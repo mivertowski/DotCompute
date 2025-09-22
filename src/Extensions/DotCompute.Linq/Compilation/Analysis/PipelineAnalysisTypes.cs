@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Information about pipeline operators used in expression analysis.
 /// </summary>
@@ -53,7 +54,6 @@ public class TypeUsageInfo
     {
         get => UsageCount;
         set => UsageCount = value;
-    }
     /// <summary>Gets or sets whether the type is supported on GPU.</summary>
     public bool IsGpuCompatible { get; set; }
     /// <summary>Gets or sets the memory size of the type.</summary>
@@ -63,7 +63,6 @@ public class TypeUsageInfo
     {
         get => TypeSize;
         set => TypeSize = value;
-    }
     /// <summary>Gets or sets conversion requirements.</summary>
     public List<string> ConversionRequirements { get; set; } = [];
     /// <summary>Gets or sets whether the type requires specialization.</summary>
@@ -121,7 +120,6 @@ public class PipelineComplexityMetrics
     {
         get => TotalComplexity;
         set => TotalComplexity = value;
-    }
     /// <summary>Gets or sets the number of operations.</summary>
     public int OperationCount { get; set; }
     /// <summary>Gets or sets the estimated memory usage.</summary>
@@ -131,7 +129,6 @@ public class PipelineComplexityMetrics
     {
         get => EstimatedMemoryUsage;
         set => EstimatedMemoryUsage = value;
-    }
     /// <summary>Gets or sets the parallelization potential (0.0 to 1.0).</summary>
     public double ParallelizationPotential { get; set; }
     /// <summary>Gets or sets whether GPU execution is recommended.</summary>
@@ -224,7 +221,6 @@ public class GlobalMemoryAccessPattern
     {
         get => (MemoryAccessPattern)(int)AccessType;
         set => AccessType = (MemoryAccessType)(int)value;
-    }
     /// <summary>Gets or sets whether accesses are coalesced.</summary>
     public bool IsCoalesced { get; set; }
     /// <summary>Gets or sets whether there are coalescing opportunities (alias for IsCoalesced).</summary>
@@ -232,7 +228,6 @@ public class GlobalMemoryAccessPattern
     {
         get => IsCoalesced;
         set => IsCoalesced = value;
-    }
     /// <summary>Gets or sets the stride pattern.</summary>
     public int StridePattern { get; set; }
     /// <summary>Gets or sets memory locations accessed.</summary>
@@ -244,7 +239,6 @@ public class GlobalMemoryAccessPattern
     {
         get => CacheEfficiency;
         set => CacheEfficiency = value;
-    }
     /// <summary>Gets or sets the locality factor (0.0 to 1.0).</summary>
     public double LocalityFactor { get; set; } = 0.5;
     /// <summary>Gets or sets whether this pattern benefits from prefetching.</summary>
@@ -260,7 +254,6 @@ public class GlobalMemoryAccessPattern
     {
         get => AccessType.ToString();
         set => AccessType = Enum.TryParse<MemoryAccessType>(value, true, out var result) ? result : MemoryAccessType.Sequential;
-    }
     /// <summary>Gets or sets the global memory access pattern.</summary>
     public MemoryAccessType Pattern { get; set; } = MemoryAccessType.Sequential;
 }

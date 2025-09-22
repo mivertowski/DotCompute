@@ -37,6 +37,7 @@ namespace DotCompute.Linq.Types
         /// <param name="backendType">The backend type to convert.</param>
         /// <returns>The corresponding ComputeBackendType.</returns>
         public static ComputeBackendType ToComputeBackendType(this BackendType backendType)
+        {
             => (ComputeBackendType)backendType;
         /// Converts a ComputeBackendType to BackendType.
         /// <param name="computeBackendType">The compute backend type to convert.</param>

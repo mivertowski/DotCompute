@@ -29,6 +29,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         private long _peakAllocatedBytes;
         private int _totalAllocations;
         private int _activeAllocations;
+        }
         public GpuMemoryManager(CudaContext context, ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -83,6 +84,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
                 bufferType, elementCount, sizeInBytes);
             try
             {
+                }
                 lock (_allocationLock)
                 {
                     _totalAllocations++;
@@ -112,6 +114,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
             }
             catch (Exception ex)
             {
+                }
                 lock (_allocationLock)
                 {
                     _activeAllocations--;
@@ -280,6 +283,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
                         _logger.LogWarning("Failed to free device memory: {Error}", CudaRuntime.GetErrorString(result));
                     }
                 });
+                }
                 lock (_allocationLock)
                 {
                     _activeAllocations--;
@@ -324,6 +328,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         /// Gets current memory statistics.
         public MemoryStatistics GetMemoryStatistics()
         {
+            }
             lock (_allocationLock)
             {
                 var (freeMemory, totalMemory) = GetDeviceMemoryInfo();
@@ -362,6 +367,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
             _logger.LogInformation("GPU memory garbage collection completed");
         }
         #region Private Methods
+        }
         private void InitializeMemoryManager()
         {
             _logger.LogInformation("Initializing GPU memory manager");
@@ -387,7 +393,6 @@ namespace DotCompute.Linq.KernelGeneration.Memory
                 return AllocationStrategy.PinnedMemory;
             // Default to device memory
             return AllocationStrategy.DeviceMemory;
-        }
         private async Task<GpuBuffer<T>> AllocateDeviceMemoryAsync<T>(int elementCount) where T : unmanaged
         {
             var sizeInBytes = elementCount * Marshal.SizeOf<T>();
@@ -471,6 +476,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
             return result == CudaError.Success && unifiedAddressing == 1;
         }
         #endregion
+        }
         public void Dispose()
         {
             if (_disposed)
@@ -593,12 +599,14 @@ namespace DotCompute.Linq.KernelGeneration.Memory
     public class MemoryAllocationException : Exception
     {
         public MemoryAllocationException(string message) : base(message) { }
+        {
         public MemoryAllocationException(string message, Exception innerException) : base(message, innerException) { }
     }
     /// Memory transfer exception.
     public class MemoryTransferException : Exception
     {
         public MemoryTransferException(string message) : base(message) { }
+        {
         public MemoryTransferException(string message, Exception innerException) : base(message, innerException) { }
     }
     #region Helper Classes
@@ -609,12 +617,12 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<int, Queue<IntPtr>> _pools;
         private bool _disposed;
+        }
         public MemoryPool(CudaContext context, ILogger logger)
         {
             _context = context;
             _logger = logger;
             _pools = new ConcurrentDictionary<int, Queue<IntPtr>>();
-        }
         public bool TryAllocateFromPool<T>(int elementCount, out GpuBuffer<T> buffer) where T : unmanaged
         {
             buffer = null!;
@@ -678,6 +686,7 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         private readonly ILogger _logger;
         private readonly HashSet<(int, int)> _enabledP2PPairs;
         private bool _disposed;
+        }
         public P2PTransferManager(CudaContext context, ILogger logger)
         {
             _context = context;
@@ -729,11 +738,11 @@ namespace DotCompute.Linq.KernelGeneration.Memory
         private readonly ILogger _logger;
         private bool _disposed;
 
+        }
         public UnifiedMemoryManager(CudaContext context, ILogger logger)
         {
             _context = context;
             _logger = logger;
-        }
         public async Task<GpuBuffer<T>> AllocateAsync<T>(int elementCount) where T : unmanaged
         {
             var sizeInBytes = elementCount * Marshal.SizeOf<T>();

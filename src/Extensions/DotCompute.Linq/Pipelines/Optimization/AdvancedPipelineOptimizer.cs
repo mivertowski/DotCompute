@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
 namespace DotCompute.Linq.Pipelines.Optimization;
+{
 /// <summary>
 /// Interface for advanced pipeline optimization including query plan optimization and caching strategies.
 /// </summary>
@@ -41,6 +42,7 @@ public interface IAdvancedPipelineOptimizer
 }
 /// Advanced pipeline optimizer with comprehensive optimization capabilities.
 public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
+    {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AdvancedPipelineOptimizer> _logger;
     private readonly IAdaptiveBackendSelector? _backendSelector;
@@ -59,6 +61,7 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
     }
     /// <inheritdoc />
     public async Task<IKernelPipeline> OptimizeQueryPlanAsync(IKernelPipeline pipeline)
+    {
         _logger.LogInformation("Starting query plan optimization");
         using var activity = _profiler.StartActivity("QueryPlanOptimization");
         try
@@ -79,9 +82,12 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
             return fusedPipeline;
         }
         catch (Exception ex)
+        {
             _logger.LogError(ex, "Query plan optimization failed");
             throw new OptimizationException("Failed to optimize query plan", ex);
+    }
     public async Task<IKernelPipeline> ApplyCachingStrategyAsync(IKernelPipeline pipeline, CachingStrategy strategy)
+    {
         _logger.LogDebug("Applying caching strategy: {Strategy}", strategy);
         using var activity = _profiler.StartActivity("CachingStrategyApplication");
         return strategy switch
@@ -92,7 +98,9 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
             CachingStrategy.Adaptive => await ApplyAdaptiveCachingAsync(pipeline),
             _ => pipeline
         };
+    }
     public async Task<IKernelPipeline> OptimizeMemoryLayoutAsync(IKernelPipeline pipeline)
+    {
         _logger.LogDebug("Optimizing memory layout and access patterns");
         using var activity = _profiler.StartActivity("MemoryLayoutOptimization");
         // Analyze memory access patterns
@@ -104,7 +112,9 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         // Apply cache-friendly data layouts
         var cacheOptimizedPipeline = ApplyCacheFriendlyLayouts(poolingOptimizedPipeline, memoryAnalysis);
         return cacheOptimizedPipeline;
+    }
     public async Task<IKernelPipeline> GenerateParallelExecutionPlanAsync(IKernelPipeline pipeline)
+    {
         _logger.LogDebug("Generating parallel execution plan");
         using var activity = _profiler.StartActivity("ParallelExecutionPlanGeneration");
         // Analyze dependencies between pipeline stages
@@ -116,7 +126,9 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         // Apply load balancing optimizations
         var loadBalancedPipeline = await ApplyLoadBalancingAsync(parallelPipeline);
         return loadBalancedPipeline;
+    }
     public async Task<IKernelPipeline> ApplyKernelFusionAsync(IKernelPipeline pipeline)
+    {
         _logger.LogDebug("Applying kernel fusion optimizations");
         using var activity = _profiler.StartActivity("KernelFusion");
             // Analyze fusion opportunities
@@ -137,7 +149,9 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
             _logger.LogWarning(ex, "Kernel fusion failed, returning original pipeline");
             return pipeline;
     #region Private Implementation Methods
+    }
     private async Task<PipelineStructureAnalysis> AnalyzePipelineStructureAsync(IKernelPipeline pipeline)
+    {
         // Analyze the pipeline structure to identify optimization opportunities
         var diagnostics = await pipeline.GetDiagnosticsAsync();
         var executionGraph = await pipeline.GetExecutionGraphAsync();
@@ -170,9 +184,11 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
         // Implementation would reorder joins to minimize intermediate result sizes
         // using cost-based optimization
     private Task<IKernelPipeline> ApplyConstantFoldingAsync(IKernelPipeline pipeline)
+    {
         _logger.LogDebug("Applying constant folding optimization");
         // Implementation would identify and pre-compute constant expressions
     private Task<IKernelPipeline> ApplyAggressiveCachingAsync(IKernelPipeline pipeline)
+    {
         var result = pipeline
             .Cache<object>("aggressive_stage_1", CachePolicy.Default)
             .AdaptiveCache(new AdaptiveCacheOptions
@@ -181,23 +197,33 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
                 PerformanceThreshold = 0.05 // Cache if 5% improvement
             });
         return Task.FromResult(result);
+    }
     private Task<IKernelPipeline> ApplySelectiveCachingAsync(IKernelPipeline pipeline)
+    {
         // Only cache expensive operations
         var result = pipeline.AdaptiveCache(new AdaptiveCacheOptions
             AutoKeyGeneration = true,
             PolicyAdaptation = true,
             PerformanceThreshold = 0.2 // Cache if 20% improvement
         });
+    }
     private Task<IKernelPipeline> ApplyResultOnlyCachingAsync(IKernelPipeline pipeline)
+    {
         var result = pipeline.Cache<object>("final_result", CachePolicy.Default);
+    }
     private Task<IKernelPipeline> ApplyIntermediateResultsCachingAsync(IKernelPipeline pipeline)
+    {
         // Cache intermediate results of expensive stages
             CacheIntermediateResults = true,
             PerformanceThreshold = 0.15
+    }
     private Task<IKernelPipeline> ApplyAdaptiveCachingAsync(IKernelPipeline pipeline)
+    {
             PerformanceThreshold = 0.1,
             AdaptiveThresholds = true
+    }
     private async Task<MemoryPatternAnalysis> AnalyzeMemoryPatternsAsync(IKernelPipeline pipeline)
+    {
         return new MemoryPatternAnalysis
             PeakMemoryUsage = diagnostics.PeakMemoryUsage,
             SequentialAccessPatterns = [],
@@ -213,6 +239,7 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
     private IKernelPipeline ApplyCacheFriendlyLayouts(
         // Reorganize data layouts for better cache locality
     private Dictionary<string, OptimizationRule> InitializeOptimizationRules()
+    {
         return new Dictionary<string, OptimizationRule>
             ["PredicatePushdown"] = new OptimizationRule
                 Name = "PredicatePushdown",
@@ -249,6 +276,7 @@ public class AdvancedPipelineOptimizer : IAdvancedPipelineOptimizer
 #region Supporting Types
 /// Caching strategies for pipeline optimization.
 public enum CachingStrategy
+    {
     /// <summary>No caching applied.</summary>
     None,
     /// <summary>Cache everything possible.</summary>
@@ -263,6 +291,7 @@ public enum CachingStrategy
     Adaptive
 /// Analysis results for pipeline structure.
 internal class PipelineStructureAnalysis
+    {
     public int StageCount { get; set; }
     public bool HasFilterOperations { get; set; }
     public bool HasProjectionOperations { get; set; }
@@ -272,6 +301,7 @@ internal class PipelineStructureAnalysis
     public List<string> MemoryIntensiveOperations { get; set; } = [];
 /// Analysis results for memory access patterns.
 internal class MemoryPatternAnalysis
+    {
     public long PeakMemoryUsage { get; set; }
     public List<string> SequentialAccessPatterns { get; set; } = [];
     public List<string> RandomAccessPatterns { get; set; } = [];
@@ -279,46 +309,61 @@ internal class MemoryPatternAnalysis
     public List<string> CacheOptimizationOpportunities { get; set; } = [];
 /// Stage dependency analysis results.
 internal class StageDependencyAnalysis
+    {
     public Dictionary<string, List<string>> Dependencies { get; set; } = [];
     public List<string> IndependentStages { get; set; } = [];
     public List<List<string>> ParallelGroups { get; set; } = [];
 /// Fusion opportunity identification.
 internal class FusionOpportunity
+    {
     public string Description { get; set; } = string.Empty;
     public List<string> StageIds { get; set; } = [];
     public double ExpectedSpeedup { get; set; }
     public double ImplementationComplexity { get; set; }
 /// Optimization rule definition.
 internal class OptimizationRule
+    {
     public string Name { get; set; } = string.Empty;
     public double EstimatedImpact { get; set; }
     public OptimizationComplexity Complexity { get; set; }
 /// Optimization complexity levels.
 internal enum OptimizationComplexity
+    {
     Low,
     Medium,
     High,
     VeryHigh
 /// Performance profiler for optimization activities.
 internal class PerformanceProfiler
+    {
     private readonly ILogger _logger;
+    }
     public PerformanceProfiler(ILogger logger)
+    {
         _logger = logger;
+    }
     public IDisposable StartActivity(string activityName)
+    {
         return new ProfilingActivity(activityName, _logger);
 /// Profiling activity for measuring optimization performance.
 internal class ProfilingActivity : IDisposable
+    {
     private readonly string _name;
     private readonly DateTime _startTime;
+    }
     public ProfilingActivity(string name, ILogger logger)
+    {
         _name = name;
         _startTime = DateTime.UtcNow;
+    }
     public void Dispose()
+    {
         var duration = DateTime.UtcNow - _startTime;
         _logger.LogDebug("Optimization activity '{Activity}' completed in {Duration}ms",
             _name, duration.TotalMilliseconds);
 /// Options for adaptive caching.
 public class AdaptiveCacheOptions
+    {
     /// <summary>Whether to automatically generate cache keys.</summary>
     public bool AutoKeyGeneration { get; set; } = true;
     /// <summary>Whether to adapt cache policies based on performance.</summary>
@@ -333,6 +378,7 @@ public class AdaptiveCacheOptions
     public bool AdaptiveThresholds { get; set; } = false;
 /// Cache policy configuration.
 public class CachePolicy
+    {
     /// <summary>Default cache policy.</summary>
     public static readonly CachePolicy Default = new()
         TimeToLive = TimeSpan.FromMinutes(30),
@@ -347,6 +393,7 @@ public class CachePolicy
     public EvictionPolicy EvictionPolicy { get; set; }
 /// Cache eviction policies.
 public enum EvictionPolicy
+    {
     /// <summary>Least Recently Used.</summary>
     LRU,
     /// <summary>Least Frequently Used.</summary>
@@ -357,11 +404,14 @@ public enum EvictionPolicy
     Random
 /// Exception thrown when optimization fails.
 public class OptimizationException : Exception
+    {
     /// <summary>Initializes a new OptimizationException.</summary>
     public OptimizationException(string message) : base(message) { }
+        {
     public OptimizationException(string message, Exception innerException) : base(message, innerException) { }
 /// Extensions for IKernelPipeline to add caching functionality.
 public static class KernelPipelineCacheExtensions
+    {
     /// Adds result caching to the pipeline with configurable cache policy.
     /// <typeparam name="T">The type to cache</typeparam>
     /// <param name="cacheKey">Unique key for the cached results</param>
@@ -388,6 +438,7 @@ public static class KernelPipelineCacheExtensions
     /// <param name="pipeline">The pipeline to get diagnostics for</param>
     /// <returns>Pipeline diagnostics information</returns>
     public static Task<IPipelineDiagnostics> GetDiagnosticsAsync(this IKernelPipeline pipeline)
+    {
         // Return simplified diagnostics based on pipeline metrics
         var metrics = pipeline.GetMetrics();
         return Task.FromResult<IPipelineDiagnostics>(new SimplePipelineDiagnostics
@@ -403,12 +454,16 @@ public static class KernelPipelineCacheExtensions
     /// <param name="pipeline">The pipeline to get execution graph for</param>
     /// <returns>Pipeline execution graph</returns>
     public static Task<IPipelineExecutionGraph> GetExecutionGraphAsync(this IKernelPipeline pipeline)
+    {
         // Return simplified execution graph
         return Task.FromResult<IPipelineExecutionGraph>(new SimplePipelineExecutionGraph
             Nodes = pipeline.Stages.Select(s => (object)s).ToList(),
             Edges = new List<object>() // Simplified - no edge relationships for now
 /// Simple implementation of pipeline execution graph.
 public class SimplePipelineExecutionGraph : IPipelineExecutionGraph
+    {
     public IEnumerable<object> Nodes { get; set; } = new List<object>();
     public IEnumerable<object> Edges { get; set; } = new List<object>();
 #endregion
+}
+}

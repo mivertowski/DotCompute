@@ -3,6 +3,7 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Pipelines.Analysis;
 
 namespace DotCompute.Linq.Compilation.Stages.Interfaces;
+{
 /// <summary>
 /// Interface for CUDA-specific operator code generation.
 /// </summary>

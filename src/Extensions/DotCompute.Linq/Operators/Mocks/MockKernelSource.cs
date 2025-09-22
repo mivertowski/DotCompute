@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 namespace DotCompute.Linq.Operators.Mocks;
+{
 /// <summary>
 /// Mock kernel source implementation for testing purposes.
 /// </summary>

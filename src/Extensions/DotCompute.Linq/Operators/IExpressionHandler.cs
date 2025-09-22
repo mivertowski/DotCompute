@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using DotCompute.Linq.Operators.Generation;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Interface for handling specific types of expressions during kernel generation.
 /// </summary>
@@ -23,6 +24,7 @@ public interface IExpressionHandler
 }
 /// Basic expression handler for method calls.
 internal class MethodCallExpressionHandler : IExpressionHandler
+    {
     public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Call;
     public string Handle(Expression expression, KernelGenerationContext context)
     {
@@ -41,7 +43,9 @@ internal class MethodCallExpressionHandler : IExpressionHandler
     }
 /// Binary expression handler for arithmetic operations.
 internal class BinaryExpressionHandler : IExpressionHandler
+    {
     public bool CanHandle(Expression expression)
+        {
         return expression.NodeType is ExpressionType.Add or ExpressionType.Subtract
                                    or ExpressionType.Multiply or ExpressionType.Divide
                                    or ExpressionType.GreaterThan or ExpressionType.LessThan

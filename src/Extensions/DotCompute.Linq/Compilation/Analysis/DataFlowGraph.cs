@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Represents a data flow graph for analyzing dependencies in expressions.
 /// </summary>

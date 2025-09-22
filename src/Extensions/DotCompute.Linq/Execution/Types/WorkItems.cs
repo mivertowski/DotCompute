@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Execution.Types;
+{
 /// <summary>
 /// Defines work dimensions for kernel execution.
 /// </summary>

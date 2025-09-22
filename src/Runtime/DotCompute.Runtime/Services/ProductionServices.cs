@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -391,7 +392,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
     /// <param name="data">The source data span.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the async operation.</returns>
-    public async Task CopyToDeviceAsync<T>(IUnifiedMemoryBuffer buffer, ReadOnlySpan<T> data, CancellationToken cancellationToken = default) where T : unmanaged
+    public async Task CopyToDeviceAsync<T>(IUnifiedMemoryBuffer buffer, ReadOnlyMemory<T> data, CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (_disposed)
         {
@@ -400,7 +401,7 @@ public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
 
         ArgumentNullException.ThrowIfNull(buffer);
 
-        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        var memory = data;
         await buffer.CopyFromAsync(memory, cancellationToken).ConfigureAwait(false);
     }
 
@@ -1016,7 +1017,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     public IReadOnlyList<KernelLanguage> SupportedSourceTypes => new KernelLanguage[]
     {
         KernelLanguage.CSharp,
-        KernelLanguage.CUDA,
+        KernelLanguage.Cuda,
         KernelLanguage.OpenCL,
         KernelLanguage.HLSL,
         KernelLanguage.Metal
@@ -1350,7 +1351,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         {
         definition.Name,
         _ = definition.Code?.GetHashCode().ToString() ?? "0",
-        definition.Language.ToString()
+        definition.Language.ToString(),
         _ = options?.PreferredBlockSize.ToString() ?? "default",
         _ = options?.SharedMemorySize.ToString() ?? "0"
     };

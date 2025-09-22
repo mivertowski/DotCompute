@@ -17,6 +17,7 @@ using AbstractionsMemoryPattern = DotCompute.Abstractions.Types.MemoryAccessPatt
 using PipelineMemoryPattern = DotCompute.Linq.Compilation.Analysis.MemoryAccessPattern;
 using DotCompute.Core.Optimization.Enums;
 namespace DotCompute.Linq.Pipelines.Bridge;
+{
 /// <summary>
 /// Provides high-performance, zero-overhead type conversion adapters for the DotCompute pipeline system.
 /// This class enables seamless interoperability between different type systems while maintaining
@@ -93,6 +94,7 @@ public static class TypeConversionExtensions
     /// <param name="operatorInfos">The collection of operator information</param>
     /// <returns>A collection of converted PipelineOperatorInfo instances</returns>
     public static IEnumerable<PipelineOperatorInfo> ToPipelineOperatorInfos(this IEnumerable<DotCompute.Linq.Analysis.OperatorInfo>? operatorInfos)
+    {
         if (operatorInfos == null)
         foreach (var operatorInfo in operatorInfos)
             var pipelineInfo = operatorInfo.ToPipelineOperatorInfo();
@@ -104,6 +106,7 @@ public static class TypeConversionExtensions
     /// <param name="abstractionsPattern">The abstractions memory access pattern</param>
     /// <returns>The corresponding pipeline memory access pattern</returns>
     public static PipelineMemoryPattern ToPipelinePattern(this AbstractionsMemoryPattern abstractionsPattern)
+    {
         return abstractionsPattern switch
             AbstractionsMemoryPattern.Sequential => PipelineMemoryPattern.Sequential,
             AbstractionsMemoryPattern.Strided => PipelineMemoryPattern.Strided,
@@ -117,6 +120,7 @@ public static class TypeConversionExtensions
     /// <param name="pipelinePattern">The pipeline memory access pattern</param>
     /// <returns>The corresponding abstractions memory access pattern</returns>
     public static AbstractionsMemoryPattern ToAbstractionsPattern(this PipelineMemoryPattern pipelinePattern)
+    {
         return pipelinePattern switch
             PipelineMemoryPattern.Sequential => AbstractionsMemoryPattern.Sequential,
             PipelineMemoryPattern.Strided => AbstractionsMemoryPattern.Strided,
@@ -127,6 +131,7 @@ public static class TypeConversionExtensions
     /// <param name="accessType">The memory access type</param>
     /// <returns>The corresponding memory access pattern</returns>
     public static AbstractionsMemoryPattern ToMemoryAccessPattern(this MemoryAccessType accessType)
+    {
         return accessType switch
             MemoryAccessType.Sequential => AbstractionsMemoryPattern.Sequential,
             MemoryAccessType.Random => AbstractionsMemoryPattern.Random,
@@ -136,6 +141,7 @@ public static class TypeConversionExtensions
     /// <param name="pattern">The memory access pattern</param>
     /// <returns>The corresponding memory access type</returns>
     public static MemoryAccessType ToMemoryAccessType(this AbstractionsMemoryPattern pattern)
+    {
         return pattern switch
             AbstractionsMemoryPattern.Sequential => MemoryAccessType.Sequential,
             AbstractionsMemoryPattern.Random => MemoryAccessType.Random,
@@ -150,6 +156,7 @@ public static class TypeConversionExtensions
     /// <param name="linqDirection">The LINQ parameter direction</param>
     /// <returns>The corresponding abstractions parameter direction</returns>
     public static AbstractionsParameterDirection ToAbstractionsDirection(this LinqParameterDirection linqDirection)
+    {
         return linqDirection switch
             LinqParameterDirection.In => AbstractionsParameterDirection.In,
             LinqParameterDirection.Out => AbstractionsParameterDirection.Out,
@@ -160,6 +167,7 @@ public static class TypeConversionExtensions
     /// <param name="abstractionsDirection">The abstractions parameter direction</param>
     /// <returns>The corresponding LINQ parameter direction</returns>
     public static LinqParameterDirection ToLinqDirection(this AbstractionsParameterDirection abstractionsDirection)
+    {
         return abstractionsDirection switch
             AbstractionsParameterDirection.In => LinqParameterDirection.In,
             AbstractionsParameterDirection.Out => LinqParameterDirection.Out,
@@ -169,6 +177,7 @@ public static class TypeConversionExtensions
     /// <param name="linqDirections">The collection of LINQ parameter directions</param>
     /// <returns>A collection of converted abstractions parameter directions</returns>
     public static IEnumerable<AbstractionsParameterDirection> ToAbstractionsDirections(this IEnumerable<LinqParameterDirection>? linqDirections)
+    {
         if (linqDirections == null)
         foreach (var direction in linqDirections)
             yield return direction.ToAbstractionsDirection();
@@ -176,6 +185,7 @@ public static class TypeConversionExtensions
     /// <param name="abstractionsDirections">The collection of abstractions parameter directions</param>
     /// <returns>A collection of converted LINQ parameter directions</returns>
     public static IEnumerable<LinqParameterDirection> ToLinqDirections(this IEnumerable<AbstractionsParameterDirection>? abstractionsDirections)
+    {
         if (abstractionsDirections == null)
         foreach (var direction in abstractionsDirections)
             yield return direction.ToLinqDirection();
@@ -183,6 +193,7 @@ public static class TypeConversionExtensions
     /// Converts a DataAccessPattern to a MemoryAccessPattern.
     /// <param name="dataPattern">The data access pattern</param>
     public static AbstractionsMemoryPattern ToMemoryAccessPattern(this DataAccessPattern dataPattern)
+    {
         return dataPattern switch
             DataAccessPattern.Sequential => AbstractionsMemoryPattern.Sequential,
             DataAccessPattern.Random => AbstractionsMemoryPattern.Random,
@@ -193,6 +204,7 @@ public static class TypeConversionExtensions
     /// <param name="memoryPattern">The memory access pattern</param>
     /// <returns>The corresponding data access pattern</returns>
     public static DataAccessPattern ToDataAccessPattern(this AbstractionsMemoryPattern memoryPattern)
+    {
         return memoryPattern switch
             AbstractionsMemoryPattern.Sequential => DataAccessPattern.Sequential,
             AbstractionsMemoryPattern.Random => DataAccessPattern.Random,
@@ -206,6 +218,7 @@ public static class TypeConversionExtensions
     /// <param name="globalPattern">The global memory access pattern</param>
     /// <returns>A unified memory access characteristics instance</returns>
     public static MemoryAccessCharacteristics ToMemoryAccessCharacteristics(this GlobalMemoryAccessPattern? globalPattern)
+    {
         if (globalPattern == null)
             return new MemoryAccessCharacteristics
                 PrimaryPattern = DataAccessPattern.Sequential,
@@ -247,7 +260,9 @@ public static class TypeConversionExtensions
         where TTarget : class
         return source == null ? null : converter(source);
     #region Private Helper Methods
+    }
     private static ExpressionType MapOperatorNameToExpressionType(string operatorName)
+    {
         return operatorName.ToUpperInvariant() switch
             "ADD" or "ADDITION" => ExpressionType.Add,
             "SUB" or "SUBTRACT" or "SUBTRACTION" => ExpressionType.Subtract,
@@ -268,7 +283,9 @@ public static class TypeConversionExtensions
             "NEG" or "NEGATE" => ExpressionType.Negate,
             "COND" or "CONDITIONAL" => ExpressionType.Conditional,
             _ => ExpressionType.Call // Default to method call for unknown operators
+    }
     private static int MapComplexityToScore(ComputationalComplexity complexity)
+    {
         return complexity switch
             ComputationalComplexity.Constant => 1,
             ComputationalComplexity.Logarithmic => 2,
@@ -278,7 +295,9 @@ public static class TypeConversionExtensions
             ComputationalComplexity.Cubic => 6,
             ComputationalComplexity.Exponential => 10,
             _ => 3 // Default to linear complexity
+    }
     private static long EstimateMemoryRequirement(DotCompute.Linq.Analysis.OperatorInfo operatorInfo)
+    {
         // Estimate based on operand types and vector width
         var baseSize = 0L;
         if (operatorInfo.OperandTypes != null)
@@ -286,7 +305,9 @@ public static class TypeConversionExtensions
                 baseSize += EstimateTypeSize(type);
         baseSize += EstimateTypeSize(operatorInfo.ResultType);
         return baseSize * operatorInfo.OptimalVectorWidth;
+    }
     private static long EstimateTypeSize(Type type)
+    {
         return type switch
             _ when type == typeof(byte) => 1,
             _ when type == typeof(short) => 2,
@@ -296,12 +317,16 @@ public static class TypeConversionExtensions
             _ when type == typeof(double) => 8,
             _ when type == typeof(decimal) => 16,
             _ => 8 // Default assumption
+    }
     private static double CalculatePerformanceCost(PerformanceCharacteristics performance)
+    {
         // Calculate normalized cost based on throughput and latency
         if (performance.Throughput > 0)
             return Math.Max(0.1, performance.Latency / (performance.Throughput * 1e-9));
         return 1.0; // Default cost
+    }
     private static Dictionary<string, object> CreateMetadataDictionary(DotCompute.Linq.Analysis.OperatorInfo operatorInfo)
+    {
         var metadata = new Dictionary<string, object>
             ["Backend"] = operatorInfo.Backend.ToString(),
             ["Implementation"] = operatorInfo.Implementation.ToString(),
@@ -346,7 +371,9 @@ public static class TypeConversionExtensions
             MemoryAccessPattern = baseInfo.MemoryAccessPattern,
             SupportsVectorization = baseInfo.SupportsVectorization && pipelineInfo.CanParallelize,
             OptimalVectorWidth = baseInfo.OptimalVectorWidth
+    }
     private static PerformanceCharacteristics EnhancePerformanceCharacteristics(PerformanceCharacteristics basePerf, PipelineOperatorInfo pipelineInfo)
+    {
         return new PerformanceCharacteristics
             Throughput = basePerf.Throughput * (1.0 / Math.Max(0.1, pipelineInfo.PerformanceCost)),
             Latency = basePerf.Latency * Math.Max(0.1, pipelineInfo.PerformanceCost),
@@ -356,7 +383,9 @@ public static class TypeConversionExtensions
             ParallelEfficiency = basePerf.ParallelEfficiency * (pipelineInfo.CanParallelize ? 1.0 : 0.1),
             ScalabilityFactor = basePerf.ScalabilityFactor,
             PowerEfficiency = basePerf.PowerEfficiency
+    }
     private static IReadOnlyDictionary<string, object> CombineMetadata(IReadOnlyDictionary<string, object>? baseMetadata, Dictionary<string, object>? pipelineMetadata)
+    {
         var combined = new Dictionary<string, object>();
         if (baseMetadata != null)
             foreach (var kvp in baseMetadata)
@@ -373,6 +402,7 @@ public static class TypeConversionExtensions
             ResultType = pipelineInfo.OutputType
     /// Converts memory access pattern between different type systems.
     public static MemoryAccessPattern ConvertMemoryAccessPattern(DotCompute.Linq.Pipelines.Models.AccessPattern accessPattern)
+    {
         return accessPattern switch
             DotCompute.Linq.Pipelines.Models.AccessPattern.Sequential => MemoryAccessPattern.Sequential,
             DotCompute.Linq.Pipelines.Models.AccessPattern.Random => MemoryAccessPattern.Random,
@@ -380,4 +410,15 @@ public static class TypeConversionExtensions
             DotCompute.Linq.Pipelines.Models.AccessPattern.Coalesced => MemoryAccessPattern.Coalesced,
             DotCompute.Linq.Pipelines.Models.AccessPattern.Scattered => MemoryAccessPattern.Scattered,
             _ => MemoryAccessPattern.Sequential
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
 }

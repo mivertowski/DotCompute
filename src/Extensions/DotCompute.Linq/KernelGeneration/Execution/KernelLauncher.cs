@@ -32,6 +32,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         // Performance counters
         private readonly Dictionary<string, KernelPerformanceMetrics> _performanceMetrics;
         private readonly object _metricsLock = new();
+        }
         public KernelLauncher(CudaContext context, GpuMemoryManager memoryManager, ILogger<KernelLauncher> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -133,6 +134,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         }
         /// Calculates optimal launch configuration for a kernel.
         private async Task<LaunchConfiguration> CalculateLaunchConfigurationAsync(
+        {
             ICompiledKernel kernel,
             int dataSize,
             LaunchOptions options)
@@ -254,6 +256,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         }
         /// Launches the kernel with the given configuration.
         private async Task<InternalLaunchResult> LaunchKernelInternalAsync(
+        {
             ICompiledKernel kernel,
             MemoryContext memoryContext,
             LaunchConfiguration config,
@@ -314,7 +317,9 @@ namespace DotCompute.Linq.KernelGeneration.Execution
             var streamPtr = new IntPtr(streamId);
             if (_streamPool.TryGetValue(streamPtr, out var existingStream))
                 return existingStream;
+            }
             lock (_streamPoolLock)
+            {
                 if (_streamPool.TryGetValue(streamPtr, out existingStream))
                     return existingStream;
                 var newStream = new CudaStream(_context, streamId != 0);
@@ -346,7 +351,9 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         /// Updates performance metrics for a kernel.
         private void UpdatePerformanceMetrics(string kernelName, TimeSpan executionTime, int dataSize, LaunchConfiguration config)
         {
+            }
             lock (_metricsLock)
+            {
                 if (!_performanceMetrics.TryGetValue(kernelName, out var metrics))
                     metrics = new KernelPerformanceMetrics { KernelName = kernelName };
                     _performanceMetrics[kernelName] = metrics;
@@ -366,6 +373,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         /// Gets performance metrics for a kernel.
         private KernelPerformanceMetrics GetPerformanceMetrics(string kernelName)
         {
+            }
             lock (_metricsLock)
             {
                 return _performanceMetrics.GetValueOrDefault(kernelName, new KernelPerformanceMetrics { KernelName = kernelName });
@@ -379,6 +387,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         /// Gets all performance metrics.
         public Dictionary<string, KernelPerformanceMetrics> GetAllPerformanceMetrics()
         {
+            }
             lock (_metricsLock)
             {
                 return new Dictionary<string, KernelPerformanceMetrics>(_performanceMetrics);
@@ -387,6 +396,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
         /// Clears performance metrics.
         public void ClearPerformanceMetrics()
         {
+            }
             lock (_metricsLock)
             {
                 _performanceMetrics.Clear();
@@ -487,6 +497,7 @@ namespace DotCompute.Linq.KernelGeneration.Execution
     public class KernelLaunchException : Exception
     {
         public KernelLaunchException(string message) : base(message) { }
+        {
         public KernelLaunchException(string message, Exception innerException) : base(message, innerException) { }
     }
     /// CUDA stream wrapper.

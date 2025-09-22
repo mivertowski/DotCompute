@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Operators.Models;
+{
 /// <summary>
 /// Defines optimization levels for kernel compilation.
 /// </summary>

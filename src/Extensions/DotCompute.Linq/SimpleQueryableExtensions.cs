@@ -6,6 +6,7 @@ using DotCompute.Linq.Providers;
 using DotCompute.Linq.Queryables;
 using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Linq;
+{
 /// <summary>
 /// Extension methods for creating GPU-accelerated LINQ queries using the simple provider.
 /// </summary>
@@ -37,6 +38,7 @@ public static class SimpleQueryableExtensions
     /// <param name="source">The source sequence.</param>
     /// <returns>The sum of the elements.</returns>
     public static int GpuSum(this IQueryable<int> source)
+        {
         return source.Sum();
     /// Computes the sum of floats on the GPU.
     public static float GpuSum(this IQueryable<float> source)

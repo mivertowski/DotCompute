@@ -13,6 +13,7 @@ using DotCompute.Linq.Compilation.Plans;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Execution;
+{
 /// <summary>
 /// Provides CPU fallback execution for LINQ operations when GPU is unavailable or fails.
 /// Uses SIMD vectorization for optimal CPU performance.
@@ -24,6 +25,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
     private readonly bool _hasAvx2;
     private readonly bool _hasNeon;
     private readonly int _vectorSize;
+    }
     public CpuFallbackExecutor(ILogger<CpuFallbackExecutor> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -68,7 +70,6 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
             if (context.Parameters.TryGetValue("Expression", out var exprObj) && exprObj is Expression expression)
             {
                 return await Task.Run(() => ExecuteExpression<object>(expression), cancellationToken).ConfigureAwait(false);
-            }
             throw new NotSupportedException("CPU fallback executor requires an expression in the parameters");
         }
         catch (Exception ex)
@@ -264,13 +265,13 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
             {
                 // Use standard sort for small arrays
                 Array.Sort(result, (a, b) => keySelector(a).CompareTo(keySelector(b)));
-            }
             return result;
         }, cancellationToken).ConfigureAwait(false);
     }
     #region SIMD Implementations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe void SelectSimdFloat(float[] source, float[] result, Func<float, float> selector)
+    {
         var vectorSize = Vector<float>.Count;
         var i = 0;
         // Process vectors
@@ -563,7 +564,9 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
                method.Name.Contains("Multiply") ||
                method.Name.Contains("Subtract") ||
                method.Name.Contains("Divide");
+    }
     private static Vector<float> ApplySimpleOperationFloat(Vector<float> vec, Func<float, float> operation)
+    {
         // Apply simple operations that can be vectorized
         // This is a simplified implementation
         var methodName = operation.Method.Name;
@@ -572,6 +575,7 @@ public sealed class CpuFallbackExecutor : IQueryExecutor
         else if (methodName.Contains("Add"))
             return vec + new Vector<float>(1.0f); // Example: add 1
         return vec;
+    }
     private static Vector<double> ApplySimpleOperationDouble(Vector<double> vec, Func<double, double> operation)
     {
         var methodName = operation.Method.Name;

@@ -26,6 +26,7 @@ namespace DotCompute.Linq.Types
         /// <param name="optimizationLevel">The optimization level applied.</param>
         /// <param name="backend">The target backend type.</param>
         public OptimizedKernel(
+        {
             ICompiledKernel compiledKernel,
             OptimizationLevel optimizationLevel,
             ComputeBackendType backend)

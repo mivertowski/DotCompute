@@ -9,6 +9,7 @@ using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// A fallback kernel implementation for expressions that cannot be compiled to GPU code.
 /// </summary>

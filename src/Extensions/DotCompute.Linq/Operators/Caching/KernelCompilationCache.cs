@@ -10,6 +10,7 @@ using System.Text;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Models;
 namespace DotCompute.Linq.Operators.Caching;
+{
 /// <summary>
 /// Static cache for compiled kernels to avoid recompilation.
 /// </summary>
@@ -42,6 +43,7 @@ internal static class KernelCompilationCache
     /// <param name="compiledKernel">The compiled kernel if found.</param>
     /// <returns>True if a valid cached kernel was found; otherwise, false.</returns>
     public static bool TryGetCached(string cacheKey, out ICompiledKernel? compiledKernel)
+        {
         compiledKernel = null;
         if (_cache.TryGetValue(cacheKey, out var weakRef))
         {

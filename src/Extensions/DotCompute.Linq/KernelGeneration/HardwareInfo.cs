@@ -9,6 +9,7 @@ using System.Linq;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Types;
 namespace DotCompute.Linq.KernelGeneration;
+{
 /// <summary>
 /// Contains comprehensive hardware capability information for kernel optimization and compilation.
 /// Provides detailed specs for CPU, GPU, and other compute devices.
@@ -235,11 +236,6 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
             SupportsECC = SupportsECC,
             DriverVersion = DriverVersion,
             RuntimeVersion = RuntimeVersion
-        };
-        foreach (var capability in Capabilities)
-            clone.Capabilities[capability.Key] = capability.Value;
-        foreach (var memory in MemoryHierarchy)
-            clone.MemoryHierarchy[memory.Key] = memory.Value;
         foreach (var unit in ComputeUnits)
             clone.ComputeUnits.Add(unit);
         foreach (var feature in SupportedFeatures)
@@ -258,11 +254,7 @@ public sealed class HardwareInfo : IEquatable<HardwareInfo>
         return DeviceType == other.DeviceType &&
                DeviceName == other.DeviceName &&
                ComputeCapability == other.ComputeCapability;
-    }
-    public override bool Equals(object? obj) => obj is HardwareInfo other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(DeviceType, DeviceName, ComputeCapability);
     public override string ToString() => GetSummary();
-}
 /// Contains information about an individual compute unit.
 public sealed class ComputeUnitInfo
 {

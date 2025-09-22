@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 namespace DotCompute.Linq.Pipelines.Models;
+{
 /// <summary>
 /// Options for streaming pipeline configuration.
 /// </summary>
@@ -22,6 +23,7 @@ public class StreamingPipelineOptions
 }
 /// Simple streaming pipeline stage information.
 public class StreamingStage
+    {
     /// Gets or sets the stage name.
     public string Name { get; set; } = string.Empty;
     /// Gets or sets the stage type.

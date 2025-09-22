@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 using DotCompute.Linq.Compilation;
 namespace DotCompute.Linq.Providers;
+{
 /// <summary>
 /// LINQ query provider that is fully integrated with the runtime orchestrator.
 /// This is the primary provider for production use cases.
@@ -30,6 +31,7 @@ public class IntegratedComputeQueryProvider : IQueryProvider
     /// <param name="optimizer">The expression optimizer.</param>
     /// <param name="logger">The logger instance.</param>
     public IntegratedComputeQueryProvider(
+        {
         IComputeOrchestrator orchestrator,
         IExpressionOptimizer optimizer,
         ILogger<IntegratedComputeQueryProvider> logger)
@@ -130,9 +132,6 @@ public class IntegratedComputeQueryProvider : IQueryProvider
                 return (TResult)(object)convertedArray;
         throw new InvalidCastException($"Cannot convert query result of type {result?.GetType()} to {typeof(TResult)}");
     private static Type GetElementType(Type type)
-        // Check if it's already IQueryable<T>
-        var queryableType = type.GetInterfaces()
-            .FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IQueryable<>));
         if (queryableType != null)
             return queryableType.GetGenericArguments()[0];
         // Check if it's IEnumerable<T>
@@ -148,12 +147,14 @@ public class IntegratedComputeQueryProvider : IQueryProvider
 /// Represents a queryable sequence that uses the integrated compute orchestrator.
 /// <typeparam name="T">The type of the elements in the sequence.</typeparam>
 public class IntegratedComputeQueryable<T> : IOrderedQueryable<T>
+    {
     private readonly IntegratedComputeQueryProvider _provider;
     private readonly Expression _expression;
     /// Initializes a new instance of the <see cref="IntegratedComputeQueryable{T}"/> class.
     /// <param name="provider">The query provider.</param>
     /// <param name="expression">The expression tree.</param>
     public IntegratedComputeQueryable(IntegratedComputeQueryProvider provider, Expression expression)
+        {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _expression = expression ?? throw new ArgumentNullException(nameof(expression));
         // Validate that expression type is compatible
@@ -182,6 +183,7 @@ public class IntegratedComputeQueryable<T> : IOrderedQueryable<T>
         return await _provider.ExecuteAsync<IEnumerable<T>>(_expression, preferredBackend, cancellationToken);
 /// Represents a kernel operation translated from a LINQ expression.
 public class KernelOperation
+    {
     /// Gets or sets the kernel name to execute.
     public string KernelName { get; set; } = string.Empty;
     /// Gets or sets the arguments for the kernel.
@@ -192,6 +194,7 @@ public class KernelOperation
     public Dictionary<string, object> Metadata { get; set; } = [];
 /// Translates LINQ expressions to kernel operations.
 public class LinqToKernelTranslator
+    {
     private readonly ILogger _logger;
     /// Initializes a new instance of the <see cref="LinqToKernelTranslator"/> class.
     public LinqToKernelTranslator(ILogger logger)
@@ -203,6 +206,7 @@ public class LinqToKernelTranslator
         return translator.Translate(expression);
     /// Visitor that converts LINQ expressions to kernel operations.
     private class ExpressionToKernelVisitor : ExpressionVisitor
+    {
         private readonly ILogger _logger;
         private readonly List<KernelOperation> _operations = [];
         private int _operationCounter = 0;
@@ -243,6 +247,7 @@ public class LinqToKernelTranslator
             };
             _operations.Add(operation);
         private void TranslateWhere(MethodCallExpression node)
+        {
                 KernelName = $"System.Linq.Where_{_operationCounter++}",
                     ["Operation"] = "Where",
         private void TranslateAggregate(MethodCallExpression node)

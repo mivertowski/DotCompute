@@ -8,6 +8,7 @@ using DotCompute.Linq.Execution;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Services;
+{
 /// <summary>
 /// Default implementation of query cache using in-memory caching.
 /// </summary>
@@ -35,6 +36,7 @@ public class DefaultQueryCache : IQueryCache
     }
     /// <inheritdoc/>
     public string GenerateKey(Expression expression)
+        {
         ArgumentNullException.ThrowIfNull(expression);
         // Generate a hash of the expression string representation
         var expressionString = expression.ToString();
@@ -53,6 +55,7 @@ public class DefaultQueryCache : IQueryCache
         result = null;
         return false;
     public void Set(string key, object? result)
+        {
         var entryOptions = new MemoryCacheEntryOptions
             Size = 1, // Each entry counts as 1 towards the size limit
             SlidingExpiration = _options.EnableExpiration ? _options.DefaultExpiration : null
@@ -87,6 +90,7 @@ public class DefaultQueryCache : IQueryCache
 }
 /// Options for configuring the query cache.
 public class QueryCacheOptions
+    {
     /// Gets or sets the maximum number of cache entries.
     public int MaxEntries { get; set; } = 1000;
     /// Gets or sets a value indicating whether cache expiration is enabled.

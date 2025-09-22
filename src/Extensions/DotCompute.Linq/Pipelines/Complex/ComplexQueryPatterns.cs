@@ -5,6 +5,7 @@
 // All complex query patterns are now implemented as extensions to DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline
 using DotCompute.Linq.Pipelines.Extensions;
 namespace DotCompute.Linq.Pipelines.Complex;
+{
 /// <summary>
 /// This class has been replaced by CorePipelineComplexExtensions.
 /// Use the extension methods in DotCompute.Linq.Pipelines.Extensions.CorePipelineComplexExtensions instead.
@@ -38,5 +39,7 @@ public static class ComplexQueryPatterns
     /// This method has been moved to CorePipelineComplexExtensions.JoinGpu.
     [System.Obsolete("Use CorePipelineComplexExtensions.JoinGpu extension method instead", true)]
     public static void JoinGpu_UseExtensionInstead()
+    {
         throw new InvalidOperationException("This method has been replaced by CorePipelineComplexExtensions.JoinGpu extension method");
+}
 }

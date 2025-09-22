@@ -10,6 +10,7 @@ using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInf
 using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes conditional operators in expression trees.
@@ -574,8 +575,6 @@ public class ConditionalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAna
             ConstantExpression => true,
             _ => false
         };
-    }
-
     private static bool IsComparisonOrLogical(ExpressionType nodeType) => nodeType switch
     {
         ExpressionType.Equal or

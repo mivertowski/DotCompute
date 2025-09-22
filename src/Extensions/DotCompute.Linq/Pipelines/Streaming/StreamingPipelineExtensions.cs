@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Pipelines.Streaming;
+{
 /// <summary>
 /// Extensions for creating real-time streaming pipelines with micro-batching and backpressure handling.
 /// Optimized for continuous data processing with configurable windowing and buffering strategies.
@@ -108,16 +109,21 @@ public static class StreamingPipelineExtensions
         _ = Task.Run(async () =>
             try
                 await foreach (var item in source.WithCancellation(cancellationToken))
+        {
                     await writer.WriteAsync(item, cancellationToken);
+            }
             catch (OperationCanceledException)
+            {
                 // Expected when cancellation is requested
             catch (Exception ex)
+            {
                 writer.TryComplete(ex);
                 return;
             writer.TryComplete();
         }, cancellationToken);
         // Consumer
         await foreach (var item in reader.ReadAllAsync(cancellationToken))
+        {
             yield return item;
     #region Stream Analytics
     /// Computes a rolling average over a time window.
@@ -268,6 +274,7 @@ public static class StreamingPipelineExtensions
 #region Supporting Types
 /// Configuration options for streaming pipelines.
 public class StreamingPipelineOptions
+    {
     /// <summary>Batch size for micro-batching.</summary>
     public int BatchSize { get; set; } = 1000;
     /// <summary>Maximum time to wait for a batch to fill.</summary>
@@ -282,6 +289,7 @@ public class StreamingPipelineOptions
     public ILogger? Logger { get; set; }
 /// Backpressure handling strategies.
 public enum BackpressureStrategy
+    {
     /// <summary>Block producer when buffer is full.</summary>
     Block,
     /// <summary>Drop oldest items when buffer is full.</summary>
@@ -292,6 +300,7 @@ public enum BackpressureStrategy
     Backoff
 /// Options for pipeline profiling configuration.
 public class ProfilingOptions
+    {
     /// <summary>Gets or sets whether to enable detailed timing.</summary>
     public bool EnableDetailedTiming { get; set; } = true;
     /// <summary>Gets or sets whether to track memory usage.</summary>
@@ -306,6 +315,7 @@ public class ProfilingOptions
     public Dictionary<string, string> CustomTags { get; set; } = [];
 /// Options for circuit breaker pattern in error handling.
 public class CircuitBreakerOptions
+    {
     /// <summary>Gets or sets the failure threshold before opening circuit.</summary>
     public int FailureThreshold { get; set; } = 5;
     /// <summary>Gets or sets the timeout before trying to close circuit.</summary>
@@ -319,6 +329,7 @@ public class CircuitBreakerOptions
 /// Timestamped value for time-aware stream processing.
 /// <typeparam name="T">Value type</typeparam>
 public struct TimestampedValue<T> where T : unmanaged
+    {
     /// <summary>The value.</summary>
     public T Value { get; set; }
     /// <summary>Timestamp when the value was created.</summary>
@@ -327,6 +338,7 @@ public struct TimestampedValue<T> where T : unmanaged
     public long SequenceNumber { get; set; }
 /// Result of anomaly detection.
 public struct AnomalyResult
+    {
     /// <summary>The value that was tested.</summary>
     public double Value { get; set; }
     /// <summary>Z-score of the value.</summary>
@@ -340,15 +352,20 @@ public struct AnomalyResult
     /// <summary>Timestamp of the detection.</summary>
 /// Exception thrown when streaming latency constraints are violated.
 public class StreamingLatencyException : Exception
+    {
     /// <summary>Initializes a new instance of the StreamingLatencyException.</summary>
     public StreamingLatencyException(string message) : base(message) { }
+        {
     public StreamingLatencyException(string message, Exception innerException) : base(message, innerException) { }
 /// Internal streaming pipeline processor.
 /// <typeparam name="T">Element type</typeparam>
 internal class StreamingPipelineProcessor<T> where T : unmanaged
+    {
     private readonly IAsyncEnumerable<T> _source;
     private readonly StreamingPipelineOptions _options;
+    }
     public StreamingPipelineProcessor(IAsyncEnumerable<T> source, StreamingPipelineOptions options)
+    {
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _options = options ?? throw new ArgumentNullException(nameof(options));
     public async IAsyncEnumerable<T> ProcessAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -364,6 +381,7 @@ internal class StreamingPipelineProcessor<T> where T : unmanaged
                 _options.Logger?.LogInformation("Streaming pipeline completed: {Metrics}", metrics);
 /// Streaming performance metrics.
 public class StreamingMetrics
+    {
     /// <summary>Total number of items processed.</summary>
     public long ItemsProcessed { get; set; }
     /// <summary>Time when the last item was processed.</summary>
@@ -376,5 +394,6 @@ public class StreamingMetrics
         : 0;
     /// <inheritdoc />
     public override string ToString()
+    {
         return $"Items: {ItemsProcessed}, Duration: {TotalDuration.TotalSeconds:F2}s, Throughput: {AverageThroughput:F2} items/s";
 #endregion

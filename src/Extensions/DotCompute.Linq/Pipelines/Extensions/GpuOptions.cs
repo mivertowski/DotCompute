@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Configuration options for GPU grouping operations.
 /// </summary>
@@ -15,15 +16,18 @@ public class GpuGroupingOptions
 }
 /// Configuration options for GPU join operations.
 public class GpuJoinOptions
+    {
     public JoinAlgorithm JoinAlgorithm { get; set; } = JoinAlgorithm.HashJoin;
     public bool EnableHashOptimization { get; set; } = true;
 /// Join algorithms for GPU operations.
 public enum JoinAlgorithm
+    {
     HashJoin,
     SortMergeJoin,
     NestedLoopJoin
 /// Configuration options for GroupBy operations with GPU acceleration.
 public class GroupByOptions
+    {
     /// <summary>
     /// Expected number of groups for hash table sizing optimization.
     /// </summary>
@@ -38,6 +42,7 @@ public class GroupByOptions
 /// Defines an aggregate function for multi-aggregate operations.
 /// <typeparam name="T">The input data type for aggregation.</typeparam>
 public class AggregateFunction<T>
+    {
     /// Name of the aggregate function for identification.
     public string Name { get; set; } = string.Empty;
     /// The aggregation function to apply to the data.
@@ -50,6 +55,7 @@ public class AggregateFunction<T>
     public long EstimatedMemoryUsage { get; set; } = 1024;
 /// Configuration options for join operations.
 public class JoinOptions
+    {
     /// Whether to prefer GPU execution for join operations.
     public bool PreferGpu { get; set; } = true;
     /// Expected size of the result set for memory allocation.
@@ -60,6 +66,7 @@ public class JoinOptions
     public int TimeoutMs { get; set; } = 60000;
 /// Configuration options for reduction operations.
 public class ReductionOptions
+    {
     /// Whether to use tree reduction algorithm for better parallelization.
     public bool UseTreeReduction { get; set; } = true;
     /// Size of data chunks for processing.
@@ -68,5 +75,6 @@ public class ReductionOptions
     public bool EnableIntermediateCaching { get; set; } = true;
 /// Configuration options for scan (prefix sum) operations.
 public class ScanOptions
+    {
     /// Whether to perform inclusive scan (includes current element).
     public bool InclusiveScan { get; set; } = true;

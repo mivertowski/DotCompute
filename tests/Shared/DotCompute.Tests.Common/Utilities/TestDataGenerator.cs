@@ -119,10 +119,34 @@ public class PerformanceMeasurement
     public double Throughput { get; set; }
     public string? Notes { get; set; }
 
+    // Additional performance metrics
+    public int Iterations { get; set; }
+    public double MeanTimeMs { get; set; }
+    public double MedianTimeMs { get; set; }
+    public double MinTimeMs { get; set; }
+    public double MaxTimeMs { get; set; }
+    public double StandardDeviationMs { get; set; }
+    public double TotalTimeMs { get; set; }
+    public double? TargetTimeMs { get; set; }
+    public bool MeetsTarget { get; set; }
+    public double Percentile95Ms { get; set; }
+    public double Percentile99Ms { get; set; }
+
     public PerformanceMeasurement()
     {
         ElapsedTime = TimeSpan.Zero;
         MemoryUsed = 0;
         Throughput = 0.0;
+        Iterations = 0;
+        MeanTimeMs = 0.0;
+        MedianTimeMs = 0.0;
+        MinTimeMs = 0.0;
+        MaxTimeMs = 0.0;
+        StandardDeviationMs = 0.0;
+        TotalTimeMs = 0.0;
+        TargetTimeMs = null;
+        MeetsTarget = true;
+        Percentile95Ms = 0.0;
+        Percentile99Ms = 0.0;
     }
 }

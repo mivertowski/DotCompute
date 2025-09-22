@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Core.Analysis;
 namespace DotCompute.Refactored.Adapters;
+{
 /// <summary>
 /// Adapter class that provides backward compatibility for legacy ComplexityMetrics classes.
 /// Converts between different ComplexityMetrics implementations found across the codebase.
@@ -29,6 +30,7 @@ public static class ComplexityMetricsAdapter
     }
     /// Converts a legacy simple ComplexityMetrics to UnifiedComplexityMetrics.
     public static UnifiedComplexityMetrics FromSimpleComplexity(dynamic legacyMetrics)
+        {
             .WithComputationalComplexity(GetPropertyValue<int>(legacyMetrics, "ComputationalComplexity"))
             .WithOperationCount(GetPropertyValue<long>(legacyMetrics, "OperationsCount", "OperationCount"))
     /// Converts UnifiedComplexityMetrics back to a legacy PipelineComplexityMetrics-like object.
@@ -59,8 +61,6 @@ public static class ComplexityMetricsAdapter
     public static UnifiedComplexityMetrics FromAny(object legacyMetrics)
         if (legacyMetrics == null)
             throw new ArgumentNullException(nameof(legacyMetrics));
-        }
-        var builder = UnifiedComplexityMetrics.Builder();
         var type = legacyMetrics.GetType();
         // Try to map common properties
         var propertyMappings = new Dictionary<string, Action<object>>
@@ -108,8 +108,10 @@ public static class ComplexityMetricsAdapter
 }
 /// Extension methods to provide seamless conversion between complexity metrics types.
 public static class ComplexityMetricsExtensions
+    {
     /// Converts any complexity metrics object to UnifiedComplexityMetrics.
     public static UnifiedComplexityMetrics ToUnified(this object complexityMetrics)
+        {
         return complexityMetrics switch
             UnifiedComplexityMetrics unified => unified,
             null => throw new ArgumentNullException(nameof(complexityMetrics)),

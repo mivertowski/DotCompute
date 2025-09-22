@@ -5,6 +5,7 @@
 
 using System;
 namespace DotCompute.Linq.Operators.Generation;
+{
 /// <summary>
 /// Represents a parameter in a generated kernel.
 /// </summary>

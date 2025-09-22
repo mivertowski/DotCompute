@@ -13,6 +13,7 @@ using DotCompute.Linq.Pipelines.Extensions;
 using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
 using OptimizationLevel = DotCompute.Linq.Operators.Models.OptimizationLevel;
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Complex LINQ query pattern extensions for the Core IKernelPipeline interface.
 /// Provides GroupBy, Join, Aggregate, and Window function support with kernel acceleration.

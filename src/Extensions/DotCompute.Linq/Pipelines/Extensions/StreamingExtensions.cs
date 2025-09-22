@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Linq.Pipelines.Streaming;
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Extension methods for streaming data processing and anomaly detection.
 /// </summary>
@@ -28,6 +29,7 @@ public static class StreamingExtensions
         ArgumentNullException.ThrowIfNull(source);
         
         var window = new Queue<double>();
+        }
         await foreach (var value in source)
         {
             window.Enqueue(value);
@@ -77,7 +79,9 @@ public static class StreamingExtensions
         Func<TIn, Task<TOut>> processor,
         TimeSpan maxLatency)
         ArgumentNullException.ThrowIfNull(processor);
+        }
         await foreach (var item in source)
+        {
             using var cts = new CancellationTokenSource(maxLatency);
             var result = await ProcessWithTimeoutAsync(processor, item, cts.Token);
             if (result != null)
@@ -95,11 +99,13 @@ public static class StreamingExtensions
 }
 /// Anomaly detection result.
 public struct AnomalyDetectionResult
+    {
     public double Value { get; set; }
     public bool IsAnomaly { get; set; }
     public double Score { get; set; }
 /// Backpressure handling strategies.
 public enum BackpressureStrategy
+    {
     DropOldest,
     DropNewest,
     Block

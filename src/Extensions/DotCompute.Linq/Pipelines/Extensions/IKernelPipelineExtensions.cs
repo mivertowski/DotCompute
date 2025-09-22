@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using DotCompute.Linq.Pipelines.Interfaces;
 using LinqPipeline = DotCompute.Linq.Pipelines.Interfaces.IKernelPipeline;
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Extension methods for IKernelPipeline that provide cancellation support and other utilities.
 /// Provides compatibility layer between different IKernelPipeline interface definitions.
@@ -19,6 +20,7 @@ public static class IKernelPipelineExtensions
     /// <param name="cancellationToken">The cancellation token to observe</param>
     /// <returns>A configured async enumerable that observes the cancellation token</returns>
     public static ConfiguredCancelableAsyncEnumerable<object> WithCancellation(
+        {
         this LinqPipeline pipeline, 
         CancellationToken cancellationToken)
     {
@@ -38,6 +40,7 @@ public static class IKernelPipelineExtensions
     /// <returns>The cast pipeline</returns>
     /// <exception cref="InvalidCastException">When the object cannot be cast to IKernelPipeline</exception>
     public static LinqPipeline AsLinqPipeline(this object obj)
+    {
         ArgumentNullException.ThrowIfNull(obj);
         
         return obj switch
@@ -50,6 +53,7 @@ public static class IKernelPipelineExtensions
     /// <param name="pipeline">The resulting pipeline if successful</param>
     /// <returns>True if the cast was successful; otherwise false</returns>
     public static bool TryAsLinqPipeline(this object obj, out LinqPipeline? pipeline)
+    {
         pipeline = obj as LinqPipeline;
         return pipeline != null;
     #region Configuration Extensions
@@ -93,13 +97,21 @@ public static class IKernelPipelineExtensions
     /// <param name="pipeline">The pipeline</param>
     /// <returns>The pipeline ID or empty string if not available</returns>
     public static string GetPipelineId(this LinqPipeline pipeline)
+    {
         return pipeline.PipelineId ?? string.Empty;
     /// Gets the pipeline configuration safely.
     /// <returns>The pipeline configuration</returns>
     public static PipelineConfiguration GetConfiguration(this LinqPipeline pipeline)
+    {
         return pipeline.Configuration;
     /// Gets the pipeline status safely.
     /// <returns>The pipeline status</returns>
     public static PipelineStatus GetStatus(this LinqPipeline pipeline)
+    {
         return pipeline.Status;
+}
+}
+}
+}
+}
 }

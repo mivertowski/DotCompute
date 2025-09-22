@@ -4,11 +4,13 @@ using DotCompute.Linq.Compilation.Stages.Interfaces;
 using OperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Compilation.Stages.Operators;
+{
 /// <summary>
 /// Generates code for where/filter operations.
 /// </summary>
 internal class WhereOperatorGenerator : IOperatorCodeGenerator
 {
+    }
     public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
     {
         // Generate SIMD vectorized where operations
@@ -19,6 +21,7 @@ internal class WhereOperatorGenerator : IOperatorCodeGenerator
         builder.AppendLine("                resultVector.CopyTo(output, i);");
     }
     public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    {
         // Generate scalar where operations
         builder.AppendLine("                // Scalar where operation");
         builder.AppendLine("                output[i] = input[i] > 0 ? input[i] : 0; // Placeholder condition");

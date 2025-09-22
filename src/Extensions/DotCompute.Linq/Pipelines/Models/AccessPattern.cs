@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Pipelines.Models;
+{
 /// <summary>
 /// Memory access pattern classifications for pipeline operations.
 /// </summary>
@@ -22,6 +23,7 @@ public enum AccessPattern
 }
 /// Pipeline characteristics that include access pattern information.
 public class PipelineCharacteristics
+    {
     /// Gets or sets the memory access pattern for this pipeline.
     public AccessPattern AccessPattern { get; set; } = AccessPattern.Sequential;
     /// Gets or sets the memory intensity from 0.0 to 1.0.

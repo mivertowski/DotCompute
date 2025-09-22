@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 
 namespace DotCompute.Linq.Reactive;
+{
 /// <summary>
 /// Backpressure strategies for reactive compute operations
 /// </summary>
@@ -46,6 +47,7 @@ public record ReactiveComputeConfig
 /// Extension methods for integrating Reactive Extensions with DotCompute
 /// Provides GPU-accelerated stream processing capabilities
 public static class ReactiveComputeExtensions
+    {
     private static readonly Meter _meter = new("DotCompute.Reactive");
     private static readonly Counter<long> _operationCounter = _meter.CreateCounter<long>("reactive_operations_total");
     private static readonly Histogram<double> _batchSizeHistogram = _meter.CreateHistogram<double>("batch_size");
@@ -257,6 +259,7 @@ public static class ReactiveComputeExtensions
                                 buffer.Clear();
                             }
                             else if (skipCount > 0)
+        {
                                 buffer.RemoveRange(0, Math.Min(skipCount, buffer.Count));
                         }
                 onError: observer.OnError,
@@ -282,6 +285,7 @@ public record PerformanceMetrics
     public long MemoryUsage { get; init; }
 /// Configuration for windowing operations
 public class WindowConfig
+    {
     /// <summary>Number of elements per window</summary>
     public int Count { get; set; } = 10;
     /// <summary>Number of elements to skip between windows</summary>
@@ -294,6 +298,7 @@ public class WindowConfig
     public TimeSpan? Timeout { get; set; }
 /// Extension methods for unified memory buffers
 public static class UnifiedBufferExtensions
+    {
     /// Converts a unified memory buffer to an array asynchronously
     /// <param name="buffer">The unified memory buffer</param>
     /// <returns>Array containing the buffer data</returns>

@@ -17,6 +17,7 @@ using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Execution;
 using DotCompute.Linq.Operators.Interfaces;
 namespace DotCompute.Linq.Tests;
+{
 /// <summary>
 /// Comprehensive test of the LINQ-to-GPU implementation.
 /// This demonstrates the complete pipeline from expression analysis to kernel execution.
@@ -49,6 +50,7 @@ public class LinqToGpuImplementationTest
     /// Tests the complete LINQ-to-GPU pipeline with expression optimization.
     /// </summary>
     public async Task TestCompleteLinqToGpuPipelineAsync()
+        {
         _logger.LogInfoMessage("Starting complete LINQ-to-GPU pipeline test");
         // 1. Create a test expression (simulated LINQ query)
         var testExpression = CreateTestExpression();
@@ -105,6 +107,7 @@ public class LinqToGpuImplementationTest
         foreach (var suggestion in suggestions)
             _logger.LogInfoMessage($"Optimization suggestion: {suggestion.Type} - {suggestion.Description} (Impact: {suggestion.Impact})");
     private async Task TestKernelCompilationAsync(Expression expression)
+        {
         _logger.LogInfoMessage("Testing kernel compilation");
         // Create mock accelerator
         var accelerator = new MockAccelerator();
@@ -208,6 +211,7 @@ public class LinqToGpuImplementationTest
 }
 // Mock implementations for testing
 internal class MockAccelerator : IAccelerator
+    {
     public AcceleratorInfo Info { get; } = new AcceleratorInfo
         Id = "mock_gpu_0",
         Name = "Mock GPU Accelerator",
@@ -228,6 +232,7 @@ internal class MockAccelerator : IAccelerator
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 internal class MockMemoryManager : IUnifiedMemoryManager
+    {
     public static long TotalMemory => 8L * 1024 * 1024 * 1024;
     public static long AvailableMemory => TotalMemory / 2;
     public static ValueTask<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions options = DotCompute.Abstractions.Memory.MemoryOptions.None, CancellationToken cancellationToken = default) => ValueTask.FromResult<IUnifiedMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
@@ -244,8 +249,6 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     public static void CopyFromDevice<T>(Span<T> data, IUnifiedMemoryBuffer buffer) where T : unmanaged
     public void Free(IUnifiedMemoryBuffer buffer) => buffer?.Dispose();
     public void Dispose() { }
-    // Additional IUnifiedMemoryManager interface members
-    public static ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, CancellationToken cancellationToken = default) where T : unmanaged
         _ = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return ValueTask.FromResult<IUnifiedMemoryBuffer<T>>(new MockMemoryBuffer<T>(count));
     public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int count, DotCompute.Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged => AllocateAsync<T>(count, cancellationToken);
@@ -258,6 +261,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
         return ValueTask.CompletedTask;
     public ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public void Clear() { }
+        {
     public IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count) where T : unmanaged => new MockMemoryBuffer<T>(count);
     public IAccelerator Accelerator => throw new NotSupportedException();
     public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new();
@@ -267,6 +271,7 @@ internal class MockMemoryManager : IUnifiedMemoryManager
     public ValueTask DisposeAsync()
         Dispose();
 internal class MockMemoryBuffer : IUnifiedMemoryBuffer
+    {
     public MockMemoryBuffer(long size)
         SizeInBytes = size;
     public long SizeInBytes { get; }
@@ -281,6 +286,7 @@ internal class MockMemoryBuffer : IUnifiedMemoryBuffer
     public static ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
     public static ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+    {
     private readonly int _count;
     public MockMemoryBuffer(int count)
         _count = count;
@@ -329,6 +335,7 @@ internal class MockMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public static ValueTask CopyFromHostAsync<TOther>(ReadOnlyMemory<TOther> source, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
     public static ValueTask CopyToHostAsync<TOther>(Memory<TOther> destination, long offset = 0, CancellationToken cancellationToken = default) where TOther : unmanaged => ValueTask.CompletedTask;
 internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
+    {
     private readonly string _name;
     public MockCompiledKernel(string name)
         _name = name;
@@ -336,6 +343,7 @@ internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
     public string Name => _name;
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 internal class MockComputePlan : IComputePlan
+    {
     public Guid Id { get; init; }
     public IReadOnlyList<IComputeStage> Stages { get; init; } = [];
     public IReadOnlyDictionary<string, Type> InputParameters { get; init; } = new Dictionary<string, Type>();
@@ -343,6 +351,7 @@ internal class MockComputePlan : IComputePlan
     public long EstimatedMemoryUsage { get; init; }
     public IReadOnlyDictionary<string, object> Metadata { get; init; } = new Dictionary<string, object>();
 internal class MockComputeStage : IComputeStage
+    {
     public string Id { get; init; } = string.Empty;
     public DotCompute.Linq.Operators.Interfaces.IKernel Kernel { get; init; } = null!;
     public IReadOnlyList<string> InputBuffers { get; init; } = [];

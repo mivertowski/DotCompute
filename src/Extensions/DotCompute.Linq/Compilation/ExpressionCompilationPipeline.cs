@@ -22,6 +22,7 @@ using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Operators.Execution;
 
 namespace DotCompute.Linq.Compilation;
+{
 /// <summary>
 /// Main orchestrator for expression-to-kernel compilation pipeline.
 /// Coordinates analysis, code generation, optimization, and caching.
@@ -37,6 +38,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
     private readonly CompilationMetrics _metrics;
     private bool _disposed;
     public ExpressionCompilationPipeline(
+        {
         ILogger<ExpressionCompilationPipeline> logger,
         ExpressionAnalyzer analyzer,
         KernelCodeGenerator codeGenerator,
@@ -358,6 +360,7 @@ public sealed class ExpressionCompilationPipeline : IDisposable
                 CacheEfficiency = 0.8
     /// Converts a pipeline analysis result to a compilation analysis result.
     private CompilationAnalysisResult ConvertToCompilationAnalysisResult(PipelineAnalysisResult pipelineResult)
+    {
         // Create a minimal compilation analysis result from pipeline result
         // This conversion bridges the gap between pipeline and compilation analysis
         return new CompilationAnalysisResult(
@@ -381,7 +384,9 @@ public sealed class ExpressionCompilationPipeline : IDisposable
     private static DotCompute.Abstractions.ICompiledKernel CreateKernelAdapter(
         DotCompute.Linq.Operators.Execution.ICompiledKernel linqKernel)
         return new LinqToAbstractionsKernelAdapter(linqKernel);
+    }
     public void Dispose()
+    {
         if (_disposed)
             return;
         _compilationSemaphore?.Dispose();
@@ -389,9 +394,11 @@ public sealed class ExpressionCompilationPipeline : IDisposable
 }
 /// Represents a cached compiled kernel with expiration.
 internal record CachedKernel(CompiledKernelPackage Package, DateTimeOffset ExpiresAt)
+{
     public bool IsExpired => DateTimeOffset.UtcNow > ExpiresAt;
 /// Thread-safe compilation metrics collector.
 internal class CompilationMetrics
+    {
     private long _compilationCount;
     private long _cacheHitCount;
     private long _errorCount;
@@ -403,15 +410,20 @@ internal class CompilationMetrics
         get
             var count = CompilationCount;
             return count > 0 ? Interlocked.Read(ref _totalCompilationTimeMs) / (double)count : 0;
+        }
     public void RecordCompilation(TimeSpan duration)
+    {
         Interlocked.Increment(ref _compilationCount);
         Interlocked.Add(ref _totalCompilationTimeMs, (long)duration.TotalMilliseconds);
     public void RecordCacheHit() => Interlocked.Increment(ref _cacheHitCount);
     public void RecordError() => Interlocked.Increment(ref _errorCount);
 /// Adapter that converts from LINQ ICompiledKernel to Abstractions ICompiledKernel.
 internal sealed class LinqToAbstractionsKernelAdapter : DotCompute.Abstractions.ICompiledKernel
+    {
     private readonly DotCompute.Linq.Operators.Execution.ICompiledKernel _linqKernel;
+    }
     public LinqToAbstractionsKernelAdapter(DotCompute.Linq.Operators.Execution.ICompiledKernel linqKernel)
+    {
         _linqKernel = linqKernel ?? throw new ArgumentNullException(nameof(linqKernel));
     public Guid Id { get; } = Guid.NewGuid();
     public string Name => _linqKernel.Name;
@@ -422,10 +434,13 @@ internal sealed class LinqToAbstractionsKernelAdapter : DotCompute.Abstractions.
         if (!_disposed)
             _linqKernel?.Dispose();
             _disposed = true;
+    }
     public async ValueTask DisposeAsync()
+    {
         await ValueTask.CompletedTask;
     /// Converts Compilation ExpressionAnalysisResult to PipelineAnalysisResult.
     private static PipelineAnalysisResult ConvertAnalysisResultToPipeline(Compilation.Analysis.ExpressionAnalysisResult analysisResult)
+    {
         return new PipelineAnalysisResult
             OperatorInfo = [],
             TypeUsage = analysisResult.TypeUsage.Select(kvp => new DotCompute.Linq.Compilation.Analysis.TypeUsageInfo
@@ -451,6 +466,7 @@ internal sealed class LinqToAbstractionsKernelAdapter : DotCompute.Abstractions.
         return pattern;
     /// Converts Pipeline ExpressionAnalysisResult to PipelineAnalysisResult.
     private static PipelineAnalysisResult ConvertFromPipelineAnalysisResult(Pipelines.Analysis.ExpressionAnalysisResult analysisResult)
+    {
             TypeUsage = [],
             Dependencies = [],
                 MemoryComplexity = (int)(analysisResult.MemoryRequirement / 1024), // Convert to MB
@@ -463,13 +479,25 @@ public record CompilationStatistics(
     int CachedKernelCount);
 /// Exception thrown during expression compilation.
 public class CompilationException : Exception
+    {
     public CompilationException(string message) : base(message) { }
     public CompilationException(string message, Exception innerException) : base(message, innerException) { }
 /// Activity tracking for compilation stages.
 internal static class CompilationActivity
+    {
+    }
     public static IDisposable Start(string operationName)
+    {
         // In a real implementation, this would integrate with System.Diagnostics.Activity
         // or OpenTelemetry for distributed tracing
         return new NoOpDisposable();
     private class NoOpDisposable : IDisposable
+    {
         public void Dispose() { }
+}
+}
+}
+}
+}
+}
+}

@@ -4,11 +4,13 @@ using DotCompute.Linq.Compilation.Stages.Interfaces;
 using OperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Compilation.Stages.Operators;
+{
 /// <summary>
 /// Generates code for arithmetic operations (add, subtract, multiply, divide).
 /// </summary>
 internal class ArithmeticOperatorGenerator : IOperatorCodeGenerator
 {
+    }
     public void GenerateVectorized(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
     {
         // Generate SIMD vectorized arithmetic operations
@@ -19,6 +21,7 @@ internal class ArithmeticOperatorGenerator : IOperatorCodeGenerator
         builder.AppendLine("                result.CopyTo(output, i);");
     }
     public void GenerateScalar(StringBuilder builder, OperatorInfo operatorInfo, CodeGenerationContext context)
+    {
         // Generate scalar arithmetic operations
         builder.AppendLine("                // Scalar arithmetic operation");
         builder.AppendLine("                output[i] = input1[i] + input2[i]; // Placeholder for actual operation");

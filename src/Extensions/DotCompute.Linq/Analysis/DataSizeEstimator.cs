@@ -5,6 +5,7 @@ using System.Collections;
 using System.Linq.Expressions;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Visitor for estimating data size in expressions.

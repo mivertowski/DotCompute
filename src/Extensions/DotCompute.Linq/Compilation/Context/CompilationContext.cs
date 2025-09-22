@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using LinqCompilationOptions = DotCompute.Linq.Compilation.Options.CompilationOptions;
 namespace DotCompute.Linq.Compilation.Context;
+{
 /// <summary>
 /// Represents the context for compiling a LINQ expression.
 /// </summary>

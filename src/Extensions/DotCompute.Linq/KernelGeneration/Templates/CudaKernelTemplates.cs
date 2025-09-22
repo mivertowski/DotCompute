@@ -17,6 +17,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     {
         private readonly ILogger _logger;
         private readonly Dictionary<KernelOperationType, KernelTemplate> _templates;
+        }
         public CudaKernelTemplates(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -55,6 +56,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     {
         protected readonly ILogger Logger;
 
+        }
         protected KernelTemplate(ILogger logger)
         {
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -83,6 +85,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     public sealed class MapKernelTemplate : KernelTemplate
     {
         public MapKernelTemplate(ILogger logger) : base(logger) { }
+        {
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             TemplateOptions options)
@@ -125,6 +128,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     public sealed class FilterKernelTemplate : KernelTemplate
     {
         public FilterKernelTemplate(ILogger logger) : base(logger) { }
+        {
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             TemplateOptions options)
@@ -192,11 +196,11 @@ namespace DotCompute.Linq.KernelGeneration.Templates
             Logger.LogDebug("Generated filter kernel for {KernelName}", analysis.KernelName);
             return Task.FromResult(builder.ToString());
         }
-    }
     /// Template for reduction operations (Sum, Average, Min, Max, Count).
     public sealed class ReductionKernelTemplate : KernelTemplate
     {
         public ReductionKernelTemplate(ILogger logger) : base(logger) { }
+        {
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             TemplateOptions options)
@@ -288,9 +292,8 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     }
     /// Template for scan operations (prefix sum).
     public sealed class ScanKernelTemplate : KernelTemplate
+    {
         public ScanKernelTemplate(ILogger logger) : base(logger) { }
-            // Generate scan kernel using Blelloch algorithm
-            builder.AppendLine("    const int idx = threadIdx.x;");
             builder.AppendLine("    const int block_start = blockIdx.x * blockDim.x * 2;");
             builder.AppendLine("    // Shared memory for block-level scan");
             builder.AppendLine("    __shared__ OutputType shared_data[2048];");
@@ -347,6 +350,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     public sealed class JoinKernelTemplate : KernelTemplate
     {
         public JoinKernelTemplate(ILogger logger) : base(logger) { }
+        {
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             TemplateOptions options)
@@ -394,6 +398,7 @@ namespace DotCompute.Linq.KernelGeneration.Templates
     public sealed class GroupByKernelTemplate : KernelTemplate
     {
         public GroupByKernelTemplate(ILogger logger) : base(logger) { }
+        {
         public override Task<string> GenerateKernelAsync(
             ExpressionAnalysisResult analysis,
             TemplateOptions options)

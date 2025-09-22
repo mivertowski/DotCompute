@@ -32,6 +32,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
         private readonly Dictionary<string, string> _cache = new();
         private bool _disposed;
 
+        }
         public bool TryGetOptimizedSource(string key, out string? source)
         {
             return _cache.TryGetValue(key, out source);

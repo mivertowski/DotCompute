@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 namespace DotCompute.Linq.Expressions;
+{
 /// <summary>
 /// Defines the interface for optimizing LINQ expression trees for GPU execution.
 /// </summary>
@@ -35,6 +36,7 @@ public class OptimizationSuggestion
     /// <param name="description">The description of the optimization.</param>
     /// <param name="impact">The expected performance impact.</param>
     public OptimizationSuggestion(
+        {
         OptimizationType type,
         string description,
         PerformanceImpact impact,

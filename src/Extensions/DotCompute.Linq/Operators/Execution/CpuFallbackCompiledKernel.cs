@@ -11,6 +11,7 @@ using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Operators.Execution;
+{
 /// <summary>
 /// CPU fallback compiled kernel implementation.
 /// </summary>
@@ -50,6 +51,7 @@ internal class CpuFallbackCompiledKernel : DotCompute.Abstractions.ICompiledKern
         return ValueTask.CompletedTask;
     /// Disposes the compiled kernel asynchronously.
     public ValueTask DisposeAsync()
+        {
         Dispose();
     /// Disposes the compiled kernel synchronously.
     public void Dispose()

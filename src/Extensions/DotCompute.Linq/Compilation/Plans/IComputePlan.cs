@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Plans;
+{
 /// <summary>
 /// Represents an executable compute plan generated from a LINQ expression.
 /// </summary>

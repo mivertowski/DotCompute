@@ -10,6 +10,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 namespace DotCompute.Linq.Operators.Compilation;
+{
 /// <summary>
 /// Accelerator-based kernel compiler that uses the accelerator's native compilation capabilities.
 /// </summary>
@@ -74,4 +75,3 @@ internal class AcceleratorKernelCompiler : DotCompute.Abstractions.IUnifiedKerne
         OptimizationLevel level,
         // Delegate to accelerator's optimization capabilities if available
         => ValueTask.FromResult(kernel);
-}

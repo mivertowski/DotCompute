@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Linq.Pipelines.Models;
 namespace DotCompute.Linq.Pipelines.Interfaces;
+{
 /// <summary>
 /// Interface for kernel execution pipelines that manage GPU/CPU execution flow.
 /// </summary>
@@ -53,6 +54,7 @@ public interface IKernelPipeline : IAsyncEnumerable<object>
 }
 /// Interface for pipeline stages.
 public interface IPipelineStage
+    {
     /// Gets the stage name.
     string Name { get; }
     /// Executes the stage.
@@ -66,6 +68,7 @@ public interface IPipelineStage
     StageConfiguration Configuration { get; }
 /// Pipeline configuration settings.
 public class PipelineConfiguration
+    {
     /// Gets or sets the maximum degree of parallelism.
     public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
     /// Gets or sets whether to enable GPU acceleration.
@@ -78,6 +81,7 @@ public class PipelineConfiguration
     public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.FromMinutes(30);
 /// Pipeline execution result.
 public class PipelineExecutionResult
+    {
     /// Gets or sets whether the execution was successful.
     public bool Success { get; set; }
     /// Gets or sets the output data.
@@ -92,6 +96,7 @@ public class PipelineExecutionResult
     public Dictionary<string, object> Metrics { get; set; } = [];
 /// Pipeline options.
 public class PipelineOptions
+    {
     /// Gets or sets whether to use caching.
     public bool UseCache { get; set; } = true;
     /// Gets or sets whether to enable profiling.
@@ -102,6 +107,7 @@ public class PipelineOptions
     public Dictionary<string, object> CustomOptions { get; set; } = [];
 /// Pipeline execution status.
 public enum PipelineStatus
+    {
     /// Pipeline is idle.
     Idle,
     /// Pipeline is being configured.
@@ -118,6 +124,7 @@ public enum PipelineStatus
     Cancelled
 /// Pipeline event arguments.
 public class PipelineEventArgs : EventArgs
+    {
     /// Gets or sets the pipeline ID.
     public string PipelineId { get; set; } = string.Empty;
     /// Gets or sets the timestamp.
@@ -126,11 +133,13 @@ public class PipelineEventArgs : EventArgs
     public Dictionary<string, object> Data { get; set; } = [];
 /// Stage completed event arguments.
 public class StageCompletedEventArgs : PipelineEventArgs
+    {
     /// Gets or sets the stage name.
     public string StageName { get; set; } = string.Empty;
     /// Gets or sets whether the stage succeeded.
 /// Stage configuration.
 public class StageConfiguration
+    {
     /// Gets or sets the stage timeout.
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
     /// Gets or sets the retry count.
@@ -141,6 +150,7 @@ public class StageConfiguration
     public Dictionary<string, object> CustomConfig { get; set; } = [];
 /// Stage execution information.
 public class StageExecutionInfo
+    {
     public string Name { get; set; } = string.Empty;
     /// Gets or sets the input size.
     public long InputSize { get; set; }

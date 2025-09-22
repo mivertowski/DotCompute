@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotCompute.Linq.Reactive.Examples;
+{
 /// <summary>
 /// Comprehensive examples demonstrating reactive compute capabilities
 /// Shows real-world usage patterns for GPU-accelerated stream processing
@@ -19,6 +20,7 @@ public class ReactiveComputeExamples
     private readonly IComputeOrchestrator _orchestrator;
     private readonly ILogger<ReactiveComputeExamples> _logger;
     public ReactiveComputeExamples(
+        {
         IComputeOrchestrator orchestrator,
         ILogger<ReactiveComputeExamples> logger)
     {
@@ -150,8 +152,6 @@ public class ReactiveComputeExamples
                 matches.Add(match);
                     "Pattern detected at index {Index} with confidence {Confidence:F2}",
                     match.StartIndex, match.Confidence);
-            },
-            error => _logger.LogError(error, "Pattern detection error"),
             () => _logger.LogInformation("Pattern detection completed"));
         await Task.Delay(4000);
             "Example 4 completed. Found {Count} pattern matches",
@@ -160,6 +160,7 @@ public class ReactiveComputeExamples
     /// Example 5: Complex multi-stage streaming pipeline
     /// Demonstrates end-to-end pipeline with multiple processing stages
     public async Task Example5_ComplexPipeline()
+        {
         _logger.LogInformation("Starting Example 5: Complex Streaming Pipeline");
         var pipelineConfig = new StreamingPipelineConfig
             Name = "SensorProcessingPipeline",
@@ -230,6 +231,7 @@ public class ReactiveComputeExamples
     /// Example 6: Time-series analysis with out-of-order handling
     /// Shows advanced time-series processing capabilities
     public async Task Example6_TimeSeriesAnalysis()
+        {
         _logger.LogInformation("Starting Example 6: Time-Series Analysis");
         var timeSeriesConfig = new TimeSeriesConfig
             TimestampSelector = data => ((TimeSeriesPoint)data).Timestamp,
@@ -259,23 +261,19 @@ public class ReactiveComputeExamples
                     Average = average,
                     StandardDeviation = stdDev,
                     Timestamp = DateTime.UtcNow
-                };
-        var results = new List<TimeSeriesStatistics>();
-        using var subscription = statistics.Subscribe(
-            error => _logger.LogError(error, "Time series analysis error"),
             () => _logger.LogInformation("Time series analysis completed"));
         await Task.Delay(15000);
             "Example 6 completed. Generated {Count} statistical summaries",
             results.Count);
     #region Helper Methods and Data Structures
     private static float CalculateVolatility(float[] prices)
+        {
         if (prices.Length < 2)
             return 0;
-        }
-        var mean = prices.Average();
         var variance = prices.Average(p => Math.Pow(p - mean, 2));
         return (float)Math.Sqrt(variance);
     private IObservable<RawSensorData> GenerateSensorData()
+        {
         return Observable.Interval(TimeSpan.FromMilliseconds(10))
             .Select(i => new RawSensorData
                 SensorId = $"SENSOR_{i % 10:D3}",
@@ -298,11 +296,13 @@ public class ReactiveComputeExamples
 }
 #region Data Models
 public struct SignalPoint
+    {
     public long TimestampTicks { get; init; }
     public float Value { get; init; }
     public float Quality { get; init; }
     public DateTime Timestamp => new(TimestampTicks);
 public struct MarketTick
+    {
     public float Price { get; init; }
     public int Volume { get; init; }
     public DateTime Timestamp { get; init; }
@@ -323,6 +323,7 @@ public record AggregatedSensorData
     public float MinValue { get; init; }
     public int SampleCount { get; init; }
 public struct TimeSeriesPoint
+    {
 public record TimeSeriesStatistics
     public float Sum { get; init; }
     public double Average { get; init; }
@@ -334,9 +335,11 @@ public record PatternMatch<T>
 #endregion
 /// Extension for generating Gaussian random numbers
 public static class RandomExtensions
+    {
     public static double NextGaussian(this Random random, double mean = 0, double stdDev = 1)
         // Box-Muller transform
         static double Sample(Random rng)
+        {
             var u1 = 1.0 - rng.NextDouble();
             var u2 = 1.0 - rng.NextDouble();
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
@@ -352,6 +355,7 @@ public record WindowConfig
     public bool IsTumbling { get; init; }
     public TimeSpan Duration { get; init; }
 public enum BackpressureStrategy
+    {
     DropOldest,
     Buffer,
     Block
@@ -367,14 +371,17 @@ public record TimeSeriesConfig
     public TimeSpan WatermarkInterval { get; init; }
     public LateDataStrategy LateDataStrategy { get; init; }
 public enum LateDataStrategy
+    {
     Drop,
     Recompute,
     Buffer
 /// Mock streaming pipeline builder for demo purposes
 public static class StreamingPipelineBuilder
+    {
     public static MockStreamingPipeline<T> Create<T>(IComputeOrchestrator orchestrator, StreamingPipelineConfig config)
         return new MockStreamingPipeline<T>();
 public class MockStreamingPipeline<T> : IDisposable
+    {
     public IObservable<object> Metrics => Observable.Empty<object>();
     public IObservable<object> Output => Observable.Empty<object>();
     public IObserver<T> Input => Observer.Create<T>(_ => { });
@@ -389,6 +396,7 @@ public class MockStreamingPipeline<T> : IDisposable
     public void Dispose() { }
 /// Extension methods for reactive compute demo
 public static class ReactiveComputeDemoExtensions
+    {
     public static IObservable<T> ComputeSelect<T>(
         this IObservable<T> source,
         Func<T, T> selector,

@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 namespace DotCompute.Linq.Telemetry;
+{
 /// <summary>
 /// Production-ready pipeline metrics service for LINQ pipelines with comprehensive observability.
 /// Provides high-performance metrics collection with minimal overhead (less than 1%).
@@ -41,6 +42,7 @@ public sealed class PipelineMetricsService : IDisposable
     /// Initializes a new instance of the PipelineMetricsService.
     /// </summary>
     public PipelineMetricsService(
+        {
         ILogger<PipelineMetricsService> logger,
         IOptions<PipelineMetricsOptions> options,
         IServiceProvider serviceProvider)
@@ -110,6 +112,7 @@ public sealed class PipelineMetricsService : IDisposable
             Interlocked.Increment(ref _totalMetricsOperations);
     /// Records stage execution with detailed metrics.
     public void RecordStageExecution(
+        {
         PipelineMetricsContext context,
         string stageId,
         string stageName,
@@ -149,6 +152,7 @@ public sealed class PipelineMetricsService : IDisposable
             });
     /// Records throughput data for pipeline performance analysis.
     public void RecordThroughput(PipelineMetricsContext context, long itemsProcessed)
+        {
                 metrics.RecordItemsProcessed(itemsProcessed);
             context.ItemsProcessed += itemsProcessed;
     /// Completes pipeline execution and finalizes metrics collection.
@@ -165,16 +169,6 @@ public sealed class PipelineMetricsService : IDisposable
                     PeakBytes = context.StageContexts.Values.Any() ? context.StageContexts.Values.Max(s => s.TotalMemoryUsed) : 0,
                     AllocationCount = 0, // Default value, could be calculated based on actual metrics
                     DeallocationCount = 0 // Default value, could be calculated based on actual metrics
-                };
-                var executionMetrics = new CorePipelineExecutionMetrics
-                    ExecutionId = context.CorrelationId,
-                    StartTime = context.StartTime,
-                    EndTime = DateTime.UtcNow,
-                    Duration = duration,
-                    MemoryUsage = memoryStats,
-                    ComputeUtilization = 0.75, // Default value, could be calculated based on actual metrics
-                    MemoryBandwidthUtilization = 0.60, // Default value, could be calculated based on actual metrics
-                    StageExecutionTimes = context.StageContexts.ToDictionary(kvp => kvp.Key, kvp => TimeSpan.FromMilliseconds(kvp.Value.ElapsedMs)),
                     DataTransferTimes = new Dictionary<string, TimeSpan>()
                 metrics.RecordExecution(executionMetrics, success);
             // Log completion
@@ -188,6 +182,7 @@ public sealed class PipelineMetricsService : IDisposable
         return _pipelineMetrics.TryGetValue(pipelineId, out var metrics) ? metrics : null;
     /// Gets all active pipeline metrics.
     public IReadOnlyDictionary<string, CorePipelineMetrics> GetAllPipelineMetrics()
+        {
         return _pipelineMetrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
     /// Gets performance overhead statistics to validate less than 1% requirement.
     public PerformanceOverheadStats GetOverheadStats()
@@ -203,6 +198,7 @@ public sealed class PipelineMetricsService : IDisposable
         };
     /// Exports comprehensive metrics in the specified format.
     public async Task<string> ExportMetricsAsync(
+        {
         MetricsExportFormat format,
         CancellationToken cancellationToken = default)
         return await _telemetryCollector.ExportMetricsAsync(format, cancellationToken);
@@ -241,6 +237,7 @@ public sealed class PipelineMetricsService : IDisposable
 }
 /// Configuration options for pipeline metrics service.
 public sealed class PipelineMetricsOptions
+    {
     /// Whether to enable distributed tracing integration.
     public bool EnableDistributedTracing { get; set; } = true;
     /// Whether to enable detailed telemetry collection.
@@ -257,6 +254,7 @@ public sealed class PipelineMetricsOptions
     public bool EnableOverheadMonitoring { get; set; } = true;
 /// Comprehensive metrics context for pipeline execution.
 public sealed class PipelineMetricsContext : IDisposable
+    {
     public string PipelineId { get; set; } = string.Empty;
     public string CorrelationId { get; set; } = string.Empty;
     public CorePipelineExecutionContext ExecutionContext { get; set; } = null!;
@@ -296,6 +294,7 @@ public sealed class PipelineMetricsContext : IDisposable
     /// <param name="cacheKey">The cache key</param>
     /// <param name="hit">Whether it was a cache hit</param>
     public void RecordCacheAccess(PipelineMetricsService metricsService, string cacheKey, bool hit)
+        {
         metricsService.RecordCacheAccess(this, cacheKey, hit);
     /// Records throughput metrics for the pipeline.
     /// <param name="itemsPerSecond">Number of items processed per second</param>
@@ -308,6 +307,7 @@ public sealed class PipelineMetricsContext : IDisposable
         // No cleanup needed for basic PipelineExecutionContext
 /// Context for individual stage metrics tracking.
 public sealed class StageMetricsContext
+    {
     public string StageId { get; set; } = string.Empty;
     public string StageName { get; set; } = string.Empty;
     public TimeSpan ExecutionTime { get; set; }
@@ -334,11 +334,13 @@ public sealed class StageMetricsContext
         : TimeSpan.Zero;
 /// Information about cache access for metrics.
 public sealed class CacheAccessInfo
+    {
     public string Key { get; set; } = string.Empty;
     public bool Hit { get; set; }
     public DateTime Timestamp { get; set; }
 /// Performance overhead statistics for monitoring.
 public sealed class PerformanceOverheadStats
+    {
     public long TotalOperations { get; set; }
     public TimeSpan TotalOverheadTime { get; set; }
     public TimeSpan AverageOverheadPerOperation { get; set; }
@@ -346,10 +348,12 @@ public sealed class PerformanceOverheadStats
     public bool MeetsPerformanceRequirement => OverheadPercentage < 1.0; // Less than 1%
 /// Metrics collection point for overhead analysis.
 public sealed class MetricsCollectionPoint
+    {
     public MetricsOperationType OperationType { get; set; }
     public TimeSpan Duration { get; set; }
 /// Types of metrics operations for overhead tracking.
 public enum MetricsOperationType
+    {
     CreateContext,
     RecordStage,
     RecordCache,
@@ -357,6 +361,7 @@ public enum MetricsOperationType
     CompleteExecution
 /// Context for tracking pipeline execution.
 public sealed class PipelineExecutionContext : IDisposable
+    {
     private bool _disposed;
     public DateTime EndTime { get; set; }
     public TimeSpan TotalDuration => EndTime - StartTime;
@@ -369,6 +374,7 @@ public sealed class PipelineExecutionContext : IDisposable
 /// LINQ-specific pipeline metrics implementation that provides a wrapper around internal Core metrics.
 /// Since we can't access the internal PipelineMetrics directly, we implement the interface ourselves.
 internal sealed class LinqPipelineMetrics : CorePipelineMetrics
+    {
     private readonly ConcurrentDictionary<string, CoreIStageMetrics> _stageMetrics = new();
     private readonly List<CoreTimeSeriesMetric> _timeSeries = [];
     private readonly ConcurrentDictionary<string, double> _customMetrics = new();

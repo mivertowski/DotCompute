@@ -22,6 +22,7 @@ using LinqReactive = DotCompute.Linq.Reactive;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Examples;
+{
 /// <summary>
 /// Comprehensive demonstration of the enhanced LINQ pipeline system.
 /// Shows integration of all pipeline features: optimization, streaming, complex queries, and error handling.
@@ -46,6 +47,7 @@ public class ComprehensivePipelineDemo
     /// Runs the comprehensive pipeline demonstration showing all features.
     /// <returns>Demonstration results</returns>
     public async Task<DemoResults> RunComprehensiveDemoAsync()
+        {
         _logger.LogInformation("Starting comprehensive pipeline demonstration");
         var results = new DemoResults();
         try
@@ -180,9 +182,11 @@ public class ComprehensivePipelineDemo
             var processedItems = new List<ProcessedStreamData>();
             var anomalies = new List<AnomalyResult>();
             await foreach (var item in processedStream.Take(100))
+        {
                 processedItems.Add(item);
             }
             await foreach (var anomaly in anomalyDetection.Take(10))
+        {
                 if (anomaly.IsAnomaly)
                 {
                     anomalies.Add(new AnomalyResult
@@ -265,7 +269,6 @@ public class ComprehensivePipelineDemo
                     PreferredBackend = "CUDA",
                     EnableAutomaticRecovery = true,
                     CriticalPath = false
-                };
                 var errorResult = await _errorHandler.HandlePipelineErrorAsync(scenario.Exception, context);
                 handledErrors.Add(errorResult);
                 _logger.LogInformation("Handled error: {ErrorType}, Recovery: {CanRecover}, Attempted: {Attempted}",
@@ -286,6 +289,7 @@ public class ComprehensivePipelineDemo
             _logger.LogError(ex, "Error handling demo failed");
     /// Demonstrates integration with DotCompute infrastructure.
     private async Task<IntegrationResult> DemoDotComputeIntegrationAsync()
+        {
         var result = new IntegrationResult();
             // Test orchestration service integration
             var orchestrationService = _serviceProvider.GetRequiredService<IPipelineOrchestrationService>();
@@ -320,6 +324,7 @@ public class ComprehensivePipelineDemo
             // Removed Name field as strings are managed types and incompatible with GPU processing
         }).ToArray();
     private async IAsyncEnumerable<SampleData> GenerateStreamingDataAsync()
+        {
         for (var i = 0; i < 1000; i++)
             await Task.Delay(1); // Simulate streaming delay
             yield return new SampleData
@@ -344,6 +349,7 @@ public class ComprehensivePipelineDemo
         public int Category { get; init; }
         public bool IsActive { get; init; }
         public SampleData(int id, float value, int category, bool isActive)
+        {
             Id = id;
             Value = value;
             Category = category;
@@ -359,17 +365,20 @@ public class ComprehensivePipelineDemo
             LeftValue = leftValue;
             RightValue = rightValue;
     public struct ProcessedStreamData
+    {
         public int Id { get; set; }
         public float ProcessedValue { get; set; }
         public long ProcessingTimeTicks { get; set; } // Using ticks instead of DateTime
         public int SourceItemId { get; set; } // Store only the ID instead of the full object
     public struct AnomalyResult
+    {
         public double Value { get; set; }
         public bool IsAnomaly { get; set; }
         public double AnomalyScore { get; set; }
         public long TimestampTicks { get; set; }
     #region Result Types
     public class DemoResults
+    {
         public bool OverallSuccess { get; set; }
         public Exception? OverallError { get; set; }
         public BasicConversionResult BasicConversionResult { get; set; } = new();
@@ -380,22 +389,26 @@ public class ComprehensivePipelineDemo
         public ErrorHandlingResult ErrorHandlingResult { get; set; } = new();
         public IntegrationResult IntegrationResult { get; set; } = new();
     public class BasicConversionResult
+    {
         public bool Success { get; set; }
         public Exception? Error { get; set; }
         public int ProcessedCount { get; set; }
         public TimeSpan ExecutionTime { get; set; }
         public bool OptimizationApplied { get; set; }
     public class ComplexQueryResult
+    {
         public bool GroupByCompleted { get; set; }
         public bool JoinCompleted { get; set; }
         public bool AggregationCompleted { get; set; }
         public bool WindowFunctionCompleted { get; set; }
     public class StreamingResult
+    {
         public int ItemsProcessed { get; set; }
         public int AnomaliesDetected { get; set; }
         public TimeSpan AverageLatency { get; set; }
         public double ThroughputAchieved { get; set; }
     public class PerformanceOptimizationResult
+    {
         public bool AnalysisCompleted { get; set; }
         public string RecommendedBackend { get; set; } = string.Empty;
         public TimeSpan EstimatedExecutionTime { get; set; }
@@ -403,18 +416,21 @@ public class ComprehensivePipelineDemo
         public List<string> OptimizationRecommendations { get; set; } = [];
         public double BackendConfidence { get; set; }
     public class AdvancedOptimizationResult
+    {
         public bool QueryPlanOptimized { get; set; }
         public bool CachingOptimized { get; set; }
         public bool MemoryLayoutOptimized { get; set; }
         public bool ParallelExecutionPlanGenerated { get; set; }
         public bool KernelFusionApplied { get; set; }
     public class ErrorHandlingResult
+    {
         public int ErrorsHandled { get; set; }
         public int RecoveryStrategiesGenerated { get; set; }
         public int AutomaticRecoveryAttempted { get; set; }
         public bool ExpressionAnalysisCompleted { get; set; }
         public bool PipelineValidationCompleted { get; set; }
     public class IntegrationResult
+    {
         public bool OrchestrationIntegrated { get; set; }
         public bool RecommendationGenerated { get; set; }
         public bool MemoryIntegrated { get; set; }
@@ -423,6 +439,7 @@ public class ComprehensivePipelineDemo
 }
 /// Extension methods for setting up the comprehensive pipeline demo.
 public static class PipelineDemoExtensions
+    {
     /// Configures all services needed for the pipeline demo.
     /// <param name="services">Service collection</param>
     /// <returns>Service collection for method chaining</returns>

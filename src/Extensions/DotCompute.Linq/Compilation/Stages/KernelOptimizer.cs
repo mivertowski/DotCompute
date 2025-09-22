@@ -27,6 +27,7 @@ using KernelGenerationExpressionAnalysisResult = DotCompute.Linq.KernelGeneratio
 using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
 using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 namespace DotCompute.Linq.Compilation.Stages;
+{
 /// <summary>
 /// Performs kernel-level optimizations on generated kernels.
 /// Applies backend-specific optimizations, memory access pattern optimization,
@@ -38,6 +39,7 @@ public sealed class KernelOptimizer
     private readonly Dictionary<BackendType, IBackendOptimizer> _backendOptimizers;
     private readonly OptimizationMetrics _metrics;
     private readonly OptimizationPipelineBuilder _pipelineBuilder;
+    }
     public KernelOptimizer(ILogger<KernelOptimizer> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,6 +51,7 @@ public sealed class KernelOptimizer
     /// Optimizes a generated kernel using backend-specific and general optimizations.
     /// </summary>
     public async Task<OptimizedKernel> OptimizeAsync(
+        {
         OperatorsGeneratedKernel generatedKernel,
         PipelinesExpressionAnalysisResult analysisResult,
         CompilationOptions? options = null,
@@ -78,6 +81,7 @@ public sealed class KernelOptimizer
             return optimizedKernel;
         }
         catch (Exception ex)
+        {
             _logger.LogError(ex, "Kernel optimization failed for {Backend}: {KernelName}",
                 generatedKernel.TargetBackend, generatedKernel.Name);
             var errorBackendType = BackendTypeExtensions.ParseBackendType(generatedKernel.TargetBackend);
@@ -129,21 +133,29 @@ public sealed class KernelOptimizer
                 }
             }).ToImmutableArray()
         };
+    }
     private static double CalculateOverallSpeedup(IReadOnlyList<AppliedOptimization> optimizations)
+    {
         // Simplified speedup calculation - in practice, this would be more sophisticated
         return optimizations.Aggregate(1.0, (acc, opt) => acc * opt.EstimatedSpeedup);
+    }
     private Dictionary<BackendType, IBackendOptimizer> InitializeBackendOptimizers()
+    {
         return new Dictionary<BackendType, IBackendOptimizer>
             [BackendType.CPU] = new CpuOptimizer(_logger),
             [BackendType.CUDA] = new CudaOptimizer(_logger),
             [BackendType.Metal] = new MetalOptimizer(_logger),
             [BackendType.ROCm] = new RocmOptimizer(_logger)
     public OptimizationStatistics GetStatistics()
+    {
         return _metrics.GetStatistics();
 }
 /// Builds optimization pipelines based on context and backend requirements.
 internal class OptimizationPipelineBuilder
+    {
+    }
     public OptimizationPipeline BuildPipeline(OptimizationContext context)
+    {
         var optimizations = new List<IKernelOptimization>();
         // Add general optimizations first
         optimizations.AddRange(BuildGeneralOptimizations(context));
@@ -152,7 +164,9 @@ internal class OptimizationPipelineBuilder
         // Add post-processing optimizations
         optimizations.AddRange(BuildPostProcessingOptimizations(context));
         return new OptimizationPipeline(optimizations);
+    }
     private IEnumerable<IKernelOptimization> BuildGeneralOptimizations(OptimizationContext context)
+    {
         var optimizations = new List<IKernelOptimization>
             // Dead code elimination
             new DeadCodeEliminationOptimization(),
@@ -160,6 +174,7 @@ internal class OptimizationPipelineBuilder
             new ConstantFoldingOptimization(),
             // Common subexpression elimination
             new CommonSubexpressionEliminationOptimization()
+            {
         // Memory access pattern optimization
         if (MemoryAccessPatternExtensions.HasOptimizationOpportunities(
             MemoryAccessPatternExtensions.ConvertMemoryAccessPattern(context.AnalysisResult.MemoryAccessPattern)))
@@ -167,21 +182,28 @@ internal class OptimizationPipelineBuilder
         return optimizations;
     /// Checks if vectorization opportunities exist in the analysis result.
     private static bool HasVectorizationOpportunities(PipelinesExpressionAnalysisResult analysisResult)
+    {
         return analysisResult.IsGpuCompatible || analysisResult.ParallelizationPotential > 50;
     /// Checks if the complexity metrics indicate a memory-bound workload.
     private static bool IsMemoryBound(PipelineComplexityMetrics complexityMetrics)
+    {
         return complexityMetrics.MemoryComplexity > complexityMetrics.ComputeComplexity;
     /// Checks if the complexity metrics indicate shared memory would be beneficial.
     private static bool CanBenefitFromSharedMemory(PipelineComplexityMetrics complexityMetrics)
+    {
         return complexityMetrics.MemoryComplexity > 50 && complexityMetrics.OverallComplexity > 75;
+    }
     private IEnumerable<IKernelOptimization> BuildBackendSpecificOptimizations(OptimizationContext context)
+    {
         return context.OperatorsGeneratedKernel.TargetBackend switch
             nameof(BackendType.CPU) => BuildCpuOptimizations(context),
             nameof(BackendType.CUDA) => BuildCudaOptimizations(context),
             nameof(BackendType.Metal) => BuildMetalOptimizations(context),
             nameof(BackendType.ROCm) => BuildRocmOptimizations(context),
             _ => Enumerable.Empty<IKernelOptimization>()
+    }
     private IEnumerable<IKernelOptimization> BuildCpuOptimizations(OptimizationContext context)
+    {
         // SIMD vectorization
         if (HasVectorizationOpportunities(context.AnalysisResult))
             optimizations.Add(new SimdVectorizationOptimization());
@@ -192,11 +214,14 @@ internal class OptimizationPipelineBuilder
         // Prefetching
         if (context.AnalysisResult.ComplexityMetrics != null && IsMemoryBound(MemoryAccessPatternExtensions.ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
             optimizations.Add(new PrefetchOptimization());
+    }
     private IEnumerable<IKernelOptimization> BuildCudaOptimizations(OptimizationContext context)
+    {
             // Memory coalescing
             new MemoryCoalescingOptimization(),
             // Occupancy optimization
             new OccupancyOptimization()
+            {
         // Shared memory utilization
         if (context.AnalysisResult.ComplexityMetrics != null && CanBenefitFromSharedMemory(MemoryAccessPatternExtensions.ConvertComplexityMetrics(context.AnalysisResult.ComplexityMetrics)))
             optimizations.Add(new SharedMemoryOptimization());
@@ -204,23 +229,31 @@ internal class OptimizationPipelineBuilder
         optimizations.Add(new WarpDivergenceOptimization());
         // Register pressure reduction
         optimizations.Add(new RegisterPressureOptimization());
+    }
     private IEnumerable<IKernelOptimization> BuildMetalOptimizations(OptimizationContext context)
+    {
         // Placeholder for Metal-specific optimizations
         return Enumerable.Empty<IKernelOptimization>();
+    }
     private IEnumerable<IKernelOptimization> BuildRocmOptimizations(OptimizationContext context)
+    {
         // Placeholder for ROCm-specific optimizations
     private IEnumerable<IKernelOptimization> BuildPostProcessingOptimizations(OptimizationContext context)
+    {
             // Code layout optimization
             new CodeLayoutOptimization(),
             // Final cleanup
             new FinalCleanupOptimization()
+            {
 /// Base interface for kernel optimizations.
 internal interface IKernelOptimization
+    {
     Task<OptimizationResult> ApplyAsync(
         OperatorsGeneratedKernel kernel,
         CancellationToken cancellationToken);
 /// Dead code elimination optimization.
 internal class DeadCodeEliminationOptimization : IKernelOptimization
+    {
     public async Task<OptimizationResult> ApplyAsync(
         // Analyze and remove unused variables and code paths
         var analyzer = new DeadCodeAnalyzer();
@@ -237,6 +270,7 @@ internal class DeadCodeEliminationOptimization : IKernelOptimization
             -deadCode.Sum(d => d.EstimatedSizeBytes));
 /// Constant folding optimization.
 internal class ConstantFoldingOptimization : IKernelOptimization
+    {
         var folder = new ConstantFolder();
         var result = await folder.FoldConstantsAsync(kernel.SourceCode, cancellationToken);
         if (!result.HasChanges)
@@ -246,12 +280,14 @@ internal class ConstantFoldingOptimization : IKernelOptimization
             0);
 /// Common subexpression elimination.
 internal class CommonSubexpressionEliminationOptimization : IKernelOptimization
+    {
         var eliminator = new CommonSubexpressionEliminator();
         var result = await eliminator.EliminateAsync(kernel.SourceCode, cancellationToken);
             $"Eliminated {result.EliminatedExpressions} common subexpressions",
             1.15, // Good speedup from reduced redundant computations
 /// SIMD vectorization optimization for CPU kernels.
 internal class SimdVectorizationOptimization : IKernelOptimization
+    {
         if (!BackendTypeExtensions.IsBackendType(context.OperatorsGeneratedKernel.TargetBackend, BackendType.CPU))
         var vectorizer = new SimdVectorizer();
         var result = await vectorizer.VectorizeAsync(kernel.SourceCode, context.AnalysisResult, cancellationToken);
@@ -260,6 +296,7 @@ internal class SimdVectorizationOptimization : IKernelOptimization
             result.EstimatedSpeedup, // Can be 2x-8x depending on data type and operations
 /// Memory coalescing optimization for GPU kernels.
 internal class MemoryCoalescingOptimization : IKernelOptimization
+    {
         if (!BackendTypeExtensions.IsBackendType(context.OperatorsGeneratedKernel.TargetBackend, BackendType.CUDA))
         var optimizer = new MemoryCoalescingOptimizer();
         var result = await optimizer.OptimizeAsync(kernel.SourceCode, context.AnalysisResult, cancellationToken);
@@ -267,6 +304,7 @@ internal class MemoryCoalescingOptimization : IKernelOptimization
             result.EstimatedSpeedup, // Can be 2x-10x for memory-bound kernels
 /// GPU occupancy optimization.
 internal class OccupancyOptimization : IKernelOptimization
+    {
         var optimizer = new OccupancyOptimizer();
         var result = await optimizer.OptimizeAsync(kernel, context.AnalysisResult, cancellationToken);
         var optimizedKernel = kernel with
@@ -274,7 +312,9 @@ internal class OccupancyOptimization : IKernelOptimization
             Metadata = ConvertMetadataToDictionary(result.UpdatedMetadata)
             $"Optimized occupancy: {result.OriginalOccupancy:P0} → {result.OptimizedOccupancy:P0}",
             result.EstimatedSpeedup,
+    }
     private static Dictionary<string, object> ConvertMetadataToDictionary(KernelMetadata metadata)
+    {
         // Convert KernelMetadata to Dictionary<string, object>
         // This is a simplified conversion - in practice you might want to use reflection or serialization
         return new Dictionary<string, object>
@@ -298,16 +338,20 @@ internal record OptimizationResult(
         double estimatedSpeedup,
         long memoryImpact = 0)
         => new(true, optimizedKernel, description, estimatedSpeedup, memoryImpact);
+    }
     public static OptimizationResult NotApplied()
+    {
         => new(false, null, "Optimization not applicable", 1.0, 0);
 internal record AppliedOptimization(
     string OptimizationType,
     long MemoryImpact);
 /// Backend-specific optimizer interfaces and implementations.
 internal interface IBackendOptimizer
+    {
     Task<OptimizedKernel> OptimizeAsync(
         object? options,
 internal class CpuOptimizer : IBackendOptimizer
+    {
     private readonly ILogger _logger;
     public CpuOptimizer(ILogger logger) => _logger = logger;
         // CPU-specific optimization logic would go here
@@ -320,38 +364,57 @@ internal class CpuOptimizer : IBackendOptimizer
             RelativePerformance = 1.0,
             MemoryEfficiency = 1.0
 internal class CudaOptimizer : IBackendOptimizer
+    {
     public CudaOptimizer(ILogger logger) => _logger = logger;
         // CUDA-specific optimization logic would go here
             ComputeBackendType.CUDA)
 internal class MetalOptimizer : IBackendOptimizer
+    {
     public MetalOptimizer(ILogger logger) => _logger = logger;
     public Task<OptimizedKernel> OptimizeAsync(
         throw new NotImplementedException("Metal optimization not yet implemented");
 internal class RocmOptimizer : IBackendOptimizer
+    {
     public RocmOptimizer(ILogger logger) => _logger = logger;
         throw new NotImplementedException("ROCm optimization not yet implemented");
 /// Placeholder optimization implementations.
 /// In a real implementation, these would contain sophisticated optimization logic.
 internal class LoopUnrollingOptimization : IKernelOptimization
+    {
+    }
     public async Task<OptimizationResult> ApplyAsync(OperatorsGeneratedKernel kernel, OptimizationContext context, CancellationToken cancellationToken)
+    {
         return OptimizationResult.NotApplied();
 internal class CacheOptimization : IKernelOptimization
+    {
 internal class PrefetchOptimization : IKernelOptimization
+    {
 internal class SharedMemoryOptimization : IKernelOptimization
+    {
 internal class WarpDivergenceOptimization : IKernelOptimization
+    {
 internal class RegisterPressureOptimization : IKernelOptimization
+    {
 internal class MemoryAccessOptimization : IKernelOptimization
+    {
 internal class CodeLayoutOptimization : IKernelOptimization
+    {
 internal class FinalCleanupOptimization : IKernelOptimization
+    {
 /// Tracks optimization metrics and performance.
 internal class OptimizationMetrics
+    {
     private readonly Dictionary<BackendType, List<TimeSpan>> _optimizationTimes = [];
     private readonly Dictionary<BackendType, int> _errorCounts = [];
+    }
     public void RecordOptimization(BackendType backend, TimeSpan duration)
+    {
         if (!_optimizationTimes.ContainsKey(backend))
             _optimizationTimes[backend] = [];
         _optimizationTimes[backend].Add(duration);
+    }
     public void RecordError(BackendType backend)
+    {
         _errorCounts.TryGetValue(backend, out var count);
         _errorCounts[backend] = count + 1;
         var backendStats = new Dictionary<BackendType, BackendOptimizationStatistics>();
@@ -376,36 +439,62 @@ public record BackendOptimizationStatistics(
     TimeSpan MaxTime);
 /// Exception thrown during kernel optimization.
 public class OptimizationException : Exception
+    {
     public OptimizationException(string message) : base(message) { }
     public OptimizationException(string message, Exception innerException) : base(message, innerException) { }
 /// Activity tracking for optimization stages.
 internal static class OptimizationActivity
+    {
+    }
     public static IDisposable Start(string operationName)
+    {
         return new NoOpDisposable();
     private class NoOpDisposable : IDisposable
+    {
         public void Dispose() { }
 /// Placeholder helper classes for optimization analysis.
 /// In a real implementation, these would contain sophisticated analysis and transformation logic.
 internal class DeadCodeAnalyzer
+    {
+    }
     public async Task<List<DeadCodeSegment>> FindDeadCodeAsync(string sourceCode, CancellationToken cancellationToken)
+    {
         return [];
 internal class DeadCodeRemover
+    {
+    }
     public async Task<string> RemoveDeadCodeAsync(string sourceCode, List<DeadCodeSegment> deadCode, CancellationToken cancellationToken)
+    {
         return sourceCode;
 internal class ConstantFolder
+    {
+    }
     public async Task<ConstantFoldingResult> FoldConstantsAsync(string sourceCode, CancellationToken cancellationToken)
+    {
         return new ConstantFoldingResult(false, sourceCode, 0);
 internal class CommonSubexpressionEliminator
+    {
+    }
     public async Task<SubexpressionEliminationResult> EliminateAsync(string sourceCode, CancellationToken cancellationToken)
+    {
         return new SubexpressionEliminationResult(false, sourceCode, 0);
 internal class SimdVectorizer
+    {
+    }
     public async Task<VectorizationResult> VectorizeAsync(string sourceCode, PipelinesExpressionAnalysisResult analysisResult, CancellationToken cancellationToken)
+    {
         return new VectorizationResult(false, sourceCode, 0, 1.0);
 internal class MemoryCoalescingOptimizer
+    {
+    }
     public async Task<MemoryOptimizationResult> OptimizeAsync(string sourceCode, PipelinesExpressionAnalysisResult analysisResult, CancellationToken cancellationToken)
+    {
         return new MemoryOptimizationResult(false, sourceCode, 0, 1.0);
 internal class OccupancyOptimizer
+    {
+    }
     public async Task<OccupancyOptimizationResult> OptimizeAsync(OperatorsGeneratedKernel kernel, PipelinesExpressionAnalysisResult analysisResult, CancellationToken cancellationToken)
+    {
         var metadata = new DotCompute.Linq.KernelGeneration.KernelMetadata(kernel.Name, kernel.Language);
         return new OccupancyOptimizationResult(false, kernel.SourceCode, metadata, 0.5, 0.5, 1.0);
 /// Result types for optimization operations.
@@ -417,8 +506,10 @@ internal record MemoryOptimizationResult(bool HasChanges, string OptimizedCode, 
 internal record OccupancyOptimizationResult(bool HasChanges, string OptimizedCode, KernelMetadata UpdatedMetadata, double OriginalOccupancy, double OptimizedOccupancy, double EstimatedSpeedup);
 /// Helper methods for memory access pattern analysis.
 internal static class MemoryAccessPatternExtensions
+    {
     /// Determines if a memory access pattern has optimization opportunities.
     public static bool HasOptimizationOpportunities(DotCompute.Abstractions.Types.MemoryAccessPattern pattern)
+    {
         return pattern switch
             DotCompute.Abstractions.Types.MemoryAccessPattern.Random => true,
             DotCompute.Abstractions.Types.MemoryAccessPattern.Strided => true,
@@ -450,16 +541,21 @@ internal static class MemoryAccessPatternExtensions
             ParallelizationComplexity = pipelineMetrics.ParallelizationComplexity
 /// Simple implementation of ICompiledKernel for generated kernels.
 internal class GeneratedCompiledKernel : ICompiledKernel
+    {
     private readonly OperatorsGeneratedKernel _kernel;
     private bool _disposed;
+    }
     public GeneratedCompiledKernel(OperatorsGeneratedKernel kernel)
+    {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
     /// <inheritdoc />
     public string Name => _kernel.Name ?? "generated_kernel";
     public string SourceCode => _kernel.Source ?? "// Generated kernel source";
     public IReadOnlyList<KernelParameter> Parameters => ConvertParameters(_kernel.Parameters);
     public string EntryPoint => _kernel.EntryPoint ?? _kernel.Name ?? "generated_kernel";
+    }
     private static IReadOnlyList<KernelParameter> ConvertParameters(GeneratedKernelParameter[]? generatedParams)
+    {
         if (generatedParams == null || generatedParams.Length == 0)
             return new List<KernelParameter>();
         return generatedParams.Select(p =>
@@ -495,6 +591,14 @@ internal class GeneratedCompiledKernel : ICompiledKernel
         for (var i = 0; i < args.Length; i++)
             parameters.Arguments[$"arg{i}"] = args[i];
             Arguments = []
+    }
     public void Dispose()
+    {
         if (!_disposed)
             _disposed = true;
+}
+}
+}
+}
+}
+}

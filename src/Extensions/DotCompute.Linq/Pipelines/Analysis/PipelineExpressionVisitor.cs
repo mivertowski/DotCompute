@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Pipelines.Analysis;
+{
 /// <summary>
 /// Visitor that converts LINQ expression trees into kernel pipeline execution plans.
 /// Analyzes complex nested expressions and optimizes the pipeline structure for GPU execution.
@@ -88,6 +89,7 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     }
 
     #region LINQ Method Visitors
+    }
     private Expression VisitWhereExpression(MethodCallExpression node)
     {
         var stage = CreateStage("WhereKernel", PipelineStageType.Filter);
@@ -192,8 +194,6 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         AddStage(divideStage);
         Visit(node.Arguments[0]); // Visit source
         return node;
-    }
-
     private Expression VisitCountExpression(MethodCallExpression node)
     {
         var stage = CreateStage("CountKernel", PipelineStageType.Reduction);
@@ -240,7 +240,6 @@ public class PipelineExpressionVisitor : ExpressionVisitor
         AddStage(stage);
         Visit(node.Arguments[0]); // Visit source
         return node;
-    }
     private Expression VisitOrderByExpression(MethodCallExpression node, bool descending = false)
     {
         var stage = CreateStage("OrderByKernel", PipelineStageType.Sorting);
@@ -339,6 +338,7 @@ public class PipelineExpressionVisitor : ExpressionVisitor
     }
     #endregion
     #region Helper Methods
+    }
     private PipelineStageInfo CreateStage(string kernelName, PipelineStageType stageType)
     {
         return new PipelineStageInfo
@@ -454,6 +454,7 @@ internal class ComplexityAnalysisVisitor : ExpressionVisitor
 {
     private int _complexity = 0;
 
+    }
     public KernelComplexity GetComplexity()
     {
         return _complexity switch
@@ -490,6 +491,7 @@ internal class ComplexityAnalysisVisitor : ExpressionVisitor
 /// Analyzer for determining backend compatibility.
 internal class BackendCompatibilityAnalyzer
 {
+    }
     public string[] AnalyzeSelector(LambdaExpression selector)
     {
         // Analyze the selector to determine backend compatibility
@@ -514,6 +516,7 @@ internal class BackendCompatibilityVisitor : ExpressionVisitor
 {
     public bool SupportsGpu { get; private set; } = true;
 
+    }
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         // Check for GPU-incompatible method calls

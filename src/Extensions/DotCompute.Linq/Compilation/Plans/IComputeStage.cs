@@ -6,6 +6,7 @@ using DotCompute.Linq.Compilation.Execution;
 using DotCompute.Linq.Operators.Execution;
 using DotCompute.Linq.Operators.Interfaces;
 namespace DotCompute.Linq.Compilation.Plans;
+{
 /// <summary>
 /// Represents a stage in a compute plan.
 /// </summary>

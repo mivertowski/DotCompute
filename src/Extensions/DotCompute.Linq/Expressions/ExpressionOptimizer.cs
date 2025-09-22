@@ -9,6 +9,7 @@ using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Expressions;
+{
 /// <summary>
 /// Optimizes LINQ expression trees for efficient GPU execution.
 /// </summary>
@@ -91,6 +92,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         private readonly ILogger _logger;
         private readonly Stack<MethodCallExpression> _methodCallStack = new();
 
+        }
         public OperatorFusionVisitor(ILogger logger)
         {
             _logger = logger;
@@ -214,6 +216,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     {
         private readonly ILogger _logger;
 
+        }
         public MemoryCoalescingVisitor(ILogger logger)
         {
             _logger = logger;
@@ -240,6 +243,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         private readonly ILogger _logger;
         private readonly Dictionary<Expression, Expression> _visitedExpressions = [];
 
+        }
         public RedundancyEliminationVisitor(ILogger logger)
         {
             _logger = logger;
@@ -287,6 +291,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     {
         private readonly ILogger _logger;
 
+        }
         public ConstantFoldingVisitor(ILogger logger)
         {
             _logger = logger;
@@ -390,6 +395,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     {
         private readonly ILogger _logger;
 
+        }
         public OperationReorderingVisitor(ILogger logger)
         {
             _logger = logger;
@@ -420,6 +426,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     {
         private readonly List<OptimizationSuggestion> _suggestions;
 
+        }
         public OptimizationAnalyzer(List<OptimizationSuggestion> suggestions)
         {
             _suggestions = suggestions;
@@ -457,6 +464,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         private readonly MethodCallExpression _secondMethod;
 
         public FusedMethodInfo(string name, Type declaringType, Type returnType, Type[] parameterTypes,
+        {
             MethodCallExpression firstMethod, MethodCallExpression secondMethod)
         {
             _name = name;
@@ -491,6 +499,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     /// </summary>
     internal class FusedParameterInfo : ParameterInfo
     {
+        }
         public FusedParameterInfo(string name, Type parameterType, int position)
         {
             NameImpl = name;
@@ -510,7 +519,6 @@ public class ExpressionOptimizer : IExpressionOptimizer
         public static void SetMetadata(string key, Dictionary<string, object> metadata) => _store.Value![key] = metadata;
         public static Dictionary<string, object>? GetMetadata(string key) => _store.Value!.TryGetValue(key, out var metadata) ? metadata : null;
         public static void Clear() => _store.Value!.Clear();
-    }
     /// <summary>
     /// Empty custom attribute provider implementation for fused methods.
     /// </summary>
@@ -519,5 +527,4 @@ public class ExpressionOptimizer : IExpressionOptimizer
         public object[] GetCustomAttributes(bool inherit) => [];
         public object[] GetCustomAttributes(Type attributeType, bool inherit) => [];
         public bool IsDefined(Type attributeType, bool inherit) => false;
-    }
 }

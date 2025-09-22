@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 namespace DotCompute.Linq.Examples;
+{
 /// <summary>
 /// Comprehensive example demonstrating the pipeline telemetry system with performance validation.
 /// Shows how to achieve less than 1% overhead while collecting detailed metrics.
@@ -159,7 +160,6 @@ public class PipelineTelemetryExample
             context.Dispose();
     /// Configures telemetry services for the example.
     private static void ConfigureTelemetryServices(IServiceCollection services)
-        // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
         // Add comprehensive pipeline telemetry
         services.AddComprehensivePipelineTelemetry(options =>
@@ -180,6 +180,7 @@ public class PipelineTelemetryExample
             .ToArray();
     /// Validates the performance overhead meets requirements.
     public static ValidationResult ValidatePerformanceRequirements(PerformanceOverheadStats stats)
+        {
         var requirements = new[]
             new Requirement("Overhead < 1%", stats.OverheadPercentage < 1.0, stats.OverheadPercentage),
             new Requirement("Average operation < 10μs", stats.AverageOverheadPerOperation.TotalMicroseconds < 10, stats.AverageOverheadPerOperation.TotalMicroseconds),
@@ -193,6 +194,7 @@ public class PipelineTelemetryExample
 }
 /// Result of the comprehensive telemetry example.
 public sealed class ExampleResult
+    {
     public int TotalExecutions { get; set; }
     public TimeSpan TotalTime { get; set; }
     public PerformanceOverheadStats OverheadStats { get; set; } = null!;
@@ -203,6 +205,7 @@ public sealed class ExampleResult
     public double CacheHitRateOverall { get; set; }
     public double ThroughputOverall { get; set; }
     public void PrintSummary()
+        {
         Console.WriteLine($"=== Pipeline Telemetry Example Results ===");
         Console.WriteLine($"Total Executions: {TotalExecutions}");
         Console.WriteLine($"Total Time: {TotalTime.TotalMilliseconds:F2}ms");
@@ -216,6 +219,7 @@ public sealed class ExampleResult
         Console.WriteLine($"Pipeline Types Monitored: {PipelineMetrics.Count}");
 /// Result of a single pipeline execution.
 public sealed class PipelineExecutionResult
+    {
     public string PipelineId { get; set; } = string.Empty;
     public bool Success { get; set; }
     public TimeSpan ExecutionTime { get; set; }
@@ -225,6 +229,7 @@ public sealed class PipelineExecutionResult
     public Exception? Exception { get; set; }
 /// Performance requirement for validation.
 public sealed class Requirement
+    {
     public string Description { get; set; }
     public bool Met { get; set; }
     public double ActualValue { get; set; }
@@ -234,6 +239,7 @@ public sealed class Requirement
         ActualValue = actualValue;
 /// Result of performance validation.
 public sealed class ValidationResult
+    {
     public bool AllRequirementsMet { get; set; }
     public List<Requirement> Requirements { get; set; } = [];
     public double OverallScore { get; set; }

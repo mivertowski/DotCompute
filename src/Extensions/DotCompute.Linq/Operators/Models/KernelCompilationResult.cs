@@ -6,6 +6,7 @@
 using System;
 using DotCompute.Linq.Operators.Execution;
 namespace DotCompute.Linq.Operators.Models;
+{
 /// <summary>
 /// Represents the result of a kernel compilation operation.
 /// </summary>

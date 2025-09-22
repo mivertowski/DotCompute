@@ -13,6 +13,7 @@ using DotCompute.Linq.Operators.Execution;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Operators.Compilation;
+{
 /// <summary>
 /// CPU fallback kernel compiler for when no accelerator is available.
 /// </summary>

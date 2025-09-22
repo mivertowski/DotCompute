@@ -8,6 +8,7 @@ using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes comparison operators in expression trees.
@@ -236,6 +237,7 @@ public class ComparisonOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
     };
 
     private static bool IsVectorizable(IReadOnlyList<Type> inputTypes)
+        {
         => inputTypes.All(type => type switch
         {
             var t when t == typeof(int) => true,

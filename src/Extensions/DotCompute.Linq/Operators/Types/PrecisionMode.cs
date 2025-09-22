@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Defines precision modes for kernel operations.
 /// </summary>

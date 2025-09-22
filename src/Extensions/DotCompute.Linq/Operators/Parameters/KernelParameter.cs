@@ -5,6 +5,7 @@
 
 using System;
 namespace DotCompute.Linq.Operators.Parameters;
+{
 /// <summary>
 /// Represents kernel parameter information with direction.
 /// </summary>

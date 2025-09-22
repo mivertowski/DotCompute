@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Execution.Types;
+{
 /// <summary>
 /// Contains properties and constraints for a kernel.
 /// </summary>

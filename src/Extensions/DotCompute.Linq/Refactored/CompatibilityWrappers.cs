@@ -8,6 +8,7 @@ using DotCompute.Core.Analysis;
 using DotCompute.Core.Kernels;
 using DotCompute.Refactored.Adapters;
 namespace DotCompute.Linq.Refactored;
+{
 /// <summary>
 /// Compatibility extensions for seamless migration to unified types.
 /// </summary>
@@ -27,6 +28,7 @@ public static class CompatibilityExtensions
     }
     /// Implicit conversion from any GeneratedKernel to UnifiedGeneratedKernel.
     public static UnifiedGeneratedKernel ToUnifiedKernel(this object generatedKernel)
+        {
         return generatedKernel switch
             UnifiedGeneratedKernel unified => unified,
             null => throw new ArgumentNullException(nameof(generatedKernel)),
@@ -41,9 +43,11 @@ public static class CompatibilityExtensions
 /// Legacy type aliases for backward compatibility. These classes provide wrapper functionality
 /// during the transition to unified types. New code should use the unified types directly.
 public static class LegacyTypeAliases
+    {
     /// Creates a ComplexityMetrics wrapper for backward compatibility.
     [Obsolete("Use DotCompute.Core.Analysis.UnifiedComplexityMetrics directly.", false)]
     public static UnifiedComplexityMetrics CreateComplexityMetrics(
+        {
         double computationalComplexity = 1.0,
         long operationCount = 1000,
         long memoryUsage = 8192)

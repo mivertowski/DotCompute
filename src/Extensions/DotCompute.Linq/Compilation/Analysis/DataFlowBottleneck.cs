@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Represents a bottleneck in the data flow analysis.
 /// </summary>

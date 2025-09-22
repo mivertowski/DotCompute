@@ -10,6 +10,7 @@ using PipelineComplexityMetrics = DotCompute.Linq.Pipelines.Analysis.ComplexityM
 // TypeUsageInfo and DependencyInfo are defined in ITypeAnalyzer.cs within the same namespace
 // Use the MemoryAccessPattern from ITypeAnalyzer to maintain consistency
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Represents the result of analyzing a LINQ expression for compilation optimization.
 /// </summary>

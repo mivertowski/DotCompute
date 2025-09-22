@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 namespace DotCompute.Linq.Optimization.Models;
+{
 /// <summary>
 /// Represents a single operation in a query execution plan.
 /// </summary>
@@ -137,6 +138,7 @@ public class QueryOperation
 }
 /// Defines the types of operations that can be performed in a query.
 public enum OperationType
+    {
     /// <summary>Map operation (transform each element).</summary>
     Map,
     /// <summary>Filter operation (select elements based on predicate).</summary>
@@ -163,6 +165,7 @@ public enum OperationType
     Barrier
 /// Defines memory access patterns for operations.
 public enum AccessPattern
+    {
     /// <summary>Sequential access pattern.</summary>
     Sequential,
     /// <summary>Random access pattern.</summary>
@@ -177,6 +180,7 @@ public enum AccessPattern
     Scatter
 /// Configuration for GPU-specific optimizations.
 public class GpuOptimizationConfig
+    {
     /// <summary>Gets or sets the preferred block size for GPU kernels.</summary>
     public int PreferredBlockSize { get; set; } = 256;
     /// <summary>Gets or sets the shared memory size in bytes.</summary>
@@ -195,6 +199,7 @@ public class GpuOptimizationConfig
     public int SharedMemoryUsage { get; set; } = 0;
 /// Configuration for load balancing strategies.
 public class LoadBalancingConfig
+    {
     /// <summary>Gets or sets the load balancing strategy.</summary>
     public string Strategy { get; set; } = "Balanced";
     /// <summary>Gets or sets the maximum number of threads to use.</summary>
@@ -207,6 +212,7 @@ public class LoadBalancingConfig
     public int GridSize { get; set; } = 1;
 /// Configuration for parallelization strategies.
 public class ParallelizationConfig
+    {
     /// <summary>Gets or sets the preferred parallelization degree.</summary>
     public int PreferredParallelism { get; set; }
     /// <summary>Gets or sets the minimum work size per thread.</summary>
@@ -226,6 +232,7 @@ public class ParallelizationConfig
     public bool LoadBalancingEnabled { get; set; } = true;
 /// Configuration for CPU-specific optimizations.
 public class CpuOptimizationConfig
+    {
     /// <summary>Gets or sets whether to use SIMD instructions.</summary>
     public bool UseSIMD { get; set; } = true;
     /// <summary>Gets or sets the preferred vector width.</summary>
@@ -250,6 +257,7 @@ public class CpuOptimizationConfig
     public NumaConfiguration? NumaConfiguration { get; set; }
 /// NUMA memory policy configuration.
 public class NumaMemoryPolicy
+    {
     /// <summary>Gets or sets the preferred NUMA node.</summary>
     public int PreferredNode { get; set; }
     /// <summary>Gets or sets the NUMA allocation policy.</summary>
@@ -258,12 +266,14 @@ public class NumaMemoryPolicy
     public bool MigrationEnabled { get; set; }
 /// NUMA configuration for CPU optimization.
 public class NumaConfiguration
+    {
     /// <summary>Gets or sets the thread distribution strategy.</summary>
     public NumaThreadDistribution ThreadDistribution { get; set; }
     /// <summary>Gets or sets the memory binding policy.</summary>
     public NumaMemoryBinding MemoryBinding { get; set; }
 /// NUMA allocation policy.
 public enum NumaAllocationPolicy
+    {
     /// <summary>Default system allocation policy.</summary>
     Default,
     /// <summary>Allocate memory locally to the accessing thread.</summary>
@@ -274,6 +284,7 @@ public enum NumaAllocationPolicy
     Preferred
 /// NUMA thread distribution strategy.
 public enum NumaThreadDistribution
+    {
     /// <summary>No specific NUMA thread placement.</summary>
     None,
     /// <summary>Distribute threads evenly across NUMA nodes.</summary>
@@ -283,6 +294,7 @@ public enum NumaThreadDistribution
     Packed
 /// NUMA memory binding policy.
 public enum NumaMemoryBinding
+    {
     /// <summary>No specific memory binding.</summary>
     /// <summary>Bind memory to local NUMA node.</summary>
     /// <summary>Bind memory to specific NUMA node.</summary>

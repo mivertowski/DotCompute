@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace DotCompute.Linq.Optimization.Models;
+{
 /// <summary>
 /// Represents a complete query execution plan consisting of multiple operations.
 /// </summary>
@@ -76,6 +77,7 @@ public class QueryPlan
     /// <param name="operationId">The ID of the operation to remove.</param>
     /// <returns>True if the operation was found and removed; otherwise, false.</returns>
     public bool RemoveOperation(string operationId)
+        {
         var operation = Operations.FirstOrDefault(op => op.Id == operationId);
         if (operation != null)
         {
@@ -118,6 +120,7 @@ public class QueryPlan
     /// Validates the query plan for consistency.
     /// <returns>A list of validation errors, empty if plan is valid.</returns>
     public List<string> Validate()
+        {
         var errors = new List<string>();
         // Check for circular dependencies
         if (HasCircularDependencies())

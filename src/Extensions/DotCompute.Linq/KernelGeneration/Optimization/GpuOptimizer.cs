@@ -19,6 +19,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
         private readonly OptimizationCache _cache;
         private readonly Dictionary<string, OptimizationProfile> _profiles;
         private bool _disposed;
+        }
         public GpuOptimizer(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -29,6 +30,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
         /// Optimizes CUDA kernel source code for target GPU architecture.
         /// </summary>
         public async Task<string> OptimizeKernelSourceAsync(
+        {
             string sourceCode,
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
@@ -241,6 +243,7 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
             return await Task.FromResult(optimizedCode);
         }
         #region Optimization Implementation Methods
+        }
         private string AddMemoryCoalescingHints(string sourceCode)
         {
             // Add vectorized memory access hints
@@ -301,13 +304,12 @@ namespace DotCompute.Linq.KernelGeneration.Optimization
     unsigned int active_mask = __activemask();
     unsigned int predicate_mask = __ballot_sync(active_mask, filter_predicate(input[i]));
     int active_threads = __popc(predicate_mask);";
-                var pattern = @"(if \(filter_predicate\([^}]+\))";
-                var replacement = $"{ballotCode}\n        $1";
                 sourceCode = Regex.Replace(sourceCode, pattern, replacement, RegexOptions.Multiline);
             }
             return sourceCode;
         }
         private string AddWarpPrimitives(string sourceCode, OptimizationProfile profile)
+        {
             // Add warp-level utility functions
             var warpUtilities = @"
 __device__ inline int warp_reduce_sum(int val) {
@@ -321,11 +323,15 @@ __device__ inline float warp_reduce_sum(float val) {
             var pattern = @"(extern\s+""C""\s+__global__)";
             var replacement = $"{warpUtilities}\n\n$1";
             return Regex.Replace(sourceCode, pattern, replacement);
+        }
         private string OptimizeSharedMemoryBankConflicts(string sourceCode)
+        {
             // Add padding to shared memory arrays to avoid bank conflicts
             var pattern = @"__shared__\s+(\w+)\s+(\w+)\[(\d+)\];";
             var replacement = "__shared__ $1 $2[$3 + 1]; // Padded to avoid bank conflicts";
+        }
         private string AddDynamicSharedMemory(string sourceCode, ExpressionAnalysisResult analysis, OptimizationProfile profile)
+        {
             if (profile.SharedMemorySize > 0)
                 // Add dynamic shared memory declaration
                 var dynamicSharedMem = @"
@@ -335,21 +341,27 @@ __device__ inline float warp_reduce_sum(float val) {
                 var pattern = @"(__shared__\s+\w+\s+shared_data\[[^\]]+\];)";
                 var replacement = dynamicSharedMem;
                 sourceCode = Regex.Replace(sourceCode, pattern, replacement);
+        }
         private string AddSharedMemoryPadding(string sourceCode)
+        {
             // Add padding calculations for optimal shared memory usage
             var paddingCode = @"
     // Calculate padding for optimal shared memory bank usage
     const int padding = (sizeof(OutputType) == 4) ? 1 : 2;";
             var pattern = @"(__shared__[\s\S]*?;)";
             var replacement = $"$1\n{paddingCode}";
+        }
         private string OptimizeAtomicOperations(string sourceCode, OptimizationProfile profile)
+        {
             // Replace generic atomics with type-specific ones
             sourceCode = sourceCode.Replace("atomicAdd(", "atomicAdd_block(");
             var (major, minor) = profile.ComputeCapability;
             if (major > 6 || (major == 6 && minor >= 0))
                 // Use faster atomic operations for newer architectures
                 sourceCode = sourceCode.Replace("atomicAdd_block(", "atomicAdd_system(");
+        }
         private string AddAtomicReductionOptimizations(string sourceCode)
+        {
             // Add block-level atomic reduction
             var atomicReduction = @"
 __device__ inline void atomic_warp_reduce_and_store(OutputType* target, OutputType value) {
@@ -361,38 +373,53 @@ __device__ inline void atomic_warp_reduce_and_store(OutputType* target, OutputTy
         atomicAdd(target, value);
             var pattern = @"(atomic_reduce_operation\([^}]+\))";
             var replacement = $"{atomicReduction}\n\n        atomic_warp_reduce_and_store$1";
+        }
         private string AddTextureMemoryDeclarations(string sourceCode, ExpressionAnalysisResult analysis)
+        {
             // Add texture object declarations
             var textureDeclarations = @"
 // Texture memory objects for spatial locality
 texture<InputType, 1, cudaReadModeElementType> tex_input;
 texture<InputType, 1, cudaReadModeElementType> tex_right_input;";
             var replacement = $"{textureDeclarations}\n\n$1";
+        }
         private string ReplaceWithTextureFetches(string sourceCode)
+        {
             // Replace direct memory access with texture fetches
             sourceCode = sourceCode.Replace("input[i]", "tex1Dfetch(tex_input, i)");
             sourceCode = sourceCode.Replace("right_input[i]", "tex1Dfetch(tex_right_input, i)");
+        }
         private string MoveConstantsToConstantMemory(string sourceCode)
+        {
             // Move small constants to constant memory
             var constantDeclarations = @"
 // Constant memory for frequently accessed small data
 __constant__ float const_params[64];
 __constant__ int const_lookup[256];";
             var replacement = $"{constantDeclarations}\n\n$1";
+        }
         private string AddConstantMemoryCaching(string sourceCode)
+        {
             var pattern = @"(const\s+\w+\s+\w+\s*=\s*[^;]+;)";
             var replacement = "$1 // Cached in constant memory";
+        }
         private bool IsTensorCoreCompatible(ExpressionAnalysisResult analysis)
+        {
             // Check if operation can benefit from Tensor Cores
             return analysis.InputType == typeof(float) || analysis.InputType == typeof(double) ||
                    analysis.InputType == typeof(int) || analysis.InputType == typeof(short);
+        }
         private string AddTensorCoreIncludes(string sourceCode)
+        {
             var tensorCoreIncludes = @"
 #include <mma.h>
 using namespace nvcuda;";
+{
             var pattern = @"(\/\/ Auto-generated CUDA kernel)";
             var replacement = $"$1\n{tensorCoreIncludes}";
+        }
         private string ReplaceMathWithTensorCores(string sourceCode, ExpressionAnalysisResult analysis)
+        {
             if (analysis.OperationType == KernelOperationType.Reduce && analysis.InputType == typeof(float))
                 // Replace with Tensor Core matrix operations
                 var tensorCoreOp = @"
@@ -401,21 +428,30 @@ using namespace nvcuda;";
     wmma::fragment<wmma::matrix_b, 16, 16, 16, half, wmma::col_major> b_frag;
     wmma::fragment<wmma::accumulator, 16, 16, 16, float> acc_frag;";
                 sourceCode = $"{tensorCoreOp}\n{sourceCode}";
+        }
         private string AddCooperativeGroupsIncludes(string sourceCode)
+        {
             var cooperativeIncludes = @"
 #include <cooperative_groups.h>
 using namespace cooperative_groups;";
+{
             var replacement = $"$1\n{cooperativeIncludes}";
+        }
         private string ReplaceWithCooperativeGroups(string sourceCode)
+        {
             // Replace __syncthreads with cooperative groups
             var pattern = @"__syncthreads\(\)";
             var replacement = "this_thread_block().sync()";
             return sourceCode.Replace(pattern, replacement);
+        }
         private string AddOccupancyLaunchBounds(string sourceCode, ExpressionAnalysisResult analysis, OptimizationProfile profile)
+        {
             var launchBounds = $"__launch_bounds__({profile.MaxThreadsPerBlock}, {profile.MinBlocksPerSM})";
             var pattern = @"(__global__\s+void)";
             var replacement = $"{launchBounds} $1";
+        }
         private string OptimizeRegisterUsage(string sourceCode, OptimizationProfile profile)
+        {
             if (profile.MaxRegisters > 0)
                 // Add register usage hints
                 var registerHints = @"
@@ -424,14 +460,20 @@ using namespace cooperative_groups;";
     register int temp_reg;";
                 var pattern = @"(\{[\s]*const\s+int\s+idx)";
                 var replacement = $"{{{registerHints}\n    $1";
+        }
         private string AddLoopUnrolling(string sourceCode, OptimizationProfile profile)
+        {
             var unrollFactor = profile.LoopUnrollFactor;
             var pattern = @"(for\s*\([^}]+\))";
             var replacement = $"#pragma unroll {unrollFactor}\n    $1";
+        }
         private string AddPredicationOptimizations(string sourceCode)
+        {
             var pattern = @"(if\s*\([^}]+\)\s*\{)";
             var replacement = "#ifdef __CUDA_ARCH__\n    #pragma unroll\n    #endif\n    $1";
+        }
         private string AddInstructionLevelParallelism(string sourceCode)
+        {
             // Add ILP hints for better instruction scheduling
             var ilpHints = @"
     // Instruction-level parallelism hints
@@ -441,6 +483,7 @@ using namespace cooperative_groups;";
         #endregion
         /// Initializes optimization profiles for different compute capabilities.
         private Dictionary<string, OptimizationProfile> InitializeOptimizationProfiles()
+        {
             return new Dictionary<string, OptimizationProfile>
                 ["5.0"] = new OptimizationProfile
                 {
@@ -478,6 +521,7 @@ using namespace cooperative_groups;";
             };
         /// Gets the optimization profile for a compute capability.
         private OptimizationProfile GetOptimizationProfile(int major, int minor, KernelGenerationOptions options)
+        {
             var key = $"{major}.{minor}";
             if (_profiles.TryGetValue(key, out var profile))
                 return profile;
@@ -492,19 +536,23 @@ using namespace cooperative_groups;";
             return _profiles.GetValueOrDefault($"{closestMajor}.{closestMinor}", _profiles["5.0"]);
         /// Generates a cache key for optimization results.
         private string GenerateCacheKey(string sourceCode, ExpressionAnalysisResult analysis, KernelGenerationOptions options)
+        {
             var keyBuilder = new StringBuilder();
             keyBuilder.Append(sourceCode.GetHashCode());
             keyBuilder.Append('_');
             keyBuilder.Append(analysis.KernelName);
             keyBuilder.Append(options.OptimizationLevel);
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(keyBuilder.ToString()));
+        }
         public void Dispose()
+        {
             if (_disposed)
                 return;
             _cache.Dispose();
             _disposed = true;
     /// Optimization profile for specific compute capabilities.
     public class OptimizationProfile
+    {
         public (int, int) ComputeCapability { get; set; }
         public bool EnableMemoryOptimizations { get; set; } = true;
         public bool EnableWarpOptimizations { get; set; } = true;
@@ -522,17 +570,25 @@ using namespace cooperative_groups;";
         public int LoopUnrollFactor { get; set; } = 4;
     /// Cache optimization levels.
     public enum CacheOptimizationLevel
+    {
         None,
         L1,
         L2,
         L3
     /// Cache for optimization results.
     internal class OptimizationCache : IDisposable
+    {
         private readonly Dictionary<string, string> _cache = [];
         private readonly object _lock = new();
+        }
         public bool TryGetOptimizedSource(string key, out string optimizedSource)
+            }
             lock (_lock)
+            {
                 return _cache.TryGetValue(key, out optimizedSource!);
+            }
         public void CacheOptimizedSource(string key, string optimizedSource)
+        {
                 _cache[key] = optimizedSource;
                 _cache.Clear();
+}

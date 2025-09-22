@@ -12,6 +12,7 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators;
 using Models = DotCompute.Linq.Operators.Models;
 namespace DotCompute.Linq.KernelGeneration;
+{
 /// <summary>
 /// Contains comprehensive metadata about a kernel for compilation and optimization.
 /// This includes performance hints, resource requirements, and compilation options.
@@ -153,11 +154,7 @@ public sealed class KernelMetadata : IEquatable<KernelMetadata>
         return Name == other.Name &&
                Language == other.Language &&
                Version == other.Version;
-    }
-    public override bool Equals(object? obj) => obj is KernelMetadata other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(Name, Language, Version);
     public override string ToString() => $"KernelMetadata(Name: {Name}, Language: {Language}, Version: {Version})";
-}
 /// Represents computational complexity categories for kernel optimization.
 public enum ComputationalComplexity
 {

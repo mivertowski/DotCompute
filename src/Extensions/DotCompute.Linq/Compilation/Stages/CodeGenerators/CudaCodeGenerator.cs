@@ -16,6 +16,7 @@ using DotCompute.Linq.Pipelines.Bridge;
 // Namespace aliases to resolve ambiguous references
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 namespace DotCompute.Linq.Compilation.Stages.CodeGenerators;
+{
 /// <summary>
 /// Generates CUDA C code for GPU execution.
 /// </summary>
@@ -23,19 +24,23 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
 {
     private readonly ILogger _logger;
     private readonly Dictionary<string, ICudaOperatorGenerator> _operatorGenerators;
+    }
     public CudaCodeGenerator(ILogger logger)
     {
         _logger = logger;
         _operatorGenerators = InitializeCudaOperatorGenerators();
     }
     public async Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         var builder = new StringBuilder();
         // Generate CUDA headers
         GenerateCudaHeaders(builder);
         // Generate kernel function
         await GenerateCudaKernelAsync(builder, context, cancellationToken);
         return builder.ToString();
+    }
     public async Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         // Similar to CPU version but with device memory considerations
         var parameters = new List<LinqKernelParameter>();
         foreach (var inputType in context.AnalysisResult.TypeUsage.Keys)
@@ -58,17 +63,23 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
             DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
         await Task.CompletedTask;
         return parameters;
+    }
     public KernelEntryPoint GenerateEntryPoint(CodeGenerationContext context)
+    {
         return new KernelEntryPoint(
             context.KernelName,
             context.KernelName, // CUDA kernels use the same name
             KernelExecutionModel.GPU);
+    }
     private void GenerateCudaHeaders(StringBuilder builder)
+    {
         builder.AppendLine("#include <cuda_runtime.h>");
         builder.AppendLine("#include <device_launch_parameters.h>");
         builder.AppendLine("#include <cub/cub.cuh>");
         builder.AppendLine();
+    }
     private async Task GenerateCudaKernelAsync(StringBuilder builder, CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         var outputType = DetermineOutputElementType(context.AnalysisResult);
         var cudaType = GetCudaTypeName(outputType);
         // Kernel signature
@@ -85,7 +96,9 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
         // Kernel body
         GenerateCudaKernelBody(builder, context);
         builder.AppendLine("}");
+    }
     private void GenerateCudaKernelBody(StringBuilder builder, CodeGenerationContext context)
+    {
         builder.AppendLine("    // Calculate thread index");
         builder.AppendLine("    int idx = blockIdx.x * blockDim.x + threadIdx.x;");
         builder.AppendLine("    int stride = blockDim.x * gridDim.x;");
@@ -98,7 +111,9 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
                 var operatorInfo = op.ConvertToOperatorInfo();
                 generator.Generate(builder, operatorInfo, context);
         builder.AppendLine("    }");
+    }
     private Dictionary<string, ICudaOperatorGenerator> InitializeCudaOperatorGenerators()
+    {
         return new Dictionary<string, ICudaOperatorGenerator>
             ["Addition"] = new CudaArithmeticOperatorGenerator(),
             ["Subtraction"] = new CudaArithmeticOperatorGenerator(),
@@ -107,7 +122,9 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
             ["Select"] = new CudaSelectOperatorGenerator(),
             ["Where"] = new CudaWhereOperatorGenerator()
         };
+    }
     private static string GetCudaTypeName(Type type)
+    {
         return type.Name switch
             nameof(Single) => "float",
             nameof(Double) => "double",
@@ -115,12 +132,16 @@ internal class CudaCodeGenerator : IBackendCodeGenerator
             nameof(Int64) => "long long",
             nameof(Boolean) => "bool",
             _ => "float" // Default fallback
+    }
     private static string GetCudaParameterDeclaration(LinqKernelParameter param)
+    {
         var typeName = GetCudaTypeName(param.Type.IsArray ? param.Type.GetElementType()! : param.Type);
         var pointer = param.Type.IsArray ? "*" : "";
         var constModifier = param.Direction == DotCompute.Linq.Operators.Parameters.ParameterDirection.Input && param.Type.IsArray ? "const " : "";
         return $"{constModifier}{typeName}{pointer} {param.Name}";
+    }
     private static Type DetermineOutputElementType(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
+    {
         return typeof(float); // Simplified
     private static bool IsArrayType(Type type) => type.IsArray;
     /// <summary>

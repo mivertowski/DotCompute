@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Operators.Types;
+{
 /// <summary>
 /// Defines work dimensions for kernel execution.
 /// </summary>

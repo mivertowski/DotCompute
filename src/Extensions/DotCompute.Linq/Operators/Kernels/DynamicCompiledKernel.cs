@@ -19,6 +19,7 @@ using DotCompute.Linq.Operators.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Operators.Kernels;
+{
 /// <summary>
 /// A kernel compiled dynamically from generated source code.
 /// </summary>
@@ -118,6 +119,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
         )).ToArray();
     /// Disposes the kernel and releases resources.
     public void Dispose()
+        {
         if (!_disposed)
             // We can't await here, so dispose synchronously
             _disposed = true;
@@ -144,7 +146,6 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
             MaxThreadsPerBlock = Math.Min(maxThreads, 1024),
             SharedMemorySize = _generatedKernel.SharedMemorySize,
             RegisterCount = EstimateRegisterCount(_generatedKernel)
-        };
     private static int EstimateRegisterCount(GeneratedKernel kernel)
         // Rough estimation based on kernel complexity
         var sourceLines = kernel.Source.Split('\n').Length;
@@ -152,6 +153,7 @@ internal class DynamicCompiledKernel : Operators.Interfaces.IKernel, IAsyncDispo
         // Simple heuristic: more lines and parameters = more registers
         return Math.Min(32 + (sourceLines / 10) + (paramCount * 2), 255);
     private KernelExecutionParameters CreateExecutionParameters(WorkItems workItems, Dictionary<string, object> parameters)
+        {
         return new KernelExecutionParameters
             GlobalWorkSize = workItems.GlobalWorkSize,
             LocalWorkSize = workItems.LocalWorkSize,

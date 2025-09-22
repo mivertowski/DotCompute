@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Pipelines.Bridge;
+{
 #region Memory Management Interfaces
 /// <summary>
 /// Memory manager for pipeline-specific memory allocation and management.
@@ -29,6 +30,7 @@ public interface IPipelineMemoryManager : IDisposable
 /// Unified buffer interface that provides cross-device memory access.
 /// <typeparam name="T">The element type stored in the buffer</typeparam>
 public interface IUnifiedBuffer<T> : IDisposable where T : unmanaged
+    {
     /// Gets the number of elements in the buffer.
     int Length { get; }
     /// Gets the total size of the buffer in bytes.
@@ -57,8 +59,10 @@ public interface IUnifiedBuffer<T> : IDisposable where T : unmanaged
     Task CopyToAsync(IUnifiedBuffer<T> destination, CancellationToken cancellationToken = default);
 /// Non-generic base interface for unified buffers.
 public interface IUnifiedBuffer : IDisposable
+    {
 /// Memory usage statistics for tracking allocation and usage patterns.
 public sealed class MemoryUsageStats
+    {
     /// Gets or sets the current memory usage in bytes.
     public required long CurrentUsage { get; init; }
     /// Gets or sets the peak memory usage in bytes.
@@ -95,6 +99,7 @@ public sealed class MemoryUsageStats
 #region Device Management Interfaces
 /// Interface representing a compute device (CPU, GPU, etc.).
 public interface IComputeDevice : IDisposable
+    {
     /// Gets the unique device identifier.
     string Id { get; }
     /// Gets the human-readable device name.
@@ -115,6 +120,7 @@ public interface IComputeDevice : IDisposable
     DeviceCapabilities Capabilities { get; }
 /// Types of compute devices.
 public enum DeviceType
+    {
     /// Central Processing Unit.
     CPU,
     /// Graphics Processing Unit (NVIDIA, AMD).
@@ -133,6 +139,7 @@ public enum DeviceType
     Custom
 /// Device capabilities and feature support information.
 public sealed class DeviceCapabilities
+    {
     /// Gets or sets whether the device supports double-precision floating point.
     public required bool SupportsDoubles { get; init; }
     /// Gets or sets whether the device supports atomic operations.
@@ -162,6 +169,7 @@ public sealed class DeviceCapabilities
 #region Memory Extension Types
 /// Extension of the TimeSpan struct to support additional operations needed for data transfer timing.
 public static class TimeSpanExtensions
+    {
     /// Gets the total bytes transferred based on a time span and transfer rate.
     /// <param name="timeSpan">The time span of the transfer</param>
     /// <param name="bytesPerSecond">The transfer rate in bytes per second</param>
@@ -174,11 +182,13 @@ public static class TimeSpanExtensions
     /// <param name="timeSpans">The collection of time spans</param>
     /// <returns>The sum of bytes from all time spans</returns>
     public static long TotalBytes(this IEnumerable<TimeSpan> timeSpans)
+    {
         // Default assumption: 1 GB/s transfer rate for calculation
         const long defaultBytesPerSecond = 1_000_000_000;
         return timeSpans.Sum(ts => ts.TotalBytes(defaultBytesPerSecond));
 /// Memory allocation patterns for optimization.
 public enum MemoryAllocationPattern
+    {
     /// Allocate memory once and reuse.
     SingleAllocation,
     /// Multiple small allocations.
@@ -191,6 +201,7 @@ public enum MemoryAllocationPattern
     OnDemand
 /// Memory access characteristics for optimization.
 public sealed class MemoryAccessCharacteristics
+    {
     /// Gets or sets the primary access pattern.
     public required DataAccessPattern PrimaryPattern { get; init; }
     /// Gets or sets the memory locality score (0-1, higher is better).
@@ -205,6 +216,7 @@ public sealed class MemoryAccessCharacteristics
     public required int PreferredAlignment { get; init; }
 /// Memory optimization recommendations.
 public sealed class MemoryOptimizationRecommendation
+    {
     /// Gets or sets the recommendation type.
     public required MemoryOptimizationType Type { get; init; }
     /// Gets or sets the recommendation description.
@@ -219,6 +231,7 @@ public sealed class MemoryOptimizationRecommendation
     public IReadOnlyList<string>? ImplementationSteps { get; init; }
 /// Types of memory optimizations.
 public enum MemoryOptimizationType
+    {
     /// Reduce memory allocation frequency.
     ReduceAllocations,
     /// Improve memory locality.
@@ -237,6 +250,7 @@ public enum MemoryOptimizationType
     EnablePrefetching
 /// Implementation complexity levels.
 public enum ImplementationComplexity
+    {
     /// Trivial implementation.
     Trivial,
     /// Simple implementation.
@@ -250,6 +264,7 @@ public enum ImplementationComplexity
 #region Device Discovery and Management
 /// Device discovery service for finding available compute devices.
 public interface IDeviceDiscoveryService
+    {
     /// Discovers all available compute devices.
     /// <returns>A list of discovered devices</returns>
     Task<IReadOnlyList<IComputeDevice>> DiscoverDevicesAsync(CancellationToken cancellationToken = default);
@@ -267,6 +282,7 @@ public interface IDeviceDiscoveryService
     IComputeDevice? GetDevice(string deviceId);
 /// Device selection criteria for automatic device selection.
 public sealed class DeviceSelectionCriteria
+    {
     /// Gets or sets the preferred device types in order of preference.
     public IReadOnlyList<DeviceType>? PreferredTypes { get; init; }
     /// Gets or sets the minimum memory requirement in bytes.
@@ -283,6 +299,7 @@ public sealed class DeviceSelectionCriteria
     public Func<IComputeDevice, double>? CustomScorer { get; init; }
 /// Device selector service for choosing optimal devices based on criteria.
 public interface IDeviceSelector
+    {
     /// Selects the best device based on the given criteria.
     /// <param name="criteria">The selection criteria</param>
     /// <param name="availableDevices">The available devices to choose from</param>

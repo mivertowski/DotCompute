@@ -9,6 +9,7 @@ using DotCompute.Linq.KernelGeneration;
 // Namespace aliases
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 namespace DotCompute.Linq.Compilation.Stages.Interfaces;
+{
 /// <summary>
 /// Interface for backend-specific code generators.
 /// </summary>

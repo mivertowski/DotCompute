@@ -5,6 +5,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Linq.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 namespace DotCompute.Linq.Integration;
+{
 /// <summary>
 /// Extension methods for integrating LINQ with the DotCompute runtime.
 /// This class provides the bridge between LINQ and runtime services without circular dependencies.
@@ -19,6 +20,7 @@ public static class RuntimeIntegrationExtensions
     /// <param name="configureOptions">Optional action to configure LINQ options</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDotComputeLinqWithRuntime(
+        {
         this IServiceCollection services,
         Action<LinqServiceOptions>? configureOptions = null)
     {

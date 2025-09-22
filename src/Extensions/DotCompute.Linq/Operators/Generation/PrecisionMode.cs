@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Operators.Generation;
+{
 /// <summary>
 /// Defines precision modes for floating-point kernel operations.
 /// </summary>

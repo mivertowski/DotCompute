@@ -11,6 +11,7 @@ using DotCompute.Linq.Types;
 using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.CostModel;
+{
 /// <summary>
 /// Comprehensive execution cost model that provides cost-based optimization,
 /// execution time prediction, memory usage estimation, and backend selection guidance.
@@ -40,7 +41,6 @@ public sealed class ExecutionCostModel
         InitializePerformanceModels();
     }
     public async Task<double> EstimateExecutionCost(QueryOperation operation, ExecutionContext context)
-        // Get or create performance model for operation type
         var performanceModel = await GetPerformanceModel(operation, context);
         // Calculate individual cost components
         var computeCost = await EstimateComputeCost(operation, performanceModel, context);
@@ -56,6 +56,7 @@ public sealed class ExecutionCostModel
         var adjustedCost = await ApplyContextAdjustments(totalCost, operation, context);
         return adjustedCost;
     public async Task<TimeSpan> PredictExecutionTime(QueryOperation operation, ExecutionContext context)
+        {
         var cost = await EstimateExecutionCost(operation, context);
         // Convert cost to time based on hardware capabilities
         var executionTime = await ConvertCostToTime(cost, performanceModel, context);
@@ -117,6 +118,7 @@ public sealed class ExecutionCostModel
         // Initialize model parameters based on operation type
         await InitializeModelParameters(model, operation, context);
     private async Task InitializeModelParameters(
+        {
         PerformanceModel model,
         model.ComputeComplexity = CalculateComputeComplexity(operation);
         model.MemoryAccessPattern = DetermineMemoryAccessPattern(operation);
@@ -329,11 +331,6 @@ public sealed class ExecutionCostModel
                 Description = "Enable SIMD vectorization for significant speedup",
                 EstimatedImpact = 0.4,
                 ImplementationEffort = ImplementationEffort.Low
-            });
-        if (operation.ParallelizationConfig?.Degree == 1 && CalculateParallelizabilityFactor(operation) > 0.8)
-                Type = OptimizationType.Parallelization,
-                Description = "Increase parallelism degree for better CPU utilization",
-                EstimatedImpact = 0.6,
                 ImplementationEffort = ImplementationEffort.Medium
         return Task.FromResult(recommendations);
     private Task<List<OptimizationRecommendation>> SuggestMemoryOptimizations(
@@ -353,6 +350,7 @@ public sealed class ExecutionCostModel
                 Type = OptimizationType.KernelFusion,
                 Description = "Fuse multiple operations to reduce memory transfers",
     private int GetElementSize(Type dataType)
+        {
         if (dataType == typeof(byte))
             return 1;
         if (dataType == typeof(short))
@@ -374,14 +372,17 @@ public sealed class ExecutionCostModel
 }
 // Supporting classes and data structures
 public class PerformanceModelRegistry
+    {
     private readonly Dictionary<string, PerformanceModel> _models = [];
     public bool TryGetModel(string key, out PerformanceModel model)
+        {
         return _models.TryGetValue(key, out model!);
     public void RegisterModel(string key, PerformanceModel model)
         _models[key] = model;
     public void RegisterBuiltInModels()
         // Register built-in performance models
 public class PerformanceModel
+    {
     public OperationType OperationType { get; set; }
     public Type DataType { get; set; } = typeof(object);
     public BackendType TargetBackend { get; set; }
@@ -392,6 +393,7 @@ public class PerformanceModel
     public double CacheEfficiency { get; set; }
     public double VectorizationPotential { get; set; }
 public class HardwareProfiler
+    {
     // Performance baselines (operations per second) - duplicated from ExecutionCostModel
     public async Task<HardwareProfile> ProfileHardware(ExecutionContext context)
         return new HardwareProfile
@@ -418,45 +420,54 @@ public class HardwareProfiler
             HasAVX2 = context.HasAvx2,
             HasAVX512 = context.HasAvx512
 public class CostCalibrator
+    {
     public async Task CalibrateModel(PerformanceModel model, ExecutionContext context)
         // Calibrate model parameters based on actual hardware measurements
         await Task.CompletedTask; // Simplified for brevity
 public class BackendRecommendation
+    {
     public BackendType RecommendedBackend { get; set; }
     public double ConfidenceScore { get; set; }
     public double ExpectedSpeedup { get; set; }
     public string Reasoning { get; set; } = string.Empty;
 public class OptimizationRecommendation
+    {
     public OptimizationType Type { get; set; }
     public string Description { get; set; } = string.Empty;
     public double EstimatedImpact { get; set; }
     public ImplementationEffort ImplementationEffort { get; set; }
 public class CostBreakdown
+    {
     public double ComputeCost { get; set; }
     public double MemoryCost { get; set; }
     public double TransferCost { get; set; }
     public double SynchronizationCost { get; set; }
     public double TotalCost { get; set; }
 public class HardwareProfile
+    {
     public double ComputeCapability { get; set; }
     public double MemoryBandwidth { get; set; }
     public CacheHierarchy CacheHierarchy { get; set; } = new();
     public VectorCapabilities VectorCapabilities { get; set; } = new();
 public class CacheHierarchy
+    {
     public long L1CacheSize { get; set; }
     public long L2CacheSize { get; set; }
     public long L3CacheSize { get; set; }
 public class VectorCapabilities
+    {
     public bool HasSSE { get; set; }
     public bool HasAVX { get; set; }
     public bool HasAVX2 { get; set; }
     public bool HasAVX512 { get; set; }
 // Enums
 public enum MemoryAccessPattern
+    {
     Sequential,
     Random,
     Reduction
 public enum OptimizationType
+    {
     Vectorization,
     Parallelization,
     MemoryLayout,
@@ -464,6 +475,7 @@ public enum OptimizationType
     MemoryTransfer,
     KernelFusion
 public enum ImplementationEffort
+    {
     Low,
     Medium,
     High

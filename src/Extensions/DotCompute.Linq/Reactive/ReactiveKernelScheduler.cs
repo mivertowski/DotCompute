@@ -9,6 +9,7 @@ using System.Diagnostics.Metrics;
 using System.Diagnostics;
 
 namespace DotCompute.Linq.Reactive;
+{
 /// <summary>
 /// Adaptive batch sizing metrics
 /// </summary>
@@ -24,6 +25,7 @@ public record BatchMetrics
 /// Custom scheduler optimized for GPU kernel execution with adaptive batching
 /// Handles batch processing, resource management, and performance optimization
 public sealed class ReactiveKernelScheduler : IScheduler, IDisposable
+    {
     private readonly IComputeOrchestrator _orchestrator;
     private readonly ReactiveComputeConfig _config;
     private readonly ILogger? _logger;
@@ -47,6 +49,7 @@ public sealed class ReactiveKernelScheduler : IScheduler, IDisposable
     private long _totalMemoryAllocated;
     private volatile bool _disposed;
     public ReactiveKernelScheduler(
+        {
         IComputeOrchestrator orchestrator,
         ReactiveComputeConfig config,
         ILogger? logger = null)
@@ -135,6 +138,7 @@ public sealed class ReactiveKernelScheduler : IScheduler, IDisposable
         return Disposable.Create(() => { });
     /// Records batch performance metrics for adaptive optimization
     public void RecordBatchPerformance(BatchMetrics metrics)
+        {
         _performanceHistory.Enqueue(metrics);
         _batchCounter.Add(1);
         _currentBatchSizeGauge.Record(metrics.BatchSize);

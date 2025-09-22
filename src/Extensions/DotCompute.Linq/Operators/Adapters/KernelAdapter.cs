@@ -9,6 +9,7 @@ using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Types;
 using DotCompute.Linq.Operators.Parameters;
 namespace DotCompute.Linq.Operators.Adapters;
+{
 /// <summary>
 /// Adapter to bridge between different IKernel interfaces.
 /// </summary>
@@ -25,7 +26,6 @@ public class KernelAdapter : IKernel
             SharedMemorySize = 0,
             RegisterCount = 0
         };
-    }
     public string Name => _coreKernel.Name;
     public KernelProperties Properties { get; }
     public Task CompileAsync(CancellationToken cancellationToken = default)
@@ -35,7 +35,6 @@ public class KernelAdapter : IKernel
         // Core kernel doesn't have execution - this is handled by accelerator
         => throw new NotSupportedException("Execution is handled by the accelerator, not the kernel directly.");
     public IReadOnlyList<KernelParameter> GetParameterInfo()
-        // Return empty for now - would need to adapt core kernel parameters
         => Array.Empty<KernelParameter>();
     public void Dispose()
         // Core kernel doesn't implement IDisposable

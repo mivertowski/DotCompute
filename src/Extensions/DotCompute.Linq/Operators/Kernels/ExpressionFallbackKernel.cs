@@ -13,6 +13,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators.Kernels;
+{
 /// <summary>
 /// Kernel implementation that falls back to CPU execution for unsupported expressions.
 /// </summary>
@@ -80,6 +81,7 @@ internal class ExpressionFallbackKernel : IKernel
     public static IReadOnlyList<KernelParameter> GetParameterInfo() => Array.Empty<KernelParameter>();
     /// Disposes the fallback kernel.
     public void Dispose()
+        {
         if (!_disposed)
             _disposed = true;
         }

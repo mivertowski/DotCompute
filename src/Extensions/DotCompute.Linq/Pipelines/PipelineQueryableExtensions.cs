@@ -13,6 +13,7 @@ using DotCompute.Linq.Pipelines.Extensions;
 using DotCompute.Linq.Pipelines.Core;
 using Microsoft.Extensions.DependencyInjection;
 namespace DotCompute.Linq.Pipelines;
+{
 /// <summary>
 /// Extension methods for IQueryable execution.
 /// </summary>
@@ -48,6 +49,7 @@ public static class QueryableExecutionExtensions
 /// Pipeline execution may utilize multiple threads for optimal performance.
 /// </remarks>
 public static class PipelineQueryableExtensions
+    {
     #region Pipeline Creation and Integration
     /// Converts a LINQ queryable to a kernel pipeline builder for advanced workflow processing.
     /// This method analyzes the LINQ expression tree and creates an equivalent pipeline
@@ -297,6 +299,7 @@ public static class PipelineQueryableExtensions
         CorePipelines.IKernelPipeline pipeline,
         IAsyncEnumerable<T> source) where T : unmanaged
         await foreach (var batch in source.Buffer(1000))
+        {
             var results = await ExecuteAsyncWithInput<T[], T[]>(pipeline, batch.ToArray());
             foreach (var result in results)
             {
@@ -323,6 +326,7 @@ public static class PipelineQueryableExtensions
         return default(TOutput)!;
 /// Helper extension methods for async enumerable operations.
 public static class AsyncEnumerableExtensions
+    {
     /// Buffers items from an async enumerable into batches.
     /// <param name="source">Source async enumerable</param>
     /// <param name="batchSize">Size of each batch</param>
@@ -331,7 +335,9 @@ public static class AsyncEnumerableExtensions
         if (batchSize <= 0)
             throw new ArgumentOutOfRangeException(nameof(batchSize));
         var buffer = new List<T>(batchSize);
+        }
         await foreach (var item in source)
+        {
             buffer.Add(item);
             if (buffer.Count >= batchSize)
                 yield return buffer.ToArray();
@@ -340,6 +346,7 @@ public static class AsyncEnumerableExtensions
             yield return buffer.ToArray();
 /// Extension methods for Core pipeline interface compatibility with LINQ operations.
 public static class CorePipelineExtensions
+    {
     /// Adds adaptive caching to a Core pipeline.
     /// <param name="pipeline">The Core pipeline</param>
     /// <param name="options">Adaptive cache options</param>
@@ -386,6 +393,7 @@ public static class CorePipelineExtensions
             .Build();
 /// Optimization levels for pipeline execution.
 public enum OptimizationLevel
+    {
     /// <summary>No optimization applied.</summary>
     None,
     /// <summary>Conservative optimizations that are safe and reliable.</summary>

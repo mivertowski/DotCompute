@@ -16,6 +16,7 @@ using KernelPipelineBuilder = DotCompute.Abstractions.Pipelines.IKernelPipelineB
 using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
 using LinqKernelPipeline = DotCompute.Linq.Pipelines.Interfaces.IKernelPipeline;
 namespace DotCompute.Linq.Pipelines.Providers;
+{
 /// <summary>
 /// LINQ query provider that converts LINQ expressions to optimized kernel pipelines.
 /// Provides intelligent backend selection and performance optimization.
@@ -33,6 +34,7 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="serviceProvider">Service provider for dependency injection</param>
     /// <param name="logger">Logger for diagnostics</param>
     public PipelineOptimizedProvider(
+        {
         KernelPipelineBuilder chainBuilder,
         IServiceProvider serviceProvider,
         ILogger<PipelineOptimizedProvider> logger)
@@ -45,6 +47,7 @@ public class PipelineOptimizedProvider : IQueryProvider
     }
     /// <inheritdoc />
     public IQueryable CreateQuery(Expression expression)
+    {
         _logger.LogDebug("Creating query from expression: {Expression}", expression);
         var elementType = GetElementType(expression.Type);
         var queryableType = typeof(PipelineOptimizedQueryable<>).MakeGenericType(elementType);
@@ -81,6 +84,7 @@ public class PipelineOptimizedProvider : IQueryProvider
             return result;
         }
         catch (Exception ex)
+        {
             _logger.LogError(ex, "Pipeline execution failed for expression: {Expression}", expression);
             throw new PipelineExecutionException($"Failed to execute pipeline: {ex.Message}", ex);
     /// Creates an optimized pipeline from a LINQ expression with intelligent backend selection.
@@ -129,6 +133,7 @@ public class PipelineOptimizedProvider : IQueryProvider
     /// <param name="stage">The stage information</param>
     /// <returns>Pipeline with the added stage</returns>
     private async Task<IKernelPipeline> AddStageAsync(IKernelPipeline pipeline, PipelineStageInfo stage)
+    {
         var stageOptions = new PipelineStageOptions
             PreferredBackend = SelectBackendForStage(stage),
             EnableProfiling = true,
@@ -174,7 +179,9 @@ public class PipelineOptimizedProvider : IQueryProvider
         var coreResult = await ExecuteAsync<TResult>(pipelineExpression, cancellationToken);
         return coreResult ?? throw new InvalidOperationException("Pipeline execution returned null result");
     #region Helper Methods
+    }
     private static Type GetElementType(Type type)
+    {
         if (type.IsGenericType)
             var genericArgs = type.GetGenericArguments();
             if (genericArgs.Length > 0)
@@ -182,40 +189,58 @@ public class PipelineOptimizedProvider : IQueryProvider
                 return genericArgs[0];
             }
         return typeof(object);
+    }
     private string SelectOptimalBackend(ExpressionAnalysisResult analysisResult)
+    {
         return analysisResult switch
             { IsGpuCompatible: true, ComplexityScore: > 10 } => "CUDA",
             { IsGpuCompatible: true, ParallelizationPotential: > 5 } => "CUDA",
             { IsCpuCompatible: true } => "CPU",
             _ => "CPU"
+    }
     private static bool ShouldEnableCaching(PipelineExecutionPlan executionPlan)
+    {
         return executionPlan.EstimatedComplexity > 15 ||
                executionPlan.EstimatedExecutionTime > TimeSpan.FromSeconds(1);
+    }
     private static long CalculateMemoryLimit(ExpressionAnalysisResult analysisResult)
+    {
         // Set memory limit based on estimated requirements
         return Math.Max(analysisResult.MemoryRequirement * 2, 64 * 1024 * 1024); // At least 64MB
+    }
     private static int CalculateTimeout(PipelineExecutionPlan executionPlan)
+    {
         // Calculate timeout with buffer
         var baseTimeout = (int)executionPlan.EstimatedExecutionTime.TotalSeconds;
         return Math.Max(baseTimeout * 3, 30); // At least 30 seconds
+    }
     private static OptimizationLevel SelectOptimizationLevel(ExpressionAnalysisResult analysisResult)
+    {
         return analysisResult.ComplexityScore switch
             <= 5 => OptimizationLevel.Conservative,
             <= 15 => OptimizationLevel.Balanced,
             <= 30 => OptimizationLevel.Aggressive,
             _ => OptimizationLevel.Adaptive
+    }
     private static string SelectBackendForStage(PipelineStageInfo stage)
+    {
         if (stage.SupportedBackends.Contains("CUDA") && stage.KernelComplexity >= KernelComplexity.Medium)
             return "CUDA";
         return stage.SupportedBackends.FirstOrDefault() ?? "CPU";
+    }
     private static object[] ConvertStageParameters(PipelineStageInfo stage)
+    {
         return stage.Parameters.Values.ToArray();
+    }
     private IPipelineExecutionContext CreateExecutionContext(ExpressionAnalysisResult analysisResult)
+    {
         return new DefaultPipelineExecutionContext
             EnableDetailedMetrics = true,
             TrackMemoryUsage = analysisResult.MemoryRequirement > 100 * 1024 * 1024, // Track if > 100MB
             CollectTimingData = true
+    }
     private void LogExecutionMetrics(CorePipelineMetrics metrics)
+    {
         _logger.LogInformation(
             "Pipeline executed - Duration: {Duration}ms, Memory: {Memory}MB, Stages: {Stages}",
             metrics.TotalExecutionTime.TotalMilliseconds,
@@ -223,6 +248,7 @@ public class PipelineOptimizedProvider : IQueryProvider
             metrics.StageCount);
     /// Converts a pipeline to an executable expression for compatibility.
     private static Expression ConvertPipelineToExpression(DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline pipeline)
+    {
         // Create a constant expression representing the pipeline
         // This is a simplified conversion - in practice, you might want more sophisticated conversion
         return Expression.Constant(pipeline);
@@ -231,16 +257,19 @@ public class PipelineOptimizedProvider : IQueryProvider
 /// Queryable implementation that uses the pipeline-optimized provider.
 /// <typeparam name="T">Element type</typeparam>
 public class PipelineOptimizedQueryable<T> : IQueryable<T>, IAsyncEnumerable<T>
+    {
     /// Initializes a new instance of the PipelineOptimizedQueryable class.
     /// <param name="provider">The query provider</param>
     /// <param name="expression">The query expression</param>
     public PipelineOptimizedQueryable(IQueryProvider provider, Expression expression)
+    {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
         Expression = expression ?? throw new ArgumentNullException(nameof(expression));
     public Type ElementType => typeof(T);
     public Expression Expression { get; }
     public IQueryProvider Provider { get; }
     public IEnumerator<T> GetEnumerator()
+    {
         var result = Provider.Execute<IEnumerable<T>>(Expression);
         return result.GetEnumerator();
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -297,6 +326,7 @@ public static class AsyncEnumerableExtensions
     public static async IAsyncEnumerable<T[]> Buffer<T>(this IAsyncEnumerable<T> source, int count)
     {
         var buffer = new List<T>(count);
+        }
         await foreach (var item in source)
         {
             buffer.Add(item);
@@ -311,4 +341,8 @@ public static class AsyncEnumerableExtensions
             yield return buffer.ToArray();
         }
     }
+}
+}
+}
+}
 }

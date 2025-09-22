@@ -36,6 +36,7 @@ namespace DotCompute.Linq.KernelGeneration
         private readonly GpuMemoryManager _memoryManager;
         private readonly CudaKernelTemplates _templates;
         private bool _disposed;
+        }
         public CudaKernelGenerator(CudaContext context, ILogger<CudaKernelGenerator> logger)
         {
             _compiler = new CudaKernelCompiler(context, logger);
@@ -134,6 +135,7 @@ namespace DotCompute.Linq.KernelGeneration
         }
         /// Generates optimized CUDA source code from a template and analysis result.
         private async Task<string> GenerateSourceCodeAsync(
+        {
             KernelTemplate template,
             ExpressionAnalysisResult analysis,
             KernelGenerationOptions options)
@@ -468,6 +470,7 @@ namespace DotCompute.Linq.KernelGeneration
         public string SourceCode { get; }
         public GpuMemoryManager MemoryManager { get; }
         public GeneratedKernel(
+        {
             ICompiledKernel compiledKernel,
             ExpressionAnalysisResult analysis,
             string sourceCode,
@@ -520,6 +523,7 @@ namespace DotCompute.Linq.KernelGeneration
     public class KernelGenerationException : Exception
     {
         public KernelGenerationException(string message) : base(message) { }
+        {
         public KernelGenerationException(string message, Exception innerException) : base(message, innerException) { }
     }
     /// LINQ expression analyzer visitor.
@@ -539,6 +543,7 @@ namespace DotCompute.Linq.KernelGeneration
         {
             // Analyze method calls for operation characteristics
             switch (node.Method.Name)
+            {
                 case "Sum":
                 case "Average":
                 case "Min":

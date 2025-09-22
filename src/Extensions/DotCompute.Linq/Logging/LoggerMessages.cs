@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Logging;
+{
 /// <summary>
 /// High-performance logger message delegates for DotCompute.Linq.
 /// Uses source-generated LoggerMessage for 2-3x performance improvement over direct ILogger calls.

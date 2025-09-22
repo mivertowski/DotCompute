@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Core.Kernels;
 namespace DotCompute.Refactored.Adapters;
+{
 /// <summary>
 /// Adapter class that provides backward compatibility for legacy GeneratedKernel types.
 /// Converts between different GeneratedKernel implementations found across the codebase.
@@ -43,6 +44,7 @@ public static class GeneratedKernelAdapter
     }
     /// Converts a legacy disposable GeneratedKernel to UnifiedGeneratedKernel.
     public static UnifiedGeneratedKernel FromDisposable(dynamic legacyKernel)
+        {
         var sourceCode = GetPropertyValue<string>(legacyKernel, "SourceCode") ?? "";
         var compiledKernel = GetPropertyValue<ICompiledKernel>(legacyKernel, "CompiledKernel");
         var analysis = GetPropertyValue<IExpressionAnalysisResult>(legacyKernel, "Analysis");
@@ -80,6 +82,7 @@ public static class GeneratedKernelAdapter
         };
     /// Converts UnifiedGeneratedKernel to a legacy disposable structure.
     public static dynamic ToDisposable(UnifiedGeneratedKernel unified)
+        {
         return new LegacyDisposableKernel
             CompiledKernel = unified.CompiledKernel,
             Analysis = unified.Analysis,
@@ -139,23 +142,28 @@ public static class GeneratedKernelAdapter
         return property?.GetValue(obj);
     /// Legacy disposable kernel implementation for backward compatibility.
     private class LegacyDisposableKernel : IDisposable
+    {
         public ICompiledKernel? CompiledKernel { get; set; }
         public IExpressionAnalysisResult? Analysis { get; set; }
         public string SourceCode { get; set; } = string.Empty;
         public IGpuMemoryManager? MemoryManager { get; set; }
         public void Dispose()
+        {
             CompiledKernel?.Dispose();
             MemoryManager?.Dispose();
     /// Legacy sealed kernel implementation for backward compatibility.
     private class LegacySealedKernel
+    {
         public string Name { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public string Language { get; set; } = string.Empty;
 }
 /// Extension methods to provide seamless conversion between generated kernel types.
 public static class GeneratedKernelExtensions
+    {
     /// Converts any generated kernel object to UnifiedGeneratedKernel.
     public static UnifiedGeneratedKernel ToUnified(this object generatedKernel)
+        {
         return generatedKernel switch
             UnifiedGeneratedKernel unified => unified,
             null => throw new ArgumentNullException(nameof(generatedKernel)),

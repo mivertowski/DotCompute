@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Execution;
+{
 /// <summary>
 /// Represents execution configuration for a compute stage.
 /// </summary>
@@ -50,4 +51,3 @@ public class ExecutionConfiguration
     /// The total number of blocks in the grid.
     public long TotalBlocks
         => (long)GridDimensions.X * GridDimensions.Y * GridDimensions.Z;
-}

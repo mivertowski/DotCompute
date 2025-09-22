@@ -14,6 +14,7 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Mocks;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Operators.Compilation;
+{
 /// <summary>
 /// Adapter that bridges the Core kernel compilers with the LINQ interface.
 /// </summary>

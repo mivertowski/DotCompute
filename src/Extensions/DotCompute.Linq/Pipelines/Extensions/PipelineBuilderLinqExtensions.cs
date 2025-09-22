@@ -12,6 +12,7 @@ using DotCompute.Linq.Pipelines.Models;
 using DotCompute.Linq.Pipelines.Streaming;
 using Microsoft.Extensions.DependencyInjection;
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Extension methods for pipeline builders to support LINQ-style operations and streaming.
 /// </summary>
@@ -47,6 +48,7 @@ public static class PipelineBuilderLinqExtensions
     /// <param name="services">Service provider for optimization services</param>
     /// <returns>An optimized pipeline</returns>
     public static async Task<object> OptimizeQueryPlanAsync(this object pipeline, IServiceProvider services)
+    {
         ArgumentNullException.ThrowIfNull(services);
         // Simulate optimization delay
         await Task.Delay(1);
@@ -100,4 +102,6 @@ public static class PipelineBuilderLinqExtensions
 }
 /// Memory usage estimation result.
 public class MemoryUsageEstimate
+    {
     public long PeakMemoryUsage { get; set; }
+}

@@ -10,6 +10,7 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.KernelGeneration.Execution;
 namespace DotCompute.Linq.Operators.Execution;
+{
 /// <summary>
 /// Represents a compiled kernel ready for execution.
 /// </summary>
@@ -35,6 +36,7 @@ public interface ICompiledKernel : IDisposable
     /// <param name="globalSize">The global size for kernel execution.</param>
     /// <returns>A task representing the asynchronous kernel launch.</returns>
     public Task LaunchAsync(
+        {
         (int x, int y, int z) workgroupSize,
         (int x, int y, int z) globalSize,
         KernelExecutionParameters parameters,

@@ -3,6 +3,7 @@ using DotCompute.Linq.Types;
 using DotCompute.Linq.Compilation.Analysis;
 
 namespace DotCompute.Linq.Compilation.Stages.Models;
+{
 /// <summary>
 /// Context information for code generation.
 /// </summary>

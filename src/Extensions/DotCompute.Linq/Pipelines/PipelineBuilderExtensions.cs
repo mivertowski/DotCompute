@@ -4,6 +4,7 @@
 using DotCompute.Abstractions.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 namespace DotCompute.Linq.Pipelines;
+{
 /// <summary>
 /// Extension methods for IKernelPipelineBuilder to support missing functionality needed by LINQ extensions.
 /// These methods provide a bridge between the expected fluent API and the actual implementation.
@@ -43,16 +44,19 @@ public static class PipelineBuilderExtensions
     /// <returns>A pipeline-like object that supports method chaining</returns>
     /// <exception cref="ArgumentNullException">Thrown when builder is null</exception>
     public static PipelineChain Create(this IKernelPipelineBuilder builder)
+    {
         // Return a wrapper that provides the expected fluent API
         return new PipelineChain(builder);
 }
 /// A wrapper class that provides the expected fluent API for pipeline operations.
 /// This bridges the gap between the builder pattern and the execution pattern.
 public sealed class PipelineChain
+    {
     private readonly IKernelPipelineBuilder _builder;
     /// Initializes a new instance of the PipelineChain class.
     /// <param name="builder">The underlying pipeline builder</param>
     public PipelineChain(IKernelPipelineBuilder builder)
+    {
         _builder = builder ?? throw new ArgumentNullException(nameof(builder));
     /// Adds a transformation stage to the pipeline chain.
     /// This method provides compatibility for Then() method calls in LINQ extensions.
@@ -75,6 +79,7 @@ public sealed class PipelineChain
     /// This provides compatibility for Create() method calls on chain objects.
     /// <returns>A new pipeline chain with the same configuration</returns>
     public PipelineChain Create()
+    {
         return new PipelineChain(_builder);
     /// Executes the pipeline chain asynchronously.
     /// <typeparam name="TResult">The result type</typeparam>
@@ -87,12 +92,14 @@ public sealed class PipelineChain
     /// <param name="strategy">The optimization strategy to apply</param>
     /// <returns>An optimized pipeline chain</returns>
     public PipelineChain Optimize(OptimizationStrategy strategy)
+    {
         // For now, return the same chain
         // In a full implementation, this would apply optimizations
     /// Adds caching to the pipeline chain.
     /// <param name="options">Caching options</param>
     /// <returns>The pipeline chain with caching enabled</returns>
     public PipelineChain AdaptiveCache(AdaptiveCacheOptions options)
+    {
         // In a full implementation, this would configure caching
     /// Executes the pipeline with specific input and output types.
     /// <typeparam name="TInput">The input type</typeparam>
@@ -104,6 +111,7 @@ public sealed class PipelineChain
         return await _builder.ExecuteAsync<TOutput>((dynamic)input!);
 /// Optimization strategies for pipeline execution.
 public enum OptimizationStrategy
+    {
     /// <summary>Conservative optimization with safety focus.</summary>
     Conservative,
     /// <summary>Balanced optimization approach.</summary>
@@ -114,6 +122,7 @@ public enum OptimizationStrategy
     Adaptive
 /// Configuration options for adaptive caching.
 public sealed class AdaptiveCacheOptions
+    {
     /// Gets or sets whether automatic cache key generation is enabled.
     public bool AutoKeyGeneration { get; set; } = true;
     /// Gets or sets whether policy adaptation is enabled.
@@ -122,3 +131,8 @@ public sealed class AdaptiveCacheOptions
     public double PerformanceThreshold { get; set; } = 0.1;
     /// Gets or sets the maximum cache size in bytes.
     public long MaxCacheSize { get; set; } = 100 * 1024 * 1024; // 100MB
+}
+}
+}
+}
+}

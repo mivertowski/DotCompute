@@ -8,6 +8,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Execution;
+{
 /// <summary>
 /// Implements caching for compiled query plans and results.
 /// </summary>
@@ -186,6 +187,7 @@ public class QueryCache : IQueryCache
     private class ExpressionKeyBuilder : ExpressionVisitor
     {
         private readonly StringBuilder _keyBuilder = new();
+        }
         public string BuildKey(Expression expression)
         {
             _ = _keyBuilder.Clear();

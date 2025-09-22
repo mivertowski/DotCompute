@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using DotCompute.Linq.Types;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Default implementation of type analyzer for common .NET types.
 /// </summary>
@@ -100,7 +101,6 @@ public class DefaultTypeAnalyzer : ITypeAnalyzer
                 OptimizationImpact.High));
         }
         return hints;
-    }
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
     {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();

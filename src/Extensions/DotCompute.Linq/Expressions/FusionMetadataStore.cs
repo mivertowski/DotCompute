@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 namespace DotCompute.Linq.Expressions;
+{
 /// <summary>
 /// Stores metadata for expression fusion operations.
 /// </summary>
@@ -29,4 +30,3 @@ public sealed class FusionMetadataStore
     public void Clear() => _metadataCache.Clear();
     /// Gets the number of cached metadata entries.
     public int Count => _metadataCache.Count;
-}

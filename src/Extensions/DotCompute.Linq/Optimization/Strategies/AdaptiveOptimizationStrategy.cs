@@ -17,6 +17,7 @@ using Models = DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.Pipelines.Models;
 
 namespace DotCompute.Linq.Optimization.Strategies;
+{
 internal static class AccessPatternConverter
 {
     internal static DotCompute.Linq.Pipelines.Models.AccessPattern ConvertToAccessPattern(MemoryAccessPattern pattern)
@@ -35,6 +36,7 @@ internal static class AccessPatternConverter
 /// and predicts optimal configurations at runtime.
 /// </summary>
 public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
+    {
     private readonly IComputeOrchestrator _orchestrator;
     private readonly ExecutionCostModel _costModel;
     private readonly ConcurrentDictionary<string, ExecutionHistory> _executionHistory;
@@ -47,6 +49,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
     private const double LearningRate = 0.01;
     private static readonly TimeSpan AdaptationInterval = TimeSpan.FromMinutes(5);
     public AdaptiveOptimizationStrategy(
+        {
         IComputeOrchestrator orchestrator,
         ExecutionCostModel costModel)
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
@@ -82,6 +85,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             ParallelismPotential = CalculateParallelismPotential(plan),
             Hardware = context.HardwareInfo
     private double CalculateComputeIntensity(QueryPlan plan)
+        {
         var intensity = 0.0;
             intensity += operation.Type switch
             {
@@ -105,6 +109,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             }
         return (double)parallelizable / total;
     private bool IsParallelizable(QueryOperation operation)
+        {
         return operation.Type switch
             Models.OperationType.Map => true,
             Models.OperationType.Filter => true,
@@ -122,6 +127,7 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             LastUpdated = DateTime.UtcNow
         });
     private Dictionary<string, double> InitializeWeights()
+        {
         return new Dictionary<string, double>
             ["BackendPreference"] = 0.5,
             ["ParallelismFactor"] = 1.0,
@@ -312,37 +318,46 @@ public sealed class AdaptiveOptimizationStrategy : ILinqOptimizationStrategy
             _ => MemoryAccessPattern.Sequential
 // Supporting classes and enums
 public interface ILinqOptimizationStrategy
+    {
     Task<QueryPlan> OptimizeAsync(QueryPlan plan, ExecutionContext context);
 // Pipelines.Models.WorkloadCharacteristics moved to shared location to avoid duplicates
 public class OptimizationModel
+    {
     public string Signature { get; set; } = string.Empty;
     public WorkloadCharacteristics BaseCharacteristics { get; set; } = new();
     public Dictionary<string, double> Predictions { get; set; } = [];
     public Dictionary<string, double> Weights { get; set; } = [];
     public DateTime LastUpdated { get; set; }
 public class ExecutionHistory
+    {
     public List<ExecutionRecord> Executions { get; set; } = [];
 public class ExecutionRecord
+    {
     public DateTime Timestamp { get; set; }
     public OptimizationConfiguration Configuration { get; set; } = new();
     public ExecutionContext? Context { get; set; }
     public PerformanceMetrics? PerformanceMetrics { get; set; }
 public class OptimizationConfiguration
+    {
     public BackendType BackendType { get; set; }
     public int ParallelismDegree { get; set; }
     public MemoryStrategy MemoryStrategy { get; set; }
     public CacheStrategy CacheStrategy { get; set; }
     public bool FusionEnabled { get; set; }
 public class FusionCandidate
+    {
     public List<QueryOperation> Operations { get; set; } = [];
 public enum MemoryStrategy
+    {
     Conservative,
     Buffered,
     Streaming,
     Aggressive
 public enum CacheStrategy
+    {
 // OperationType enum is defined in Models namespace - removed duplicate
 public class PerformanceMetrics
+    {
     public TimeSpan ExecutionTime { get; set; }
     public long MemoryUsage { get; set; }
     public double ThroughputMBps { get; set; }

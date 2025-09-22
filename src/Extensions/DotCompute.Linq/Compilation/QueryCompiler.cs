@@ -18,6 +18,7 @@ using DotCompute.Linq.Compilation.Execution;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Compilation;
+{
 /// <summary>
 /// Compiles LINQ expression trees into executable compute plans.
 /// </summary>
@@ -33,6 +34,7 @@ public class QueryCompiler : IQueryCompiler
     /// <param name="optimizer">The expression optimizer.</param>
     /// <param name="logger">The logger instance.</param>
     public QueryCompiler(
+        {
         IKernelFactory kernelFactory,
         IExpressionOptimizer optimizer,
         ILogger<QueryCompiler> logger)
@@ -112,6 +114,7 @@ public class QueryCompiler : IQueryCompiler
         private Type _outputType = typeof(object);
         private long _estimatedMemoryUsage;
         private int _stageCounter;
+        }
         public ComputePlanVisitor(IKernelFactory kernelFactory, IAccelerator accelerator, ILogger logger)
         {
             _kernelFactory = kernelFactory;
@@ -122,6 +125,7 @@ public class QueryCompiler : IQueryCompiler
         public IReadOnlyDictionary<string, Type> InputParameters => _inputParameters;
         public Type OutputType => _outputType;
         public long EstimatedMemoryUsage => _estimatedMemoryUsage;
+        }
         public new List<IComputeStage> Visit(Expression expression)
         {
             _ = base.Visit(expression);
@@ -133,6 +137,7 @@ public class QueryCompiler : IQueryCompiler
             // Handle LINQ operators
             if (node.Method.DeclaringType == typeof(Queryable) || node.Method.DeclaringType == typeof(Enumerable))
             {
+                }
                 switch (node.Method.Name)
                 {
                     case "Select":
@@ -153,9 +158,10 @@ public class QueryCompiler : IQueryCompiler
                         _logger.LogWarningMessage("Unsupported LINQ method: {node.Method.Name}");
                         break;
                 }
-            }
             return node != null ? base.VisitMethodCall(node) : node!;
+        }
         private Expression VisitSelect(MethodCallExpression node)
+        {
             // Visit the source
             _ = Visit(node.Arguments[0]);
             // Extract the selector lambda
@@ -172,9 +178,6 @@ public class QueryCompiler : IQueryCompiler
                 new KernelParameter("count", typeof(int), ParameterDirection.In)
                 ],
                 Language = DotCompute.Abstractions.Kernels.Types.KernelLanguage.CSharp
-            };
-            var kernel = CreateKernelFromDefinition(kernelDefinition);
-            var stage = new ComputeStage(
                 $"stage_{_stageCounter}",
                 kernel,
                 new[] { "input" },
@@ -189,7 +192,9 @@ public class QueryCompiler : IQueryCompiler
             _estimatedMemoryUsage += EstimateTypeSize(inputType) * 1000; // Assume 1000 elements
             _estimatedMemoryUsage += EstimateTypeSize(outputType) * 1000;
             return node;
+        }
         private Expression VisitWhere(MethodCallExpression node)
+        {
             // Extract the predicate lambda
             var predicateLambda = GetLambdaOperand(node.Arguments[1]);
             var elementType = predicateLambda.Parameters[0].Type;
@@ -202,7 +207,9 @@ public class QueryCompiler : IQueryCompiler
             _outputType = CreateArrayType(elementType);
             _estimatedMemoryUsage += EstimateTypeSize(elementType) * 2000; // Input + output
             _estimatedMemoryUsage += sizeof(bool) * 1000; // Predicate results
+        }
         private Expression VisitAggregate(MethodCallExpression node)
+        {
             var elementType = node.Arguments[0].Type.GetGenericArguments()[0];
             var resultType = node.Type;
             // Create an aggregation kernel
@@ -214,20 +221,26 @@ public class QueryCompiler : IQueryCompiler
             _outputType = resultType;
             _estimatedMemoryUsage += EstimateTypeSize(elementType) * 1000;
             _estimatedMemoryUsage += EstimateTypeSize(resultType);
+        }
         private Expression VisitOrderBy(MethodCallExpression node)
+        {
             var keySelectorLambda = GetLambdaOperand(node.Arguments[1]);
             var elementType = keySelectorLambda.Parameters[0].Type;
             var keyType = keySelectorLambda.Body.Type;
             // Create a sort kernel
                 new KernelParameter("keys", CreateArrayType(keyType), ParameterDirection.InOut),
             _estimatedMemoryUsage += EstimateTypeSize(keyType) * 1000; // Keys
+        }
         private static LambdaExpression GetLambdaOperand(Expression expression)
+        {
             if (expression is UnaryExpression unary && unary.Operand is LambdaExpression lambda)
                 return lambda;
             if (expression is LambdaExpression directLambda)
                 return directLambda;
             throw new InvalidOperationException($"Expected lambda expression, got {expression.GetType()}");
+        }
         private static long EstimateTypeSize(Type type)
+        {
             if (type.IsPrimitive)
                 return type.Name switch
                     "Boolean" => sizeof(bool),
@@ -244,7 +257,6 @@ public class QueryCompiler : IQueryCompiler
                     "Decimal" => sizeof(decimal),
                     "Char" => sizeof(char),
                     _ => IntPtr.Size
-                };
             if (type.IsValueType)
                 // Estimate for structs
                 return type.GetFields().Sum(f => EstimateTypeSize(f.FieldType));
@@ -268,19 +280,25 @@ public class QueryCompiler : IQueryCompiler
             return new Operators.Kernels.DynamicCompiledKernel(generatedKernel, _accelerator, _logger);
     /// Validates expressions for GPU compatibility.
     private class ExpressionValidator : ExpressionVisitor
+    {
         private List<ValidationIssue> _errors = [];
+        }
         public void Visit(Expression expression, List<ValidationIssue> errors)
+        {
             _errors = errors;
             // Check for unsupported method calls
             if (node.Method.DeclaringType?.Namespace?.StartsWith("System.IO") == true)
                 _errors.Add(new ValidationIssue("UNSUPPORTED_IO", "I/O operations are not supported in GPU queries", ValidationSeverity.Error));
             if (node?.Method.DeclaringType?.Namespace?.StartsWith("System.Net") == true)
                 _errors.Add(new ValidationIssue("UNSUPPORTED_NETWORK", "Network operations are not supported in GPU queries", ValidationSeverity.Error));
+        }
         protected override Expression VisitNew(NewExpression node)
+        {
             // Check for unsupported types
             if (!IsGpuCompatibleType(node.Type))
                 _errors.Add(new ValidationIssue("UNSUPPORTED_TYPE", $"Type {node?.Type} is not GPU-compatible", ValidationSeverity.Error));
             return node != null ? base.VisitNew(node) : node!;
+        }
         private static bool IsGpuCompatibleType(Type type)
         {
             // Primitive types are GPU-compatible

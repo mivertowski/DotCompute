@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Abstractions.Types;
 namespace DotCompute.Linq.Operators.Types;
+{
 /// <summary>
 /// Defines a kernel with its source expression and metadata.
 /// </summary>
@@ -27,7 +28,6 @@ public class KernelDefinition
     {
         get => CompiledSource;
         set => CompiledSource = value;
-    }
     /// Gets or sets the kernel language.
     public DotCompute.Abstractions.Kernels.Types.KernelLanguage Language { get; set; } = DotCompute.Abstractions.Kernels.Types.KernelLanguage.CSharpIL;
     /// Gets or sets the kernel parameters.

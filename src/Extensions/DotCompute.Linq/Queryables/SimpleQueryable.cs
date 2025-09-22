@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 using DotCompute.Linq.Providers;
 namespace DotCompute.Linq.Queryables;
+{
 /// <summary>
 /// Simple queryable implementation.
 /// </summary>
@@ -27,6 +28,7 @@ public class SimpleQueryable<T> : IOrderedQueryable<T>
     public Expression Expression => _expression;
     public IQueryProvider Provider => _provider;
     public IEnumerator<T> GetEnumerator()
+        {
         var result = _provider.Execute<IEnumerable<T>>(_expression);
         return result.GetEnumerator();
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();

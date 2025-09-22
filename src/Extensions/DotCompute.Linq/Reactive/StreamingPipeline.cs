@@ -13,6 +13,7 @@ using System.Diagnostics.Metrics;
 using System.Text.Json;
 
 namespace DotCompute.Linq.Reactive;
+{
 /// <summary>
 /// Configuration for streaming pipeline
 /// </summary>
@@ -41,12 +42,14 @@ public record StreamingPipelineConfig
 }
 /// Retry delay strategies
 public enum RetryDelayStrategy
+    {
     Fixed,
     Linear,
     Exponential,
     Random
 /// Pipeline health status
 public enum PipelineHealth
+    {
     Healthy,
     Degraded,
     Critical,
@@ -86,6 +89,7 @@ public record PipelineMetrics
 /// Comprehensive streaming pipeline for real-time GPU-accelerated data processing
 /// Provides end-to-end streaming capabilities with error handling, monitoring, and state management
 public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
+    {
     where TInput : class
     where TOutput : class
     private readonly StreamingPipelineConfig _config;
@@ -116,6 +120,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     private DateTime _startTime = DateTime.UtcNow;
     private bool _disposed;
     public StreamingPipeline(
+        {
         IComputeOrchestrator orchestrator,
         StreamingPipelineConfig? config = null,
         ILogger<StreamingPipeline<TInput, TOutput>>? logger = null)
@@ -188,6 +193,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
     /// <param name="predicate">Filter predicate</param>
     /// <returns>Same pipeline for chaining</returns>
     public StreamingPipeline<TInput, TOutput> AddFilterStage(
+        {
         Func<TOutput, bool> predicate)
         var stage = new PipelineStage<TOutput, TOutput>
             Transform = source => source.Where(predicate),
@@ -241,6 +247,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         });
     /// Builds the complete pipeline from all stages
     private IObservable<TOutput> BuildPipeline()
+        {
         var pipeline = _inputSubject.Cast<object>();
         foreach (var stageObj in _stages)
             // Use reflection to call the Transform method
@@ -263,6 +270,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
             .Retry(_config.MaxRetryAttempts);
     /// Records processing metrics
     private void RecordProcessingMetrics()
+        {
         Interlocked.Increment(ref _totalProcessed);
         _elementsProcessedCounter.Add(1, new KeyValuePair<string, object?>("pipeline", _config.Name));
         var currentThroughput = _totalProcessed / (DateTime.UtcNow - _startTime).TotalSeconds;
@@ -325,14 +333,12 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
                 TotalErrors = _totalErrors,
                 State = _state.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
                 Health = Health
-            };
             var json = JsonSerializer.Serialize(checkpoint);
             // In a real implementation, you would save this to persistent storage
             _logger?.LogDebug("Checkpoint created for pipeline '{Name}'", _config.Name);
             _logger?.LogError(ex, "Error creating checkpoint for pipeline '{Name}'", _config.Name);
     /// Gets current CPU utilization (simplified implementation)
     private double GetCpuUtilization()
-        // In a real implementation, you would use performance counters
         return Environment.ProcessorCount * 0.1; // Placeholder
     /// Gets current GPU utilization (simplified implementation)
     private double GetGpuUtilization()
@@ -340,6 +346,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
         return 0.0; // Placeholder
     /// <inheritdoc />
     public void Dispose()
+        {
         if (_disposed)
         _disposed = true;
         _cancellationTokenSource.Cancel();
@@ -354,6 +361,7 @@ public sealed class StreamingPipeline<TInput, TOutput> : IDisposable
             _config.Name, _totalProcessed, _totalErrors);
 /// Circuit breaker for pipeline fault tolerance
 internal class CircuitBreaker
+    {
     private readonly int _maxFailures;
     private readonly TimeSpan _timeout;
     private int _failureCount;
@@ -379,6 +387,7 @@ internal class CircuitBreaker
         _isOpen = false;
 /// Builder for creating streaming pipelines
 public static class StreamingPipelineBuilder
+    {
     /// Creates a new streaming pipeline
     /// <typeparam name="TInput">Input type</typeparam>
     /// <param name="orchestrator">Compute orchestrator</param>

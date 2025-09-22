@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using DotCompute.Linq.Pipelines.Analysis;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes data flow patterns in expression trees for optimization opportunities.

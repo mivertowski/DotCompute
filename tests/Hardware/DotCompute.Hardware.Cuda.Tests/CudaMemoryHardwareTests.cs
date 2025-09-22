@@ -8,6 +8,7 @@ using DotCompute.Core.Extensions;
 using DotCompute.Abstractions.Kernels;
 using static DotCompute.Tests.Common.TestCategories;
 using DotCompute.Tests.Common.Specialized;
+using DotCompute.Tests.Common.Utilities;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;

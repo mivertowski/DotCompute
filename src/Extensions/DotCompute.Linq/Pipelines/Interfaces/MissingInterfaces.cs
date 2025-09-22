@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Optimization.Enums;
 namespace DotCompute.Linq.Pipelines.Models;
+{
 #region Core Interface Bridge Types
 /// <summary>
 /// Interface for pipeline memory manager (bridges to Core interface).
@@ -20,6 +21,7 @@ public interface IPipelineMemoryManager : IDisposable
 }
 /// Interface for compute device (bridges to Core interface).
 public interface IComputeDevice : IDisposable
+    {
     /// <summary>Device name.</summary>
     string Name { get; }
     /// <summary>Device type.</summary>
@@ -30,6 +32,7 @@ public interface IComputeDevice : IDisposable
     Task InitializeAsync();
 /// Interface for memory buffer (bridges to Core interface).
 public interface IMemoryBuffer : IDisposable
+    {
     /// <summary>Buffer size in bytes.</summary>
     long Size { get; }
     /// <summary>Copy buffer to another buffer.</summary>
@@ -38,6 +41,7 @@ public interface IMemoryBuffer : IDisposable
 /// Temporary interface definition for IAdvancedPipelineOptimizer.
 /// This will be moved to proper location once infrastructure is ready.
 public interface IAdvancedPipelineOptimizer
+    {
     /// <summary>
     /// Optimizes a pipeline using advanced query plan optimization.
     /// </summary>
@@ -52,6 +56,7 @@ public interface IAdvancedPipelineOptimizer
     Task<object> OptimizeMemoryAccessAsync(object pipeline);
 /// Represents pipeline diagnostic information.
 public interface IPipelineDiagnostics
+    {
     /// <summary>Gets the number of stages in the pipeline.</summary>
     int StageCount { get; }
     /// <summary>Gets the total execution time in milliseconds.</summary>
@@ -68,6 +73,7 @@ public interface IPipelineDiagnostics
     long PeakMemoryUsage { get; }
 /// Stage performance metrics interface.
 public interface IStagePerformanceMetrics
+    {
     /// <summary>Gets the stage name.</summary>
     string StageName { get; }
     /// <summary>Gets the execution time for this stage.</summary>
@@ -80,6 +86,7 @@ public interface IStagePerformanceMetrics
     IReadOnlyDictionary<string, object> PerformanceData { get; }
 /// Memory usage statistics interface.
 public interface IMemoryUsageStatistics
+    {
     /// <summary>Gets the average memory usage in bytes.</summary>
     long AverageMemoryUsage { get; }
     /// <summary>Gets the number of allocations.</summary>
@@ -90,6 +97,7 @@ public interface IMemoryUsageStatistics
     IReadOnlyDictionary<string, long> MemoryByStage { get; }
 /// Pipeline validation result.
 public class PipelineValidationResult
+    {
     /// <summary>Gets whether the pipeline is valid.</summary>
     public bool IsValid { get; set; }
     /// <summary>Gets validation errors if any.</summary>
@@ -99,6 +107,7 @@ public class PipelineValidationResult
 /// Pipeline error types for comprehensive error handling.
 [Flags]
 public enum PipelineErrorType
+    {
     /// <summary>No errors.</summary>
     None = 0,
     /// <summary>Data validation errors.</summary>
@@ -131,6 +140,7 @@ public enum PipelineErrorType
     All = int.MaxValue
 /// Pipeline error recovery result.
 public class PipelineErrorRecoveryResult<T>
+    {
     /// Gets whether the recovery was successful.
     public bool IsSuccess { get; set; }
     /// Gets the recovered value if successful.
@@ -144,6 +154,7 @@ public class PipelineErrorRecoveryResult<T>
     /// Gets any warnings from the recovery process.
 /// Simple implementation of pipeline diagnostics for testing.
 public class SimplePipelineDiagnostics : IPipelineDiagnostics
+    {
     public int StageCount { get; set; }
     public double TotalExecutionTimeMs { get; set; }
     public double CacheHitRate { get; set; }
@@ -153,6 +164,7 @@ public class SimplePipelineDiagnostics : IPipelineDiagnostics
     public long PeakMemoryUsage { get; set; }
 /// Simple implementation of stage performance metrics.
 public class SimpleStagePerformanceMetrics : IStagePerformanceMetrics
+    {
     public string StageName { get; set; } = string.Empty;
     public TimeSpan ExecutionTime { get; set; }
     public long MemoryUsage { get; set; }
@@ -160,12 +172,14 @@ public class SimpleStagePerformanceMetrics : IStagePerformanceMetrics
     public IReadOnlyDictionary<string, object> PerformanceData { get; set; } = new Dictionary<string, object>();
 /// Simple implementation of memory usage statistics.
 public class SimpleMemoryUsageStatistics : IMemoryUsageStatistics
+    {
     public long AverageMemoryUsage { get; set; }
     public int AllocationCount { get; set; }
     public long TotalAllocatedMemory { get; set; }
     public IReadOnlyDictionary<string, long> MemoryByStage { get; set; } = new Dictionary<string, long>();
 /// Resource utilization metrics interface.
 public interface IResourceUtilizationMetrics
+    {
     /// <summary>Gets CPU utilization as a percentage.</summary>
     double CpuUtilization { get; }
     /// <summary>Gets memory utilization as a percentage.</summary>
@@ -176,6 +190,7 @@ public interface IResourceUtilizationMetrics
     /// <summary>Gets average memory usage in bytes.</summary>
 /// Cache utilization metrics interface.
 public interface ICacheUtilizationMetrics
+    {
     /// <summary>Gets cache hit rate as a percentage.</summary>
     double HitRate { get; }
     /// <summary>Gets cache miss rate as a percentage.</summary>
@@ -188,6 +203,7 @@ public interface ICacheUtilizationMetrics
     int EvictionCount { get; }
 /// Performance insights interface.
 public interface IPerformanceInsights
+    {
     /// <summary>Gets optimization recommendations.</summary>
     IReadOnlyList<string> Recommendations { get; }
     /// <summary>Gets performance improvement opportunities.</summary>
@@ -196,6 +212,7 @@ public interface IPerformanceInsights
     double PerformanceRating { get; }
 /// Stage execution metrics interface.
 public interface IStageExecutionMetrics
+    {
     /// <summary>Gets execution start time.</summary>
     DateTimeOffset StartTime { get; }
     /// <summary>Gets execution end time.</summary>
@@ -209,6 +226,7 @@ public interface IStageExecutionMetrics
 #region Missing Pipeline Interfaces
 /// Interface for kernel execution context.
 public interface IKernelExecutionContext
+    {
     /// <summary>Preferred backend for execution.</summary>
     string PreferredBackend { get; set; }
     /// <summary>Timeout in milliseconds.</summary>
@@ -221,12 +239,14 @@ public interface IKernelExecutionContext
     OptimizationLevel OptimizationLevel { get; set; }
 /// Interface for pipeline configuration.
 public interface IPipelineConfiguration
+    {
     /// <summary>Whether to enable caching.</summary>
     bool EnableCaching { get; set; }
     /// <summary>Timeout in seconds.</summary>
     int TimeoutSeconds { get; set; }
 /// Interface for pipeline execution context.
 public interface IPipelineExecutionContext
+    {
     /// <summary>Whether to enable detailed metrics.</summary>
     bool EnableDetailedMetrics { get; set; }
     /// <summary>Whether to track memory usage.</summary>
@@ -235,6 +255,7 @@ public interface IPipelineExecutionContext
     bool CollectTimingData { get; set; }
 /// Interface for pipeline execution result.
 public interface IPipelineExecutionResult<T>
+    {
     /// <summary>The execution result.</summary>
     T Result { get; }
     /// <summary>Pipeline metrics.</summary>
@@ -243,12 +264,14 @@ public interface IPipelineExecutionResult<T>
     /// <summary>Any exception that occurred.</summary>
 /// Interface for adaptive backend selector.
 public interface IAdaptiveBackendSelector
+    {
     /// Selects the optimal backend for given workload characteristics.
     /// <param name="characteristics">Workload characteristics</param>
     /// <returns>Selected backend name</returns>
     Task<string> SelectBackendAsync(WorkloadCharacteristics characteristics);
 /// Pipeline stage options for execution configuration.
 public class PipelineStageOptions
+    {
     /// <summary>Preferred backend for this stage.</summary>
     public string? PreferredBackend { get; set; }
     public bool EnableProfiling { get; set; }
@@ -261,6 +284,7 @@ public class PipelineStageOptions
     public int TimeoutMs { get; set; } = 30000;
 /// Workload characteristics for backend selection.
 public class WorkloadCharacteristics
+    {
     /// <summary>Compute intensity (0.0 to 1.0).</summary>
     public double ComputeIntensity { get; set; }
     /// <summary>Memory intensity (0.0 to 1.0).</summary>
@@ -291,6 +315,7 @@ public class WorkloadCharacteristics
     public object? Hardware { get; set; }
 /// Backend recommendation result.
 public class BackendRecommendation
+    {
     /// <summary>Recommended backend name.</summary>
     public string RecommendedBackend { get; set; } = "CPU";
     /// <summary>Confidence in recommendation (0.0 to 1.0).</summary>
@@ -301,6 +326,7 @@ public class BackendRecommendation
     public Dictionary<string, BackendEstimate> BackendEstimates { get; set; } = [];
 /// Backend performance estimate.
 public class BackendEstimate
+    {
     /// <summary>Estimated execution time.</summary>
     public TimeSpan EstimatedExecutionTime { get; set; }
     /// <summary>Estimated memory usage.</summary>
@@ -310,12 +336,14 @@ public class BackendEstimate
 // OptimizationLevel is now imported from DotCompute.Abstractions.Types
 /// Pipeline metrics interface.
 public interface IPipelineMetrics
+    {
     /// <summary>Total execution time.</summary>
     TimeSpan TotalExecutionTime { get; }
     /// <summary>Peak memory usage in bytes.</summary>
     /// <summary>Number of stages.</summary>
 /// Cache policy for pipeline caching.
 public enum CachePolicy
+    {
     /// <summary>Default cache policy.</summary>
     Default,
     /// <summary>No caching.</summary>
@@ -328,6 +356,7 @@ public enum CachePolicy
     Distributed
 /// Execution priority for pipeline tasks.
 public enum ExecutionPriority
+    {
     /// <summary>Low priority.</summary>
     Low,
     /// <summary>Normal priority.</summary>
@@ -338,22 +367,26 @@ public enum ExecutionPriority
     Critical
 /// Interface for pipeline resource manager.
 public interface IPipelineResourceManager
+    {
     /// <summary>Gets available resources.</summary>
     Task<object> GetAvailableResourcesAsync();
     /// <summary>Releases resources.</summary>
     Task ReleaseResourcesAsync();
 /// Interface for pipeline cache manager.
 public interface IPipelineCacheManager
+    {
     /// <summary>Clears the cache.</summary>
     Task ClearCacheAsync();
     /// <summary>Gets cache statistics.</summary>
     Task<object> GetCacheStatsAsync();
 /// Interface for telemetry collector.
 public interface ITelemetryCollector
+    {
     /// <summary>Collects telemetry data.</summary>
     Task CollectAsync(string eventName, object data);
 /// Interface for pipeline execution graph.
 public interface IPipelineExecutionGraph
+    {
     /// <summary>Gets the graph nodes.</summary>
     IEnumerable<object> Nodes { get; }
     /// <summary>Gets the graph edges.</summary>
@@ -363,6 +396,7 @@ public interface IPipelineExecutionGraph
 /// Extension methods to bridge LINQ IKernelPipelineBuilder to Core IKernelPipelineBuilder.
 /// Provides backward compatibility while unifying on the Core interface.
 public static class KernelPipelineBuilderExtensions
+    {
     /// Creates a new empty pipeline for manual construction.
     /// Bridges LINQ interface to Core interface.
     /// <param name="builder">The pipeline builder</param>
@@ -377,6 +411,7 @@ public static class KernelPipelineBuilderExtensions
     /// <param name="expression">The expression to convert to a pipeline</param>
     /// <returns>A Core pipeline based on the expression</returns>
     public static object FromExpression(this DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipelineBuilder builder, System.Linq.Expressions.Expression expression)
+    {
         ArgumentNullException.ThrowIfNull(expression);
         // Create Core pipeline from expression
         return builder
@@ -419,6 +454,7 @@ public static class KernelPipelineBuilderExtensions
             })
 /// Extension methods for IAsyncEnumerable to provide missing LINQ operations.
 public static class AsyncEnumerableExtensions
+    {
     /// Projects each element of an async sequence into a new form.
     /// <typeparam name="TSource">Source element type</typeparam>
     /// <typeparam name="TResult">Result element type</typeparam>
@@ -428,6 +464,7 @@ public static class AsyncEnumerableExtensions
         this IAsyncEnumerable<TSource> source,
         Func<TSource, TResult> selector)
         ArgumentNullException.ThrowIfNull(selector);
+        }
         await foreach (var item in source)
         {
             yield return selector(item);
@@ -464,6 +501,7 @@ public static class AsyncEnumerableExtensions
 /// Represents an aggregate function for pipeline operations.
 /// <typeparam name="T">The type being aggregated</typeparam>
 public class AggregateFunction<T>
+    {
     /// <summary>Gets or sets the aggregation function.</summary>
     public Func<IEnumerable<T>, T>? Function { get; set; }
     /// <summary>Gets or sets the function name for kernel generation.</summary>

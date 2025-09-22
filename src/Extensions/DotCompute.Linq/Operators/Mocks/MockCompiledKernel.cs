@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 using DotCompute.Linq.KernelGeneration.Execution;
 namespace DotCompute.Linq.Operators.Mocks;
+{
 /// <summary>
 /// Mock implementation of a compiled kernel for testing purposes.
 /// </summary>
@@ -71,6 +72,7 @@ internal class MockCompiledKernel : ICompiledKernel
     /// <param name="parameters">The kernel execution parameters.</param>
     /// <returns>A task representing the asynchronous kernel launch.</returns>
     public async Task LaunchAsync(
+        {
         (int x, int y, int z) workgroupSize,
         (int x, int y, int z) globalSize,
         KernelExecutionParameters parameters,

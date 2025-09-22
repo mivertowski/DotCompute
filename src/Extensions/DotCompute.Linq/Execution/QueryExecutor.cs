@@ -12,6 +12,7 @@ using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Execution;
+{
 /// <summary>
 /// Executes compiled compute plans on accelerators.
 /// </summary>
@@ -26,6 +27,7 @@ public class QueryExecutor : IQueryExecutor
     /// <param name="memoryManagerFactory">The memory manager factory.</param>
     /// <param name="logger">The logger instance.</param>
     public QueryExecutor(
+        {
         IMemoryManagerFactory memoryManagerFactory,
         ILogger<QueryExecutor> logger)
     {
@@ -398,4 +400,3 @@ public class DefaultMemoryManagerFactory : IMemoryManagerFactory
 
     /// <inheritdoc/>
     public IUnifiedMemoryManager CreateMemoryManager(IAccelerator accelerator) => accelerator.Memory;
-}

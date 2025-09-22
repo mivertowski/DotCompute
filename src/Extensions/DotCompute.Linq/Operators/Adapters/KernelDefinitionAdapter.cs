@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Types;
 using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using LinqKernelDefinition = DotCompute.Linq.Operators.Types.KernelDefinition;
 namespace DotCompute.Linq.Operators.Adapters;
+{
 /// <summary>
 /// Adapter for converting between LINQ and Core kernel definitions.
 /// </summary>
@@ -36,6 +37,7 @@ public static class KernelDefinitionAdapter
     /// <param name="coreDefinition">The core kernel definition to convert.</param>
     /// <returns>The converted LINQ kernel definition.</returns>
     public static LinqKernelDefinition ConvertToLinqDefinition(CoreKernelDefinition coreDefinition)
+        {
         var linqDefinition = new LinqKernelDefinition
             Name = coreDefinition.Name,
             CompiledSource = coreDefinition.Source

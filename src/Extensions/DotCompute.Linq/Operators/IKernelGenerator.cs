@@ -11,6 +11,7 @@ using DotCompute.Linq.Operators.Types;
 using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
 using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Interface for generating kernels from expressions and operation types.
 /// </summary>
@@ -35,8 +36,8 @@ public interface IKernelGenerator
 }
 /// CUDA kernel generator implementation.
 internal class CUDAKernelGenerator : IKernelGenerator
+    {
     public bool CanCompile(Expression expression)
-        // Basic check for supported expressions
         => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
     public OperatorsGeneratedKernel GenerateKernel(Expression expression, KernelGenerationContext context)
     {
@@ -54,6 +55,7 @@ internal class CUDAKernelGenerator : IKernelGenerator
         };
     }
     public OperatorsGeneratedKernel GenerateOperationKernel(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+        {
             Name = $"cuda_{operationType.ToLowerInvariant()}_kernel_{Guid.NewGuid():N}",
             Source = GenerateCudaOperationSource(operationType, inputTypes, outputType, context),
             Parameters = GenerateParameters(inputTypes, outputType),
@@ -119,6 +121,7 @@ internal class CUDAKernelGenerator : IKernelGenerator
         return [.. parameters];
 /// OpenCL kernel generator implementation.
 internal class OpenCLKernelGenerator : IKernelGenerator
+    {
     public bool CanCompile(Expression expression) => expression.NodeType is ExpressionType.Call or ExpressionType.Lambda;
             Name = $"opencl_kernel_{Guid.NewGuid():N}",
             Source = GenerateOpenCLSource(expression, context),
@@ -130,6 +133,7 @@ internal class OpenCLKernelGenerator : IKernelGenerator
                int idx = get_global_id(0);
                    // Placeholder OpenCL kernel implementation
     private static string GenerateOpenCLOperationSource(string operationType, Type[] inputTypes, Type outputType, KernelGenerationContext context)
+        {
                  __kernel void map_kernel(__global float* input, __global float* output, int size) {
                      int idx = get_global_id(0);
                     __kernel void filter_kernel(__global float* input, __global int* output, int size) {

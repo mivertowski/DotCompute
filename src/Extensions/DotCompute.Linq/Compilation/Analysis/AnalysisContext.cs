@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Context for expression analysis operations.
 /// </summary>

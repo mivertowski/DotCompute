@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using DotCompute.Abstractions;
 namespace DotCompute.Linq.Operators.Generation;
+{
 /// <summary>
 /// Context for kernel generation containing optimization hints and metadata.
 /// </summary>

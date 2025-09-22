@@ -318,7 +318,7 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     /// <summary>
     /// Verifies that two float arrays match within a tolerance.
     /// </summary>
-    protected void VerifyFloatArraysMatch(float[] expected, float[] actual, float tolerance = 0.001f, string? message = null)
+    protected static void VerifyFloatArraysMatch(float[] expected, float[] actual, float tolerance = 0.001f, string? message = null)
     {
         Assert.Equal(expected.Length, actual.Length);
         for (int i = 0; i < expected.Length; i++)
@@ -331,7 +331,7 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     /// <summary>
     /// Gets the test timeout for CUDA tests.
     /// </summary>
-    protected TimeSpan TestTimeout => TimeSpan.FromMinutes(2);
+    protected static TimeSpan TestTimeout => TimeSpan.FromMinutes(2);
 
     #endregion
 

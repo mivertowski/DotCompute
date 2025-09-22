@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators.Interfaces;
+{
 /// <summary>
 /// Represents a compiled kernel ready for execution.
 /// </summary>

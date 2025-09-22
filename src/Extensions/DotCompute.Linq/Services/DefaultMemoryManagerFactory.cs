@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Services;
+{
 /// <summary>
 /// Factory for creating unified memory managers for LINQ operations.
 /// </summary>
@@ -27,6 +28,7 @@ public class DefaultMemoryManagerFactory
     /// <param name="accelerator">The accelerator</param>
     /// <returns>A unified memory manager</returns>
     public IUnifiedMemoryManager GetOrCreateMemoryManager(IAccelerator accelerator)
+        {
         ArgumentNullException.ThrowIfNull(accelerator);
         lock (_lock)
         {

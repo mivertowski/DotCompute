@@ -26,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 namespace DotCompute.Linq.Extensions;
+{
 /// <summary>
 /// Extension methods for registering DotCompute LINQ services in dependency injection.
 /// </summary>
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configureOptions">Optional action to configure LINQ options</param>
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDotComputeLinq(
+        {
         this IServiceCollection services,
         Action<LinqServiceOptions>? configureOptions = null)
     {
@@ -157,6 +159,7 @@ public static class ServiceCollectionExtensions
     /// <item>Performance monitoring and metrics</item>
     /// <item>Automatic kernel fusion and optimization</item>
     public static IServiceCollection AddLinqProvider(
+        {
         Action<LinqProviderOptions>? configureProvider = null)
         // Configure provider options
         if (configureProvider != null)
@@ -242,6 +245,7 @@ public static class ServiceCollectionExtensions
 }
 /// Configuration options for LINQ services.
 public class LinqServiceOptions
+    {
     /// Gets or sets a value indicating whether to enable query caching.
     public bool EnableCaching { get; set; } = true;
     /// Gets or sets the maximum number of cache entries.
@@ -270,18 +274,21 @@ public class LinqServiceOptions
     public DotCompute.Abstractions.Types.OptimizationLevel OptimizationLevel { get; set; } = DotCompute.Abstractions.Types.OptimizationLevel.Balanced;
 /// Factory interface for creating compute query providers.
 public interface IComputeQueryProviderFactory
+    {
     /// Creates a compute query provider for the specified accelerator.
     /// <param name="accelerator">The accelerator to use</param>
     /// <returns>A compute query provider</returns>
     ComputeQueryProvider CreateProvider(IAccelerator accelerator);
 /// Default implementation of compute query provider factory.
 public class ComputeQueryProviderFactory : IComputeQueryProviderFactory
+    {
     private readonly IQueryCompiler _compiler;
     private readonly IQueryExecutor _executor;
     private readonly IQueryCache _cache;
     private readonly ILogger<ComputeQueryProvider> _logger;
     /// Initializes a new instance of the <see cref="ComputeQueryProviderFactory"/> class.
     public ComputeQueryProviderFactory(
+        {
         IQueryCompiler compiler,
         IQueryExecutor executor,
         IQueryCache cache,
@@ -295,6 +302,7 @@ public class ComputeQueryProviderFactory : IComputeQueryProviderFactory
         return new ComputeQueryProvider(accelerator, _compiler, _executor, _cache, _logger);
 /// Implementation of IComputeLinqProvider that integrates with the DotCompute runtime.
 public class ComputeLinqProviderImpl : DotCompute.Abstractions.Interfaces.Linq.IComputeLinqProvider
+    {
     private readonly IComputeOrchestrator _orchestrator;
     private readonly IComputeQueryProviderFactory _providerFactory;
     private readonly IExpressionOptimizer _optimizer;
@@ -353,7 +361,6 @@ public class ComputeLinqProviderImpl : DotCompute.Abstractions.Interfaces.Linq.I
                 _logger.LogWarning(ex, "Failed to pre-compile expression: {ExpressionType}", expr.NodeType);
         await Task.WhenAll(tasks);
     private ComputeQueryProvider GetOrCreateProvider(IAccelerator? accelerator)
-        // If no specific accelerator requested, use the first available one
         if (accelerator == null)
             // This would need access to accelerator registry
             // For now, throw exception to force explicit accelerator selection
@@ -373,6 +380,7 @@ public class ComputeLinqProviderImpl : DotCompute.Abstractions.Interfaces.Linq.I
             _ => Interfaces.SuggestionSeverity.Info
         };
     private static double MapImpactToDouble(DotCompute.Linq.Expressions.PerformanceImpact impact)
+        {
             DotCompute.Linq.Expressions.PerformanceImpact.Low => 0.1,
             DotCompute.Linq.Expressions.PerformanceImpact.Medium => 0.3,
             DotCompute.Linq.Expressions.PerformanceImpact.High => 0.7,
@@ -380,11 +388,13 @@ public class ComputeLinqProviderImpl : DotCompute.Abstractions.Interfaces.Linq.I
             _ => 0.0
 // Extension method to get accelerator from ComputeQueryProvider
 internal static class ComputeQueryProviderExtensions
+    {
     public static IAccelerator GetAccelerator(this ComputeQueryProvider provider)
         return provider.Accelerator;
 #region Configuration Options
 /// Configuration options for pipeline services.
 public class PipelineServiceOptions
+    {
     /// Gets or sets whether to enable advanced pipeline optimization.
     public bool EnableAdvancedOptimization { get; set; } = true;
     /// Gets or sets whether to enable telemetry collection.
@@ -408,6 +418,7 @@ public class PipelineServiceOptions
         MaxMemoryUsageMB = source.MaxMemoryUsageMB;
 /// Configuration options for LINQ provider services.
 public class LinqProviderOptions
+    {
     /// Gets or sets whether to enable expression optimization.
     public bool EnableExpressionOptimization { get; set; } = true;
     /// Gets or sets whether to enable intelligent backend selection.
@@ -429,6 +440,7 @@ public class LinqProviderOptions
         GpuComplexityThreshold = source.GpuComplexityThreshold;
 /// Configuration options for pipeline optimization services.
 public class PipelineOptimizationOptions
+    {
     /// Gets or sets the optimization strategy to use.
     public OptimizationStrategy Strategy { get; set; } = OptimizationStrategy.Balanced;
     /// Gets or sets whether to enable machine learning-based optimization.
@@ -453,6 +465,7 @@ public class PipelineOptimizationOptions
         ExecutionPriority = source.ExecutionPriority;
 /// Configuration options for pipeline telemetry services.
 public class PipelineTelemetryOptions
+    {
     /// Gets or sets whether to enable detailed metrics collection.
     public bool EnableDetailedMetrics { get; set; } = false;
     /// Gets or sets whether to enable execution trace collection.
@@ -480,6 +493,7 @@ public class PipelineTelemetryOptions
         MaxBufferSize = source.MaxBufferSize;
 /// Complete configuration options for all pipeline services.
 public class CompletePipelineOptions
+    {
     /// Gets the pipeline service options.
     public PipelineServiceOptions Pipelines { get; } = new();
     /// Gets the LINQ provider options.
@@ -490,6 +504,7 @@ public class CompletePipelineOptions
     public PipelineTelemetryOptions Telemetry { get; } = new();
 /// Optimization strategy enumeration for pipeline execution.
 public enum OptimizationStrategy
+    {
     /// Conservative optimization with minimal risk.
     Conservative,
     /// Balanced optimization between performance and safety.
@@ -502,6 +517,7 @@ public enum OptimizationStrategy
 #region Default Implementations
 /// Default implementation of adaptive backend selector.
 internal class AdaptiveBackendSelector : IAdaptiveBackendSelector
+    {
     private readonly ILogger<AdaptiveBackendSelector> _logger;
     public AdaptiveBackendSelector(ILogger<AdaptiveBackendSelector> logger)
     public Task<string> SelectBackendAsync(WorkloadCharacteristics characteristics)
@@ -515,6 +531,7 @@ internal class AdaptiveBackendSelector : IAdaptiveBackendSelector
         return Task.FromResult("CPU");
 /// Default implementation of pipeline resource manager.
 internal class DefaultPipelineResourceManager : IPipelineResourceManager
+    {
     private readonly ILogger<DefaultPipelineResourceManager> _logger;
     public DefaultPipelineResourceManager(ILogger<DefaultPipelineResourceManager> logger)
     public async Task<object> GetAvailableResourcesAsync()
@@ -525,6 +542,7 @@ internal class DefaultPipelineResourceManager : IPipelineResourceManager
         await Task.CompletedTask;
 /// Default implementation of pipeline cache manager.
 internal class DefaultPipelineCacheManager : IPipelineCacheManager
+    {
     private readonly ILogger<DefaultPipelineCacheManager> _logger;
     public DefaultPipelineCacheManager(ILogger<DefaultPipelineCacheManager> logger)
     public async Task ClearCacheAsync()
@@ -534,12 +552,14 @@ internal class DefaultPipelineCacheManager : IPipelineCacheManager
         return await Task.FromResult(new { HitRate = 0.75, Size = 100 });
 /// Default implementation of telemetry collector.
 internal class DefaultTelemetryCollector : ITelemetryCollector
+    {
     private readonly ILogger<DefaultTelemetryCollector> _logger;
     public DefaultTelemetryCollector(ILogger<DefaultTelemetryCollector> logger)
     public async Task CollectAsync(string eventName, object data)
         _logger.LogInformation("Collected telemetry event: {EventName}", eventName);
 /// Default implementation of kernel pipeline builder when orchestrator is not available.
 internal class DefaultKernelPipelineBuilder : DotCompute.Abstractions.Pipelines.IKernelPipelineBuilder
+    {
     DotCompute.Abstractions.Pipelines.IKernelPipelineBuilder DotCompute.Abstractions.Pipelines.IKernelPipelineBuilder.AddStage(string kernelName, params object[] parameters)
         // Minimal implementation - in production this would add stages to a collection
         return this;
@@ -559,6 +579,7 @@ internal class DefaultKernelPipelineBuilder : DotCompute.Abstractions.Pipelines.
     public IKernelPipeline Create(IPipelineConfiguration configuration)
 /// Default kernel pipeline implementation.
 internal class DefaultKernelPipeline : IKernelPipeline
+    {
     public string Id { get; } = Guid.NewGuid().ToString();
     public string Name { get; } = "DefaultPipeline";
     public IReadOnlyList<IPipelineStage> Stages { get; } = new List<IPipelineStage>();
@@ -585,15 +606,16 @@ internal class DefaultKernelPipeline : IKernelPipeline
                 MemoryBandwidthUtilization = 0.0,
                 StageExecutionTimes = new Dictionary<string, TimeSpan>(),
                 DataTransferTimes = new Dictionary<string, TimeSpan>()
-            },
             StageResults = new List<DotCompute.Core.Pipelines.StageExecutionResult>()
     public DotCompute.Core.Pipelines.PipelineValidationResult Validate()
         return new DotCompute.Core.Pipelines.PipelineValidationResult { IsValid = true };
     public DotCompute.Core.Pipelines.IPipelineMetrics GetMetrics()
         return new DefaultPipelineMetrics();
     public async ValueTask<IKernelPipeline> OptimizeAsync(IPipelineOptimizer optimizer)
+        {
     public async ValueTask DisposeAsync()
     private class DefaultPipelineMetrics : DotCompute.Core.Pipelines.IPipelineMetrics
+    {
         public string PipelineId { get; } = "default";
         public long ExecutionCount { get; } = 0;
         public long SuccessfulExecutionCount { get; } = 0;
@@ -616,6 +638,7 @@ internal class DefaultKernelPipeline : IKernelPipeline
             return "{}"; // Empty JSON for minimal implementation
 /// Options for comprehensive pipeline telemetry configuration.
 public class ComprehensivePipelineTelemetryOptions
+    {
     /// Gets or sets whether to enable distributed tracing.
     public bool EnableDistributedTracing { get; set; } = true;
     /// Gets or sets whether to enable detailed telemetry.
@@ -633,6 +656,7 @@ public class ComprehensivePipelineTelemetryOptions
     public bool EnableOverheadMonitoring { get; set; } = true;
 /// Extension methods for adding comprehensive pipeline telemetry.
 public static class PipelineTelemetryServiceCollectionExtensions
+    {
     /// Adds comprehensive pipeline telemetry services to the service collection.
     /// <param name="configure">Configuration action for telemetry options</param>
     public static IServiceCollection AddComprehensivePipelineTelemetry(

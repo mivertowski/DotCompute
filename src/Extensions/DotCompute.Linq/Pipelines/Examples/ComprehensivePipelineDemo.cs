@@ -18,6 +18,7 @@ using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipe
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Pipelines.Examples;
+{
 /// <summary>
 /// Comprehensive demonstration of all LINQ pipeline capabilities including complex queries,
 /// streaming operations, error handling, and advanced optimization techniques.
@@ -41,6 +42,7 @@ public class ComprehensivePipelineDemo
     }
     /// Demonstrates basic LINQ-to-Pipeline conversion and execution.
     public async Task DemonstrateBasicPipelineAsync()
+    {
         _logger.LogInformation("Starting basic pipeline demonstration");
         // Create sample data
         var data = Enumerable.Range(1, 10000).Select(i => new SampleData(
@@ -72,10 +74,12 @@ public class ComprehensivePipelineDemo
             await Task.CompletedTask;
         }
         catch (Exception ex)
+        {
             _logger.LogError(ex, "Basic pipeline demonstration failed");
             throw;
     /// Demonstrates complex GPU-optimized query operations.
     public async Task DemonstrateComplexQueryPatternsAsync()
+    {
         _logger.LogInformation("Starting complex query patterns demonstration");
         // Create larger dataset for GPU acceleration
         var data = GenerateLargeDataset(100000);
@@ -102,6 +106,7 @@ public class ComprehensivePipelineDemo
             _logger.LogError(ex, "Complex query patterns demonstration failed");
     /// Demonstrates real-time streaming pipeline processing.
     public async Task DemonstrateStreamingPipelineAsync()
+    {
         _logger.LogInformation("Starting streaming pipeline demonstration");
             // Create a streaming data source
             var streamingData = GenerateStreamingData();
@@ -120,6 +125,7 @@ public class ComprehensivePipelineDemo
             _logger.LogError(ex, "Streaming pipeline demonstration failed");
     /// Demonstrates advanced optimization techniques and performance analysis.
     public async Task DemonstrateAdvancedOptimizationAsync()
+    {
         _logger.LogInformation("Starting advanced optimization demonstration");
         var data = GenerateLargeDataset(50000);
             // Create a complex pipeline for optimization (simplified)
@@ -151,6 +157,7 @@ public class ComprehensivePipelineDemo
             _logger.LogError(ex, "Advanced optimization demonstration failed");
     /// Demonstrates comprehensive error handling and recovery strategies.
     public async Task DemonstrateErrorHandlingAsync()
+    {
         _logger.LogInformation("Starting error handling demonstration");
         // Create data that will cause various types of errors
         var problematicData = GenerateProblematicDataset();
@@ -162,13 +169,16 @@ public class ComprehensivePipelineDemo
             var validData = problematicData.Where(item => !float.IsNaN(item.Value) && !float.IsInfinity(item.Value));
             var result = validData.Any() ? validData.First() : (SampleData?)null;
             _logger.LogInformation("Error handling demonstration completed. Result: {HasValue}", result.HasValue);
+        }
         catch (AggregateException ex)
+        {
             _logger.LogError("Multiple errors occurred during pipeline execution:");
             foreach (var innerEx in ex.InnerExceptions)
                 _logger.LogError(innerEx, "- {ErrorType}: {Message}", innerEx.GetType().Name, innerEx.Message);
             _logger.LogError(ex, "Error handling demonstration failed");
     /// Demonstrates integration with the full DotCompute infrastructure.
     public async Task DemonstrateInfrastructureIntegrationAsync()
+    {
         _logger.LogInformation("Starting infrastructure integration demonstration");
         var data = GenerateLargeDataset(25000);
             // Get backend recommendations (simplified)
@@ -197,6 +207,7 @@ public class ComprehensivePipelineDemo
             _logger.LogError(ex, "Infrastructure integration demonstration failed");
     /// Runs all pipeline demonstrations in sequence.
     public async Task RunAllDemonstrationsAsync()
+    {
         _logger.LogInformation("=== Starting Comprehensive Pipeline Demonstrations ===");
             await DemonstrateBasicPipelineAsync();
             await DemonstrateComplexQueryPatternsAsync();
@@ -207,14 +218,18 @@ public class ComprehensivePipelineDemo
             _logger.LogInformation("=== All Pipeline Demonstrations Completed Successfully ===");
             _logger.LogError(ex, "Pipeline demonstrations failed");
     #region Helper Methods and Data Generation
+    }
     private SampleData[] GenerateLargeDataset(int size)
+    {
         var random = new Random(42);
         return Enumerable.Range(1, size).Select(i => new SampleData(
             value: (float)(random.NextDouble() * 1000),
             category: random.Next(0, 10),
             isActive: random.Next(0, 2) == 1,
             dataChecksum: random.Next()
+    }
     private CategoryData[] GenerateSecondaryDataset(int size)
+    {
         var categories = new[]
             "Electronics", "Clothing", "Books", "Food", "Sports",
             "Home", "Garden", "Automotive", "Health", "Beauty"
@@ -224,7 +239,9 @@ public class ComprehensivePipelineDemo
             categoryName: categories[i % categories.Length],
             multiplier: 1.0f + (i % 5) * 0.1f,
             isEnabled: i % 3 != 0
+    }
     private async IAsyncEnumerable<SampleData> GenerateStreamingData()
+    {
         for (var i = 0; i < 10000; i++)
             await Task.Delay(1, CancellationToken.None); // Simulate streaming delay
             yield return new SampleData(
@@ -234,7 +251,9 @@ public class ComprehensivePipelineDemo
                 isActive: true,
                 dataChecksum: random.Next()
             );
+    }
     private SampleData[] GenerateProblematicDataset()
+    {
         var data = new List<SampleData>();
         // Add normal data
         for (var i = 0; i < 100; i++)
@@ -278,6 +297,7 @@ public class ComprehensivePipelineDemo
         public float Multiplier { get; init; }
         public bool IsEnabled { get; init; }
         public CategoryData(int categoryId, string categoryName, float multiplier, bool isEnabled)
+        {
             CategoryId = categoryId;
             CategoryNameHash = categoryName?.GetHashCode() ?? 0;
             Multiplier = multiplier;
@@ -286,10 +306,13 @@ public class ComprehensivePipelineDemo
         public string CategoryName => $"Category_{CategoryId}";
     /// Joined data structure for join demonstrations.
     public readonly struct JoinedData
+        }
         public JoinedData(int id, float value, int categoryId, float multiplier)
+        {
         // Backward compatibility property
     /// Pipeline execution context for infrastructure integration.
     public class PipelineExecutionContext : PipelineModels.IPipelineExecutionContext
+    {
         public Guid ContextId { get; } = Guid.NewGuid();
         public string PreferredBackend { get; set; } = "CPU";
         public string ActualBackend { get; set; } = "CPU";
@@ -312,4 +335,12 @@ public class ComprehensivePipelineDemo
         public ILogger Logger => throw new NotImplementedException();
         public IServiceProvider ServiceProvider => throw new NotImplementedException();
         public IReadOnlyDictionary<string, object> Properties => new Dictionary<string, object>();
+}
+}
+}
+}
+}
+}
+}
+}
 }

@@ -14,6 +14,7 @@ using DotCompute.Linq.Logging;
 using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
 using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Generates GPU kernels from LINQ expressions with advanced optimization support.
 /// </summary>
@@ -39,6 +40,7 @@ public class ExpressionKernelGenerator
     /// <param name="accelerator">The target accelerator.</param>
     /// <returns>A generated kernel.</returns>
     public OperatorsGeneratedKernel Generate(Expression expression, IAccelerator accelerator)
+        {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(accelerator);
         _logger.LogDebugMessage("Generating kernel from expression {expression.NodeType}");
@@ -86,13 +88,10 @@ public class ExpressionKernelGenerator
             Type = expression.Type,
             IsOutput = true,
             IsInput = false
-        });
-            Name = "size",
-            Type = typeof(int),
-            IsInput = true,
             IsOutput = false
         return [.. parameters];
     private string GenerateSourceCode(Expression expression, IAccelerator accelerator)
+        {
         var generator = new KernelSourceGenerator(accelerator.Type);
         return generator.GenerateFromExpression(expression, _context);
     private static DotCompute.Abstractions.Types.DotCompute.Abstractions.Kernels.Types.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
@@ -112,12 +111,11 @@ public class ExpressionKernelGenerator
         var workGroupSize = Math.Min(256, Math.Max(32, complexity * 8));
         return [workGroupSize, 1, 1];
     private int CalculateSharedMemorySize(Expression expression)
-        // Calculate shared memory requirements based on context and expression
-        if (_context.UseSharedMemory)
             var complexity = CalculateComplexity(expression);
             return Math.Min(48 * 1024, complexity * 1024); // Max 48KB shared memory
         return 0;
     private Dictionary<string, object> ExtractOptimizationMetadata(Expression expression)
+        {
         var metadata = new Dictionary<string, object>
             ["ComplexityScore"] = CalculateComplexity(expression),
             ["UseSharedMemory"] = _context.UseSharedMemory,
@@ -136,9 +134,11 @@ public class ExpressionKernelGenerator
 }
 /// Visitor that extracts parameters from expressions.
 internal class ParameterExtractionVisitor : ExpressionVisitor
+    {
     private readonly List<GeneratedKernelParameter> _parameters;
     private readonly HashSet<string> _seenNames = [];
     public ParameterExtractionVisitor(List<GeneratedKernelParameter> parameters)
+        {
         _parameters = parameters;
     protected override Expression VisitParameter(ParameterExpression node)
         if (!_seenNames.Contains(node.Name!))
@@ -167,8 +167,10 @@ internal class ParameterExtractionVisitor : ExpressionVisitor
         return base.VisitConstant(node);
 /// Visitor that calculates expression complexity.
 internal class ComplexityCalculationVisitor : ExpressionVisitor
+    {
     public int Complexity { get; private set; }
     protected override Expression VisitBinary(BinaryExpression node)
+        {
         Complexity += 2;
         return base.VisitBinary(node);
     protected override Expression VisitUnary(UnaryExpression node)
@@ -182,6 +184,7 @@ internal class ComplexityCalculationVisitor : ExpressionVisitor
         return base.VisitConditional(node);
 /// Handler for method call expressions.
 internal class MethodCallHandler : IExpressionHandler
+    {
     public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Call;
     public string Handle(Expression expression, KernelGenerationContext context)
         if (expression is MethodCallExpression methodCall)
@@ -196,11 +199,14 @@ internal class MethodCallHandler : IExpressionHandler
         return "/* Unknown method call */";
 /// Handler for lambda expressions.
 internal class LambdaHandler : IExpressionHandler
+    {
     public bool CanHandle(Expression expression) => expression.NodeType == ExpressionType.Lambda;
     public string Handle(Expression expression, KernelGenerationContext context) => "/* Lambda expression */";
 /// Handler for binary operations.
 internal class BinaryOperationHandler : IExpressionHandler
+    {
     public bool CanHandle(Expression expression)
+        {
         return expression.NodeType is ExpressionType.Add or ExpressionType.Subtract
                                    or ExpressionType.Multiply or ExpressionType.Divide;
         if (expression is BinaryExpression binary)
@@ -213,6 +219,7 @@ internal class BinaryOperationHandler : IExpressionHandler
         return "/* Unknown binary operation */";
 /// Handler for comparison operations.
 internal class ComparisonHandler : IExpressionHandler
+    {
         return expression.NodeType is ExpressionType.Equal or ExpressionType.NotEqual
                                    or ExpressionType.LessThan or ExpressionType.LessThanOrEqual
                                    or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual;

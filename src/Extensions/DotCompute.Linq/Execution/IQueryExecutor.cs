@@ -7,6 +7,7 @@ using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Linq.KernelGeneration;
 namespace DotCompute.Linq.Execution;
+{
 /// <summary>
 /// Defines the interface for executing compiled compute plans.
 /// </summary>
@@ -222,6 +223,7 @@ public class BufferPool : IDisposable
     /// <returns>The memory buffer.</returns>
     public async Task<IUnifiedMemoryBuffer> GetOrCreateAsync(string key, long size, IUnifiedMemoryManager manager)
     {
+        }
         lock (_lock)
         {
             if (_buffers.TryGetValue(key, out var existingBuffer) && existingBuffer.SizeInBytes >= size)
@@ -230,6 +232,7 @@ public class BufferPool : IDisposable
             }
         }
         var buffer = await manager.AllocateAsync<byte>((int)size, DotCompute.Abstractions.Memory.MemoryOptions.None);
+        }
         lock (_lock)
         {
             // For now, don't dispose the buffer - the memory manager will handle cleanup
@@ -243,6 +246,7 @@ public class BufferPool : IDisposable
     /// <param name="key">The buffer key.</param>
     public void Release(string key)
     {
+        }
         lock (_lock)
         {
             // Buffer remains in pool for reuse
@@ -257,6 +261,7 @@ public class BufferPool : IDisposable
     /// </summary>
     public void Dispose()
     {
+        }
         lock (_lock)
         {
             // Clear buffers - memory manager will handle cleanup
@@ -332,7 +337,6 @@ public class CacheStatistics
     /// Gets the cache hit ratio.
     /// </summary>
     public double HitRatio => Hits + Misses > 0 ? (double)Hits / (Hits + Misses) : 0;
-}
 /// <summary>
 /// Contains GPU information for optimization purposes.
 /// </summary>

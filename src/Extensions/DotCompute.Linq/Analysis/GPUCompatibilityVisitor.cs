@@ -4,6 +4,7 @@
 using System.Linq.Expressions;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Expression visitor that analyzes GPU compatibility.

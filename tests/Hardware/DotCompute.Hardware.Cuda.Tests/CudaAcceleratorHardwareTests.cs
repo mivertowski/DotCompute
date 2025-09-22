@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
 using static DotCompute.Tests.Common.TestCategories;
 using DotCompute.Tests.Common.Specialized;
+using DotCompute.Tests.Common.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;

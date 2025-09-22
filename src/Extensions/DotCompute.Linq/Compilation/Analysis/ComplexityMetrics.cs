@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Contains computational complexity metrics for expressions.
 /// </summary>

@@ -11,6 +11,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Core.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 namespace DotCompute.Linq.Pipelines.Extensions;
+{
 /// <summary>
 /// Extension methods that bridge LINQ pipeline functionality to the Core IKernelPipeline interface.
 /// This provides backward compatibility while unifying on the production-grade Core interface.
@@ -58,6 +59,7 @@ public static class CorePipelineLinqExtensions
     /// Bridges LINQ interface Parallel method to Core interface.
     /// <returns>Pipeline configured for parallel execution</returns>
     public static IKernelPipeline Parallel(this IKernelPipeline pipeline)
+    {
         // Configure pipeline for parallel execution using Core interface
         var optimizedPipeline = pipeline.Optimize(OptimizationStrategy.Aggressive);
         // In a full implementation, this would configure parallel execution stages
@@ -128,6 +130,7 @@ public static class CorePipelineLinqExtensions
     /// This provides compatibility with the LINQ interface IsCompiled property.
     /// <returns>True if pipeline is ready for execution</returns>
     public static bool IsCompiled(this IKernelPipeline pipeline)
+    {
         // Core pipelines are always "compiled" when they pass validation
         var validationResult = pipeline.Validate();
         return validationResult.IsValid;
@@ -135,6 +138,7 @@ public static class CorePipelineLinqExtensions
     /// Bridges LINQ interface property to Core interface settings.
     /// <returns>Current optimization level</returns>
     public static OptimizationLevel GetOptimizationLevel(this IKernelPipeline pipeline)
+    {
         // Extract optimization level from Core pipeline settings
         return pipeline.OptimizationSettings.Level switch
             PipelineOptimizationLevel.None => OptimizationLevel.None,
@@ -181,24 +185,28 @@ public static class CorePipelineLinqExtensions
     #region Helper Classes for Core Interface Compatibility
     /// Default pipeline memory manager implementation for compatibility.
     private class DefaultPipelineMemoryManager : DotCompute.Linq.Pipelines.Models.IPipelineMemoryManager
+    {
         public Task<DotCompute.Linq.Pipelines.Models.IMemoryBuffer> AllocateAsync(long size)
             => Task.FromResult<DotCompute.Linq.Pipelines.Models.IMemoryBuffer>(new MemoryBuffer(size));
         public Task ReleaseAsync(DotCompute.Linq.Pipelines.Models.IMemoryBuffer buffer) => Task.CompletedTask;
         public void Dispose() { }
     /// Default compute device implementation for compatibility.
     private class DefaultComputeDevice : DotCompute.Linq.Pipelines.Models.IComputeDevice
+    {
         public string Name => "Default";
         public string Type => "CPU";
         public bool IsAvailable => true;
         public Task InitializeAsync() => Task.CompletedTask;
     /// Simple memory buffer implementation.
     private class MemoryBuffer : DotCompute.Linq.Pipelines.Models.IMemoryBuffer
+    {
         public MemoryBuffer(long size) => Size = size;
         public long Size { get; }
         public Task CopyToAsync(DotCompute.Linq.Pipelines.Models.IMemoryBuffer destination) => Task.CompletedTask;
 }
 /// Additional extension methods for Core interface compatibility with LINQ-specific options.
 public static class PipelineStageOptionsExtensions
+    {
     /// Enables optimization for the stage options.
     /// <param name="options">Stage options to extend</param>
     /// <returns>Options with optimization enabled</returns>
@@ -208,4 +216,7 @@ public static class PipelineStageOptionsExtensions
     /// Enables memory optimization for the stage options.
     /// <returns>Options with memory optimization enabled</returns>
     public static PipelineStageOptions EnableMemoryOptimization(this PipelineStageOptions options)
+    {
         // For Core interface compatibility - would configure memory optimization in full implementation  
+}
+}

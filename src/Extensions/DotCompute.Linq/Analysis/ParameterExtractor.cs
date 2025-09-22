@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Visitor for extracting parameters and preparing kernel arguments.

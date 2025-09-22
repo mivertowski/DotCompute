@@ -12,6 +12,7 @@ using DotCompute.Refactored.Adapters;
 using DotCompute.Abstractions.Analysis;
 using IComplexityMetrics = DotCompute.Abstractions.Analysis.IComplexityMetrics;
 namespace DotCompute.Refactored.Extensions;
+{
 /// <summary>
 /// Factory class for creating unified types with intelligent defaults and cross-cutting concerns.
 /// </summary>
@@ -26,6 +27,7 @@ public static class UnifiedTypeFactory
         /// Creates basic complexity metrics for simple operations.
         /// </summary>
         public static UnifiedComplexityMetrics CreateBasic(
+        {
             UnifiedOperatorType operatorType,
             long operationCount = 1000,
             long memoryUsage = 8192)
@@ -94,6 +96,7 @@ public static class UnifiedTypeFactory
                 _ => ComplexityClass.Linear
             };
         private static ComplexityClass GetOverallComplexityClass(IEnumerable<UnifiedOperatorType> operators)
+        {
             var classes = operators.Select(GetComplexityClass);
             return classes.Max();
         private static double GetCacheEfficiency(UnifiedOperatorType operatorType)
@@ -123,8 +126,10 @@ public static class UnifiedTypeFactory
     }
     /// Creates generated kernels with best practices and intelligent defaults.
     public static class GeneratedKernel
+    {
         /// Creates a basic CPU kernel.
         public static UnifiedGeneratedKernel CreateCpu(
+        {
             string name,
             string sourceCode,
             params (string name, Type type, bool isPointer)[] parameters)
@@ -140,6 +145,7 @@ public static class UnifiedTypeFactory
             return kernel;
         /// Creates a basic GPU kernel with CUDA optimizations.
         public static UnifiedGeneratedKernel CreateGpu(
+        {
             string cudaSource,
             var kernel = UnifiedGeneratedKernelFactory.CreateGpuKernel(name, cudaSource);
             // Add default GPU optimizations
@@ -205,6 +211,7 @@ public static class UnifiedTypeFactory
             return baseOptimizations.Concat(specificOptimizations);
     /// Simple implementation of IExpressionAnalysisResult for factory use.
     private class SimpleExpressionAnalysisResult : IExpressionAnalysisResult
+    {
         public SimpleExpressionAnalysisResult(UnifiedComplexityMetrics complexityMetrics)
             ComplexityMetrics = complexityMetrics;
             AnalysisTimestamp = DateTimeOffset.UtcNow;
@@ -213,14 +220,17 @@ public static class UnifiedTypeFactory
 }
 /// Fluent builder extensions for creating complex unified types.
 public static class UnifiedTypeBuilderExtensions
+    {
     /// Creates a complexity analysis pipeline for multiple operations.
     public static ComplexityAnalysisPipeline CreateComplexityPipeline(this UnifiedOperatorType[] operators)
+        {
         return new ComplexityAnalysisPipeline(operators);
     /// Creates a kernel compilation pipeline for multi-stage kernels.
     public static KernelCompilationPipeline CreateKernelPipeline(this string baseName)
         return new KernelCompilationPipeline(baseName);
 /// Builder for complex complexity analysis scenarios.
 public class ComplexityAnalysisPipeline
+    {
     private readonly List<UnifiedOperatorType> _operators;
     private long _totalOperations = 10000;
     private long _totalMemory = 65536;
@@ -239,6 +249,7 @@ public class ComplexityAnalysisPipeline
             _operators, _totalOperations, _totalMemory, _operationBreakdown);
 /// Builder for complex kernel compilation scenarios.
 public class KernelCompilationPipeline
+    {
     private readonly string _baseName;
     private string _cpuSource = "";
     private string _gpuSource = "";

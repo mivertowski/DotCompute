@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Kernels.Types;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Operators.Generation;
+{
 /// <summary>
 /// Represents a generated kernel with its metadata for the operators generation system.
 /// </summary>

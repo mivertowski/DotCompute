@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Represents dependency information for expression analysis.

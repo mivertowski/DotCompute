@@ -10,6 +10,7 @@ using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInf
 using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes arithmetic operators in expression trees.
@@ -201,8 +202,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
         var baseCost = GetBaseCost(expression.NodeType);
         var typePenalty = GetTypePenalty(expression.Type);
         return baseCost * typePenalty;
-    }
-
     private static string GetOperatorName(ExpressionType nodeType) => nodeType switch
     {
         ExpressionType.Add => "Add",
@@ -340,8 +339,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
             ExpressionType.Negate or ExpressionType.UnaryPlus => operandTypes[0],
             _ => operandTypes[0]
         };
-    }
-
     private static double GetRelativeError(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.Add or ExpressionType.Subtract => 1e-15,
@@ -466,8 +463,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
 
         return opportunities;
-    }
-
     private static double EstimateVectorizationSpeedup(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.Add or ExpressionType.Subtract => 7.0,
@@ -565,8 +560,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
 
         return constraints;
-    }
-
     private static double GetBaseCost(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.Add or ExpressionType.Subtract => 1.0,
@@ -596,8 +589,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
             ExpressionType.Divide or ExpressionType.Power => NumericalPrecision.Standard,
             _ => NumericalPrecision.High
         };
-    }
-
     private static bool IsNumericallyStable(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.Add or ExpressionType.Subtract or
@@ -642,8 +633,6 @@ public class ArithmeticOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnal
 
 
         return strategies;
-    }
-
     private static double GetTypePenalty(Type type) => type switch
     {
         var t when t == typeof(double) => 1.5, // Double precision is slower

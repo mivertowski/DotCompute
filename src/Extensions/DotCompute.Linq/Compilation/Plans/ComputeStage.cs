@@ -6,6 +6,7 @@ using DotCompute.Linq.Compilation.Execution;
 using DotCompute.Linq.Operators.Interfaces;
 using DotCompute.Linq.Operators.Execution;
 namespace DotCompute.Linq.Compilation.Plans;
+{
 /// <summary>
 /// Implementation of a compute stage.
 /// </summary>
@@ -29,6 +30,7 @@ internal class ComputeStage : IComputeStage
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="id"/> or <paramref name="outputBuffer"/> is empty.
     public ComputeStage(
+        {
         string id,
         DotCompute.Linq.Operators.Interfaces.IKernel kernel,
         IReadOnlyList<string> inputBuffers,

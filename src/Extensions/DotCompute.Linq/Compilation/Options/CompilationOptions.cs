@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Options;
+{
 /// <summary>
 /// Represents compilation options for query expressions.
 /// </summary>

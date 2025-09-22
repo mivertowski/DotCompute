@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Linq.Operators.Parameters;
 namespace DotCompute.Linq.KernelGeneration;
+{
 /// <summary>
 /// Defines the execution model for kernels.
 /// </summary>
@@ -37,6 +38,7 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
     /// <exception cref="ArgumentNullException">Thrown when functionName or returnType is null.</exception>
     /// <exception cref="ArgumentException">Thrown when functionName is empty or whitespace.</exception>
     public KernelEntryPoint(
+        {
         string functionName,
         IReadOnlyList<KernelParameter> parameters,
         Type returnType)
@@ -178,6 +180,7 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
                Parameters.SequenceEqual(other.Parameters, new KernelParameterComparer());
     }
     public override bool Equals(object? obj) => obj is KernelEntryPoint other && Equals(other);
+    }
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -191,11 +194,11 @@ public sealed class KernelEntryPoint : IEquatable<KernelEntryPoint>
             hash.Add(parameter.Direction);
         }
         return hash.ToHashCode();
-    }
     public override string ToString() => Signature;
     /// Comparer for kernel parameters used in equality checks.
     private sealed class KernelParameterComparer : IEqualityComparer<KernelParameter>
     {
+        }
         public bool Equals(KernelParameter? x, KernelParameter? y)
         {
             if (ReferenceEquals(x, y))

@@ -15,6 +15,7 @@ using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
 using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 namespace DotCompute.Linq.Optimization.Strategies;
+{
 /// <summary>
 /// Advanced kernel fusion strategy that combines multiple operations into single kernels
 /// to reduce memory transfers and eliminate intermediate results.
@@ -30,6 +31,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
     private const double MinFusionBenefit = 0.15; // 15% improvement threshold
     private const long MaxFusedKernelComplexity = 1000;
     public KernelFusionStrategy(
+        {
         IComputeOrchestrator orchestrator,
         ExecutionCostModel costModel)
     {
@@ -65,7 +67,6 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 Operation = operations[i],
                 Dependencies = [],
                 Dependents = []
-            };
             nodes[i] = node;
             graph.Nodes.Add(node);
         // Build dependencies based on data flow
@@ -84,13 +85,12 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 });
         return graph;
     private bool HasDataDependency(QueryOperation current, QueryOperation previous)
-        // Check if current operation uses output from previous
-        return current.InputId == previous.OutputId ||
                current.InputDataType == previous.OutputDataType;
     private long EstimateDataTransferSize(QueryOperation from, QueryOperation to)
         // Estimate the amount of data transferred between operations
         return Math.Min(from.OutputSize, to.InputSize) * GetTypeSize(from.DataType);
     private int GetTypeSize(Type dataType)
+        {
         if (dataType == typeof(byte))
             return 1;
         if (dataType == typeof(short))
@@ -127,6 +127,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 }
         return fusionGroups;
     private List<OperationNode> TopologicalSort(OperationDependencyGraph graph)
+        {
         var result = new List<OperationNode>();
         var visited = new HashSet<int>();
         var visiting = new HashSet<int>();
@@ -158,7 +159,6 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
         var group = new FusionGroup
             Operations = [startNode],
             FusionComplexity = CalculateOperationComplexity(startNode.Operation)
-        };
         var candidates = new Queue<OperationNode>();
         candidates.Enqueue(startNode);
         while (candidates.Count > 0 && group.Operations.Count < MaxFusionDepth)
@@ -176,6 +176,7 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                         candidates.Enqueue(dependent);
         return group;
     private long CalculateOperationComplexity(QueryOperation operation)
+        {
         return operation.Type switch
             (Models.OperationType)OperationType.Map => operation.InputSize * 2,
             (Models.OperationType)OperationType.Filter => operation.InputSize * 1,
@@ -298,37 +299,41 @@ public sealed class KernelFusionStrategy : ILinqOptimizationStrategy
                 IsInput = !p.IsPointer || p.Name == "input",
                 IsOutput = p.IsPointer && (p.Name == "output" || p.Name.Contains("result")),
                 ElementType = p.Type.IsArray ? p.Type.GetElementType() : null
-            }).ToArray() ?? [],
             Metadata = source.Metadata ?? []
     private static GeneratedKernel ConvertFromOperatorsGeneratedKernel(Operators.Generation.GeneratedKernel source)
+        {
         return new GeneratedKernel
             Name = source.Name,
             SourceCode = source.Source, // Use Source property instead of SourceCode
             Parameters = source.Parameters?.Select(p => new KernelParameter
                 IsPointer = p.IsOutput || p.Name.Contains("output") || p.Name.Contains("result")
-            }).ToList() ?? [],
-            Metadata = source.Metadata ?? [],
             TargetBackend = source.TargetBackend
 }
 // Supporting classes
 public class OperationDependencyGraph
+    {
     public List<OperationNode> Nodes { get; set; } = [];
     public List<DependencyEdge> Edges { get; set; } = [];
 public class OperationNode
+    {
     public int Id { get; set; }
     public QueryOperation Operation { get; set; } = new();
     public List<int> Dependencies { get; set; } = [];
     public List<int> Dependents { get; set; } = [];
 public class DependencyEdge
+    {
     public int From { get; set; }
     public int To { get; set; }
     public long DataSize { get; set; }
 public class FusionGroup
+    {
     public List<OperationNode> Operations { get; set; } = [];
     public long FusionComplexity { get; set; }
     public double EstimatedBenefit { get; set; }
 public class FusionAnalyzer
+    {
     public FusionAnalyzer(ExecutionCostModel costModel)
+        {
         _costModel = costModel;
     public async Task<double> EstimateFusionBenefit(
         // Estimate performance benefit of fusing two operations
@@ -342,6 +347,7 @@ public class FusionAnalyzer
         var memoryCost = first.InputSize * 0.3; // Reduced memory traffic
         return Task.FromResult(computeCost + memoryCost);
 public class KernelCodeGenerator
+    {
     public async Task<GeneratedKernel> GenerateFusedKernel(FusionGroup group, ExecutionContext context)
         var kernel = new GeneratedKernel
             Name = $"FusedKernel_{string.Join("_", group.Operations.Select(op => op.Operation.Type))}",
@@ -413,6 +419,7 @@ __global__ void FusedKernel(
             optimizations.Add("warp_optimization");
         return optimizations;
 public class MemoryAccessOptimizer
+    {
     public async Task CoalesceMemoryAccesses(GeneratedKernel kernel)
         // Implement memory coalescing optimizations
         await Task.CompletedTask;
@@ -430,10 +437,12 @@ public record GeneratedKernel
     public Dictionary<string, object> Metadata { get; init; } = [];
     public string TargetBackend { get; init; } = "CPU";
 public class KernelParameter
+    {
     public string Name { get; set; } = string.Empty;
     public Type Type { get; set; } = typeof(object);
     public bool IsPointer { get; set; }
 public enum AccessPattern
+    {
     Sequential,
     Random,
     Strided

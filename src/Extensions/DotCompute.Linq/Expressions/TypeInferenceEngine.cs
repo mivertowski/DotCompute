@@ -6,6 +6,7 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Expressions;
+{
 /// <summary>
 /// Engine for inferring and validating types in LINQ expression trees for GPU compilation.
 /// </summary>
@@ -273,9 +274,6 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
             return size > 64; // Structs larger than 64 bytes may cause performance issues
         }
         return false;
-    }
-    private bool CanVectorize(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.CanVectorize;
-    private Type? GetVectorType(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.VectorType : null;
     private static bool CanReducePrecision(Type type) => type == typeof(double) || type == typeof(decimal);
     private static Type GetReducedPrecisionType(Type type)
     {
@@ -295,8 +293,10 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         return fields.Any(f => !IsWellAligned(f.FieldType));
     }
     private static bool IsWellAligned(Type type)
+    {
         // Simple check for alignment - more sophisticated logic would be needed in practice
         => type.IsPrimitive || (type.IsValueType && CalculateTypeSize(type) % 4 == 0);
+    }
     private static int CalculateTypeSize(Type type)
     {
         if (type.IsPrimitive)
@@ -462,6 +462,7 @@ public sealed class TypeOptimizationSuggestion
     /// Initializes a new instance of the <see cref="TypeOptimizationSuggestion"/> class.
     /// </summary>
     public TypeOptimizationSuggestion(
+        {
         TypeOptimizationType type,
         string description,
         Type currentType,
@@ -610,6 +611,7 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
     private readonly List<TypeValidationError> _validationErrors = [];
 
     public TypeInferenceVisitor(
+        {
         HashSet<Type> supportedTypes,
         Dictionary<Type, TypeCapabilities> typeCapabilities,
         ILogger logger)
@@ -619,6 +621,7 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
         _logger = logger;
     }
     public TypeInferenceResult AnalyzeExpression(Expression expression)
+    {
         _ = Visit(expression);
         return new TypeInferenceResult
             InferredTypes = _inferredTypes,
@@ -629,19 +632,26 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
                 ["UnsupportedTypes"] = _inferredTypes.Values.Count(t => t.RequiresConversion),
                 ["RequiredConversions"] = _typeConversions.Count
     protected override Expression VisitConstant(ConstantExpression node)
+    {
         if (node.Value != null)
             AnalyzeType(node.Type, node, TypeUsageContext.Constant);
         return base.VisitConstant(node);
+    }
     protected override Expression VisitParameter(ParameterExpression node)
+    {
         AnalyzeType(node.Type, node, TypeUsageContext.Parameter);
         return base.VisitParameter(node);
+    }
     protected override Expression VisitBinary(BinaryExpression node)
+    {
         AnalyzeType(node.Type, node, TypeUsageContext.BinaryOperation);
         // Check for type mismatches that might require conversion
         if (node.Left.Type != node.Right.Type)
             CheckBinaryTypeCompatibility(node);
         return base.VisitBinary(node);
+    }
     protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
         AnalyzeType(node.Type, node, TypeUsageContext.MethodCall);
         // Analyze parameter types
         var parameters = node.Method.GetParameters();
@@ -661,7 +671,9 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
     protected override Expression VisitLambda<T>(Expression<T> node)
         AnalyzeType(node.ReturnType, node, TypeUsageContext.ReturnValue);
         return base.VisitLambda(node);
+    }
     private void AnalyzeType(Type type, Expression expression, TypeUsageContext context)
+    {
         if (!_inferredTypes.TryGetValue(type, out var typeInfo))
             var requiresConversion = !IsDirectlySupported(type);
             var suggestedType = requiresConversion ? GetSuggestedGpuType(type) : null;
@@ -679,7 +691,9 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
                 $"Type {type.Name} is not GPU-compatible",
                 expression,
                 TypeValidationSeverity.Error));
+    }
     private void CheckBinaryTypeCompatibility(BinaryExpression node)
+    {
         var leftType = node.Left.Type;
         var rightType = node.Right.Type;
         _ = node.Type;
@@ -696,7 +710,9 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
                     FromType = rightType,
                     Expression = node.Right,
                     IsLossy = IsLossyConversion(rightType, commonType)
+    }
     private bool IsDirectlySupported(Type type)
+    {
         return _supportedTypes.Contains(type) ||
                (type.IsArray && _supportedTypes.Contains(type.GetElementType()!));
     private bool IsGpuCompatible(Type type) => _typeCapabilities.TryGetValue(type, out var capabilities) && capabilities.IsGpuCompatible;
@@ -711,10 +727,14 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
             // Return the "wider" type
             return GetWiderType(code1, code2) == code1 ? type1 : type2;
         return null;
+    }
     private static bool IsNumericType(Type type)
+    {
         var code = Type.GetTypeCode(type);
         return code is >= TypeCode.SByte and <= TypeCode.Decimal;
+    }
     private static TypeCode GetWiderType(TypeCode code1, TypeCode code2)
+    {
         var order = new[]
         TypeCode.SByte, TypeCode.Byte, TypeCode.Int16, TypeCode.UInt16,
         TypeCode.Int32, TypeCode.UInt32, TypeCode.Int64, TypeCode.UInt64,
@@ -724,11 +744,16 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
         var index2 = Array.IndexOf(order, code2);
         return index1 > index2 ? code1 : code2;
     private static bool IsImplicitlyConvertible(Type from, Type to) => to.IsAssignableFrom(from) || HasImplicitConversion(from, to);
+    }
     private static bool HasImplicitConversion(Type from, Type to)
+    {
         // Check for built-in numeric conversions
         if (IsNumericType(from) && IsNumericType(to))
             var fromCode = Type.GetTypeCode(from);
             var toCode = Type.GetTypeCode(to);
             return GetWiderType(fromCode, toCode) == toCode;
+        }
     private static bool IsLossyConversion(Type from, Type to)
+    {
             return GetWiderType(fromCode, toCode) == fromCode; // Converting to narrower type
+}

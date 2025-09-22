@@ -16,6 +16,7 @@ using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter
 using OperatorsGeneratedKernel = DotCompute.Linq.Operators.Generation.GeneratedKernel;
 using KernelGenerationGeneratedKernel = DotCompute.Linq.KernelGeneration.GeneratedKernel;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Library of kernel templates for common operations.
 /// </summary>
@@ -34,6 +35,7 @@ public class KernelTemplateLibrary
     /// <param name="templateName">The template name.</param>
     /// <returns>The kernel template.</returns>
     public IKernelTemplate GetTemplate(string templateName)
+        {
         if (_templates.TryGetValue(templateName, out var template))
         {
             return template;
@@ -50,6 +52,7 @@ public class KernelTemplateLibrary
 }
 /// Interface for kernel templates that generate code.
 public interface IKernelTemplate
+    {
     /// Generates a kernel from a definition.
     /// <param name="definition">The kernel definition.</param>
     /// <param name="accelerator">The target accelerator.</param>
@@ -57,8 +60,10 @@ public interface IKernelTemplate
     public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator);
 /// Template for map (Select) operations.
 public class MapKernelTemplate : IKernelTemplate
+    {
     /// <inheritdoc/>
     public GeneratedKernel Generate(CoreKernelDefinition definition, IAccelerator accelerator)
+        {
         var sourceBuilder = new StringBuilder();
         // Generate kernel based on accelerator type
         switch (accelerator.Type)
@@ -81,6 +86,7 @@ public class MapKernelTemplate : IKernelTemplate
             OptimizationMetadata = definition.Metadata
         };
     private static void GenerateCudaMapKernel(StringBuilder source, CoreKernelDefinition definition)
+        {
         _ = source.AppendLine("__global__ void " + definition.Name + "(");
         // Generate parameters
         var parameters = KernelDefinitionAdapter.ExtractParameters(definition);
@@ -150,6 +156,7 @@ public class MapKernelTemplate : IKernelTemplate
             IsOutput = param.Direction is Parameters.ParameterDirection.Out or Parameters.ParameterDirection.InOut
 /// Template for filter (Where) operations.
 public class FilterKernelTemplate : IKernelTemplate
+    {
         _ = sourceBuilder.AppendLine("// Filter kernel template");
         _ = sourceBuilder.AppendLine($"// Generated for {accelerator.Type}");
         _ = sourceBuilder.AppendLine("// TODO: Implement filter kernel generation");
@@ -157,9 +164,11 @@ public class FilterKernelTemplate : IKernelTemplate
             Parameters = [.. KernelDefinitionAdapter.ExtractParameters(definition).Select(ConvertParameter)],
 /// Template for reduce operations.
 public class ReduceKernelTemplate : IKernelTemplate
+    {
         _ = sourceBuilder.AppendLine("// Reduce kernel template");
         _ = sourceBuilder.AppendLine("// TODO: Implement reduce kernel generation");
 /// Template for sort operations.
 public class SortKernelTemplate : IKernelTemplate
+    {
         _ = sourceBuilder.AppendLine("// Sort kernel template");
         _ = sourceBuilder.AppendLine("// TODO: Implement sort kernel generation");

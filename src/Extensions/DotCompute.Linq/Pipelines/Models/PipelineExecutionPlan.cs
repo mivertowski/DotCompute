@@ -3,6 +3,7 @@
 
 using System.Text.Json.Serialization;
 namespace DotCompute.Linq.Pipelines.Models;
+{
 /// <summary>
 /// Represents a complete execution plan for a LINQ-to-Pipeline conversion.
 /// Contains all stages, optimization hints, and execution metadata.
@@ -30,6 +31,7 @@ public class PipelineExecutionPlan
 }
 /// Represents information about a single pipeline stage.
 public class PipelineStageInfo
+    {
     /// Gets or sets the unique identifier for this stage.
     public int StageId { get; set; }
     /// Gets or sets the name of the kernel to execute for this stage.
@@ -58,6 +60,7 @@ public class PipelineStageInfo
     public Dictionary<string, object> Configuration { get; set; } = [];
 /// Represents an opportunity for parallel execution.
 public class ParallelizationOpportunity
+    {
     /// Gets or sets the stage IDs that can be parallelized.
     public int[] StageIds { get; set; } = Array.Empty<int>();
     /// Gets or sets the estimated speedup from parallelization.
@@ -70,6 +73,7 @@ public class ParallelizationOpportunity
     public ParallelizationStrategy Strategy { get; set; }
 /// Types of pipeline stages.
 public enum PipelineStageType
+    {
     /// <summary>Source data loading stage.</summary>
     Source,
     /// <summary>Data transformation stage (Select, Cast, etc.).</summary>
@@ -96,6 +100,7 @@ public enum PipelineStageType
     Sink
 /// Kernel complexity levels.
 public enum KernelComplexity
+    {
     /// <summary>Unknown complexity.</summary>
     Unknown = 0,
     /// <summary>Low complexity operations (simple arithmetic, comparisons).</summary>
@@ -108,6 +113,7 @@ public enum KernelComplexity
     VeryHigh = 15
 /// Parallelization strategies.
 public enum ParallelizationStrategy
+    {
     /// <summary>No parallelization.</summary>
     None,
     /// <summary>Data-parallel execution.</summary>
@@ -120,6 +126,7 @@ public enum ParallelizationStrategy
     Hybrid
 /// Context for pipeline optimization analysis.
 public class PipelineOptimizationContext
+    {
     private readonly List<string> _hints = [];
     private readonly Dictionary<string, int> _operationCounts = [];
     private readonly List<PipelineStageInfo> _analyzedStages = [];
@@ -140,10 +147,13 @@ public class PipelineOptimizationContext
     /// Gets the current optimization hints.
     /// <returns>List of optimization hints</returns>
     public List<string> GetOptimizationHints()
+    {
         // Add global hints based on analysis
         GenerateGlobalHints();
         return _hints.ToList();
+    }
     private void GenerateStageHints(PipelineStageInfo stage)
+        {
         switch (stage.StageType)
         {
             case PipelineStageType.Filter when stage.KernelComplexity == KernelComplexity.Low:
@@ -157,6 +167,7 @@ public class PipelineOptimizationContext
                 _hints.Add($"Stage {stage.StageId}: Optimize hash table size for grouping");
         }
     private void CheckFusionOpportunities(PipelineStageInfo stage)
+    {
         if (_analyzedStages.Count > 0)
             var previousStage = _analyzedStages[^2]; // Second to last
             if (CanFuseStages(previousStage, stage))
@@ -164,6 +175,7 @@ public class PipelineOptimizationContext
                 _hints.Add($"Fusion opportunity: Combine stages {previousStage.StageId} and {stage.StageId}");
             }
     private void GenerateGlobalHints()
+    {
         // Memory optimization hints
         var totalMemory = _analyzedStages.Sum(s => s.RequiredMemory);
         if (totalMemory > 1024 * 1024 * 1024) // > 1GB
@@ -179,18 +191,25 @@ public class PipelineOptimizationContext
             _hints.Add("Pipeline is highly GPU-compatible - recommend CUDA backend");
         else if (cudaCompatibleStages < totalStages * 0.3)
             _hints.Add("Pipeline has limited GPU compatibility - recommend CPU backend");
+    }
     private static bool IsProjectionStage(PipelineStageInfo stage)
+    {
         return stage.StageType == PipelineStageType.Transform &&
                stage.Parameters.ContainsKey("selector");
+    }
     private static bool HasLargeDataset(PipelineStageInfo stage)
+    {
         return stage.RequiredMemory > 10 * 1024 * 1024; // > 10MB
+    }
     private static bool CanFuseStages(PipelineStageInfo first, PipelineStageInfo second)
+    {
         // Simple heuristic for kernel fusion opportunities
         return (first.StageType == PipelineStageType.Transform || first.StageType == PipelineStageType.Filter) &&
                (second.StageType == PipelineStageType.Transform || second.StageType == PipelineStageType.Filter) &&
                first.SupportedBackends.Intersect(second.SupportedBackends).Any();
 /// Performance report for pipeline analysis.
 public class PipelinePerformanceReport
+    {
     /// Gets or sets the estimated execution time.
     /// Gets or sets the estimated memory usage.
     public long EstimatedMemoryUsage { get; set; }
@@ -210,6 +229,7 @@ public class PipelinePerformanceReport
     public double EstimatedMemoryUsageMB => EstimatedMemoryUsage / (1024.0 * 1024.0);
 /// Information about performance bottlenecks.
 public class BottleneckInfo
+    {
     /// Gets or sets the stage ID where the bottleneck occurs.
     /// Gets or sets the type of bottleneck.
     public BottleneckType Type { get; set; }
@@ -220,6 +240,7 @@ public class BottleneckInfo
     public List<string> Mitigations { get; set; } = [];
 /// Types of performance bottlenecks.
 public enum BottleneckType
+    {
     /// <summary>Memory bandwidth bottleneck.</summary>
     MemoryBandwidth,
     /// <summary>Compute throughput bottleneck.</summary>
@@ -232,6 +253,7 @@ public enum BottleneckType
     AlgorithmComplexity
 /// Alternative execution strategy.
 public class ExecutionStrategy
+    {
     /// Gets or sets the strategy name.
     public string Name { get; set; } = string.Empty;
     /// Gets or sets the estimated performance improvement.
@@ -242,6 +264,7 @@ public class ExecutionStrategy
 // BackendRecommendation is defined in MissingInterfaces.cs
 /// Performance estimate for a specific backend.
 public class BackendPerformanceEstimate
+    {
     public TimeSpan EstimatedTime { get; set; }
     public long EstimatedMemory { get; set; }
     /// Gets or sets the estimated throughput.
@@ -250,6 +273,7 @@ public class BackendPerformanceEstimate
     public List<string> Limitations { get; set; } = [];
 /// Memory usage estimate for pipeline execution.
 public class MemoryEstimate
+    {
     /// Gets or sets the peak memory usage estimate.
     public long PeakMemoryUsage { get; set; }
     /// Gets or sets the average memory usage estimate.
@@ -260,13 +284,16 @@ public class MemoryEstimate
     public List<string> OptimizationOpportunities { get; set; } = [];
 /// Configuration options for data pipeline initialization.
 public sealed class DataPipelineOptions
+    {
     /// Gets or sets whether to create a copy of the input data.
     public bool CreateCopy { get; set; }
 /// Configuration options for streaming pipeline initialization.
 public sealed class StreamPipelineOptions
+    {
     /// Gets or sets the batch size for micro-batching operations.
     public int BatchSize { get; set; } = 1000;
     /// Gets or sets the window size for sliding window operations.
     public TimeSpan WindowSize { get; set; } = TimeSpan.FromSeconds(1);
     /// Gets or sets whether backpressure handling is enabled.
     public bool EnableBackpressure { get; set; } = true;
+}

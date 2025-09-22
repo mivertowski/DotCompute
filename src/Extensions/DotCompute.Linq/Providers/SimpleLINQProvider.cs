@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Queryables;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Providers;
+{
 /// <summary>
 /// Simplified LINQ provider implementation for initial testing.
 /// </summary>
@@ -25,6 +26,7 @@ public class SimpleLINQProvider : IQueryProvider
     }
     /// <inheritdoc/>
     public IQueryable CreateQuery(Expression expression)
+        {
         ArgumentNullException.ThrowIfNull(expression);
         var elementType = GetElementType(expression.Type);
         var queryableType = typeof(SimpleQueryable<>).MakeGenericType(elementType);

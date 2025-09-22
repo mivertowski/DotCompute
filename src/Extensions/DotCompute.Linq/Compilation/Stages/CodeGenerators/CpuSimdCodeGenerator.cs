@@ -17,6 +17,7 @@ using DotCompute.Linq.Pipelines.Bridge;
 // Namespace aliases to resolve ambiguous references
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 namespace DotCompute.Linq.Compilation.Stages.CodeGenerators;
+{
 /// <summary>
 /// Generates SIMD-optimized C# code for CPU execution.
 /// </summary>
@@ -24,12 +25,14 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
 {
     private readonly ILogger _logger;
     private readonly Dictionary<string, IOperatorCodeGenerator> _operatorGenerators;
+    }
     public CpuSimdCodeGenerator(ILogger logger)
     {
         _logger = logger;
         _operatorGenerators = InitializeOperatorGenerators();
     }
     public async Task<string> GenerateKernelSourceAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         var builder = new StringBuilder();
         // Generate using directives
         GenerateUsingDirectives(builder);
@@ -41,7 +44,9 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         builder.AppendLine("    }");
         builder.AppendLine("}");
         return builder.ToString();
+    }
     public async Task<IReadOnlyList<LinqKernelParameter>> GenerateParametersAsync(CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         var parameters = new List<LinqKernelParameter>();
         // Add input arrays
         foreach (var inputType in context.AnalysisResult.TypeUsage.Keys)
@@ -66,12 +71,16 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
             DotCompute.Linq.Operators.Parameters.ParameterDirection.Input));
         await Task.CompletedTask; // For async consistency
         return parameters;
+    }
     public KernelEntryPoint GenerateEntryPoint(CodeGenerationContext context)
+    {
         return new KernelEntryPoint(
             context.KernelName,
             "Execute",
             KernelExecutionModel.DataParallel);
+    }
     private void GenerateUsingDirectives(StringBuilder builder)
+    {
         builder.AppendLine("using System;");
         builder.AppendLine("using System.Numerics;");
         builder.AppendLine("using System.Runtime.Intrinsics;");
@@ -79,12 +88,17 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         builder.AppendLine("using System.Runtime.CompilerServices;");
         builder.AppendLine("using DotCompute.Backends.CPU;");
         builder.AppendLine();
+    }
     private void GenerateClassDeclaration(StringBuilder builder, CodeGenerationContext context)
+    {
         builder.AppendLine("namespace DotCompute.Generated.Kernels");
+{
         builder.AppendLine("{");
         builder.AppendLine($"    public static class {context.KernelName}");
         builder.AppendLine("    {");
+    }
     private async Task GenerateKernelMethodAsync(StringBuilder builder, CodeGenerationContext context, CancellationToken cancellationToken)
+    {
         var outputType = DetermineOutputElementType(context.AnalysisResult);
         // Method signature
         builder.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
@@ -103,7 +117,9 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         // Method body with SIMD optimization
         GenerateSimdKernelBody(builder, context, outputType);
         builder.AppendLine("        }");
+    }
     private void GenerateSimdKernelBody(StringBuilder builder, CodeGenerationContext context, Type outputType)
+    {
         builder.AppendLine("            // SIMD-optimized kernel implementation");
         builder.AppendLine("            var vectorSize = Vector<float>.Count;");
         builder.AppendLine("            var vectorLength = length - (length % vectorSize);");
@@ -117,14 +133,20 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         builder.AppendLine("            // Scalar remainder");
         builder.AppendLine("            for (int i = vectorLength; i < length; i++)");
         GenerateScalarOperations(builder, context);
+    }
     private void GenerateVectorizedOperations(StringBuilder builder, CodeGenerationContext context)
+    {
         foreach (var op in context.AnalysisResult.OperatorChain)
             if (_operatorGenerators.TryGetValue(op.Name, out var generator))
                 var operatorInfo = op.ConvertToOperatorInfo();
                 generator.GenerateVectorized(builder, operatorInfo, context);
+    }
     private void GenerateScalarOperations(StringBuilder builder, CodeGenerationContext context)
+    {
                 generator.GenerateScalar(builder, operatorInfo, context);
+    }
     private Dictionary<string, IOperatorCodeGenerator> InitializeOperatorGenerators()
+    {
         return new Dictionary<string, IOperatorCodeGenerator>
             ["Addition"] = new ArithmeticOperatorGenerator(),
             ["Subtraction"] = new ArithmeticOperatorGenerator(),
@@ -139,6 +161,7 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
     /// Converts LINQ kernel parameters to generated kernel parameters.
     /// </summary>
     private static GeneratedKernelParameter[] ConvertToGeneratedKernelParameters(IReadOnlyList<LinqKernelParameter> parameters)
+    {
         return parameters.Select(p => new GeneratedKernelParameter
             Name = p.Name,
             Type = p.Type,
@@ -150,6 +173,7 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         }).ToArray();
     /// Estimates the size of a parameter type in bytes.
     private static int EstimateParameterSize(Type type)
+    {
         if (type == typeof(int) || type == typeof(float))
             return 4;
         if (type == typeof(long) || type == typeof(double))
@@ -163,6 +187,7 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         return IntPtr.Size; // Default to pointer size for reference types
     /// Converts kernel metadata to dictionary.
     private static Dictionary<string, object> ConvertToMetadataDictionary(KernelMetadata metadata)
+    {
         var result = new Dictionary<string, object>();
         if (metadata.Properties != null)
             foreach (var kvp in metadata.Properties)
@@ -172,10 +197,14 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
         result["OptimizationLevel"] = metadata.OptimizationLevel.ToString();
         result["CompilerVersion"] = metadata.CompilerVersion;
         return result;
+    }
     private static Type DetermineOutputElementType(DotCompute.Linq.Compilation.Analysis.ExpressionAnalysisResult analysisResult)
+    {
         // Simplified logic - in practice, this would analyze the expression tree
         return typeof(float);
+    }
     private static string GetCSharpTypeName(Type type)
+    {
         if (type == typeof(int))
             return "int";
         if (type == typeof(float))
@@ -186,4 +215,5 @@ internal class CpuSimdCodeGenerator : IBackendCodeGenerator
             return "bool";
             return GetCSharpTypeName(type.GetElementType()!) + "[]";
         return type.Name;
+}
 }

@@ -9,6 +9,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Types;
 namespace DotCompute.Linq.Operators.Models;
+{
 /// <summary>
 /// Represents a request to compile a kernel.
 /// </summary>

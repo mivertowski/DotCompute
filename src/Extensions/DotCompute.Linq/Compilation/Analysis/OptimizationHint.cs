@@ -5,6 +5,7 @@
 
 using System;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Represents an optimization hint generated during expression analysis.
 /// </summary>

@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Pipelines.Analysis;
+{
 /// <summary>
 /// Context for pipeline expression analysis operations.
 /// </summary>

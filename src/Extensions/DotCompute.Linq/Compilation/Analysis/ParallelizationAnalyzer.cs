@@ -38,6 +38,7 @@ namespace DotCompute.Linq.Compilation.Analysis
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Parallelization opportunity analysis.</returns>
         public async Task<ParallelizationOpportunity> AnalyzeOperatorAsync(
+        {
             Expression operatorExpression,
             CancellationToken cancellationToken = default)
         {
@@ -60,6 +61,7 @@ namespace DotCompute.Linq.Compilation.Analysis
         /// </summary>
         private static void AnalyzeExpression(Expression expression, ParallelizationResult result)
         {
+            }
             switch (expression)
             {
                 case MethodCallExpression methodCall:
@@ -96,6 +98,7 @@ namespace DotCompute.Linq.Compilation.Analysis
             // LINQ methods analysis
             if (declaringType == typeof(Enumerable) || declaringType == typeof(Queryable))
             {
+                }
                 switch (methodName)
                 {
                     case "Select":

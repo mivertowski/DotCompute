@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Linq;
+{
 /// <summary>
 /// Extension methods to create compute-accelerated queryables from collections.
 /// Provides the primary user-facing API for LINQ-to-GPU functionality with automatic backend selection,
@@ -187,6 +188,7 @@ public static class ComputeQueryableExtensions
     /// <para>Precision: Uses 32-bit integer arithmetic. Consider using ComputeSum() on
     /// long sequences if overflow is a concern.</para>
     public static int ComputeSum(this IQueryable<int> source)
+        {
         var sumExpression = Expression.Call(
             typeof(Queryable),
             nameof(Queryable.Sum),
@@ -288,6 +290,7 @@ public static class ComputeQueryableExtensions
             loggerFactory.CreateLogger<ComputeQueryProvider>());
     /// Options for compute queries.
     public class ComputeQueryOptions
+    {
         /// <summary>
         /// Gets or sets the logger factory.
         /// </summary>

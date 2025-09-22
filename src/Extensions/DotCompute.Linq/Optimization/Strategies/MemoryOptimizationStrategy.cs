@@ -10,6 +10,7 @@ using DotCompute.Linq.Optimization.Models;
 using ExecutionContext = DotCompute.Linq.Execution.ExecutionContext;
 
 namespace DotCompute.Linq.Optimization.Strategies;
+{
 /// <summary>
 /// Comprehensive memory optimization strategy that optimizes memory access patterns,
 /// implements cache-aware algorithms, and provides intelligent memory pooling and prefetching.
@@ -28,6 +29,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
     private const int OptimalBlockSize = 64 * 1024; // 64KB blocks
     private const int PrefetchDistance = 8; // Cache lines to prefetch ahead
     public MemoryOptimizationStrategy(
+        {
         IComputeOrchestrator orchestrator,
         ExecutionCostModel costModel)
     {
@@ -79,12 +81,6 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
             _ => CreateDefaultLayout(operation)
         };
     private Task<MemoryLayout> OptimizeForSequentialAccess(
-        // Array of Structures (AoS) is optimal for sequential access
-        var layout = new MemoryLayout
-            Type = MemoryLayoutType.ArrayOfStructures,
-            Alignment = context.CacheLineSize,
-            Padding = CalculateOptimalPadding(operation, context),
-            BlockSize = Math.Min(operation.InputSize, OptimalBlockSize),
             Prefetching = new PrefetchingConfig
             {
                 Enabled = true,
@@ -93,16 +89,11 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
             }
         return Task.FromResult(layout);
     private Task<MemoryLayout> OptimizeForRandomAccess(
-        // Structure of Arrays (SoA) with hash table optimization for random access
-            Type = MemoryLayoutType.StructureOfArrays,
-            Padding = 0, // Minimize memory usage for random access
-            BlockSize = context.CacheSize / 4, // Fit multiple blocks in cache
-                Enabled = false, // Random access doesn't benefit from prefetching
-                Distance = 0,
                 Strategy = PrefetchingStrategy.None
             },
             IndexingStrategy = IndexingStrategy.HashTable
     private Task<MemoryLayout> OptimizeForStridedAccess(
+        {
         OperationAccessPattern accessPattern,
         var stride = accessPattern.Stride;
         var optimalBlockSize = CalculateStridedBlockSize(stride, context.CacheSize);
@@ -241,6 +232,7 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
             analysis.Lifetimes.Add(lifetime);
         return analysis;
     private BufferReuseStrategy CreateBufferReuseStrategy(
+        {
         BufferLifetimeAnalysis analysis,
         var strategy = new BufferReuseStrategy();
         // Find non-overlapping lifetimes for buffer reuse
@@ -303,7 +295,9 @@ public sealed class MemoryOptimizationStrategy : ILinqOptimizationStrategy
 }
 // Supporting classes and enums
 public class MemoryAnalyzer
+    {
     public async Task<MemoryAccessProfile> AnalyzeAccessPatterns(QueryPlan plan, ExecutionContext context)
+        {
         var profile = new MemoryAccessProfile();
             var pattern = await AnalyzeOperationAccessPattern(operation, context);
             profile.AccessPatterns[operation.Id] = pattern;
@@ -338,6 +332,7 @@ public class MemoryAnalyzer
         return Task.FromResult((double)workingSet / dataSize);
         return 8;
 public class CacheOptimizer
+    {
     public Task<CacheBlockingStrategy> DetermineBlockingStrategy(
         var optimalBlockSize = context.CacheSize / 4; // Use 1/4 of cache for blocks
         var strategy = new CacheBlockingStrategy
@@ -361,6 +356,7 @@ public class CacheOptimizer
         // 1D tiling for other operations
         return [(int)(context.CacheSize / GetElementSize(operation.DataType))];
 public class PrefetchingEngine
+    {
     public Task<PrefetchingConfig> CreatePrefetchConfiguration(
         var config = new PrefetchingConfig
             Enabled = true,
@@ -383,6 +379,7 @@ public class PrefetchingEngine
         var sizeFactor = Math.Min(1.0, dataSize / (double)context.CacheSize);
         return 0.3 + sizeFactor * 0.4; // Range: 0.3 to 0.7
 public class MemoryPoolManager
+    {
     public Task<MemoryPoolingStrategy> CreatePoolingStrategy(
         var strategy = new MemoryPoolingStrategy();
         // Analyze memory allocation patterns
@@ -400,16 +397,15 @@ public class MemoryPoolManager
                     AllocationStrategy = MemoryAllocationStrategy.BestFit
                 });
     private bool ShouldCreatePool(long size, QueryPlan plan, ExecutionContext context)
-        // Create pools for frequently used sizes
-        var usage = plan.Operations.Count(op =>
-            op.InputSize * GetElementSize(op.DataType) == size);
         return usage >= 2 || size > 1024 * 1024; // Multiple uses or large allocations
     private int CalculateInitialCapacity(long size, QueryPlan plan)
+        {
         return Math.Max(2, usage / 2);
     private int CalculateMaxCapacity(long size, ExecutionContext context)
         return (int)Math.Min(16, context.AvailableMemory / size / 4);
 // Supporting data structures
 public class MemoryAccessProfile
+    {
     public Dictionary<string, OperationAccessPattern> AccessPatterns { get; set; } = [];
     public OperationAccessPattern GetAccessPattern(QueryOperation operation)
         return AccessPatterns.TryGetValue(operation.Id, out var pattern)
@@ -419,11 +415,13 @@ public class MemoryAccessProfile
         // Simplified entropy calculation
         return 0.8; // Default medium entropy
 public class OperationAccessPattern
+    {
     public AccessPatternType PrimaryPattern { get; set; }
     public int Stride { get; set; } = 1;
     public double Locality { get; set; }
     public double CacheEfficiency { get; set; }
 public class MemoryLayout
+    {
     public MemoryLayoutType Type { get; set; }
     public int Alignment { get; set; }
     public int Padding { get; set; }
@@ -433,91 +431,115 @@ public class MemoryLayout
     public PrefetchingConfig? Prefetching { get; set; }
     public IndexingStrategy IndexingStrategy { get; set; }
 public class PrefetchingConfig
+    {
     public bool Enabled { get; set; }
     public int Distance { get; set; }
     public PrefetchingStrategy Strategy { get; set; }
     public double Aggressiveness { get; set; }
 public class CacheBlockingStrategy
+    {
     public int BlockSize { get; set; }
     public int[] TilingDimensions { get; set; } = Array.Empty<int>();
     public int PrefetchDistance { get; set; }
     public CacheWriteBackPolicy WriteBackPolicy { get; set; }
 public class ExecutionSchedule
+    {
     public List<QueryOperation> Operations { get; set; } = [];
 public class MemoryPoolingStrategy
+    {
     public List<MemoryPool> Pools { get; set; } = [];
 public class MemoryPool
+    {
     public int InitialCapacity { get; set; }
     public int MaxCapacity { get; set; }
     public MemoryAllocationStrategy AllocationStrategy { get; set; }
 public class BufferLifetimeAnalysis
+    {
     public List<BufferLifetime> Lifetimes { get; set; } = [];
 public class BufferLifetime
+    {
     public string OperationId { get; set; } = string.Empty;
     public DateTime AllocationPoint { get; set; }
     public DateTime DeallocationPoint { get; set; }
     public long Size { get; set; }
     public MemoryAccessPattern AccessPattern { get; set; }
 public class BufferReuseStrategy
+    {
     public Dictionary<string, string> ReuseMapping { get; set; } = [];
 public class NumaMemoryPolicy
+    {
     public int PreferredNode { get; set; }
     public NumaAllocationPolicy AllocationPolicy { get; set; }
     public bool MigrationEnabled { get; set; }
 public class CompressionStrategy
+    {
     public CompressionAlgorithm Algorithm { get; set; }
     public CompressionLevel Level { get; set; }
 public class CpuUsageAnalysis
+    {
     public double GetScore(int numaNode) => 0.5; // Simplified
 public class MemoryBandwidthAnalysis
+    {
 // Enums
 public enum AccessPatternType
+    {
     Sequential,
     Random,
     Strided,
     Blocked
 public enum MemoryLayoutType
+    {
     Linear,
     ArrayOfStructures,
     StructureOfArrays,
 public enum IndexingStrategy
+    {
     HashTable,
     BTree
 public enum PrefetchingStrategy
+    {
     None,
     BlockBased
 public enum CacheWriteBackPolicy
+    {
     Immediate,
     Delayed,
     Batched
 public enum MemoryAllocationStrategy
+    {
     FirstFit,
     BestFit,
     WorstFit
 public enum DataStructureType
+    {
     Array,
     HashMap,
     StridedArray,
     BlockedArray
 public enum NumaAllocationPolicy
+    {
     Default,
     Local,
     Interleaved,
     Preferred
 public enum CompressionAlgorithm
+    {
     LZ4,
     Snappy,
     ZSTD
 public enum CompressionLevel
+    {
     Fast,
     Balanced,
     Maximum
 public enum MemoryAccessPattern
+    {
     Broadcast,
     Gather,
     Scatter
 /// Conversion methods for NUMA-related types.
 internal static class NumaConversionExtensions
+    {
     public static Models.NumaMemoryPolicy ConvertToModelsNumaMemoryPolicy(NumaMemoryPolicy source)
         return new Models.NumaMemoryPolicy
             PreferredNode = source.PreferredNode,

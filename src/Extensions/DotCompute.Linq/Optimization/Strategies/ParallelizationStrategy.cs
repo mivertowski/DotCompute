@@ -14,6 +14,7 @@ using Models = DotCompute.Linq.Optimization.Models;
 using DotCompute.Linq.Pipelines.Models;
 
 namespace DotCompute.Linq.Optimization.Strategies;
+{
 /// <summary>
 /// Advanced parallelization strategy that provides dynamic parallelism selection,
 /// work distribution optimization, load balancing, and GPU occupancy optimization.
@@ -33,6 +34,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     private const int MinWorkPerThread = 100;
     private const int MaxParallelismDegree = 1024;
     public ParallelizationStrategy(
+        {
         IComputeOrchestrator orchestrator,
         ExecutionCostModel costModel)
     {
@@ -92,7 +94,6 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
             GrainSize = CalculateOptimalGrainSize(operation, optimalDegree, context)
         };
     private bool IsParallelizable(QueryOperation operation, Pipelines.Models.WorkloadCharacteristics workload)
-        // Check fundamental parallelizability requirements
         if (operation.HasSideEffects && !operation.IsSideEffectSafe)
             return false;
         if (operation.InputSize < MinParallelizationThreshold)
@@ -107,6 +108,7 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
             Models.OperationType.CustomKernel => operation.IsAssociative,
             _ => false
     private StrategiesParallelizationConfig CreateSequentialConfig()
+        {
             Degree = 1,
             Pattern = ParallelizationPattern.Sequential,
             WorkDistribution = WorkDistribution.Single,
@@ -322,7 +324,6 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
     private bool CanVectorize(QueryOperation operation)
         // Check if operation can benefit from vectorization
     private int DetermineOptimalVectorWidth(Type dataType)
-        // Determine optimal SIMD vector width based on data type and available instructions
         var elementSize = GetElementSize(dataType);
         // Assume AVX2 (256-bit) or AVX-512 (512-bit) support
         var maxVectorSize = 512 / 8; // 64 bytes for AVX-512
@@ -334,11 +335,10 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
         // Calculate optimal loop unroll factor based on instruction pipeline depth
         return workload.ComputeIntensity > 0.5 ? 8 : 4;
     private async Task OptimizeGpuMemoryTransfers(QueryPlan plan, ExecutionContext context)
-        // Batch memory transfers to reduce overhead
-        var transferGroups = GroupMemoryTransfers(plan);
         foreach (var group in transferGroups)
             await OptimizeTransferGroup(group, context);
     private async Task OptimizeGpuOccupancy(QueryPlan plan, ExecutionContext context)
+        {
             if (operation.GpuOptimizationConfig != null)
                 await _gpuOptimizer.OptimizeOccupancy(operation, context);
     private async Task ApplyDynamicScheduling(QueryPlan plan, ExecutionContext context)
@@ -417,7 +417,9 @@ public sealed class ParallelizationStrategy : ILinqOptimizationStrategy
 }
 // Supporting classes and data structures
 public class WorkloadAnalyzer
+    {
     public WorkloadAnalyzer(ExecutionCostModel costModel)
+        {
         _costModel = costModel;
     public async Task<WorkloadProfile> AnalyzeWorkload(QueryPlan plan, ExecutionContext context)
         var profile = new WorkloadProfile();
@@ -457,6 +459,7 @@ public class WorkloadAnalyzer
     private long EstimateSecondaryDataSize(QueryOperation operation)
         return operation.Type == Models.OperationType.Join ? operation.InputSize / 2 : 0;
 public class LoadBalancer
+    {
     public Task<StrategiesLoadBalancingConfig> CreateConfiguration(
         var config = new StrategiesLoadBalancingConfig
             Strategy = Enum.TryParse<LoadBalancingStrategy>(operation.ParallelizationConfig?.LoadBalancingStrategy, out var parsed) ? parsed : LoadBalancingStrategy.Static,
@@ -466,6 +469,7 @@ public class LoadBalancer
     private double CalculateAdaptiveThreshold(Pipelines.Models.WorkloadCharacteristics workload)
         return 0.1 + workload.WorkloadVariance * 0.3;
 public class GpuOccupancyOptimizer
+    {
     public Task<StrategiesGpuOptimizationConfig> OptimizeForGpu(
         return Task.FromResult(new StrategiesGpuOptimizationConfig
             BlockSize = CalculateOptimalBlockSize(operation, context),
@@ -475,6 +479,7 @@ public class GpuOccupancyOptimizer
             OccupancyTarget = OptimalGpuOccupancy
         });
     public Task OptimizeOccupancy(QueryOperation operation, ExecutionContext context)
+        {
         if (operation.GpuOptimizationConfig == null)
             return Task.CompletedTask;
         // Adjust configuration for optimal occupancy
@@ -529,6 +534,7 @@ public class GpuOccupancyOptimizer
         // Reduce shared memory usage if needed
         config.SharedMemorySize = (int)(config.SharedMemorySize * 0.9);
 public class DynamicScheduler
+    {
     public Task<DynamicSchedule> CreateSchedule(QueryPlan plan, ExecutionContext context)
         return Task.FromResult(new DynamicSchedule
             SchedulingPolicy = SchedulingPolicy.Adaptive,
@@ -537,6 +543,7 @@ public class DynamicScheduler
             TimeSliceMs = 10
 // Data structures
 public class WorkloadProfile
+    {
     public Dictionary<string, DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics> OperationCharacteristics { get; set; } = [];
     public DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics GetWorkloadCharacteristics(QueryOperation operation)
         return OperationCharacteristics.TryGetValue(operation.Id, out var characteristics)
@@ -544,6 +551,7 @@ public class WorkloadProfile
             : new DotCompute.Linq.Pipelines.Models.WorkloadCharacteristics();
 // Pipelines.Models.WorkloadCharacteristics moved to shared location to avoid duplicates
 public class StrategiesParallelizationConfig
+    {
     public int Degree { get; set; }
     public ParallelizationPattern Pattern { get; set; }
     public WorkDistribution WorkDistribution { get; set; } = new();
@@ -553,56 +561,68 @@ public class StrategiesParallelizationConfig
     public int ChunkSize { get; set; }
     public bool LoadBalancingEnabled { get; set; }
 public class WorkDistribution
+    {
     public WorkDistributionType Type { get; set; }
     public int ReduceGrainSize { get; set; }
     public TaskDependencyGraph? TaskDependencies { get; set; }
     public int TreeDepth { get; set; }
     public static WorkDistribution Single => new() { Type = WorkDistributionType.Single };
 public class StrategiesLoadBalancingConfig
+    {
     public LoadBalancingStrategy Strategy { get; set; }
     public bool WorkStealingEnabled { get; set; }
     public double AdaptiveThreshold { get; set; }
     public TimeSpan MonitoringInterval { get; set; }
 public class StrategiesGpuOptimizationConfig
+    {
     public int BlockSize { get; set; }
     public int GridSize { get; set; }
     public int SharedMemoryUsage { get; set; }
     public int RegisterUsage { get; set; }
     public double OccupancyTarget { get; set; }
 public class StrategiesCpuOptimizationConfig
+    {
     public ThreadAffinityConfig ThreadAffinity { get; set; } = new();
     public List<VectorizationHint> VectorizationHints { get; set; } = [];
     public CacheOptimizationStrategy CacheOptimization { get; set; } = new();
     public HyperThreadingStrategy HyperThreadingStrategy { get; set; }
     public NumaConfiguration? NumaConfiguration { get; set; }
 public class ThreadAffinityConfig
+    {
     public bool UsePhysicalCores { get; set; }
     public List<int> PreferredCores { get; set; } = [];
     public bool AvoidHyperThreading { get; set; }
 public class VectorizationHint
+    {
     public VectorizationType Type { get; set; }
     public int VectorWidth { get; set; }
     public int AlignmentRequirement { get; set; }
     public int LoopUnrollFactor { get; set; }
 public class CacheOptimizationStrategy
+    {
     public int CacheLineSize { get; set; } = 64;
     public int PrefetchDistance { get; set; } = 8;
     public bool TemporalLocality { get; set; }
     public bool SpatialLocality { get; set; }
 public class NumaConfiguration
+    {
     public int PreferredNode { get; set; }
     public NumaThreadDistribution ThreadDistribution { get; set; }
     public NumaMemoryBinding MemoryBinding { get; set; }
 public class TaskDependencyGraph
+    {
     // Implementation details
 public class MemoryTransferGroup
+    {
 public class DynamicSchedule
+    {
     public SchedulingPolicy SchedulingPolicy { get; set; }
     public bool PreemptionEnabled { get; set; }
     public int PriorityLevels { get; set; }
     public int TimeSliceMs { get; set; }
 // Enums
 public enum ParallelizationPattern
+    {
     Sequential,
     DataParallel,
     TaskParallel,
@@ -611,32 +631,38 @@ public enum ParallelizationPattern
     BroadcastJoin,
     HashJoin
 public enum WorkDistributionType
+    {
     Single,
     ChunkedStatic,
     ChunkedDynamic,
     TaskQueue,
     TreeReduction
 public enum LoadBalancingStrategy
+    {
     None,
     Static,
     Dynamic,
     WorkStealing
 public enum SynchronizationStrategy
+    {
     Barrier,
     EventBased,
     Phased,
     Hierarchical
 public enum VectorizationType
+    {
     SIMD,
     AVX2,
     AVX512
 public enum HyperThreadingStrategy
+    {
     Avoid,
     Utilize,
     Adaptive,
     Enabled,
     Disabled
 public enum NumaThreadDistribution
+    {
     /// <summary>No specific NUMA thread placement.</summary>
     /// <summary>Distribute threads evenly across NUMA nodes.</summary>
     Balanced,
@@ -645,6 +671,7 @@ public enum NumaThreadDistribution
     /// <summary>Pack threads onto specific NUMA nodes.</summary>
     Packed
 public enum NumaMemoryBinding
+    {
     /// <summary>No specific memory binding.</summary>
     /// <summary>Bind memory to local NUMA node.</summary>
     Local,
@@ -653,6 +680,7 @@ public enum NumaMemoryBinding
     /// <summary>Interleave memory across NUMA nodes.</summary>
     Interleaved
 public enum SchedulingPolicy
+    {
     FIFO,
     RoundRobin,
     Adaptive

@@ -9,6 +9,7 @@ using DotCompute.Linq.Operators.Generation;
 using DotCompute.Linq.Operators.Types;
 using CoreKernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Generates kernel source code for different accelerator types.
 /// </summary>
@@ -31,6 +32,7 @@ public class KernelSourceGenerator
     /// <param name="definition">The kernel definition.</param>
     /// <returns>Generated source code.</returns>
     public string GenerateSource(string operationType, CoreKernelDefinition definition)
+        {
         if (_templates.TryGetValue(operationType, out var template))
         {
             return template.GenerateCode(definition, _targetAcceleratorType);
@@ -83,18 +85,12 @@ public class KernelSourceGenerator
         _ = sourceBuilder.AppendLine("    int size");
         _ = sourceBuilder.AppendLine(") {");
     private void GenerateKernelBody(StringBuilder sourceBuilder, Expression expression, KernelGenerationContext context)
-        // Generate thread indexing
-            AcceleratorType.CUDA => sourceBuilder.AppendLine("    int idx = blockIdx.x * blockDim.x + threadIdx.x;"),
-            AcceleratorType.OpenCL => sourceBuilder.AppendLine("    int idx = get_global_id(0);"),
-            AcceleratorType.Metal => sourceBuilder.AppendLine("    int idx = thread_position_in_grid;"),
-            _ => sourceBuilder.AppendLine("    int idx = GetGlobalThreadId();"),
-        _ = sourceBuilder.AppendLine("    ");
         _ = sourceBuilder.AppendLine("    if (idx < size) {");
         // Generate expression-specific code
         GenerateExpressionCode(sourceBuilder, expression, context);
-        _ = sourceBuilder.AppendLine("    }");
         _ = sourceBuilder.AppendLine("}");
     private static void GenerateExpressionCode(StringBuilder sourceBuilder, Expression expression, KernelGenerationContext context)
+        {
         switch (expression.NodeType)
             case ExpressionType.Call:
                 if (expression is MethodCallExpression methodCall)
@@ -184,28 +180,34 @@ public class KernelSourceGenerator
 }
 /// Interface for code generation templates.
 public interface ICodeTemplate
+    {
     /// Generates code for a kernel definition.
     /// <param name="acceleratorType">The target accelerator type.</param>
     /// <returns>Generated code.</returns>
     public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType);
 /// Template for map operations.
 public class MapCodeTemplate : ICodeTemplate
+    {
     public string GenerateCode(CoreKernelDefinition definition, AcceleratorType acceleratorType)
         _ = sourceBuilder.AppendLine($"// Map operation template for {acceleratorType}");
         _ = sourceBuilder.AppendLine("// TODO: Implement specialized map template");
 /// Template for filter operations.
 public class FilterCodeTemplate : ICodeTemplate
+    {
         _ = sourceBuilder.AppendLine($"// Filter operation template for {acceleratorType}");
         _ = sourceBuilder.AppendLine("// TODO: Implement specialized filter template");
 /// Template for reduce operations.
 public class ReduceCodeTemplate : ICodeTemplate
+    {
         _ = sourceBuilder.AppendLine($"// Reduce operation template for {acceleratorType}");
         _ = sourceBuilder.AppendLine("// TODO: Implement specialized reduce template");
 /// Template for sort operations.
 public class SortCodeTemplate : ICodeTemplate
+    {
         _ = sourceBuilder.AppendLine($"// Sort operation template for {acceleratorType}");
         _ = sourceBuilder.AppendLine("// TODO: Implement specialized sort template");
 /// Template for custom operations.
 public class CustomCodeTemplate : ICodeTemplate
+    {
         _ = sourceBuilder.AppendLine($"// Custom operation template for {acceleratorType}");
         _ = sourceBuilder.AppendLine("// TODO: Implement custom operation logic");

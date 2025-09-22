@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Validation;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 namespace DotCompute.Linq.Compilation.Validation;
+{
 /// <summary>
 /// Context for query compilation validation.
 /// </summary>

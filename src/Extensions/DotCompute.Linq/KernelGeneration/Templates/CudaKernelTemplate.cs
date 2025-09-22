@@ -15,6 +15,7 @@ using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Types;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.KernelGeneration.Templates;
+{
 /// <summary>
 /// CUDA kernel template implementation that generates optimized CUDA C++ kernel source code.
 /// Supports various CUDA-specific optimizations including shared memory, texture memory, and compute capability targeting.
@@ -42,6 +43,7 @@ public sealed class CudaKernelTemplate : IKernelTemplate
     public string Version => "1.0.0";
     public IReadOnlySet<string> SupportedOperations => s_supportedOperations;
     public async Task<KernelGenerationResult> GenerateAsync(
+        {
         KernelMetadata metadata,
         KernelEntryPoint entryPoint,
         KernelGenerationOptions? options = null,
@@ -525,4 +527,5 @@ public sealed class CudaKernelTemplate : IKernelTemplate
         // Check if parameters use float types that could benefit from vectorization
         return entryPoint.Parameters.Any(p => p.Type == typeof(float) || p.Type == typeof(float[]));
     }
+}
 }

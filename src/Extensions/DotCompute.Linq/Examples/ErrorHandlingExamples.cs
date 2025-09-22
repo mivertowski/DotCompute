@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 namespace DotCompute.Linq.Examples;
+{
 /// <summary>
 /// Comprehensive examples demonstrating error handling patterns and recovery strategies
 /// in the DotCompute.Linq pipeline system. Shows how to handle common error scenarios
@@ -61,6 +62,7 @@ public class ErrorHandlingExamples
         public readonly long Timestamp; // Unix timestamp
         public readonly double Money; // GPU-compatible type
         public OptimizedDataItem(int id, float value, long timestamp, double money)
+        {
             Value = value;
     #endregion
     #region Memory and Resource Error Handling
@@ -218,7 +220,6 @@ public class ErrorHandlingExamples
                 ("Complex Mathematical Operation", ExecuteComplexMathOperationAsync),
                 ("Large Dataset Operation", ExecuteLargeDatasetOperationAsync),
                 ("Potentially Problematic Operation", ExecuteProblematicOperationAsync)
-            };
             foreach (var (name, operation) in scenarios)
                 logger.LogInformation("Testing scenario: {Scenario}", name);
                 try
@@ -285,6 +286,7 @@ public class ErrorHandlingExamples
         var processedCount = 0;
         var batchSize = 10000;
         await foreach (var batch in streamingData.Chunk(batchSize).ToAsyncEnumerable())
+        {
                 var batchResults = await batch.AsComputeQueryable(services)
                 processedCount += batchResults.Count();
                 if (processedCount % (batchSize * 10) == 0)

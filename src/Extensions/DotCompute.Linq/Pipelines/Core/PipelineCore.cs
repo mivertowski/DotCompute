@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Pipelines;
 using DotCompute.Linq.Pipelines.Models;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Pipelines.Core;
+{
 #region Exception Types
 /// <summary>
 /// Custom exception type for pipeline orchestration failures, providing detailed diagnostic information
@@ -35,21 +36,13 @@ public class PipelineOrchestrationException : Exception
     {
         DiagnosticInfo = new Dictionary<string, object>();
         ErrorType = PipelineErrorType.None;
-    }
-    /// Initializes a new instance of the <see cref="PipelineOrchestrationException"/> class with a specified error message.
     /// <param name="message">The error message that explains the reason for the exception.</param>
     public PipelineOrchestrationException(string message) : base(message)
-    /// Initializes a new instance of the <see cref="PipelineOrchestrationException"/> class with a specified error message and inner exception.
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public PipelineOrchestrationException(string message, Exception innerException) : base(message, innerException)
-    /// Initializes a new instance of the <see cref="PipelineOrchestrationException"/> class with detailed orchestration context.
-    /// <param name="stageName">The name of the stage where the error occurred.</param>
-    /// <param name="pipelineId">The unique identifier of the pipeline.</param>
-    /// <param name="backendName">The name of the backend where the error occurred.</param>
-    /// <param name="errorType">The type classification of the error.</param>
-    /// <param name="executionContext">The execution context at the time of failure.</param>
     /// <param name="diagnosticInfo">Additional diagnostic information.</param>
     public PipelineOrchestrationException(
+        {
         string message,
         string? stageName = null,
         Guid? pipelineId = null,
@@ -76,6 +69,7 @@ public class PipelineOrchestrationException : Exception
         DiagnosticInfo = info.GetValue(nameof(DiagnosticInfo), typeof(Dictionary<string, object>)) as IReadOnlyDictionary<string, object> ?? new Dictionary<string, object>();
     /// Sets the SerializationInfo with information about the exception.
     public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
         base.GetObjectData(info, context);
         info.AddValue(nameof(StageName), StageName);
         info.AddValue(nameof(PipelineId), PipelineId);
@@ -85,6 +79,7 @@ public class PipelineOrchestrationException : Exception
     /// Creates a detailed error message including all diagnostic information.
     /// <returns>A comprehensive error message with context.</returns>
     public override string ToString()
+    {
         var details = new List<string> { base.ToString() };
         if (!string.IsNullOrEmpty(StageName))
         {
@@ -109,6 +104,7 @@ public class PipelineOrchestrationException : Exception
 /// Defines optimization strategies for pipeline execution, balancing performance, reliability, and resource utilization.
 /// Each strategy represents a different approach to optimizing pipeline execution based on specific use cases and constraints.
 public enum OptimizationStrategy
+    {
     /// Conservative optimization focusing on reliability and predictable performance.
     /// Minimizes aggressive optimizations that could potentially cause instability.
     /// Best for: Production systems requiring high reliability.
@@ -141,6 +137,7 @@ public enum OptimizationStrategy
 /// Comprehensive configuration options for adaptive caching in pipeline execution.
 /// Provides fine-grained control over caching behavior, performance thresholds, and resource management.
 public class AdaptiveCacheOptions
+    {
     /// Gets or sets the maximum size of the cache in bytes.
     /// When the cache exceeds this size, the eviction policy will be applied to free space.
     /// Default: 100 MB.
@@ -206,6 +203,7 @@ public class AdaptiveCacheOptions
     /// Validates the configuration options and throws an exception if invalid.
     /// <exception cref="ArgumentOutOfRangeException">Thrown when configuration values are outside acceptable ranges.</exception>
     public void Validate()
+    {
         if (MaxCacheSize <= 0)
             throw new ArgumentOutOfRangeException(nameof(MaxCacheSize), "Cache size must be positive.");
         if (MaxEntries <= 0)
@@ -248,6 +246,7 @@ public class AdaptiveCacheOptions
 /// Cache eviction policies for determining which entries to remove when the cache reaches capacity.
 /// Each policy optimizes for different access patterns and use cases.
 public enum CacheEvictionPolicy
+    {
     /// Least Recently Used (LRU) - Removes entries that haven't been accessed recently.
     /// Best for: General-purpose caching with temporal locality.
     LeastRecentlyUsed,
@@ -272,6 +271,7 @@ public enum CacheEvictionPolicy
 /// Configuration options for cache partitioning in multi-tenant or multi-user scenarios.
 /// Provides isolation and resource management capabilities for different cache consumers.
 public class CachePartitioningOptions
+    {
     /// Gets or sets whether partitioning is enabled.
     public bool EnablePartitioning { get; set; } = false;
     /// Gets or sets the partitioning strategy to use.
@@ -290,6 +290,7 @@ public class CachePartitioningOptions
     public bool AllowCrossPartitionSharing { get; set; } = true;
 /// Strategies for cache partitioning.
 public enum CachePartitioningStrategy
+    {
     /// Partition by cache entry tags.
     ByTag,
     /// Partition by key prefix patterns.
@@ -298,3 +299,5 @@ public enum CachePartitioningStrategy
     ByDataType,
     /// Custom partitioning logic provided by the application.
     Custom
+}
+}

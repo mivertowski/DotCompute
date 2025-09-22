@@ -10,6 +10,7 @@ using CompilationOperatorInfo = DotCompute.Linq.Compilation.Analysis.OperatorInf
 using PipelineOperatorInfo = DotCompute.Linq.Pipelines.Analysis.OperatorInfo;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes method call operators in expression trees.

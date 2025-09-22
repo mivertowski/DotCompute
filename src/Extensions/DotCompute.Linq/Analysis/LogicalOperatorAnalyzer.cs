@@ -8,6 +8,7 @@ using DotCompute.Linq.Pipelines.Analysis;
 using DotCompute.Linq.Compilation.Analysis;
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Analyzes logical operators in expression trees.
@@ -281,8 +282,6 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
             var t when t == typeof(bool) => 32,
             _ => 8
         };
-    }
-
     private static int[] GetSupportedWidths(Type type) => type switch
     {
         var t when t == typeof(bool) => [8, 16, 32, 64],
@@ -318,8 +317,6 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
             BackendType.CUDA => IsShortCircuiting(operatorType) ? ImplementationMethod.Emulated : ImplementationMethod.Native,
             _ => ImplementationMethod.Library
         };
-    }
-
     private static List<string> GetSpecialCases(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.AndAlso => ["Short-circuit evaluation"],
@@ -425,8 +422,6 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
 
 
         return opportunities;
-    }
-
     private static double EstimateVectorizationSpeedup(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.And or ExpressionType.Or or ExpressionType.ExclusiveOr => 8.0, // Very good vectorization
@@ -486,8 +481,6 @@ public class LogicalOperatorAnalyzer : DotCompute.Linq.Analysis.IOperatorAnalyze
 
 
         return constraints;
-    }
-
     private static double GetBaseCost(ExpressionType operatorType) => operatorType switch
     {
         ExpressionType.And or ExpressionType.Or or

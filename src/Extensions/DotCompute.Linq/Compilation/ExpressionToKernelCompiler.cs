@@ -19,6 +19,7 @@ using DotCompute.Linq.Pipelines.Analysis;
 using LinqKernelParameter = DotCompute.Linq.Operators.Parameters.KernelParameter;
 using LinqParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 namespace DotCompute.Linq.Compilation;
+{
 /// <summary>
 /// Compiles LINQ expression trees into GPU kernels with support for expression fusion and optimization.
 /// </summary>
@@ -34,6 +35,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
     /// Initializes a new instance of the <see cref="ExpressionToKernelCompiler"/> class.
     /// </summary>
     public ExpressionToKernelCompiler(
+        {
         IKernelFactory kernelFactory,
         IExpressionOptimizer optimizer,
         ILogger<ExpressionToKernelCompiler> logger)
@@ -78,6 +80,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
     /// Validates whether an expression can be compiled to a kernel.
     /// Note: Always returns false in AOT scenarios.
     public bool CanCompileExpression(Expression expression)
+    {
         // Expression compilation is not supported in AOT
             return false;
             var analysis = AnalyzeExpression(expression);
@@ -85,6 +88,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         catch
     /// Gets resource estimation for compiling an expression.
     public ExpressionResourceEstimate EstimateResources(Expression expression)
+    {
         var analysis = AnalyzeExpression(expression);
         return new ExpressionResourceEstimate
             EstimatedMemoryUsage = CalculateMemoryUsage(analysis),
@@ -126,10 +130,13 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         return new Operators.Adapters.KernelAdapter(coreKernel);
     /// Disposes the compiler and releases resources.
     public void Dispose()
+    {
         if (!_disposed)
             _compilationSemaphore?.Dispose();
             _disposed = true;
+    }
     private static ExpressionAnalysisResult AnalyzeExpression(Expression expression)
+    {
         var visitor = new ExpressionAnalysisVisitor();
         _ = visitor.Visit(expression);
         return visitor.GetResult();
@@ -194,11 +201,15 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
             foreach (var kvp in additionalMetadata)
                 context.Metadata[kvp.Key] = kvp.Value;
         return context;
+    }
     private static List<Type> ExtractParameterTypes(Expression expression)
+    {
         var types = new List<Type>();
         var visitor = new ParameterTypeExtractor(types);
         return types;
+    }
     private static string GenerateTemplateKey(ExpressionAnalysisResult analysis)
+    {
         var keyBuilder = new StringBuilder();
         _ = keyBuilder.Append(analysis.OutputType.Name);
         _ = keyBuilder.Append('_');
@@ -211,7 +222,9 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         var definition = template.CreateDefinition(expression);
         await Task.CompletedTask.ConfigureAwait(false); // Satisfy async signature
         return _kernelFactory.CreateKernel(accelerator, definition);
+    }
     private static string DetermineOperationType(ExpressionAnalysisResult analysis)
+    {
         if (analysis.SupportedOperations.Contains("Select"))
             return "Map";
         if (analysis.SupportedOperations.Contains("Where"))
@@ -221,27 +234,37 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         if (analysis.SupportedOperations.Contains("OrderBy"))
             return "Sort";
         return "Custom";
+    }
     private static long CalculateMemoryUsage(ExpressionAnalysisResult analysis)
+    {
         // Estimate memory based on parameter types and operations
         var baseMemory = analysis.ParameterTypes.Sum(t => EstimateTypeSize(t));
         long operationOverhead = analysis.SupportedOperations.Count * 1024; // 1KB per operation
         return baseMemory + operationOverhead;
+    }
     private static TimeSpan CalculateCompilationTime(ExpressionAnalysisResult analysis)
+    {
         // Estimate compilation time based on complexity
         var baseTime = TimeSpan.FromMilliseconds(100); // Base compilation time
         var complexityMultiplier = Math.Max(1.0, analysis.ComplexityScore / 10.0);
         return TimeSpan.FromTicks((long)(baseTime.Ticks * complexityMultiplier));
+    }
     private static TimeSpan CalculateExecutionTime(ExpressionAnalysisResult analysis)
+    {
         // Rough estimation based on operations and data size
         var baseExecution = TimeSpan.FromMicroseconds(50);
         var operationCount = analysis.SupportedOperations.Count;
         return TimeSpan.FromTicks(baseExecution.Ticks * Math.Max(1, operationCount));
+    }
     private static double CalculateParallelizationFactor(ExpressionAnalysisResult analysis)
+    {
         // Estimate how well the expression can be parallelized
         var parallelizableOps = new[] { "Select", "Where", "Sum", "Average" };
         var parallelCount = analysis.SupportedOperations.Count(op => parallelizableOps.Contains(op));
         return Math.Min(1.0, parallelCount / (double)analysis.SupportedOperations.Count);
+    }
     private static long EstimateTypeSize(Type type)
+    {
         if (type.IsPrimitive)
             return Type.GetTypeCode(type) switch
                 TypeCode.Boolean or TypeCode.Byte or TypeCode.SByte => 1,
@@ -257,18 +280,21 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
 }
 /// Interface for expression-to-kernel compilation.
 public interface IExpressionToKernelCompiler
+    {
     public Task<Operators.Interfaces.IKernel> CompileExpressionAsync(
         CancellationToken cancellationToken = default);
     public bool CanCompileExpression(Expression expression);
     public ExpressionResourceEstimate EstimateResources(Expression expression);
 /// Represents fusion context for multiple operations.
 public sealed class FusionContext
+    {
     public IReadOnlyList<string> FusedOperations { get; init; } = [];
     public string FusionType { get; init; } = string.Empty;
     public Dictionary<string, object> Metadata { get; init; } = [];
     public double EstimatedSpeedup { get; init; } = 1.0;
 /// Represents resource estimation for expression compilation.
 public sealed class ExpressionResourceEstimate
+    {
     public long EstimatedMemoryUsage { get; init; }
     public TimeSpan EstimatedCompilationTime { get; init; }
     public TimeSpan EstimatedExecutionTime { get; init; }
@@ -276,16 +302,22 @@ public sealed class ExpressionResourceEstimate
     public double ParallelizationFactor { get; init; }
 /// Template for generating kernels from similar expressions.
 public sealed class KernelTemplate
+    {
     public string Name { get; init; } = string.Empty;
     public Func<Expression, DotCompute.Abstractions.Kernels.KernelDefinition> CreateDefinition { get; init; } = _ => new DotCompute.Abstractions.Kernels.KernelDefinition("DefaultKernel", "DefaultSource", "main");
 /// Visitor for analyzing expressions to determine compilation feasibility.
 internal class ExpressionAnalysisVisitor : ExpressionVisitor
+    {
     private readonly ExpressionAnalysisResult _result = new() { IsCompilable = true };
     private int _complexityScore;
+    }
     public ExpressionAnalysisResult GetResult()
+    {
         _result.ComplexityScore = _complexityScore;
         return _result;
+    }
     protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
         _complexityScore++;
         if (IsLinqMethod(node))
             _result.SupportedOperationsInternal.Add(node.Method.Name);
@@ -298,10 +330,14 @@ internal class ExpressionAnalysisVisitor : ExpressionVisitor
                 _result.IsCompilable = false;
                 _result.Metadata["UnsupportedMethod"] = node.Method.Name;
         return base.VisitMethodCall(node);
+    }
     protected override Expression VisitBinary(BinaryExpression node)
+    {
         _result.SupportedOperationsInternal.Add(node.NodeType.ToString());
         return base.VisitBinary(node);
+    }
     protected override Expression VisitParameter(ParameterExpression node)
+    {
         if (!_result.ParameterTypes.Contains(node.Type))
             _result.ParameterTypesInternal.Add(node.Type);
         return base.VisitParameter(node);
@@ -309,17 +345,25 @@ internal class ExpressionAnalysisVisitor : ExpressionVisitor
         if (_result.OutputType == typeof(object))
             _result.OutputType = node.ReturnType;
         return base.VisitLambda(node);
+    }
     private static bool IsLinqMethod(MethodCallExpression node)
+    {
         var declaringType = node.Method.DeclaringType;
         return declaringType == typeof(Queryable) || declaringType == typeof(Enumerable);
     private static bool IsMathMethod(MethodCallExpression node) => node.Method.DeclaringType == typeof(Math) || node.Method.DeclaringType == typeof(MathF);
 /// Visitor for extracting parameter types from expressions.
 internal class ParameterTypeExtractor : ExpressionVisitor
+    {
     private readonly List<Type> _types;
+    }
     public ParameterTypeExtractor(List<Type> types)
+    {
         _types = types;
+    }
     protected override Expression VisitConstant(ConstantExpression node)
+    {
         if (node.Value != null && !_types.Contains(node.Type))
             _types.Add(node.Type);
         return base.VisitConstant(node);
         if (!_types.Contains(node.Type))
+}

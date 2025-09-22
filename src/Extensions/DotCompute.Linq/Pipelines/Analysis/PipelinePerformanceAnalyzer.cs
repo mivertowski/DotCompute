@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Linq.Pipelines.Analysis;
+{
 
 /// <summary>
 /// Interface for analyzing pipeline performance characteristics and providing optimization recommendations.
@@ -239,6 +240,7 @@ public partial class PipelinePerformanceAnalyzer : IPipelinePerformanceAnalyzer
 
     #region Private Helper Methods
 
+    }
     private async Task<List<StagePerformanceAnalysis>> AnalyzeStagesAsync(List<PipelineStageInfo> stages)
     {
         var analyses = new List<StagePerformanceAnalysis>();
@@ -541,8 +543,10 @@ internal class PerformanceModelCache
     private readonly Dictionary<string, StagePerformanceAnalysis> _cache = [];
     private readonly object _lock = new();
 
+    }
     public bool TryGetCachedAnalysis(string key, out StagePerformanceAnalysis analysis)
     {
+        }
         lock (_lock)
         {
             return _cache.TryGetValue(key, out analysis!);
@@ -551,6 +555,7 @@ internal class PerformanceModelCache
 
     public void CacheAnalysis(string key, StagePerformanceAnalysis analysis)
     {
+        }
         lock (_lock)
         {
             _cache[key] = analysis;
@@ -561,6 +566,7 @@ internal class PerformanceModelCache
 public class PerformanceAnalysisException : Exception
 {
     public PerformanceAnalysisException(string message) : base(message) { }
+        {
     public PerformanceAnalysisException(string message, Exception innerException) : base(message, innerException) { }
 }
 
@@ -604,4 +610,3 @@ public partial class PipelinePerformanceAnalyzer
     private List<string> IdentifyMemoryOptimizationOpportunities(PipelineExecutionPlan plan) => [];
     private bool IsStageCompatible(PipelineStageInfo stage, BackendCapabilities capabilities) => stage.SupportedBackends.Contains(capabilities.BackendName) || capabilities.SupportedOperations.Contains("All");
     private double CalculateScoreConfidence(BackendCapabilities capabilities, PipelineExecutionPlan plan) => capabilities.Reliability;
-}

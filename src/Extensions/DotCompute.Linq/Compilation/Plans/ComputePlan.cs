@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Compilation.Plans;
+{
 /// <summary>
 /// Implementation of a compute plan.
 /// </summary>
@@ -23,6 +24,7 @@ internal class ComputePlan : IComputePlan
     /// or <paramref name="outputType"/> is null.
     /// </exception>
     public ComputePlan(
+        {
         IReadOnlyList<IComputeStage> stages,
         IReadOnlyDictionary<string, Type> inputParameters,
         Type outputType,

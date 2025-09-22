@@ -12,6 +12,7 @@ using DotCompute.Linq.Operators.Models;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.KernelGeneration.Execution;
 namespace DotCompute.Linq.Operators.Execution;
+{
 /// <summary>
 /// Adapter for compiled kernels that bridges between LINQ and Core abstractions.
 /// </summary>
@@ -55,6 +56,7 @@ internal class CompiledKernelAdapter : ICompiledKernel
             // Local work size is also handled by the execution context
         await _coreKernel.ExecuteAsync(kernelArgs, cancellationToken).ConfigureAwait(false);
     public async Task LaunchAsync(
+        {
         (int x, int y, int z) workgroupSize,
         (int x, int y, int z) globalSize,
         KernelExecutionParameters parameters,
@@ -80,6 +82,7 @@ internal class CompiledKernelAdapter : ICompiledKernel
         // The block and grid sizes are typically handled by the underlying kernel execution context
     /// Disposes the adapter and the underlying compiled kernel.
     public void Dispose()
+        {
         if (!_disposed)
             _disposed = true;
             // Core kernel disposal is handled through its own lifecycle

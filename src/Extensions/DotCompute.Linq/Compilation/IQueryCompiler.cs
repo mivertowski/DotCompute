@@ -7,6 +7,7 @@ using DotCompute.Linq.Compilation.Context;
 using DotCompute.Linq.Compilation.Plans;
 using DotCompute.Linq.Compilation.Validation;
 namespace DotCompute.Linq.Compilation;
+{
 /// <summary>
 /// Defines the interface for compiling LINQ expression trees into compute plans.
 /// </summary>

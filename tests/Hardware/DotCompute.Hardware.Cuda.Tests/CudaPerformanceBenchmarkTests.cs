@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using DotCompute.Tests.Common.Specialized;
+using DotCompute.Tests.Common.Utilities;
 using Xunit.Abstractions;
 using Xunit;
 using DotCompute.Abstractions;

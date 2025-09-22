@@ -9,11 +9,13 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using DotCompute.Linq.Types;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Type analyzer for numeric types (int, float, double, etc.).
 /// </summary>
 /// <typeparam name="T">The numeric type to analyze.</typeparam>
 public class NumericTypeAnalyzer<T> : ITypeAnalyzer
+    {
     where T : struct, IComparable<T>, IEquatable<T>
 {
     /// <inheritdoc/>
@@ -99,7 +101,6 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
                 OptimizationImpact.Medium));
         }
         return hints;
-    }
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
     {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();
@@ -124,7 +125,6 @@ public class NumericTypeAnalyzer<T> : ITypeAnalyzer
         return TargetType == typeof(float) ||
                TargetType == typeof(double) ||
                TargetType == typeof(decimal);
-    }
     private int CountTypeUsage(Expression expression)
     {
         var count = 0;
@@ -153,6 +153,7 @@ internal class TypeUsageVisitor : ExpressionVisitor
 {
     private readonly Type _targetType;
     private readonly Action _onTypeFound;
+    }
     public TypeUsageVisitor(Type targetType, Action onTypeFound)
     {
         _targetType = targetType;

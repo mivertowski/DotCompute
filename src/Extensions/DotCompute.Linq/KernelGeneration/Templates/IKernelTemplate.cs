@@ -12,6 +12,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Linq.Operators.Parameters;
 using DotCompute.Linq.Types;
 namespace DotCompute.Linq.KernelGeneration.Templates;
+{
 /// <summary>
 /// Defines the contract for kernel template implementations that generate
 /// backend-specific kernel source code from high-level descriptions.
@@ -37,6 +38,7 @@ public interface IKernelTemplate
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the generated kernel source code.</returns>
     Task<KernelGenerationResult> GenerateAsync(
+        {
         KernelMetadata metadata,
         KernelEntryPoint entryPoint,
         KernelGenerationOptions? options = null,
@@ -176,6 +178,7 @@ public sealed class KernelOptimizationSuggestion
     /// <param name="description">The description of the suggestion.</param>
     /// <param name="impact">The expected performance impact.</param>
     public KernelOptimizationSuggestion(
+        {
         OptimizationType type,
         string description,
         PerformanceImpact impact)

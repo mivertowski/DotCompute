@@ -11,6 +11,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
 namespace DotCompute.Linq.Compilation;
+{
 /// <summary>
 /// Compiles LINQ expression trees into optimized GPU kernels with CPU fallback support.
 /// </summary>
@@ -19,6 +20,7 @@ public sealed class LinqToGpuKernelCompiler
     private readonly ILogger<LinqToGpuKernelCompiler> _logger;
     private readonly Dictionary<ExpressionType, string> _cudaOperatorMap;
     private readonly Dictionary<MethodInfo, string> _methodMap;
+    }
     public LinqToGpuKernelCompiler(ILogger<LinqToGpuKernelCompiler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -152,7 +154,9 @@ public sealed class LinqToGpuKernelCompiler
         _ = sb.AppendLine("        if (swap) {");
         _ = sb.AppendLine("            data[idx] = right;");
         _ = sb.AppendLine("            data[partner] = left;");
+    }
     private string GenerateCudaKernel(Expression body, ParameterExpression parameter, Type elementType)
+    {
         _ = new StringBuilder();
         // Analyze expression to determine kernel type
         if (body is MethodCallExpression methodCall)
@@ -165,22 +169,30 @@ public sealed class LinqToGpuKernelCompiler
                 _ => throw new NotSupportedException($"LINQ method {methodCall.Method.Name} is not supported for GPU compilation"),
             };
         throw new NotSupportedException("Expression type not supported for GPU compilation");
+    }
     private string GenerateSelectKernel(MethodCallExpression methodCall, Type elementType)
+    {
         var lambda = (LambdaExpression)((UnaryExpression)methodCall.Arguments[1]).Operand;
         var cudaType = GetCudaType(elementType);
         _ = sb.AppendLine($"extern \"C\" __global__ void kernel({cudaType}* input, {cudaType}* output, int count) {{");
         _ = sb.AppendLine($"    output[idx] = {CompileExpression(lambda.Body, "input[idx]")};");
+    }
     private string GenerateWhereKernel(MethodCallExpression methodCall, Type elementType)
+    {
         _ = sb.AppendLine($"extern \"C\" __global__ void kernel({cudaType}* input, {cudaType}* output, int* count, int total) {{");
         _ = sb.AppendLine("    if (idx >= total) return;");
         _ = sb.AppendLine($"    if ({CompileExpression(lambda.Body, "input[idx]")}) {{");
         _ = sb.AppendLine("        int pos = atomicAdd(count, 1);");
         _ = sb.AppendLine("        output[pos] = input[idx];");
+    }
     private string GenerateReductionKernel(MethodCallExpression methodCall, Type elementType)
+    {
         var operation = methodCall.Method.Name.ToLowerInvariant();
         _ = GetCudaType(elementType);
         return CompileAggregate<float>(null!, operation);
+    }
     private static string GenerateSortKernel(MethodCallExpression methodCall, Type elementType)
+    {
         _ = methodCall.Arguments.Count > 1
             ? (LambdaExpression)((UnaryExpression)methodCall.Arguments[1]).Operand
             : null;
@@ -191,8 +203,11 @@ public sealed class LinqToGpuKernelCompiler
         _ = sb.AppendLine($"        {cudaType} right = data[partner];");
         _ = sb.AppendLine("        bool swap = (left > right) == ascending;");
     private string CompileExpression(Expression expr, string input) => CompileExpression(expr, input, null);
+    }
     private string CompileExpression(Expression expr, string left, string? right)
+        }
         switch (expr)
+        {
             case BinaryExpression binary:
                 var leftExpr = CompileExpression(binary.Left, left, right);
                 var rightExpr = CompileExpression(binary.Right, left, right);
@@ -224,7 +239,9 @@ public sealed class LinqToGpuKernelCompiler
             default:
                 throw new NotSupportedException($"Expression type {expr.NodeType} not supported");
     private static string GetCudaType<T>() where T : unmanaged => GetCudaType(typeof(T));
+    }
     private static string GetCudaType(Type type)
+    {
         return type.Name switch
             "Int32" => "int",
             "UInt32" => "unsigned int",
@@ -239,7 +256,9 @@ public sealed class LinqToGpuKernelCompiler
             "UInt16" => "unsigned short",
             _ => throw new NotSupportedException($"Type {type.Name} not supported for CUDA")
         };
+    }
     private static Dictionary<ExpressionType, string> InitializeOperatorMap()
+    {
         return new Dictionary<ExpressionType, string>
             [ExpressionType.Add] = "+",
             [ExpressionType.Subtract] = "-",
@@ -260,6 +279,7 @@ public sealed class LinqToGpuKernelCompiler
             [ExpressionType.GreaterThan] = ">",
             [ExpressionType.GreaterThanOrEqual] = ">="
     private static Dictionary<MethodInfo, string> InitializeMethodMap()
+    {
         var dict = new Dictionary<MethodInfo, string>();
         // Math functions
         var mathType = typeof(Math);
@@ -278,8 +298,11 @@ public sealed class LinqToGpuKernelCompiler
 }
 /// Simple string-based kernel source for CUDA code.
 public sealed class StringKernelSource : IKernelSource
+    {
     private readonly string _source;
+    }
     public StringKernelSource(string source)
+    {
         _source = source ?? throw new ArgumentNullException(nameof(source));
     public string Name => "LinqGeneratedKernel";
     public static KernelSourceType Type => KernelSourceType.Cuda;
@@ -289,3 +312,18 @@ public sealed class StringKernelSource : IKernelSource
     public string[] Dependencies => [];
     public ValueTask<string> GetSourceAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(_source);
     public ValueTask<byte[]> GetBinaryAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Binary not available for string source");
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}

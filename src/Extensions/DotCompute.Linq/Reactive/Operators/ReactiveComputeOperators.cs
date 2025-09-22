@@ -12,6 +12,7 @@ using System.Diagnostics.Metrics;
 using System.Numerics;
 
 namespace DotCompute.Linq.Reactive.Operators;
+{
 /// <summary>
 /// Window configuration for streaming operations
 /// </summary>
@@ -40,12 +41,14 @@ public record TimeSeriesConfig
     public LateDataStrategy LateDataStrategy { get; init; } = LateDataStrategy.Drop;
 /// Strategy for handling late-arriving data
 public enum LateDataStrategy
+    {
     Drop,
     Buffer,
     Recompute
 /// Advanced reactive operators optimized for GPU compute operations
 /// Provides streaming window operations, time-series processing, and real-time aggregations
 public static class ReactiveComputeOperators
+    {
     private static readonly Meter _meter = new("DotCompute.Reactive.Operators");
     private static readonly Counter<long> _windowOperationCounter = _meter.CreateCounter<long>("window_operations_total");
     private static readonly Counter<long> _aggregationCounter = _meter.CreateCounter<long>("aggregations_total");
@@ -188,6 +191,7 @@ public static class ReactiveComputeOperators
             var watermarkTimer = new Timer(_ => ProcessWatermark(), null,
                 config.WatermarkInterval, config.WatermarkInterval);
             void ProcessWatermark()
+        {
                 var newWatermark = DateTime.UtcNow - config.MaxOutOfOrderDelay;
                 var itemsToEmit = buffer
                     .Where(kvp => kvp.Key <= newWatermark)
@@ -253,9 +257,6 @@ public static class ReactiveComputeOperators
                 .Select(x => x.Value).ToArray();
         }
         else if (config.Duration.HasValue)
-            // Time-based window
-            var duration = config.Duration.Value;
-            var windowStart = currentTime - duration;
             return items.Where(x => x.Timestamp >= windowStart)
         return Array.Empty<T>();
     /// Computes sum of array using GPU acceleration
@@ -324,10 +325,12 @@ public static class ReactiveComputeOperators
         }}";
 /// Circular buffer for efficient windowing operations
 internal class CircularBuffer<T>
+    {
     private readonly T[] _buffer;
     private int _start;
     private int _count;
     public CircularBuffer(int capacity)
+        {
         _buffer = new T[capacity];
     public int Count => _count;
     public int Capacity => _buffer.Length;

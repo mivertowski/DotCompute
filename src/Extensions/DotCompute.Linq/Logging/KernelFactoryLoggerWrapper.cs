@@ -4,6 +4,7 @@
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Logging;
+{
 /// <summary>
 /// Adapter for DefaultKernelFactory logger.
 /// </summary>
@@ -27,6 +28,7 @@ internal class KernelFactoryLoggerWrapper : ILogger<DefaultKernelFactory>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         => _innerLogger.BeginScope(state);
     public bool IsEnabled(LogLevel logLevel)
+        {
         => _innerLogger.IsEnabled(logLevel);
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         => _innerLogger.Log(logLevel, eventId, state, exception, formatter);

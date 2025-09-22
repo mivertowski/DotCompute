@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Represents a parallelization opportunity identified during expression analysis.

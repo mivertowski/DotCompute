@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using DotCompute.Linq.Pipelines.Models;
 using DotCompute.Linq.Compilation.Analysis;
 namespace DotCompute.Linq.Pipelines.Analysis;
+{
 /// <summary>
 /// Interface for analyzing LINQ expressions and converting them to pipeline configurations.
 /// </summary>
@@ -171,6 +172,7 @@ public class ExpressionAnalysisResult
 /// Expression optimizer for pipeline-specific optimizations.
 internal class ExpressionOptimizer
 {
+    }
     public Expression Optimize(Expression expression)
     {
         // Apply various optimization passes
@@ -213,6 +215,7 @@ internal class ExpressionOptimizer
 /// Simplifies boolean predicates in expressions.
 internal class PredicateSimplifier : ExpressionVisitor
 {
+    }
     protected override Expression VisitBinary(BinaryExpression node)
     {
         // Apply boolean logic simplifications
@@ -233,9 +236,6 @@ internal class PredicateSimplifier : ExpressionVisitor
             {
                 return Expression.Constant(false);
             }
-        }
-        else if (node.NodeType == ExpressionType.OrElse)
-            // true || x => true
             if (node.Left is ConstantExpression { Value: true })
             {
                 return Expression.Constant(true);
@@ -273,6 +273,7 @@ internal class OperationFusionOptimizer : ExpressionVisitor
 /// Performs constant folding optimizations.
 internal class ConstantFoldingOptimizer : ExpressionVisitor
 {
+    }
     protected override Expression VisitBinary(BinaryExpression node)
     {
         var left = Visit(node.Left);
@@ -298,6 +299,7 @@ internal class ConstantFoldingOptimizer : ExpressionVisitor
 /// Eliminates redundant operations.
 internal class RedundancyEliminator : ExpressionVisitor
 {
+    }
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         // Remove redundant operations like .Where(x => true) or .Select(x => x)
@@ -378,6 +380,7 @@ public class OperatorInfo
 /// Legacy OperatorType enum - use UnifiedOperatorType instead.
 [Obsolete("Use DotCompute.Core.Analysis.UnifiedOperatorType instead. This enum is maintained for backward compatibility.", false)]
 public enum OperatorType
+    {
     /// Unknown or unspecified operator type.
     Unknown,
     /// Filtering operation (Where).
@@ -448,7 +451,6 @@ public class ComplexityMetrics
     {
         get => OperationsCount;
         set => OperationsCount = value;
-    }
 
     /// Gets or sets whether GPU execution is recommended.
     public bool GpuRecommended { get; set; }

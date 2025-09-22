@@ -9,6 +9,7 @@ using DotCompute.Core.Pipelines.Models;
 using DotCompute.Memory.Interfaces;
 using CorePipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipeline;
 namespace DotCompute.Linq.Pipelines.Bridge;
+{
 /// <summary>
 /// Minimal bridge adapter that provides fluent API extensions to Core IKernelPipeline.
 /// This critical bridge resolves compilation errors between incompatible interfaces.
@@ -260,6 +261,7 @@ public static class CorePipelineFluentExtensions
     /// <param name="delay">Delay between retries</param>
     /// <returns>A new pipeline with retry logic</returns>
     public static FluentPipelineAdapter Retry(
+        {
         this CorePipeline pipeline,
         int maxAttempts = 3,
         TimeSpan? delay = null)
@@ -284,6 +286,7 @@ public static class CorePipelineFluentExtensions
 internal class DefaultMemoryManager : DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryManager
 {
     public async ValueTask DisposeAsync() { }
+        {
     public async ValueTask<DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T>> AllocateAsync<T>(
         long elementCount,
         DotCompute.Abstractions.Pipelines.Enums.MemoryHint hint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint.None,
@@ -353,6 +356,7 @@ internal class DefaultPipelineMemory<T> : DotCompute.Abstractions.Interfaces.Pip
     private readonly T[] _data;
     private bool _isDisposed;
 
+    }
     public DefaultPipelineMemory(long elementCount)
     {
         ElementCount = elementCount;
@@ -372,7 +376,6 @@ internal class DefaultPipelineMemory<T> : DotCompute.Abstractions.Interfaces.Pip
     {
         IsLocked = true;
         return new DotCompute.Abstractions.Interfaces.Pipelines.MemoryLock<T>(this, mode, () => IsLocked = false);
-    }
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
     {
         source.Span.CopyTo(_data.AsSpan((int)offset));
@@ -398,6 +401,7 @@ internal class DefaultPipelineMemory<T> : DotCompute.Abstractions.Interfaces.Pip
 }
 internal class DefaultPipelineMemoryView<T> : DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemoryView<T> where T : unmanaged
 {
+    }
     public DefaultPipelineMemoryView(DotCompute.Abstractions.Interfaces.Pipelines.IPipelineMemory<T> parent, long offset, long length)
     {
         Parent = parent;
@@ -417,6 +421,7 @@ internal class DefaultBuffer<T> : IUnifiedBuffer<T> where T : unmanaged
 {
     private readonly T[] _data;
 
+    }
     public DefaultBuffer(int length)
     {
         Length = length;
@@ -440,7 +445,6 @@ internal class DefaultBuffer<T> : IUnifiedBuffer<T> where T : unmanaged
         return Task.CompletedTask;
     }
     public void Dispose() => IsDisposed = true;
-}
 internal class DefaultDevice : IComputeDevice
 {
     public string Id => "default-cpu";
@@ -460,5 +464,6 @@ internal class DefaultDevice : IComputeDevice
         LocalMemorySize = 64 * 1024
     };
     public void Dispose() { }
+        {
 }
 #endregion

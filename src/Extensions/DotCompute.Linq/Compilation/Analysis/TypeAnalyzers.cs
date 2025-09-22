@@ -9,6 +9,7 @@ using DotCompute.Linq.Compilation.Analysis;
 using DotCompute.Linq.Types;
 using DotCompute.Linq.Analysis;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Analyzer for memory access patterns in expressions.
 /// </summary>
@@ -74,6 +75,7 @@ public class MemoryAccessAnalyzer
         public List<string> AccessedLocations { get; } = []; // Simplified as strings for now
         public MemoryAccessPattern DominantAccessType { get; private set; } = MemoryAccessPattern.Sequential;
         public bool IsCoalesced { get; private set; } = true;
+        }
         protected override Expression VisitMember(MemberExpression node)
         {
             // Track member access as potential memory location
@@ -127,6 +129,7 @@ public class ComplexityCalculator
     /// <param name="dataFlowGraph">Data flow graph</param>
     /// <returns>Pipeline complexity metrics</returns>
     public PipelineComplexityMetrics Calculate(
+        {
         IEnumerable<OperatorInfo> operatorChain,
         IEnumerable<TypeUsageInfo> typeUsage,
         object dataFlowGraph)
@@ -182,6 +185,7 @@ public class ComplexityCalculator
         public long EstimatedMemoryUsage { get; private set; }
         public double ParallelizationPotential { get; private set; } = 0.7;
         public Dictionary<string, int> ComplexityByCategory { get; } = [];
+        }
         protected override Expression VisitBinary(BinaryExpression node)
         {
             OperationCount++;
@@ -271,14 +275,10 @@ public class DecimalTypeAnalyzer : ITypeAnalyzer
     public TypeUsageInfo AnalyzeUsage(Expression expression, AnalysisContext context)
     {
         return AnalyzeDecimalUsage(expression);
-    }
-    public bool SupportsVectorization() => false;
-    public int GetOptimalAlignment() => 16;
     public double EstimateOperationComplexity(ExpressionType operation) => 5.0;
     public IEnumerable<OptimizationHint> GetOptimizationHints(Expression expression)
     {
         yield return new OptimizationHint(OptimizationHintType.TypeSpecialization, "Decimal not GPU compatible", OptimizationImpact.High);
-    }
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
     {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();
@@ -311,6 +311,7 @@ public class DecimalTypeAnalyzer : ITypeAnalyzer
         public int DecimalUsageCount { get; private set; }
         public List<string> ConversionRequirements { get; } = [];
 
+        }
         protected override Expression VisitConstant(ConstantExpression node)
         {
             if (node.Type == typeof(decimal))
@@ -340,19 +341,11 @@ public class StringTypeAnalyzer : ITypeAnalyzer
     public TypeUsageInfo AnalyzeUsage(Expression expression, AnalysisContext context)
     {
         return AnalyzeStringUsage(expression);
-    }
-
-    public bool SupportsVectorization() => false;
-
-    public int GetOptimalAlignment() => IntPtr.Size;
-
     public double EstimateOperationComplexity(ExpressionType operation) => 5.0;
 
     public IEnumerable<OptimizationHint> GetOptimizationHints(Expression expression)
     {
         yield return new OptimizationHint(OptimizationHintType.TypeSpecialization, "String not GPU compatible", OptimizationImpact.High);
-    }
-
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
     {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();
@@ -383,6 +376,7 @@ public class StringTypeAnalyzer : ITypeAnalyzer
         public int StringUsageCount { get; private set; }
         public List<string> ConversionRequirements { get; } = [];
 
+        }
         protected override Expression VisitConstant(ConstantExpression node)
         {
             if (node.Type == typeof(string))
@@ -412,19 +406,11 @@ public class BooleanTypeAnalyzer : ITypeAnalyzer
     public TypeUsageInfo AnalyzeUsage(Expression expression, AnalysisContext context)
     {
         return AnalyzeBooleanUsage(expression);
-    }
-
-    public bool SupportsVectorization() => true;
-
-    public double EstimateOperationComplexity(ExpressionType operation) => 1.0;
-
     public int GetOptimalAlignment() => 1;
 
     public IEnumerable<OptimizationHint> GetOptimizationHints(Expression expression)
     {
         yield return new OptimizationHint(OptimizationHintType.Vectorization, "Boolean operations vectorizable", OptimizationImpact.Medium);
-    }
-
     public TypeUsageInfo Analyze(Expression expression, object? context = null)
     {
         var analysisContext = context as AnalysisContext ?? new AnalysisContext();

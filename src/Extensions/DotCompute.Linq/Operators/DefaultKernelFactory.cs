@@ -14,6 +14,7 @@ using DotCompute.Linq.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ParameterDirection = DotCompute.Linq.Operators.Parameters.ParameterDirection;
 namespace DotCompute.Linq.Operators;
+{
 /// <summary>
 /// Default implementation of kernel factory for LINQ operations with dynamic kernel generation.
 /// </summary>
@@ -36,7 +37,6 @@ public class DefaultKernelFactory : IKernelFactory
     /// <param name="definition">The kernel definition.</param>
     /// <returns>A compiled kernel.</returns>
     public IKernel CreateKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition)
-        // Try to find a matching generator
         if (_generators.TryGetValue(accelerator.Type, out var generator))
         {
             return CreateDynamicKernel(accelerator, definition, generator);
@@ -68,6 +68,7 @@ public class DefaultKernelFactory : IKernelFactory
         _logger.LogWarningMessage("No kernel generator available for {accelerator.Type}");
         return new ExpressionFallbackKernel(expression, _logger);
     private IKernel CreateDynamicKernel(IAccelerator accelerator, DotCompute.Abstractions.Kernels.KernelDefinition definition, IKernelGenerator generator)
+        {
         try
             // Check for fusion metadata in definition
             var fusionMetadata = ExtractFusionMetadata(definition);
@@ -150,6 +151,7 @@ public class DefaultKernelFactory : IKernelFactory
             Metadata = new Dictionary<string, object>(definition.Metadata)
         };
     private static KernelGenerationContext CreateDefaultContext(IAccelerator accelerator)
+        {
             UseSharedMemory = true,
             UseVectorTypes = true,
             Precision = PrecisionMode.Single.ToString()
@@ -161,8 +163,6 @@ public class DefaultKernelFactory : IKernelFactory
                 DeviceInfo = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024),
                 UseSharedMemory = false,
                 UseVectorTypes = false
-            };
-            var testKernel = generator.GenerateOperationKernel(operationType, testInputTypes, testOutputType, testContext);
             return testKernel != null;
         catch
             return false;
@@ -177,6 +177,7 @@ public class DefaultKernelFactory : IKernelFactory
 }
 /// Placeholder kernel implementation for development purposes.
 internal class PlaceholderKernel : IKernel
+    {
     private bool _disposed;
     private readonly DotCompute.Abstractions.Kernels.KernelDefinition _definition;
     public PlaceholderKernel(string name, DotCompute.Abstractions.Kernels.KernelDefinition? definition = null)
@@ -216,5 +217,6 @@ internal class PlaceholderKernel : IKernel
         => Array.Empty<DotCompute.Abstractions.Kernels.KernelParameter>();
     /// Disposes the kernel.
     public void Dispose()
+        {
         if (!_disposed)
             _disposed = true;

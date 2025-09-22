@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Pipelines.Models;
+{
 /// <summary>
 /// Configuration options for window operations (sliding window, tumbling window, etc.).
 /// </summary>
@@ -24,6 +25,7 @@ public class WindowOptions
 }
 /// Padding modes for handling boundary conditions in window operations.
 public enum PaddingMode
+    {
     /// No padding - skip incomplete windows at boundaries.
     None,
     /// Pad with zeros for incomplete windows.

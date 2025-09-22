@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 namespace DotCompute.Linq.Operators.Models;
+{
 /// <summary>
 /// Contains parameters for kernel execution.
 /// </summary>

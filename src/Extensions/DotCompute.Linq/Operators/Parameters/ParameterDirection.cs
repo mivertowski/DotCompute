@@ -4,6 +4,7 @@
 // </copyright>
 
 namespace DotCompute.Linq.Operators.Parameters;
+{
 /// <summary>
 /// Defines the direction of data flow for kernel parameters.
 /// </summary>

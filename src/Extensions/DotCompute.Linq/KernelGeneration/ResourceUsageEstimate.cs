@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 namespace DotCompute.Linq.KernelGeneration;
+{
 /// <summary>
 /// Estimates resource usage for kernel execution to help with optimization and scheduling.
 /// Provides detailed analysis of memory, compute, and bandwidth requirements.
@@ -22,13 +23,9 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
         BandwidthDetails = [];
         CustomMetrics = [];
         EstimatedAt = DateTimeOffset.UtcNow;
-    }
-    /// Initializes a new instance of the <see cref="ResourceUsageEstimate"/> class with basic parameters.
-    /// <param name="memoryMB">Memory usage in megabytes.</param>
-    /// <param name="threadsNeeded">Number of threads needed.</param>
-    /// <param name="registersPerThread">Registers per thread.</param>
     /// <param name="sharedMemoryBytes">Shared memory in bytes.</param>
     public ResourceUsageEstimate(long memoryMB, int threadsNeeded, int registersPerThread, long sharedMemoryBytes) : this()
+        {
         TotalMemoryBytes = memoryMB * 1024 * 1024; // Convert MB to bytes
         RegistersPerThread = registersPerThread;
         SharedMemoryBytes = sharedMemoryBytes;
@@ -81,6 +78,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// <param name="category">The memory category.</param>
     /// <param name="bytes">The number of bytes.</param>
     public void AddMemoryDetail(string category, long bytes)
+    {
         if (string.IsNullOrWhiteSpace(category))
         {
             throw new ArgumentException("Category cannot be null or whitespace.", nameof(category));
@@ -90,6 +88,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// <param name="operation">The operation type.</param>
     /// <param name="count">The operation count.</param>
     public void AddComputeDetail(string operation, double count)
+    {
         if (string.IsNullOrWhiteSpace(operation))
             throw new ArgumentException("Operation cannot be null or whitespace.", nameof(operation));
         ComputeDetails[operation] = count;
@@ -97,6 +96,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// <param name="type">The bandwidth type.</param>
     /// <param name="gbps">The bandwidth in GB/s.</param>
     public void AddBandwidthDetail(string type, double gbps)
+    {
         if (string.IsNullOrWhiteSpace(type))
             throw new ArgumentException("Type cannot be null or whitespace.", nameof(type));
         BandwidthDetails[type] = gbps;
@@ -104,6 +104,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// <param name="name">The metric name.</param>
     /// <param name="value">The metric value.</param>
     public void AddCustomMetric(string name, object value)
+    {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name cannot be null or whitespace.", nameof(name));
         CustomMetrics[name] = value ?? throw new ArgumentNullException(nameof(value));
@@ -117,6 +118,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// Calculates the total operations per second based on execution time.
     /// <returns>The operations per second.</returns>
     public double GetOperationsPerSecond()
+    {
         if (EstimatedExecutionTimeMs <= 0)
             return 0.0;
         var totalOps = EstimatedFlops + EstimatedIntOps;
@@ -125,6 +127,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// Calculates the memory efficiency ratio (useful work vs. total memory access).
     /// <returns>The memory efficiency ratio (0-1).</returns>
     public double GetMemoryEfficiency()
+    {
         if (TotalMemoryBytes == 0)
             return 1.0;
         var usefulWork = Math.Min(GlobalMemoryBytes + ConstantMemoryBytes, TotalMemoryBytes);
@@ -132,6 +135,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// Gets a human-readable summary of the resource usage.
     /// <returns>A formatted summary string.</returns>
     public string GetSummary()
+    {
         return $"Memory: {TotalMemoryBytes / 1024.0 / 1024.0:F2} MB, " +
                $"Registers: {RegistersPerThread}, " +
                $"FLOPS: {EstimatedFlops:E2}, " +
@@ -142,6 +146,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
     /// <param name="newDataSize">The new data size.</param>
     /// <returns>A scaled resource usage estimate.</returns>
     public ResourceUsageEstimate ScaleToDataSize(long newDataSize)
+    {
         if (InputDataSize <= 0)
             throw new InvalidOperationException("Cannot scale estimate with unknown input data size.");
         var scaleFactor = (double)newDataSize / InputDataSize;
@@ -179,6 +184,7 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
         return scaled;
     /// <inheritdoc/>
     public bool Equals(ResourceUsageEstimate? other)
+    {
         if (other is null)
             return false;
         if (ReferenceEquals(this, other))
@@ -188,7 +194,17 @@ public sealed class ResourceUsageEstimate : IEquatable<ResourceUsageEstimate>
                Math.Abs(EstimatedFlops - other.EstimatedFlops) < 1e-6 &&
                Math.Abs(EstimatedExecutionTimeMs - other.EstimatedExecutionTimeMs) < 1e-6;
     public override bool Equals(object? obj) => obj is ResourceUsageEstimate other && Equals(other);
+    }
     public override int GetHashCode()
+    {
         return HashCode.Combine(TotalMemoryBytes, RegistersPerThread, EstimatedFlops, EstimatedExecutionTimeMs);
     public override string ToString() => GetSummary();
+}
+}
+}
+}
+}
+}
+}
+}
 }

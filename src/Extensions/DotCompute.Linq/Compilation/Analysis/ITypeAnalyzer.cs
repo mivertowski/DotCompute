@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Interface for analyzing types in expression trees.
 /// </summary>
@@ -91,7 +92,6 @@ public record ParallelizationOpportunity
     public double ParallelizationPotential { get; init; }
     /// <summary>Gets whether this operation is suitable for parallelization.</summary>
     public bool IsSuitable => VectorizationSuitable || SupportsParallelExecution;
-}
 // DependencyInfo is defined in PipelineAnalysisTypes.cs to avoid duplication
 /// Defines memory usage patterns for types.
 public enum MemoryUsagePattern

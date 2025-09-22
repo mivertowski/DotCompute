@@ -11,6 +11,7 @@ using DotCompute.Linq.Pipelines;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 namespace DotCompute.Linq.Examples;
+{
 /// <summary>
 /// Comprehensive examples demonstrating basic usage of the DotCompute.Linq pipeline system.
 /// These examples show common patterns and best practices for GPU-accelerated data processing.
@@ -50,6 +51,7 @@ public class BasicUsageExamples
     public readonly struct ProcessedResult
         public readonly double ProcessedValue;
         public ProcessedResult(int id, double processedValue, int category)
+        {
             ProcessedValue = processedValue;
     /// Aggregation result structure.
     public readonly struct CategorySummary
@@ -283,10 +285,6 @@ public class BasicUsageExamples
     /// <param name="data">Sample data to process.</param>
     /// <param name="logger">Logger for output.</param>
     private static Task CompareWithStandardLinq(SampleDataItem[] data, ILogger logger)
-        // Standard LINQ performance
-        var standardStopwatch = Stopwatch.StartNew();
-        var standardResults = data
-            .Where(item => item.IsActive && item.Value > 100.0f)
             .Select(item => new ProcessedResult(
                 item.Id,
                 item.Value * 2.5,
@@ -302,6 +300,7 @@ public class BasicUsageExamples
     /// This method shows the typical service registration needed for the examples.
     /// <returns>Configured service provider.</returns>
     public static IServiceProvider CreateExampleServiceProvider()
+        {
         var services = new ServiceCollection();
         // Add DotCompute services
         services.AddDotComputeLinq(options =>
@@ -331,6 +330,7 @@ public class BasicUsageExamples
 }
 /// Extension methods to support the examples with additional functionality.
 public static class ExampleExtensions
+    {
     /// Creates a simple benchmark for comparing different execution strategies.
     /// <typeparam name="T">The data type.</typeparam>
     /// <param name="data">Data to process.</param>

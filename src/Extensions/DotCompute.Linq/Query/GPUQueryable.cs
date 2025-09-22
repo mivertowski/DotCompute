@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 namespace DotCompute.Linq.Query;
+{
 /// <summary>
 /// GPU-accelerated queryable implementation.
 /// </summary>
@@ -45,6 +46,7 @@ public sealed class GPUQueryable<T> : IOrderedQueryable<T>
     /// the results as an enumerable sequence.
     /// </remarks>
     public IEnumerator<T> GetEnumerator()
+        {
         var result = _provider.Execute<IEnumerable<T>>(_expression);
         return result.GetEnumerator();
     /// Returns a non-generic enumerator that iterates through the query results.

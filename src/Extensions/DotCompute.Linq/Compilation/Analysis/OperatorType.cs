@@ -3,6 +3,7 @@
 
 using DotCompute.Core.Analysis;
 namespace DotCompute.Linq.Compilation.Analysis;
+{
 /// <summary>
 /// Legacy OperatorType enum - use UnifiedOperatorType instead.
 /// </summary>

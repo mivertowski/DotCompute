@@ -15,6 +15,7 @@ using DotCompute.Linq.Query;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
 namespace DotCompute.Linq;
+{
 /// <summary>
 /// GPU-accelerated LINQ provider that translates LINQ expressions into optimized GPU kernels
 /// with automatic fallback to CPU execution when needed.
@@ -265,6 +266,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
             _disposed = true;
     #region Logging
     private partial class Log
+    {
         [LoggerMessage(1, LogLevel.Warning, "GPU execution failed: {Reason}. Falling back to CPU.")]
         public static partial void GPUExecutionFailed(ILogger logger, string reason);
         [LoggerMessage(2, LogLevel.Debug, "Expression not GPU compatible: {Reason}")]

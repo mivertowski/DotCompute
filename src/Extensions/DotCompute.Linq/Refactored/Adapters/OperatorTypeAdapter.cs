@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Core.Analysis;
 namespace DotCompute.Refactored.Adapters;
+{
 /// <summary>
 /// Legacy OperatorType enum from Pipeline analysis for compatibility.
 /// </summary>
@@ -30,6 +31,7 @@ public enum LegacyPipelineOperatorType
 }
 /// Legacy OperatorType enum from Compilation analysis for compatibility.
 public enum LegacyCompilationOperatorType
+    {
     Arithmetic,
     Logical,
     Comparison,
@@ -37,6 +39,7 @@ public enum LegacyCompilationOperatorType
     Assignment,
 /// Adapter class that provides conversion between legacy OperatorType enums and UnifiedOperatorType.
 public static class OperatorTypeAdapter
+    {
     private static readonly Dictionary<LegacyPipelineOperatorType, UnifiedOperatorType> PipelineToUnifiedMapping = new()
     {
         [LegacyPipelineOperatorType.Unknown] = UnifiedOperatorType.Unknown,
@@ -82,10 +85,12 @@ public static class OperatorTypeAdapter
     /// Converts a legacy pipeline OperatorType to UnifiedOperatorType.
     /// </summary>
     public static UnifiedOperatorType FromPipeline(LegacyPipelineOperatorType legacyType)
+        {
         return PipelineToUnifiedMapping.TryGetValue(legacyType, out var unified) ? unified : UnifiedOperatorType.Unknown;
     }
     /// Converts a legacy compilation OperatorType to UnifiedOperatorType.
     public static UnifiedOperatorType FromCompilation(LegacyCompilationOperatorType legacyType)
+        {
         return CompilationToUnifiedMapping.TryGetValue(legacyType, out var unified) ? unified : UnifiedOperatorType.Unknown;
     /// Converts UnifiedOperatorType to legacy pipeline OperatorType.
     public static LegacyPipelineOperatorType ToPipeline(UnifiedOperatorType unifiedType)
@@ -191,8 +196,10 @@ public static class OperatorTypeAdapter
         };
 /// Extension methods for seamless operator type conversion.
 public static class OperatorTypeExtensions
+    {
     /// Converts any operator type to UnifiedOperatorType.
     public static UnifiedOperatorType ToUnified(this Enum operatorType)
+        {
         return OperatorTypeAdapter.FromEnum(operatorType);
     /// Converts a string to UnifiedOperatorType.
     public static UnifiedOperatorType ToUnified(this string operatorTypeString)

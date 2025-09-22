@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Linq.Analysis;
+{
 
 /// <summary>
 /// Expression analysis result containing GPU compatibility information.
@@ -153,8 +154,6 @@ public sealed class ExpressionAnalysis
         var visitor = new ComplexityCountingVisitor();
         visitor.Visit(expression);
         return visitor.Complexity;
-    }
-
     private static int CountChainLength(System.Linq.Expressions.Expression expression)
     {
         var count = 0;

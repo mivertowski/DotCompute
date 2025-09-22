@@ -15,6 +15,7 @@ using DotCompute.Linq.Interfaces;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Providers;
+{
 /// <summary>
 /// Production implementation of IComputeLinqProvider that fully integrates with the runtime orchestrator.
 /// This is the primary entry point for LINQ-to-GPU functionality.
@@ -34,6 +35,7 @@ public class RuntimeIntegratedLinqProvider : IComputeLinqProvider
     /// <param name="optimizer">The expression optimizer.</param>
     /// <param name="logger">The logger instance.</param>
     public RuntimeIntegratedLinqProvider(
+        {
         IComputeOrchestrator orchestrator,
         IntegratedComputeQueryProvider queryProvider,
         IExpressionOptimizer optimizer,
@@ -206,6 +208,7 @@ public class AcceleratorSpecificQueryable<T> : IntegratedComputeQueryable<T>
     /// <param name="source">The data source</param>
     /// <param name="accelerator">The specific accelerator to use</param>
     public AcceleratorSpecificQueryable(
+        {
         IntegratedComputeQueryProvider provider,
         IEnumerable<T> source,
         IAccelerator accelerator)

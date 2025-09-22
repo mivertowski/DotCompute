@@ -10,6 +10,7 @@ using DotCompute.Linq.Execution;
 using Microsoft.Extensions.Logging;
 using DotCompute.Linq.Logging;
 namespace DotCompute.Linq.Providers;
+{
 /// <summary>
 /// LINQ query provider that enables GPU-accelerated query execution.
 /// </summary>
@@ -29,6 +30,7 @@ public class ComputeQueryProvider : IQueryProvider
     /// <param name="cache">The query cache.</param>
     /// <param name="logger">The logger instance.</param>
     public ComputeQueryProvider(
+        {
         IAccelerator accelerator,
         IQueryCompiler compiler,
         IQueryExecutor executor,
@@ -112,12 +114,14 @@ public class ComputeQueryProvider : IQueryProvider
 /// Represents a queryable sequence that can be executed on a compute accelerator.
 /// <typeparam name="T">The type of the elements in the sequence.</typeparam>
 public class ComputeQueryable<T> : IOrderedQueryable<T>
+    {
     private readonly ComputeQueryProvider _provider;
     private readonly Expression _expression;
     /// Initializes a new instance of the <see cref="ComputeQueryable{T}"/> class.
     /// <param name="provider">The query provider.</param>
     /// <param name="expression">The expression tree.</param>
     public ComputeQueryable(ComputeQueryProvider provider, Expression expression)
+        {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _expression = expression ?? throw new ArgumentNullException(nameof(expression));
         // Validate that expression type is compatible
