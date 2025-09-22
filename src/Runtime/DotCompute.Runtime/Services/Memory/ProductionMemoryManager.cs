@@ -1,0 +1,558 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Memory;
+using DotCompute.Runtime.Logging;
+using DotCompute.Runtime.Services.Memory.Pool;
+using DotCompute.Runtime.Services.Statistics;
+using DotCompute.Runtime.Services.Buffers;
+using DotCompute.Runtime.Services.Buffers.Views;
+using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using global::System.Runtime.CompilerServices;
+
+namespace DotCompute.Runtime.Services.Memory;
+
+/// <summary>
+/// Production memory manager implementation with advanced memory pool management, P2P transfers,
+/// and comprehensive error handling for accelerated computing workloads.
+/// </summary>
+public sealed class ProductionMemoryManager : IUnifiedMemoryManager, IDisposable
+{
+    private readonly ILogger<ProductionMemoryManager> _logger;
+    private readonly ConcurrentDictionary<long, ProductionMemoryBuffer> _buffers = new();
+    private readonly ConcurrentDictionary<long, WeakReference<ProductionMemoryBuffer>> _bufferRegistry = new();
+    private readonly MemoryPool _memoryPool;
+    private readonly DotCompute.Runtime.Services.Statistics.MemoryStatistics _statistics = new();
+    private readonly SemaphoreSlim _allocationSemaphore = new(32, 32); // Limit concurrent allocations
+    private long _nextId = 1;
+    private bool _disposed;
+    private readonly IAccelerator? _accelerator;
+
+    // Interface Properties
+
+    public IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("No accelerator associated with this memory manager");
+    public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
+    {
+        TotalAllocated = _statistics.TotalBytesAllocated,
+        CurrentUsage = _statistics.CurrentlyAllocatedBytes,
+        CurrentUsed = _statistics.CurrentlyAllocatedBytes,
+        PeakUsage = _statistics.TotalBytesAllocated,
+        AllocationCount = _statistics.TotalAllocations,
+        DeallocationCount = _statistics.TotalDeallocations,
+        ActiveAllocations = _statistics.TotalAllocations - _statistics.TotalDeallocations,
+        AvailableMemory = TotalAvailableMemory - _statistics.CurrentlyAllocatedBytes,
+        TotalCapacity = TotalAvailableMemory,
+        FragmentationPercentage = 0.0,
+        AverageAllocationSize = _statistics.AverageAllocationTime,
+        TotalAllocationCount = _statistics.TotalAllocations,
+        TotalDeallocationCount = _statistics.TotalDeallocations,
+        PoolHitRate = _statistics.PoolHitRate
+    };
+    public long MaxAllocationSize => 16L * 1024 * 1024 * 1024; // 16GB
+    public long TotalAvailableMemory => 32L * 1024 * 1024 * 1024; // 32GB simulated
+    public long CurrentAllocatedMemory => _statistics.CurrentlyAllocatedBytes;
+
+    public ProductionMemoryManager(ILogger<ProductionMemoryManager> logger, IAccelerator? accelerator = null)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _accelerator = accelerator; // Can be null for CPU scenarios
+        _memoryPool = new MemoryPool(_logger);
+
+        // Start background cleanup task
+        _ = Task.Run(PerformPeriodicCleanup);
+
+        _logger.LogInfoMessage("Production memory manager initialized with advanced memory pooling");
+    }
+
+    // Generic allocation for typed buffers
+    public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
+        int count,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var sizeInBytes = count * Unsafe.SizeOf<T>();
+        var buffer = await AllocateRawAsync(sizeInBytes, options, cancellationToken);
+        return new TypedMemoryBufferWrapper<T>(buffer, count);
+    }
+
+
+    public async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Limit memory allocation size to prevent excessive memory consumption
+        if (sizeInBytes > 16L * 1024 * 1024 * 1024) // 16GB limit
+        {
+            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Allocation size exceeds maximum limit of 16GB");
+        }
+
+        await _allocationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            var id = Interlocked.Increment(ref _nextId);
+            var startTime = Stopwatch.GetTimestamp();
+
+            // Attempt to get buffer from memory pool first
+            var pooledBuffer = await _memoryPool.TryGetBufferAsync(sizeInBytes, options, cancellationToken);
+            if (pooledBuffer != null)
+            {
+                var buffer = new ProductionMemoryBuffer(id, sizeInBytes, options, _logger, pooledBuffer, _statistics);
+                _ = _buffers.TryAdd(id, buffer);
+                _ = _bufferRegistry.TryAdd(id, new WeakReference<ProductionMemoryBuffer>(buffer));
+
+                var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+                _statistics.RecordAllocation(sizeInBytes, elapsedMs, fromPool: true);
+
+                _logger.LogDebugMessage($"Allocated pooled memory buffer {id} with size {sizeInBytes} in {elapsedMs}ms");
+
+                return buffer;
+            }
+
+            // Allocate new buffer if pool doesn't have suitable buffer
+            var newBuffer = new ProductionMemoryBuffer(id, sizeInBytes, options, _logger, null, _statistics);
+            _ = _buffers.TryAdd(id, newBuffer);
+            _ = _bufferRegistry.TryAdd(id, new WeakReference<ProductionMemoryBuffer>(newBuffer));
+
+            var allocElapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
+            _statistics.RecordAllocation(sizeInBytes, allocElapsedMs, fromPool: false);
+
+            _logger.LogDebugMessage($"Allocated new memory buffer {id} with size {sizeInBytes} in {allocElapsedMs}ms");
+
+            return newBuffer;
+        }
+        catch (OutOfMemoryException ex)
+        {
+            DotCompute.Runtime.Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
+            _logger.LogErrorMessage(ex, $"Failed to allocate memory buffer of size {sizeInBytes} - out of memory");
+
+            // Attempt garbage collection and retry once
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            // Allow GC to complete before retrying allocation
+            await Task.Yield(); // Yield control to allow GC to complete without blocking
+
+            try
+            {
+                var retryBuffer = new ProductionMemoryBuffer(Interlocked.Increment(ref _nextId), sizeInBytes, options, _logger, null, _statistics);
+                _logger.LogInfoMessage("Successfully allocated memory buffer after GC retry");
+                return retryBuffer;
+            }
+            catch (OutOfMemoryException)
+            {
+                _logger.LogCritical("Failed to allocate memory even after garbage collection - system may be low on memory");
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            DotCompute.Runtime.Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
+            _logger.LogErrorMessage(ex, $"Unexpected error during memory allocation for size {sizeInBytes}");
+            throw new InvalidOperationException($"Memory allocation failed: {ex.Message}", ex);
+        }
+        finally
+        {
+            _ = _allocationSemaphore.Release();
+        }
+    }
+
+    public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken);
+
+        try
+        {
+            await buffer.CopyFromAsync(source, cancellationToken);
+            return buffer;
+        }
+        catch
+        {
+            await buffer.DisposeAsync();
+            throw;
+        }
+    }
+
+    public IUnifiedMemoryBuffer<T> CreateView<T>(
+        IUnifiedMemoryBuffer<T> buffer,
+        int offset,
+        int length) where T : unmanaged
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+
+        if (offset + length > buffer.Length)
+        {
+            throw new ArgumentException("View extends beyond buffer boundaries");
+        }
+
+        var viewId = Interlocked.Increment(ref _nextId);
+        var view = new TypedMemoryBufferView<T>(buffer, offset, length);
+
+        _logger.LogTrace("Created typed memory buffer view {ViewId} with offset {Offset} and length {Length}",
+            viewId, offset, length);
+
+        return view;
+    }
+
+
+    public IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+
+        if (offset + length > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("View extends beyond buffer boundaries");
+        }
+
+        var viewId = Interlocked.Increment(ref _nextId);
+        var view = new ProductionMemoryBufferView(viewId, buffer, offset, length, _logger);
+
+        _logger.LogTrace("Created memory buffer view {ViewId} with offset {Offset} and length {Length}",
+            viewId, offset, length);
+
+        return view;
+    }
+
+    public DotCompute.Runtime.Services.Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
+
+    // Copy operations
+
+    public async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
+
+
+        if (source.Length != destination.Length)
+        {
+            throw new ArgumentException("Source and destination buffers must be the same size");
+        }
+
+
+        await source.CopyToAsync(destination, cancellationToken);
+    }
+
+
+    public async ValueTask CopyAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        int sourceOffset,
+        IUnifiedMemoryBuffer<T> destination,
+        int destinationOffset,
+        int count,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
+
+
+        await source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
+    }
+
+
+    public async ValueTask CopyToDeviceAsync<T>(
+        ReadOnlyMemory<T> source,
+        IUnifiedMemoryBuffer<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        await destination.CopyFromAsync(source, cancellationToken);
+    }
+
+
+    public async ValueTask CopyFromDeviceAsync<T>(
+        IUnifiedMemoryBuffer<T> source,
+        Memory<T> destination,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        await source.CopyToAsync(destination, cancellationToken);
+    }
+
+    // Free operations
+
+    public async ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
+    {
+        if (buffer is ProductionMemoryBuffer prodBuffer)
+        {
+            _ = _buffers.TryRemove(prodBuffer.Id, out _);
+            await prodBuffer.DisposeAsync();
+        }
+        else
+        {
+            await (buffer?.DisposeAsync() ?? ValueTask.CompletedTask);
+        }
+    }
+
+
+    public async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+
+        await _memoryPool.PerformMaintenanceAsync();
+
+        // Trigger garbage collection for optimization
+
+        GC.Collect(2, GCCollectionMode.Optimized, true, true);
+        GC.WaitForPendingFinalizers();
+
+
+        _logger.LogInfoMessage("Memory optimization completed");
+    }
+
+
+    public void Clear()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+
+        var buffersToDispose = _buffers.Values.ToList();
+        _buffers.Clear();
+        _bufferRegistry.Clear();
+
+
+        foreach (var buffer in buffersToDispose)
+        {
+            try
+            {
+                buffer.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error disposing buffer during clear operation");
+            }
+        }
+
+
+        _logger.LogInfoMessage("Memory manager cleared - all buffers disposed");
+    }
+
+    /// <summary>
+    /// Allocates memory for a specific number of elements.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="count">The number of elements to allocate.</param>
+    /// <returns>A memory buffer for the allocated elements.</returns>
+    public async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+
+        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await AllocateRawAsync(sizeInBytes);
+    }
+
+    /// <summary>
+    /// Copies data from host memory to a device buffer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="buffer">The destination buffer.</param>
+    /// <param name="data">The source data span.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the async operation.</returns>
+    public async Task CopyToDeviceAsync<T>(IUnifiedMemoryBuffer buffer, ReadOnlyMemory<T> data, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
+
+        var memory = data;
+        await buffer.CopyFromAsync(memory, 0, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Copies data from a device buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The destination data span.</param>
+    /// <param name="buffer">The source buffer.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the async operation.</returns>
+    public async Task CopyFromDeviceAsync<T>(Memory<T> data, IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
+        }
+
+        ArgumentNullException.ThrowIfNull(buffer);
+
+        await buffer.CopyToAsync(data, 0, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Frees a memory buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer to free.</param>
+    public void Free(IUnifiedMemoryBuffer buffer)
+    {
+        if (buffer is ProductionMemoryBuffer prodBuffer)
+        {
+            _ = _buffers.TryRemove(prodBuffer.Id, out _);
+            prodBuffer.Dispose();
+        }
+        else
+        {
+            buffer?.Dispose();
+        }
+    }
+
+    private async Task PerformPeriodicCleanup()
+    {
+        while (!_disposed)
+        {
+            try
+            {
+                // Use a more efficient cleanup interval with cancellation support
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken.None);
+                cts.CancelAfter(TimeSpan.FromMinutes(5));
+                try
+                {
+                    await Task.Delay(Timeout.Infinite, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected after 5 minutes, continue cleanup
+                }
+
+                // Clean up dead weak references
+                var deadReferences = new List<long>();
+                foreach (var kvp in _bufferRegistry)
+                {
+                    if (!kvp.Value.TryGetTarget(out _))
+                    {
+                        deadReferences.Add(kvp.Key);
+                    }
+                }
+
+                foreach (var deadId in deadReferences)
+                {
+                    _ = _bufferRegistry.TryRemove(deadId, out _);
+                }
+
+                // Trigger memory pool cleanup
+                await _memoryPool.PerformMaintenanceAsync();
+
+                if (deadReferences.Count > 0)
+                {
+                    _logger.LogDebugMessage($"Cleaned up {deadReferences.Count} dead buffer references during periodic maintenance");
+                }
+            }
+            catch (Exception ex) when (!_disposed)
+            {
+                _logger.LogWarning(ex, "Error during periodic memory cleanup - continuing");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+
+            _logger.LogInfoMessage($"Disposing production memory manager with {_buffers.Count} active buffers");
+
+            // Dispose all active buffers
+            foreach (var buffer in _buffers.Values)
+            {
+                try
+                {
+                    buffer.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error disposing buffer {BufferId}", buffer.Id);
+                }
+            }
+
+            _buffers.Clear();
+            _bufferRegistry.Clear();
+
+            // Dispose memory pool
+            _memoryPool?.Dispose();
+            _allocationSemaphore?.Dispose();
+
+            _logger.LogInfoMessage("Production memory manager disposed successfully");
+        }
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+
+            _logger.LogInfoMessage($"Disposing production memory manager with {_buffers.Count} active buffers");
+
+            // Dispose all active buffers asynchronously
+            var disposeTasks = _buffers.Values.Select(async buffer =>
+            {
+                try
+                {
+                    await buffer.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error disposing buffer {BufferId}", buffer.Id);
+                }
+            }).ToArray();
+
+
+            await Task.WhenAll(disposeTasks);
+
+            _buffers.Clear();
+            _bufferRegistry.Clear();
+
+            // Dispose memory pool
+            _memoryPool?.Dispose();
+            _allocationSemaphore?.Dispose();
+
+            _logger.LogInfoMessage("Production memory manager disposed successfully");
+        }
+    }
+}

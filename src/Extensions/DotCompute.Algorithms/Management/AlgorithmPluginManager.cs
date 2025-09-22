@@ -34,14 +34,15 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     private readonly ILogger<AlgorithmPluginManager> _logger;
     private readonly IAccelerator _accelerator;
     private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
-    private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
-    private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
     private readonly AlgorithmPluginManagerOptions _options;
-    private readonly Timer _healthCheckTimer;
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
-    private readonly SecurityPolicy _securityPolicy;
-    private readonly AuthenticodeValidator _authenticodeValidator;
-    private readonly MalwareScanningService _malwareScanner;
+
+    // Focused component dependencies
+    private readonly AlgorithmPluginDiscovery _pluginDiscovery;
+    private readonly AlgorithmPluginLoader _pluginLoader;
+    private readonly AlgorithmPluginLifecycle _pluginLifecycle;
+    private readonly AlgorithmPluginValidator _pluginValidator;
+
     private bool _disposed;
 
     /// <summary>
@@ -83,21 +84,19 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        
-        // Initialize security components
-        var securityLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SecurityPolicy>.Instance;
-        _securityPolicy = new SecurityPolicy(securityLogger);
-        
-        var authenticodeLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthenticodeValidator>.Instance;
-        _authenticodeValidator = new AuthenticodeValidator(authenticodeLogger);
-        
-        var malwareLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MalwareScanningService>.Instance;
-        _malwareScanner = new MalwareScanningService(malwareLogger, new MalwareScanningOptions
-        {
-            EnableWindowsDefender = _options.EnableWindowsDefenderScanning,
-            MaxConcurrentScans = 2,
-            ScanTimeout = TimeSpan.FromMinutes(1)
-        });
+
+        // Initialize focused components
+        var discoveryLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginDiscovery>.Instance;
+        _pluginDiscovery = new AlgorithmPluginDiscovery(discoveryLogger, _options);
+
+        var loaderLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLoader>.Instance;
+        _pluginLoader = new AlgorithmPluginLoader(loaderLogger, _options);
+
+        var lifecycleLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLifecycle>.Instance;
+        _pluginLifecycle = new AlgorithmPluginLifecycle(lifecycleLogger, _options);
+
+        var validatorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginValidator>.Instance;
+        _pluginValidator = new AlgorithmPluginValidator(validatorLogger, _options);
 
         // Configure security policy from options
         ConfigureSecurityPolicy();

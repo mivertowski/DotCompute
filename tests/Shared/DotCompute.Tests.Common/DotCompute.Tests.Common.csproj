@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
     <!-- CUDA backend reference removed to allow test compilation without full CUDA dependencies -->
   </ItemGroup>
 

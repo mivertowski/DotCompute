@@ -42,6 +42,20 @@ public sealed class SignalProcessingPlugin : AlgorithmPluginBase
     ];
 
     /// <inheritdoc/>
+    public override IReadOnlyList<string> SupportedOperations => [
+        "Filtering",
+        "Convolution",
+        "Correlation",
+        "DigitalFiltering",
+        "FIRFilter",
+        "IIRFilter",
+        "Windowing",
+        "Resampling",
+        "NoiseReduction",
+        "FeatureExtraction"
+    ];
+
+    /// <inheritdoc/>
     public override Type[] InputTypes => [typeof(string), typeof(object)];
 
     /// <inheritdoc/>

@@ -8,6 +8,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.SharedTestUtilities.Performance;
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;

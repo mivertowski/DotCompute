@@ -2,7 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Memory;
-using DotCompute.Memory.Tests.TestHelpers;
+using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.Mocks;
 using FluentAssertions;
 using Xunit;
 
@@ -18,11 +19,11 @@ public class BaseDeviceBufferTests
     public async Task DeviceBuffer_InitializesCorrectly()
     {
         // Arrange
-        await using var accelerator = new TestAccelerator();
+        await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
 
         // Act
 
-        using var buffer = new TestDeviceBuffer<float>(accelerator, 1024);
+        using var buffer = new TestMemoryBuffer<float>(256);
 
         // Assert
         _ = buffer.Should().NotBeNull();
@@ -41,11 +42,11 @@ public class BaseDeviceBufferTests
     public async Task DeviceBuffer_SupportsMultipleMemoryTypes(MemoryType memoryType)
     {
         // Arrange
-        await using var accelerator = new TestAccelerator();
+        await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
 
         // Act
 
-        using var buffer = new TestDeviceBuffer<int>(accelerator, 512, memoryType);
+        using var buffer = new TestMemoryBuffer<int>(128); // 512 bytes / 4 bytes per int
 
         // Assert
         _ = buffer.MemoryType.Should().Be(memoryType);
@@ -58,8 +59,8 @@ public class BaseDeviceBufferTests
     public async Task DeviceBuffer_ThrowsOnHostOperations()
     {
         // Arrange
-        await using var accelerator = new TestAccelerator();
-        using var buffer = new TestDeviceBuffer<double>(accelerator, 800);
+        await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
+        using var buffer = new TestMemoryBuffer<double>(100); // 800 bytes / 8 bytes per double
 
         // Act & Assert
 
@@ -76,8 +77,8 @@ public class BaseDeviceBufferTests
     public async Task DeviceBuffer_TracksDisposalState()
     {
         // Arrange
-        await using var accelerator = new TestAccelerator();
-        var buffer = new TestDeviceBuffer<float>(accelerator, 256);
+        await using var accelerator = ConsolidatedMockAccelerator.CreateCpuMock();
+        var buffer = new TestMemoryBuffer<float>(64); // 256 bytes / 4 bytes per float
 
         // Act
 

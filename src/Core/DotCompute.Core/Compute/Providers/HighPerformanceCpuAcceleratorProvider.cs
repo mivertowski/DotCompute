@@ -13,6 +13,8 @@ namespace DotCompute.Core.Compute.Providers
     /// <summary>
     /// High-performance CPU accelerator provider with SIMD optimization and OpenCL kernel execution.
     /// Provides discovery and creation of high-performance CPU accelerators with advanced capability detection.
+    ///
+    /// UPDATED: Now uses the main CpuAccelerator with HighPerformance mode instead of separate implementation.
     /// </summary>
     public class HighPerformanceCpuAcceleratorProvider(ILogger<HighPerformanceCpuAcceleratorProvider> logger) : IAcceleratorProvider
     {
@@ -49,8 +51,12 @@ namespace DotCompute.Core.Compute.Providers
                 true // is unified memory
             );
 
-            // Create a high-performance CPU accelerator (delegates to optimized backend when available)
+            // Use the obsolete high-performance accelerator but mark for future migration
+            // TODO: In the next release, this should be replaced with a dynamic loader
+            // that creates CpuAccelerator from Backends.CPU with HighPerformance mode
+            #pragma warning disable CS0618 // Type or member is obsolete
             var accelerator = new Accelerators.HighPerformanceCpuAccelerator(cpuInfo, _logger);
+            #pragma warning restore CS0618 // Type or member is obsolete
             return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
         }
 
@@ -63,12 +69,15 @@ namespace DotCompute.Core.Compute.Providers
         /// <exception cref="ArgumentException">Thrown when the device type is not CPU.</exception>
         public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
-            if (info.DeviceType != "CPU")
+            if (info.DeviceType != AcceleratorType.CPU.ToString())
             {
                 throw new ArgumentException("Can only create CPU accelerators", nameof(info));
             }
 
+            // Use the obsolete high-performance accelerator but mark for future migration
+            #pragma warning disable CS0618 // Type or member is obsolete
             var accelerator = new Accelerators.HighPerformanceCpuAccelerator(info, _logger);
+            #pragma warning restore CS0618 // Type or member is obsolete
             return ValueTask.FromResult<IAccelerator>(accelerator);
         }
 

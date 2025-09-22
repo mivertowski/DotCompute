@@ -3,6 +3,31 @@
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
+/// <summary>
+/// Performance mode options for CPU accelerator.
+/// </summary>
+public enum CpuPerformanceMode
+{
+    /// <summary>
+    /// Conservative mode focusing on power efficiency.
+    /// </summary>
+    Conservative,
+
+    /// <summary>
+    /// Balanced mode providing good performance with reasonable power usage.
+    /// </summary>
+    Balanced,
+
+    /// <summary>
+    /// High performance mode with aggressive optimizations (equivalent to HighPerformanceCpuAccelerator).
+    /// </summary>
+    HighPerformance,
+
+    /// <summary>
+    /// Maximum performance mode with all optimizations enabled.
+    /// </summary>
+    Maximum
+}
 
 /// <summary>
 /// Configuration options for the CPU accelerator.
@@ -87,6 +112,13 @@ public sealed class CpuAcceleratorOptions
     /// Gets or sets whether to prefer performance over power efficiency.
     /// </summary>
     public bool PreferPerformanceOverPower { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the performance mode for the CPU accelerator.
+    /// Controls optimization level and resource usage patterns.
+    /// Default: Balanced
+    /// </summary>
+    public CpuPerformanceMode PerformanceMode { get; set; } = CpuPerformanceMode.Balanced;
 
     /// <summary>
     /// Gets or sets the thread priority for compute threads.

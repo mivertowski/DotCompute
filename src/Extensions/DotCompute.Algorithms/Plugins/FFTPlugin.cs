@@ -42,6 +42,19 @@ public sealed class FFTPlugin : AlgorithmPluginBase
     ];
 
     /// <inheritdoc/>
+    public override IReadOnlyList<string> SupportedOperations => [
+        "FFT",
+        "IFFT",
+        "RealFFT",
+        "InverseRealFFT",
+        "PowerSpectrum",
+        "MagnitudeSpectrum",
+        "PhaseSpectrum",
+        "WindowFunction",
+        "SpectralAnalysis"
+    ];
+
+    /// <inheritdoc/>
     public override Type[] InputTypes => [typeof(string), typeof(object)];
 
     /// <inheritdoc/>

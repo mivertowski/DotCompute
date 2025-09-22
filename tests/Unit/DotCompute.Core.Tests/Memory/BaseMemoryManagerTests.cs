@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using DotCompute.Tests.Common.Mocks;
 
 namespace DotCompute.Core.Tests.Memory;
 
@@ -780,7 +781,7 @@ internal sealed class TestMemoryManager : BaseMemoryManager
 
     // Metrics
     public override long CurrentAllocatedMemory => _currentAllocatedMemory;
-    public int AllocationCount => _allocationCount;
+    public new int AllocationCount => _allocationCount;
     public int PoolHitCount => _poolHitCount;
     public int CleanupCallCount => _cleanupCallCount;
 
@@ -790,7 +791,7 @@ internal sealed class TestMemoryManager : BaseMemoryManager
         _enablePooling = enablePooling;
     }
 
-    public override IAccelerator Accelerator => new MockAccelerator();
+    public override IAccelerator Accelerator => ConsolidatedMockAccelerator.CreateCpuMock();
 
     public override long MaxAllocationSize => long.MaxValue;
 
@@ -941,14 +942,20 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         _array = array;
         SizeInBytes = sizeInBytes;
         _manager = manager;
-        Length = sizeInBytes / sizeof(T);
+        Length = (int)(sizeInBytes / sizeof(T));
     }
 
     public long SizeInBytes { get; }
-    public long Length { get; }
+    public int Length { get; }
     public MemoryType MemoryType => MemoryType.Host;
     public IntPtr DevicePointer => IntPtr.Zero;
     public bool IsDisposed => _disposed;
+    public MemoryOptions Options => MemoryOptions.None;
+    public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
+    public IAccelerator Accelerator => _manager.Accelerator;
+    public bool IsOnHost => true;
+    public bool IsOnDevice => false;
+    public bool IsDirty => false;
 
     public Span<T> AsSpan()
     {
@@ -961,6 +968,52 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         ThrowIfDisposed();
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
     }
+
+    public ReadOnlySpan<T> AsReadOnlySpan()
+    {
+        ThrowIfDisposed();
+        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+    }
+
+    public ReadOnlyMemory<T> AsReadOnlyMemory()
+    {
+        ThrowIfDisposed();
+        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
+    }
+
+    public DeviceMemory GetDeviceMemory()
+    {
+        ThrowIfDisposed();
+        return DeviceMemory.Invalid; // Test implementation returns invalid device memory
+    }
+
+    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    {
+        ThrowIfDisposed();
+        return new MappedMemory<T>(AsMemory(), null);
+    }
+
+    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    {
+        ThrowIfDisposed();
+        if (offset < 0 || length < 0 || offset + length > Length)
+            throw new ArgumentOutOfRangeException();
+        return new MappedMemory<T>(AsMemory().Slice(offset, length), null);
+    }
+
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(Map(mode));
+    }
+
+    public void EnsureOnHost() { /* Already on host */ }
+    public void EnsureOnDevice() { /* Test implementation - no-op */ }
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public void Synchronize() { /* Test implementation - no-op */ }
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public void MarkHostDirty() { /* Test implementation - no-op */ }
+    public void MarkDeviceDirty() { /* Test implementation - no-op */ }
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
@@ -978,6 +1031,78 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
             throw new ArgumentOutOfRangeException(nameof(destination), "Destination is smaller than buffer");
 
         await Task.Run(() => AsSpan().CopyTo(destination.Span), cancellationToken);
+    }
+
+    public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        return destination.CopyFromAsync(AsReadOnlyMemory(), cancellationToken);
+    }
+
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        if (sourceOffset < 0 || count < 0 || sourceOffset + count > Length)
+            throw new ArgumentOutOfRangeException();
+        var sourceSlice = AsReadOnlyMemory().Slice(sourceOffset, count);
+        return destination.CopyFromAsync(sourceSlice, cancellationToken);
+    }
+
+    public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        AsSpan().Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        if (offset < 0 || count < 0 || offset + count > Length)
+            throw new ArgumentOutOfRangeException();
+        AsSpan().Slice(offset, count).Fill(value);
+        return ValueTask.CompletedTask;
+    }
+
+    public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
+    {
+        ThrowIfDisposed();
+        if (offset < 0 || length < 0 || offset + length > Length)
+            throw new ArgumentOutOfRangeException();
+        // Create a new array for the slice in this test implementation
+        var slicedArray = new byte[length * sizeof(T)];
+        Array.Copy(_array, offset * sizeof(T), slicedArray, 0, length * sizeof(T));
+        return new TestMemoryBuffer<T>(slicedArray, length * sizeof(T), _manager);
+    }
+
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+    {
+        ThrowIfDisposed();
+        var newSizeInBytes = SizeInBytes;
+        return new TestMemoryBuffer<TNew>(_array, newSizeInBytes, _manager);
+    }
+
+    // Implement base interface methods
+    public ValueTask CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
+    {
+        ThrowIfDisposed();
+        if (typeof(TElement) == typeof(T))
+        {
+            var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
+            return CopyFromAsync(typedSource, cancellationToken);
+        }
+        throw new ArgumentException($"Type mismatch: {typeof(TElement)} vs {typeof(T)}");
+    }
+
+    public ValueTask CopyToAsync<TElement>(Memory<TElement> destination, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
+    {
+        ThrowIfDisposed();
+        if (typeof(TElement) == typeof(T))
+        {
+            var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
+            return CopyToAsync(typedDestination, cancellationToken);
+        }
+        throw new ArgumentException($"Type mismatch: {typeof(TElement)} vs {typeof(T)}");
     }
 
     private void ThrowIfDisposed()
@@ -1002,54 +1127,3 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 }
 
-/// <summary>
-/// Mock accelerator for testing.
-/// </summary>
-internal sealed class MockAccelerator : IAccelerator
-{
-    public AcceleratorInfo Info => new AcceleratorInfo { Id = "mock-0", Name = "Mock Accelerator" };
-    public AcceleratorType Type => AcceleratorType.CPU;
-    public string DeviceType => "CPU";
-    public IUnifiedMemoryManager Memory => new TestMemoryManager(Mock.Of<ILogger<BaseMemoryManager>>());
-    public IUnifiedMemoryManager MemoryManager => Memory;
-    public AcceleratorContext Context => new AcceleratorContext();
-
-    public ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
-        CompilationOptions? options = null,
-        CancellationToken cancellationToken = default) =>
-        ValueTask.FromResult<ICompiledKernel>(Mock.Of<ICompiledKernel>());
-
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
-        ValueTask.CompletedTask;
-
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}
-
-/// <summary>
-/// Test unified memory buffer for testing.
-/// </summary>
-internal sealed class TestUnifiedMemoryBuffer : IUnifiedMemoryBuffer
-{
-    private readonly byte[] _data;
-
-    public TestUnifiedMemoryBuffer(long sizeInBytes)
-    {
-        _data = new byte[sizeInBytes];
-        SizeInBytes = sizeInBytes;
-    }
-
-    public long SizeInBytes { get; }
-    public MemoryOptions Options => MemoryOptions.None;
-    public bool IsDisposed => false;
-    public BufferState State => BufferState.Allocated;
-
-    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
-        ValueTask.CompletedTask;
-
-    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged =>
-        ValueTask.CompletedTask;
-
-    public void Dispose() { }
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}

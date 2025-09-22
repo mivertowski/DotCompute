@@ -12,7 +12,7 @@ namespace DotCompute.Core.Telemetry;
 /// Production-grade telemetry provider with OpenTelemetry integration for comprehensive observability.
 /// Provides distributed tracing, metrics collection, and performance profiling for DotCompute operations.
 /// </summary>
-public sealed class TelemetryProvider : IDisposable
+public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Telemetry.Providers.TelemetryProvider
 {
     private static readonly ActivitySource ActivitySource = new("DotCompute.Core", "1.0.0");
     private static readonly Meter Meter = new("DotCompute.Core", "1.0.0");
@@ -28,7 +28,7 @@ public sealed class TelemetryProvider : IDisposable
     private readonly ObservableGauge<double> _deviceUtilizationGauge;
 
 
-    private readonly ILogger<TelemetryProvider> _logger;
+    private readonly ILogger<ProductionTelemetryProvider> _logger;
     private readonly TelemetryOptions _options;
     private readonly MetricsCollector _metricsCollector;
     private readonly PerformanceProfiler _performanceProfiler;
@@ -36,8 +36,8 @@ public sealed class TelemetryProvider : IDisposable
     private readonly Timer _samplingTimer = null!;
     private volatile bool _disposed;
 
-    public TelemetryProvider(
-        ILogger<TelemetryProvider> logger,
+    public ProductionTelemetryProvider(
+        ILogger<ProductionTelemetryProvider> logger,
         IOptions<TelemetryOptions> options,
         MetricsCollector metricsCollector,
         PerformanceProfiler performanceProfiler)
@@ -151,9 +151,9 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Records kernel execution metrics with detailed performance data.
     /// </summary>
-    public void RecordKernelExecution(string kernelName, TimeSpan duration,
+    public override void RecordKernelExecution(string kernelName, TimeSpan duration,
 
-        string deviceId, bool success, Dictionary<string, object>? metadata = null)
+        string deviceId, bool success, Dictionary<string, object> metadata)
     {
         ThrowIfDisposed();
 
@@ -188,7 +188,7 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Records memory operation metrics including allocation patterns and transfer performance.
     /// </summary>
-    public void RecordMemoryOperation(string operationType, long bytes, TimeSpan duration,
+    public override void RecordMemoryOperation(string operationType, long bytes, TimeSpan duration,
         string deviceId, bool success)
     {
         ThrowIfDisposed();
@@ -274,7 +274,7 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Exports telemetry data to configured external systems (Prometheus, ELK, etc.).
     /// </summary>
-    public async Task ExportTelemetryAsync(TelemetryExportFormat format = TelemetryExportFormat.Prometheus,
+    public override async Task ExportTelemetryAsync(DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat format = DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Prometheus,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -287,13 +287,13 @@ public sealed class TelemetryProvider : IDisposable
 
             switch (format)
             {
-                case TelemetryExportFormat.Prometheus:
+                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Prometheus:
                     await ExportPrometheusMetricsAsync(metrics, cancellationToken);
                     break;
-                case TelemetryExportFormat.OpenTelemetry:
+                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.OpenTelemetry:
                     await ExportOpenTelemetryMetricsAsync(metrics, cancellationToken);
                     break;
-                case TelemetryExportFormat.Json:
+                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Json:
                     await ExportJsonMetricsAsync(metrics, cancellationToken);
                     break;
             }
@@ -308,17 +308,16 @@ public sealed class TelemetryProvider : IDisposable
     /// <summary>
     /// Gets current system health metrics for monitoring and alerting.
     /// </summary>
-    public SystemHealthMetrics GetSystemHealth()
+    public override DotCompute.Abstractions.Telemetry.Types.SystemHealthMetrics GetSystemHealth()
     {
         ThrowIfDisposed();
 
 
-        return new SystemHealthMetrics
+        return new DotCompute.Abstractions.Telemetry.Types.SystemHealthMetrics
         {
-            MemoryUsageBytes = _metricsCollector.GetCurrentMemoryUsage(),
-            DeviceUtilization = _metricsCollector.GetDeviceUtilization(),
-            ActiveOperations = _correlationContext.Count,
-            ErrorRate = CalculateErrorRate(),
+            CpuUtilization = Environment.ProcessorCount > 0 ? _metricsCollector.GetDeviceUtilization() / Environment.ProcessorCount : 0,
+            MemoryUtilization = Math.Min(100.0, _metricsCollector.GetCurrentMemoryUsage() / (1024.0 * 1024.0 * 1024.0) * 10), // Rough estimate
+            GpuUtilization = _metricsCollector.GetDeviceUtilization(),
             Timestamp = DateTimeOffset.UtcNow
         };
     }
@@ -337,15 +336,15 @@ public sealed class TelemetryProvider : IDisposable
 
             // Check thresholds for alerting
 
-            if (health.MemoryUsageBytes > _options.MemoryAlertThreshold)
+            if (health.MemoryUtilization > 80.0)
             {
-                _logger.LogWarningMessage($"Memory usage exceeded threshold: {health.MemoryUsageBytes} bytes");
+                _logger.LogWarningMessage($"Memory utilization exceeded threshold: {health.MemoryUtilization:F2}%");
             }
 
 
-            if (health.ErrorRate > _options.ErrorRateThreshold)
+            if (health.GpuUtilization > 90.0)
             {
-                _logger.LogWarningMessage($"Error rate exceeded threshold: {health.ErrorRate * 100}%");
+                _logger.LogWarningMessage($"GPU utilization exceeded threshold: {health.GpuUtilization:F2}%");
             }
         }
         catch (Exception ex)
@@ -405,11 +404,11 @@ public sealed class TelemetryProvider : IDisposable
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(TelemetryProvider));
+            throw new ObjectDisposedException(nameof(ProductionTelemetryProvider));
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (_disposed)
         {

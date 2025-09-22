@@ -158,7 +158,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Execute kernel with performance measurement
 
-            var perfMeasurement = new PerformanceMeasurement("Vector Addition Kernel", Output);
+            var perfMeasurement = new PerformanceMeasurement("Vector Addition Kernel");
 
 
             perfMeasurement.Start();
@@ -264,7 +264,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             await using var kernel = await accelerator.CompileKernelAsync(new KernelDefinition { Name = "MatrixMultiply", Source = matMulKernel, EntryPoint = "MatrixMultiply" });
 
 
-            var perfMeasurement = new PerformanceMeasurement("Matrix Multiplication", Output);
+            var perfMeasurement = new PerformanceMeasurement("Matrix Multiplication");
 
             // Configure launch parameters for tiled matrix multiplication
 
@@ -558,7 +558,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Test host-to-device transfer
 
-            var perfMeasurement = new PerformanceMeasurement("Host to Device Transfer", Output);
+            var perfMeasurement = new PerformanceMeasurement("Host to Device Transfer");
 
 
             perfMeasurement.Start();
@@ -576,7 +576,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test device-to-host transfer
 
             var results = new float[elementCount];
-            perfMeasurement = new PerformanceMeasurement("Device to Host Transfer", Output);
+            perfMeasurement = new PerformanceMeasurement("Device to Host Transfer");
 
 
             perfMeasurement.Start();

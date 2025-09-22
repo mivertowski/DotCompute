@@ -75,6 +75,11 @@ public class CompilationOptions
 
 
     /// <summary>
+    /// Allow unsafe code during compilation
+    /// </summary>
+    public bool AllowUnsafeCode { get; set; }
+
+    /// <summary>
     /// Target architecture specific optimizations
     /// </summary>
     public string? TargetArchitecture { get; set; }
@@ -321,6 +326,7 @@ public class CompilationOptions
             GenerateLineInfo = GenerateLineInfo,
             EnableFastMath = EnableFastMath,
             AggressiveOptimizations = AggressiveOptimizations,
+            AllowUnsafeCode = AllowUnsafeCode,
             TargetArchitecture = TargetArchitecture,
             Defines = new Dictionary<string, string>(Defines),
             IncludePaths = [.. IncludePaths],

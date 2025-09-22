@@ -71,12 +71,14 @@ namespace DotCompute.Core.Compute
         /// <exception cref="ArgumentException">Can only create CPU accelerators - info</exception>
         public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
         {
-            if (info.DeviceType != "CPU")
+            if (info.DeviceType != AcceleratorType.CPU.ToString())
             {
                 throw new ArgumentException("Can only create CPU accelerators", nameof(info));
             }
 
+            #pragma warning disable CS0618 // Type or member is obsolete
             var accelerator = new Accelerators.HighPerformanceCpuAccelerator(info, _logger);
+            #pragma warning restore CS0618 // Type or member is obsolete
             return ValueTask.FromResult<IAccelerator>(accelerator);
         }
 

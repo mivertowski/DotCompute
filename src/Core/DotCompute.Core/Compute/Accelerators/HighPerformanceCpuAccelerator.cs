@@ -16,7 +16,11 @@ namespace DotCompute.Core.Compute.Accelerators
     /// <summary>
     /// High-performance CPU accelerator that tries to use optimized implementations when available.
     /// Provides kernel compilation and execution capabilities with memory management.
+    ///
+    /// OBSOLETE: This class has been consolidated into the main CpuAccelerator with configurable performance modes.
+    /// Use CpuAccelerator with PerformanceMode.HighPerformance instead.
     /// </summary>
+    [Obsolete("Use CpuAccelerator with PerformanceMode.HighPerformance instead. This class will be removed in a future version.")]
     internal class HighPerformanceCpuAccelerator : IAccelerator
     {
         private readonly ILogger _logger;

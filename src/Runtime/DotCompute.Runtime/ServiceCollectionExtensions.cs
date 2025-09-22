@@ -152,8 +152,8 @@ public static class ServiceCollectionExtensions
             _ = services.Configure(configureOptions);
         }
 
-        // Register plugin services
-        services.TryAddSingleton<IPluginServiceProvider, PluginServiceProvider>();
+        // Register plugin services - using consolidated implementation
+        services.TryAddSingleton<IPluginServiceProvider, ConsolidatedPluginServiceProvider>();
         services.TryAddSingleton<IPluginDependencyResolver, PluginDependencyResolver>();
         services.TryAddSingleton<IPluginLifecycleManager, PluginLifecycleManager>();
         services.TryAddTransient<IPluginFactory, DefaultPluginFactory>();

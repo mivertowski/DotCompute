@@ -20,7 +20,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
 {
     private readonly AcceleratorRuntime _runtime;
     private readonly ILogger<KernelExecutionService> _logger;
-    private readonly IKernelCompiler _compiler;
+    private readonly IUnifiedKernelCompiler _compiler;
     private readonly IKernelCache _cache;
     private readonly IKernelProfiler _profiler;
     private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry;
@@ -112,7 +112,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     public KernelExecutionService(
         AcceleratorRuntime runtime,
         ILogger<KernelExecutionService> logger,
-        IKernelCompiler compiler,
+        IUnifiedKernelCompiler compiler,
         IKernelCache cache,
         IKernelProfiler profiler)
     {

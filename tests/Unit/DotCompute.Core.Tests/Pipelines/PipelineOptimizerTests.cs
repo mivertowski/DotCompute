@@ -38,7 +38,7 @@ public sealed class PipelineOptimizerTests : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<PipelineOptimizer>> _mockLogger;
     private readonly Mock<IPipelineMetrics> _mockMetrics;
-    private readonly Mock<IPipelineProfiler> _mockProfiler;
+    private readonly Mock<DotCompute.Abstractions.Interfaces.Pipelines.Profiling.IPipelineProfiler> _mockProfiler;
     private readonly PipelineOptimizer _optimizer;
     private readonly List<IDisposable> _disposables = [];
     private bool _disposed;
@@ -1005,16 +1005,50 @@ public class TestPipeline : IPipelineAlias
 
 public class TestPipelineStage : IPipelineStage
 {
+    public string Id { get; }
     public string Name { get; }
-    public StageType Type { get; }
-    public bool CanExecuteInParallel { get; set; }
-    public bool SupportsInPlaceOperation { get; set; }
-    public bool SupportsStreaming { get; set; }
-    public bool SupportsGPU { get; set; }
-    public bool RequiresSynchronization { get; set; }
-    public string[] Dependencies { get; set; } = Array.Empty<string>();
-    public List<string> OptimizationHints { get; set; } = [];
-    public string PreferredDevice { get; set; } = "CPU";
+    public PipelineStageType Type { get; }
+    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
+
+    public TestPipelineStage(string id, string name, PipelineStageType type = PipelineStageType.Kernel)
+    {
+        Id = id;
+        Name = name;
+        Type = type;
+        Dependencies = Array.Empty<string>();
+        Metadata = new Dictionary<string, object>();
+    }
+
+    public ValueTask<StageExecutionResult> ExecuteAsync(PipelineExecutionContext context, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(new StageExecutionResult { Success = true });
+    }
+
+    public Models.Pipelines.StageValidationResult Validate()
+    {
+        return new Models.Pipelines.StageValidationResult { IsValid = true };
+    }
+
+    public IStageMetrics GetMetrics()
+    {
+        return new TestStageMetrics();
+    }
+}
+
+public class TestStageMetrics : IStageMetrics
+{
+    public string StageId => "test-stage";
+    public string StageName => "Test Stage";
+    public long ExecutionCount => 1;
+    public TimeSpan TotalExecutionTime => TimeSpan.FromMilliseconds(100);
+    public TimeSpan AverageExecutionTime => TimeSpan.FromMilliseconds(100);
+    public TimeSpan MinExecutionTime => TimeSpan.FromMilliseconds(100);
+    public TimeSpan MaxExecutionTime => TimeSpan.FromMilliseconds(100);
+    public MemoryUsageStats MemoryUsage => new MemoryUsageStats { AllocatedBytes = 1024, PeakBytes = 2048, AllocationCount = 1, DeallocationCount = 0 };
+    public double ThroughputOpsPerSecond => 1000.0;
+    public IReadOnlyDictionary<string, object> CustomMetrics => new Dictionary<string, object>();
+}
 
     // Performance characteristics
     public int EstimatedExecutionTimeMs { get; set; } = 10;

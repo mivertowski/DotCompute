@@ -700,9 +700,9 @@ public class OptimizationStrategyTests : IDisposable
 /// </summary>
 internal class TestMemoryInfo : MemoryInfo
 {
-    public long TotalMemory { get; set; }
-    public long AvailableMemory { get; set; }
-    public long UsedMemory { get; set; }
+    public new long TotalMemory { get; set; }
+    public new long AvailableMemory { get; set; }
+    public new long UsedMemory { get; set; }
 }
 
 /// <summary>

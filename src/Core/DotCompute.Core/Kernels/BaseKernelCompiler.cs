@@ -27,7 +27,7 @@ namespace DotCompute.Core.Kernels;
 /// Base abstract class for kernel compiler implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate compiler implementations.
 /// </summary>
-public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, AbstractionsICompiledKernel>
+public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, AbstractionsICompiledKernel> _compilationCache;
@@ -509,6 +509,88 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler<KernelDefiniti
 
 
         => ValueTask.FromResult(kernel);
+
+    // Backward compatibility methods for legacy IKernelCompiler interface
+
+    /// <inheritdoc />
+    public virtual async Task<AbstractionsICompiledKernel> CompileAsync(
+        KernelDefinition kernelDefinition,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var options = new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.Full,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType
+        };
+
+        return await CompileAsync(kernelDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        try
+        {
+            var validationResult = Validate(kernelDefinition);
+            return Task.FromResult(validationResult.IsValid);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public virtual CompilationOptions GetSupportedOptions(IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        return new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.Full,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType,
+            AllowUnsafeCode = true,
+            PreferredBlockSize = new Dim3(256, 1, 1),
+            SharedMemorySize = 48 * 1024 // 48KB default shared memory
+        };
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<IDictionary<string, AbstractionsICompiledKernel>> BatchCompileAsync(
+        IEnumerable<KernelDefinition> kernelDefinitions,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinitions);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var results = new Dictionary<string, AbstractionsICompiledKernel>();
+
+        foreach (var kernelDef in kernelDefinitions)
+        {
+            try
+            {
+                var compiled = await CompileAsync(kernelDef, accelerator, cancellationToken);
+                results[kernelDef.Name] = compiled;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to compile kernel {KernelName} in batch operation", kernelDef.Name);
+                throw new KernelCompilationException($"Batch compilation failed for kernel {kernelDef.Name}: {ex.Message}", ex);
+            }
+        }
+
+        return results;
+    }
 }
 
 /// <summary>

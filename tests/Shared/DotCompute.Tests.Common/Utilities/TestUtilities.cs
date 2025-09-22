@@ -15,6 +15,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Extensions;
 using DotCompute.Memory;
+using DotCompute.SharedTestUtilities.Performance;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -548,6 +549,25 @@ public class LogEntry
     public string Message { get; set; } = string.Empty;
     public Exception? Exception { get; set; }
     public DateTime Timestamp { get; set; }
+}
+
+/// <summary>
+/// Performance measurement results for testing
+/// </summary>
+public class PerformanceMeasurement
+{
+    public int Iterations { get; set; }
+    public double MeanTimeMs { get; set; }
+    public double MedianTimeMs { get; set; }
+    public double MinTimeMs { get; set; }
+    public double MaxTimeMs { get; set; }
+    public double StandardDeviationMs { get; set; }
+    public double TotalTimeMs { get; set; }
+    public double? TargetTimeMs { get; set; }
+    public bool MeetsTarget { get; set; }
+    public double OperationsPerSecond { get; set; }
+    public double Percentile95Ms { get; set; }
+    public double Percentile99Ms { get; set; }
 }
 
 /// <summary>

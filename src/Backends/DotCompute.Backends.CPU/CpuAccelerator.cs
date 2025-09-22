@@ -78,7 +78,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         CancellationToken cancellationToken)
     {
         // Check if we should try optimized kernel compilation first
-        if (_options.EnableAutoVectorization && _options.PreferPerformanceOverPower)
+        if (ShouldUseOptimizedCompilation())
         {
             var optimizedKernel = TryCreateOptimizedKernel(definition, options);
             if (optimizedKernel != null)
@@ -100,7 +100,8 @@ public sealed class CpuAccelerator : BaseAccelerator
             Options = coreOptions,
             SimdCapabilities = SimdCapabilities.GetSummary(),
             ThreadPool = _threadPool,
-            Logger = _logger
+            Logger = _logger,
+            // Note: _options is already included via the Options property above
         };
 
         // Use AOT-compatible compiler when dynamic code compilation is not available
@@ -121,6 +122,27 @@ public sealed class CpuAccelerator : BaseAccelerator
 
     /// <inheritdoc/>
     protected override async ValueTask DisposeCoreAsync() => await _threadPool.DisposeAsync().ConfigureAwait(false);// Memory manager disposal is handled by base class
+
+    /// <summary>
+    /// Determines whether to use optimized compilation based on performance mode and settings.
+    /// </summary>
+    private bool ShouldUseOptimizedCompilation()
+    {
+        // Always use optimized compilation for high performance modes
+        if (_options.PerformanceMode is CpuPerformanceMode.HighPerformance or CpuPerformanceMode.Maximum)
+        {
+            return true;
+        }
+
+        // For balanced mode, use optimization if vectorization is enabled and performance is preferred
+        if (_options.PerformanceMode == CpuPerformanceMode.Balanced)
+        {
+            return _options.EnableAutoVectorization && _options.PreferPerformanceOverPower;
+        }
+
+        // Conservative mode only uses basic optimizations when explicitly enabled
+        return _options.EnableAutoVectorization && _options.PreferPerformanceOverPower;
+    }
 
     /// <summary>
     /// Attempts to create an optimized kernel for known patterns.

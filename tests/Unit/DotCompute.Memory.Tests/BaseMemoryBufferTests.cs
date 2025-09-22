@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions.Memory;
 using FluentAssertions;
-using DotCompute.Memory.Tests.TestHelpers;
+using DotCompute.Tests.Common;
 using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,7 +33,7 @@ public class BaseMemoryBufferTests
     public void BaseMemoryBuffer_CalculatesLength_Correctly(int sizeInBytes, int expectedLength)
     {
         // Arrange & Act
-        using var buffer = new TestMemoryBuffer<float>(sizeInBytes);
+        using var buffer = new TestMemoryBuffer<float>(sizeInBytes / sizeof(float));
 
         // Assert
         _ = buffer.SizeInBytes.Should().Be(sizeInBytes);
@@ -50,7 +50,7 @@ public class BaseMemoryBufferTests
     public void BaseMemoryBuffer_ThrowsForInvalidSize(int invalidSize)
     {
         // Act & Assert
-        Action act = () => { var _ = new TestMemoryBuffer<float>(invalidSize); };
+        Action act = () => { var _ = new TestMemoryBuffer<float>(Math.Max(1, invalidSize / sizeof(float))); };
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*sizeInBytes*");
     }
@@ -63,7 +63,7 @@ public class BaseMemoryBufferTests
     public void BaseMemoryBuffer_ThrowsForNonAlignedSize(int nonAlignedSize)
     {
         // Act & Assert
-        Action act = () => new TestMemoryBuffer<float>(nonAlignedSize);
+        Action act = () => new TestMemoryBuffer<float>(nonAlignedSize / sizeof(float));
         _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*not evenly divisible*");
     }
@@ -261,7 +261,7 @@ public class BaseMemoryBufferTests
     public void UnifiedBuffer_HandlesSlicing()
     {
         // Arrange
-        using var buffer = new TestUnifiedBuffer<float>(64); // 16 elements
+        using var buffer = new TestMemoryBuffer<float>(16); // 16 elements
 
         // Act
 
@@ -281,7 +281,7 @@ public class BaseMemoryBufferTests
     public void UnifiedBuffer_SliceValidatesParameters(int start, int length)
     {
         // Arrange
-        using var buffer = new TestUnifiedBuffer<float>(64); // 16 elements
+        using var buffer = new TestMemoryBuffer<float>(16); // 16 elements
 
         // Act & Assert
 

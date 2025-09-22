@@ -6,6 +6,7 @@ using DotCompute.Runtime.Services;
 using DotCompute.Runtime.Services.Interfaces;
 using DotCompute.Runtime.Services.Implementation;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Runtime.Services.Performance.Metrics;
 using DotCompute.Runtime.Services.Performance.Results;
 using DotCompute.Runtime.Services.Performance.Types;
@@ -69,7 +70,8 @@ public static class ServiceCollectionExtensions
 
         // Add production kernel services
 
-        services.AddSingleton<IKernelCompiler, DefaultKernelCompiler>();
+        // Register the unified kernel compiler interface only
+        services.AddSingleton<IUnifiedKernelCompiler, DefaultKernelCompiler>();
         services.AddSingleton<IKernelCache, MemoryKernelCache>();
         services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
 

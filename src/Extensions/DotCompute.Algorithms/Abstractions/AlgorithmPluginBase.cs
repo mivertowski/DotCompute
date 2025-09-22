@@ -41,6 +41,9 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
     public abstract AcceleratorType[] SupportedAccelerators { get; }
 
     /// <inheritdoc/>
+    public abstract IReadOnlyList<string> SupportedOperations { get; }
+
+    /// <inheritdoc/>
     public abstract Type[] InputTypes { get; }
 
     /// <inheritdoc/>

@@ -3,10 +3,10 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using DotCompute.Tests.Common.Assertions;
+using DotCompute.Tests.Common.Data;
 using DotCompute.Tests.Common.Fixtures;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.Tests.Common.Constants;
+using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

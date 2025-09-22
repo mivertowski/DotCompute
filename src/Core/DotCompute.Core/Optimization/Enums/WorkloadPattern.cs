@@ -12,5 +12,7 @@ public enum WorkloadPattern
     ComputeIntensive,
     MemoryIntensive,
     HighlyParallel,
-    Balanced
+    Balanced,
+    IOBound,
+    Mixed
 }

@@ -97,4 +97,34 @@ public sealed class AlgorithmPluginManagerOptions
     /// Performs comprehensive malware analysis on plugin assemblies.
     /// </summary>
     public bool EnableMalwareScanning { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the timeout for plugin operations.
+    /// Prevents plugins from running indefinitely and causing system hangs.
+    /// </summary>
+    public TimeSpan PluginTimeout { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Gets or sets the maximum memory usage allowed per plugin in megabytes.
+    /// Prevents plugins from consuming excessive system memory.
+    /// </summary>
+    public int MaxMemoryUsageMB { get; set; } = 512; // 512 MB default limit
+
+    /// <summary>
+    /// Gets or sets whether plugins are allowed to access the file system.
+    /// When disabled, plugins will be restricted from file I/O operations.
+    /// </summary>
+    public bool AllowFileSystemAccess { get; set; } = false; // Secure by default
+
+    /// <summary>
+    /// Gets or sets whether plugins are allowed to access the network.
+    /// When disabled, plugins will be restricted from network operations.
+    /// </summary>
+    public bool AllowNetworkAccess { get; set; } = false; // Secure by default
+
+    /// <summary>
+    /// Gets or sets whether plugins must be security transparent.
+    /// Requires plugins to be marked with SecurityTransparent attributes for enhanced security.
+    /// </summary>
+    public bool RequireSecurityTransparency { get; set; } = true;
 }

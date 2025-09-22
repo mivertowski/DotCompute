@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -13,22 +15,45 @@ namespace DotCompute.Runtime.Services.Implementation;
 
 /// <summary>
 /// Default kernel compiler implementation that delegates to backend-specific compilers.
+/// Implements the unified kernel compiler interface.
 /// </summary>
-public class DefaultKernelCompiler : IKernelCompiler
+public class DefaultKernelCompiler : IUnifiedKernelCompiler
 {
     private readonly ILogger<DefaultKernelCompiler> _logger;
-    private readonly ConcurrentDictionary<string, IKernelCompiler> _backendCompilers;
+    private readonly ConcurrentDictionary<string, IUnifiedKernelCompiler> _backendCompilers;
+
+    /// <inheritdoc />
+    public string Name => "Default Kernel Compiler";
+
+    /// <inheritdoc />
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes => new KernelLanguage[]
+    {
+        KernelLanguage.CSharp,
+        KernelLanguage.Cuda,
+        KernelLanguage.OpenCL,
+        KernelLanguage.HLSL,
+        KernelLanguage.Metal
+    };
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
+    {
+        { "SupportsMultipleBackends", true },
+        { "SupportsBatchCompilation", true },
+        { "SupportsOptimization", true },
+        { "Version", "1.0.0" }
+    };
 
     public DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _backendCompilers = new ConcurrentDictionary<string, IKernelCompiler>();
+        _backendCompilers = new ConcurrentDictionary<string, IUnifiedKernelCompiler>();
     }
 
     /// <summary>
     /// Registers a backend-specific compiler.
     /// </summary>
-    public void RegisterBackendCompiler(string backendType, IKernelCompiler compiler)
+    public void RegisterBackendCompiler(string backendType, IUnifiedKernelCompiler compiler)
     {
         _backendCompilers[backendType] = compiler ?? throw new ArgumentNullException(nameof(compiler));
         _logger.CompilerRegistered(backendType);
@@ -44,7 +69,6 @@ public class DefaultKernelCompiler : IKernelCompiler
         var backendType = accelerator.Info.DeviceType.ToUpperInvariant();
 
         // Try to get backend-specific compiler
-
         if (_backendCompilers.TryGetValue(backendType, out var backendCompiler))
         {
             _logger.CompilerSelected(backendType, kernelDefinition.Name);
@@ -135,5 +159,69 @@ public class DefaultKernelCompiler : IKernelCompiler
         }
 
         return results;
+    }
+
+    /// <inheritdoc />
+    public ValueTask<ICompiledKernel> CompileAsync(
+        KernelDefinition source,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Use a dummy accelerator for the legacy method call
+        // This is a design issue that should be addressed in the future
+        throw new NotSupportedException("This method requires an accelerator. Use CompileAsync(KernelDefinition, IAccelerator, CancellationToken) instead.");
+    }
+
+    /// <inheritdoc />
+    public UnifiedValidationResult Validate(KernelDefinition source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        var result = new UnifiedValidationResult
+        {
+            Context = $"Validation of kernel '{source.Name}'"
+        };
+
+        // Basic validation
+        if (string.IsNullOrEmpty(source.Name))
+            result.AddError("Kernel name cannot be null or empty", "DC001");
+
+        if (string.IsNullOrEmpty(source.Source))
+            result.AddError("Kernel source cannot be null or empty", "DC002");
+
+        // Note: KernelDefinition structure may vary
+        // if (source.Parameters == null)
+        //     result.AddWarning("Kernel parameters are null", "DC003");
+
+        if (result.IsValid)
+        {
+            result.AddInfo("Kernel validation passed", "DC000");
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<UnifiedValidationResult> ValidateAsync(
+        KernelDefinition source,
+        CancellationToken cancellationToken = default)
+    {
+        // For now, delegate to synchronous validation
+        // In the future, this could perform more expensive async validation
+        return await Task.FromResult(Validate(source));
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<ICompiledKernel> OptimizeAsync(
+        ICompiledKernel kernel,
+        OptimizationLevel level,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernel);
+
+        // For now, return the kernel as-is
+        // Individual backend compilers can override this for specific optimizations
+        _logger.LogWarning("Optimization not implemented in default compiler for level {Level}", level);
+        return await Task.FromResult(kernel);
     }
 }

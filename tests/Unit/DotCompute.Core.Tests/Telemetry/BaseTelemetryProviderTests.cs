@@ -817,7 +817,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
     protected override string GetBackendType() => "Test";
 
-    public new void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
+    public void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
     {
         ThrowIfDisposed();
         ValidateMetricParameters(metricName, value);
@@ -844,7 +844,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public new void TrackEvent(string eventName, IDictionary<string, object>? properties = null, string? correlationId = null)
+    public void TrackEvent(string eventName, IDictionary<string, object>? properties = null, string? correlationId = null)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(eventName))
@@ -864,7 +864,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public new void TrackException(Exception exception, IDictionary<string, object>? additionalData = null)
+    public void TrackException(Exception exception, IDictionary<string, object>? additionalData = null)
     {
         ThrowIfDisposed();
         if (exception == null) throw new ArgumentNullException(nameof(exception));
@@ -881,7 +881,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public new void TrackDependency(string dependencyName, string operationName, TimeSpan duration, bool success)
+    public void TrackDependency(string dependencyName, string operationName, TimeSpan duration, bool success)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(dependencyName))
@@ -902,7 +902,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public new ITelemetryTimer StartTimer(string timerName)
+    public ITelemetryTimer StartTimer(string timerName)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(timerName))
@@ -911,7 +911,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         return new TestTelemetryTimer(timerName, this);
     }
 
-    public new void IncrementCounter(string counterName, long increment = 1)
+    public void IncrementCounter(string counterName, long increment = 1)
     {
         ThrowIfDisposed();
         if (string.IsNullOrWhiteSpace(counterName))
@@ -924,7 +924,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         }
     }
 
-    public new void CaptureSystemMetrics()
+    public void CaptureSystemMetrics()
     {
         ThrowIfDisposed();
 
@@ -1133,7 +1133,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             throw new ArgumentException("Metric value cannot be NaN or Infinity", nameof(value));
     }
 
-    protected new void DisposeCoreImpl()
+    private void DisposeCoreImpl()
     {
         lock (_lock)
         {

@@ -1,7 +1,25 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+// This file has been REPLACED by the consolidated TestMemoryBuffer implementation.
+// Use DotCompute.Tests.Common.TestMemoryBuffer<T> instead.
+//
+// MIGRATION GUIDE:
+// - Replace TestMemoryBuffer<T> with DotCompute.Tests.Common.TestMemoryBuffer<T>
+// - Add using DotCompute.Tests.Common;
+// - Update constructor calls to use new options pattern
+// - Use TestMemoryBufferOptions for configuring test behavior
+//
+// The new implementation provides:
+// - Comprehensive IUnifiedMemoryBuffer<T> compatibility
+// - Configurable behavior for testing edge cases
+// - Deterministic failure simulation
+// - Memory tracking and validation
+//
+// This legacy implementation is kept for backward compatibility during migration.
+
 #pragma warning disable CA2000 // Dispose objects before losing scope - Test implementations don't require disposal
+#pragma warning disable CS0618 // Type or member is obsolete
 
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
@@ -11,15 +29,21 @@ using DotCompute.Abstractions.Memory;
 namespace DotCompute.Memory.Tests.TestHelpers;
 
 /// <summary>
-/// Test implementation of BaseMemoryBuffer for unit testing.
+/// DEPRECATED: Test implementation of BaseMemoryBuffer for unit testing.
+///
+/// This class is deprecated and will be removed in a future version.
+/// Use DotCompute.Tests.Common.TestMemoryBuffer{T} instead.
+///
+/// The new implementation provides better functionality and configuration options.
 /// </summary>
-internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
+[Obsolete("Use DotCompute.Tests.Common.TestMemoryBuffer<T> instead. This will be removed in a future version.")]
+internal sealed class LegacyTestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmanaged
 {
     private readonly Memory<T> _memory;
     private readonly MemoryType _memoryType;
     private bool _isDisposed;
 
-    public TestMemoryBuffer(long sizeInBytes, MemoryType memoryType = MemoryType.Host)
+    public LegacyTestMemoryBuffer(long sizeInBytes, MemoryType memoryType = MemoryType.Host)
 
         : base(sizeInBytes)
     {
@@ -188,7 +212,7 @@ internal sealed class TestMemoryBuffer<T> : BaseMemoryBuffer<T> where T : unmana
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
 
 
-        return new TestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _memoryType);
+        return new LegacyTestMemoryBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), _memoryType);
     }
 
 
@@ -710,4 +734,106 @@ internal sealed class TestAccelerator : IAccelerator
 
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>
+/// Migration helpers for transitioning from legacy test buffers to the consolidated implementation.
+/// Use these factory methods to easily migrate existing tests.
+/// </summary>
+[Obsolete("Use DotCompute.Tests.Common.TestMemoryBuffer<T> directly. This will be removed in a future version.")]
+public static class TestMemoryBufferFactory
+{
+    /// <summary>
+    /// Creates a new test memory buffer using the consolidated implementation.
+    /// This is the recommended way to create test buffers going forward.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="elementCount">The number of elements in the buffer.</param>
+    /// <param name="options">Optional configuration for test behavior.</param>
+    /// <returns>A new test memory buffer.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> Create<T>(int elementCount, DotCompute.Tests.Common.TestMemoryBufferOptions? options = null)
+        where T : unmanaged
+    {
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(elementCount, options ?? DotCompute.Tests.Common.TestMemoryBufferOptions.Default);
+    }
+
+    /// <summary>
+    /// Creates a test memory buffer with data from an existing span.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The initial data for the buffer.</param>
+    /// <param name="options">Optional configuration for test behavior.</param>
+    /// <returns>A new test memory buffer initialized with the provided data.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> CreateFromData<T>(ReadOnlySpan<T> data, DotCompute.Tests.Common.TestMemoryBufferOptions? options = null)
+        where T : unmanaged
+    {
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(data, options);
+    }
+
+    /// <summary>
+    /// Creates a test memory buffer that simulates slow transfer operations.
+    /// Useful for testing timeout and cancellation scenarios.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="elementCount">The number of elements in the buffer.</param>
+    /// <param name="delayMs">The delay in milliseconds for transfer operations.</param>
+    /// <returns>A new test memory buffer with slow transfer simulation.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> CreateSlowTransfer<T>(int elementCount, int delayMs = 10)
+        where T : unmanaged
+    {
+        var options = new DotCompute.Tests.Common.TestMemoryBufferOptions
+        {
+            SimulateSlowTransfers = true,
+            TransferDelayMs = delayMs
+        };
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(elementCount, options);
+    }
+
+    /// <summary>
+    /// Creates a test memory buffer that fails after a certain number of operations.
+    /// Useful for testing error handling and resilience.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="elementCount">The number of elements in the buffer.</param>
+    /// <param name="failAfterOperations">The number of operations after which the buffer should fail.</param>
+    /// <returns>A new test memory buffer configured to fail after the specified operations.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> CreateFailAfter<T>(int elementCount, int failAfterOperations)
+        where T : unmanaged
+    {
+        var options = DotCompute.Tests.Common.TestMemoryBufferOptions.FailAfter(failAfterOperations);
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(elementCount, options);
+    }
+
+    /// <summary>
+    /// Creates a restrictive test memory buffer that throws on most operations.
+    /// Useful for testing error handling paths.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="elementCount">The number of elements in the buffer.</param>
+    /// <returns>A new test memory buffer with restrictive behavior.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> CreateRestrictive<T>(int elementCount)
+        where T : unmanaged
+    {
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(elementCount, DotCompute.Tests.Common.TestMemoryBufferOptions.Restrictive);
+    }
+}
+
+/// <summary>
+/// Compatibility type alias for legacy test memory buffer.
+/// This helps with migration by providing a familiar name.
+/// </summary>
+[Obsolete("Use DotCompute.Tests.Common.TestMemoryBuffer<T> instead. This will be removed in a future version.")]
+public static class TestMemoryBuffer
+{
+    /// <summary>
+    /// Creates a test memory buffer using the new consolidated implementation.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="elementCount">The number of elements in the buffer.</param>
+    /// <returns>A new test memory buffer.</returns>
+    public static DotCompute.Tests.Common.TestMemoryBuffer<T> Create<T>(int elementCount)
+        where T : unmanaged
+    {
+        return new DotCompute.Tests.Common.TestMemoryBuffer<T>(elementCount);
+    }
 }

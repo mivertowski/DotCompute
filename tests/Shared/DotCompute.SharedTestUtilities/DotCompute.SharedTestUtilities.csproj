@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
   </ItemGroup>
 
   <!-- Test packages are included via Directory.Build.targets -->

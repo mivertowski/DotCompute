@@ -12,5 +12,6 @@ public enum MemoryAccessPattern
     Random,
     Strided,
     Coalesced,
-    Scattered
+    Scattered,
+    Stride
 }

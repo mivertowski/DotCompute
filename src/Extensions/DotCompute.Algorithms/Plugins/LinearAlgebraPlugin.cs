@@ -46,6 +46,21 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
     ];
 
     /// <inheritdoc/>
+    public override IReadOnlyList<string> SupportedOperations => [
+        "MatrixMultiplication",
+        "MatrixAddition",
+        "MatrixSubtraction",
+        "MatrixTranspose",
+        "MatrixInverse",
+        "LUDecomposition",
+        "QRDecomposition",
+        "CholeskyDecomposition",
+        "SVD",
+        "EigenDecomposition",
+        "LinearSolve"
+    ];
+
+    /// <inheritdoc/>
     public override Type[] InputTypes => [typeof(string), typeof(Matrix[])];
 
     /// <inheritdoc/>

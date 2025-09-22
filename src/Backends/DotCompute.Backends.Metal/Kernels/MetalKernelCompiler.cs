@@ -24,7 +24,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler : IUnifiedKernelCompiler<KernelDefinition, DotCompute.Abstractions.ICompiledKernel>, IDisposable
+public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 {
     private readonly IntPtr _device;
     private readonly IntPtr _commandQueue;
@@ -461,5 +461,88 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
         // TODO: Implement Metal-specific optimizations
         // For now, return the kernel as-is since Metal optimization happens at compile time
         return ValueTask.FromResult(kernel);
+    }
+
+    // Backward compatibility methods for legacy IKernelCompiler interface
+
+    /// <inheritdoc />
+    public async Task<ICompiledKernel> CompileAsync(
+        KernelDefinition kernelDefinition,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var options = new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.Full,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType
+        };
+
+        return await CompileAsync(kernelDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinition);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        try
+        {
+            var validationResult = Validate(kernelDefinition);
+            return Task.FromResult(validationResult.IsValid);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public CompilationOptions GetSupportedOptions(IAccelerator accelerator)
+    {
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        return new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.Full,
+            EnableDebugInfo = false,
+            TargetArchitecture = accelerator.Info.DeviceType,
+            AllowUnsafeCode = false, // Metal doesn't support unsafe code
+            PreferredBlockSize = new Dim3(64, 1, 1), // Good default for Metal
+            SharedMemorySize = 32 * 1024 // 32KB default for Metal threadgroup memory
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<IDictionary<string, ICompiledKernel>> BatchCompileAsync(
+        IEnumerable<KernelDefinition> kernelDefinitions,
+        IAccelerator accelerator,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(kernelDefinitions);
+        ArgumentNullException.ThrowIfNull(accelerator);
+
+        var results = new Dictionary<string, ICompiledKernel>();
+
+        // Metal can benefit from batch compilation by building a single library
+        foreach (var kernelDef in kernelDefinitions)
+        {
+            try
+            {
+                var compiled = await CompileAsync(kernelDef, accelerator, cancellationToken);
+                results[kernelDef.Name] = compiled;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to compile kernel {KernelName} in batch operation", kernelDef.Name);
+                throw new InvalidOperationException($"Batch compilation failed for kernel {kernelDef.Name}: {ex.Message}", ex);
+            }
+        }
+
+        return results;
     }
 }

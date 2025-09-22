@@ -77,6 +77,13 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
     ];
 
     /// <inheritdoc/>
+    public override IReadOnlyList<string> SupportedOperations => [
+        "VectorAddition",
+        "ElementwiseOperation",
+        "ParallelComputation"
+    ];
+
+    /// <inheritdoc/>
     public override Type[] InputTypes => [typeof(float[]), typeof(float[])];
 
     /// <inheritdoc/>

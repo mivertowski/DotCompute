@@ -38,6 +38,12 @@ public abstract class AlgorithmPluginBase : IAlgorithmPlugin
     public abstract IEnumerable<AcceleratorType> SupportedAccelerators { get; }
 
     /// <summary>
+    /// Gets the list of operations supported by this plugin.
+    /// Used for capability validation and security checks.
+    /// </summary>
+    public virtual IReadOnlyList<string> SupportedOperations => Array.Empty<string>();
+
+    /// <summary>
     /// Gets the supported input types.
     /// </summary>
     public abstract IEnumerable<Type> InputTypes { get; }

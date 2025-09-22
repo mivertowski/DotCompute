@@ -38,6 +38,12 @@ public interface IAlgorithmPlugin : IAsyncDisposable
     public IEnumerable<AcceleratorType> SupportedAccelerators { get; }
 
     /// <summary>
+    /// Gets the list of operations supported by this plugin.
+    /// Used for capability validation and security checks.
+    /// </summary>
+    public IReadOnlyList<string> SupportedOperations { get; }
+
+    /// <summary>
     /// Gets the input types that this plugin can process.
     /// </summary>
     public IEnumerable<Type> InputTypes { get; }
