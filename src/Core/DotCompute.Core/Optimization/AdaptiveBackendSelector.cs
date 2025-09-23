@@ -409,7 +409,7 @@ public class AdaptiveBackendSelector : IDisposable
         };
     }
 
-    private WorkloadSignature CreateWorkloadSignature(string kernelName, WorkloadCharacteristics characteristics)
+    private static WorkloadSignature CreateWorkloadSignature(string kernelName, WorkloadCharacteristics characteristics)
     {
         return new WorkloadSignature
         {
@@ -519,7 +519,7 @@ public class AdaptiveBackendSelector : IDisposable
         return (float)((sampleConfidence + consistencyConfidence + reliabilityConfidence) / 3.0f);
     }
 
-    private double CalculateRealtimeScore(
+    private static double CalculateRealtimeScore(
         BackendPerformanceState state,
         SystemPerformanceSnapshot systemSnapshot,
         WorkloadPattern workloadPattern)
@@ -550,7 +550,7 @@ public class AdaptiveBackendSelector : IDisposable
         return (utilizationScore * 0.3 + recentPerformanceScore * 0.4 + systemLoadScore * 0.3) * patternMultiplier;
     }
 
-    private double CalculateCharacteristicScore(string backendId, WorkloadPattern pattern)
+    private static double CalculateCharacteristicScore(string backendId, WorkloadPattern pattern)
     {
         // Score backend based on its suitability for the workload pattern
         return pattern switch

@@ -24,7 +24,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             
             if (IsCudaAvailable().Result)
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 _accelerator = factory.CreateProductionAccelerator(0) as CudaAccelerator;
                 
                 if (_accelerator != null)

@@ -44,7 +44,7 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         return pipeline;
     }
 
-    public ValueTask<OptimizationResult> ApplyInternalAsync(
+    public static ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
         PipelineOptimizationSettings settings,
         CancellationToken cancellationToken = default)

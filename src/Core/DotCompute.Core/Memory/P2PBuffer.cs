@@ -390,7 +390,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Clears the buffer (fills with zero).
         /// </summary>
-        public async Task ClearAsync(CancellationToken cancellationToken = default) => await FillAsync(default(T), cancellationToken);
+        public async Task ClearAsync(CancellationToken cancellationToken = default) => await FillAsync(default, cancellationToken);
 
         /// <summary>
         /// Creates a slice of this buffer.

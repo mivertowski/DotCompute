@@ -27,6 +27,7 @@ public class CudaKernelCompilerTests : CudaTestBase
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<CudaKernelCompiler>>? _mockLogger;
     private readonly CudaKernelCompiler? _compiler;
+    private readonly DotCompute.Backends.CUDA.CudaContext? _context;
 
     public CudaKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
@@ -34,8 +35,8 @@ public class CudaKernelCompilerTests : CudaTestBase
         _mockLogger = new Mock<ILogger<CudaKernelCompiler>>();
         if (IsCudaAvailable())
         {
-            var context = new DotCompute.Backends.CUDA.CudaContext(0);
-            _compiler = new CudaKernelCompiler(context, _mockLogger.Object);
+            _context = new DotCompute.Backends.CUDA.CudaContext(0);
+            _compiler = new CudaKernelCompiler(_context, _mockLogger.Object);
         }
     }
 
@@ -637,6 +638,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         if (disposing)
         {
             _compiler?.Dispose();
+            _context?.Dispose();
         }
         base.Dispose(disposing);
     }

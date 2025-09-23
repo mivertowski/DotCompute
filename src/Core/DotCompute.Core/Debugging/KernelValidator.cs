@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Validation;
 // using DotCompute.Core.Logging; // Removed - not needed
 
 namespace DotCompute.Core.Debugging;
@@ -135,7 +136,7 @@ public class KernelValidator
         var results = new List<InternalKernelExecutionResult>();
         var issues = new List<string>();
 
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var result = await ExecuteKernelSafelyAsync(
                 kernelName,
@@ -165,10 +166,10 @@ public class KernelValidator
 
         // Compare all results to the first one
         var referenceResult = results[0];
-        bool isDeterministic = true;
+        var isDeterministic = true;
         float maxDifference = 0;
 
-        for (int i = 1; i < results.Count; i++)
+        for (var i = 1; i < results.Count; i++)
         {
             var comparison = CompareResults(referenceResult, results[i], tolerance: 0);
             if (!comparison.IsMatch)
@@ -228,7 +229,7 @@ public class KernelValidator
         }
     }
 
-    private ResultComparison CompareResults(
+    private static ResultComparison CompareResults(
         InternalKernelExecutionResult result1,
         InternalKernelExecutionResult result2,
         float tolerance)
@@ -253,7 +254,7 @@ public class KernelValidator
         };
     }
 
-    private List<string> GetDeterminismRecommendations()
+    private static List<string> GetDeterminismRecommendations()
     {
         return
         [

@@ -20,4 +20,9 @@ public class PerformanceResult
     public string? ErrorMessage { get; set; }
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
     public Dictionary<string, object> AdditionalMetrics { get; set; } = [];
+
+    /// <summary>
+    /// Gets the elapsed time as a TimeSpan (computed from ExecutionTimeMs).
+    /// </summary>
+    public TimeSpan ElapsedTime => TimeSpan.FromMilliseconds(ExecutionTimeMs);
 }

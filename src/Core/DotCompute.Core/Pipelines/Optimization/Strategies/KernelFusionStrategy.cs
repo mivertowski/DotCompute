@@ -45,7 +45,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         return pipeline;
     }
 
-    public ValueTask<OptimizationResult> ApplyInternalAsync(
+    public static ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
         PipelineOptimizationSettings settings,
         CancellationToken cancellationToken = default)
@@ -111,7 +111,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         // Intelligent buffer size calculation that considers multiple optimization factors
         var calculator = new IntelligentBufferSizeCalculator();
 
-        return calculator.CalculateOptimalBufferSize(stage1, stage2);
+        return IntelligentBufferSizeCalculator.CalculateOptimalBufferSize(stage1, stage2);
     }
 
     private static IKernelPipeline CreateOptimizedPipeline(

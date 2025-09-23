@@ -12,7 +12,7 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets the optimization level for compilation
     /// </summary>
-    public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Balanced;
+    public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Default;
 
     /// <summary>
     /// Gets or sets whether to generate debug information
@@ -177,7 +177,7 @@ public sealed class KernelCompilationOptions
     {
         return new KernelCompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Maximum,
+            OptimizationLevel = OptimizationLevel.O3,
             GenerateDebugInfo = false,
             EnableFastMath = true,
             EnableAutoVectorization = true,
@@ -195,7 +195,7 @@ public sealed class KernelCompilationOptions
     {
         return new KernelCompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Balanced,
+            OptimizationLevel = OptimizationLevel.Default,
             GenerateDebugInfo = false,
             EnableFastMath = true,
             EnableCaching = true

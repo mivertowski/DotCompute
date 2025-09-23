@@ -67,8 +67,8 @@ public class KernelCompilationIntegrationTests : IntegrationTestBase
         }
 
         var accelerator = _availableAccelerators.First();
-        _logger.LogInformation("Testing kernel compilation on {Type}: {Name}", 
-            accelerator.Type, accelerator.Info.Name);
+        _logger.LogInformation("Testing kernel compilation on {Type}: {Name}",
+            accelerator.Type, accelerator.Info!.Name);
 
         // Act
         var measurement = await MeasurePerformanceAsync(async () =>

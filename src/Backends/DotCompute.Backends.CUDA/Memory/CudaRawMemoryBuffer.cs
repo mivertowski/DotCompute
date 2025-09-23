@@ -182,7 +182,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
         }
 
-        private void EnsureOnHost()
+        private static void EnsureOnHost()
         {
             // For unified memory, ensure data is accessible on host
             Synchronize();

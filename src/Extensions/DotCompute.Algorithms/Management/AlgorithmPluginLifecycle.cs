@@ -269,7 +269,11 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         private void PerformHealthCheck(object? state)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             _ = Task.Run(() =>
             {

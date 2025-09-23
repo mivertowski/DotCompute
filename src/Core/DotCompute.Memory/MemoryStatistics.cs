@@ -186,7 +186,11 @@ public sealed class MemoryStatistics
         {
             var original = Interlocked.CompareExchange(ref _peakAllocatedBytes, newCurrentBytes, currentPeak);
             if (original == currentPeak)
+            {
                 break;
+            }
+
+
             currentPeak = original;
         }
 

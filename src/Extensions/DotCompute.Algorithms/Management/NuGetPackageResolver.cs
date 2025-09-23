@@ -1,0 +1,260 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using Microsoft.Extensions.Logging;
+using NuGet.Common;
+using NuGet.Configuration;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
+using NuGet.Versioning;
+using NuGet.Packaging.Core;
+using DotCompute.Algorithms.Types.Security;
+
+namespace DotCompute.Algorithms.Management
+{
+    /// <summary>
+    /// Handles NuGet package resolution including version resolution and dependency analysis.
+    /// Provides comprehensive package resolution with caching and security validation.
+    /// </summary>
+    internal sealed class NuGetPackageResolver : IDisposable
+    {
+        private readonly ILogger _logger;
+        private readonly NuGetPluginLoaderOptions _options;
+        private readonly SourceRepositoryProvider _sourceRepositoryProvider;
+        private bool _disposed;
+
+        public NuGetPackageResolver(ILogger logger, NuGetPluginLoaderOptions options)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+
+            var settings = Settings.LoadDefaultSettings(null);
+            _sourceRepositoryProvider = new SourceRepositoryProvider(
+                new PackageSourceProvider(settings),
+                Repository.Provider.GetCoreV3());
+        }
+
+        /// <summary>
+        /// Resolves the latest version of a package from configured NuGet sources.
+        /// </summary>
+        public async Task<NuGetVersion> ResolveLatestVersionAsync(string packageId, CancellationToken cancellationToken)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+
+            _logger.LogDebug("Resolving latest version for package: {PackageId}", packageId);
+
+            foreach (var sourceRepository in _sourceRepositoryProvider.GetRepositories())
+            {
+                try
+                {
+                    var metadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>(cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (metadataResource == null)
+                    {
+                        continue;
+                    }
+
+
+                    var packages = await metadataResource.GetMetadataAsync(
+                        packageId,
+                        includePrerelease: _options.IncludePrereleaseVersions,
+                        includeUnlisted: false,
+                        sourceCacheContext: new SourceCacheContext(),
+                        logger: new NuGetLogger(_logger),
+                        cancellationToken).ConfigureAwait(false);
+
+                    var latestPackage = packages
+                        .Where(p => !p.Identity.Version.IsPrerelease || _options.IncludePrereleaseVersions)
+                        .OrderByDescending(p => p.Identity.Version)
+                        .FirstOrDefault();
+
+                    if (latestPackage != null)
+                    {
+                        _logger.LogDebug("Resolved latest version for {PackageId}: {Version}",
+                            packageId, latestPackage.Identity.Version);
+                        return latestPackage.Identity.Version;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to resolve version from source: {Source}",
+                        sourceRepository.PackageSource.Source);
+                    // Continue to next source
+                }
+            }
+
+            throw new InvalidOperationException($"Package '{packageId}' not found in any configured source.");
+        }
+
+        /// <summary>
+        /// Resolves all dependencies for a given package identity.
+        /// </summary>
+        public async Task<PackageDependency[]> ResolveDependenciesAsync(PackageIdentity identity, string extractedPath)
+        {
+            ArgumentNullException.ThrowIfNull(identity);
+            ArgumentException.ThrowIfNullOrWhiteSpace(extractedPath);
+
+            _logger.LogDebug("Resolving dependencies for package: {PackageId} {Version}",
+                identity.Id, identity.Version);
+
+            var dependencies = new List<PackageDependency>();
+
+            // Load dependencies from .nuspec file in extracted package
+            var nuspecFile = Directory.GetFiles(extractedPath, "*.nuspec", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault();
+
+            if (nuspecFile != null)
+            {
+                try
+                {
+                    var nuspecContent = await File.ReadAllTextAsync(nuspecFile).ConfigureAwait(false);
+                    var nuspecDoc = System.Xml.Linq.XDocument.Parse(nuspecContent);
+                    var ns = nuspecDoc.Root?.GetDefaultNamespace();
+
+                    if (ns != null)
+                    {
+                        var dependencyGroups = nuspecDoc.Root?
+                            .Element(ns + "metadata")?
+                            .Element(ns + "dependencies")?
+                            .Elements(ns + "group");
+
+                        if (dependencyGroups != null)
+                        {
+                            foreach (var group in dependencyGroups)
+                            {
+                                var targetFramework = group.Attribute("targetFramework")?.Value;
+                                var dependencyElements = group.Elements(ns + "dependency");
+
+                                foreach (var dep in dependencyElements)
+                                {
+                                    var id = dep.Attribute("id")?.Value;
+                                    var version = dep.Attribute("version")?.Value;
+                                    var exclude = dep.Attribute("exclude")?.Value?.Split(',');
+                                    var include = dep.Attribute("include")?.Value?.Split(',');
+
+                                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(version))
+                                    {
+                                        dependencies.Add(new PackageDependency
+                                        {
+                                            Id = id,
+                                            VersionRange = version,
+                                            TargetFrameworks = string.IsNullOrEmpty(targetFramework)
+                                                ? null
+                                                : new[] { targetFramework },
+                                            Exclude = exclude,
+                                            Include = include
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    _logger.LogDebug("Resolved {Count} dependencies for {PackageId}",
+                        dependencies.Count, identity.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse nuspec file for dependency resolution: {NuspecFile}",
+                        nuspecFile);
+                }
+            }
+
+            return dependencies.ToArray();
+        }
+
+        /// <summary>
+        /// Parses a package source string to extract package ID and version.
+        /// </summary>
+        public static (string PackageId, NuGetVersion? Version) ParsePackageSource(string packageSource)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(packageSource);
+
+            // Handle various formats:
+            // - "PackageId" -> latest version
+            // - "PackageId:1.0.0" -> specific version
+            // - "PackageId/1.0.0" -> specific version
+
+            var separators = new[] { ':', '/' };
+            var parts = packageSource.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 1)
+            {
+                return (parts[0].Trim(), null);
+            }
+
+            if (parts.Length == 2 && NuGetVersion.TryParse(parts[1].Trim(), out var version))
+            {
+                return (parts[0].Trim(), version);
+            }
+
+            // If parsing fails, treat entire string as package ID
+            return (packageSource.Trim(), null);
+        }
+
+        /// <summary>
+        /// Validates that a package identity meets security requirements.
+        /// </summary>
+        public async Task<(bool IsValid, string? ValidationMessage)> ValidatePackageSecurityAsync(
+            PackageIdentity identity,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(identity);
+
+            try
+            {
+                // Check against security policy if configured
+                if (!string.IsNullOrEmpty(_options.PackageSecurityPolicy))
+                {
+                    var securityPolicy = SecurityPolicy.FromFile(_options.PackageSecurityPolicy);
+
+                    if (securityPolicy.IsPackageBlocked(identity.Id))
+                    {
+                        return (false, $"Package {identity.Id} is blocked by security policy");
+                    }
+
+                    if (!securityPolicy.IsPackageAllowed(identity.Id))
+                    {
+                        return (false, $"Package {identity.Id} is not in allowed packages list");
+                    }
+                }
+
+                // Additional security validations can be added here
+                // - Check for known vulnerabilities
+                // - Validate publisher certificates
+                // - Check package reputation
+
+                await Task.CompletedTask; // Placeholder for async security checks
+
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Security validation failed for package: {PackageId} {Version}",
+                    identity.Id, identity.Version);
+                return (false, $"Security validation error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Generates a cache key for package identity and target framework combination.
+        /// </summary>
+        public static string GetCacheKey(PackageIdentity identity, string targetFramework)
+        {
+            ArgumentNullException.ThrowIfNull(identity);
+            ArgumentException.ThrowIfNullOrWhiteSpace(targetFramework);
+
+            return $"{identity.Id}_{identity.Version}_{targetFramework}".ToLowerInvariant();
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _sourceRepositoryProvider?.Dispose();
+                _disposed = true;
+            }
+        }
+    }
+}

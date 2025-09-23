@@ -1205,7 +1205,7 @@ public enum KeyType
 /// <summary>
 /// Secure container for cryptographic keys.
 /// </summary>
-internal sealed class SecureKeyContainer : IDisposable
+public sealed class SecureKeyContainer : IDisposable
 {
     public required KeyType KeyType { get; init; }
     public required int KeySize { get; init; }

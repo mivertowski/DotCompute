@@ -31,7 +31,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create production accelerator for advanced features, but use base CudaAccelerator for tests
                 var productionAccelerator = factory.CreateProductionAccelerator(0);
                 _accelerator = new CudaAccelerator(0, NullLogger<CudaAccelerator>.Instance);

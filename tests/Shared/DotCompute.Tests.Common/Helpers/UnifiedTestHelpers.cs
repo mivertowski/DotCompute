@@ -597,6 +597,19 @@ public static class UnifiedTestHelpers
         }
     }
 
+    /// <summary>
+    /// Verifies that two float arrays match within tolerance (delegated to ValidationHelpers).
+    /// </summary>
+    public static void VerifyFloatArraysMatch(
+        float[] expected,
+        float[] actual,
+        float tolerance = 0.0001f,
+        int maxElementsToCheck = 1000,
+        string? context = null)
+    {
+        ValidationHelpers.VerifyFloatArraysMatch(expected, actual, tolerance, maxElementsToCheck, context);
+    }
+
     #endregion
 }
 

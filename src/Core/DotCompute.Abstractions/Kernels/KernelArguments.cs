@@ -272,7 +272,7 @@ public class KernelArguments : IEnumerable<object?>
             {
                 throw new InvalidCastException($"Cannot cast null value to non-nullable value type {typeof(T).Name}.");
             }
-            return default(T)!;
+            return default!;
         }
 
 

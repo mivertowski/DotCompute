@@ -11,7 +11,7 @@ using DotCompute.Backends.Metal.Factory;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using System.Runtime.InteropServices;
-using ICompiledKernel = DotCompute.Backends.Metal.Execution.Interfaces.ICompiledKernel;
+using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 
 namespace DotCompute.Backends.Metal.Tests.Mocks
 {

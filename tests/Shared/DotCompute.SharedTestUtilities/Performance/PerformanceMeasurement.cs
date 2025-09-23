@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
 
 namespace DotCompute.SharedTestUtilities.Performance;
 
@@ -107,7 +108,15 @@ public sealed class PerformanceMeasurement : IDisposable
 
     public string OperationName => _operationName;
     public TimeSpan Elapsed => _stopwatch.Elapsed;
+    public TimeSpan Duration => _stopwatch.Elapsed;
+    public TimeSpan ElapsedTime => _stopwatch.Elapsed;
     public bool IsRunning => _isRunning;
+
+    public PerformanceMeasurement(string operationName, ITestOutputHelper output)
+        : this(operationName, false, null)
+    {
+        // Ignore output for now - could create a logger that writes to it if needed
+    }
 
     public PerformanceMeasurement(string operationName, bool trackMemory = true, ILogger<PerformanceMeasurement>? logger = null)
     {
@@ -261,7 +270,7 @@ public sealed class PerformanceMeasurement : IDisposable
         if (result.Checkpoints.Length > 0)
         {
             s_logCheckpoints(_logger, null);
-            TimeSpan previousTime = TimeSpan.Zero;
+            var previousTime = TimeSpan.Zero;
 
             foreach (var checkpoint in result.Checkpoints)
             {
@@ -289,6 +298,22 @@ public sealed class PerformanceMeasurement : IDisposable
             MemoryReport = _memoryTracker?.GetReport(),
             Timestamp = DateTime.UtcNow
         };
+    }
+
+    public void LogResults(long dataSize = 0)
+    {
+        var result = Stop();
+        if (dataSize > 0)
+        {
+            var throughput = dataSize / result.Duration.TotalSeconds;
+            var gbps = throughput / (1024.0 * 1024.0 * 1024.0);
+            s_logDuration(_logger, result.Duration.TotalMilliseconds, null);
+            _logger.LogInformation($"  Throughput: {gbps:F2} GB/s");
+        }
+        else
+        {
+            s_logDuration(_logger, result.Duration.TotalMilliseconds, null);
+        }
     }
 
     public void Dispose()

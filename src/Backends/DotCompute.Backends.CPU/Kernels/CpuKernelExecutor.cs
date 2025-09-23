@@ -140,7 +140,7 @@ internal sealed class CpuKernelExecutor
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private async ValueTask ExecuteVectorizedAsync(
+    private static async ValueTask ExecuteVectorizedAsync(
         KernelDefinition definition,
         KernelArguments arguments,
         KernelExecutionPlan executionPlan,

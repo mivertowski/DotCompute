@@ -330,6 +330,11 @@ public class KernelExecutionRecord
     public required string KernelName { get; init; }
 
     /// <summary>
+    /// Gets the execution name (alias for KernelName).
+    /// </summary>
+    public string Name => KernelName;
+
+    /// <summary>
     /// Gets the arguments passed to the kernel.
     /// </summary>
     public required object[] Arguments { get; init; }

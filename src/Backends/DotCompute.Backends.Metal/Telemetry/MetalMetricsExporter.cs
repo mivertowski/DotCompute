@@ -300,7 +300,7 @@ public sealed class MetalMetricsExporter : IDisposable
         }
     }
 
-    private string ConvertToPrometheusFormat(MetalTelemetrySnapshot snapshot)
+    private static string ConvertToPrometheusFormat(MetalTelemetrySnapshot snapshot)
     {
         var sb = new StringBuilder();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -379,7 +379,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { resourceMetrics = new[] { resourceMetrics } };
     }
 
-    private object[] CreateOTLPMetrics(MetalTelemetrySnapshot snapshot)
+    private static object[] CreateOTLPMetrics(MetalTelemetrySnapshot snapshot)
     {
         var metrics = new List<object>
         {
@@ -425,7 +425,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return metrics.ToArray();
     }
 
-    private object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
+    private static object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
     {
         var telemetryItems = new List<object>
         {
@@ -468,7 +468,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { items = telemetryItems };
     }
 
-    private object ConvertToDataDogFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToDataDogFormat(MetalTelemetrySnapshot snapshot)
     {
         var series = new List<object>();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -504,7 +504,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { series };
     }
 
-    private object ConvertToGrafanaFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToGrafanaFormat(MetalTelemetrySnapshot snapshot)
     {
         var dataPoints = new List<object>();
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -528,7 +528,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return new { dataPoints };
     }
 
-    private object ConvertToCustomFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
+    private static object ConvertToCustomFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)
     {
         // Default JSON format for custom endpoints
         return new

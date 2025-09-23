@@ -179,7 +179,7 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         var barrier = new Barrier(10);
 
         // Act - Create 10 tasks that will all try to dispose concurrently
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(Task.Run(() =>
             {

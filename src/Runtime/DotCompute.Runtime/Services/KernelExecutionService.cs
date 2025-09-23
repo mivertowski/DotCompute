@@ -346,7 +346,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
         return await Task.FromResult(true);
     }
 
-    private KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration)
+    private static KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration)
     {
         return new KernelDefinition
         {
@@ -520,7 +520,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
         throw new InvalidOperationException($"Cannot convert result type {result.GetType()} to {typeof(T)}");
     }
 
-    private async Task<T> ExtractExecutionResultAsync<T>(ICompiledKernel compiledKernel, KernelArguments kernelArgs, IAccelerator accelerator)
+    private static async Task<T> ExtractExecutionResultAsync<T>(ICompiledKernel compiledKernel, KernelArguments kernelArgs, IAccelerator accelerator)
     {
         // For most kernels, results are written to output buffers rather than returned directly
         // This method extracts results from the kernel arguments after execution
@@ -767,7 +767,7 @@ internal class MockUnifiedBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
 
     public int Length { get; }
     public long SizeInBytes { get; }
-    public IAccelerator Accelerator => null!;
+    public static IAccelerator Accelerator => null!;
     public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
     public bool IsDisposed => false;
     public DotCompute.Abstractions.Memory.BufferState State => DotCompute.Abstractions.Memory.BufferState.Synchronized;

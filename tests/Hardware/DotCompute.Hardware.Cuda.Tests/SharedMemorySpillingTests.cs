@@ -22,12 +22,13 @@ namespace DotCompute.Hardware.Cuda.Tests
     public class SharedMemorySpillingTests : CudaTestBase
     {
         private readonly ILogger<SharedMemorySpillingTests> _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
 
         public SharedMemorySpillingTests(ITestOutputHelper output) : base(output)
         {
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = loggerFactory.CreateLogger<SharedMemorySpillingTests>();
+            _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = _loggerFactory.CreateLogger<SharedMemorySpillingTests>();
         }
 
         [SkippableFact]
@@ -36,7 +37,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires Turing or newer for register spilling");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             var kernelCode = CreateRegisterIntensiveKernel();
@@ -85,7 +86,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires Turing or newer");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Create a kernel that uses many registers
@@ -148,7 +149,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires Turing or newer");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             const int dataSize = 1024 * 1024; // 1M elements
@@ -235,7 +236,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires Turing or newer");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // This test would ideally use occupancy calculator from the accelerator
@@ -329,6 +330,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                     
                     output[idx] = t10;
                 }";
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _loggerFactory?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

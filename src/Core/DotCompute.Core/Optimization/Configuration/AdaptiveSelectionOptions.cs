@@ -25,4 +25,18 @@ public class AdaptiveSelectionOptions
 
     /// <summary>Interval in seconds for updating backend performance states</summary>
     public int PerformanceUpdateIntervalSeconds { get; set; } = 10;
+
+    /// <summary>Minimum samples required for learning (alias for MinHistoryForLearning)</summary>
+    public int MinimumSamplesForLearning
+    {
+        get => MinHistoryForLearning;
+        set => MinHistoryForLearning = value;
+    }
+
+    /// <summary>Confidence threshold for making selections (alias for MinConfidenceThreshold)</summary>
+    public float ConfidenceThreshold
+    {
+        get => MinConfidenceThreshold;
+        set => MinConfidenceThreshold = value;
+    }
 }

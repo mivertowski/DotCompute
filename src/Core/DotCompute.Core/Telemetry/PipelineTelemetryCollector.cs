@@ -507,7 +507,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         }
     }
 
-    private async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
+    private static async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
     {
         // Custom telemetry event processing logic
         // This could include forwarding to external systems, alerting, etc.

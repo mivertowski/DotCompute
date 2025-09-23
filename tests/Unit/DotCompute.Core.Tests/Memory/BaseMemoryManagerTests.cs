@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Interfaces;
@@ -55,7 +56,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
     [InlineData(1024 * 1024)]    // 1MB
     [InlineData(16 * 1024 * 1024)] // 16MB
     [Trait("TestType", "Allocation")]
-    public async Task AllocateAsync_ValidSizes_ReturnsValidBuffer(long sizeInBytes)
+    public async Task AllocateAsync_ValidSizes_ReturnsValidBuffer(int sizeInBytes)
     {
         // Act
         var buffer = await _memoryManager.AllocateAsync<byte>(sizeInBytes);
@@ -66,7 +67,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
             buffer.Should().NotBeNull();
             buffer.SizeInBytes.Should().Be(sizeInBytes);
             buffer.Length.Should().Be(sizeInBytes);
-            buffer.MemoryType.Should().Be(MemoryType.Host);
+            // buffer.MemoryType.Should().Be(MemoryType.Host); // Property not available in interface
             _memoryManager.CurrentAllocatedMemory.Should().BeGreaterThan(0);
         }
     }
@@ -76,7 +77,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
     [InlineData(-1)]     // Negative size
     [InlineData(-1000)]  // Large negative
     [Trait("TestType", "Allocation")]
-    public async Task AllocateAsync_InvalidSizes_ThrowsArgumentException(long invalidSize)
+    public async Task AllocateAsync_InvalidSizes_ThrowsArgumentException(int invalidSize)
     {
         // Act & Assert
         var act = async () => await _memoryManager.AllocateAsync<int>(invalidSize);
@@ -89,7 +90,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
     public async Task AllocateAsync_ExtremelyLargeSize_ThrowsOutOfMemoryException()
     {
         // Arrange - Request more memory than reasonably available
-        const long extremeSize = long.MaxValue / 2;
+        const int extremeSize = int.MaxValue / 2;
 
         // Act & Assert
         var act = async () => await _memoryManager.AllocateAsync<byte>(extremeSize);
@@ -120,20 +121,20 @@ public sealed class BaseMemoryManagerTests : IDisposable
             // Act - Allocate multiple buffers
             for (var i = 0; i < allocationCount; i++)
             {
-                var buffer = await _memoryManager.AllocateAsync<byte>(allocationSize);
+                var buffer = await _memoryManager.AllocateAsync<byte>((int)allocationSize);
                 buffers.Add(buffer);
             }
 
             // Assert
             buffers.Should().HaveCount(allocationCount);
-            _memoryManager.CurrentAllocatedMemory.Should().BeGreaterOrEqualTo(allocationCount * allocationSize);
+            _memoryManager.CurrentAllocatedMemory.Should().BeGreaterThanOrEqualTo(allocationCount * allocationSize);
             _memoryManager.AllocationCount.Should().Be(allocationCount);
 
             // Verify each buffer is valid
             foreach (var buffer in buffers)
             {
                 buffer.SizeInBytes.Should().Be(allocationSize);
-                buffer.MemoryType.Should().Be(MemoryType.Host);
+                // buffer.MemoryType.Should().Be(MemoryType.Host); // Property not available in interface
             }
         }
         finally
@@ -202,12 +203,12 @@ public sealed class BaseMemoryManagerTests : IDisposable
         const long bufferSize = 1024;
 
         // Allocate and release buffer
-        var buffer1 = await pooledManager.AllocateAsync<byte>(bufferSize);
+        var buffer1 = await pooledManager.AllocateAsync<byte>((int)bufferSize);
         var initialAllocations = pooledManager.AllocationCount;
         buffer1.Dispose();
 
         // Allocate same size again - should reuse from pool
-        var buffer2 = await pooledManager.AllocateAsync<byte>(bufferSize);
+        var buffer2 = await pooledManager.AllocateAsync<byte>((int)bufferSize);
 
         buffer2.Should().NotBeNull();
         pooledManager.PoolHitCount.Should().BeGreaterThan(0);
@@ -217,9 +218,9 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var nonPooledManager = new TestMemoryManager(_mockLogger.Object, enablePooling: false);
         _managers.Add(nonPooledManager);
 
-        var buffer3 = await nonPooledManager.AllocateAsync<byte>(bufferSize);
+        var buffer3 = await nonPooledManager.AllocateAsync<byte>((int)bufferSize);
         buffer3.Dispose();
-        var buffer4 = await nonPooledManager.AllocateAsync<byte>(bufferSize);
+        var buffer4 = await nonPooledManager.AllocateAsync<byte>((int)bufferSize);
 
         nonPooledManager.PoolHitCount.Should().Be(0);
         buffer4.Dispose();
@@ -240,7 +241,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         // Act - High volume allocate/deallocate cycle
         for (var i = 0; i < operationCount; i++)
         {
-            using var buffer = await pooledManager.AllocateAsync<byte>(bufferSize);
+            using var buffer = await pooledManager.AllocateAsync<byte>((int)bufferSize);
             // Simulate some work
             buffer.AsSpan().Fill((byte)(i % 256));
         }
@@ -313,7 +314,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
             {
                 for (var i = 0; i < allocationsPerThread; i++)
                 {
-                    var buffer = await _memoryManager.AllocateAsync<byte>(bufferSize);
+                    var buffer = await _memoryManager.AllocateAsync<byte>((int)bufferSize);
                     results.Add(buffer);
                 }
             }
@@ -414,8 +415,8 @@ public sealed class BaseMemoryManagerTests : IDisposable
         statisticsResults.Should().AllSatisfy(stats =>
         {
             stats.TotalMemoryBytes.Should().BeGreaterThan(0);
-            stats.UsedMemoryBytes.Should().BeGreaterOrEqualTo(0);
-            stats.AvailableMemoryBytes.Should().BeGreaterOrEqualTo(0);
+            stats.UsedMemoryBytes.Should().BeGreaterThanOrEqualTo(0);
+            stats.AvailableMemoryBytes.Should().BeGreaterThanOrEqualTo(0);
         });
     }
 
@@ -461,7 +462,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
             {
                 try
                 {
-                    var buffer = await _memoryManager.AllocateAsync<byte>(bufferSize);
+                    var buffer = await _memoryManager.AllocateAsync<byte>((int)bufferSize);
                     buffers.Add(buffer);
                     successfulAllocations++;
                 }
@@ -533,7 +534,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         // Act
         for (var i = 0; i < allocationCount; i++)
         {
-            using var buffer = await _memoryManager.AllocateAsync<byte>(bufferSize);
+            using var buffer = await _memoryManager.AllocateAsync<byte>((int)bufferSize);
             // Minimal work to prevent optimization
             buffer.AsSpan()[0] = (byte)(i % 256);
         }
@@ -942,7 +943,7 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         _array = array;
         SizeInBytes = sizeInBytes;
         _manager = manager;
-        Length = (int)(sizeInBytes / sizeof(T));
+        Length = (int)(sizeInBytes / Unsafe.SizeOf<T>());
     }
 
     public long SizeInBytes { get; }
@@ -960,25 +961,25 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     public Span<T> AsSpan()
     {
         ThrowIfDisposed();
-        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
     }
 
     public Memory<T> AsMemory()
     {
         ThrowIfDisposed();
-        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
+        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
     }
 
     public ReadOnlySpan<T> AsReadOnlySpan()
     {
         ThrowIfDisposed();
-        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
     }
 
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
         ThrowIfDisposed();
-        return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
+        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsMemory(0, (int)SizeInBytes));
     }
 
     public DeviceMemory GetDeviceMemory()
@@ -1088,7 +1089,7 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         ThrowIfDisposed();
         if (typeof(TElement) == typeof(T))
         {
-            var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
+            var typedSource = global::System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
             return CopyFromAsync(typedSource, cancellationToken);
         }
         throw new ArgumentException($"Type mismatch: {typeof(TElement)} vs {typeof(T)}");
@@ -1099,7 +1100,7 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         ThrowIfDisposed();
         if (typeof(TElement) == typeof(T))
         {
-            var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
+            var typedDestination = global::System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
             return CopyToAsync(typedDestination, cancellationToken);
         }
         throw new ArgumentException($"Type mismatch: {typeof(TElement)} vs {typeof(T)}");

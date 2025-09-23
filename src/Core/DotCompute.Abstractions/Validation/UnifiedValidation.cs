@@ -84,7 +84,7 @@ public sealed class UnifiedValidationResult
     /// <summary>
     /// Adds an informational message to the validation result.
     /// </summary>
-    public void AddInfo(string message, string? code = null, string? source = null, object? data = null) => _information.Add(new ValidationIssue(ValidationSeverity.Information, message, code, source, data));
+    public void AddInfo(string message, string? code = null, string? source = null, object? data = null) => _information.Add(new ValidationIssue(ValidationSeverity.Info, message, code, source, data));
 
 
     /// <summary>
@@ -278,27 +278,8 @@ public sealed class ValidationIssue
     }
 }
 
-/// <summary>
-/// Validation severity levels.
-/// </summary>
-public enum ValidationSeverity
-{
-    /// <summary>
-    /// Informational message.
-    /// </summary>
-    Information,
-
-    /// <summary>
-    /// Warning that doesn't prevent operation.
-    /// </summary>
-    Warning,
-
-
-    /// <summary>
-    /// Error that prevents operation.
-    /// </summary>
-    Error
-}
+// ValidationSeverity moved to DotCompute.Abstractions.Validation.ValidationSeverity
+// This enum is already in the same namespace, so no need to re-declare it here.
 
 /// <summary>
 /// Exception thrown when validation fails.

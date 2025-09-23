@@ -321,10 +321,10 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
 
     private sealed class NullTimer : Interfaces.Telemetry.IOperationTimer
     {
-        public string OperationName => string.Empty;
-        public string OperationId => string.Empty;
-        public DateTime StartTime => DateTime.UtcNow;
-        public TimeSpan Elapsed => TimeSpan.Zero;
+        public static string OperationName => string.Empty;
+        public static string OperationId => string.Empty;
+        public static DateTime StartTime => DateTime.UtcNow;
+        public static TimeSpan Elapsed => TimeSpan.Zero;
         public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;
         public bool IsEnabled => false;
 

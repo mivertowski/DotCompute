@@ -38,7 +38,7 @@ internal sealed class IntelligentBufferSizeCalculator
     /// Calculates optimal buffer size considering kernel memory requirements,
     /// hardware capabilities, and memory hierarchy optimization.
     /// </summary>
-    public long CalculateOptimalBufferSize(KernelStage stage1, KernelStage stage2)
+    public static long CalculateOptimalBufferSize(KernelStage stage1, KernelStage stage2)
     {
         try
         {

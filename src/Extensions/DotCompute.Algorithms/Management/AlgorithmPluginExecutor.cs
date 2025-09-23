@@ -35,9 +35,18 @@ public class AlgorithmPluginExecutor
         CancellationToken cancellationToken = default)
     {
         if (plugin == null)
+        {
+
             throw new ArgumentNullException(nameof(plugin));
+        }
+
+
         if (input == null)
+        {
+
             throw new ArgumentNullException(nameof(input));
+        }
+
 
         _logger.LogDebug("Executing plugin: {PluginId} with input type: {InputType}",
             plugin.Id, input.GetType().Name);
@@ -108,7 +117,7 @@ public class AlgorithmPluginExecutor
         // TODO: Re-enable Polly resilience patterns after adding package reference
         // Simple retry logic for now
         Exception? lastException = null;
-        for (int attempt = 0; attempt <= _options.MaxRetryAttempts; attempt++)
+        for (var attempt = 0; attempt <= _options.MaxRetryAttempts; attempt++)
         {
             try
             {
@@ -148,30 +157,45 @@ public class AlgorithmPluginExecutor
     /// <summary>
     /// Determines if an exception is retryable.
     /// </summary>
-    private bool IsRetryableException(Exception ex)
+    private static bool IsRetryableException(Exception ex)
     {
         // Don't retry on cancellation
         if (ex is OperationCanceledException)
+        {
             return false;
+        }
 
         // Don't retry on argument exceptions
+
         if (ex is ArgumentException)
+        {
             return false;
+        }
 
         // Don't retry on not supported exceptions
+
         if (ex is NotSupportedException)
+        {
             return false;
+        }
 
         // Retry on transient errors
+
         if (ex is TimeoutException)
+        {
             return true;
+        }
 
         // Check for specific error messages or types that indicate transient errors
+
         var message = ex.Message?.ToLowerInvariant() ?? string.Empty;
         if (message.Contains("timeout") || message.Contains("temporary") || message.Contains("transient"))
+        {
             return true;
+        }
 
         // Default to retrying for unknown exceptions
+
         return true;
     }
 
@@ -181,7 +205,10 @@ public class AlgorithmPluginExecutor
     public bool ValidateInput(IAlgorithmPlugin plugin, object input)
     {
         if (plugin == null || input == null)
+        {
             return false;
+        }
+
 
         var inputType = input.GetType();
         var expectedTypes = plugin.InputTypes;

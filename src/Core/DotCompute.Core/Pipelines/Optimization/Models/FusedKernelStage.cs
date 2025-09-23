@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 
@@ -122,36 +123,11 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
 
         return new MemoryUsageStats
         {
-            AllocatedBytes = stats1.AllocatedBytes + stats2.AllocatedBytes,
-            PeakBytes = Math.Max(stats1.PeakBytes, stats2.PeakBytes),
-            AllocationCount = stats1.AllocationCount + stats2.AllocationCount,
-            DeallocationCount = stats1.DeallocationCount + stats2.DeallocationCount
+            TotalAllocatedBytes = stats1.TotalAllocatedBytes + stats2.TotalAllocatedBytes,
+            PeakMemoryUsageBytes = Math.Max(stats1.PeakMemoryUsageBytes, stats2.PeakMemoryUsageBytes),
+            AllocationCount = stats1.AllocationCount + stats2.AllocationCount
         };
     }
 }
 
-/// <summary>
-/// Memory usage statistics.
-/// </summary>
-public sealed class MemoryUsageStats
-{
-    /// <summary>
-    /// Gets the allocated bytes.
-    /// </summary>
-    public required long AllocatedBytes { get; init; }
-
-    /// <summary>
-    /// Gets the peak bytes.
-    /// </summary>
-    public required long PeakBytes { get; init; }
-
-    /// <summary>
-    /// Gets the allocation count.
-    /// </summary>
-    public required int AllocationCount { get; init; }
-
-    /// <summary>
-    /// Gets the deallocation count.
-    /// </summary>
-    public required int DeallocationCount { get; init; }
-}
+// MemoryUsageStats now uses the canonical version from DotCompute.Abstractions.Pipelines.Results

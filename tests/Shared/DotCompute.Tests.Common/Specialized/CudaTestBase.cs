@@ -321,7 +321,7 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     protected static void VerifyFloatArraysMatch(float[] expected, float[] actual, float tolerance = 0.001f, string? message = null)
     {
         Assert.Equal(expected.Length, actual.Length);
-        for (int i = 0; i < expected.Length; i++)
+        for (var i = 0; i < expected.Length; i++)
         {
             Assert.True(Math.Abs(expected[i] - actual[i]) <= tolerance,
                 $"{message ?? "Arrays don't match"} at index {i}: expected {expected[i]}, actual {actual[i]}");

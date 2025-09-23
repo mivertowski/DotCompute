@@ -43,7 +43,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var logger = loggerFactory.CreateLogger<MemoryTracker>();
             using var memoryTracker = new MemoryTracker(logger);
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Test progressively larger allocations
@@ -89,7 +89,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -137,7 +137,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var logger = loggerFactory.CreateLogger<MemoryTracker>();
             using var memoryTracker = new MemoryTracker(logger);
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -193,7 +193,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -257,7 +257,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -337,7 +337,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -399,7 +399,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -473,7 +473,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Unified Memory requires CC 6.0+");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -568,7 +568,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -688,7 +688,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -724,7 +724,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Test zero-size allocation
@@ -758,7 +758,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Memory pools require modern CUDA versions");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -804,7 +804,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Memory prefetching requires Pascal+");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 

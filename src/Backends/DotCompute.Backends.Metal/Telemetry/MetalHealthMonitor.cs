@@ -707,7 +707,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private List<TimeWindow> GetTimeWindows(List<HealthEvent> events, TimeSpan windowSize)
+    private static List<TimeWindow> GetTimeWindows(List<HealthEvent> events, TimeSpan windowSize)
     {
         if (events.Count == 0)
         {
@@ -735,7 +735,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return healthEvent.Timestamp >= window.Start && healthEvent.Timestamp < window.End;
     }
 
-    private Dictionary<string, object> GetSystemHealthMetrics()
+    private static Dictionary<string, object> GetSystemHealthMetrics()
     {
         var metrics = new Dictionary<string, object>();
 
@@ -757,7 +757,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return metrics;
     }
 
-    private List<string> GenerateHealthRecommendations(List<HealthEvent> recentEvents)
+    private static List<string> GenerateHealthRecommendations(List<HealthEvent> recentEvents)
     {
         var recommendations = new List<string>();
 
@@ -788,7 +788,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return recommendations;
     }
 
-    private Dictionary<string, object> AnalyzeErrorPatterns(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzeErrorPatterns(List<HealthEvent> events)
     {
         var errorEvents = events.Where(e => e.EventType == HealthEventType.Error).ToList();
         
@@ -801,7 +801,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private Dictionary<string, object> AnalyzePerformanceDegradation(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzePerformanceDegradation(List<HealthEvent> events)
     {
         var successEvents = events.Where(e => e.EventType == HealthEventType.Success).ToList();
         
@@ -825,7 +825,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private Dictionary<string, object> AnalyzeResourcePressure(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzeResourcePressure(List<HealthEvent> events)
     {
         var pressureEvents = events.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
         
@@ -848,7 +848,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private double CalculateHealthScore(List<HealthEvent> events)
+    private static double CalculateHealthScore(List<HealthEvent> events)
     {
         if (events.Count == 0)
         {
@@ -876,7 +876,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private List<string> PredictPotentialIssues(List<HealthEvent> events)
+    private static List<string> PredictPotentialIssues(List<HealthEvent> events)
     {
         var predictions = new List<string>();
 

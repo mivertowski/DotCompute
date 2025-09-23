@@ -255,6 +255,9 @@ namespace DotCompute.Plugins.Core
         public AcceleratorContext Context => _accelerator.Context;
 
         /// <inheritdoc/>
+        public bool IsAvailable => _accelerator.IsAvailable;
+
+        /// <inheritdoc/>
         public ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition definition,
             CompilationOptions? options = default,

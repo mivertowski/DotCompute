@@ -752,7 +752,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             }
         }
 
-        private GraphAnalysis AnalyzeGraph(CudaGraph graph)
+        private static GraphAnalysis AnalyzeGraph(CudaGraph graph)
         {
             var analysis = new GraphAnalysis
             {

@@ -84,7 +84,7 @@ internal class DevicePerformanceEstimator
     /// <summary>
     /// Estimates execution time from historical performance data.
     /// </summary>
-    private TimeSpan EstimateFromHistoricalData(PerformanceHistory history, long dataSize)
+    private static TimeSpan EstimateFromHistoricalData(PerformanceHistory history, long dataSize)
     {
         // Use linear regression on historical data
         var measurements = history.Measurements.ToArray();
@@ -424,7 +424,7 @@ internal class DevicePerformanceEstimator
     /// <summary>
     /// Analyzes kernel characteristics to create a performance model.
     /// </summary>
-    private KernelPerformanceModel AnalyzeKernelCharacteristics(string kernelName)
+    private static KernelPerformanceModel AnalyzeKernelCharacteristics(string kernelName)
     {
         var model = new KernelPerformanceModel();
         var lowerName = kernelName.ToLowerInvariant();
@@ -630,7 +630,7 @@ internal class DevicePerformanceEstimator
     /// <summary>
     /// Calculates kernel-device compatibility factor.
     /// </summary>
-    private double CalculateCompatibilityFactor(string kernelName, string deviceType)
+    private static double CalculateCompatibilityFactor(string kernelName, string deviceType)
     {
         var lowerKernel = kernelName.ToLowerInvariant();
 

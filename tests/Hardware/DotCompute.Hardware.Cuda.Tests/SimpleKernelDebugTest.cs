@@ -20,7 +20,7 @@ public class SimpleKernelDebugTest : CudaTestBase
 
 
         const int size = 256;
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create GPU buffer
@@ -91,7 +91,7 @@ public class SimpleKernelDebugTest : CudaTestBase
 
 
         const int size = 256;
-        var factory = new CudaAcceleratorFactory();
+        using var factory = new CudaAcceleratorFactory();
         await using var accelerator = factory.CreateProductionAccelerator(0);
 
         // Create test data

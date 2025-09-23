@@ -149,7 +149,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
 
 
-        var correlationId = _productionLogger.GenerateCorrelationId();
+        var correlationId = MetalProductionLogger.GenerateCorrelationId();
         
         var tags = new Dictionary<string, object?>
         {
@@ -255,7 +255,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
 
 
-        var correlationId = _productionLogger.GenerateCorrelationId();
+        var correlationId = MetalProductionLogger.GenerateCorrelationId();
         
         _errorCounter.Add(1, new KeyValuePair<string, object?>("error_code", error.ToString()));
 
@@ -496,7 +496,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         };
     }
 
-    private MetalSystemInfo GetSystemInfo()
+    private static MetalSystemInfo GetSystemInfo()
     {
         try
         {
@@ -524,7 +524,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
     }
 
-    private List<string> GenerateRecommendations(MetalTelemetrySnapshot snapshot)
+    private static List<string> GenerateRecommendations(MetalTelemetrySnapshot snapshot)
     {
         var recommendations = new List<string>();
 

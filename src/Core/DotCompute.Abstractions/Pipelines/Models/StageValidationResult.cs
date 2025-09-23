@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Validation;
 using ValidationIssue = DotCompute.Abstractions.ValidationIssue;
 
 namespace DotCompute.Abstractions.Pipelines.Models;

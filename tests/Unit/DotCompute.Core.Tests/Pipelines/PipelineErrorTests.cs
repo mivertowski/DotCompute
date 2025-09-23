@@ -38,7 +38,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure graceful error recovery
 
-        builder.OnError(ex => ErrorHandlingStrategy.Skip);
+        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
@@ -68,7 +68,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure fallback on memory issues
 
-        builder.OnError(ex => ex is OutOfMemoryException ? ErrorHandlingStrategy.Fallback : ErrorHandlingStrategy.Abort);
+        builder.OnError(ex => ex is OutOfMemoryException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -119,7 +119,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure backend switching on failure
 
-        builder.OnError(ex => ErrorHandlingStrategy.Fallback);
+        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback);
 
         // Act
         var result = await builder
@@ -165,12 +165,12 @@ public class PipelineErrorTests : PipelineTestBase
     }
 
     [Theory]
-    [InlineData(ErrorHandlingStrategy.Continue, true, 3)]
-    [InlineData(ErrorHandlingStrategy.Skip, true, 3)]
-    [InlineData(ErrorHandlingStrategy.Retry, true, 3)]
-    [InlineData(ErrorHandlingStrategy.Abort, false, 1)]
-    [InlineData(ErrorHandlingStrategy.Fallback, true, 3)]
-    public async Task Pipeline_ErrorStrategy_HandlesCorrectly(ErrorHandlingStrategy strategy, bool shouldSucceed, int expectedSteps)
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue, true, 3)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip, true, 3)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry, true, 3)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort, false, 1)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback, true, 3)]
+    public async Task Pipeline_ErrorStrategy_HandlesCorrectly(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy, bool shouldSucceed, int expectedSteps)
     {
         // Arrange
         var data = GenerateTestData<float>(100);
@@ -205,7 +205,7 @@ public class PipelineErrorTests : PipelineTestBase
             Assert.True(result.Success);
 
 
-            if (strategy != ErrorHandlingStrategy.Retry)
+            if (strategy != DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)
             {
                 Assert.Equal(expectedSteps, result.StepMetrics.Count);
             }
@@ -230,7 +230,7 @@ public class PipelineErrorTests : PipelineTestBase
         builder.OnError(ex =>
         {
             failureCount++;
-            return failureCount >= 3 ? ErrorHandlingStrategy.Abort : ErrorHandlingStrategy.Retry;
+            return failureCount >= 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry;
         });
 
         // Act & Assert - Should abort after 3 failures
@@ -244,7 +244,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Should have tried exactly 3 times before circuit breaker triggered
 
         var history = _mockOrchestrator.ExecutionHistory;
-        var failures = history.Where(h => h.KernelName == "AlwaysFailingKernel" && !h.Success).Count();
+        var failures = history.Where(h => h.Name == "AlwaysFailingKernel" && !h.Success).Count();
         Assert.Equal(3, failures);
     }
 
@@ -256,7 +256,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        builder.OnError(ex => ex is TimeoutException ? ErrorHandlingStrategy.Fallback : ErrorHandlingStrategy.Abort);
+        builder.OnError(ex => ex is TimeoutException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -300,7 +300,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure to continue on failure
 
-        builder.OnError(ex => ErrorHandlingStrategy.Continue);
+        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -329,7 +329,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Continue on all errors to collect them
 
-        builder.OnError(ex => ErrorHandlingStrategy.Continue);
+        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -363,7 +363,7 @@ public class PipelineErrorTests : PipelineTestBase
         builder.OnError(ex =>
         {
             retryCount++;
-            return retryCount < 3 ? ErrorHandlingStrategy.Retry : ErrorHandlingStrategy.Abort;
+            return retryCount < 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort;
         });
 
         // Act & Assert - Should eventually abort after retries
@@ -377,7 +377,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Should have retried 3 times
         Assert.Equal(3, retryCount);
         var history = _mockOrchestrator.ExecutionHistory;
-        var attempts = history.Where(h => h.KernelName == "SometimesFailingKernel").Count();
+        var attempts = history.Where(h => h.Name == "SometimesFailingKernel").Count();
         Assert.Equal(3, attempts);
     }
 
@@ -389,7 +389,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        builder.OnError(ex => ErrorHandlingStrategy.Skip);
+        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
@@ -406,7 +406,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Independent kernel should still execute
 
         var independentExecution = _mockOrchestrator.ExecutionHistory
-            .FirstOrDefault(h => h.KernelName == "IndependentKernel");
+            .FirstOrDefault(h => h.Name == "IndependentKernel");
         Assert.NotNull(independentExecution);
         Assert.True(independentExecution.Success);
     }

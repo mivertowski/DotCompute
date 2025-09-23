@@ -96,7 +96,7 @@ public class ThreadSafetyTests : IDisposable
         compilationResults.Should().OnlyContain(r => r.Success, "All compilations should succeed");
 
         // Verify no race conditions in naming
-        var uniqueKernelNames = compilationResults.Select(r => r.KernelName).Distinct().ToArray();
+        var uniqueKernelNames = compilationResults.Select(r => r.Name).Distinct().ToArray();
         uniqueKernelNames.Should().HaveCount(threadCount * compilationsPerThread, 
             "All kernel names should be unique (no race conditions)");
 

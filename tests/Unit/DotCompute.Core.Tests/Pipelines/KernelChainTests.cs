@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Models;
@@ -60,8 +61,8 @@ public class KernelChainTests : PipelineTestBase
 
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.Equal(2, history.Count);
-        Assert.Equal("VectorAdd", history[0].KernelName);
-        Assert.Equal("VectorMultiply", history[1].KernelName);
+        Assert.Equal("VectorAdd", history[0].Name);
+        Assert.Equal("VectorMultiply", history[1].Name);
 
         // Verify all executions were successful
 
@@ -131,12 +132,12 @@ public class KernelChainTests : PipelineTestBase
 
         // First operation should always be VectorAdd
 
-        Assert.Equal("VectorAdd", history[0].KernelName);
+        Assert.Equal("VectorAdd", history[0].Name);
 
         // Second operation should depend on branch condition
 
         var expectedSecondKernel = conditionValue ? "VectorMultiply" : "VectorAdd";
-        Assert.Equal(expectedSecondKernel, history[1].KernelName);
+        Assert.Equal(expectedSecondKernel, history[1].Name);
     }
 
     [Fact]
@@ -174,12 +175,12 @@ public class KernelChainTests : PipelineTestBase
     }
 
     [Theory]
-    [InlineData(ErrorHandlingStrategy.Continue)]
-    [InlineData(ErrorHandlingStrategy.Retry)]
-    [InlineData(ErrorHandlingStrategy.Skip)]
-    [InlineData(ErrorHandlingStrategy.Abort)]
-    [InlineData(ErrorHandlingStrategy.Fallback)]
-    public async Task KernelChain_ErrorStrategy_HandlesFailures(ErrorHandlingStrategy strategy)
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort)]
+    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback)]
+    public async Task KernelChain_ErrorStrategy_HandlesFailures(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy)
     {
         // Arrange
         var input = GenerateTestData<float>(100);
@@ -192,9 +193,9 @@ public class KernelChainTests : PipelineTestBase
         // Act & Assert based on strategy
         switch (strategy)
         {
-            case ErrorHandlingStrategy.Continue:
-            case ErrorHandlingStrategy.Skip:
-            case ErrorHandlingStrategy.Fallback:
+            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue:
+            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip:
+            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback:
                 // These should complete without throwing
                 var result = await builder
                     .Kernel("VectorAdd", input, input, new float[input.Length])
@@ -204,7 +205,7 @@ public class KernelChainTests : PipelineTestBase
                 Assert.NotNull(result);
                 break;
 
-            case ErrorHandlingStrategy.Retry:
+            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry:
                 // Should eventually succeed after retries (or fail after max retries)
                 var retryResult = await builder
                     .Kernel("VectorAdd", input, input, new float[input.Length])
@@ -212,7 +213,7 @@ public class KernelChainTests : PipelineTestBase
                     .ExecuteAsync<float[]>(CreateTestTimeout());
                 break;
 
-            case ErrorHandlingStrategy.Abort:
+            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort:
                 // Should throw and abort the entire chain
                 await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 {
@@ -341,7 +342,7 @@ public class KernelChainTests : PipelineTestBase
         foreach (var stepMetric in result.StepMetrics)
         {
             Assert.True(stepMetric.ExecutionTime > TimeSpan.Zero);
-            Assert.NotNull(stepMetric.KernelName);
+            Assert.NotNull(stepMetric.Name);
             Assert.True(stepMetric.MemoryUsed >= 0);
         }
 

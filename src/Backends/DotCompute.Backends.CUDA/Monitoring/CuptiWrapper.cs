@@ -260,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
             };
         }
 
-        private void ProcessActivityRecord(IntPtr record, KernelMetrics metrics)
+        private static void ProcessActivityRecord(IntPtr record, KernelMetrics metrics)
         {
             // Read activity kind
             var kind = Marshal.ReadInt32(record);

@@ -429,7 +429,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         return PrefetchStrategy.Adaptive;
     }
 
-    private PrefetchStrategy DetermineOptimalStrategy(AccessPatternAnalysis analysis)
+    private static PrefetchStrategy DetermineOptimalStrategy(AccessPatternAnalysis analysis)
     {
         if (analysis.IsSequential)
         {
@@ -497,7 +497,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         return Task.FromResult(Math.Min(1.0, recentPrefetches / (double)_config.MaxConcurrentPrefetches));
     }
 
-    private int ConvertCacheLevelToCudaLocation(CacheLevel cacheLevel)
+    private static int ConvertCacheLevelToCudaLocation(CacheLevel cacheLevel)
     {
         return cacheLevel switch
         {

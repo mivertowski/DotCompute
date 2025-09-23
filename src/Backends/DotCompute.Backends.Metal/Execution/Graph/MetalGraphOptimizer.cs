@@ -154,7 +154,7 @@ public sealed class MetalGraphOptimizer
     /// </summary>
     /// <param name="graph">The graph to analyze.</param>
     /// <returns>Analysis results containing optimization opportunities.</returns>
-    public async Task<MetalGraphAnalysis> AnalyzeGraphAsync(MetalComputeGraph graph)
+    public static async Task<MetalGraphAnalysis> AnalyzeGraphAsync(MetalComputeGraph graph)
     {
         ArgumentNullException.ThrowIfNull(graph);
 
@@ -356,7 +356,7 @@ public sealed class MetalGraphOptimizer
         }
     }
 
-    private object CreateFusedKernel(List<MetalGraphNode> kernelGroup)
+    private static object CreateFusedKernel(List<MetalGraphNode> kernelGroup)
     {
         // This would involve actual Metal shader language compilation
         // For now, return a placeholder that represents the fused kernel
@@ -450,7 +450,7 @@ public sealed class MetalGraphOptimizer
         return opportunities;
     }
 
-    private bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
+    private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
     {
         // Check if operations are adjacent in memory
         if (mem1.DestinationBuffer != IntPtr.Zero && mem2.SourceBuffer != IntPtr.Zero)
@@ -522,7 +522,7 @@ public sealed class MetalGraphOptimizer
         return false;
     }
 
-    private int ApplyUnifiedMemoryOptimizations(MetalComputeGraph graph)
+    private static int ApplyUnifiedMemoryOptimizations(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -622,7 +622,7 @@ public sealed class MetalGraphOptimizer
         return batches;
     }
 
-    private bool CanBatchNodes(MetalGraphNode node1, MetalGraphNode node2)
+    private static bool CanBatchNodes(MetalGraphNode node1, MetalGraphNode node2)
     {
         // Nodes can be batched if they:
         // 1. Use the same encoder type
@@ -673,7 +673,7 @@ public sealed class MetalGraphOptimizer
         return result;
     }
 
-    private int OptimizeForUnifiedMemory(MetalComputeGraph graph)
+    private static int OptimizeForUnifiedMemory(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -725,7 +725,7 @@ public sealed class MetalGraphOptimizer
         return optimizations;
     }
 
-    private int ApplyAppleSiliconPerformanceOptimizations(MetalComputeGraph graph)
+    private static int ApplyAppleSiliconPerformanceOptimizations(MetalComputeGraph graph)
     {
         var optimizations = 0;
 
@@ -747,64 +747,64 @@ public sealed class MetalGraphOptimizer
 
     #region Helper Methods
 
-    private IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
+    private static IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
     {
         // This would be implemented to find all nodes that depend on the target node
         // For now, return empty collection
         return Enumerable.Empty<MetalGraphNode>();
     }
 
-    private void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
+    private static void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
         // Update graph dependencies after kernel fusion
         // This is a placeholder implementation
     }
 
-    private void UpdateDependenciesAfterCoalescing(MetalGraphNode removedNode, MetalGraphNode replacementNode)
+    private static void UpdateDependenciesAfterCoalescing(MetalGraphNode removedNode, MetalGraphNode replacementNode)
     {
         // Update graph dependencies after memory coalescing
         // This is a placeholder implementation
     }
 
-    private bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
+    private static bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
     {
         // Check if kernels can share resources
         return kernel1.RequiredEncoderType == kernel2.RequiredEncoderType;
     }
 
-    private bool AreKernelDataFlowsCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
+    private static bool AreKernelDataFlowsCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
     {
         // Check if kernel data flows are compatible for fusion
         return true; // Simplified implementation
     }
 
-    private long GetMaxThreadgroupMemory()
+    private static long GetMaxThreadgroupMemory()
     {
         // Metal threadgroup memory limit (typically 32KB)
         return 32 * 1024;
     }
 
-    private MemoryAccessPattern AnalyzeMemoryAccessPattern(MetalGraphNode kernel)
+    private static MemoryAccessPattern AnalyzeMemoryAccessPattern(MetalGraphNode kernel)
     {
         // Analyze kernel memory access patterns for optimization
         return new MemoryAccessPattern { IsOptimizable = true };
     }
 
-    private uint CalculateOptimalThreadgroupSize(MetalGraphNode kernel)
+    private static uint CalculateOptimalThreadgroupSize(MetalGraphNode kernel)
     {
         // Calculate optimal threadgroup size for Apple Silicon
         // Apple Silicon GPUs typically perform well with 512 threads per threadgroup
         return 512;
     }
 
-    private bool IsNeuralEngineCandidate(MetalGraphNode kernel)
+    private static bool IsNeuralEngineCandidate(MetalGraphNode kernel)
     {
         // Determine if kernel operations could benefit from Neural Engine
         // Look for matrix operations, convolutions, etc.
         return false; // Simplified implementation
     }
 
-    private bool IsRunningOnAppleSilicon()
+    private static bool IsRunningOnAppleSilicon()
     {
         // Detect if running on Apple Silicon
         return OperatingSystem.IsMacOS() && 
@@ -812,7 +812,7 @@ public sealed class MetalGraphOptimizer
                System.Runtime.InteropServices.Architecture.Arm64;
     }
 
-    private double CalculatePerformanceImprovement(MetalGraphAnalysis before, MetalGraphAnalysis after)
+    private static double CalculatePerformanceImprovement(MetalGraphAnalysis before, MetalGraphAnalysis after)
     {
         // Calculate estimated performance improvement
         var beforeScore = before.NodeCount * 1.0; // Simplified scoring

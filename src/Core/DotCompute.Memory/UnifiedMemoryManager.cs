@@ -312,7 +312,11 @@ public class UnifiedMemoryManager : BaseMemoryManager
     /// <inheritdoc />
     public override async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
     {
-        if (IsDisposed) return;
+        if (IsDisposed)
+        {
+            return;
+        }
+
 
         Logger.LogInformation("Starting memory optimization");
 
@@ -337,7 +341,11 @@ public class UnifiedMemoryManager : BaseMemoryManager
     /// <inheritdoc />
     public override void Clear()
     {
-        if (IsDisposed) return;
+        if (IsDisposed)
+        {
+            return;
+        }
+
 
         Logger.LogInformation("Clearing all memory buffers");
 
@@ -379,7 +387,11 @@ public class UnifiedMemoryManager : BaseMemoryManager
                     // Expected after 5 minutes
                 }
 
-                if (IsDisposed) break;
+                if (IsDisposed)
+                {
+                    break;
+                }
+
 
                 CleanupDeadReferences();
                 await _memoryPool.PerformMaintenanceAsync();

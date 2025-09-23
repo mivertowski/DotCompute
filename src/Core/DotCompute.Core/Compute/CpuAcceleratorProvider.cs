@@ -76,9 +76,7 @@ namespace DotCompute.Core.Compute
                 throw new ArgumentException("Can only create CPU accelerators", nameof(info));
             }
 
-            #pragma warning disable CS0618 // Type or member is obsolete
-            var accelerator = new Accelerators.HighPerformanceCpuAccelerator(info, _logger);
-            #pragma warning restore CS0618 // Type or member is obsolete
+            var accelerator = new CpuAccelerator(info, _logger);
             return ValueTask.FromResult<IAccelerator>(accelerator);
         }
 
@@ -501,6 +499,8 @@ namespace DotCompute.Core.Compute
         public IUnifiedMemoryManager MemoryManager => _memoryManager;
 
         public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
+        public bool IsAvailable => !_disposed;
 
         public async ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition definition,

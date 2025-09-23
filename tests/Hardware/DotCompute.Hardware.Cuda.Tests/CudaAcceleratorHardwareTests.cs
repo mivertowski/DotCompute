@@ -41,7 +41,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             using var memoryTracker = new MemoryTracker();
 
 
-            var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
+            using var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
 
 
             await using var accelerator = factory.CreateProductionAccelerator(0);
@@ -61,7 +61,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -91,7 +91,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(3, 5), "Requires minimum compute capability 3.5");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -113,7 +113,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             using var memoryTracker = new MemoryTracker();
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -200,7 +200,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             const int elementCount = matrixSize * matrixSize;
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Generate test matrices
@@ -327,7 +327,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -353,7 +353,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(6, 0), "Unified Memory requires CC 6.0+");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -377,7 +377,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -405,7 +405,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -428,7 +428,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsRTX2000AdaAvailable(), "RTX 2000 Ada hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -462,7 +462,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -491,7 +491,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Create a kernel that runs for a very long time
@@ -547,7 +547,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 

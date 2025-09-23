@@ -673,7 +673,7 @@ internal sealed class CSharpToMetalTranslator
         _output.AppendLine(";");
     }
 
-    private string ConvertToMetalType(string csharpType)
+    private static string ConvertToMetalType(string csharpType)
     {
         return csharpType switch
         {

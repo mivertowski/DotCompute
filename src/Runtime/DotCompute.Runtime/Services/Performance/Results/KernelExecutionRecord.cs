@@ -18,6 +18,11 @@ public class KernelExecutionRecord
     public required string KernelName { get; init; }
 
     /// <summary>
+    /// Gets the execution name (alias for KernelName).
+    /// </summary>
+    public string Name => KernelName;
+
+    /// <summary>
     /// Gets the execution timestamp.
     /// When the kernel was executed.
     /// </summary>

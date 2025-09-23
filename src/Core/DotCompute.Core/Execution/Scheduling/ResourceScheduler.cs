@@ -335,7 +335,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <summary>
         /// Distributes workload using adaptive strategy.
         /// </summary>
-        private async ValueTask<List<DeviceWorkAssignment>> DistributeAdaptiveAsync<T>(
+        private static async ValueTask<List<DeviceWorkAssignment>> DistributeAdaptiveAsync<T>(
             IUnifiedMemoryBuffer<T>[] inputBuffers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
@@ -345,7 +345,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <summary>
         /// Distributes workload using dynamic strategy with work stealing.
         /// </summary>
-        private async ValueTask<List<DeviceWorkAssignment>> DistributeDynamicAsync<T>(
+        private static async ValueTask<List<DeviceWorkAssignment>> DistributeDynamicAsync<T>(
         IUnifiedMemoryBuffer<T>[] inputBuffers,
         IAccelerator[] devices,
         CancellationToken cancellationToken) where T : unmanaged

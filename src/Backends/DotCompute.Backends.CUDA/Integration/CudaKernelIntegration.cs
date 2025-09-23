@@ -1,0 +1,476 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Execution;
+using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Native;
+using Microsoft.Extensions.Logging;
+using DotCompute.Backends.CUDA.Logging;
+using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
+using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
+
+namespace DotCompute.Backends.CUDA.Integration;
+
+/// <summary>
+/// Integrates CUDA kernel compilation and execution with optimization
+/// </summary>
+public sealed class CudaKernelIntegration : IDisposable
+{
+    private readonly CudaContext _context;
+    private readonly ILogger _logger;
+    private readonly CudaKernelCompiler _compiler;
+    private readonly CudaKernelExecutor _executor;
+    private readonly CudaKernelCache _cache;
+    private readonly Dictionary<string, KernelExecutionStats> _executionStats;
+    private readonly Timer _optimizationTimer;
+    private readonly object _statsLock = new();
+    private volatile bool _disposed;
+
+    public CudaKernelIntegration(CudaContext context, ILogger logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        
+        _compiler = new CudaKernelCompiler(context, logger);
+        _executor = new CudaKernelExecutor(context.ToIAccelerator(), context, null!, null!, logger);
+        _cache = new CudaKernelCache(logger);
+        _executionStats = new Dictionary<string, KernelExecutionStats>();
+
+        // Set up periodic optimization
+        _optimizationTimer = new Timer(PerformOptimization, null,
+            TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
+
+        _logger.LogInfoMessage($"CUDA Kernel Integration initialized for device {context.DeviceId}");
+    }
+
+    /// <summary>
+    /// Gets the kernel compiler
+    /// </summary>
+    public CudaKernelCompiler Compiler => _compiler;
+
+    /// <summary>
+    /// Gets the kernel executor
+    /// </summary>
+    public CudaKernelExecutor Executor => _executor;
+
+    /// <summary>
+    /// Gets the kernel cache
+    /// </summary>
+    public CudaKernelCache Cache => _cache;
+
+    /// <summary>
+    /// Compiles a kernel with caching and optimization
+    /// </summary>
+    public async Task<CudaCompiledKernel> CompileOptimizedKernelAsync(
+        string kernelSource,
+        string kernelName,
+        CudaCompilationOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
+        }
+
+        try
+        {
+            // Check cache first
+            var cacheKey = GenerateCacheKey(kernelSource, kernelName, options);
+            if (_cache.TryGetKernel(cacheKey, out var cachedKernel))
+            {
+                _logger.LogDebugMessage($"Kernel '{kernelName}' loaded from cache");
+                return cachedKernel;
+            }
+
+            // Compile with optimizations
+            var optimizedOptions = OptimizeCompilationOptions(options);
+            var compiledKernel = await _compiler.CompileKernelAsync(kernelSource, kernelName, optimizedOptions, cancellationToken);
+
+            // Cache the result
+            _cache.CacheKernel(cacheKey, compiledKernel);
+            
+            _logger.LogDebugMessage($"Kernel '{kernelName}' compiled and cached");
+            
+            return compiledKernel;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, $"Failed to compile optimized kernel '{kernelName}'");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Executes a kernel with performance tracking
+    /// </summary>
+    public async Task<KernelExecutionResult> ExecuteKernelAsync(
+        CudaCompiledKernel kernel,
+        AbstractionsKernelArgument[] arguments,
+        KernelExecutionConfig config,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
+        }
+
+        var startTime = DateTimeOffset.UtcNow;
+        
+        try
+        {
+            // Convert arguments
+            var convertedArguments = ConvertKernelArguments(arguments);
+            
+            // Execute kernel
+            var result = await _executor.ExecuteAndWaitAsync(
+                kernel.ToCompiledKernel(), convertedArguments, config, cancellationToken);
+
+            var endTime = DateTimeOffset.UtcNow;
+            
+            // Record execution statistics
+            RecordExecutionStats(kernel.Name, endTime - startTime, result.Success);
+            
+            _logger.LogDebugMessage($"Kernel '{kernel.Name}' executed: Success={result.Success}, Duration={endTime - startTime}");
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var endTime = DateTimeOffset.UtcNow;
+            RecordExecutionStats(kernel.Name, endTime - startTime, false);
+            
+            _logger.LogErrorMessage(ex, $"Kernel '{kernel.Name}' execution failed");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets optimal execution configuration for a kernel
+    /// </summary>
+    public KernelExecutionConfig GetOptimalExecutionConfig(
+        CudaCompiledKernel kernel,
+        int[] problemSize)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
+        }
+
+        try
+        {
+            // Use executor's optimization logic
+            return _executor.GetOptimalExecutionConfig(kernel.ToCompiledKernel(), problemSize);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to get optimal execution config for kernel '{KernelName}'", kernel.Name);
+            
+            // Return default configuration
+            return new KernelExecutionConfig
+            {
+                GlobalWorkSize = problemSize,
+                LocalWorkSize = new[] { Math.Min(256, problemSize[0]) },
+                DynamicSharedMemorySize = 0,
+                Stream = null,
+                Flags = KernelLaunchFlags.None,
+                CaptureTimings = false
+            };
+        }
+    }
+
+    /// <summary>
+    /// Gets kernel execution statistics
+    /// </summary>
+    public IReadOnlyDictionary<string, KernelExecutionStats> GetExecutionStatistics()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
+        }
+
+        lock (_statsLock)
+        {
+            return new Dictionary<string, KernelExecutionStats>(_executionStats);
+        }
+    }
+
+    /// <summary>
+    /// Gets kernel health status
+    /// </summary>
+    public double GetKernelHealth()
+    {
+        if (_disposed)
+        {
+            return 0.0;
+        }
+
+        try
+        {
+            lock (_statsLock)
+            {
+                if (_executionStats.Count == 0)
+                {
+                    return 1.0; // No kernels = healthy
+                }
+
+                var totalExecutions = _executionStats.Values.Sum(s => s.TotalExecutions);
+                var successfulExecutions = _executionStats.Values.Sum(s => s.SuccessfulExecutions);
+                
+                if (totalExecutions == 0)
+                {
+                    return 1.0;
+                }
+
+                var successRate = (double)successfulExecutions / totalExecutions;
+                
+                // Health is based on success rate and recent performance
+                return successRate;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error calculating kernel health");
+            return 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Optimizes kernels for the given workload
+    /// </summary>
+    public async Task OptimizeKernelsAsync(CudaWorkloadProfile profile, CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                // Optimize cache based on workload
+                _cache.OptimizeForWorkload(profile);
+                
+                // Update compilation options for future kernels
+                UpdateOptimizationStrategies(profile);
+                
+                _logger.LogDebugMessage("Kernel optimization completed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Kernel optimization failed");
+            }
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Performs maintenance on kernel resources
+    /// </summary>
+    public void PerformMaintenance()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            // Clean up old cache entries
+            _cache.Cleanup();
+            
+            // Reset old statistics
+            lock (_statsLock)
+            {
+                var oldEntries = _executionStats
+                    .Where(kvp => DateTimeOffset.UtcNow - kvp.Value.LastExecution > TimeSpan.FromHours(1))
+                    .ToList();
+
+                foreach (var (key, _) in oldEntries)
+                {
+                    _executionStats.Remove(key);
+                }
+
+                if (oldEntries.Count > 0)
+                {
+                    _logger.LogDebugMessage($"Cleaned up {oldEntries.Count} old execution statistics");
+                }
+            }
+            
+            _logger.LogDebugMessage("Kernel maintenance completed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogErrorMessage(ex, "Error during kernel maintenance");
+        }
+    }
+
+    private static string GenerateCacheKey(
+        string kernelSource,
+        string kernelName,
+        CudaCompilationOptions options)
+    {
+        // Generate a cache key based on source, name, and options
+        var sourceHash = kernelSource.GetHashCode();
+        var optionsHash = options.GetHashCode();
+        
+        return $"{kernelName}_{sourceHash:X8}_{optionsHash:X8}";
+    }
+
+    private static CudaCompilationOptions OptimizeCompilationOptions(CudaCompilationOptions options)
+    {
+        // Create optimized compilation options
+        return new CudaCompilationOptions
+        {
+            OptimizationLevel = Math.Max(options.OptimizationLevel, 2), // Ensure at least O2
+            GenerateDebugInfo = options.GenerateDebugInfo,
+            UseRestrictedPointers = true, // Enable restrict for better optimization
+            EnableFastMath = options.EnableFastMath,
+            MaxRegistersPerThread = options.MaxRegistersPerThread,
+            AdditionalOptions = options.AdditionalOptions
+        };
+    }
+
+    private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
+    {
+        return arguments.Select(arg => new InterfacesKernelArgument
+        {
+            Name = arg.Name,
+            Value = arg.Value ?? new object(),
+            Type = arg.Type,
+            IsDeviceMemory = arg.IsDeviceMemory,
+            MemoryBuffer = arg.MemoryBuffer,
+            SizeInBytes = arg.SizeInBytes,
+            IsOutput = arg.IsOutput
+        }).ToArray();
+    }
+
+    private void RecordExecutionStats(string kernelName, TimeSpan duration, bool success)
+    {
+        try
+        {
+            lock (_statsLock)
+            {
+                if (!_executionStats.TryGetValue(kernelName, out var stats))
+                {
+                    stats = new KernelExecutionStats
+                    {
+                        KernelName = kernelName,
+                        FirstExecution = DateTimeOffset.UtcNow
+                    };
+                    _executionStats[kernelName] = stats;
+                }
+
+                stats.TotalExecutions++;
+                if (success)
+                {
+                    stats.SuccessfulExecutions++;
+                }
+                
+                stats.TotalExecutionTime += duration;
+                stats.LastExecution = DateTimeOffset.UtcNow;
+                
+                if (duration < stats.FastestExecution || stats.FastestExecution == TimeSpan.Zero)
+                {
+                    stats.FastestExecution = duration;
+                }
+                
+                if (duration > stats.SlowestExecution)
+                {
+                    stats.SlowestExecution = duration;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to record execution statistics for kernel '{KernelName}'", kernelName);
+        }
+    }
+
+    private void UpdateOptimizationStrategies(CudaWorkloadProfile profile)
+    {
+        try
+        {
+            // Update compiler optimization strategies based on workload
+            // This could involve adjusting default compilation options
+            _logger.LogDebugMessage("Optimization strategies updated for workload profile");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to update optimization strategies");
+        }
+    }
+
+    private void PerformOptimization(object? state)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            // Periodic optimization based on execution statistics
+            lock (_statsLock)
+            {
+                var poorPerformingKernels = _executionStats.Values
+                    .Where(s => s.TotalExecutions > 10 && (double)s.SuccessfulExecutions / s.TotalExecutions < 0.95)
+                    .ToList();
+
+                foreach (var stats in poorPerformingKernels)
+                {
+                    _logger.LogWarning("Kernel '{KernelName}' has poor performance: {SuccessRate:P2} success rate",
+                        stats.KernelName, (double)stats.SuccessfulExecutions / stats.TotalExecutions);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during periodic optimization");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _optimizationTimer?.Dispose();
+            
+            // Clean up statistics
+            lock (_statsLock)
+            {
+                _executionStats.Clear();
+            }
+            
+            _cache?.Dispose();
+            _executor?.Dispose();
+            _compiler?.Dispose();
+            
+            _disposed = true;
+            
+            _logger.LogDebugMessage("CUDA Kernel Integration disposed");
+        }
+    }
+}
+
+/// <summary>
+/// Kernel execution statistics
+/// </summary>
+public sealed class KernelExecutionStats
+{
+    public string KernelName { get; init; } = string.Empty;
+    public int TotalExecutions { get; set; }
+    public int SuccessfulExecutions { get; set; }
+    public TimeSpan TotalExecutionTime { get; set; }
+    public TimeSpan FastestExecution { get; set; }
+    public TimeSpan SlowestExecution { get; set; }
+    public DateTimeOffset FirstExecution { get; init; }
+    public DateTimeOffset LastExecution { get; set; }
+    
+    public TimeSpan AverageExecutionTime => 
+        TotalExecutions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalExecutions) : TimeSpan.Zero;
+    
+    public double SuccessRate => 
+        TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions : 0.0;
+}

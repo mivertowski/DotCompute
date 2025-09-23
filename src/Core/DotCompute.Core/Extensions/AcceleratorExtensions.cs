@@ -72,9 +72,9 @@ public static class AcceleratorExtensions
 
         return new MemoryStatistics
         {
-            TotalMemoryBytes = accelerator.Info.TotalMemory,
+            TotalMemoryBytes = accelerator.Info!.TotalMemory,
             UsedMemoryBytes = 0,
-            AvailableMemoryBytes = accelerator.Info.AvailableMemory,
+            AvailableMemoryBytes = accelerator.Info!.AvailableMemory,
             AllocationCount = 0
         };
     }

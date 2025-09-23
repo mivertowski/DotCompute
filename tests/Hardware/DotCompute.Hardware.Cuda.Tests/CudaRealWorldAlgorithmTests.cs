@@ -31,7 +31,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
 
@@ -109,12 +109,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Calculate expected sum
 
-            double expectedSum = data.Sum(x => (double)x);
+            var expectedSum = data.Sum(x => (double)x);
 
             // Act
             var perf = new PerformanceMeasurement("Parallel Reduction", Output);
             perf.Start();
-            float gpuSum = await ExecuteParallelReduction(data);
+            var gpuSum = await ExecuteParallelReduction(data);
             perf.Stop();
             perf.LogResults(size * sizeof(float));
 

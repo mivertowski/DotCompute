@@ -569,7 +569,7 @@ public sealed class MetalExecutionContext : IDisposable
             // Perform component maintenance
             _commandStream.OptimizeStreamUsage();
             _eventManager.PerformMaintenance();
-            _performanceCollector.PerformMaintenance();
+            MetalPerformanceCollector.PerformMaintenance();
 
             // Log periodic statistics
             var stats = GetStatistics();
@@ -867,7 +867,7 @@ internal sealed class MetalPerformanceCollector : IDisposable
         return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
     }
 
-    public void PerformMaintenance()
+    public static void PerformMaintenance()
     {
         // Cleanup old metrics, aggregate data, etc.
         // Implementation details would go here

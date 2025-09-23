@@ -266,7 +266,7 @@ public sealed class MetalGraphManager : IDisposable
             return null;
         }
 
-        return await _optimizer.AnalyzeGraphAsync(graph);
+        return await MetalGraphOptimizer.AnalyzeGraphAsync(graph);
     }
 
     #endregion

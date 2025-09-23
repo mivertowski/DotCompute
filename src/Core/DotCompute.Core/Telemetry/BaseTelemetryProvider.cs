@@ -1012,7 +1012,7 @@ internal sealed class NullOperationTimer : IOperationTimer
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
-    public void Stop() { }
+    public static void Stop() { }
     public void Dispose() { }
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new NullTimerHandle();
     public IDisposable StartOperationScope(string operationName, string? operationId = null) => new NullTimerHandle();

@@ -550,7 +550,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
 
     private void InitializeTestPattern()
     {
-        for (int i = 0; i < _length; i++)
+        for (var i = 0; i < _length; i++)
         {
             if (typeof(T) == typeof(int))
             {
@@ -570,7 +570,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
             {
                 // For other types, use byte pattern
                 var bytes = MemoryMarshal.AsBytes(_data.AsSpan(i, 1));
-                for (int b = 0; b < bytes.Length; b++)
+                for (var b = 0; b < bytes.Length; b++)
                 {
                     bytes[b] = (byte)(i % 256);
                 }

@@ -43,7 +43,7 @@ public sealed class ProductionCompiledKernel : ICompiledKernel
 
     // Additional properties for internal use
     public bool IsReady => !IsDisposed && _nativeHandle != IntPtr.Zero;
-    public string BackendType => "Production";
+    public static string BackendType => "Production";
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {

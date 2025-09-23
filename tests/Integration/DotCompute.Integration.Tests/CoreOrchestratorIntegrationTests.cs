@@ -132,7 +132,7 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
 
 
                 _logger.LogInformation("Optimal accelerator for {Kernel}: {Type} - {Name}",
-                    kernelName, accelerator.Type, accelerator.Info.Name);
+                    kernelName, accelerator.Type, accelerator.Info!.Name);
             }
             else
             {
@@ -158,12 +158,12 @@ public class CoreOrchestratorIntegrationTests : IntegrationTestBase
         foreach (var accelerator in accelerators)
         {
             accelerator.Info.Should().NotBeNull("Each accelerator should have valid info");
-            accelerator.Info.Name.Should().NotBeNullOrEmpty("Accelerator should have a name");
+            accelerator.Info!.Name.Should().NotBeNullOrEmpty("Accelerator should have a name");
             accelerator.Type.Should().BeOneOf(AcceleratorType.CPU, AcceleratorType.GPU, AcceleratorType.Other);
 
 
             _logger.LogInformation("Supported accelerator: {Type} - {Name} (Memory: {Memory:N0} bytes)",
-                accelerator.Type, accelerator.Info.Name, accelerator.Info.TotalMemory);
+                accelerator.Type, accelerator.Info!.Name, accelerator.Info!.TotalMemory);
         }
     }
 

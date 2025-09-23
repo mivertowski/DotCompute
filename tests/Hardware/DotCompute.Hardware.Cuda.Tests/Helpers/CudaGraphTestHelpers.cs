@@ -71,7 +71,7 @@ public class TestGraph
     /// <summary>
     /// Adds a dependency between nodes.
     /// </summary>
-    public void AddDependency(object from, object to)
+    public static void AddDependency(object from, object to)
     {
         // Test implementation
     }
@@ -79,9 +79,23 @@ public class TestGraph
     /// <summary>
     /// Instantiates the graph for execution.
     /// </summary>
-    public object Instantiate()
+    public static object Instantiate()
     {
         // Test implementation
         return new { Type = "ExecutableGraph" };
     }
+}
+
+/// <summary>
+/// Launch configuration for CUDA graph tests.
+/// </summary>
+public class LaunchConfiguration
+{
+    public int GridSizeX { get; set; } = 1;
+    public int GridSizeY { get; set; } = 1;
+    public int GridSizeZ { get; set; } = 1;
+    public int BlockSizeX { get; set; } = 256;
+    public int BlockSizeY { get; set; } = 1;
+    public int BlockSizeZ { get; set; } = 1;
+    public int SharedMemoryBytes { get; set; }
 }

@@ -317,7 +317,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = metrics.Should().HaveCount(1);
         var metric = metrics.Values.First();
         _ = metric.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        _ = metric.KernelName.Should().Be("metrics_opt");
+        _ = metric.Name.Should().Be("metrics_opt");
     }
 
     [Fact]
@@ -1166,7 +1166,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         {
             _ = metric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
             _ = metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
-            _ = metric.KernelName.Should().NotBeNullOrEmpty();
+            _ = metric.Name.Should().NotBeNullOrEmpty();
         }
 
         _ = compiler.LogCompilationMetricsCallCount.Should().Be(3);
@@ -1200,7 +1200,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
         var metrics = compiler.GetMetrics();
         _ = metrics.Should().HaveCount(1);
-        _ = metrics.Values.First().KernelName.Should().Be("large_kernel");
+        _ = metrics.Values.First().Name.Should().Be("large_kernel");
     }
 
     [Fact]
@@ -1236,8 +1236,8 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
         var newMetrics = compiler.GetMetrics();
         _ = newMetrics.Should().HaveCount(2, "should have metrics for recompiled metrics1 and new metrics3");
-        _ = newMetrics.Values.Should().Contain(m => m.KernelName == "metrics1");
-        _ = newMetrics.Values.Should().Contain(m => m.KernelName == "metrics3");
+        _ = newMetrics.Values.Should().Contain(m => m.Name == "metrics1");
+        _ = newMetrics.Values.Should().Contain(m => m.Name == "metrics3");
     }
 
     #endregion

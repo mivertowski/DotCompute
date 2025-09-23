@@ -69,7 +69,7 @@ public class PipelineWorkflowTests : PipelineTestBase, IClassFixture<DotComputeT
         {
             Assert.True(metric.ExecutionTime > TimeSpan.Zero);
             Assert.True(metric.MemoryUsed > 0);
-            Assert.NotNull(metric.KernelName);
+            Assert.NotNull(metric.Name);
         });
 
         // Image processing should complete within reasonable time

@@ -1,47 +1,45 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Reflection;
-using global::System.Runtime.Loader;
-using global::System.Security.Cryptography;
-using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
+using DotCompute.Algorithms.Management.Core;
+using DotCompute.Algorithms.Management.Infrastructure;
+using DotCompute.Algorithms.Management.Services;
 using DotCompute.Algorithms.Management.Info;
-using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Enums;
-using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Types.Abstractions;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
-using DotCompute.Algorithms.Logging;
 
 namespace DotCompute.Algorithms.Management
 {
 
 /// <summary>
-/// Manages the loading, registration, and execution of algorithm plugins with advanced isolation and lifecycle management.
-/// This class has been refactored to use a component-based architecture for better maintainability.
+/// Main facade for algorithm plugin management, orchestrating all plugin-related operations.
+/// This class delegates to specialized components for discovery, loading, validation, caching,
+/// lifecycle management, metrics, and orchestration while maintaining a clean, unified API.
 /// </summary>
 public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 {
     private readonly ILogger<AlgorithmPluginManager> _logger;
     private readonly IAccelerator _accelerator;
-    private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
     private readonly AlgorithmPluginManagerOptions _options;
-    private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
 
-    // Focused component dependencies
-    private readonly AlgorithmPluginDiscovery _pluginDiscovery;
-    private readonly AlgorithmPluginLoader _pluginLoader;
-    private readonly AlgorithmPluginLifecycle _pluginLifecycle;
-    private readonly AlgorithmPluginValidator _pluginValidator;
+    // Core components - focused responsibilities
+    private readonly AlgorithmPluginRegistry _registry;
+    private readonly AlgorithmPluginValidator _validator;
+    private readonly AlgorithmPluginLifecycle _lifecycle;
+
+    // Infrastructure components
+    private readonly AlgorithmPluginDiscovery _discovery;
+    private readonly AlgorithmPluginLoader _loader;
+    private readonly AlgorithmPluginCache _cache;
+
+    // Service components
+    private readonly AlgorithmPluginOrchestrator _orchestrator;
+    private readonly AlgorithmPluginResolver _resolver;
+    private readonly AlgorithmPluginMetrics _metrics;
 
     private bool _disposed;
 
@@ -85,32 +83,20 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
-        // Initialize focused components
-        var discoveryLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginDiscovery>.Instance;
-        _pluginDiscovery = new AlgorithmPluginDiscovery(discoveryLogger, _options);
+        // Initialize core components
+        _registry = new AlgorithmPluginRegistry(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginRegistry>.Instance);
+        _validator = new AlgorithmPluginValidator(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginValidator>.Instance, _options);
+        _lifecycle = new AlgorithmPluginLifecycle(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLifecycle>.Instance, _options);
 
-        var loaderLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLoader>.Instance;
-        _pluginLoader = new AlgorithmPluginLoader(loaderLogger, _options);
+        // Initialize infrastructure components
+        _discovery = new AlgorithmPluginDiscovery(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginDiscovery>.Instance, _options);
+        _loader = new AlgorithmPluginLoader(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLoader>.Instance, _options);
+        _cache = new AlgorithmPluginCache(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginCache>.Instance, _options);
 
-        var lifecycleLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginLifecycle>.Instance;
-        _pluginLifecycle = new AlgorithmPluginLifecycle(lifecycleLogger, _options);
-
-        var validatorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginValidator>.Instance;
-        _pluginValidator = new AlgorithmPluginValidator(validatorLogger, _options);
-
-        // Configure security policy from options
-        ConfigureSecurityPolicy();
-        
-        // Initialize health check timer if enabled
-        if (_options.EnableHealthChecks)
-        {
-            _healthCheckTimer = new Timer(PerformHealthChecksWrapper, null, 
-                _options.HealthCheckInterval, _options.HealthCheckInterval);
-        }
-        else
-        {
-            _healthCheckTimer = new Timer(_ => { }, null, Timeout.Infinite, Timeout.Infinite);
-        }
+        // Initialize service components
+        _orchestrator = new AlgorithmPluginOrchestrator(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginOrchestrator>.Instance, _options, _registry, _lifecycle, _metrics);
+        _resolver = new AlgorithmPluginResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginResolver>.Instance, _options, _registry);
+        _metrics = new AlgorithmPluginMetrics(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginMetrics>.Instance, _options, _registry);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Loading algorithm plugin from assembly {AssemblyPath}")]
@@ -140,7 +126,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <summary>
     /// Gets the registered plugin IDs.
     /// </summary>
-    public IEnumerable<string> RegisteredPlugins => _plugins.Keys;
+    public IEnumerable<string> RegisteredPlugins => _registry.RegisteredPlugins;
 
     /// <summary>
     /// Discovers plugins in the specified directory.
@@ -150,44 +136,8 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <returns>The number of plugins discovered and loaded.</returns>
     public async Task<int> DiscoverAndLoadPluginsAsync(string pluginDirectory, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(pluginDirectory);
         ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (!Directory.Exists(pluginDirectory))
-        {
-            LogDirectoryNotFound(pluginDirectory);
-            return 0;
-        }
-
-        LogDiscoveringPlugins(pluginDirectory);
-
-        var pluginFiles = Directory.GetFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories)
-            .Where(file => !IsSystemAssembly(file))
-            .ToList();
-
-        var loadedCount = 0;
-
-        foreach (var pluginFile in pluginFiles)
-        {
-            try
-            {
-                var count = await LoadPluginsFromAssemblyAsync(pluginFile, cancellationToken).ConfigureAwait(false);
-                loadedCount += count;
-
-                // Setup hot reload if enabled
-                if (_options.EnableHotReload)
-                {
-                    SetupHotReload(pluginFile);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogPluginDiscoveryFailed(pluginFile, ex.Message);
-            }
-        }
-
-        LogPluginsDiscovered(loadedCount, pluginDirectory);
-        return loadedCount;
+        return await _orchestrator.DiscoverAndLoadPluginsAsync(pluginDirectory, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -690,7 +640,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     public IAlgorithmPlugin? GetPlugin(string pluginId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _plugins.TryGetValue(pluginId, out var loadedPlugin) ? loadedPlugin.Plugin : null;
+        return _registry.GetPlugin(pluginId);
     }
 
     /// <summary>
@@ -701,26 +651,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     public LoadedPluginInfo? GetLoadedPluginInfo(string pluginId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
-        if (!_plugins.TryGetValue(pluginId, out var loadedPlugin))
-        {
-            return null;
-        }
-
-        return new LoadedPluginInfo
-        {
-            Plugin = loadedPlugin.Plugin,
-            Metadata = loadedPlugin.Metadata,
-            State = loadedPlugin.State,
-            Health = loadedPlugin.Health,
-            LoadTime = loadedPlugin.LoadTime,
-            ExecutionCount = loadedPlugin.ExecutionCount,
-            LastExecution = loadedPlugin.LastExecution,
-            TotalExecutionTime = loadedPlugin.TotalExecutionTime,
-            LastError = loadedPlugin.LastError,
-            AssemblyLocation = loadedPlugin.Assembly.Location,
-            LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown"
-        };
+        return _registry.GetLoadedPluginInfo(pluginId);
     }
 
     /// <summary>
@@ -731,10 +662,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     public IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _plugins.Values
-            .Where(lp => lp.Health != PluginHealth.Critical && lp.State == PluginState.Running)
-            .Select(lp => lp.Plugin)
-            .Where(p => p.SupportedAccelerators.Contains(acceleratorType));
+        return _registry.GetPluginsByAcceleratorType(acceleratorType);
     }
 
     /// <summary>
@@ -744,13 +672,8 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <returns>Collection of compatible plugins.</returns>
     public IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType)
     {
-        ArgumentNullException.ThrowIfNull(inputType);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
-        return _plugins.Values
-            .Where(lp => lp.Health != PluginHealth.Critical && lp.State == PluginState.Running)
-            .Select(lp => lp.Plugin)
-            .Where(p => p.InputTypes.Contains(inputType));
+        return _registry.GetPluginsByInputType(inputType);
     }
 
     /// <summary>
@@ -760,9 +683,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     public IEnumerable<IAlgorithmPlugin> GetHealthyPlugins()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _plugins.Values
-            .Where(lp => lp.Health == PluginHealth.Healthy && lp.State == PluginState.Running)
-            .Select(lp => lp.Plugin);
+        return _registry.GetHealthyPlugins();
     }
 
     /// <summary>
@@ -774,65 +695,13 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
     public async Task<object> ExecutePluginAsync(
-        string pluginId, 
-        object[] inputs, 
+        string pluginId,
+        object[] inputs,
         Dictionary<string, object>? parameters = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
-        ArgumentNullException.ThrowIfNull(inputs);
         ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (!_plugins.TryGetValue(pluginId, out var loadedPlugin))
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
-        }
-
-        // Check plugin health before execution
-        if (loadedPlugin.Health == PluginHealth.Critical || loadedPlugin.State != PluginState.Running)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' is not in a healthy state for execution. Health: {loadedPlugin.Health}, State: {loadedPlugin.State}");
-        }
-
-        LogExecutingAlgorithm(pluginId);
-
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        try
-        {
-            // Update execution tracking
-            loadedPlugin.ExecutionCount++;
-            loadedPlugin.LastExecution = DateTime.UtcNow;
-
-            // Execute with error recovery
-            var result = await ExecuteWithRetryAsync(loadedPlugin.Plugin, inputs, parameters, cancellationToken).ConfigureAwait(false);
-
-            stopwatch.Stop();
-            loadedPlugin.TotalExecutionTime += stopwatch.Elapsed;
-            loadedPlugin.Health = PluginHealth.Healthy;
-            loadedPlugin.LastError = null;
-
-            LogPluginExecutionCompleted(pluginId, stopwatch.ElapsedMilliseconds);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            loadedPlugin.LastError = ex;
-            
-            // Determine health impact based on error
-            if (ex is OutOfMemoryException or StackOverflowException)
-            {
-                loadedPlugin.Health = PluginHealth.Critical;
-                loadedPlugin.State = PluginState.Failed;
-            }
-            else
-            {
-                loadedPlugin.Health = PluginHealth.Degraded;
-            }
-
-            LogPluginExecutionFailed(pluginId, ex.Message);
-            throw;
-        }
+        return await _orchestrator.ExecutePluginAsync(pluginId, inputs, parameters, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -962,18 +831,49 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     public IEnumerable<AlgorithmPluginInfo> GetPluginInfo()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        return _registry.GetPluginInfo();
+    }
 
-        return _plugins.Values.Select(lp => new AlgorithmPluginInfo
-        {
-            Id = lp.Plugin.Id,
-            Name = lp.Plugin.Name,
-            Version = lp.Plugin.Version,
-            Description = lp.Plugin.Description,
-            SupportedAccelerators = lp.Plugin.SupportedAccelerators,
-            InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
-            OutputType = lp.Plugin.OutputType.FullName ?? lp.Plugin.OutputType.Name,
-            PerformanceProfile = lp.Plugin.GetPerformanceProfile()
-        });
+    /// <summary>
+    /// Gets comprehensive metrics for a specific plugin.
+    /// </summary>
+    /// <param name="pluginId">The plugin ID.</param>
+    /// <returns>Plugin metrics if available; otherwise, null.</returns>
+    public PluginMetrics? GetPluginMetrics(string pluginId)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _metrics.GetPluginMetrics(pluginId);
+    }
+
+    /// <summary>
+    /// Gets system-wide metrics summary.
+    /// </summary>
+    /// <returns>System metrics summary.</returns>
+    public SystemMetrics GetSystemMetrics()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _metrics.GetSystemMetrics();
+    }
+
+    /// <summary>
+    /// Gets cache statistics.
+    /// </summary>
+    /// <returns>Cache statistics.</returns>
+    public CacheStatistics GetCacheStatistics()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _cache.GetStatistics();
+    }
+
+    /// <summary>
+    /// Resolves the best plugin for the given requirements.
+    /// </summary>
+    /// <param name="requirements">The plugin requirements.</param>
+    /// <returns>The best matching plugin if found; otherwise, null.</returns>
+    public IAlgorithmPlugin? ResolvePlugin(PluginRequirements requirements)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _resolver.ResolvePlugin(requirements);
     }
 
     #region Private Helper Methods
@@ -1711,42 +1611,31 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         {
             _disposed = true;
 
-            // Stop health check timer
-            _healthCheckTimer.Dispose();
-
-            // Stop all file watchers
-            foreach (var watcher in _watchers.Values)
+            try
             {
-                watcher.EnableRaisingEvents = false;
-                watcher.Dispose();
+                // Dispose service components
+                _metrics?.Dispose();
+                _resolver?.Dispose();
+                _orchestrator?.Dispose();
+
+                // Dispose infrastructure components
+                _cache?.Dispose();
+                _loader?.Dispose();
+                _discovery?.Dispose();
+
+                // Dispose core components
+                _lifecycle?.Dispose();
+                _validator?.Dispose();
+                _registry?.Dispose();
+
+                _logger.LogInformation("Algorithm plugin manager disposed successfully");
             }
-            _watchers.Clear();
-
-            // Dispose security components
-            _authenticodeValidator?.Dispose();
-            _malwareScanner?.Dispose();
-
-            // Dispose all plugins and their load contexts
-            var disposeTasks = _plugins.Values.Select(async lp =>
+            catch (Exception ex)
             {
-                try
-                {
-                    await lp.Plugin.DisposeAsync().ConfigureAwait(false);
-                    lp.LoadContext.Unload();
-                }
-                catch (Exception ex)
-                {
-                    LogPluginDisposeFailed(lp.Plugin.Id, ex.Message);
-                }
-            });
+                _logger.LogError(ex, "Error during algorithm plugin manager disposal");
+            }
 
-            await Task.WhenAll(disposeTasks).ConfigureAwait(false);
-
-            _plugins.Clear();
-            _loadContexts.Clear();
-
-            // Dispose semaphore
-            _loadingSemaphore.Dispose();
+            await Task.CompletedTask;
         }
     }
 

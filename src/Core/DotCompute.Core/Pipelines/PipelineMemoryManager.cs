@@ -298,7 +298,7 @@ namespace DotCompute.Core.Pipelines
             _isDisposed = true;
         }
 
-        private void ValidateAllocationParameters<T>(long elementCount) where T : unmanaged
+        private static void ValidateAllocationParameters<T>(long elementCount) where T : unmanaged
         {
             if (elementCount <= 0)
             {

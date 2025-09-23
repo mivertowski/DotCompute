@@ -223,7 +223,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private void PerformPeriodicCleanup(object? state)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             try
             {

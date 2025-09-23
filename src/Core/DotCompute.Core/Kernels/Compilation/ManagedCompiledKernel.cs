@@ -210,7 +210,7 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
 
             // Convert KernelArguments to object array for delegate invocation
             var args = new object[arguments.Count];
-            for (int i = 0; i < arguments.Count; i++)
+            for (var i = 0; i < arguments.Count; i++)
             {
                 args[i] = arguments.Arguments[i] ?? throw new ArgumentNullException($"Argument {i} is null");
             }
@@ -249,7 +249,7 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
 
                 // Convert KernelArguments to object array for method invocation
                 var args = new object[arguments.Count];
-                for (int i = 0; i < arguments.Count; i++)
+                for (var i = 0; i < arguments.Count; i++)
                 {
                     args[i] = arguments.Arguments[i] ?? throw new ArgumentNullException($"Argument {i} is null");
                 }

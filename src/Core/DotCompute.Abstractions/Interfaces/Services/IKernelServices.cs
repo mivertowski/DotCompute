@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Accelerators;
+using DotCompute.Abstractions.Statistics;
 
 namespace DotCompute.Abstractions.Interfaces.Services;
 
@@ -147,31 +148,7 @@ public class KernelCompilationStatistics
     public DateTime CollectedAt { get; init; } = DateTime.UtcNow;
 }
 
-/// <summary>
-/// Compilation statistics for a specific accelerator type.
-/// </summary>
-public class AcceleratorCompilationStats
-{
-    /// <summary>
-    /// Gets the accelerator type.
-    /// </summary>
-    public required string AcceleratorType { get; init; }
-
-    /// <summary>
-    /// Gets the number of compilations for this accelerator type.
-    /// </summary>
-    public long CompilationCount { get; init; }
-
-    /// <summary>
-    /// Gets the average compilation time for this accelerator type.
-    /// </summary>
-    public TimeSpan AverageCompilationTime { get; init; }
-
-    /// <summary>
-    /// Gets the success rate for this accelerator type.
-    /// </summary>
-    public double SuccessRate { get; init; }
-}
+// AcceleratorCompilationStats moved to DotCompute.Runtime.Services.Statistics namespace
 
 /// <summary>
 /// Kernel cache statistics.

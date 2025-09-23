@@ -467,9 +467,9 @@ public sealed class MetalComputeGraph : IDisposable
         }
     }
 
-    private string GenerateNodeId() => $"node_{Guid.NewGuid():N}";
+    private static string GenerateNodeId() => $"node_{Guid.NewGuid():N}";
 
-    private long EstimateKernelMemoryUsage(ICompiledKernel kernel, object[] arguments)
+    private static long EstimateKernelMemoryUsage(ICompiledKernel kernel, object[] arguments)
     {
         // Estimate based on argument sizes and typical kernel memory usage
         long estimatedUsage = 1024 * 1024; // Base 1MB for kernel overhead
@@ -570,7 +570,7 @@ public sealed class MetalComputeGraph : IDisposable
         return fusionOpportunities;
     }
 
-    private bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
+    private static bool CanFuseKernels(MetalGraphNode kernel1, MetalGraphNode kernel2)
     {
         // Kernels can potentially be fused if:
         // 1. One depends directly on the other
@@ -612,7 +612,7 @@ public sealed class MetalComputeGraph : IDisposable
         return coalescingOpportunities;
     }
 
-    private bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
+    private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
     {
         // Memory operations can be coalesced if they're adjacent and have no dependencies between them
         return !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
@@ -626,7 +626,11 @@ public sealed class MetalComputeGraph : IDisposable
 
         foreach (var node in _nodes)
         {
-            if (processed.Contains(node.Id)) continue;
+            if (processed.Contains(node.Id))
+            {
+                continue;
+            }
+
 
             var group = new List<MetalGraphNode> { node };
             processed.Add(node.Id);
@@ -634,8 +638,12 @@ public sealed class MetalComputeGraph : IDisposable
             // Find nodes that can be batched with this one
             foreach (var other in _nodes)
             {
-                if (processed.Contains(other.Id)) continue;
-                
+                if (processed.Contains(other.Id))
+                {
+                    continue;
+                }
+
+
                 if (CanBatchInSameCommandBuffer(node, other))
                 {
                     group.Add(other);
@@ -650,7 +658,7 @@ public sealed class MetalComputeGraph : IDisposable
         return Math.Max(0, _nodes.Count - independentGroups.Count);
     }
 
-    private bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
+    private static bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
     {
         // Nodes can be batched if they don't depend on each other
         return !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
@@ -665,11 +673,19 @@ public sealed class MetalComputeGraph : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         lock (_lock)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             try
             {

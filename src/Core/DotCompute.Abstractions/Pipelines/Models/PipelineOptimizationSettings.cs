@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Pipelines.Models;
 
@@ -16,7 +17,7 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets the optimization level to apply.
     /// </summary>
-    public OptimizationLevel Level { get; set; } = OptimizationLevel.Balanced;
+    public Types.OptimizationLevel Level { get; set; } = Types.OptimizationLevel.Default;
 
     /// <summary>
     /// Gets or sets the specific optimization types to apply.
@@ -110,6 +111,15 @@ public sealed class PipelineOptimizationSettings
     public bool EnableParallelMerging { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether to enable fusion optimization (alias for EnableKernelFusion).
+    /// </summary>
+    public bool EnableFusion
+    {
+        get => EnableKernelFusion;
+        set => EnableKernelFusion = value;
+    }
+
+    /// <summary>
     /// Creates a copy of the current settings.
     /// </summary>
     /// <returns>A new instance with the same configuration</returns>
@@ -135,7 +145,8 @@ public sealed class PipelineOptimizationSettings
             EnableKernelFusion = EnableKernelFusion,
             EnableStageReordering = EnableStageReordering,
             EnableMemoryOptimization = EnableMemoryOptimization,
-            EnableParallelMerging = EnableParallelMerging
+            EnableParallelMerging = EnableParallelMerging,
+            EnableFusion = EnableFusion
         };
     }
 }

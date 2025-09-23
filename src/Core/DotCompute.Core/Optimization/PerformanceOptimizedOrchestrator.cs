@@ -390,7 +390,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     #region Helper Methods
 
-    private string GenerateWorkloadCacheKey(string kernelName, object[] args)
+    private static string GenerateWorkloadCacheKey(string kernelName, object[] args)
     {
         var dataSize = CalculateTotalDataSize(args);
         var argCount = args.Length;
@@ -422,7 +422,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         _ => 4 // Default
     };
 
-    private long EstimateOperationCount(string kernelName, object[] args)
+    private static long EstimateOperationCount(string kernelName, object[] args)
     {
         // Heuristic based on data size and kernel name patterns
         var dataSize = CalculateTotalDataSize(args);
@@ -492,7 +492,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         };
     }
 
-    private double EstimateParallelismLevel(string kernelName, object[] args, KernelPerformanceProfile profile)
+    private static double EstimateParallelismLevel(string kernelName, object[] args, KernelPerformanceProfile profile)
     {
         if (profile.HistoricalParallelismLevel.HasValue)
         {

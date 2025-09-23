@@ -493,7 +493,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
     }
 
-    private NumaThreadAffinityInfo CalculateOptimalAffinity(int threadIndex, NumaTopology topology)
+    private NumaThreadAffinityInfo CalculateOptimalAffinity(int threadIndex, NUMA.NumaTopology topology)
     {
         // Distribute threads across NUMA nodes for optimal performance
         var totalThreads = _threads.Length;

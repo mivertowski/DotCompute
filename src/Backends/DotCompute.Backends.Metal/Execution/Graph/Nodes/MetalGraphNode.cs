@@ -223,7 +223,10 @@ public sealed class MetalGraphNode
     public bool RemoveDependency(string dependencyId)
     {
         if (string.IsNullOrWhiteSpace(dependencyId))
+        {
             return false;
+        }
+
 
         var dependency = Dependencies.FirstOrDefault(d => d.Id == dependencyId);
         if (dependency != null)
@@ -248,7 +251,11 @@ public sealed class MetalGraphNode
     public bool DependsOn(string nodeId)
     {
         if (string.IsNullOrWhiteSpace(nodeId))
+        {
+
             return false;
+        }
+
 
         return Dependencies.Any(d => d.Id == nodeId);
     }

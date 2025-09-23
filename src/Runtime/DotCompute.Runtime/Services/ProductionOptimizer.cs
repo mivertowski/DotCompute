@@ -44,7 +44,11 @@ namespace DotCompute.Runtime.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
             ArgumentNullException.ThrowIfNull(metrics);
 
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             var profile = _performanceProfiles.GetOrAdd(kernelName, _ => new KernelPerformanceProfile(kernelName));
             profile.AddExecution(metrics);
@@ -161,7 +165,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private static void AnalyzeExecutionTimePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
-            if (profile.ExecutionCount < 5) return; // Need enough data
+            if (profile.ExecutionCount < 5)
+            {
+                return; // Need enough data
+            }
+
 
             var executionTimes = profile.GetExecutionTimes();
             var average = executionTimes.Average(t => t.TotalMilliseconds);
@@ -203,7 +211,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private static void AnalyzeMemoryUsagePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
-            if (profile.ExecutionCount < 3) return;
+            if (profile.ExecutionCount < 3)
+            {
+                return;
+            }
+
 
             var memoryUsages = profile.GetMemoryUsages();
             var maxMemory = memoryUsages.Max();
@@ -245,10 +257,14 @@ namespace DotCompute.Runtime.Services
         private static void AnalyzeWorkGroupSizeOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             var workGroupSizes = profile.GetWorkGroupSizes();
-            if (workGroupSizes.Count < 2) return;
+            if (workGroupSizes.Count < 2)
+            {
+                return;
+            }
 
             // Group by work group size and analyze performance
             // For now, use a simple heuristic based on total work units
+
             var performanceBySize = workGroupSizes
                 .GroupBy(size => $"{size.X}x{size.Y}x{size.Z}")
                 .Where(g => g.Count() >= 2)
@@ -280,7 +296,11 @@ namespace DotCompute.Runtime.Services
         private static void AnalyzeCompilationOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             var compilationTimes = profile.GetCompilationTimes();
-            if (compilationTimes.Count == 0) return;
+            if (compilationTimes.Count == 0)
+            {
+                return;
+            }
+
 
             var averageCompilationTime = compilationTimes.Average(t => t.TotalMilliseconds);
 
@@ -329,7 +349,7 @@ namespace DotCompute.Runtime.Services
             }
         }
 
-        private async Task<AppliedOptimization> ApplyWorkGroupOptimizationAsync(
+        private static async Task<AppliedOptimization> ApplyWorkGroupOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
@@ -340,7 +360,7 @@ namespace DotCompute.Runtime.Services
             return AppliedOptimization.Success(OptimizationType.WorkGroupOptimization, "Work group size optimized");
         }
 
-        private async Task<AppliedOptimization> ApplyMemoryOptimizationAsync(
+        private static async Task<AppliedOptimization> ApplyMemoryOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
@@ -351,7 +371,7 @@ namespace DotCompute.Runtime.Services
             return AppliedOptimization.Success(OptimizationType.MemoryOptimization, "Memory usage optimized");
         }
 
-        private async Task<AppliedOptimization> ApplyCompilationOptimizationAsync(
+        private static async Task<AppliedOptimization> ApplyCompilationOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
@@ -367,7 +387,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private void PerformOptimizationAnalysis(object? state)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             try
             {

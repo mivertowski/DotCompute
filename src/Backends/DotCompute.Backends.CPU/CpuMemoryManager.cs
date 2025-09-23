@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// </summary>
 public sealed class CpuMemoryManager : BaseMemoryManager
 {
-    private readonly NumaTopology _topology;
+    private readonly Threading.NUMA.NumaTopology _topology;
     private readonly NumaMemoryPolicy _defaultPolicy;
     private readonly ILogger<CpuMemoryManager> _logger;
 
@@ -33,7 +33,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     /// <summary>
     /// Gets NUMA topology information.
     /// </summary>
-    public NumaTopology Topology => _topology;
+    public Threading.NUMA.NumaTopology Topology => _topology;
 
     /// <summary>
     /// Allocates memory with NUMA-aware placement.

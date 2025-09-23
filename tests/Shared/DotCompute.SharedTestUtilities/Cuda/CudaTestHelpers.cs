@@ -249,7 +249,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         try
         {
             var hostData = new float[size];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 hostData[i] = i * 0.5f;
             }
@@ -270,13 +270,13 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// </summary>
     public static (int blockSize, int gridSize) CalculateOptimalLaunchConfig(int problemSize, int maxThreadsPerBlock = 1024)
     {
-        int blockSize = Math.Min(problemSize, maxThreadsPerBlock);
+        var blockSize = Math.Min(problemSize, maxThreadsPerBlock);
 
         // Round down to nearest power of 2 for optimal performance
         blockSize = 1 << (int)Math.Floor(Math.Log2(blockSize));
         blockSize = Math.Max(blockSize, 32); // Minimum warp size
 
-        int gridSize = (problemSize + blockSize - 1) / blockSize;
+        var gridSize = (problemSize + blockSize - 1) / blockSize;
 
         return (blockSize, gridSize);
     }
@@ -287,7 +287,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     public static (bool isValid, string[] issues) ValidateCudaEnvironment()
     {
         var issues = new List<string>();
-        bool isValid = true;
+        var isValid = true;
 
         // Check CUDA availability
         if (!IsCudaAvailable())
@@ -297,7 +297,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
         }
 
         // Check device count
-        int deviceCount = GetDeviceCount();
+        var deviceCount = GetDeviceCount();
         if (deviceCount == 0)
         {
             issues.Add("No CUDA devices found");

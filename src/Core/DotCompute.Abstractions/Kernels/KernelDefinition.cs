@@ -44,6 +44,16 @@ public class KernelDefinition
     public string EntryPoint { get; init; } = "main";
 
     /// <summary>
+    /// Gets or sets the entry function name for kernel execution (alias for EntryPoint).
+    /// </summary>
+    /// <value>The name of the function to call when executing the kernel.</value>
+    public string EntryFunction
+    {
+        get => EntryPoint;
+        init => EntryPoint = value;
+    }
+
+    /// <summary>
     /// Gets or sets kernel metadata for additional configuration and information.
     /// </summary>
     /// <value>A dictionary containing kernel-specific metadata such as compilation flags, device constraints, or custom attributes.</value>

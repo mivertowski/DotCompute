@@ -27,6 +27,7 @@ public class CudaMemoryManagementTests : CudaTestBase
     private readonly Mock<ILogger<CudaMemoryManager>> _mockLogger;
     private readonly CudaMemoryManager _memoryManager;
     private readonly CudaAccelerator _accelerator;
+    private readonly CudaContext? _context;
 
     public CudaMemoryManagementTests(ITestOutputHelper output) : base(output)
     {
@@ -38,13 +39,14 @@ public class CudaMemoryManagementTests : CudaTestBase
         {
             var acceleratorLogger = new Mock<ILogger<CudaAccelerator>>();
             _accelerator = new CudaAccelerator(0, acceleratorLogger.Object);
-            var context = new CudaContext(0);
-            _memoryManager = new CudaMemoryManager(context, _mockLogger.Object);
+            _context = new CudaContext(0);
+            _memoryManager = new CudaMemoryManager(_context, _mockLogger.Object);
         }
         else
         {
             _accelerator = null!;
             _memoryManager = null!;
+            _context = null;
         }
     }
 
@@ -599,6 +601,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         {
             _memoryManager?.Dispose();
             _accelerator?.DisposeAsync().AsTask().Wait();
+            _context?.Dispose();
         }
         base.Dispose(disposing);
     }

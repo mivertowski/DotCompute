@@ -396,7 +396,7 @@ internal sealed class RegisterSpillingOptimizer
             return Regex.IsMatch(line, @"\b(for|while|do)\b\s*\(");
         }
 
-        private bool IsVariableDeclaration(string line, out string varName, out string varType, out string initializer)
+        private static bool IsVariableDeclaration(string line, out string varName, out string varType, out string initializer)
         {
             varName = varType = initializer = string.Empty;
 

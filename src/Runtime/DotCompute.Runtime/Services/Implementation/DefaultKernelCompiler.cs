@@ -184,14 +184,19 @@ public class DefaultKernelCompiler : IUnifiedKernelCompiler
 
         // Basic validation
         if (string.IsNullOrEmpty(source.Name))
+        {
             result.AddError("Kernel name cannot be null or empty", "DC001");
+        }
 
         if (string.IsNullOrEmpty(source.Source))
+        {
             result.AddError("Kernel source cannot be null or empty", "DC002");
+        }
 
         // Note: KernelDefinition structure may vary
         // if (source.Parameters == null)
         //     result.AddWarning("Kernel parameters are null", "DC003");
+
 
         if (result.IsValid)
         {

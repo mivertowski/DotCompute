@@ -194,7 +194,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         /// Resolves a kernel from the discovery service.
         /// This is a placeholder that would interface with the actual kernel discovery and compilation system.
         /// </summary>
-        private async Task<ICompiledKernel?> ResolveKernelFromDiscoveryServiceAsync(string kernelName, CancellationToken cancellationToken)
+        private static async Task<ICompiledKernel?> ResolveKernelFromDiscoveryServiceAsync(string kernelName, CancellationToken cancellationToken)
         {
             // TODO: This needs to interface with the actual kernel discovery and compilation system
             // For now, return null to indicate kernel not found
@@ -213,7 +213,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         /// Gets kernel names from the discovery service.
         /// This is a placeholder that would interface with the actual kernel discovery system.
         /// </summary>
-        private async Task<IReadOnlyCollection<string>> GetKernelNamesFromDiscoveryServiceAsync(CancellationToken cancellationToken)
+        private static async Task<IReadOnlyCollection<string>> GetKernelNamesFromDiscoveryServiceAsync(CancellationToken cancellationToken)
         {
             // TODO: This needs to interface with the actual kernel discovery system
             // For now, return empty collection

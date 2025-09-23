@@ -542,7 +542,7 @@ public class EnhancedBaseMemoryBufferTests
     public async Task ConcurrentDisposeOperations_HandleGracefully()
     {
         // Arrange
-        var buffer = new TestMemoryBuffer<byte>(1024);
+        using var buffer = new TestMemoryBuffer<byte>(1024);
         var disposeTasks = new List<Task>();
 
         // Act - Attempt concurrent dispose operations

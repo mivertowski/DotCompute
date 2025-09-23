@@ -50,7 +50,7 @@ MetalCommandBufferPool? commandBufferPool = null) : DotCompute.Abstractions.ICom
     public bool IsReady => _disposed == 0 && _pipelineState != IntPtr.Zero;
 
     /// <inheritdoc/>
-    public string BackendType => "Metal";
+    public static string BackendType => "Metal";
 
     /// <inheritdoc/>
     public async ValueTask ExecuteAsync(

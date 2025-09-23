@@ -226,7 +226,7 @@ namespace DotCompute.Core.Compute
 
             // For CPU accelerators, create a context with the thread ID as the handle
             // Try to extract a numeric device ID from the accelerator ID
-            var idParts = accelerator.Info.Id.Split(_separator);
+            var idParts = accelerator.Info!.Id.Split(_separator);
             var lastPart = idParts.LastOrDefault() ?? "0";
             // Try to parse the last part as a number, otherwise use 0
             if (!int.TryParse(lastPart, out var deviceId))
@@ -363,7 +363,7 @@ namespace DotCompute.Core.Compute
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, $"Failed to dispose accelerator {accelerator.Info.Id}");
+                    _logger.LogErrorMessage(ex, $"Failed to dispose accelerator {accelerator.Info?.Id ?? "unknown"}");
                 }
             }
 

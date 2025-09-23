@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Pipelines.Statistics;
 using DotCompute.Core.Pipelines.Analysis;
+using DotCompute.Core.Pipelines.Statistics;
 
 namespace DotCompute.Core.Pipelines.Results;
 

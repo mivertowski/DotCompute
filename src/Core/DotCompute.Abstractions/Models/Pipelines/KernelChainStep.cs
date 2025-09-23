@@ -135,7 +135,7 @@ namespace DotCompute.Abstractions.Models.Pipelines
 
             if (previousResult == null && !typeof(T).IsValueType)
             {
-                return Condition(default(T)!);
+                return Condition(default!);
             }
 
             // Attempt type conversion

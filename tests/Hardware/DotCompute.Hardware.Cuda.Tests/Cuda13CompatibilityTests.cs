@@ -27,7 +27,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
-            var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
+            using var factory = new CudaAcceleratorFactory(new NullLogger<CudaAcceleratorFactory>());
 
             // Try to create an accelerator - should succeed only on CC 7.5+
 
@@ -90,7 +90,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine($"Testing device: {deviceInfo.Name} (CC {deviceInfo.ComputeCapability.Major}.{deviceInfo.ComputeCapability.Minor})");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
 
 
             if (deviceInfo.ComputeCapability.Major < 7 ||
@@ -148,7 +148,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     Output.WriteLine($"Found deprecated {architecture} GPU (CC {major}.{minor})");
 
 
-                    var factory = new CudaAcceleratorFactory();
+                    using var factory = new CudaAcceleratorFactory();
                     var act = () => factory.CreateProductionAccelerator(0);
 
 
@@ -197,7 +197,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     Output.WriteLine($"Found supported {architecture} GPU (CC {cc.Major}.{cc.Minor})");
 
 
-                    var factory = new CudaAcceleratorFactory();
+                    using var factory = new CudaAcceleratorFactory();
                     await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -217,7 +217,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             if (cc.Major >= 7 && cc.Minor >= 5)
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 await using var accelerator = factory.CreateProductionAccelerator(0);
                 _ = accelerator.Should().NotBeNull();
                 Output.WriteLine("Device accepted as it meets minimum requirements");
@@ -230,7 +230,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
             Skip.IfNot(HasMinimumComputeCapability(7, 5), "Requires CC 7.5+ for CUDA 13.0");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
             // Test that CUDA 13.0 specific features are available
@@ -239,7 +239,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // 1. Shared memory register spilling should be configurable
 
-            var compilerOptions = new DotCompute.Backends.CUDA.Configuration.CompilationOptions
+            var compilerOptions = new DotCompute.Backends.CUDA.Configuration.CudaCompilationOptions
             {
                 EnableSharedMemoryRegisterSpilling = true
             };
@@ -300,7 +300,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         {
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
 
             // Get driver version
 

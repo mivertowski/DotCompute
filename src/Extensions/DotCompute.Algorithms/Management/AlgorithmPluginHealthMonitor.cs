@@ -34,7 +34,10 @@ public class AlgorithmPluginHealthMonitor
     public void StartHealthMonitoring(Func<Task> healthCheckCallback)
     {
         if (!_options.EnableHealthChecks)
+        {
             return;
+        }
+
 
         _healthCheckTimer = new Timer(
             async _ => await PerformHealthChecks(healthCheckCallback),
@@ -185,7 +188,10 @@ public class AlgorithmPluginHealthMonitor
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
+
 
         StopHealthMonitoring();
         _disposed = true;

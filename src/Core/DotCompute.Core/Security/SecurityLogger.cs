@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
@@ -1057,16 +1058,8 @@ public enum SecurityEventType
     PluginSecurityCheck
 }
 
-/// <summary>
-/// Security event severity levels.
-/// </summary>
-public enum SecurityLevel
-{
-    Informational = 1,
-    Warning = 2,
-    High = 3,
-    Critical = 4
-}
+// Use the canonical SecurityLevel from DotCompute.Abstractions.Security
+// This local enum has been replaced with the unified type
 
 /// <summary>
 /// Types of security violations.

@@ -522,7 +522,7 @@ public sealed class MetalGraphExecutor : IDisposable
         return levels;
     }
 
-    private int CalculateExecutionLevel(MetalGraphNode node, Dictionary<string, int> nodeToLevel, HashSet<string> processed)
+    private static int CalculateExecutionLevel(MetalGraphNode node, Dictionary<string, int> nodeToLevel, HashSet<string> processed)
     {
         if (nodeToLevel.TryGetValue(node.Id, out var existingLevel))
         {
@@ -550,7 +550,7 @@ public sealed class MetalGraphExecutor : IDisposable
         return level;
     }
 
-    private double CalculateParallelEfficiency(GraphExecutionContext context)
+    private static double CalculateParallelEfficiency(GraphExecutionContext context)
     {
         if (context.NodesExecuted == 0)
         {
@@ -565,7 +565,7 @@ public sealed class MetalGraphExecutor : IDisposable
         return Math.Min(1.0, idealParallelTime / actualTime);
     }
 
-    private double CalculateMemoryBandwidth(GraphExecutionContext context)
+    private static double CalculateMemoryBandwidth(GraphExecutionContext context)
     {
         if (context.TotalGpuTimeMs == 0)
         {
@@ -579,7 +579,7 @@ public sealed class MetalGraphExecutor : IDisposable
         return totalMemoryGB / timeInSeconds; // GB/s
     }
 
-    private long GetAvailableMetalMemory()
+    private static long GetAvailableMetalMemory()
     {
         // This would query the actual Metal device memory
         // For now, return a reasonable default (8GB for Apple Silicon)
@@ -593,61 +593,61 @@ public sealed class MetalGraphExecutor : IDisposable
     // These methods would be implemented using Metal native bindings
     // For now, they are stubs that simulate the actual Metal operations
 
-    private IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
+    private static IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
     {
         // Create Metal command buffer from command queue
         return new IntPtr(0x1000); // Stub
     }
 
-    private IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
+    private static IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
     {
         // Create compute command encoder
         return new IntPtr(0x2000); // Stub
     }
 
-    private IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
+    private static IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
     {
         // Create blit command encoder
         return new IntPtr(0x3000); // Stub
     }
 
-    private void SetMetalComputePipelineState(IntPtr encoder, object kernel)
+    private static void SetMetalComputePipelineState(IntPtr encoder, object kernel)
     {
         // Set the compute pipeline state
     }
 
-    private void SetMetalKernelArgument(IntPtr encoder, int index, object argument)
+    private static void SetMetalKernelArgument(IntPtr encoder, int index, object argument)
     {
         // Set kernel argument at index
     }
 
-    private void DispatchMetalThreadgroups(IntPtr encoder, MTLSize threadgroupsPerGrid, MTLSize threadsPerThreadgroup)
+    private static void DispatchMetalThreadgroups(IntPtr encoder, MTLSize threadgroupsPerGrid, MTLSize threadsPerThreadgroup)
     {
         // Dispatch compute threadgroups
     }
 
-    private void CopyMetalBuffer(IntPtr encoder, IntPtr sourceBuffer, long sourceOffset, IntPtr destBuffer, long destOffset, long size)
+    private static void CopyMetalBuffer(IntPtr encoder, IntPtr sourceBuffer, long sourceOffset, IntPtr destBuffer, long destOffset, long size)
     {
         // Copy between Metal buffers
     }
 
-    private void FillMetalBuffer(IntPtr encoder, IntPtr buffer, byte value, long size)
+    private static void FillMetalBuffer(IntPtr encoder, IntPtr buffer, byte value, long size)
     {
         // Fill Metal buffer with value
     }
 
-    private void EndMetalCommandEncoding(IntPtr encoder)
+    private static void EndMetalCommandEncoding(IntPtr encoder)
     {
         // End command encoding
     }
 
-    private async Task CommitAndWaitMetalCommandBuffer(IntPtr commandBuffer)
+    private static async Task CommitAndWaitMetalCommandBuffer(IntPtr commandBuffer)
     {
         // Commit command buffer and wait for completion
         await Task.Delay(1); // Simulate GPU execution time
     }
 
-    private void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
+    private static void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
     {
         // Release command buffer resources
     }

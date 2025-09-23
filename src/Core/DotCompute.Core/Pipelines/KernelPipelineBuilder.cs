@@ -198,7 +198,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts Core PipelineEventType to Abstractions PipelineEvent enum.
         /// </summary>
-        private AbstractionsPipelineEvent ConvertEventType(PipelineEventType coreType)
+        private static AbstractionsPipelineEvent ConvertEventType(PipelineEventType coreType)
         {
             return coreType switch
             {

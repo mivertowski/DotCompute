@@ -403,7 +403,7 @@ public class GpuKernelGenerationTests : IDisposable
         results.Should().OnlyContain(r => r.Success);
         
         // Verify each kernel has unique content
-        var uniqueNames = results.Select(r => r.KernelName).Distinct().ToArray();
+        var uniqueNames = results.Select(r => r.Name).Distinct().ToArray();
         uniqueNames.Should().HaveCount(10);
     }
 

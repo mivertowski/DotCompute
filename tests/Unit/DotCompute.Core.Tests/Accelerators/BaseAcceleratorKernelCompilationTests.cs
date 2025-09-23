@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Tests.TestImplementations;
@@ -61,8 +62,8 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.KernelName.Should().Be("testKernel");
-        result.IsValid.Should().BeTrue();
+        result.Name.Should().Be("testKernel");
+        result.IsReady.Should().BeTrue();
         _accelerator.CompileKernelAsyncCalled.Should().BeTrue();
     }
 
@@ -187,8 +188,8 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         // Assert
         results.Should().HaveCount(3);
-        results.Should().OnlyContain(r => r.IsValid);
-        results.Select(r => r.KernelName).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
+        results.Should().OnlyContain(r => r.IsReady);
+        results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
         _accelerator.CompilationCount.Should().Be(3);
     }
 
@@ -223,7 +224,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Assert
         result1.Should().NotBeNull();
         result2.Should().NotBeNull();
-        result1.KernelName.Should().Be(result2.KernelName);
+        result1.Name.Should().Be(result2.Name);
         _accelerator.CompilationCount.Should().Be(1); // Should only compile once due to caching
         _accelerator.CacheHits.Should().Be(1);
     }

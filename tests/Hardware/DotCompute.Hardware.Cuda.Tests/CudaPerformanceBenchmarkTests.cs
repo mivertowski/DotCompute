@@ -103,7 +103,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var logger = loggerFactory.CreateLogger<MemoryTracker>();
             using var memoryTracker = new MemoryTracker(logger);
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -194,7 +194,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -280,7 +280,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -408,7 +408,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(IsCudaAvailable(), "CUDA hardware not available");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 
@@ -488,7 +488,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Skip.IfNot(HasMinimumComputeCapability(2, 0), "Concurrent streams require compute capability 2.0+");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             await using var accelerator = factory.CreateProductionAccelerator(0);
 
 

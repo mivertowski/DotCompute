@@ -739,7 +739,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Copies data between two buffers using raw byte copying.
         /// </summary>
-        private async ValueTask CopyRawAsync<T>(
+        private static async ValueTask CopyRawAsync<T>(
             IUnifiedMemoryBuffer<T> source,
             IUnifiedMemoryBuffer<T> destination,
             long bytesToCopy,

@@ -672,7 +672,7 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             private readonly CudaAccelerator _baseAccelerator;
             private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;
-
+            private bool _disposed;
 
             public CudaStreamManagerProduction StreamManager { get; }
             public CudaMemoryManager AsyncMemoryManager { get; }
@@ -752,6 +752,7 @@ namespace DotCompute.Backends.CUDA.Factory
             };
             public IUnifiedMemoryManager Memory => _memoryAdapter.Value;
             public AcceleratorContext Context { get; private set; }
+            public bool IsAvailable => !_disposed;
 
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
                 => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
@@ -762,7 +763,13 @@ namespace DotCompute.Backends.CUDA.Factory
 
             public void Dispose()
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
                 // Dispose managers in reverse order
+
                 Profiler?.Dispose();
                 GraphOptimizer?.Dispose();
                 KernelCache?.Dispose();
@@ -778,11 +785,19 @@ namespace DotCompute.Backends.CUDA.Factory
                 {
                     _baseAccelerator.DisposeAsync().AsTask().Wait();
                 }
+
+                _disposed = true;
             }
 
             public async ValueTask DisposeAsync()
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
                 // Dispose async-capable managers first
+
                 if (_baseAccelerator != null)
                 {
                     await _baseAccelerator.DisposeAsync().ConfigureAwait(false);
@@ -811,7 +826,7 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 StreamManager?.Dispose();
 
-
+                _disposed = true;
                 GC.SuppressFinalize(this);
             }
         }

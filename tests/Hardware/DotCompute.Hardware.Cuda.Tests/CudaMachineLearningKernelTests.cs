@@ -25,20 +25,21 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<CudaMachineLearningKernelTests>? _logger;
+        private readonly ILoggerFactory? _loggerFactory;
 
         public CudaMachineLearningKernelTests(ITestOutputHelper output) : base(output)
         {
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
 
 
-                using var loggerFactory = LoggerFactory.Create(builder =>
+                _loggerFactory = LoggerFactory.Create(builder =>
 
                     builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-                _logger = loggerFactory.CreateLogger<CudaMachineLearningKernelTests>();
+                _logger = _loggerFactory.CreateLogger<CudaMachineLearningKernelTests>();
             }
         }
 
@@ -47,6 +48,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             if (disposing)
             {
                 _accelerator?.DisposeAsync().AsTask().Wait();
+                _loggerFactory?.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -61,7 +61,7 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         /// <param name="assembly">The assembly to scan.</param>
         /// <returns>The list of discovered plugin types.</returns>
-        public IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
+        public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
         {
             ArgumentNullException.ThrowIfNull(assembly);
 
@@ -89,7 +89,11 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var directory = Path.GetDirectoryName(assemblyPath);
-                if (directory == null) return;
+                if (directory == null)
+                {
+                    return;
+                }
+
 
                 var fileName = Path.GetFileName(assemblyPath);
 
@@ -133,7 +137,11 @@ namespace DotCompute.Algorithms.Management
         private void SetupAdditionalFileWatchers(string assemblyPath, Func<string, Task> onChanged)
         {
             var directory = Path.GetDirectoryName(assemblyPath);
-            if (directory == null) return;
+            if (directory == null)
+            {
+                return;
+            }
+
 
             var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
             var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
@@ -190,11 +198,18 @@ namespace DotCompute.Algorithms.Management
             {
                 var assemblyPath = Path.ChangeExtension(filePath, ".dll");
                 if (File.Exists(assemblyPath))
+                {
                     return assemblyPath;
+                }
+
 
                 assemblyPath = Path.ChangeExtension(filePath, ".exe");
                 if (File.Exists(assemblyPath))
+                {
+
                     return assemblyPath;
+                }
+
             }
 
             return filePath;

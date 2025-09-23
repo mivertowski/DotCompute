@@ -318,7 +318,7 @@ namespace DotCompute.Core.Pipelines
             if (result.Result == null)
             {
 
-                return default(T)!;
+                return default!;
             }
 
             // Attempt type conversion
@@ -674,7 +674,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets a fallback value for a failed step.
         /// </summary>
-        private object? GetFallbackValue(KernelChainStep step)
+        private static object? GetFallbackValue(KernelChainStep step)
         {
             // This could be enhanced to support configurable fallback values
             return null;
@@ -705,7 +705,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Gets memory usage metrics for the execution.
         /// </summary>
-        private KernelChainMemoryMetrics? GetMemoryMetrics()
+        private static KernelChainMemoryMetrics? GetMemoryMetrics()
         {
             // This could be enhanced to collect actual memory metrics
             var gc0 = GC.CollectionCount(0);

@@ -979,6 +979,7 @@ public class MemoryManagementTests
 
         public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller for disposal")]
         public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
         public void Dispose()

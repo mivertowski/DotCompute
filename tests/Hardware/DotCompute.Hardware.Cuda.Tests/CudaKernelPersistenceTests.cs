@@ -21,7 +21,6 @@ using Xunit.Abstractions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
 using DotCompute.SharedTestUtilities.Performance;
-using SimplePerformanceMeasurement = DotCompute.SharedTestUtilities.Performance.PerformanceMeasurementExtensions.SimplePerformanceMeasurement;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -42,7 +41,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             if (IsCudaAvailable())
             {
-                var factory = new CudaAcceleratorFactory();
+                using var factory = new CudaAcceleratorFactory();
                 // Create base CUDA accelerator for tests
                 _accelerator = new CudaAccelerator(0, Microsoft.Extensions.Logging.Abstractions.NullLogger<CudaAccelerator>.Instance);
 
@@ -478,7 +477,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
             // Act - First compilation pass
-            var firstPassPerf = new SimplePerformanceMeasurement("First Pass Compilation", Output);
+            var firstPassPerf = new PerformanceMeasurement("First Pass Compilation", trackMemory: false);
             firstPassPerf.Start();
 
 
@@ -494,7 +493,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Act - Second compilation pass (should use cache)
 
-            var secondPassPerf = new SimplePerformanceMeasurement("Second Pass (Cached)", Output);
+            var secondPassPerf = new PerformanceMeasurement("Second Pass (Cached)", trackMemory: false);
             secondPassPerf.Start();
 
 

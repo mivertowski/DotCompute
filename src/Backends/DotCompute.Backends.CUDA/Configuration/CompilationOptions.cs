@@ -140,11 +140,5 @@ namespace DotCompute.Backends.CUDA.Configuration
         };
     }
 
-    /// <summary>
-    /// Alias for backward compatibility.
-    /// </summary>
-    [Obsolete("Use CudaCompilationOptions instead")]
-    public class CompilationOptions : CudaCompilationOptions
-    {
-    }
+    // Removed obsolete CompilationOptions alias - use DotCompute.Abstractions.CompilationOptions instead
 }

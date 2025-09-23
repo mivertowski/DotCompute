@@ -41,7 +41,7 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Generates a new correlation ID for tracking related operations
     /// </summary>
-    public string GenerateCorrelationId()
+    public static string GenerateCorrelationId()
     {
         return $"metal_{Guid.NewGuid():N}"[..24]; // 24 character correlation ID
     }

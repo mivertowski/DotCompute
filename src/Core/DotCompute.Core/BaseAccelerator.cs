@@ -73,6 +73,8 @@ public abstract class BaseAccelerator : IAccelerator
     /// <inheritdoc/>
     public AcceleratorContext Context { get; }
 
+    /// <inheritdoc/>
+    public virtual bool IsAvailable => !IsDisposed;
 
     /// <summary>
     /// Gets whether this accelerator has been disposed.

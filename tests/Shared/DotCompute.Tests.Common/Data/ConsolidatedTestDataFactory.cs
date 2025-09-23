@@ -25,7 +25,7 @@ public static class ConsolidatedTestDataFactory
     public static int[] CreateIntArray(int length, int min = -1000, int max = 1000)
     {
         var array = new int[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = _random.Next(min, max + 1);
         }
@@ -38,7 +38,7 @@ public static class ConsolidatedTestDataFactory
     public static float[] CreateFloatArray(int length, float min = -100f, float max = 100f)
     {
         var array = new float[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = min + _random.NextSingle() * (max - min);
         }
@@ -51,7 +51,7 @@ public static class ConsolidatedTestDataFactory
     public static double[] CreateDoubleArray(int length, double min = -100.0, double max = 100.0)
     {
         var array = new double[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = min + _random.NextDouble() * (max - min);
         }
@@ -82,7 +82,7 @@ public static class ConsolidatedTestDataFactory
     public static float[] CreateNormalizedFloatArray(int length)
     {
         var array = new float[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = _random.NextSingle();
         }
@@ -99,9 +99,9 @@ public static class ConsolidatedTestDataFactory
     public static int[,] CreateIntMatrix(int rows, int cols, int min = -100, int max = 100)
     {
         var matrix = new int[rows, cols];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 matrix[i, j] = _random.Next(min, max + 1);
             }
@@ -115,9 +115,9 @@ public static class ConsolidatedTestDataFactory
     public static float[,] CreateFloatMatrix(int rows, int cols, float min = -1f, float max = 1f)
     {
         var matrix = new float[rows, cols];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 matrix[i, j] = min + _random.NextSingle() * (max - min);
             }
@@ -131,7 +131,7 @@ public static class ConsolidatedTestDataFactory
     public static float[,] CreateIdentityMatrix(int size)
     {
         var matrix = new float[size, size];
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             matrix[i, i] = 1.0f;
         }
@@ -144,7 +144,7 @@ public static class ConsolidatedTestDataFactory
     public static float[][] CreateJaggedMatrix(int rows, int cols, float min = -1f, float max = 1f)
     {
         var matrix = new float[rows][];
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
             matrix[i] = CreateFloatArray(cols, min, max);
         }
@@ -161,7 +161,7 @@ public static class ConsolidatedTestDataFactory
     public static Vector2[] CreateVector2Array(int length, float min = -1f, float max = 1f)
     {
         var vectors = new Vector2[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector2(
                 min + _random.NextSingle() * (max - min),
@@ -177,7 +177,7 @@ public static class ConsolidatedTestDataFactory
     public static Vector3[] CreateVector3Array(int length, float min = -1f, float max = 1f)
     {
         var vectors = new Vector3[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector3(
                 min + _random.NextSingle() * (max - min),
@@ -194,7 +194,7 @@ public static class ConsolidatedTestDataFactory
     public static Vector4[] CreateVector4Array(int length, float min = -1f, float max = 1f)
     {
         var vectors = new Vector4[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             vectors[i] = new Vector4(
                 min + _random.NextSingle() * (max - min),
@@ -212,7 +212,7 @@ public static class ConsolidatedTestDataFactory
     public static Complex[] CreateComplexArray(int length)
     {
         var array = new Complex[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             array[i] = new Complex(
                 _random.NextDouble() * 2 - 1,
@@ -250,11 +250,11 @@ public static class ConsolidatedTestDataFactory
     public static float[,,] CreateImageData(int height, int width, int channels = 3)
     {
         var image = new float[height, width, channels];
-        for (int h = 0; h < height; h++)
+        for (var h = 0; h < height; h++)
         {
-            for (int w = 0; w < width; w++)
+            for (var w = 0; w < width; w++)
             {
-                for (int c = 0; c < channels; c++)
+                for (var c = 0; c < channels; c++)
                 {
                     image[h, w, c] = _random.NextSingle();
                 }
@@ -269,9 +269,9 @@ public static class ConsolidatedTestDataFactory
     public static float[] CreateTimeSeriesData(int length, float trend = 0.01f, float noise = 0.1f)
     {
         var data = new float[length];
-        float value = 0f;
+        var value = 0f;
 
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             value += trend + (_random.NextSingle() - 0.5f) * noise;
             data[i] = value;
@@ -372,7 +372,7 @@ public static class ConsolidatedTestDataFactory
     {
         var args = new object[argumentTypes.Length];
 
-        for (int i = 0; i < argumentTypes.Length; i++)
+        for (var i = 0; i < argumentTypes.Length; i++)
         {
             args[i] = argumentTypes[i] switch
             {
@@ -436,7 +436,7 @@ public static class ConsolidatedTestDataFactory
             var array = CreateFloatArray(length);
             var edgeCaseCount = Math.Min(length, FloatValues.Length);
 
-            for (int i = 0; i < edgeCaseCount; i++)
+            for (var i = 0; i < edgeCaseCount; i++)
             {
                 array[i] = FloatValues[i];
             }
@@ -459,8 +459,8 @@ public static class ConsolidatedTestDataFactory
         /// </summary>
         public static (int grid, int block) CalculateOptimalDimensions(int dataSize, int maxThreadsPerBlock = 256)
         {
-            int blockSize = Math.Min(dataSize, maxThreadsPerBlock);
-            int gridSize = (dataSize + blockSize - 1) / blockSize;
+            var blockSize = Math.Min(dataSize, maxThreadsPerBlock);
+            var gridSize = (dataSize + blockSize - 1) / blockSize;
             return (gridSize, blockSize);
         }
 
@@ -491,9 +491,9 @@ public static class ConsolidatedTestDataFactory
         /// </summary>
         public static (int width, int height) CalculateOptimalThreadgroupSize(int dataSize, int maxThreadsPerGroup = 1024)
         {
-            int threadsPerGroup = Math.Min(dataSize, maxThreadsPerGroup);
-            int width = (int)Math.Sqrt(threadsPerGroup);
-            int height = threadsPerGroup / width;
+            var threadsPerGroup = Math.Min(dataSize, maxThreadsPerGroup);
+            var width = (int)Math.Sqrt(threadsPerGroup);
+            var height = threadsPerGroup / width;
             return (width, height);
         }
 
@@ -516,7 +516,7 @@ public static class ConsolidatedTestDataFactory
     public static string CreateRandomString(int length, string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
     {
         var result = new char[length];
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             result[i] = charset[_random.Next(charset.Length)];
         }
@@ -529,7 +529,7 @@ public static class ConsolidatedTestDataFactory
     public static string[] CreateRandomStrings(int count, int minLength = 5, int maxLength = 20)
     {
         var strings = new string[count];
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var length = _random.Next(minLength, maxLength + 1);
             strings[i] = CreateRandomString(length);
@@ -619,7 +619,7 @@ public static class ConsolidatedTestDataFactory
         var size = width * height * channels;
         var imageData = new float[size];
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             // Generate realistic image-like data (0.0 to 1.0 range)
             imageData[i] = _random.NextSingle();
@@ -654,7 +654,7 @@ public static class ConsolidatedTestDataFactory
         if (typeof(T) == typeof(float))
         {
             var result = new float[size];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
                 result[i] = i;
             return result.Cast<T>().ToArray();
         }
@@ -688,7 +688,7 @@ public static class ConsolidatedTestDataFactory
         if (typeof(T) == typeof(float))
         {
             var result = new float[size];
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 // Box-Muller transform for normal distribution
                 var u1 = 1.0f - _random.NextSingle();
@@ -720,7 +720,7 @@ public static class ConsolidatedTestDataFactory
             var result = new float[size];
             var clusterCount = Math.Max(1, size / 100);
 
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 var cluster = i % clusterCount;
                 var clusterValue = cluster * 10.0f;
@@ -743,7 +743,7 @@ public static class ConsolidatedTestDataFactory
     public static void ResetToKnownSeed(int seed = 42)
     {
         // Create new random instance with specified seed
-        System.Reflection.FieldInfo? field = typeof(ConsolidatedTestDataFactory).GetField("_random",
+        var field = typeof(ConsolidatedTestDataFactory).GetField("_random",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         field?.SetValue(null, new Random(seed));
     }

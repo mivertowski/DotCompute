@@ -597,7 +597,7 @@ public sealed class MetalAlertsManager : IDisposable
         }
     }
 
-    private void UpdateAlert(Alert alert, MetalTelemetrySnapshot snapshot)
+    private static void UpdateAlert(Alert alert, MetalTelemetrySnapshot snapshot)
     {
         // Update alert with current telemetry data
         alert.LastOccurrence = DateTimeOffset.UtcNow;

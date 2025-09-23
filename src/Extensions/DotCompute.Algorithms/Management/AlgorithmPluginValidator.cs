@@ -299,7 +299,7 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Validates plugin interface implementation.
         /// </summary>
-        private ValidationResult ValidatePluginInterface(IAlgorithmPlugin plugin)
+        private static ValidationResult ValidatePluginInterface(IAlgorithmPlugin plugin)
         {
             var validations = new List<ValidationResult>();
 
@@ -331,7 +331,7 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Validates plugin metadata.
         /// </summary>
-        private ValidationResult ValidatePluginMetadata(IAlgorithmPlugin plugin)
+        private static ValidationResult ValidatePluginMetadata(IAlgorithmPlugin plugin)
         {
             var validations = new List<ValidationResult>();
 
@@ -515,7 +515,11 @@ namespace DotCompute.Algorithms.Management
         private static bool IsValidIdentifier(string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
+            {
+
                 return false;
+            }
+
 
             return identifier.All(c => char.IsLetterOrDigit(c) || c == '_' || c == '.');
         }
@@ -585,15 +589,16 @@ namespace DotCompute.Algorithms.Management
     }
 
     /// <summary>
-    /// Represents the severity level of a validation issue.
+    /// Legacy alias for ValidationSeverity. Use DotCompute.Abstractions.Validation.ValidationSeverity instead.
     /// </summary>
+    [System.Obsolete("Use DotCompute.Abstractions.Validation.ValidationSeverity instead. This alias will be removed in a future version.")]
     public enum ValidationSeverity
     {
         None = 0,
-        Low = 1,
-        Medium = 2,
-        High = 3,
-        Critical = 4
+        Low = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Info,
+        Medium = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Warning,
+        High = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Error,
+        Critical = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Critical
     }
 
     /// <summary>

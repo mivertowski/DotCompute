@@ -67,7 +67,7 @@ public static class CompilationOptionsExtensions
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        options.OptimizationLevel = OptimizationLevel.Maximum;
+        options.OptimizationLevel = OptimizationLevel.O3;
         options.AggressiveOptimizations = true;
         options.EnableInlining = true;
         options.UnrollLoops = true;
@@ -105,7 +105,7 @@ public static class CompilationOptionsExtensions
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        options.OptimizationLevel = OptimizationLevel.Maximum;
+        options.OptimizationLevel = OptimizationLevel.O3;
         options.EnableFastMath = true;
         options.AggressiveOptimizations = true;
         options.EnableVectorization = true;

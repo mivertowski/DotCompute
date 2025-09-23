@@ -603,6 +603,11 @@ public record CompilationMetrics
     public required OptimizationLevel OptimizationLevel { get; init; }
     public required bool CacheHit { get; init; }
     public required DateTime Timestamp { get; init; }
+
+    /// <summary>
+    /// Gets the compilation name (alias for KernelName).
+    /// </summary>
+    public string Name => KernelName;
 }
 
 /// <summary>

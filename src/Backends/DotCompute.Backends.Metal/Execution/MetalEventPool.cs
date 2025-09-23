@@ -268,7 +268,7 @@ public sealed class MetalEventPool : IDisposable
         });
     }
 
-    private async Task<IntPtr> CreateTimingEventAsync(CancellationToken cancellationToken = default)
+    private static async Task<IntPtr> CreateTimingEventAsync(CancellationToken cancellationToken = default)
     {
         // For Metal, we would create an MTLSharedEvent or similar for timing
         // This is a placeholder implementation
@@ -280,7 +280,7 @@ public sealed class MetalEventPool : IDisposable
         return eventHandle;
     }
 
-    private async Task<IntPtr> CreateSyncEventAsync(CancellationToken cancellationToken = default)
+    private static async Task<IntPtr> CreateSyncEventAsync(CancellationToken cancellationToken = default)
     {
         // For Metal, we would create an MTLSharedEvent for synchronization
         // This is a placeholder implementation

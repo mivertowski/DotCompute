@@ -123,7 +123,7 @@ namespace DotCompute.Plugins.Platform
             }
         }
 
-        private BackendCapabilityInfo AnalyzeBackendCapabilities(ComputeBackendType backendType)
+        private static BackendCapabilityInfo AnalyzeBackendCapabilities(ComputeBackendType backendType)
         {
             var hardware = PlatformDetection.Hardware;
 

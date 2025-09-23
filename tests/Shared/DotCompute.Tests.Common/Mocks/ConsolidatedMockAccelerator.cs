@@ -36,6 +36,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     public IUnifiedMemoryManager MemoryManager => Memory;
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "AcceleratorContext() constructor is not equivalent to default")]
     public AcceleratorContext Context { get; } = new();
+    public bool IsAvailable => !_disposed;
 
     // Configuration properties for testing scenarios
     public bool ShouldFailCompilation { get; set; }

@@ -290,7 +290,7 @@ public class CompilationOptions
     /// </summary>
     public static CompilationOptions Debug => new()
     {
-        OptimizationLevel = OptimizationLevel.Minimal,
+        OptimizationLevel = OptimizationLevel.O1,
         EnableDebugInfo = true,
         EnableFastMath = false,
         TreatWarningsAsErrors = false,

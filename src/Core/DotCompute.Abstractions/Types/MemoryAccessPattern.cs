@@ -47,6 +47,20 @@ public enum MemoryAccessPattern
     Mixed,
 
     /// <summary>
+    /// Scatter operations.
+    /// Threads scatter data to non-contiguous memory locations.
+    /// May result in poor memory coalescing and cache utilization.
+    /// </summary>
+    Scatter,
+
+    /// <summary>
+    /// Gather operations.
+    /// Threads gather data from scattered memory locations.
+    /// May benefit from texture memory or vectorized loads.
+    /// </summary>
+    Gather,
+
+    /// <summary>
     /// Scatter-gather operations.
     /// Threads gather data from scattered memory locations or scatter data.
     /// </summary>
@@ -56,5 +70,12 @@ public enum MemoryAccessPattern
     /// Broadcast operations.
     /// Single value broadcast to multiple threads.
     /// </summary>
-    Broadcast
+    Broadcast,
+
+    /// <summary>
+    /// Unknown access pattern.
+    /// Pattern cannot be determined through static analysis.
+    /// Requires runtime profiling for optimization.
+    /// </summary>
+    Unknown
 }

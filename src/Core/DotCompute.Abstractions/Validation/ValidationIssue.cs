@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Validation;
+
 namespace DotCompute.Abstractions;
 
 /// <summary>
@@ -59,23 +61,3 @@ public sealed class ValidationIssue
     public static ValidationIssue Warning(string code, string message) => new(code, message, ValidationSeverity.Warning);
 }
 
-/// <summary>
-/// Validation issue severity levels.
-/// </summary>
-public enum ValidationSeverity
-{
-    /// <summary>
-    /// Informational message.
-    /// </summary>
-    Info,
-
-    /// <summary>
-    /// Warning that doesn't prevent execution.
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// Error that prevents execution.
-    /// </summary>
-    Error
-}

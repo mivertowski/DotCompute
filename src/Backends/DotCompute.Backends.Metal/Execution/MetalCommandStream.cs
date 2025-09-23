@@ -556,7 +556,7 @@ public sealed class MetalCommandStream : IDisposable
         return MetalNative.CreateCommandQueue(_device);
     }
 
-    private async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)
+    private static async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)
     {
         var tcs = new TaskCompletionSource<bool>();
 

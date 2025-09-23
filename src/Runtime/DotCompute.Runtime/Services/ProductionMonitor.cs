@@ -109,7 +109,11 @@ namespace DotCompute.Runtime.Services
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(metricName);
 
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             var counter = _performanceCounters.GetOrAdd(metricName, _ => new PerformanceCounter(metricName));
             counter.RecordValue(value, unit);
@@ -157,10 +161,13 @@ namespace DotCompute.Runtime.Services
             {
                 // Get multiple samples for accuracy
                 var samples = new List<float>();
-                for (int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     if (cancellationToken.IsCancellationRequested)
+                    {
                         break;
+                    }
+
 
                     if (_cpuCounter != null)
                     {
@@ -179,7 +186,10 @@ namespace DotCompute.Runtime.Services
                         }
                     }
                     if (i < 2) // Don't wait after last sample
+                    {
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                    }
+
                 }
 
                 var avgCpuUsage = samples.Average();
@@ -345,7 +355,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Checks accelerator health (placeholder).
         /// </summary>
-        private HealthCheckResult CheckAcceleratorHealth()
+        private static HealthCheckResult CheckAcceleratorHealth()
         {
             // This is a placeholder for accelerator-specific health checks
             // In a real implementation, you would check GPU temperature, memory, etc.
@@ -356,7 +366,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Checks kernel execution health (placeholder).
         /// </summary>
-        private HealthCheckResult CheckKernelExecutionHealth()
+        private static HealthCheckResult CheckKernelExecutionHealth()
         {
             // This is a placeholder for kernel execution health checks
             // In a real implementation, you would check execution queues, error rates, etc.
@@ -372,13 +382,25 @@ namespace DotCompute.Runtime.Services
             var statuses = healthChecks.Select(h => h.Status).ToList();
 
             if (statuses.Any(s => s == HealthStatus.Critical))
+            {
+
                 return HealthStatus.Critical;
+            }
+
 
             if (statuses.Any(s => s == HealthStatus.Warning))
+            {
+
                 return HealthStatus.Warning;
+            }
+
 
             if (statuses.Any(s => s == HealthStatus.Unknown))
+            {
+
                 return HealthStatus.Unknown;
+            }
+
 
             return HealthStatus.Healthy;
         }
@@ -388,7 +410,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private void PerformMonitoringCycle(object? state)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             _ = Task.Run(async () =>
             {
@@ -409,7 +435,11 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         private void PerformPeriodicCleanup(object? state)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
 
             try
             {
@@ -503,10 +533,19 @@ namespace DotCompute.Runtime.Services
                 _samples.Enqueue((value, DateTime.UtcNow));
                 Unit = unit;
 
-                if (value < _minValue) _minValue = value;
-                if (value > _maxValue) _maxValue = value;
+                if (value < _minValue)
+                {
+                    _minValue = value;
+                }
+
+
+                if (value > _maxValue)
+                {
+                    _maxValue = value;
+                }
 
                 // Clean up old samples
+
                 CleanupOldSamples();
             }
         }

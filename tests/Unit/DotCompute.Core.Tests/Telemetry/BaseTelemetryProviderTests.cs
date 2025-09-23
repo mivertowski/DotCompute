@@ -818,6 +818,14 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
     protected override string GetBackendType() => "Test";
 
+    private bool _disposed;
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(TestTelemetryProvider));
+    }
+
     public void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
     {
         ThrowIfDisposed();

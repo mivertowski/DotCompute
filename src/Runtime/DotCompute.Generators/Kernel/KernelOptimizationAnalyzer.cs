@@ -545,7 +545,7 @@ internal sealed class KernelOptimizationAnalyzer
         return statement.DescendantNodes().Count();
     }
 
-    private int EstimateArraySize(ISymbol variable)
+    private static int EstimateArraySize(ISymbol variable)
     {
         var type = variable.GetTypeDisplayString();
 

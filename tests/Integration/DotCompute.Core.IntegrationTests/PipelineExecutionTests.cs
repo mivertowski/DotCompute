@@ -198,7 +198,7 @@ public sealed class PipelineExecutionTests : IAsyncLifetime, IDisposable
         unoptimizedStopwatch.Stop();
 
         // Act - Execute with optimization
-        var optimizedPipeline = await _pipelineOptimizer.OptimizePipelineAsync(pipeline);
+        var optimizedPipeline = await _pipelineOptimizer.OptimizeAsync(pipeline);
         var optimizedStopwatch = Stopwatch.StartNew();
         var optimizedResult = await _pipelineExecutor.ExecuteAsync(optimizedPipeline, inputBuffer);
         optimizedStopwatch.Stop();
@@ -1093,7 +1093,7 @@ public interface IPipelineExecutor
 
 public interface IPipelineOptimizer
 {
-    Task<IPipeline> OptimizePipelineAsync(IPipeline pipeline, CancellationToken cancellationToken = default);
+    Task<IPipeline> OptimizeAsync(IPipeline pipeline, CancellationToken cancellationToken = default);
 }
 
 public interface ITelemetryProvider
@@ -1184,7 +1184,7 @@ public class TestPipelineExecutor : IPipelineExecutor
 
 public class TestPipelineOptimizer : IPipelineOptimizer
 {
-    public Task<IPipeline> OptimizePipelineAsync(IPipeline pipeline, CancellationToken cancellationToken = default)
+    public Task<IPipeline> OptimizeAsync(IPipeline pipeline, CancellationToken cancellationToken = default)
     {
         // For testing, return the same pipeline (no optimization)
         return Task.FromResult(pipeline);

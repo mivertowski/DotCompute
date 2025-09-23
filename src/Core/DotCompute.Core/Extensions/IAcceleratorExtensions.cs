@@ -23,7 +23,7 @@ namespace DotCompute.Core.Extensions
         public static string Name(this IAccelerator accelerator)
         {
             ArgumentNullException.ThrowIfNull(accelerator);
-            return accelerator.Info.Name;
+            return accelerator.Info!.Name;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace DotCompute.Core.Extensions
         public static string Description(this IAccelerator accelerator)
         {
             ArgumentNullException.ThrowIfNull(accelerator);
-            return $"{accelerator.Info.Vendor} {accelerator.Info.DeviceType}";
+            return $"{accelerator.Info!.Vendor} {accelerator.Info!.DeviceType}";
         }
 
         /// <summary>
@@ -69,19 +69,19 @@ namespace DotCompute.Core.Extensions
             ArgumentException.ThrowIfNullOrEmpty(feature);
 
             // Check if the accelerator has capabilities defined
-            if (accelerator.Info.Capabilities?.ContainsKey(feature) == true)
+            if (accelerator.Info!.Capabilities?.ContainsKey(feature) == true)
             {
-                var value = accelerator.Info.Capabilities[feature];
+                var value = accelerator.Info!.Capabilities[feature];
                 return value is bool supported && supported;
             }
 
             // Default feature support based on accelerator type
             return feature.ToLowerInvariant() switch
             {
-                "unified_memory" => accelerator.Info.IsUnifiedMemory,
-                "double_precision" => accelerator.Info.SupportsFloat64,
-                "int64" => accelerator.Info.SupportsInt64,
-                "float64" => accelerator.Info.SupportsFloat64,
+                "unified_memory" => accelerator.Info!.IsUnifiedMemory,
+                "double_precision" => accelerator.Info!.SupportsFloat64,
+                "int64" => accelerator.Info!.SupportsInt64,
+                "float64" => accelerator.Info!.SupportsFloat64,
                 _ => false
             };
         }
@@ -97,9 +97,9 @@ namespace DotCompute.Core.Extensions
 
             var memoryInfo = new MemoryInfo
             {
-                TotalMemory = accelerator.Info.TotalMemory,
-                AvailableMemory = accelerator.Info.AvailableMemory,
-                UsedMemory = accelerator.Info.TotalMemory - accelerator.Info.AvailableMemory
+                TotalMemory = accelerator.Info!.TotalMemory,
+                AvailableMemory = accelerator.Info!.AvailableMemory,
+                UsedMemory = accelerator.Info!.TotalMemory - accelerator.Info!.AvailableMemory
             };
 
             return ValueTask.FromResult(memoryInfo);

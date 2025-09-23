@@ -46,7 +46,7 @@ public class TestAccelerator : BaseAccelerator
         AcceleratorInfo info,
         IUnifiedMemoryManager memoryManager,
         ILogger logger)
-        : base(info, memoryManager, logger)
+        : base(info, AcceleratorType.CPU, memoryManager, new AcceleratorContext(IntPtr.Zero, 0), logger)
     {
     }
 
@@ -134,6 +134,11 @@ public class TestAccelerator : BaseAccelerator
     }
 
     public new AcceleratorContext Context => base.Context;
+
+    public void Dispose()
+    {
+        DisposeAsync().AsTask().Wait();
+    }
 }
 
 /// <summary>
@@ -142,18 +147,17 @@ public class TestAccelerator : BaseAccelerator
 public class TestCompiledKernel : ICompiledKernel
 {
     public Guid Id { get; } = Guid.NewGuid();
-    public string Name => KernelName;
-    public string KernelName { get; }
+    public string Name { get; }
     public string EntryFunction { get; }
     public byte[] ByteCode { get; }
-    public bool IsValid => ByteCode.Length > 0;
+    public bool IsReady => ByteCode.Length > 0;
     public int MaxThreadsPerBlock => 1024;
     public int RequiredSharedMemory => 0;
     public int RegistersPerThread => 32;
 
     public TestCompiledKernel(string kernelName, string entryFunction, byte[] byteCode)
     {
-        KernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
+        Name = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
         EntryFunction = entryFunction ?? throw new ArgumentNullException(nameof(entryFunction));
         ByteCode = byteCode ?? throw new ArgumentNullException(nameof(byteCode));
     }

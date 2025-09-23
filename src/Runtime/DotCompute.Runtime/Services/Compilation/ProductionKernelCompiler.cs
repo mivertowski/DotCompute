@@ -226,7 +226,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             definition.Language, compilationTime);
     }
 
-    private async ValueTask<double> CompileCSharpKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static async ValueTask<double> CompileCSharpKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -274,7 +274,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private async ValueTask<double> CompileHLSLKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static async ValueTask<double> CompileHLSLKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 

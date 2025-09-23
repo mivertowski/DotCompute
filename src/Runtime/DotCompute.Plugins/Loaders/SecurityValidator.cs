@@ -572,7 +572,7 @@ public class SecurityValidator
     /// <summary>
     /// Scans a dependency for vulnerabilities.
     /// </summary>
-    private async Task ScanDependencyAsync(NuGetPackageDependency dependency, SecurityScanResult scanResult, CancellationToken cancellationToken)
+    private static async Task ScanDependencyAsync(NuGetPackageDependency dependency, SecurityScanResult scanResult, CancellationToken cancellationToken)
     {
         // Parse version range to get specific versions to scan
         var versionsToScan = await GetVersionsToScanAsync(dependency, cancellationToken);

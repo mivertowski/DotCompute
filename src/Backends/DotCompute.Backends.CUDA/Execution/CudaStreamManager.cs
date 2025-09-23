@@ -740,7 +740,10 @@ namespace DotCompute.Backends.CUDA.Execution
         public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
         {
             if (_disposed)
+            {
                 return;
+            }
+
 
             if (_manager is CudaStreamManager manager)
             {

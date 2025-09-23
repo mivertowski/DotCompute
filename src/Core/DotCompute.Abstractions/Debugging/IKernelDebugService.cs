@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Abstractions.Debugging;
 
@@ -105,20 +106,7 @@ public interface IKernelDebugService
     public void Configure(DebugServiceOptions options);
 }
 
-/// <summary>
-/// Result of validating a kernel across multiple backends.
-/// </summary>
-public class KernelValidationResult
-{
-    public string KernelName { get; init; } = string.Empty;
-    public bool IsValid { get; init; }
-    public string[] BackendsTested { get; init; } = Array.Empty<string>();
-    public Dictionary<string, object> Results { get; init; } = [];
-    public List<DebugValidationIssue> Issues { get; init; } = [];
-    public TimeSpan TotalValidationTime { get; init; }
-    public float MaxDifference { get; init; }
-    public string RecommendedBackend { get; init; } = string.Empty;
-}
+// KernelValidationResult moved to DotCompute.Abstractions.Validation namespace
 
 /// <summary>
 /// Result of executing a kernel on a specific backend.
@@ -161,21 +149,23 @@ public class KernelExecutionTrace
     public TimeSpan TotalExecutionTime { get; init; }
     public bool Success { get; init; }
     public string? ErrorMessage { get; init; }
+
+    /// <summary>
+    /// Execution result if successful.
+    /// </summary>
+    public object? Result { get; init; }
+
+    /// <summary>
+    /// Memory profiling information.
+    /// </summary>
+    public MemoryProfile? MemoryProfile { get; init; }
+
+    /// <summary>
+    /// Performance metrics for this execution.
+    /// </summary>
+    public PerformanceMetrics? PerformanceMetrics { get; init; }
 }
 
-/// <summary>
-/// Report on kernel determinism across multiple executions.
-/// </summary>
-public class DeterminismReport
-{
-    public string KernelName { get; init; } = string.Empty;
-    public bool IsDeterministic { get; init; }
-    public int ExecutionCount { get; init; }
-    public List<object> AllResults { get; init; } = [];
-    public float MaxVariation { get; init; }
-    public string? NonDeterminismSource { get; init; }
-    public List<string> Recommendations { get; init; } = [];
-}
 
 /// <summary>
 /// Analysis of kernel memory access patterns.
@@ -223,6 +213,21 @@ public class DebugServiceOptions
     public string LogOutputPath { get; set; } = "./debug-logs";
     public int MaxConcurrentExecutions { get; set; } = Environment.ProcessorCount;
     public TimeSpan ExecutionTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Enables detailed execution tracing.
+    /// </summary>
+    public bool EnableDetailedTracing { get; set; } = false;
+
+    /// <summary>
+    /// Enables memory profiling during execution.
+    /// </summary>
+    public bool EnableMemoryProfiling { get; set; } = true;
+
+    /// <summary>
+    /// Enables performance analysis and reporting.
+    /// </summary>
+    public bool EnablePerformanceAnalysis { get; set; } = true;
 }
 
 /// <summary>
@@ -263,6 +268,16 @@ public class ResultDifference
     public object ActualValue { get; init; } = new();
     public float Difference { get; init; }
     public string[] BackendsInvolved { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// First backend involved in the comparison.
+    /// </summary>
+    public string Backend1 { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Second backend involved in the comparison.
+    /// </summary>
+    public string Backend2 { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -274,6 +289,21 @@ public class TracePoint
     public int ExecutionOrder { get; init; }
     public Dictionary<string, object> Values { get; init; } = [];
     public TimeSpan TimestampFromStart { get; init; }
+
+    /// <summary>
+    /// Timestamp when this trace point was captured.
+    /// </summary>
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Memory usage at this trace point in bytes.
+    /// </summary>
+    public long MemoryUsage { get; init; }
+
+    /// <summary>
+    /// Additional data for this trace point.
+    /// </summary>
+    public Dictionary<string, object> Data { get; init; } = [];
 }
 
 /// <summary>
@@ -321,16 +351,8 @@ public enum ComparisonStrategy
     Relative
 }
 
-/// <summary>
-/// Severity levels for validation issues.
-/// </summary>
-public enum ValidationSeverity
-{
-    Info,
-    Warning,
-    Error,
-    Critical
-}
+// ValidationSeverity moved to DotCompute.Abstractions.Validation.ValidationSeverity
+// Use: using DotCompute.Abstractions.Validation;
 
 /// <summary>
 /// Logging levels for debug output.
@@ -343,4 +365,25 @@ public enum LogLevel
     Warning,
     Error,
     Critical
+}
+
+/// <summary>
+/// Memory profiling information.
+/// </summary>
+public class MemoryProfile
+{
+    /// <summary>
+    /// Peak memory usage during execution in bytes.
+    /// </summary>
+    public long PeakMemory { get; init; }
+
+    /// <summary>
+    /// Memory allocations during execution.
+    /// </summary>
+    public long Allocations { get; init; }
+
+    /// <summary>
+    /// Memory efficiency score (0-1).
+    /// </summary>
+    public float Efficiency { get; init; }
 }

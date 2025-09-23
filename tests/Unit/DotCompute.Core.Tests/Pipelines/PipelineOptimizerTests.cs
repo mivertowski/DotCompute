@@ -50,17 +50,18 @@ public sealed class PipelineOptimizerTests : IDisposable
         _output = output;
         _mockLogger = new Mock<ILogger<PipelineOptimizer>>();
         _mockMetrics = new Mock<IPipelineMetrics>();
-        _mockProfiler = new Mock<IPipelineProfiler>();
+        _mockProfiler = new Mock<DotCompute.Abstractions.Interfaces.Pipelines.Profiling.IPipelineProfiler>();
 
-        _optimizer = new PipelineOptimizer(_mockLogger.Object, _mockMetrics.Object, _mockProfiler.Object);
-        _disposables.Add(_optimizer);
+        _optimizer = new PipelineOptimizer();
+        // Note: PipelineOptimizer doesn't accept dependencies via constructor anymore
+        // _disposables.Add(_optimizer); // PipelineOptimizer doesn't implement IDisposable
     }
 
     #region Pipeline Fusion Tests
 
     [Fact]
     [Trait("TestType", "StageFusion")]
-    public async Task OptimizePipelineAsync_SequentialStages_FusesCompatibleStages()
+    public async Task OptimizeAsync_SequentialStages_FusesCompatibleStages()
     {
         // Arrange
         var pipeline = CreateTestPipeline("sequential_fusion_test", new[]
@@ -73,7 +74,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -92,7 +94,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "StageFusion")]
-    public async Task OptimizePipelineAsync_IncompatibleStages_PreservesSeparation()
+    public async Task OptimizeAsync_IncompatibleStages_PreservesSeparation()
     {
         // Arrange
         var pipeline = CreateTestPipeline("incompatible_fusion_test", new[]
@@ -105,7 +107,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -118,7 +121,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "StageFusion")]
-    public async Task OptimizePipelineAsync_LongSequentialChain_FusesOptimally()
+    public async Task OptimizeAsync_LongSequentialChain_FusesOptimally()
     {
         // Arrange - Create a long chain of compatible operations
         var stages = Enumerable.Range(0, 10)
@@ -129,7 +132,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -149,7 +153,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Parallelization")]
-    public async Task OptimizePipelineAsync_IndependentBranches_EnablesParallelExecution()
+    public async Task OptimizeAsync_IndependentBranches_EnablesParallelExecution()
     {
         // Arrange
         var pipeline = CreateTestPipeline("parallel_branches_test", new[]
@@ -166,7 +170,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -188,7 +193,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Parallelization")]
-    public async Task OptimizePipelineAsync_DataDependencies_PreservesSequencing()
+    public async Task OptimizeAsync_DataDependencies_PreservesSequencing()
     {
         // Arrange
         var pipeline = CreateTestPipeline("data_dependencies_test", new[]
@@ -201,7 +206,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -217,7 +223,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Parallelization")]
-    public async Task OptimizePipelineAsync_CyclicDependencies_DetectsAndHandles()
+    public async Task OptimizeAsync_CyclicDependencies_DetectsAndHandles()
     {
         // Arrange
         var pipeline = CreateTestPipeline("cyclic_dependencies_test", new[]
@@ -230,7 +236,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -252,7 +259,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "MemoryOptimization")]
-    public async Task OptimizePipelineAsync_MemoryIntensiveStages_OptimizesBuffering()
+    public async Task OptimizeAsync_MemoryIntensiveStages_OptimizesBuffering()
     {
         // Arrange
         var pipeline = CreateTestPipeline("memory_intensive_test", new[]
@@ -265,7 +272,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization(memoryPressure: true);
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -287,7 +295,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "MemoryOptimization")]
-    public async Task OptimizePipelineAsync_StreamingData_EnablesStreamProcessing()
+    public async Task OptimizeAsync_StreamingData_EnablesStreamProcessing()
     {
         // Arrange
         var pipeline = CreateTestPipeline("streaming_test", new[]
@@ -300,20 +308,21 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
 
         // Verify streaming optimization
-        var streamingStages = optimizedPipeline.Stages.Where(s => s.SupportsStreaming).ToList();
-        streamingStages.Should().HaveCountGreaterOrEqualTo(pipeline.Stages.Count(s => s.SupportsStreaming),
+        var streamingStages = optimizedPipeline.Stages.OfType<ExtendedTestPipelineStage>().Where(s => s.SupportsStreaming).ToList();
+        streamingStages.Should().HaveCountGreaterOrEqualTo(pipeline.Stages.OfType<ExtendedTestPipelineStage>().Count(s => s.SupportsStreaming),
             "streaming capability should be preserved or enhanced");
     }
 
     [Fact]
     [Trait("TestType", "MemoryOptimization")]
-    public async Task OptimizePipelineAsync_InPlaceOperations_MinimizesCopying()
+    public async Task OptimizeAsync_InPlaceOperations_MinimizesCopying()
     {
         // Arrange
         var pipeline = CreateTestPipeline("in_place_test", new[]
@@ -326,7 +335,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -342,7 +352,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Performance")]
-    public async Task OptimizePipelineAsync_BottleneckDetection_OptimizesCriticalPath()
+    public async Task OptimizeAsync_BottleneckDetection_OptimizesCriticalPath()
     {
         // Arrange
         var pipeline = CreateTestPipeline("bottleneck_test", new[]
@@ -355,7 +365,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupBottleneckMetrics();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -373,7 +384,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Performance")]
-    public async Task OptimizePipelineAsync_LoadBalancing_DistributesWorkEvenly()
+    public async Task OptimizeAsync_LoadBalancing_DistributesWorkEvenly()
     {
         // Arrange
         var pipeline = CreateTestPipeline("load_balancing_test", new[]
@@ -386,7 +397,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -398,7 +410,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Performance")]
-    public async Task OptimizePipelineAsync_CacheOptimization_ReducesRedundantWork()
+    public async Task OptimizeAsync_CacheOptimization_ReducesRedundantWork()
     {
         // Arrange
         var pipeline = CreateTestPipeline("cache_test", new[]
@@ -412,7 +424,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -428,7 +441,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ResourceOptimization")]
-    public async Task OptimizePipelineAsync_ResourceConstraints_AllocatesOptimally()
+    public async Task OptimizeAsync_ResourceConstraints_AllocatesOptimally()
     {
         // Arrange
         var pipeline = CreateTestPipeline("resource_constrained_test", new[]
@@ -441,7 +454,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupResourceConstrainedMetrics();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -459,7 +473,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ResourceOptimization")]
-    public async Task OptimizePipelineAsync_GPUAcceleration_SelectsOptimalDevice()
+    public async Task OptimizeAsync_GPUAcceleration_SelectsOptimalDevice()
     {
         // Arrange
         var pipeline = CreateTestPipeline("gpu_acceleration_test", new[]
@@ -472,7 +486,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupGPUMetrics();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -492,23 +507,23 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
-    public async Task OptimizePipelineAsync_NullPipeline_ThrowsArgumentNullException()
+    public async Task OptimizeAsync_NullPipeline_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = async () => await _optimizer.OptimizePipelineAsync(null!);
+        var act = async () => await _optimizer.OptimizeAsync(null!);
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("pipeline");
     }
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
-    public async Task OptimizePipelineAsync_EmptyPipeline_ReturnsEmptyOptimizedPipeline()
+    public async Task OptimizeAsync_EmptyPipeline_ReturnsEmptyOptimizedPipeline()
     {
         // Arrange
         var emptyPipeline = CreateTestPipeline("empty_test", Array.Empty<TestPipelineStage>());
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(emptyPipeline);
+        var optimizedPipeline = await _optimizer.OptimizeAsync(emptyPipeline);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -517,7 +532,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
-    public async Task OptimizePipelineAsync_WithCancellation_RespondsToToken()
+    public async Task OptimizeAsync_WithCancellation_RespondsToToken()
     {
         // Arrange
         var pipeline = CreateTestPipeline("cancellation_test", new[]
@@ -529,13 +544,13 @@ public sealed class PipelineOptimizerTests : IDisposable
         cts.CancelAfter(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        var act = async () => await _optimizer.OptimizePipelineAsync(pipeline, cts.Token);
+        var act = async () => await _optimizer.OptimizeAsync(pipeline, cts.Token);
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
-    public async Task OptimizePipelineAsync_OptimizationFailure_FallsBackToOriginal()
+    public async Task OptimizeAsync_OptimizationFailure_FallsBackToOriginal()
     {
         // Arrange
         var pipeline = CreateTestPipeline("fallback_test", new[]
@@ -546,7 +561,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupFailingOptimization();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -565,7 +581,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
-    public async Task OptimizePipelineAsync_CorruptedMetrics_HandlesGracefully()
+    public async Task OptimizeAsync_CorruptedMetrics_HandlesGracefully()
     {
         // Arrange
         var pipeline = CreateTestPipeline("corrupted_metrics_test", new[]
@@ -576,7 +592,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupCorruptedMetrics();
 
         // Act
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
 
         // Assert
         optimizedPipeline.Should().NotBeNull();
@@ -598,7 +615,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Concurrency")]
-    public async Task OptimizePipelineAsync_ConcurrentOptimizations_ThreadSafe()
+    public async Task OptimizeAsync_ConcurrentOptimizations_ThreadSafe()
     {
         // Arrange
         const int concurrentOptimizations = 10;
@@ -613,7 +630,7 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act - Run optimizations concurrently
-        var optimizationTasks = pipelines.Select(p => _optimizer.OptimizePipelineAsync(p));
+        var optimizationTasks = pipelines.Select(p => _optimizer.OptimizeAsync(p));
         var results = await Task.WhenAll(optimizationTasks);
 
         // Assert
@@ -629,7 +646,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Concurrency")]
-    public async Task OptimizePipelineAsync_StateIsolation_MaintainsIndependence()
+    public async Task OptimizeAsync_StateIsolation_MaintainsIndependence()
     {
         // Arrange
         var pipeline1 = CreateTestPipeline("isolation_test_1", new[]
@@ -645,8 +662,8 @@ public sealed class PipelineOptimizerTests : IDisposable
         SetupMetricsForOptimization();
 
         // Act - Optimize both pipelines
-        var task1 = _optimizer.OptimizePipelineAsync(pipeline1);
-        var task2 = _optimizer.OptimizePipelineAsync(pipeline2);
+        var task1 = _optimizer.OptimizeAsync(pipeline1);
+        var task2 = _optimizer.OptimizeAsync(pipeline2);
 
         var results = await Task.WhenAll(task1, task2);
 
@@ -664,7 +681,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Performance")]
-    public async Task OptimizePipelineAsync_OptimizationOverhead_IsMinimal()
+    public async Task OptimizeAsync_OptimizationOverhead_IsMinimal()
     {
         // Arrange
         var pipeline = CreateTestPipeline("overhead_test", new[]
@@ -678,7 +695,8 @@ public sealed class PipelineOptimizerTests : IDisposable
 
         // Act - Measure optimization time
         var stopwatch = Stopwatch.StartNew();
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(pipeline);
+        var settings = new PipelineOptimizationSettings { EnableFusion = true };
+        var optimizedPipeline = await _optimizer.OptimizeAsync(pipeline, settings);
         stopwatch.Stop();
 
         // Assert
@@ -690,7 +708,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     [Fact]
     [Trait("TestType", "Performance")]
-    public async Task OptimizePipelineAsync_LargePipeline_ScalesEfficiently()
+    public async Task OptimizeAsync_LargePipeline_ScalesEfficiently()
     {
         // Arrange - Create a large pipeline
         const int stageCount = 100;
@@ -703,7 +721,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
         // Act
         var stopwatch = Stopwatch.StartNew();
-        var optimizedPipeline = await _optimizer.OptimizePipelineAsync(largePipeline);
+        var optimizedPipeline = await _optimizer.OptimizeAsync(largePipeline);
         stopwatch.Stop();
 
         // Assert
@@ -729,7 +747,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateMapStage(string name, Func<int, int> transform)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             Transform = transform,
             CanExecuteInParallel = true,
@@ -739,7 +757,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateFilterStage(string name, Func<int, bool> predicate)
     {
-        return new TestPipelineStage(name, StageType.Filter)
+        return new ExtendedTestPipelineStage(name, StageType.Filter)
         {
             Predicate = predicate,
             CanExecuteInParallel = true
@@ -748,7 +766,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateReduceStage(string name, Func<int, int, int> reducer)
     {
-        return new TestPipelineStage(name, StageType.Reduce)
+        return new ExtendedTestPipelineStage(name, StageType.Reduce)
         {
             Reducer = reducer,
             CanExecuteInParallel = false // Reduce typically requires sequential processing
@@ -757,7 +775,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateSyncStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Synchronization)
+        return new ExtendedTestPipelineStage(name, StageType.Synchronization)
         {
             CanExecuteInParallel = false,
             RequiresSynchronization = true
@@ -766,7 +784,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateBranchStage(string name, TestPipelineStage[] branches)
     {
-        return new TestPipelineStage(name, StageType.Branch)
+        return new ExtendedTestPipelineStage(name, StageType.Branch)
         {
             Branches = branches,
             CanExecuteInParallel = true
@@ -775,7 +793,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateMergeStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Merge)
+        return new ExtendedTestPipelineStage(name, StageType.Merge)
         {
             CanExecuteInParallel = false // Merge requires coordination
         };
@@ -783,7 +801,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateDependentStage(string name, string dependsOn)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             Dependencies = new[] { dependsOn },
             CanExecuteInParallel = false
@@ -792,16 +810,16 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateMemoryIntensiveStage(string name, int memoryUsageMB)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             MemoryUsageMB = memoryUsageMB,
             OptimizationHints = ["memory_intensive"]
         };
     }
 
-    private TestPipelineStage CreateStreamingStage(string name)
+    private ExtendedTestPipelineStage CreateStreamingStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Stream)
+        return new ExtendedTestPipelineStage(name, StageType.Stream)
         {
             SupportsStreaming = true,
             CanExecuteInParallel = true
@@ -810,7 +828,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateInPlaceStage(string name, Func<int, int> transform)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             Transform = transform,
             SupportsInPlaceOperation = true,
@@ -820,7 +838,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateCopyStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             SupportsInPlaceOperation = false,
             CanExecuteInParallel = true
@@ -829,7 +847,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateFastStage(string name, int executionTimeMs)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             EstimatedExecutionTimeMs = executionTimeMs,
             CanExecuteInParallel = true
@@ -838,7 +856,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateSlowStage(string name, int executionTimeMs)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             EstimatedExecutionTimeMs = executionTimeMs,
             CanExecuteInParallel = true,
@@ -848,7 +866,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateParallelProcessingStage(string name, int workerCount)
     {
-        return new TestPipelineStage(name, StageType.ParallelProcessing)
+        return new ExtendedTestPipelineStage(name, StageType.ParallelProcessing)
         {
             WorkerCount = workerCount,
             CanExecuteInParallel = true,
@@ -858,7 +876,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateExpensiveComputationStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             EstimatedExecutionTimeMs = 1000,
             ComputationSignature = "expensive_computation", // Same signature for caching
@@ -868,7 +886,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateResourceIntensiveStage(string name, int cpuUsage = 0, int memoryUsageMB = 0, int ioOpsPerSec = 0)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             CpuUsagePercent = cpuUsage,
             MemoryUsageMB = memoryUsageMB,
@@ -879,7 +897,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateGPUCapableStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             SupportsGPU = true,
             PreferredDevice = "GPU",
@@ -889,7 +907,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateCPUOnlyStage(string name)
     {
-        return new TestPipelineStage(name, StageType.IO)
+        return new ExtendedTestPipelineStage(name, StageType.IO)
         {
             SupportsGPU = false,
             PreferredDevice = "CPU",
@@ -899,7 +917,7 @@ public sealed class PipelineOptimizerTests : IDisposable
 
     private TestPipelineStage CreateProblematicStage(string name)
     {
-        return new TestPipelineStage(name, StageType.Map)
+        return new ExtendedTestPipelineStage(name, StageType.Map)
         {
             CausesOptimizationFailure = true
         };
@@ -1054,11 +1072,9 @@ public class TestStageMetrics : IStageMetrics
     public TimeSpan MaxExecutionTime => TimeSpan.FromMilliseconds(100);
     public Abstractions.Pipelines.Results.MemoryUsageStats MemoryUsage => new Abstractions.Pipelines.Results.MemoryUsageStats
     {
-        AllocatedBytes = 1024,
-        PeakBytes = 2048,
-        AllocationCount = 1,
-        DeallocationCount = 0,
-        UsageByType = null
+        TotalAllocatedBytes = 1024,
+        PeakMemoryUsageBytes = 2048,
+        AllocationCount = 1
     };
     public double ThroughputOpsPerSecond => 1000.0;
     public long AverageMemoryUsage => 1024;
@@ -1085,6 +1101,10 @@ public class ExtendedTestPipelineStage : TestPipelineStage
     public Func<int, bool>? Predicate { get; set; }
     public Func<int, int, int>? Reducer { get; set; }
     public ExtendedTestPipelineStage[]? Branches { get; set; }
+
+    // Additional properties for testing
+    public bool SupportsStreaming { get; set; }
+    public bool CanExecuteInParallel { get; set; }
 
     public ExtendedTestPipelineStage(string name, StageType type)
         : base(name + "_ext", name, PipelineStageType.Computation)

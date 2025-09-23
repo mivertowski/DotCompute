@@ -21,7 +21,7 @@ using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 using ErrorSeverity = DotCompute.Abstractions.Types.ErrorSeverity;
-using MemoryUsageStats = DotCompute.Core.Pipelines.Statistics.MemoryUsageStats;
+using MemoryUsageStats = DotCompute.Abstractions.Pipelines.Results.MemoryUsageStats;
 using PipelineExecutionOptions = DotCompute.Core.Pipelines.Models.PipelineExecutionOptions;
 
 // Additional type aliases to resolve ambiguous references
@@ -114,9 +114,8 @@ namespace DotCompute.Core.Pipelines
             var memoryStats = new MemoryUsageStats
             {
                 TotalAllocatedBytes = 0,
-                PeakUsageBytes = 0,
-                AllocationCount = 0,
-                DeallocationCount = 0
+                PeakMemoryUsageBytes = 0,
+                AllocationCount = 0
             };
 
             try
@@ -190,9 +189,8 @@ namespace DotCompute.Core.Pipelines
                         memoryStats = new MemoryUsageStats
                         {
                             TotalAllocatedBytes = memoryStats.TotalAllocatedBytes + stageResult.MemoryUsage,
-                            PeakUsageBytes = Math.Max(memoryStats.PeakUsageBytes, stageResult.MemoryUsage),
-                            AllocationCount = memoryStats.AllocationCount + 1,
-                            DeallocationCount = memoryStats.DeallocationCount
+                            PeakMemoryUsageBytes = Math.Max(memoryStats.PeakMemoryUsageBytes, stageResult.MemoryUsage),
+                            AllocationCount = memoryStats.AllocationCount + 1
                         };
                     }
                 }

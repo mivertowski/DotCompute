@@ -142,7 +142,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine("=== Accelerator Creation Test ===");
 
 
-            var factory = new CudaAcceleratorFactory();
+            using var factory = new CudaAcceleratorFactory();
             var accelerator = factory.CreateProductionAccelerator(0);
 
 

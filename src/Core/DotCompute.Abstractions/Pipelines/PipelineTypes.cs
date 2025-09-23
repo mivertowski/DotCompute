@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.ComponentModel;
+using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Abstractions.Pipelines;
@@ -77,23 +78,8 @@ public class PipelineStageOptions
     public bool EnableMemoryOptimization { get; set; } = true;
 }
 
-/// <summary>
-/// Execution priority levels for pipeline stages and entire pipelines.
-/// </summary>
-public enum ExecutionPriority
-{
-    /// <summary>Lowest priority - executed when resources are available.</summary>
-    Low = 1,
-    
-    /// <summary>Normal priority - default execution priority.</summary>
-    Normal = 5,
-    
-    /// <summary>High priority - prioritized over normal executions.</summary>
-    High = 8,
-    
-    /// <summary>Critical priority - highest priority execution.</summary>
-    Critical = 10
-}
+// Use the canonical ExecutionPriority from DotCompute.Abstractions.Execution
+// This local enum has been replaced with the unified type
 
 /// <summary>
 /// Memory allocation hints for optimizing stage execution.

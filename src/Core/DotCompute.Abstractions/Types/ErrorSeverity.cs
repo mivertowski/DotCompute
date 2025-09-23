@@ -29,43 +29,5 @@ public enum ErrorSeverity
     Critical
 }
 
-/// <summary>
-/// Defines bottleneck types for performance analysis.
-/// </summary>
-public enum BottleneckType
-{
-    /// <summary>
-    /// No bottleneck detected.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// CPU processing is the bottleneck.
-    /// </summary>
-    Cpu,
-
-    /// <summary>
-    /// Memory bandwidth is the bottleneck.
-    /// </summary>
-    Memory,
-
-    /// <summary>
-    /// I/O operations are the bottleneck.
-    /// </summary>
-    Io,
-
-    /// <summary>
-    /// GPU processing is the bottleneck.
-    /// </summary>
-    Gpu,
-
-    /// <summary>
-    /// Network communication is the bottleneck.
-    /// </summary>
-    Network,
-
-    /// <summary>
-    /// Data transfer between devices is the bottleneck.
-    /// </summary>
-    DataTransfer
-}
+// BottleneckType moved to DotCompute.Abstractions.Types.BottleneckType
+// This duplicate enum has been removed to avoid conflicts.
