@@ -3,11 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Backends.CUDA.Analysis.Types;
 using DotCompute.Backends.CUDA.Advanced.Types;
 using DotCompute.Abstractions.Types;
-using AbstractionsMemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
-using AnalysisMemoryAccessPattern = DotCompute.Backends.CUDA.Analysis.Types.MemoryAccessPattern;
 
 namespace DotCompute.Backends.CUDA.Analysis.Models;
 
@@ -19,7 +16,7 @@ public sealed class MemoryAccessAnalysis
     /// <summary>
     /// Gets or sets the memory access pattern type.
     /// </summary>
-    public AnalysisMemoryAccessPattern Pattern { get; set; }
+    public MemoryAccessPattern Pattern { get; set; }
 
     /// <summary>
     /// Gets or sets the coalescing efficiency percentage.

@@ -606,8 +606,8 @@ namespace DotCompute.Algorithms.Management
     /// </summary>
     public interface IResourceAwarePlugin
     {
-        int RequiredMemoryMB { get; }
-        int RequiredCpuCores { get; }
-        bool RequiresGpu { get; }
+        public int RequiredMemoryMB { get; }
+        public int RequiredCpuCores { get; }
+        public bool RequiresGpu { get; }
     }
 }

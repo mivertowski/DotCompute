@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Linq;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
@@ -48,11 +49,12 @@ public sealed partial class EnhancedKernelValidator : IDisposable
 
         LogValidationStarted(kernel.Name);
 
+        var startTime = DateTime.UtcNow;
         var result = new KernelValidationResult
         {
             KernelName = kernel.Name,
-            ValidationTime = DateTime.UtcNow,
-            Issues = new List<ValidationIssue>(),
+            ValidationTime = TimeSpan.Zero, // Will be updated at the end
+            Issues = new List<DebugValidationIssue>(),
             Recommendations = new List<string>()
         };
 
@@ -73,19 +75,59 @@ public sealed partial class EnhancedKernelValidator : IDisposable
             // Security validation
             ValidateSecurityConsiderations(kernel, result);
 
-            result.IsValid = !result.Issues.Any(i => i.Severity == ValidationSeverity.Error);
+            var finalValidationTime = DateTime.UtcNow - startTime;
+            var isValid = !result.Issues.Any(i => i.Severity == ValidationSeverity.Error);
 
-            LogValidationCompleted(kernel.Name, result.IsValid, result.Issues.Count);
+            var finalResult = new KernelValidationResult
+            {
+                KernelName = result.KernelName,
+                IsValid = isValid,
+                ValidationTime = finalValidationTime,
+                Issues = result.Issues,
+                Recommendations = result.Recommendations,
+                BackendsTested = result.BackendsTested,
+                Errors = result.Errors,
+                Warnings = result.Warnings,
+                Results = result.Results,
+                TotalValidationTime = result.TotalValidationTime,
+                MaxDifference = result.MaxDifference,
+                RecommendedBackend = result.RecommendedBackend,
+                ResourceUsage = result.ResourceUsage
+            };
 
-            return result;
+            LogValidationCompleted(kernel.Name, finalResult.IsValid, finalResult.Issues.Count);
+
+            return finalResult;
         }
         catch (Exception ex)
         {
             LogValidationFailed(kernel.Name, ex.Message);
 
-            result.Issues.Add(new ValidationIssue("VAL001", $"Validation failed with exception: {ex.Message}", ValidationSeverity.Error));
+            var debugValidationIssue = new DebugValidationIssue
+            {
+                Severity = ValidationSeverity.Error,
+                Message = $"Validation failed with exception: {ex.Message}",
+                BackendAffected = "Unknown",
+                Context = "EnhancedKernelValidator"
+            };
+            var finalResult = new KernelValidationResult
+            {
+                KernelName = result.KernelName,
+                IsValid = false,
+                ValidationTime = DateTime.UtcNow - startTime,
+                Issues = result.Issues.Append(debugValidationIssue).ToList(),
+                Recommendations = result.Recommendations,
+                BackendsTested = result.BackendsTested,
+                Errors = result.Errors,
+                Warnings = result.Warnings,
+                Results = result.Results,
+                TotalValidationTime = result.TotalValidationTime,
+                MaxDifference = result.MaxDifference,
+                RecommendedBackend = result.RecommendedBackend,
+                ResourceUsage = result.ResourceUsage
+            };
 
-            return result;
+            return finalResult;
         }
     }
 
@@ -116,7 +158,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         var result = new DeterminismTestResult
         {
             KernelName = kernel.Name,
-            AcceleratorType = accelerator.AcceleratorType,
+            AcceleratorType = accelerator.Type,
             Iterations = iterations,
             TestTime = DateTime.UtcNow,
             ExecutionResults = new List<object?>(),

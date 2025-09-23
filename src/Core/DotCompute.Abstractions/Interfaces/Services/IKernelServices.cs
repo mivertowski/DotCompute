@@ -23,7 +23,7 @@ public interface IKernelCompilerService
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="options">Compilation options</param>
     /// <returns>The compiled kernel</returns>
-    Task<ICompiledKernel> CompileAsync(
+    public Task<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
         IAccelerator accelerator,
         CompilationOptions? options = null);
@@ -34,13 +34,13 @@ public interface IKernelCompilerService
     /// <param name="definitions">The kernel definitions to pre-compile</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>A task representing the pre-compilation operation</returns>
-    Task PrecompileAsync(IEnumerable<KernelDefinition> definitions, IAccelerator accelerator);
+    public Task PrecompileAsync(IEnumerable<KernelDefinition> definitions, IAccelerator accelerator);
 
     /// <summary>
     /// Gets compilation statistics.
     /// </summary>
     /// <returns>Compilation statistics</returns>
-    KernelCompilationStatistics GetStatistics();
+    public KernelCompilationStatistics GetStatistics();
 
     /// <summary>
     /// Optimizes a kernel definition for the target accelerator.
@@ -48,7 +48,7 @@ public interface IKernelCompilerService
     /// <param name="definition">The kernel definition</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>The optimized kernel definition</returns>
-    Task<KernelDefinition> OptimizeAsync(KernelDefinition definition, IAccelerator accelerator);
+    public Task<KernelDefinition> OptimizeAsync(KernelDefinition definition, IAccelerator accelerator);
 
     /// <summary>
     /// Validates a kernel definition for compilation.
@@ -56,7 +56,7 @@ public interface IKernelCompilerService
     /// <param name="definition">The kernel definition</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>Validation result</returns>
-    Task<KernelValidationResult> ValidateAsync(KernelDefinition definition, IAccelerator accelerator);
+    public Task<KernelValidationResult> ValidateAsync(KernelDefinition definition, IAccelerator accelerator);
 }
 
 /// <summary>
@@ -69,7 +69,7 @@ public interface IKernelCacheService
     /// </summary>
     /// <param name="cacheKey">The cache key</param>
     /// <returns>The cached kernel or null if not found</returns>
-    Task<ICompiledKernel?> GetAsync(string cacheKey);
+    public Task<ICompiledKernel?> GetAsync(string cacheKey);
 
     /// <summary>
     /// Stores a compiled kernel in the cache.
@@ -77,7 +77,7 @@ public interface IKernelCacheService
     /// <param name="cacheKey">The cache key</param>
     /// <param name="kernel">The compiled kernel</param>
     /// <returns>A task representing the store operation</returns>
-    Task StoreAsync(string cacheKey, ICompiledKernel kernel);
+    public Task StoreAsync(string cacheKey, ICompiledKernel kernel);
 
     /// <summary>
     /// Generates a cache key for a kernel definition and accelerator.
@@ -86,25 +86,25 @@ public interface IKernelCacheService
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="options">Compilation options</param>
     /// <returns>The cache key</returns>
-    string GenerateCacheKey(KernelDefinition definition, IAccelerator accelerator, CompilationOptions? options);
+    public string GenerateCacheKey(KernelDefinition definition, IAccelerator accelerator, CompilationOptions? options);
 
     /// <summary>
     /// Clears the kernel cache.
     /// </summary>
     /// <returns>A task representing the clear operation</returns>
-    Task ClearAsync();
+    public Task ClearAsync();
 
     /// <summary>
     /// Gets cache statistics.
     /// </summary>
     /// <returns>Cache statistics</returns>
-    KernelCacheStatistics GetStatistics();
+    public KernelCacheStatistics GetStatistics();
 
     /// <summary>
     /// Evicts old or unused cached kernels.
     /// </summary>
     /// <returns>The number of evicted kernels</returns>
-    Task<int> EvictAsync();
+    public Task<int> EvictAsync();
 }
 
 /// <summary>

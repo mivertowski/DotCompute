@@ -158,20 +158,20 @@ public sealed class PipelineAnalysisResult
 // Interface placeholders for types referenced in the pipeline interfaces
 public interface IOptimizationPass
 {
-    string Name { get; }
-    OptimizationType OptimizationType { get; }
-    Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
+    public string Name { get; }
+    public OptimizationType OptimizationType { get; }
+    public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
 }
 
 public interface IOptimizationStrategy
 {
-    string Name { get; }
-    OptimizationType SupportedOptimizations { get; }
-    OptimizationType Type { get; }
-    bool CanOptimize(IKernelPipeline pipeline);
-    bool CanApply(IKernelPipeline pipeline);
-    Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
-    Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
+    public string Name { get; }
+    public OptimizationType SupportedOptimizations { get; }
+    public OptimizationType Type { get; }
+    public bool CanOptimize(IKernelPipeline pipeline);
+    public bool CanApply(IKernelPipeline pipeline);
+    public Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
+    public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
 }
 
 // IKernelPipeline is defined in DotCompute.Abstractions.Interfaces.Pipelines namespace

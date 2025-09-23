@@ -179,6 +179,16 @@ public class MemoryAnalysisReport
     public long TotalMemoryAccessed { get; init; }
     public float MemoryEfficiency { get; init; }
     public List<string> Warnings { get; init; } = [];
+
+    /// <summary>
+    /// Allocation efficiency score (0-1).
+    /// </summary>
+    public double AllocationEfficiency { get; init; }
+
+    /// <summary>
+    /// Probability of memory leaks (0-1).
+    /// </summary>
+    public double LeakProbability { get; init; }
 }
 
 /// <summary>
@@ -228,6 +238,50 @@ public class DebugServiceOptions
     /// Enables performance analysis and reporting.
     /// </summary>
     public bool EnablePerformanceAnalysis { get; set; } = true;
+
+    /// <summary>
+    /// Maximum number of historical entries to keep.
+    /// </summary>
+    public int MaxHistoricalEntries { get; set; } = 1000;
+
+    /// <summary>
+    /// Maximum number of metric points to collect.
+    /// </summary>
+    public int MaxMetricPoints { get; set; } = 10000;
+
+    /// <summary>
+    /// Threshold for considering an array as large (in elements).
+    /// </summary>
+    public int LargeArrayThreshold { get; set; } = 1000000;
+
+    /// <summary>
+    /// Memory efficiency threshold (percentage 0-100).
+    /// </summary>
+    public double MemoryEfficiencyThreshold { get; set; } = 85.0;
+
+    /// <summary>
+    /// Threshold for long-running kernels (in milliseconds).
+    /// </summary>
+    public int LongRunningThreshold { get; set; } = 5000;
+
+    /// <summary>
+    /// Memory pressure threshold (percentage 0-100).
+    /// </summary>
+    public double MemoryPressureThreshold { get; set; } = 90.0;
+
+    /// <summary>
+    /// Development profile configuration.
+    /// </summary>
+    public static DebugServiceOptions Development => new()
+    {
+        VerbosityLevel = LogLevel.Debug,
+        EnableProfiling = true,
+        EnableMemoryAnalysis = true,
+        EnableDetailedTracing = true,
+        SaveExecutionLogs = true,
+        MaxHistoricalEntries = 5000,
+        MaxMetricPoints = 50000
+    };
 }
 
 /// <summary>
@@ -240,6 +294,7 @@ public class DebugValidationIssue
     public string BackendAffected { get; init; } = string.Empty;
     public string? Suggestion { get; init; }
     public Dictionary<string, object> Details { get; init; } = [];
+    public string? Context { get; init; }
 
     /// <summary>
     /// Creates a new debug validation issue.
@@ -316,6 +371,12 @@ public class PerformanceMetrics
     public float CpuUtilization { get; init; }
     public float GpuUtilization { get; init; }
     public int ThroughputOpsPerSecond { get; init; }
+
+    // Additional properties for compatibility with Performance namespace
+    public long ExecutionTimeMs => (long)ExecutionTime.TotalMilliseconds;
+    public long MemoryAllocatedBytes => MemoryUsage;
+    public long ThroughputOpsPerSec => ThroughputOpsPerSecond;
+    public double EfficiencyScore => CpuUtilization * 100; // Simple efficiency metric
 }
 
 /// <summary>

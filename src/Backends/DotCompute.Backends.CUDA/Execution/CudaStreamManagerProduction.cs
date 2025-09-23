@@ -410,8 +410,9 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 else
                 {
-                    // Log error but don't throw in callback
-                    Console.WriteLine($"Stream callback error: {status}");
+                    // Log error but don't throw in callback - use proper logging in production
+                    // Note: Cannot use ILogger in static callback, consider event-based error reporting
+                    System.Diagnostics.Debug.WriteLine($"Stream callback error: {status}");
                 }
             }
         }

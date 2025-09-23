@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.CompilerServices;
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P

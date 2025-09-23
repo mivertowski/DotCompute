@@ -10,7 +10,7 @@ using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
 using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
-using DebugValidationSeverity = DotCompute.Abstractions.Debugging.ValidationSeverity;
+using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -23,14 +23,19 @@ public sealed class KernelDebugAnalyzer : IDisposable
     private readonly ILogger<KernelDebugAnalyzer> _logger;
     private readonly DebugServiceOptions _options;
     private readonly ConcurrentDictionary<string, KernelAnalysisProfile> _analysisProfiles;
+    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
+    private readonly KernelDebugProfiler _profiler;
     private bool _disposed;
 
     public KernelDebugAnalyzer(
         ILogger<KernelDebugAnalyzer> logger,
-        DebugServiceOptions options)
+        ConcurrentDictionary<string, IAccelerator> accelerators,
+        KernelDebugProfiler profiler)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _accelerators = accelerators ?? throw new ArgumentNullException(nameof(accelerators));
+        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
+        _options = DebugServiceOptions.Development; // Use default options
         _analysisProfiles = new ConcurrentDictionary<string, KernelAnalysisProfile>();
     }
 

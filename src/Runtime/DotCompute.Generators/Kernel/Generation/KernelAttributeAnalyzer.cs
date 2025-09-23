@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using DotCompute.Generators.Models.Kernel;
 using DotCompute.Generators.Kernel.Enums;
+using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel.Generation;
 

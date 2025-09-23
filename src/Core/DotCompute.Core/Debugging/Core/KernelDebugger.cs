@@ -11,7 +11,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Sockets;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using DebugValidationSeverity = DotCompute.Abstractions.Debugging.ValidationSeverity;
+using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -113,17 +113,18 @@ public sealed partial class KernelDebugger : IDisposable
                 try
                 {
                     var stopwatch = Stopwatch.StartNew();
-                    var result = await ExecuteKernelSafelyAsync(kernel, accelerator, inputs, cancellationToken).ConfigureAwait(false);
+                    var kernelResult = await ExecuteKernelSafelyAsync(kernel, accelerator, inputs, cancellationToken).ConfigureAwait(false);
                     stopwatch.Stop();
 
                     var executionResult = new KernelExecutionResult
                     {
                         KernelName = kernel.Name,
-                        AcceleratorName = name,
-                        AcceleratorType = accelerator.Type,
+                        BackendType = accelerator.Type.ToString(),
+                        Result = result,
                         ExecutionTime = stopwatch.Elapsed,
-                        Output = result,
+                        MemoryUsed = 0, // TODO: Add memory tracking
                         Success = true,
+                        ErrorMessage = null,
                         ExecutedAt = DateTime.UtcNow
                     };
 
@@ -137,11 +138,12 @@ public sealed partial class KernelDebugger : IDisposable
                     var failureResult = new KernelExecutionResult
                     {
                         KernelName = kernel.Name,
-                        AcceleratorName = name,
-                        AcceleratorType = accelerator.Type,
+                        BackendType = accelerator.Type.ToString(),
+                        Result = null,
                         ExecutionTime = TimeSpan.Zero,
-                        Error = ex,
+                        MemoryUsed = 0,
                         Success = false,
+                        ErrorMessage = ex.Message,
                         ExecutedAt = DateTime.UtcNow
                     };
 
@@ -204,35 +206,61 @@ public sealed partial class KernelDebugger : IDisposable
 
         LogDebugStarted(kernel.Name, accelerator.Type.ToString());
 
-        var debugInfo = new KernelDebugInfo
-        {
-            KernelName = kernel.Name,
-            AcceleratorType = accelerator.Type,
-            StartTime = DateTime.UtcNow
-        };
+        var startTime = DateTime.UtcNow;
+        var memoryBefore = GC.GetTotalMemory(false);
+        var inputValidation = ValidateInputs(kernel, inputs);
 
         try
         {
-            // Pre-execution analysis
-            debugInfo.InputValidation = ValidateInputs(kernel, inputs);
-            debugInfo.MemoryUsageBefore = GC.GetTotalMemory(false);
-
             // Execute with instrumentation
             var stopwatch = Stopwatch.StartNew();
-            var result = await ExecuteKernelSafelyAsync(kernel, accelerator, inputs, cancellationToken).ConfigureAwait(false);
+            var executionResult = await ExecuteKernelSafelyAsync(kernel, accelerator, inputs, cancellationToken).ConfigureAwait(false);
             stopwatch.Stop();
 
-            // Post-execution analysis
-            debugInfo.ExecutionTime = stopwatch.Elapsed;
-            debugInfo.Output = result;
-            debugInfo.MemoryUsageAfter = GC.GetTotalMemory(false);
-            debugInfo.MemoryAllocated = debugInfo.MemoryUsageAfter - debugInfo.MemoryUsageBefore;
-            debugInfo.Success = true;
-            debugInfo.EndTime = DateTime.UtcNow;
+            var memoryAfter = GC.GetTotalMemory(false);
+            var endTime = DateTime.UtcNow;
 
-            // Additional analysis
-            debugInfo.PerformanceMetrics = AnalyzePerformance(debugInfo);
-            debugInfo.ResourceUsage = AnalyzeResourceUsage(debugInfo);
+            var debugInfo = new KernelDebugInfo
+            {
+                KernelName = kernel.Name,
+                AcceleratorType = accelerator.Type,
+                StartTime = startTime,
+                EndTime = endTime,
+                InputValidation = inputValidation,
+                MemoryUsageBefore = memoryBefore,
+                MemoryUsageAfter = memoryAfter,
+                MemoryAllocated = memoryAfter - memoryBefore,
+                ExecutionTime = stopwatch.Elapsed,
+                Output = executionResult,
+                Success = true,
+                PerformanceMetrics = null, // Will be set after creation
+                ResourceUsage = null, // Will be set after creation
+                Error = null,
+                ErrorAnalysis = null
+            };
+
+            // Additional analysis - must create new object due to init-only properties
+            var performanceMetrics = AnalyzePerformance(debugInfo);
+            var resourceUsage = AnalyzeResourceUsage(debugInfo);
+
+            debugInfo = new KernelDebugInfo
+            {
+                KernelName = debugInfo.KernelName,
+                AcceleratorType = debugInfo.AcceleratorType,
+                StartTime = debugInfo.StartTime,
+                EndTime = debugInfo.EndTime,
+                InputValidation = debugInfo.InputValidation,
+                MemoryUsageBefore = debugInfo.MemoryUsageBefore,
+                MemoryUsageAfter = debugInfo.MemoryUsageAfter,
+                MemoryAllocated = debugInfo.MemoryAllocated,
+                ExecutionTime = debugInfo.ExecutionTime,
+                Output = debugInfo.Output,
+                Success = debugInfo.Success,
+                PerformanceMetrics = performanceMetrics,
+                ResourceUsage = resourceUsage,
+                Error = debugInfo.Error,
+                ErrorAnalysis = debugInfo.ErrorAnalysis
+            };
 
             LogDebugCompleted(kernel.Name, stopwatch.ElapsedMilliseconds);
 
@@ -240,10 +268,27 @@ public sealed partial class KernelDebugger : IDisposable
         }
         catch (Exception ex)
         {
-            debugInfo.Error = ex;
-            debugInfo.Success = false;
-            debugInfo.EndTime = DateTime.UtcNow;
-            debugInfo.ErrorAnalysis = AnalyzeError(ex);
+            var endTime = DateTime.UtcNow;
+            var errorAnalysis = AnalyzeError(ex);
+
+            var debugInfo = new KernelDebugInfo
+            {
+                KernelName = kernel.Name,
+                AcceleratorType = accelerator.Type,
+                StartTime = startTime,
+                EndTime = endTime,
+                InputValidation = inputValidation,
+                MemoryUsageBefore = memoryBefore,
+                MemoryUsageAfter = GC.GetTotalMemory(false),
+                MemoryAllocated = 0,
+                ExecutionTime = TimeSpan.Zero,
+                Output = null,
+                Success = false,
+                PerformanceMetrics = null,
+                ResourceUsage = null,
+                Error = ex,
+                ErrorAnalysis = errorAnalysis
+            };
 
             LogDebugFailed(kernel.Name, ex.Message);
 
@@ -322,17 +367,17 @@ public sealed partial class KernelDebugger : IDisposable
         }
 
         // Compare outputs (simplified - real implementation would need deep comparison)
-        var firstOutput = successfulResults[0].Output;
+        var firstOutput = successfulResults[0].Result;
         for (var i = 1; i < successfulResults.Count; i++)
         {
-            var otherOutput = successfulResults[i].Output;
+            var otherOutput = successfulResults[i].Result;
 
             if (!AreOutputsEqual(firstOutput, otherOutput))
             {
                 issues.Add(new DebugValidationIssue
                 {
                     Severity = DebugValidationSeverity.Error,
-                    Message = $"Output mismatch between {successfulResults[0].AcceleratorName} and {successfulResults[i].AcceleratorName}",
+                    Message = $"Output mismatch between {successfulResults[0].BackendType} and {successfulResults[i].BackendType}",
                     Context = "Cross-backend consistency check"
                 });
             }

@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DotCompute.Generators.Models.Kernel;
+using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel;
 

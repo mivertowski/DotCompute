@@ -38,9 +38,14 @@ namespace DotCompute.Backends.CUDA.Native
 
                     if (!currentPath.Contains(cudaLib64))
                     {
-                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
-                            $"{cudaLib64}:{currentPath}");
-                        Console.WriteLine($"Added CUDA library path: {cudaLib64}");
+                        // Security: Validate path before modifying environment
+                        if (Directory.Exists(cudaLib64) && Path.IsPathFullyQualified(cudaLib64))
+                        {
+                            Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
+                                $"{cudaLib64}:{currentPath}");
+                            // Use Debug output instead of Console in production
+                            System.Diagnostics.Debug.WriteLine($"Added CUDA library path: {cudaLib64}");
+                        }
                     }
                 }
             }
@@ -66,7 +71,11 @@ namespace DotCompute.Backends.CUDA.Native
                             foreach (var path in candidatePaths)
                             {
                                 if (NativeLibrary.TryLoad(path, out var handle))
+                                {
+
                                     return handle;
+                                }
+
                             }
                         }
                         return IntPtr.Zero;

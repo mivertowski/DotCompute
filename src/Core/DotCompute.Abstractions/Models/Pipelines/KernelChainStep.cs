@@ -93,19 +93,19 @@ namespace DotCompute.Abstractions.Models.Pipelines
         /// <summary>
         /// Gets the true path steps to execute when condition is true.
         /// </summary>
-        List<KernelChainStep> TruePath { get; }
+        public List<KernelChainStep> TruePath { get; }
 
         /// <summary>
         /// Gets the false path steps to execute when condition is false.
         /// </summary>
-        List<KernelChainStep> FalsePath { get; }
+        public List<KernelChainStep> FalsePath { get; }
 
         /// <summary>
         /// Evaluates the condition based on the previous result.
         /// </summary>
         /// <param name="previousResult">The result from the previous step</param>
         /// <returns>True if the condition is met, false otherwise</returns>
-        bool EvaluateCondition(object? previousResult);
+        public bool EvaluateCondition(object? previousResult);
     }
 
     /// <summary>

@@ -22,7 +22,7 @@ public interface IPluginExecutor
     /// <param name="parameters">Optional parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
-    Task<object> ExecutePluginAsync(
+    public Task<object> ExecutePluginAsync(
         string pluginId,
         object[] inputs,
         Dictionary<string, object>? parameters = null,
@@ -36,7 +36,7 @@ public interface IPluginExecutor
     /// <param name="parameters">Optional parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
-    Task<object> ExecuteWithRetryAsync(
+    public Task<object> ExecuteWithRetryAsync(
         IAlgorithmPlugin plugin,
         object[] inputs,
         Dictionary<string, object>? parameters,
@@ -47,7 +47,7 @@ public interface IPluginExecutor
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>Execution statistics.</returns>
-    Task<PluginExecutionStatistics> GetStatisticsAsync(string pluginId);
+    public Task<PluginExecutionStatistics> GetStatisticsAsync(string pluginId);
 
     /// <summary>
     /// Validates plugin inputs before execution.
@@ -56,7 +56,7 @@ public interface IPluginExecutor
     /// <param name="inputs">The input data.</param>
     /// <param name="parameters">Optional parameters.</param>
     /// <returns>Validation result.</returns>
-    Task<ValidationResult> ValidateInputsAsync(
+    public Task<ValidationResult> ValidateInputsAsync(
         string pluginId,
         object[] inputs,
         Dictionary<string, object>? parameters = null);

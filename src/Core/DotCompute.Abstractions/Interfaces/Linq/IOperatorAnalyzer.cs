@@ -23,7 +23,7 @@ public interface IOperatorAnalyzer
     /// </summary>
     /// <param name="expression">The operator expression to analyze.</param>
     /// <returns>Analysis result containing optimization information.</returns>
-    OperatorAnalysisResult AnalyzeOperator(Expression expression);
+    public OperatorAnalysisResult AnalyzeOperator(Expression expression);
 
     /// <summary>
     /// Gets information about a specific operator for a given backend.
@@ -32,7 +32,7 @@ public interface IOperatorAnalyzer
     /// <param name="operandTypes">The types of the operands.</param>
     /// <param name="backend">The target backend.</param>
     /// <returns>Operator information for the backend.</returns>
-    OperatorInfo GetOperatorInfo(ExpressionType operatorType, Type[] operandTypes, BackendType backend);
+    public OperatorInfo GetOperatorInfo(ExpressionType operatorType, Type[] operandTypes, BackendType backend);
 
     /// <summary>
     /// Determines if an operator can be vectorized.
@@ -40,14 +40,14 @@ public interface IOperatorAnalyzer
     /// <param name="operatorType">The operator type.</param>
     /// <param name="operandTypes">The operand types.</param>
     /// <returns>Vectorization analysis for the operator.</returns>
-    VectorizationAnalysis AnalyzeVectorization(ExpressionType operatorType, Type[] operandTypes);
+    public VectorizationAnalysis AnalyzeVectorization(ExpressionType operatorType, Type[] operandTypes);
 
     /// <summary>
     /// Gets fusion opportunities for combining multiple operators.
     /// </summary>
     /// <param name="operators">The sequence of operators to analyze.</param>
     /// <returns>Fusion analysis result.</returns>
-    FusionAnalysisResult AnalyzeFusion(IEnumerable<Expression> operators);
+    public FusionAnalysisResult AnalyzeFusion(IEnumerable<Expression> operators);
 
     /// <summary>
     /// Estimates the computational cost of an operator.
@@ -56,7 +56,7 @@ public interface IOperatorAnalyzer
     /// <param name="operandTypes">The operand types.</param>
     /// <param name="backend">The target backend.</param>
     /// <returns>Estimated computational cost.</returns>
-    double EstimateComputationalCost(ExpressionType operatorType, Type[] operandTypes, BackendType backend);
+    public double EstimateComputationalCost(ExpressionType operatorType, Type[] operandTypes, BackendType backend);
 
     /// <summary>
     /// Analyzes operator precision and numerical stability.
@@ -64,7 +64,7 @@ public interface IOperatorAnalyzer
     /// <param name="operatorType">The operator type.</param>
     /// <param name="operandTypes">The operand types.</param>
     /// <returns>Precision analysis result.</returns>
-    PrecisionAnalysisResult AnalyzePrecision(ExpressionType operatorType, Type[] operandTypes);
+    public PrecisionAnalysisResult AnalyzePrecision(ExpressionType operatorType, Type[] operandTypes);
 
     /// <summary>
     /// Analyzes an expression containing an operator for optimization opportunities.
@@ -72,7 +72,7 @@ public interface IOperatorAnalyzer
     /// <param name="expression">The expression to analyze.</param>
     /// <param name="context">The analysis context.</param>
     /// <returns>Analysis result containing optimization information.</returns>
-    OperatorAnalysisResult Analyze(Expression expression, object? context = null);
+    public OperatorAnalysisResult Analyze(Expression expression, object? context = null);
 }
 
 /// <summary>

@@ -174,7 +174,11 @@ public sealed class PerformanceMetrics
 
         var metricsList = metrics.ToList();
         if (metricsList.Count == 0)
+        {
+
             return new PerformanceMetrics();
+        }
+
 
         var result = new PerformanceMetrics
         {

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Pipelines;
 
@@ -525,32 +526,6 @@ public class DataFlowBottleneckDetectedEvent : DataFlowEvent
     public List<string> RecommendedActions { get; set; } = new();
 }
 
-/// <summary>
-/// Types of bottlenecks that can occur in data flow operations.
-/// </summary>
-public enum BottleneckType
-{
-    /// <summary>Memory bandwidth limitation.</summary>
-    MemoryBandwidth,
-    
-    /// <summary>Buffer allocation/deallocation overhead.</summary>
-    BufferAllocation,
-    
-    /// <summary>Data transformation overhead.</summary>
-    DataTransformation,
-    
-    /// <summary>Inter-stage data transfer overhead.</summary>
-    DataTransfer,
-    
-    /// <summary>Cache miss penalty.</summary>
-    CacheMiss,
-    
-    /// <summary>Resource contention between stages.</summary>
-    ResourceContention,
-    
-    /// <summary>Serialization/deserialization overhead.</summary>
-    Serialization
-}
 
 /// <summary>
 /// Severity levels for bottleneck impact assessment.

@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Enums;
 
 namespace DotCompute.Core.Optimization.Selection;

@@ -374,7 +374,7 @@ namespace DotCompute.Core.Pipelines
             return new PipelineValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors.Select(e => new DotCompute.Abstractions.ValidationIssue(e.Code ?? "UNKNOWN", e.Message, DotCompute.Abstractions.ValidationSeverity.Error)).ToList() : null,
+                Errors = errors.Count > 0 ? errors.Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code ?? "UNKNOWN", e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error)).ToList() : null,
                 Warnings = warnings.Count > 0 ? warnings.Select(w => new DotCompute.Abstractions.Validation.ValidationWarning { Code = w.Code, Message = w.Message, Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium }).ToList() : null
             };
         }
@@ -686,7 +686,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts ValidationIssue from Abstractions to Validation namespace
         /// </summary>
-        private static IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> ConvertValidationIssues(IReadOnlyList<DotCompute.Abstractions.ValidationIssue> issues)
+        private static IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> ConvertValidationIssues(IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> issues)
         {
             return issues.Select(issue => new DotCompute.Abstractions.Validation.ValidationIssue(
                 (DotCompute.Abstractions.Validation.ValidationSeverity)(int)issue.Severity,

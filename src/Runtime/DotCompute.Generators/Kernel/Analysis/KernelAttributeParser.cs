@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Generators.Kernel.Enums;
+using DotCompute.Generators.Kernel.Enums;
 using Microsoft.CodeAnalysis;
 
 namespace DotCompute.Generators.Kernel.Analysis;

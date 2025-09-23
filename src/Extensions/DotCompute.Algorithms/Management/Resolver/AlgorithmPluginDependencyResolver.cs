@@ -542,7 +542,11 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     private void CleanupCache(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         try
         {
@@ -639,16 +643,29 @@ public sealed class PluginRequirements
         var parts = new List<string>();
 
         if (PreferredAcceleratorType.HasValue)
+        {
             parts.Add($"Accelerator: {PreferredAcceleratorType}");
+        }
+
 
         if (InputType != null)
+        {
             parts.Add($"Input: {InputType.Name}");
+        }
+
 
         if (OutputType != null)
+        {
             parts.Add($"Output: {OutputType.Name}");
+        }
+
 
         if (!string.IsNullOrEmpty(Category))
+        {
+
             parts.Add($"Category: {Category}");
+        }
+
 
         return string.Join(", ", parts);
     }

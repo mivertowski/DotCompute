@@ -14,6 +14,7 @@ using DotCompute.Core.Telemetry;
 using DotCompute.Core.Telemetry.System;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Optimization.Configuration;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;

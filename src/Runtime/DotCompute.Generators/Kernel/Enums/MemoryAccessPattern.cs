@@ -4,62 +4,42 @@
 namespace DotCompute.Generators.Kernel.Enums;
 
 /// <summary>
-/// Describes the expected memory access pattern for a compute kernel.
+/// Memory access patterns for kernel optimization.
+/// This is a copy of the canonical version from DotCompute.Abstractions.Types
+/// for use in the source generator which targets netstandard2.0.
 /// </summary>
-/// <remarks>
-/// Memory access patterns significantly impact performance, especially on GPUs
-/// where memory bandwidth and latency are critical factors. Providing accurate
-/// hints helps the code generator optimize memory layout, prefetching, and caching strategies.
-/// </remarks>
 public enum MemoryAccessPattern
 {
-    /// <summary>
-    /// Sequential memory access pattern.
-    /// </summary>
-    /// <remarks>
-    /// Data is accessed in a predictable, linear fashion. This pattern
-    /// benefits from hardware prefetching and provides optimal cache utilization.
-    /// Common in array processing and streaming operations.
-    /// </remarks>
-    Sequential,
+    /// <summary>Sequential memory access with optimal cache utilization.</summary>
+    Sequential = 0,
 
-    /// <summary>
-    /// Strided memory access pattern.
-    /// </summary>
-    /// <remarks>
-    /// Data is accessed with a fixed stride (skip pattern). This occurs when
-    /// processing every nth element or accessing specific fields in structures.
-    /// May benefit from software prefetching and vector gather operations.
-    /// </remarks>
-    Strided,
+    /// <summary>Strided access with fixed step size between elements.</summary>
+    Strided = 1,
 
-    /// <summary>
-    /// Random memory access pattern.
-    /// </summary>
-    /// <remarks>
-    /// Data is accessed in an unpredictable pattern. This is the most challenging
-    /// pattern for optimization and may benefit from larger cache sizes and
-    /// reduced memory latency. Common in sparse matrix operations and lookup tables.
-    /// </remarks>
-    Random,
+    /// <summary>Random memory access with unpredictable patterns.</summary>
+    Random = 2,
 
-    /// <summary>
-    /// Coalesced memory access pattern (optimized for GPU).
-    /// </summary>
-    /// <remarks>
-    /// Memory accesses from adjacent threads access adjacent memory locations.
-    /// This pattern is crucial for GPU performance as it maximizes memory
-    /// bandwidth utilization and minimizes the number of memory transactions.
-    /// </remarks>
-    Coalesced,
+    /// <summary>Coalesced access optimized for GPU memory architecture.</summary>
+    Coalesced = 3,
 
-    /// <summary>
-    /// Tiled memory access pattern.
-    /// </summary>
-    /// <remarks>
-    /// Data is accessed in small, localized blocks (tiles). This pattern
-    /// benefits from blocking algorithms and shared memory usage on GPUs.
-    /// Common in matrix operations and image processing kernels.
-    /// </remarks>
-    Tiled
+    /// <summary>Tiled access for optimized cache usage.</summary>
+    Tiled = 4,
+
+    /// <summary>Scatter operation writing to non-contiguous locations.</summary>
+    Scatter = 5,
+
+    /// <summary>Gather operation reading from non-contiguous locations.</summary>
+    Gather = 6,
+
+    /// <summary>Combined scatter-gather operations.</summary>
+    ScatterGather = 7,
+
+    /// <summary>Broadcast operation from single source to multiple destinations.</summary>
+    Broadcast = 8,
+
+    /// <summary>Mixed patterns requiring runtime analysis.</summary>
+    Mixed = 9,
+
+    /// <summary>Unknown or unanalyzed access pattern.</summary>
+    Unknown = 10
 }

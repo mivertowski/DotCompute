@@ -6,7 +6,7 @@ using global::System.Runtime.InteropServices;
 using System.Threading.Tasks;
 // using DotCompute.Backends.CUDA.Analysis.Enums; // Not needed for core functionality
 using DotCompute.Backends.CUDA.Analysis.Models;
-using DotCompute.Backends.CUDA.Analysis.Types;
+using DotCompute.Abstractions.Types;
 // using DotCompute.Core.Models; // Commented out to avoid conflicts
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;

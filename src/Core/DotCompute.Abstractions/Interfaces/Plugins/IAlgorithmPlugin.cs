@@ -17,32 +17,32 @@ public interface IAlgorithmPlugin
     /// <summary>
     /// Gets the unique identifier for this algorithm plugin.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the human-readable name of the algorithm.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the version of the algorithm implementation.
     /// </summary>
-    Version Version { get; }
+    public Version Version { get; }
 
     /// <summary>
     /// Gets the description of what this algorithm does.
     /// </summary>
-    string Description { get; }
+    public string Description { get; }
 
     /// <summary>
     /// Gets the supported input types for this algorithm.
     /// </summary>
-    IReadOnlyList<Type> SupportedInputTypes { get; }
+    public IReadOnlyList<Type> SupportedInputTypes { get; }
 
     /// <summary>
     /// Gets the supported output types for this algorithm.
     /// </summary>
-    IReadOnlyList<Type> SupportedOutputTypes { get; }
+    public IReadOnlyList<Type> SupportedOutputTypes { get; }
 
     /// <summary>
     /// Executes the algorithm with the provided inputs.
@@ -51,7 +51,7 @@ public interface IAlgorithmPlugin
     /// <param name="parameters">Optional algorithm parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The algorithm result.</returns>
-    Task<object> ExecuteAsync(
+    public Task<object> ExecuteAsync(
         object[] inputs,
         Dictionary<string, object>? parameters = null,
         CancellationToken cancellationToken = default);
@@ -62,7 +62,7 @@ public interface IAlgorithmPlugin
     /// <param name="inputs">The input data to validate.</param>
     /// <param name="parameters">Optional algorithm parameters.</param>
     /// <returns>Validation result.</returns>
-    Task<ValidationResult> ValidateAsync(
+    public Task<ValidationResult> ValidateAsync(
         object[] inputs,
         Dictionary<string, object>? parameters = null);
 
@@ -70,7 +70,7 @@ public interface IAlgorithmPlugin
     /// Gets algorithm metadata and capabilities.
     /// </summary>
     /// <returns>Algorithm metadata.</returns>
-    AlgorithmMetadata GetMetadata();
+    public AlgorithmMetadata GetMetadata();
 }
 
 /// <summary>

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
-using DebugValidationSeverity = DotCompute.Abstractions.Debugging.ValidationSeverity;
+using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Core;
 

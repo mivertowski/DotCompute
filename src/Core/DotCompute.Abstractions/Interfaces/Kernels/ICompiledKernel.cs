@@ -17,17 +17,17 @@ public interface ICompiledKernel : IDisposable
     /// <summary>
     /// Gets the kernel name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets a value indicating whether the kernel is compiled and ready for execution.
     /// </summary>
-    bool IsReady { get; }
+    public bool IsReady { get; }
 
     /// <summary>
     /// Gets the backend type that compiled this kernel.
     /// </summary>
-    string BackendType { get; }
+    public string BackendType { get; }
 
     /// <summary>
     /// Executes the compiled kernel with the specified parameters.
@@ -35,11 +35,11 @@ public interface ICompiledKernel : IDisposable
     /// <param name="parameters">The kernel execution parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous execution.</returns>
-    Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets kernel metadata and properties.
     /// </summary>
     /// <returns>Kernel metadata.</returns>
-    object GetMetadata();
+    public object GetMetadata();
 }

@@ -75,9 +75,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         // Add kernel source hash for cache invalidation on kernel changes
         if (!string.IsNullOrEmpty(kernelDefinition.Source))
         {
-            using var sha256 = SHA256.Create();
             var sourceBytes = Encoding.UTF8.GetBytes(kernelDefinition.Source);
-            var hashBytes = sha256.ComputeHash(sourceBytes);
+            var hashBytes = SHA256.HashData(sourceBytes);
             var hashString = Convert.ToBase64String(hashBytes)[..8]; // Use first 8 chars of hash
             keyBuilder.Append('_');
             keyBuilder.Append(hashString);

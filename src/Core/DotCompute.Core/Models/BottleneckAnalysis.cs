@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Generic;
-using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Models
 {

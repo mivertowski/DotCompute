@@ -145,6 +145,26 @@ public sealed class ProfilingData
     /// Gets memory usage information.
     /// </summary>
     public MemoryProfilingData? MemoryUsage { get; init; }
+
+    /// <summary>
+    /// Gets CPU usage information.
+    /// </summary>
+    public CpuProfilingData? CpuUsage { get; init; }
+
+    /// <summary>
+    /// Gets the execution result data.
+    /// </summary>
+    public object? Result { get; init; }
+
+    /// <summary>
+    /// Gets the error information if execution failed.
+    /// </summary>
+    public Exception? Error { get; init; }
+
+    /// <summary>
+    /// Gets performance metrics collected during execution.
+    /// </summary>
+    public Dictionary<string, object> PerformanceMetrics { get; init; } = [];
 }
 
 /// <summary>
@@ -181,6 +201,67 @@ public sealed class MemoryProfilingData
     /// Gets the memory usage at the end.
     /// </summary>
     public long EndMemory { get; init; }
+
+    /// <summary>
+    /// Gets the number of garbage collections that occurred.
+    /// </summary>
+    public int GCCollections { get; init; }
+}
+
+/// <summary>
+/// Represents CPU profiling data for kernel execution.
+/// </summary>
+ public sealed class CpuProfilingData
+{
+    /// <summary>
+    /// Gets the CPU usage percentage (0-100).
+    /// </summary>
+    public double CpuUsagePercent { get; init; }
+
+    /// <summary>
+    /// Gets the start CPU time.
+    /// </summary>
+    public double StartCpuTime { get; init; }
+
+    /// <summary>
+    /// Gets the end CPU time.
+    /// </summary>
+    public double EndCpuTime { get; init; }
+
+    /// <summary>
+    /// Gets the total CPU time.
+    /// </summary>
+    public TimeSpan CpuTime { get; init; }
+
+    /// <summary>
+    /// Gets the CPU utilization.
+    /// </summary>
+    public TimeSpan CpuUtilization { get; init; }
+
+    /// <summary>
+    /// Gets the user CPU time in milliseconds.
+    /// </summary>
+    public double UserTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the system CPU time in milliseconds.
+    /// </summary>
+    public double SystemTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the total CPU time in milliseconds.
+    /// </summary>
+    public double TotalTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the number of context switches.
+    /// </summary>
+    public long ContextSwitches { get; init; }
+
+    /// <summary>
+    /// Gets the number of page faults.
+    /// </summary>
+    public long PageFaults { get; init; }
 }
 
 /// <summary>
@@ -247,6 +328,21 @@ public sealed class PerformanceAnalysis
     /// Gets performance anomalies detected in the data.
     /// </summary>
     public List<PerformanceAnomaly> Anomalies { get; init; } = [];
+
+    /// <summary>
+    /// Gets the accelerator type used for the analysis.
+    /// </summary>
+    public AcceleratorType AcceleratorType { get; init; }
+
+    /// <summary>
+    /// Gets the number of data points analyzed.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    /// <summary>
+    /// Gets the time when the analysis was performed.
+    /// </summary>
+    public DateTime AnalysisTime { get; init; }
 }
 
 /// <summary>
@@ -254,6 +350,31 @@ public sealed class PerformanceAnalysis
 /// </summary>
 public sealed class PerformanceTrend
 {
+    /// <summary>
+    /// Gets the kernel name.
+    /// </summary>
+    public string KernelName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the time range for the trend.
+    /// </summary>
+    public TimeSpan TimeRange { get; init; }
+
+    /// <summary>
+    /// Gets the number of data points.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    /// <summary>
+    /// Gets the trend direction.
+    /// </summary>
+    public TrendDirection TrendDirection { get; init; }
+
+    /// <summary>
+    /// Gets the time of analysis.
+    /// </summary>
+    public DateTime AnalysisTime { get; init; }
+
     /// <summary>
     /// Gets the metric that is trending.
     /// </summary>
@@ -285,6 +406,16 @@ public sealed class PerformanceTrend
 /// </summary>
 public sealed class PerformanceAnomaly
 {
+    /// <summary>
+    /// Gets the session ID where the anomaly was detected.
+    /// </summary>
+    public string SessionId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets when the anomaly was detected.
+    /// </summary>
+    public DateTime DetectedAt { get; init; } = DateTime.UtcNow;
+
     /// <summary>
     /// Gets the timestamp when the anomaly occurred.
     /// </summary>
@@ -357,9 +488,34 @@ public sealed class AcceleratorComparisonResult
     public AcceleratorType RecommendedAccelerator { get; init; }
 
     /// <summary>
+    /// Gets the best performing accelerator.
+    /// </summary>
+    public AcceleratorType BestPerformingAccelerator { get; init; }
+
+    /// <summary>
+    /// Gets the most reliable accelerator.
+    /// </summary>
+    public AcceleratorType MostReliableAccelerator { get; init; }
+
+    /// <summary>
+    /// Gets performance recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; init; } = [];
+
+    /// <summary>
     /// Gets performance comparisons between accelerators.
     /// </summary>
     public Dictionary<string, double> PerformanceRatios { get; init; } = [];
+
+    /// <summary>
+    /// Gets the time when the comparison was performed.
+    /// </summary>
+    public DateTime ComparisonTime { get; init; }
+
+    /// <summary>
+    /// Gets whether there is sufficient data for comparison.
+    /// </summary>
+    public bool HasSufficientData { get; init; }
 }
 
 /// <summary>
@@ -376,6 +532,11 @@ public sealed class AcceleratorPerformanceSummary
     /// Gets the average execution time in milliseconds.
     /// </summary>
     public double AverageExecutionTimeMs { get; init; }
+
+    /// <summary>
+    /// Gets the average execution time in milliseconds (alias for AverageExecutionTimeMs).
+    /// </summary>
+    public double AverageExecutionTime => AverageExecutionTimeMs;
 
     /// <summary>
     /// Gets the average memory usage in bytes.
@@ -396,6 +557,41 @@ public sealed class AcceleratorPerformanceSummary
     /// Gets the efficiency score (0-100).
     /// </summary>
     public double EfficiencyScore { get; init; }
+
+    /// <summary>
+    /// Gets the number of data points used in this summary.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    /// <summary>
+    /// Gets the median execution time in milliseconds.
+    /// </summary>
+    public double MedianExecutionTime { get; init; }
+
+    /// <summary>
+    /// Gets the minimum execution time in milliseconds.
+    /// </summary>
+    public double MinExecutionTime { get; init; }
+
+    /// <summary>
+    /// Gets the maximum execution time in milliseconds.
+    /// </summary>
+    public double MaxExecutionTime { get; init; }
+
+    /// <summary>
+    /// Gets the standard deviation of execution times.
+    /// </summary>
+    public double StandardDeviation { get; init; }
+
+    /// <summary>
+    /// Gets the success rate (0-1).
+    /// </summary>
+    public double SuccessRate { get; init; }
+
+    /// <summary>
+    /// Gets the throughput score for performance comparison.
+    /// </summary>
+    public double ThroughputScore { get; init; }
 }
 
 /// <summary>
@@ -403,6 +599,11 @@ public sealed class AcceleratorPerformanceSummary
 /// </summary>
 public enum TrendDirection
 {
+    /// <summary>
+    /// Unknown trend direction.
+    /// </summary>
+    Unknown,
+
     /// <summary>
     /// No clear trend direction.
     /// </summary>
@@ -438,6 +639,16 @@ public enum AnomalyType
     /// Memory usage spike.
     /// </summary>
     MemorySpike,
+
+    /// <summary>
+    /// Execution time anomaly.
+    /// </summary>
+    ExecutionTime,
+
+    /// <summary>
+    /// Memory usage anomaly.
+    /// </summary>
+    MemoryUsage,
 
     /// <summary>
     /// Throughput drop.

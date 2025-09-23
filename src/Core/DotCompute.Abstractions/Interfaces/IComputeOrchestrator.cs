@@ -105,17 +105,17 @@ public interface IComputeOrchestrator
 public interface IKernelExecutionParameters
 {
     /// <summary>Gets the kernel arguments.</summary>
-    object[] Arguments { get; }
+    public object[] Arguments { get; }
 
 
     /// <summary>Gets the preferred backend.</summary>
-    string? PreferredBackend { get; }
+    public string? PreferredBackend { get; }
 
 
     /// <summary>Gets the execution options.</summary>
-    IDictionary<string, object> Options { get; }
+    public IDictionary<string, object> Options { get; }
 
 
     /// <summary>Gets the cancellation token.</summary>
-    CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; }
 }

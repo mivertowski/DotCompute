@@ -815,15 +815,15 @@ public enum RecoveryCapability
 /// </summary>
 public interface IRecoveryStrategy<in TContext> where TContext : class
 {
-    RecoveryCapability Capability { get; }
-    int Priority { get; }
-    bool CanHandle(Exception error, TContext context);
-    Task<RecoveryResult> AttemptRecoveryAsync(
+    public RecoveryCapability Capability { get; }
+    public int Priority { get; }
+    public bool CanHandle(Exception error, TContext context);
+    public Task<RecoveryResult> AttemptRecoveryAsync(
         Exception error,
         TContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default);
-    RecoveryStatistics GetStatistics();
+    public RecoveryStatistics GetStatistics();
 }
 
 #endregion

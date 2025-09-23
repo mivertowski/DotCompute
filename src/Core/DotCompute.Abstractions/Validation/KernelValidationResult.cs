@@ -72,6 +72,16 @@ public sealed class KernelValidationResult
     /// Provides information about memory, register usage, and performance characteristics.
     /// </summary>
     public ResourceUsageEstimate? ResourceUsage { get; init; }
+
+    /// <summary>
+    /// Gets the time spent validating this kernel.
+    /// </summary>
+    public TimeSpan ValidationTime { get; set; }
+
+    /// <summary>
+    /// Gets optimization recommendations for the kernel.
+    /// </summary>
+    public List<string> Recommendations { get; init; } = [];
 }
 
 // ValidationWarning, ValidationIssue, WarningSeverity, and ResourceUsageEstimate

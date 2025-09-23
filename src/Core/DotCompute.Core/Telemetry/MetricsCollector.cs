@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -663,14 +664,6 @@ public sealed class PerformanceBottleneck
     public double MetricValue { get; set; }
 }
 
-public enum BottleneckType
-{
-    MemoryUtilization,
-    KernelFailures,
-    DeviceUtilization,
-    TransferBandwidth,
-    CacheEfficiency
-}
 
 public enum BottleneckSeverity
 {

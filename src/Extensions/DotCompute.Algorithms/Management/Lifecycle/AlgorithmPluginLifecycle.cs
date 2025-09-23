@@ -332,7 +332,11 @@ public sealed class AlgorithmPluginLifecycle : IDisposable
     /// <param name="state">Timer state (unused).</param>
     private void PerformHealthChecks(object? state)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
 
         _ = Task.Run(async () =>
         {

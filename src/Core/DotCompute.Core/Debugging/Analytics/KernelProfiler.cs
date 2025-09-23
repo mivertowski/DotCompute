@@ -7,6 +7,7 @@ using DotCompute.Abstractions.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Analytics;
@@ -109,19 +110,19 @@ public sealed partial class KernelProfiler : IDisposable
                 EndMemory = endMemory,
                 PeakMemory = Math.Max(session.StartMemory, endMemory),
                 AllocatedMemory = Math.Max(0, endMemory - session.StartMemory),
-                GCCollections = GetGCCollectionCounts()
+                GCCollections = GetGCCollectionCounts().Values.Sum()
             },
             CpuUsage = new CpuProfilingData
             {
                 StartCpuTime = session.StartCpuTime,
-                EndCpuTime = endCpuTime,
-                CpuTime = endCpuTime - session.StartCpuTime,
+                EndCpuTime = endCpuTime.TotalMilliseconds,
+                CpuTime = endCpuTime - TimeSpan.FromMilliseconds(session.StartCpuTime),
                 CpuUtilization = CalculateCpuUtilization(session.StartCpuTime, endCpuTime, session.StartTime, endTime)
             },
             Result = result,
             Error = error,
             Success = error == null,
-            PerformanceMetrics = CalculatePerformanceMetrics(session, endTime, endMemory, endCpuTime)
+            PerformanceMetrics = ConvertToPerformanceMetricsDictionary(CalculatePerformanceMetrics(session, endTime, endMemory, endCpuTime))
         };
 
         // Store historical data
@@ -175,16 +176,33 @@ public sealed partial class KernelProfiler : IDisposable
             return new PerformanceAnalysis
             {
                 KernelName = kernelName,
-                AcceleratorType = acceleratorType,
+                AcceleratorType = acceleratorType ?? AcceleratorType.CPU,
                 DataPoints = 0,
                 AnalysisTime = DateTime.UtcNow
             };
         }
 
-        var analysis = AnalyzePerformanceData(relevantData);
-        analysis.KernelName = kernelName;
-        analysis.AcceleratorType = acceleratorType;
-        analysis.AnalysisTime = DateTime.UtcNow;
+        var rawAnalysis = AnalyzePerformanceData(relevantData);
+
+        // Create new analysis with proper values due to init-only properties
+        var analysis = new PerformanceAnalysis
+        {
+            KernelName = kernelName,
+            AcceleratorType = acceleratorType ?? AcceleratorType.CPU,
+            AnalysisTime = DateTime.UtcNow,
+            AverageExecutionTimeMs = rawAnalysis.AverageExecutionTimeMs,
+            MinExecutionTimeMs = rawAnalysis.MinExecutionTimeMs,
+            MaxExecutionTimeMs = rawAnalysis.MaxExecutionTimeMs,
+            ExecutionTimeStdDev = rawAnalysis.ExecutionTimeStdDev,
+            AverageMemoryUsage = rawAnalysis.AverageMemoryUsage,
+            PeakMemoryUsage = rawAnalysis.PeakMemoryUsage,
+            AverageThroughput = rawAnalysis.AverageThroughput,
+            DataPointCount = rawAnalysis.DataPointCount,
+            AnalysisTimeRange = rawAnalysis.AnalysisTimeRange,
+            Trends = rawAnalysis.Trends,
+            Anomalies = rawAnalysis.Anomalies,
+            DataPoints = rawAnalysis.DataPoints
+        };
 
         LogAnalysisCompleted(kernelName, relevantData.Count);
 
@@ -480,6 +498,17 @@ public sealed partial class KernelProfiler : IDisposable
         var timeScore = Math.Max(0, 100 - executionTime.TotalMilliseconds / 10);
         var memoryScore = Math.Max(0, 100 - memoryAllocated / (1024 * 1024)); // MB
         return (timeScore + memoryScore) / 2;
+    }
+
+    private static Dictionary<string, object> ConvertToPerformanceMetricsDictionary(PerformanceMetrics metrics)
+    {
+        return new Dictionary<string, object>
+        {
+            ["ExecutionTimeMs"] = metrics.ExecutionTimeMs,
+            ["MemoryAllocatedBytes"] = metrics.MemoryAllocatedBytes,
+            ["ThroughputOpsPerSec"] = metrics.ThroughputOpsPerSec,
+            ["EfficiencyScore"] = metrics.EfficiencyScore
+        };
     }
 
     private static PerformanceAnalysis AnalyzePerformanceData(List<ProfilingData> data)

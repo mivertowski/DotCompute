@@ -9,16 +9,17 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Core.Debugging;
 
 /// <summary>
-/// Main orchestrator for kernel debugging operations, coordinating all debugging components.
+/// Core orchestrator for kernel debugging operations, coordinating all debugging components.
 /// Implements the IKernelDebugService interface and delegates to specialized components.
 /// </summary>
-internal sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
+internal sealed class CoreKernelDebugOrchestrator : IKernelDebugService, IDisposable
 {
-    private readonly ILogger<KernelDebugOrchestrator> _logger;
+    private readonly ILogger<CoreKernelDebugOrchestrator> _logger;
     private readonly IAccelerator? _primaryAccelerator;
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
@@ -32,8 +33,8 @@ internal sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     private DebugServiceOptions _options;
     private bool _disposed;
 
-    public KernelDebugOrchestrator(
-        ILogger<KernelDebugOrchestrator> logger,
+    public CoreKernelDebugOrchestrator(
+        ILogger<CoreKernelDebugOrchestrator> logger,
         IAccelerator? primaryAccelerator = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -138,6 +139,26 @@ internal sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         }
     }
 
+    // Interface-compliant method for comparing multiple results
+    public async Task<ResultComparisonReport> CompareResultsAsync(
+        IEnumerable<KernelExecutionResult> results,
+        ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogDebug("Orchestrating multi-result comparison with strategy {strategy}", comparisonStrategy);
+
+        try
+        {
+            return await _reporter.CompareResultsAsync(results, comparisonStrategy);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in multi-result comparison orchestration");
+            throw;
+        }
+    }
+
     public async Task<KernelExecutionTrace> TraceKernelExecutionAsync(
         string kernelName,
         string backendType,
@@ -154,6 +175,28 @@ internal sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in execution trace orchestration");
+            throw;
+        }
+    }
+
+    // Interface-compliant method for tracing with trace points
+    public async Task<KernelExecutionTrace> TraceKernelExecutionAsync(
+        string kernelName,
+        object[] inputs,
+        string[] tracePoints)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogInformation("Orchestrating execution trace for {kernelName} with {tracePointCount} trace points",
+            kernelName, tracePoints.Length);
+
+        try
+        {
+            return await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in trace execution orchestration");
             throw;
         }
     }

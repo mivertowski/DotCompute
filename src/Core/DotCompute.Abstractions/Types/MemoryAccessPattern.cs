@@ -73,6 +73,14 @@ public enum MemoryAccessPattern
     Broadcast,
 
     /// <summary>
+    /// Tiled memory access pattern.
+    /// Data is accessed in small, localized blocks (tiles).
+    /// Benefits from blocking algorithms and shared memory usage on GPUs.
+    /// Common in matrix operations and image processing kernels.
+    /// </summary>
+    Tiled,
+
+    /// <summary>
     /// Unknown access pattern.
     /// Pattern cannot be determined through static analysis.
     /// Requires runtime profiling for optimization.

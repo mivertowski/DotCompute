@@ -550,14 +550,6 @@ internal sealed class CryptographicKeyManager : IDisposable
 }
 
 // Supporting classes and enums
-public enum KeyType
-{
-    AES,
-    RSA,
-    ECDSA,
-    ChaCha20
-}
-
 public enum KeyExportFormat
 {
     Pkcs8,

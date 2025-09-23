@@ -18,7 +18,7 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="kernelName">The name of the kernel to execute</param>
         /// <param name="args">The arguments to pass to the kernel</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder Kernel(string kernelName, params object[] args);
+        public IKernelChainBuilder Kernel(string kernelName, params object[] args);
 
         /// <summary>
         /// Adds another kernel to the execution chain (alias for Kernel for readability).
@@ -26,14 +26,14 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="kernelName">The name of the kernel to execute</param>
         /// <param name="args">The arguments to pass to the kernel</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder Then(string kernelName, params object[] args);
+        public IKernelChainBuilder Then(string kernelName, params object[] args);
 
         /// <summary>
         /// Adds multiple kernels to execute in parallel.
         /// </summary>
         /// <param name="kernels">Array of (kernel name, arguments) tuples to execute in parallel</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder Parallel(params (string kernelName, object[] args)[] kernels);
+        public IKernelChainBuilder Parallel(params (string kernelName, object[] args)[] kernels);
 
         /// <summary>
         /// Adds conditional branching to the chain based on the result of the previous operation.
@@ -43,7 +43,7 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="truePath">Action to configure the true branch</param>
         /// <param name="falsePath">Action to configure the false branch (optional)</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder Branch<T>(Func<T, bool> condition,
+        public IKernelChainBuilder Branch<T>(Func<T, bool> condition,
             Func<IKernelChainBuilder, IKernelChainBuilder> truePath,
             Func<IKernelChainBuilder, IKernelChainBuilder>? falsePath = null);
 
@@ -53,49 +53,49 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="key">Cache key for storing/retrieving results</param>
         /// <param name="ttl">Time-to-live for cached results (optional)</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder Cache(string key, TimeSpan? ttl = null);
+        public IKernelChainBuilder Cache(string key, TimeSpan? ttl = null);
 
         /// <summary>
         /// Forces execution on a specific backend.
         /// </summary>
         /// <param name="backendName">Name of the backend to use (e.g., "CUDA", "CPU")</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder OnBackend(string backendName);
+        public IKernelChainBuilder OnBackend(string backendName);
 
         /// <summary>
         /// Forces execution on a specific accelerator instance.
         /// </summary>
         /// <param name="accelerator">The specific accelerator to use</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder OnAccelerator(IAccelerator accelerator);
+        public IKernelChainBuilder OnAccelerator(IAccelerator accelerator);
 
         /// <summary>
         /// Adds profiling and performance monitoring to the chain.
         /// </summary>
         /// <param name="profileName">Optional profile name for identification</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder WithProfiling(string? profileName = null);
+        public IKernelChainBuilder WithProfiling(string? profileName = null);
 
         /// <summary>
         /// Sets execution timeout for the entire chain.
         /// </summary>
         /// <param name="timeout">Maximum execution time</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder WithTimeout(TimeSpan timeout);
+        public IKernelChainBuilder WithTimeout(TimeSpan timeout);
 
         /// <summary>
         /// Adds error handling to the chain.
         /// </summary>
         /// <param name="errorHandler">Function to handle errors during execution</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder OnError(Func<Exception, ErrorHandlingStrategy> errorHandler);
+        public IKernelChainBuilder OnError(Func<Exception, ErrorHandlingStrategy> errorHandler);
 
         /// <summary>
         /// Adds validation to ensure chain integrity before execution.
         /// </summary>
         /// <param name="validateInputs">Whether to validate input parameters</param>
         /// <returns>The chain builder for method chaining</returns>
-        IKernelChainBuilder WithValidation(bool validateInputs = true);
+        public IKernelChainBuilder WithValidation(bool validateInputs = true);
 
         /// <summary>
         /// Executes the kernel chain and returns the result.
@@ -103,20 +103,20 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <typeparam name="T">The expected return type</typeparam>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Task containing the execution result</returns>
-        Task<T> ExecuteAsync<T>(CancellationToken cancellationToken = default);
+        public Task<T> ExecuteAsync<T>(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes the kernel chain and returns detailed execution information.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Task containing detailed execution results with metrics</returns>
-        Task<KernelChainExecutionResult> ExecuteWithMetricsAsync(CancellationToken cancellationToken = default);
+        public Task<KernelChainExecutionResult> ExecuteWithMetricsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates the current chain configuration without executing.
         /// </summary>
         /// <returns>Validation result indicating any issues</returns>
-        Task<KernelChainValidationResult> ValidateAsync();
+        public Task<KernelChainValidationResult> ValidateAsync();
     }
 
     /// <summary>

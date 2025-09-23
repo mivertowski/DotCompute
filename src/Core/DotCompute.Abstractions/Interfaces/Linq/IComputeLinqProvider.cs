@@ -55,7 +55,7 @@ public interface IComputeLinqProvider
     /// <para>Memory: Large enumerables will be materialized into arrays for GPU processing,
     /// which may impact memory usage for very large datasets.</para>
     /// </remarks>
-    IQueryable<T> CreateQueryable<T>(IEnumerable<T> source, IAccelerator? accelerator = null);
+    public IQueryable<T> CreateQueryable<T>(IEnumerable<T> source, IAccelerator? accelerator = null);
 
     /// <summary>
     /// Creates a queryable for the specified array with GPU acceleration.
@@ -64,7 +64,7 @@ public interface IComputeLinqProvider
     /// <param name="source">The array source</param>
     /// <param name="accelerator">Optional specific accelerator to use</param>
     /// <returns>A GPU-accelerated queryable</returns>
-    IQueryable<T> CreateQueryable<T>(T[] source, IAccelerator? accelerator = null);
+    public IQueryable<T> CreateQueryable<T>(T[] source, IAccelerator? accelerator = null);
 
     /// <summary>
     /// Executes a LINQ expression with GPU acceleration and automatic optimization.
@@ -89,7 +89,7 @@ public interface IComputeLinqProvider
     /// <para>Optimization: Expressions are automatically optimized for the target backend,
     /// including operation reordering, kernel fusion, and memory layout optimization.</para>
     /// </remarks>
-    Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default);
+    public Task<T> ExecuteAsync<T>(Expression expression, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Executes a LINQ expression with GPU acceleration and optional accelerator preference.
@@ -99,7 +99,7 @@ public interface IComputeLinqProvider
     /// <param name="preferredAccelerator">Preferred accelerator for execution</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The execution result</returns>
-    Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator, CancellationToken cancellationToken = default);
+    public Task<T> ExecuteAsync<T>(Expression expression, IAccelerator preferredAccelerator, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Analyzes a LINQ expression and provides optimization suggestions to improve
@@ -122,14 +122,14 @@ public interface IComputeLinqProvider
     /// <para>Usage: These suggestions can be used to guide manual query optimization
     /// or to inform automatic optimization strategies.</para>
     /// </remarks>
-    IEnumerable<OptimizationSuggestion> GetOptimizationSuggestions(Expression expression);
+    public IEnumerable<OptimizationSuggestion> GetOptimizationSuggestions(Expression expression);
 
     /// <summary>
     /// Validates if an expression can be executed on GPU.
     /// </summary>
     /// <param name="expression">The expression to validate</param>
     /// <returns>True if GPU-compatible, false otherwise</returns>
-    bool IsGpuCompatible(Expression expression);
+    public bool IsGpuCompatible(Expression expression);
 
     /// <summary>
     /// Pre-compiles frequently used expressions for better runtime performance.
@@ -153,7 +153,7 @@ public interface IComputeLinqProvider
     /// <para>Resource Usage: Pre-compilation consumes CPU and memory resources upfront
     /// but reduces resource usage during query execution.</para>
     /// </remarks>
-    Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions, CancellationToken cancellationToken = default);
+    public Task PrecompileExpressionsAsync(IEnumerable<Expression> expressions, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

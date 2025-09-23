@@ -13,10 +13,10 @@ public interface IPipeline
     /// <summary>
     /// Gets the pipeline name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the pipeline stages.
     /// </summary>
-    IReadOnlyList<IPipelineStage> Stages { get; }
+    public IReadOnlyList<IPipelineStage> Stages { get; }
 }

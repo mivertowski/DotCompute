@@ -343,9 +343,8 @@ public sealed class MetalKernelCache : IDisposable
     /// </summary>
     public static string ComputeCacheKey(KernelDefinition definition, CompilationOptions options)
     {
-        using var sha256 = SHA256.Create();
         var inputBuilder = new StringBuilder();
-        
+
         // Include all relevant properties in the cache key
         inputBuilder.Append(definition.Name);
         inputBuilder.Append('|');
@@ -362,7 +361,7 @@ public sealed class MetalKernelCache : IDisposable
         inputBuilder.Append(options.FastMath);
         inputBuilder.Append('|');
         inputBuilder.Append(options.TargetArchitecture ?? "default");
-        
+
         // Add additional flags if any
         if (options.AdditionalFlags != null)
         {
@@ -372,9 +371,9 @@ public sealed class MetalKernelCache : IDisposable
                 inputBuilder.Append(flag);
             }
         }
-        
+
         var inputBytes = Encoding.UTF8.GetBytes(inputBuilder.ToString());
-        var hashBytes = sha256.ComputeHash(inputBytes);
+        var hashBytes = SHA256.HashData(inputBytes);
         return Convert.ToBase64String(hashBytes).Replace("/", "_").Replace("+", "-");
     }
 

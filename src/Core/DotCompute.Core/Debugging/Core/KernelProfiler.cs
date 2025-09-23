@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Debugging.Core;
@@ -747,14 +748,6 @@ public record ExecutionStatistics
     public double StandardDeviation { get; init; }
 }
 
-public enum BottleneckType
-{
-    ExecutionTime,
-    Memory,
-    ThroughputLimitation,
-    ResourceContention,
-    BackendSpecific
-}
 
 public enum BottleneckSeverity
 {

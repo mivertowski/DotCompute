@@ -15,7 +15,7 @@ using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecution
 using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
-using ValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Pipelines.Stages
 {

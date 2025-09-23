@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Core.Debugging;
 
@@ -338,7 +339,6 @@ internal sealed class KernelDebugReporter : IDisposable
 
                     return (false, diff);
                 }
-
             }
 
             var avgDifference = elementCount > 0 ? totalDifference / elementCount : 0f;
@@ -426,13 +426,7 @@ internal sealed class KernelDebugReporter : IDisposable
 }
 
 // Supporting enums and classes
-public enum ReportFormat
-{
-    Json,
-    Xml,
-    Csv,
-    Text
-}
+// ReportFormat moved to DotCompute.Abstractions.Debugging.ReportingTypes
 
 public enum ComparisonSeverity
 {
@@ -449,14 +443,4 @@ public class ComparisonIssue
     public string Details { get; set; } = string.Empty;
 }
 
-public class ResultComparisonReport
-{
-    public required KernelExecutionResult Result1 { get; set; }
-    public required KernelExecutionResult Result2 { get; set; }
-    public float Tolerance { get; set; }
-    public DateTimeOffset ComparisonTime { get; set; }
-    public bool ResultsMatch { get; set; }
-    public float ResultDifference { get; set; }
-    public List<ComparisonIssue> Issues { get; set; } = new();
-    public string Summary { get; set; } = string.Empty;
-}
+// ResultComparisonReport moved to DotCompute.Abstractions.Debugging.IKernelDebugService

@@ -282,25 +282,25 @@ public interface IPipelineMetrics
     /// <summary>
     /// Gets the pipeline identifier.
     /// </summary>
-    string PipelineId { get; }
+    public string PipelineId { get; }
 
     /// <summary>
     /// Gets the total execution time.
     /// </summary>
-    TimeSpan TotalExecutionTime { get; }
+    public TimeSpan TotalExecutionTime { get; }
 
     /// <summary>
     /// Gets the peak memory usage.
     /// </summary>
-    long PeakMemoryUsage { get; }
+    public long PeakMemoryUsage { get; }
 
     /// <summary>
     /// Gets the number of stages.
     /// </summary>
-    int StageCount { get; }
+    public int StageCount { get; }
 
     /// <summary>
     /// Gets stage-specific metrics.
     /// </summary>
-    IReadOnlyList<IStageMetrics> StageMetrics { get; }
+    public IReadOnlyList<IStageMetrics> StageMetrics { get; }
 }

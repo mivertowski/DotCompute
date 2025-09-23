@@ -1242,6 +1242,6 @@ public class RecoveryResult
 
 public interface IRecoveryStrategy
 {
-    bool CanHandle(RecoveryContext context);
-    ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default);
+    public bool CanHandle(RecoveryContext context);
+    public ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default);
 }

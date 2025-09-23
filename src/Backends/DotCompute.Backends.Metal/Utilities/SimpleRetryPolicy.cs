@@ -19,7 +19,7 @@ public interface IAsyncPolicy
     /// <param name="action">The action to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the operation.</returns>
-    Task ExecuteAsync(Func<Task> action, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(Func<Task> action, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -34,7 +34,7 @@ public interface IAsyncPolicy<T>
     /// <param name="function">The function to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the operation with a return value.</returns>
-    Task<T> ExecuteAsync(Func<Task<T>> function, CancellationToken cancellationToken = default);
+    public Task<T> ExecuteAsync(Func<Task<T>> function, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

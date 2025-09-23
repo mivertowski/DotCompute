@@ -19,14 +19,14 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="kernelName">The name of the kernel to resolve</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The compiled kernel instance or null if not found</returns>
-        Task<ICompiledKernel?> ResolveKernelAsync(string kernelName, CancellationToken cancellationToken = default);
+        public Task<ICompiledKernel?> ResolveKernelAsync(string kernelName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all available kernel names.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Collection of available kernel names</returns>
-        Task<IReadOnlyCollection<string>> GetAvailableKernelNamesAsync(CancellationToken cancellationToken = default);
+        public Task<IReadOnlyCollection<string>> GetAvailableKernelNamesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks if a kernel with the specified name exists.
@@ -34,7 +34,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="kernelName">The kernel name to check</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>True if the kernel exists, false otherwise</returns>
-        Task<bool> KernelExistsAsync(string kernelName, CancellationToken cancellationToken = default);
+        public Task<bool> KernelExistsAsync(string kernelName, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -48,14 +48,14 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="profileName">Name for the profiling session</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the start operation</returns>
-        Task StartProfilingAsync(string profileName, CancellationToken cancellationToken = default);
+        public Task StartProfilingAsync(string profileName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the current profiling session.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the stop operation</returns>
-        Task StopProfilingAsync(CancellationToken cancellationToken = default);
+        public Task StopProfilingAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the profiling results for the specified profile.
@@ -63,7 +63,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="profileName">Name of the profiling session</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Profiling results or null if not found</returns>
-        Task<KernelChainProfilingResult?> GetProfilingResultAsync(string profileName, CancellationToken cancellationToken = default);
+        public Task<KernelChainProfilingResult?> GetProfilingResultAsync(string profileName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Records a kernel execution event for profiling.
@@ -74,7 +74,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="backend">Backend used for execution</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the record operation</returns>
-        Task RecordKernelExecutionAsync(string kernelName, TimeSpan executionTime, long memoryUsed, string backend, CancellationToken cancellationToken = default);
+        public Task RecordKernelExecutionAsync(string kernelName, TimeSpan executionTime, long memoryUsed, string backend, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="steps">The steps to validate</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Validation result with any errors or warnings</returns>
-        Task<KernelChainValidationResult> ValidateChainAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default);
+        public Task<KernelChainValidationResult> ValidateChainAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates kernel arguments for a specific kernel.
@@ -97,7 +97,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="arguments">Arguments to validate</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>True if arguments are valid, false otherwise</returns>
-        Task<bool> ValidateKernelArgumentsAsync(string kernelName, object[] arguments, CancellationToken cancellationToken = default);
+        public Task<bool> ValidateKernelArgumentsAsync(string kernelName, object[] arguments, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets validation recommendations for optimizing a kernel chain.
@@ -105,7 +105,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="steps">The steps to analyze</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Collection of optimization recommendations</returns>
-        Task<IReadOnlyCollection<KernelChainOptimizationRecommendation>> GetOptimizationRecommendationsAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default);
+        public Task<IReadOnlyCollection<KernelChainOptimizationRecommendation>> GetOptimizationRecommendationsAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="key">Cache key</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Cached value or null if not found</returns>
-        Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class;
+        public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class;
 
         /// <summary>
         /// Sets a value in the cache with optional TTL.
@@ -131,7 +131,7 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="ttl">Time-to-live for the cached value</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the set operation</returns>
-        Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default) where T : class;
+        public Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default) where T : class;
 
         /// <summary>
         /// Removes a value from the cache.
@@ -139,21 +139,21 @@ namespace DotCompute.Core.Pipelines.Services
         /// <param name="key">Cache key to remove</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the remove operation</returns>
-        Task RemoveAsync(string key, CancellationToken cancellationToken = default);
+        public Task RemoveAsync(string key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Clears all cached values.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the clear operation</returns>
-        Task ClearAsync(CancellationToken cancellationToken = default);
+        public Task ClearAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets cache statistics.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Cache statistics</returns>
-        Task<KernelChainCacheStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
+        public Task<KernelChainCacheStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
     }
 
     /// <summary>

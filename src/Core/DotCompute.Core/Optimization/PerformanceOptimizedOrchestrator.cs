@@ -13,7 +13,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
-using DotCompute.Core.Optimization.Enums;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;

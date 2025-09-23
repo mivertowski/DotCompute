@@ -42,4 +42,14 @@ public class DeterminismReport
     /// Recommendations for achieving deterministic behavior.
     /// </summary>
     public List<string> Recommendations { get; init; } = [];
+
+    /// <summary>
+    /// Number of runs performed during determinism testing.
+    /// </summary>
+    public int RunCount { get; init; }
+
+    /// <summary>
+    /// Components identified as non-deterministic.
+    /// </summary>
+    public List<string> NonDeterministicComponents { get; init; } = [];
 }

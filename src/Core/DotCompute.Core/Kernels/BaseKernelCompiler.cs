@@ -17,7 +17,7 @@ using DotCompute.Core.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 // Using aliases to resolve ValidationIssue conflicts
-using CoreValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using CoreValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
@@ -435,7 +435,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             {
                 IsValid = result.IsValid,
                 Errors = result.Errors
-                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, e.Message, e.Code))
+                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code, e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error))
                     .ToList(),
                 Warnings = result.Warnings
                     .Select(w => new DotCompute.Abstractions.Validation.ValidationWarning
@@ -454,7 +454,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = false,
-                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, $"Validation failed: {ex.Message}", "VALIDATION_ERROR")]
+                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue("VALIDATION_ERROR", $"Validation failed: {ex.Message}", DotCompute.Abstractions.Validation.ValidationSeverity.Error)]
             };
         }
     }
@@ -523,7 +523,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };
@@ -555,7 +555,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType,
             AllowUnsafeCode = true,

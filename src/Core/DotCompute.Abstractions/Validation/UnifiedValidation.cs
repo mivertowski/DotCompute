@@ -72,19 +72,19 @@ public sealed class UnifiedValidationResult
     /// <summary>
     /// Adds an error to the validation result.
     /// </summary>
-    public void AddError(string message, string? code = null, string? source = null, object? data = null) => _errors.Add(new ValidationIssue(ValidationSeverity.Error, message, code, source, data));
+    public void AddError(string message, string? code = null, string? source = null, object? data = null) => _errors.Add(new ValidationIssue(code ?? "ERROR", message, ValidationSeverity.Error) { Source = source, Line = null, Column = null });
 
 
     /// <summary>
     /// Adds a warning to the validation result.
     /// </summary>
-    public void AddWarning(string message, string? code = null, string? source = null, object? data = null) => _warnings.Add(new ValidationIssue(ValidationSeverity.Warning, message, code, source, data));
+    public void AddWarning(string message, string? code = null, string? source = null, object? data = null) => _warnings.Add(new ValidationIssue(code ?? "WARNING", message, ValidationSeverity.Warning) { Source = source, Line = null, Column = null });
 
 
     /// <summary>
     /// Adds an informational message to the validation result.
     /// </summary>
-    public void AddInfo(string message, string? code = null, string? source = null, object? data = null) => _information.Add(new ValidationIssue(ValidationSeverity.Info, message, code, source, data));
+    public void AddInfo(string message, string? code = null, string? source = null, object? data = null) => _information.Add(new ValidationIssue(code ?? "INFO", message, ValidationSeverity.Info) { Source = source, Line = null, Column = null });
 
 
     /// <summary>
@@ -178,103 +178,6 @@ public sealed class UnifiedValidationResult
 
 
         return string.Join(Environment.NewLine, lines);
-    }
-}
-
-/// <summary>
-/// Represents a single validation issue.
-/// </summary>
-public sealed class ValidationIssue
-{
-    /// <summary>
-    /// Gets the severity of the issue.
-    /// </summary>
-    public ValidationSeverity Severity { get; }
-
-
-    /// <summary>
-    /// Gets the issue message.
-    /// </summary>
-    public string Message { get; }
-
-
-    /// <summary>
-    /// Gets the optional error/warning code.
-    /// </summary>
-    public string? Code { get; }
-
-
-    /// <summary>
-    /// Gets the source of the issue (e.g., property name, file path).
-    /// </summary>
-    public string? Source { get; }
-
-
-    /// <summary>
-    /// Gets additional data associated with the issue.
-    /// </summary>
-    public object? Data { get; }
-
-
-    /// <summary>
-    /// Gets the line number if applicable.
-    /// </summary>
-    public int? LineNumber { get; init; }
-
-
-    /// <summary>
-    /// Gets the column number if applicable.
-    /// </summary>
-    public int? ColumnNumber { get; init; }
-
-
-    public ValidationIssue(
-        ValidationSeverity severity,
-        string message,
-        string? code = null,
-        string? source = null,
-        object? data = null)
-    {
-        Severity = severity;
-        Message = message ?? throw new ArgumentNullException(nameof(message));
-        Code = code;
-        Source = source;
-        Data = data;
-    }
-
-
-    public override string ToString()
-    {
-        var parts = new List<string>();
-
-
-        if (!string.IsNullOrEmpty(Code))
-        {
-            parts.Add($"[{Code}]");
-        }
-
-
-        if (!string.IsNullOrEmpty(Source))
-        {
-            if (LineNumber.HasValue)
-            {
-                parts.Add(ColumnNumber.HasValue
-
-                    ? $"{Source}({LineNumber},{ColumnNumber})"
-
-                    : $"{Source}({LineNumber})");
-            }
-            else
-            {
-                parts.Add(Source);
-            }
-        }
-
-
-        parts.Add(Message);
-
-
-        return string.Join(": ", parts);
     }
 }
 

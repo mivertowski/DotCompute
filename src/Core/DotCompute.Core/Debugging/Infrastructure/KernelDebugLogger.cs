@@ -13,7 +13,7 @@ using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
-using DebugValidationSeverity = DotCompute.Abstractions.Debugging.ValidationSeverity;
+using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 

@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions.Validation;
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions.Validation;
 
 /// <summary>
 /// Represents a validation issue (error or warning).

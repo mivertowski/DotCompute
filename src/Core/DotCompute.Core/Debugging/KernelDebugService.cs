@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Core.Debugging;
 
@@ -24,7 +25,7 @@ namespace DotCompute.Core.Debugging;
 /// </summary>
 public class KernelDebugService : IKernelDebugService, IDisposable
 {
-    private readonly KernelDebugOrchestrator _orchestrator;
+    private readonly CoreKernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
     private bool _disposed;
 
@@ -35,8 +36,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // Create the orchestrator with specialized components
-        var orchestratorLogger = logger.CreateLogger<KernelDebugOrchestrator>();
-        _orchestrator = new KernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
+        var orchestratorLogger = logger.CreateLogger<CoreKernelDebugOrchestrator>();
+        _orchestrator = new CoreKernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
 
         _logger.LogInformation("KernelDebugService initialized with modular architecture");
     }
@@ -66,15 +67,14 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     }
 
     /// <summary>
-    /// Compares results from two kernel executions.
+    /// Compares results from multiple kernel executions.
     /// </summary>
     public async Task<ResultComparisonReport> CompareResultsAsync(
-        KernelExecutionResult result1,
-        KernelExecutionResult result2,
-        float tolerance = 1e-6f)
+        IEnumerable<KernelExecutionResult> results,
+        ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return await _orchestrator.CompareResultsAsync(result1, result2, tolerance);
+        return await _orchestrator.CompareResultsAsync(results, comparisonStrategy);
     }
 
     /// <summary>
@@ -82,11 +82,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// </summary>
     public async Task<KernelExecutionTrace> TraceKernelExecutionAsync(
         string kernelName,
-        string backendType,
-        object[] inputs)
+        object[] inputs,
+        string[] tracePoints)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return await _orchestrator.TraceKernelExecutionAsync(kernelName, backendType, inputs);
+        return await _orchestrator.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
     }
 
     /// <summary>

@@ -23,17 +23,17 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <summary>
     /// Gets the name of the compiler.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the supported source types this compiler can handle.
     /// </summary>
-    IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
+    public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; }
 
     /// <summary>
     /// Gets compiler capabilities as a dictionary of feature flags.
     /// </summary>
-    IReadOnlyDictionary<string, object> Capabilities { get; }
+    public IReadOnlyDictionary<string, object> Capabilities { get; }
 
     /// <summary>
     /// Compiles a kernel source to executable form.
@@ -42,7 +42,7 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <param name="options">Optional compilation options.</param>
     /// <param name="cancellationToken">Token to cancel the compilation.</param>
     /// <returns>A task that represents the asynchronous compilation operation.</returns>
-    ValueTask<TCompiled> CompileAsync(
+    public ValueTask<TCompiled> CompileAsync(
         TSource source,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default);
@@ -52,7 +52,7 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// </summary>
     /// <param name="source">The kernel source to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    UnifiedValidationResult Validate(TSource source);
+    public UnifiedValidationResult Validate(TSource source);
 
     /// <summary>
     /// Asynchronously validates a kernel source with detailed analysis.
@@ -60,7 +60,7 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <param name="source">The kernel source to validate.</param>
     /// <param name="cancellationToken">Token to cancel the validation operation.</param>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    ValueTask<UnifiedValidationResult> ValidateAsync(
+    public ValueTask<UnifiedValidationResult> ValidateAsync(
         TSource source,
         CancellationToken cancellationToken = default);
 
@@ -71,7 +71,7 @@ public interface IUnifiedKernelCompiler<in TSource, TCompiled>
     /// <param name="level">The optimization level to apply.</param>
     /// <param name="cancellationToken">Token to cancel the optimization.</param>
     /// <returns>A task that represents the asynchronous optimization operation.</returns>
-    ValueTask<TCompiled> OptimizeAsync(
+    public ValueTask<TCompiled> OptimizeAsync(
         TCompiled kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken = default);
@@ -91,7 +91,7 @@ public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>The compiled kernel ready for execution</returns>
-    Task<ICompiledKernel> CompileAsync(
+    public Task<ICompiledKernel> CompileAsync(
         KernelDefinition kernelDefinition,
         IAccelerator accelerator,
         CancellationToken cancellationToken = default);
@@ -103,7 +103,7 @@ public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
     /// <param name="kernelDefinition">The kernel definition to validate</param>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>True if the kernel can be compiled, false otherwise</returns>
-    Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator);
+    public Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator);
 
     /// <summary>
     /// Gets the supported compilation options for the accelerator.
@@ -111,7 +111,7 @@ public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
     /// </summary>
     /// <param name="accelerator">The target accelerator</param>
     /// <returns>The supported compilation options</returns>
-    CompilationOptions GetSupportedOptions(IAccelerator accelerator);
+    public CompilationOptions GetSupportedOptions(IAccelerator accelerator);
 
     /// <summary>
     /// Performs batch compilation of multiple kernels for optimization.
@@ -121,7 +121,7 @@ public interface IUnifiedKernelCompiler : IUnifiedKernelCompiler<KernelDefinitio
     /// <param name="accelerator">The target accelerator</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>Dictionary mapping kernel names to compiled kernels</returns>
-    Task<IDictionary<string, ICompiledKernel>> BatchCompileAsync(
+    public Task<IDictionary<string, ICompiledKernel>> BatchCompileAsync(
         IEnumerable<KernelDefinition> kernelDefinitions,
         IAccelerator accelerator,
         CancellationToken cancellationToken = default);

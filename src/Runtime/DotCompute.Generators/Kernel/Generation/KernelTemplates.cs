@@ -46,7 +46,6 @@ public sealed class KernelTemplates
         return @"using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Services;
 using DotCompute.Generated;

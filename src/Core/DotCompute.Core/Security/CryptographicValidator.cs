@@ -560,17 +560,7 @@ public enum EntropyQuality
     Excellent
 }
 
-public class AlgorithmValidationResult
-{
-    public required string Algorithm { get; set; }
-    public int KeySize { get; set; }
-    public required string Context { get; set; }
-    public DateTimeOffset ValidationTime { get; set; }
-    public bool IsApproved { get; set; }
-    public List<string> Issues { get; set; } = new();
-    public List<string> Warnings { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
-}
+// AlgorithmValidationResult moved to CryptographicSecurityCore.cs to avoid duplication
 
 public class ConfigurationValidationResult
 {

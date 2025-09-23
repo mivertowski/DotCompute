@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Pipelines.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Pipelines.Analysis;
 

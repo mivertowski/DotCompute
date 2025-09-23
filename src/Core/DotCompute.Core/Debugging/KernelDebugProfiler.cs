@@ -19,7 +19,7 @@ namespace DotCompute.Core.Debugging;
 /// Handles performance profiling and execution tracing for kernel debugging.
 /// Provides detailed performance metrics and execution traces.
 /// </summary>
-internal sealed class KernelDebugProfiler : IDisposable
+public sealed class KernelDebugProfiler : IDisposable
 {
     private readonly ILogger<KernelDebugProfiler> _logger;
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
@@ -405,6 +405,131 @@ internal sealed class KernelDebugProfiler : IDisposable
         return summary;
     }
 
+    /// <summary>
+    /// Analyzes memory usage patterns for kernels.
+    /// </summary>
+    /// <param name="kernelName">Name of the kernel to analyze.</param>
+    /// <param name="timeWindow">Time window for analysis.</param>
+    /// <returns>Memory usage analysis result.</returns>
+    public async Task<MemoryUsageAnalysis> AnalyzeMemoryUsageAsync(string kernelName, TimeSpan timeWindow)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await Task.CompletedTask; // Make async for consistency
+
+        var cutoffTime = DateTime.UtcNow - timeWindow;
+        var relevantResults = _executionHistory
+            .Where(r => r.KernelName == kernelName && r.ExecutedAt >= cutoffTime)
+            .ToList();
+
+        if (!relevantResults.Any())
+        {
+            return new MemoryUsageAnalysis
+            {
+                KernelName = kernelName,
+                AverageMemoryUsage = 0,
+                PeakMemoryUsage = 0,
+                MinMemoryUsage = 0,
+                TotalMemoryAllocated = 0,
+                AnalysisTime = DateTime.UtcNow
+            };
+        }
+
+        var memoryUsages = relevantResults.Select(r => r.MemoryUsed).ToList();
+
+        return new MemoryUsageAnalysis
+        {
+            KernelName = kernelName,
+            AverageMemoryUsage = memoryUsages.Average(),
+            PeakMemoryUsage = memoryUsages.Max(),
+            MinMemoryUsage = memoryUsages.Min(),
+            TotalMemoryAllocated = memoryUsages.Sum(),
+            AnalysisTime = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Detects bottlenecks in kernel execution.
+    /// </summary>
+    /// <param name="kernelName">Name of the kernel to analyze.</param>
+    /// <returns>Bottleneck analysis result.</returns>
+    public async Task<DotCompute.Core.Debugging.Core.BottleneckAnalysis> DetectBottlenecksAsync(string kernelName)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await Task.CompletedTask; // Make async for consistency
+
+        var relevantResults = _executionHistory
+            .Where(r => r.KernelName == kernelName)
+            .ToList();
+
+        var bottlenecks = new List<DotCompute.Core.Debugging.Core.Bottleneck>();
+
+        if (relevantResults.Any())
+        {
+            var avgExecutionTime = relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds);
+            var slowExecutions = relevantResults.Where(r => r.ExecutionTime.TotalMilliseconds > avgExecutionTime * 1.5);
+
+            if (slowExecutions.Any())
+            {
+                bottlenecks.Add(new DotCompute.Core.Debugging.Core.Bottleneck
+                {
+                    Type = DotCompute.Abstractions.Types.BottleneckType.Execution,
+                    Severity = DotCompute.Core.Debugging.Core.BottleneckSeverity.Medium,
+                    Description = $"Slow execution detected in {slowExecutions.Count()} runs",
+                    Impact = $"{(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
+                    Recommendation = "Consider optimizing algorithm or increasing resources"
+                });
+            }
+        }
+
+        return new DotCompute.Core.Debugging.Core.BottleneckAnalysis
+        {
+            KernelName = kernelName,
+            Bottlenecks = bottlenecks,
+            AnalysisTime = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Gets execution statistics for a kernel.
+    /// </summary>
+    /// <param name="kernelName">Name of the kernel.</param>
+    /// <returns>Execution statistics.</returns>
+    public ExecutionStatistics GetExecutionStatistics(string kernelName)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var relevantResults = _executionHistory
+            .Where(r => r.KernelName == kernelName)
+            .ToList();
+
+        if (!relevantResults.Any())
+        {
+            return new ExecutionStatistics
+            {
+                KernelName = kernelName,
+                TotalExecutions = 0,
+                SuccessfulExecutions = 0,
+                FailedExecutions = 0,
+                AverageExecutionTime = TimeSpan.Zero,
+                LastExecutionTime = null
+            };
+        }
+
+        var successfulExecutions = relevantResults.Count(r => r.Success);
+        var avgTime = TimeSpan.FromMilliseconds(
+            relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds));
+
+        return new ExecutionStatistics
+        {
+            KernelName = kernelName,
+            TotalExecutions = relevantResults.Count,
+            SuccessfulExecutions = successfulExecutions,
+            FailedExecutions = relevantResults.Count - successfulExecutions,
+            AverageExecutionTime = avgTime,
+            LastExecutionTime = relevantResults.Max(r => r.ExecutedAt)
+        };
+    }
+
     public void Dispose()
     {
         if (!_disposed)
@@ -443,4 +568,30 @@ public class PerformanceReport
     public Dictionary<string, BackendPerformanceStats> Backends { get; set; } = new();
     public OverallPerformanceStats? OverallStats { get; set; }
     public string Summary { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Memory usage analysis result.
+/// </summary>
+public class MemoryUsageAnalysis
+{
+    public string KernelName { get; set; } = string.Empty;
+    public double AverageMemoryUsage { get; set; }
+    public long PeakMemoryUsage { get; set; }
+    public long MinMemoryUsage { get; set; }
+    public long TotalMemoryAllocated { get; set; }
+    public DateTime AnalysisTime { get; set; }
+}
+
+/// <summary>
+/// Execution statistics for a kernel.
+/// </summary>
+public class ExecutionStatistics
+{
+    public string KernelName { get; set; } = string.Empty;
+    public int TotalExecutions { get; set; }
+    public int SuccessfulExecutions { get; set; }
+    public int FailedExecutions { get; set; }
+    public TimeSpan AverageExecutionTime { get; set; }
+    public DateTime? LastExecutionTime { get; set; }
 }

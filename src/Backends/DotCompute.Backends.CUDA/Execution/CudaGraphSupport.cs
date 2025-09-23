@@ -20,7 +20,7 @@ using DotCompute.Backends.CUDA.Execution.Graph.Statistics;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Execution.Optimization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -787,7 +787,7 @@ namespace DotCompute.Backends.CUDA.Execution
             foreach (var op in graph.Operations)
             {
                 // Configure optimal memory access patterns
-                op.MemoryAccessPattern = DotCompute.Backends.CUDA.Types.MemoryAccessPattern.Coalesced;
+                op.MemoryAccessPattern = MemoryAccessPattern.Coalesced;
                 op.CacheConfig = DotCompute.Backends.CUDA.Types.CacheConfig.PreferL1;
             }
         }

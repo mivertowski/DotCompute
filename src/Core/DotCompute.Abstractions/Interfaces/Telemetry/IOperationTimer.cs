@@ -20,7 +20,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operationId">Optional unique identifier for this operation instance</param>
     /// <returns>A timer handle that can be used to stop the operation</returns>
-    ITimerHandle StartOperation(string operationName, string? operationId = null);
+    public ITimerHandle StartOperation(string operationName, string? operationId = null);
 
     /// <summary>
     /// Starts timing an operation and automatically stops when the returned handle is disposed.
@@ -28,7 +28,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operationId">Optional unique identifier for this operation instance</param>
     /// <returns>A disposable timer handle</returns>
-    IDisposable StartOperationScope(string operationName, string? operationId = null);
+    public IDisposable StartOperationScope(string operationName, string? operationId = null);
 
     /// <summary>
     /// Times a synchronous operation and returns the result along with timing information.
@@ -37,7 +37,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operation">The operation to time</param>
     /// <returns>Tuple containing the operation result and timing information</returns>
-    (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation);
+    public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation);
 
     /// <summary>
     /// Times an asynchronous operation and returns the result along with timing information.
@@ -46,7 +46,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operation">The async operation to time</param>
     /// <returns>Task containing the operation result and timing information</returns>
-    Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation);
+    public Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation);
 
     /// <summary>
     /// Times a void synchronous operation.
@@ -54,7 +54,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operation">The operation to time</param>
     /// <returns>Duration of the operation</returns>
-    TimeSpan TimeOperation(string operationName, Action operation);
+    public TimeSpan TimeOperation(string operationName, Action operation);
 
     /// <summary>
     /// Times a void asynchronous operation.
@@ -62,7 +62,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="operationName">Name of the operation being timed</param>
     /// <param name="operation">The async operation to time</param>
     /// <returns>Task containing the duration of the operation</returns>
-    Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation);
+    public Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation);
 
     /// <summary>
     /// Records a manual timing measurement for an operation.
@@ -71,7 +71,7 @@ public interface IOperationTimer : IDisposable
     /// <param name="duration">Duration of the operation</param>
     /// <param name="operationId">Optional unique identifier for this operation instance</param>
     /// <param name="metadata">Optional metadata associated with the operation</param>
-    void RecordTiming(string operationName, TimeSpan duration, string? operationId = null,
+    public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null,
                      IDictionary<string, object>? metadata = null);
 
     /// <summary>
@@ -79,24 +79,24 @@ public interface IOperationTimer : IDisposable
     /// </summary>
     /// <param name="operationName">Name of the operation to get statistics for</param>
     /// <returns>Timing statistics for the operation, or null if no data exists</returns>
-    OperationStatistics? GetStatistics(string operationName);
+    public OperationStatistics? GetStatistics(string operationName);
 
     /// <summary>
     /// Gets timing statistics for all recorded operations.
     /// </summary>
     /// <returns>Dictionary mapping operation names to their statistics</returns>
-    IDictionary<string, OperationStatistics> GetAllStatistics();
+    public IDictionary<string, OperationStatistics> GetAllStatistics();
 
     /// <summary>
     /// Clears all timing data for a specific operation.
     /// </summary>
     /// <param name="operationName">Name of the operation to clear data for</param>
-    void ClearStatistics(string operationName);
+    public void ClearStatistics(string operationName);
 
     /// <summary>
     /// Clears all timing data for all operations.
     /// </summary>
-    void ClearAllStatistics();
+    public void ClearAllStatistics();
 
     /// <summary>
     /// Exports timing data in the specified format.
@@ -104,35 +104,35 @@ public interface IOperationTimer : IDisposable
     /// <param name="format">Format for exporting the data</param>
     /// <param name="operationFilter">Optional filter for which operations to include</param>
     /// <returns>Exported timing data as a string</returns>
-    string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null);
+    public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null);
 
     /// <summary>
     /// Enables or disables timing collection.
     /// </summary>
     /// <param name="enabled">Whether timing should be enabled</param>
-    void SetEnabled(bool enabled);
+    public void SetEnabled(bool enabled);
 
     /// <summary>
     /// Gets whether timing collection is currently enabled.
     /// </summary>
-    bool IsEnabled { get; }
+    public bool IsEnabled { get; }
 
     /// <summary>
     /// Sets the minimum duration threshold for recording operations.
     /// Operations faster than this threshold will be ignored.
     /// </summary>
     /// <param name="threshold">Minimum duration threshold</param>
-    void SetMinimumDurationThreshold(TimeSpan threshold);
+    public void SetMinimumDurationThreshold(TimeSpan threshold);
 
     /// <summary>
     /// Gets the current minimum duration threshold.
     /// </summary>
-    TimeSpan MinimumDurationThreshold { get; }
+    public TimeSpan MinimumDurationThreshold { get; }
 
     /// <summary>
     /// Event fired when an operation completes and timing data is recorded.
     /// </summary>
-    event EventHandler<OperationTimingEventArgs> OperationCompleted;
+    public event EventHandler<OperationTimingEventArgs> OperationCompleted;
 }
 
 /// <summary>
@@ -143,42 +143,42 @@ public interface ITimerHandle : IDisposable
     /// <summary>
     /// Gets the name of the operation being timed.
     /// </summary>
-    string OperationName { get; }
+    public string OperationName { get; }
 
     /// <summary>
     /// Gets the unique identifier for this operation instance.
     /// </summary>
-    string OperationId { get; }
+    public string OperationId { get; }
 
     /// <summary>
     /// Gets the time when the operation started.
     /// </summary>
-    DateTime StartTime { get; }
+    public DateTime StartTime { get; }
 
     /// <summary>
     /// Gets the elapsed time since the operation started.
     /// </summary>
-    TimeSpan Elapsed { get; }
+    public TimeSpan Elapsed { get; }
 
     /// <summary>
     /// Stops the timer and records the operation duration.
     /// </summary>
     /// <param name="metadata">Optional metadata to associate with the timing record</param>
     /// <returns>The total duration of the operation</returns>
-    TimeSpan Stop(IDictionary<string, object>? metadata = null);
+    public TimeSpan Stop(IDictionary<string, object>? metadata = null);
 
     /// <summary>
     /// Adds a checkpoint with a name and the current elapsed time.
     /// </summary>
     /// <param name="checkpointName">Name of the checkpoint</param>
     /// <returns>Elapsed time at the checkpoint</returns>
-    TimeSpan AddCheckpoint(string checkpointName);
+    public TimeSpan AddCheckpoint(string checkpointName);
 
     /// <summary>
     /// Gets all checkpoints recorded for this operation.
     /// </summary>
     /// <returns>Dictionary mapping checkpoint names to their elapsed times</returns>
-    IDictionary<string, TimeSpan> GetCheckpoints();
+    public IDictionary<string, TimeSpan> GetCheckpoints();
 }
 
 /// <summary>

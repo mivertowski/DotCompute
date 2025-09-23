@@ -16,6 +16,7 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 using DotCompute.Core.Pipelines.Analysis;
+using DotCompute.Abstractions.Types;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -531,17 +532,6 @@ namespace DotCompute.Backends.CUDA.Advanced
         public string Details { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Types of performance bottlenecks
-    /// </summary>
-    public enum BottleneckType
-    {
-        None,
-        Occupancy,
-        MemoryBandwidth,
-        Compute,
-        ThreadDivergence
-    }
 
     /// <summary>
     /// Kernel profile data storage

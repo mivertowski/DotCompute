@@ -22,7 +22,7 @@ public interface IPipelineOptimizer
     /// <param name="pipeline">The pipeline to analyze</param>
     /// <param name="cancellationToken">Token to cancel the analysis</param>
     /// <returns>Task containing analysis results with optimization recommendations</returns>
-    Task<PipelineAnalysisResult> AnalyzeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
+    public Task<PipelineAnalysisResult> AnalyzeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Optimizes a pipeline based on specified optimization types and settings.
@@ -32,7 +32,7 @@ public interface IPipelineOptimizer
     /// <param name="settings">Configuration settings for optimization</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the optimized pipeline</returns>
-    Task<IKernelPipeline> OptimizeAsync(
+    public Task<IKernelPipeline> OptimizeAsync(
         IKernelPipeline pipeline,
         OptimizationType optimizationTypes,
         PipelineOptimizationSettings? settings = null,
@@ -45,7 +45,7 @@ public interface IPipelineOptimizer
     /// <param name="fusionCriteria">Criteria for determining which kernels can be fused</param>
     /// <param name="cancellationToken">Token to cancel the fusion process</param>
     /// <returns>Task containing the pipeline with fused kernels</returns>
-    Task<IKernelPipeline> ApplyKernelFusionAsync(
+    public Task<IKernelPipeline> ApplyKernelFusionAsync(
         IKernelPipeline pipeline,
         FusionCriteria fusionCriteria,
         CancellationToken cancellationToken = default);
@@ -57,7 +57,7 @@ public interface IPipelineOptimizer
     /// <param name="memoryConstraints">Memory constraints and preferences</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the memory-optimized pipeline</returns>
-    Task<IKernelPipeline> OptimizeMemoryAccessAsync(
+    public Task<IKernelPipeline> OptimizeMemoryAccessAsync(
         IKernelPipeline pipeline,
         MemoryConstraints memoryConstraints,
         CancellationToken cancellationToken = default);
@@ -69,7 +69,7 @@ public interface IPipelineOptimizer
     /// <param name="targetBackends">Target backends to optimize for</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the backend-optimized pipeline</returns>
-    Task<IKernelPipeline> OptimizeForBackendsAsync(
+    public Task<IKernelPipeline> OptimizeForBackendsAsync(
         IKernelPipeline pipeline,
         IEnumerable<string> targetBackends,
         CancellationToken cancellationToken = default);
@@ -81,7 +81,7 @@ public interface IPipelineOptimizer
     /// <param name="parallelismGoals">Goals and constraints for parallelization</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the parallelism-optimized pipeline</returns>
-    Task<IKernelPipeline> OptimizeParallelismAsync(
+    public Task<IKernelPipeline> OptimizeParallelismAsync(
         IKernelPipeline pipeline,
         ParallelismGoals parallelismGoals,
         CancellationToken cancellationToken = default);
@@ -93,7 +93,7 @@ public interface IPipelineOptimizer
     /// <param name="loopOptimizations">Specific loop optimization techniques to apply</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the loop-optimized pipeline</returns>
-    Task<IKernelPipeline> ApplyLoopOptimizationsAsync(
+    public Task<IKernelPipeline> ApplyLoopOptimizationsAsync(
         IKernelPipeline pipeline,
         LoopOptimizations loopOptimizations,
         CancellationToken cancellationToken = default);
@@ -105,7 +105,7 @@ public interface IPipelineOptimizer
     /// <param name="layoutPreferences">Preferences for data layout optimization</param>
     /// <param name="cancellationToken">Token to cancel the optimization</param>
     /// <returns>Task containing the data-layout-optimized pipeline</returns>
-    Task<IKernelPipeline> OptimizeDataLayoutAsync(
+    public Task<IKernelPipeline> OptimizeDataLayoutAsync(
         IKernelPipeline pipeline,
         DataLayoutPreferences layoutPreferences,
         CancellationToken cancellationToken = default);
@@ -118,7 +118,7 @@ public interface IPipelineOptimizer
     /// <param name="testInputs">Test inputs for validation</param>
     /// <param name="cancellationToken">Token to cancel the validation</param>
     /// <returns>Task containing validation results</returns>
-    Task<OptimizationValidationResult> ValidateOptimizationAsync(
+    public Task<OptimizationValidationResult> ValidateOptimizationAsync(
         IKernelPipeline originalPipeline,
         IKernelPipeline optimizedPipeline,
         IEnumerable<object[]> testInputs,
@@ -131,7 +131,7 @@ public interface IPipelineOptimizer
     /// <param name="proposedOptimizations">Optimizations to estimate impact for</param>
     /// <param name="cancellationToken">Token to cancel the estimation</param>
     /// <returns>Task containing performance impact estimates</returns>
-    Task<OptimizationImpactEstimate> EstimateOptimizationImpactAsync(
+    public Task<OptimizationImpactEstimate> EstimateOptimizationImpactAsync(
         IKernelPipeline pipeline,
         IEnumerable<OptimizationType> proposedOptimizations,
         CancellationToken cancellationToken = default);
@@ -142,7 +142,7 @@ public interface IPipelineOptimizer
     /// <param name="optimizationName">Name for the custom optimization</param>
     /// <param name="optimizationLogic">Function that performs the optimization</param>
     /// <returns>A custom optimization pass that can be applied to pipelines</returns>
-    IOptimizationPass CreateCustomOptimization(
+    public IOptimizationPass CreateCustomOptimization(
         string optimizationName,
         Func<IKernelPipeline, Task<IKernelPipeline>> optimizationLogic);
 
@@ -151,12 +151,12 @@ public interface IPipelineOptimizer
     /// </summary>
     /// <param name="strategyName">Name of the optimization strategy</param>
     /// <param name="strategy">The optimization strategy implementation</param>
-    void RegisterOptimizationStrategy(string strategyName, IOptimizationStrategy strategy);
+    public void RegisterOptimizationStrategy(string strategyName, IOptimizationStrategy strategy);
 
     /// <summary>
     /// Gets available optimization strategies for a specific optimization type.
     /// </summary>
     /// <param name="optimizationType">Type of optimization to get strategies for</param>
     /// <returns>Collection of available optimization strategies</returns>
-    IEnumerable<IOptimizationStrategy> GetAvailableStrategies(OptimizationType optimizationType);
+    public IEnumerable<IOptimizationStrategy> GetAvailableStrategies(OptimizationType optimizationType);
 }

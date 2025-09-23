@@ -287,6 +287,26 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// Gets performance counters if available.
         /// </summary>
         public Dictionary<string, object>? PerformanceCounters { get; init; }
+
+        /// <summary>
+        /// Gets the name of the accelerator used for execution.
+        /// </summary>
+        public string? AcceleratorName { get; init; }
+
+        /// <summary>
+        /// Gets the type of accelerator used for execution.
+        /// </summary>
+        public AcceleratorType AcceleratorType { get; init; }
+
+        /// <summary>
+        /// Gets the execution output data.
+        /// </summary>
+        public object? Output { get; init; }
+
+        /// <summary>
+        /// Gets the execution error if failed.
+        /// </summary>
+        public Exception? Error { get; init; }
     }
 
     /// <summary>

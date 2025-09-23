@@ -15,9 +15,9 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
 
 // Using aliases to resolve ValidationIssue conflicts
-using CoreValidationIssue = DotCompute.Abstractions.ValidationIssue;
+using CoreValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
-using DebugValidationSeverity = DotCompute.Abstractions.Debugging.ValidationSeverity;
+using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Debugging;
@@ -388,4 +388,30 @@ internal sealed class KernelDebugValidator : IDisposable
             _disposed = true;
         }
     }
+}
+
+/// <summary>
+/// Represents the result of comparing two kernel execution results.
+/// </summary>
+internal class ResultComparison
+{
+    /// <summary>
+    /// Gets or sets the first backend type.
+    /// </summary>
+    public string Backend1 { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the second backend type.
+    /// </summary>
+    public string Backend2 { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the results match within tolerance.
+    /// </summary>
+    public bool IsMatch { get; set; }
+
+    /// <summary>
+    /// Gets or sets the measured difference between results.
+    /// </summary>
+    public float Difference { get; set; }
 }

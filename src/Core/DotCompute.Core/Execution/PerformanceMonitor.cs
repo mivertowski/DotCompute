@@ -17,7 +17,7 @@ using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyTyp
 using DotCompute.Core.Execution.Plans;
 
 // Type alias to resolve ambiguity between different BottleneckType enums
-using AnalysisBottleneckType = DotCompute.Core.Kernels.BottleneckType;
+using AnalysisBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
 
 namespace DotCompute.Core.Execution
 {

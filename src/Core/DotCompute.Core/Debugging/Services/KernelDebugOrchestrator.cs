@@ -9,6 +9,7 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
+using KernelDebugProfiler = DotCompute.Core.Debugging.KernelDebugProfiler;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve type conflicts
@@ -29,7 +30,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
 
     // Core components
     private readonly CoreKernelValidator _validator;
-    private readonly CoreKernelProfiler _profiler;
+    private readonly KernelDebugProfiler _profiler;
     private readonly KernelDebugAnalyzer _analyzer;
     private readonly KernelDebugLogger _debugLogger;
 
@@ -51,11 +52,14 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         var validatorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<CoreKernelValidator>.Instance;
         _validator = new CoreKernelValidator(validatorLogger, _options);
 
-        var profilerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<CoreKernelProfiler>.Instance;
-        _profiler = new CoreKernelProfiler(profilerLogger, _options);
+        var profilerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<KernelDebugProfiler>.Instance;
+        var executionHistory = new ConcurrentQueue<KernelExecutionResult>();
+        _profiler = new KernelDebugProfiler(profilerLogger, executionHistory);
+        _profiler.Configure(_options);
 
         var analyzerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<KernelDebugAnalyzer>.Instance;
-        _analyzer = new KernelDebugAnalyzer(analyzerLogger, _options);
+        var accelerators = new ConcurrentDictionary<string, IAccelerator>();
+        _analyzer = new KernelDebugAnalyzer(analyzerLogger, accelerators, _profiler);
 
         var debugLoggerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<KernelDebugLogger>.Instance;
         _debugLogger = new KernelDebugLogger(debugLoggerLogger, _options);
@@ -227,7 +231,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             await _debugLogger.LogTracingStartAsync(kernelName, backendType, tracePoints);
 
             // Perform execution tracing
-            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints, accelerator, backendType);
+            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
 
             // Enhance with additional analysis
             var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace);
@@ -267,13 +271,13 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             var performanceReport = await _profiler.GeneratePerformanceReportAsync(kernelName, timeWindow);
 
             // Analyze memory usage
-            var memoryAnalysis = await _profiler.AnalyzeMemoryUsageAsync(kernelName);
+            var memoryAnalysis = await _profiler.AnalyzeMemoryUsageAsync(kernelName, TimeSpan.FromHours(1));
 
             // Detect bottlenecks
             var bottleneckAnalysis = await _profiler.DetectBottlenecksAsync(kernelName);
 
             // Get execution statistics
-            var executionStats = _profiler.GetExecutionStatistics(kernelName, timeWindow);
+            var executionStats = _profiler.GetExecutionStatistics(kernelName);
 
             // Perform advanced analysis
             var advancedAnalysis = await _analyzer.PerformAdvancedPerformanceAnalysisAsync(

@@ -14,7 +14,7 @@ public interface IKernelPipelineBuilder
     /// <param name="kernelName">Name of the kernel to execute</param>
     /// <param name="parameters">Parameters for kernel execution</param>
     /// <returns>The pipeline builder for method chaining</returns>
-    IKernelPipelineBuilder AddStage(string kernelName, params object[] parameters);
+    public IKernelPipelineBuilder AddStage(string kernelName, params object[] parameters);
 
 
     /// <summary>
@@ -24,7 +24,7 @@ public interface IKernelPipelineBuilder
     /// <typeparam name="TOutput">Output data type</typeparam>
     /// <param name="transform">Transformation function</param>
     /// <returns>The pipeline builder for method chaining</returns>
-    IKernelPipelineBuilder Transform<TInput, TOutput>(Func<TInput, TOutput> transform);
+    public IKernelPipelineBuilder Transform<TInput, TOutput>(Func<TInput, TOutput> transform);
 
 
     /// <summary>
@@ -34,7 +34,7 @@ public interface IKernelPipelineBuilder
     /// <param name="input">Input data</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pipeline execution result</returns>
-    Task<T> ExecuteAsync<T>(T input, CancellationToken cancellationToken = default);
+    public Task<T> ExecuteAsync<T>(T input, CancellationToken cancellationToken = default);
 
 
     /// <summary>
@@ -43,14 +43,14 @@ public interface IKernelPipelineBuilder
     /// <typeparam name="T">Output data type</typeparam>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pipeline execution result</returns>
-    Task<T> ExecutePipelineAsync<T>(CancellationToken cancellationToken = default);
+    public Task<T> ExecutePipelineAsync<T>(CancellationToken cancellationToken = default);
 
 
     /// <summary>
     /// Creates a pipeline instance from the current builder configuration
     /// </summary>
     /// <returns>A pipeline instance that can be executed</returns>
-    object Create();
+    public object Create();
 
 
     /// <summary>
@@ -59,7 +59,7 @@ public interface IKernelPipelineBuilder
     /// <typeparam name="T">The element type of the input data</typeparam>
     /// <param name="inputData">The input data array to process</param>
     /// <returns>A new pipeline initialized with the input data</returns>
-    IKernelPipelineBuilder FromData<T>(T[] inputData) where T : unmanaged;
+    public IKernelPipelineBuilder FromData<T>(T[] inputData) where T : unmanaged;
 
 
     /// <summary>
@@ -68,5 +68,5 @@ public interface IKernelPipelineBuilder
     /// <typeparam name="T">The element type of the input stream</typeparam>
     /// <param name="inputStream">The async enumerable input stream</param>
     /// <returns>A new streaming pipeline</returns>
-    IKernelPipelineBuilder FromStream<T>(IAsyncEnumerable<T> inputStream) where T : unmanaged;
+    public IKernelPipelineBuilder FromStream<T>(IAsyncEnumerable<T> inputStream) where T : unmanaged;
 }
