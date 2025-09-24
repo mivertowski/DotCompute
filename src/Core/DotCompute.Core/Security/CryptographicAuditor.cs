@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System.Text;
+using System.Security;
 
 namespace DotCompute.Core.Security;
 
@@ -511,7 +513,7 @@ internal sealed class CryptographicAuditor : IDisposable
 
     private string ConvertToCsv(List<SecurityEvent> events)
     {
-        var csv = new System.Text.StringBuilder();
+        var csv = new StringBuilder();
         csv.AppendLine("EventId,Timestamp,EventType,Severity,Category,Description,UserId,SessionId");
 
         foreach (var evt in events)
@@ -526,7 +528,7 @@ internal sealed class CryptographicAuditor : IDisposable
     private string ConvertToXml(List<SecurityEvent> events)
     {
         // Simplified XML conversion - in practice, use XmlDocument or XElement
-        var xml = new System.Text.StringBuilder();
+        var xml = new StringBuilder();
         xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         xml.AppendLine("<SecurityEvents>");
 
@@ -536,7 +538,7 @@ internal sealed class CryptographicAuditor : IDisposable
             xml.AppendLine($"    <Type>{evt.EventType}</Type>");
             xml.AppendLine($"    <Severity>{evt.Severity}</Severity>");
             xml.AppendLine($"    <Category>{evt.Category}</Category>");
-            xml.AppendLine($"    <Description>{System.Security.SecurityElement.Escape(evt.Description)}</Description>");
+            xml.AppendLine($"    <Description>{SecurityElement.Escape(evt.Description)}</Description>");
             xml.AppendLine("  </Event>");
         }
 

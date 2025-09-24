@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
-// using DotCompute.Core.Logging; // Removed - not needed
 
 namespace DotCompute.Core.Debugging;
 
@@ -21,12 +20,10 @@ namespace DotCompute.Core.Debugging;
 public class KernelValidator
 {
     private readonly ILogger<KernelValidator> _logger;
-    // private readonly KernelDebugLogMessages _logMessages; // Not needed for split component
 
     public KernelValidator(ILogger<KernelValidator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        // _logMessages = new KernelDebugLogMessages(); // Not needed for split component
     }
 
     /// <summary>
@@ -66,7 +63,7 @@ public class KernelValidator
                     [
                         new()
                         {
-                            Severity = Abstractions.Debugging.ValidationSeverity.Critical,
+                            Severity = ValidationSeverity.Critical,
                             Message = "All backend executions failed"
                         }
                     ],
@@ -85,7 +82,7 @@ public class KernelValidator
                 {
                     issues.Add(new DebugValidationIssue
                     {
-                        Severity = Abstractions.Debugging.ValidationSeverity.Error,
+                        Severity = ValidationSeverity.Error,
                         Message = $"Result mismatch between {referenceResult.Backend} and {result.Backend}"
                     });
                 }
@@ -112,7 +109,7 @@ public class KernelValidator
                 [
                     new()
                     {
-                        Severity = Abstractions.Debugging.ValidationSeverity.Critical,
+                        Severity = ValidationSeverity.Critical,
                         Message = "Validation failed with exception"
                     }
                 ],

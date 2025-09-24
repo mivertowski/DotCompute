@@ -139,7 +139,6 @@ namespace DotCompute.Core.Security
                 throw new ObjectDisposedException(nameof(CryptographicSecurityCore));
             }
 
-
             var result = new DecryptionResult
             {
                 KeyIdentifier = keyIdentifier,
@@ -178,6 +177,8 @@ namespace DotCompute.Core.Security
             {
                 result.ErrorMessage = $"Decryption failed: {ex.Message}";
             }
+
+            await Task.CompletedTask;
 
             return result;
         }
@@ -394,11 +395,11 @@ namespace DotCompute.Core.Security
 
     public class SecureKeyContainer : IDisposable
     {
-        public KeyType KeyType { get; }
-        public int KeySize { get; }
-        public string Identifier { get; }
-        public string Purpose { get; }
-        public DateTimeOffset CreationTime { get; }
+        public KeyType KeyType { get; init; }
+        public int KeySize { get; init; }
+        public string Identifier { get; init; }
+        public string Purpose { get; init; }
+        public DateTimeOffset CreationTime { get; init; }
         private readonly byte[] _keyData;
         private bool _disposed;
 

@@ -12,6 +12,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Core.Debugging;
 
@@ -318,8 +319,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
 
             if (!validationResult.IsValid)
             {
-                var criticalIssues = validationResult.Issues.Where(i => i.Severity == DotCompute.Abstractions.Debugging.ValidationSeverity.Critical);
-                var errorIssues = validationResult.Issues.Where(i => i.Severity == DotCompute.Abstractions.Debugging.ValidationSeverity.Error);
+                var criticalIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Critical);
+                var errorIssues = validationResult.Issues.Where(i => i.Severity == ValidationSeverity.Error);
 
 
                 if (criticalIssues.Any())

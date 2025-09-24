@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
+using System.Diagnostics;
 
 namespace DotCompute.Core.Security;
 
@@ -54,9 +55,9 @@ public sealed class SecurityAlertManager
         {
             if (OperatingSystem.IsWindows())
             {
-                System.Diagnostics.EventLog.WriteEntry("DotCompute.Security", 
+                EventLog.WriteEntry("DotCompute.Security", 
                     $"Critical security event: {entry.EventType} - {entry.Message}",
-                    System.Diagnostics.EventLogEntryType.Error);
+                    EventLogEntryType.Error);
             }
         }
         catch (Exception ex)

@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
+using DotCompute.Abstractions.Pipelines.Enums;
 
 namespace DotCompute.Core.Telemetry;
 

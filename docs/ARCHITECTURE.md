@@ -1,430 +1,707 @@
-# DotCompute Architecture
+# DotCompute Architecture Overview
 
-This document provides a comprehensive overview of DotCompute's system architecture, design principles, and component interactions.
+This document provides a comprehensive overview of DotCompute's architecture, designed for developers who want to understand the internal workings of the framework.
 
-## 🎯 Design Principles
+## Table of Contents
 
-DotCompute is built on four core principles:
+- [High-Level Architecture](#high-level-architecture)
+- [Component Diagram](#component-diagram)
+- [Core Layers](#core-layers)
+- [Backend Abstraction Layer](#backend-abstraction-layer)
+- [Memory Management System](#memory-management-system)
+- [Kernel Compilation Pipeline](#kernel-compilation-pipeline)
+- [Plugin Architecture](#plugin-architecture)
+- [Runtime Integration](#runtime-integration)
+- [Performance Optimization](#performance-optimization)
+- [Cross-Cutting Concerns](#cross-cutting-concerns)
 
-### 1. **Native AOT First**
-- **Zero Runtime Codegen**: All kernels compiled at build time
-- **Static Analysis**: Leverage compile-time optimizations
-- **Minimal Runtime**: Sub-10ms startup with < 1MB overhead
-- **Predictable Performance**: No JIT compilation delays
+## High-Level Architecture
 
-### 2. **Performance by Design**
-- **Zero-Copy Operations**: Direct memory access without copying
-- **SIMD Vectorization**: 8-23x speedup with AVX512/AVX2/NEON
-- **Memory Pooling**: 90%+ allocation reduction
-- **Multi-threading**: Work-stealing parallel execution
+DotCompute follows a layered architecture with clear separation of concerns, designed for Native AOT compatibility and production-grade performance:
 
-### 3. **Universal Backends**
-- **Abstraction Layer**: Unified API across compute devices
-- **Backend Plugins**: Hot-reload capable plugin architecture
-- **CPU Backend**: Production-ready SIMD optimization
-- **GPU Backends**: CUDA/Metal/ROCm support
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Layer                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ User Code with │  │ LINQ Queries   │  │ Algorithm      │ │
+│  │ [Kernel] attrs │  │ + Extensions   │  │ Libraries      │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                               │
+┌─────────────────────────────────────────────────────────────┐
+│                 Source Generation Layer                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Kernel Source  │  │ Roslyn         │  │ Code Fixes &   │ │
+│  │ Generator      │  │ Analyzers      │  │ Refactoring    │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                               │
+┌─────────────────────────────────────────────────────────────┐
+│                   Runtime Orchestration                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ ICompute       │  │ Kernel         │  │ Backend        │ │
+│  │ Orchestrator   │  │ Execution      │  │ Selection      │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                               │
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend Layer                           │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ CPU Backend    │  │ CUDA Backend   │  │ Plugin         │ │
+│  │ (SIMD/AVX)     │  │ (NVIDIA GPU)   │  │ Backends       │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                               │
+┌─────────────────────────────────────────────────────────────┐
+│                  Memory Management                         │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Unified Memory │  │ Memory Pool    │  │ P2P Transfer   │ │
+│  │ Buffers        │  │ Management     │  │ Manager        │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 4. **Developer Experience**
-- **C# Kernels**: Familiar syntax and tooling
-- **Type Safety**: Compile-time error detection
-- **IntelliSense**: Full IDE support and debugging
-- **Hot Reload**: Real-time development workflow
+## Component Diagram
 
-## 🏗️ System Architecture
+### Core Components and Their Relationships
 
 ```mermaid
 graph TB
     subgraph "Application Layer"
-        App[.NET Application]
-        LINQ[LINQ Provider]
-        Algos[Algorithm Libraries]
+        A1[User Code with [Kernel]]
+        A2[LINQ Extensions]
+        A3[Algorithm Libraries]
     end
     
-    subgraph "DotCompute Framework"
-        subgraph "Core Services"
-            CS[ComputeService]
-            KM[KernelManager]
-            AM[AcceleratorManager]
-        end
-        
-        subgraph "Memory System"
-            UM[UnifiedBuffer<T>]
-            MP[MemoryPool]
-            P2P[P2P Manager]
-        end
-        
-        subgraph "Plugin System"
-            PS[PluginRegistry]
-            HR[HotReload]
-            SG[SourceGenerators]
-        end
+    subgraph "Source Generation"
+        S1[KernelSourceGenerator]
+        S2[DotComputeAnalyzer]
+        S3[CodeFixProvider]
+    end
+    
+    subgraph "Runtime Services"
+        R1[IComputeOrchestrator]
+        R2[KernelExecutionService]
+        R3[GeneratedKernelDiscoveryService]
+        R4[AdaptiveBackendSelector]
+    end
+    
+    subgraph "Core Abstractions"
+        C1[IAccelerator]
+        C2[IKernelCompiler]
+        C3[IUnifiedMemoryManager]
+        C4[KernelDefinition]
     end
     
     subgraph "Backend Implementations"
-        CPU[CPU Backend<br/>SIMD + Threading]
-        CUDA[CUDA Backend<br/>PTX + NVRTC]
-        Metal[Metal Backend<br/>MSL Shaders]
-        ROCm[ROCm Backend<br/>HIP/HSA]
+        B1[CpuAccelerator]
+        B2[CudaAccelerator] 
+        B3[PluginAccelerator]
     end
     
-    subgraph "Hardware Layer"
-        CPUH[CPU Cores<br/>AVX512/NEON]
-        NVGPU[NVIDIA GPU<br/>CUDA Cores]
-        AMGPU[Apple GPU<br/>Metal Cores]
-        AMDGPU[AMD GPU<br/>Compute Units]
+    subgraph "Memory System"
+        M1[UnifiedBuffer<T>]
+        M2[MemoryPool]
+        M3[P2PManager]
     end
     
-    App --> CS
-    LINQ --> CS
-    Algos --> CS
-    
-    CS --> KM
-    CS --> AM
-    CS --> UM
-    
-    KM --> PS
-    AM --> PS
-    UM --> MP
-    UM --> P2P
-    
-    PS --> CPU
-    PS --> CUDA
-    PS --> Metal
-    PS --> ROCm
-    
-    CPU --> CPUH
-    CUDA --> NVGPU
-    Metal --> AMGPU
-    ROCm --> AMDGPU
+    A1 --> S1
+    S1 --> R3
+    R3 --> R2
+    R2 --> R1
+    R1 --> R4
+    R4 --> C1
+    C1 --> B1
+    C1 --> B2
+    C1 --> B3
+    R2 --> C2
+    R2 --> C3
+    C3 --> M1
+    M1 --> M2
+    B2 --> M3
 ```
 
-## 📦 Component Architecture
+## Core Layers
 
-### Core Components
+### 1. Abstractions Layer (`DotCompute.Abstractions`)
 
-#### ComputeService (`IComputeService`)
-Primary entry point for all compute operations.
+Defines the fundamental interfaces and contracts:
 
 ```csharp
-public interface IComputeService : IAsyncDisposable
+// Core computation interface
+public interface IComputeOrchestrator
 {
-    ValueTask<IAccelerator> GetAcceleratorAsync(string? backendName = null);
-    ValueTask ExecuteAsync<T>(string kernelName, T parameters);
+    Task<T> ExecuteAsync<T>(string kernelName, params object[] args);
+    Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName);
+    Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null);
+}
+
+// Backend abstraction
+public interface IAccelerator : IAsyncDisposable
+{
+    AcceleratorInfo Info { get; }
+    AcceleratorType Type { get; }
+    IUnifiedMemoryManager Memory { get; }
     ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition);
 }
-```
 
-**Responsibilities:**
-- Accelerator lifecycle management
-- Kernel compilation coordination  
-- Execution orchestration
-- Backend selection and optimization
-
-#### AcceleratorManager (`IAcceleratorManager`)
-Manages available compute accelerators and their capabilities.
-
-```csharp
-public interface IAcceleratorManager : IDisposable
+// Memory abstraction
+public interface IUnifiedMemoryBuffer<T> : IAsyncDisposable where T : unmanaged
 {
-    IReadOnlyList<IAccelerator> AvailableAccelerators { get; }
-    IAccelerator GetBestAccelerator(AcceleratorType preferredType);
-    ValueTask<AcceleratorInfo> GetAcceleratorInfoAsync(IAccelerator accelerator);
-}
-```
-
-**Responsibilities:**
-- Hardware detection and enumeration
-- Capability assessment
-- Performance profiling
-- Resource allocation
-
-#### KernelManager (`IKernelManager`)
-Handles kernel compilation, caching, and execution.
-
-```csharp
-public interface IKernelManager : IDisposable
-{
-    ValueTask<ICompiledKernel> CompileAsync(KernelDefinition definition);
-    ValueTask<IKernel> LoadAsync(string kernelName);
-    bool IsKernelCached(string kernelName);
-}
-```
-
-**Responsibilities:**
-- Source-to-binary compilation
-- Compiled kernel caching
-- Kernel metadata management
-- Cross-backend compatibility
-
-### Memory System
-
-#### UnifiedBuffer<T> (`IUnifiedBuffer<T>`)
-Zero-copy memory abstraction supporting multiple memory spaces.
-
-```csharp
-public interface IUnifiedBuffer<T> : IMemoryBuffer<T>, IDisposable 
-    where T : unmanaged
-{
-    Memory<T> AsMemory();
+    int Length { get; }
+    bool IsOnHost { get; }
+    bool IsOnDevice { get; }
     Span<T> AsSpan();
-    ValueTask TransferToAsync(IAccelerator accelerator);
-    ValueTask SynchronizeAsync();
+    void EnsureOnDevice();
+    ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-**Key Features:**
-- **Lazy Transfer**: Data moved only when needed
-- **Multi-Device**: Supports CPU/GPU memory spaces  
-- **Reference Tracking**: Automatic synchronization
-- **Pool Integration**: Allocation/deallocation optimization
+### 2. Core Layer (`DotCompute.Core`)
 
-#### MemoryPool (`IMemoryPool`)
-High-performance memory allocation with reuse.
+Implements core runtime functionality:
+
+- **Orchestration Engine**: Coordinates kernel execution across backends
+- **Debugging Services**: Cross-backend validation and profiling
+- **Optimization Engine**: ML-powered backend selection
+- **Telemetry System**: Performance monitoring and metrics collection
 
 ```csharp
-public interface IMemoryPool : IDisposable
+// Core orchestration with debugging integration
+public class DebugIntegratedOrchestrator : IComputeOrchestrator
 {
-    IMemoryBuffer<T> Rent<T>(int size) where T : unmanaged;
-    void Return<T>(IMemoryBuffer<T> buffer) where T : unmanaged;
-    MemoryStatistics GetStatistics();
+    private readonly IComputeOrchestrator _inner;
+    private readonly IKernelDebugService _debugService;
+    
+    public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
+    {
+        // Cross-backend validation in debug builds
+        if (_debugProfile.EnableCrossBackendValidation)
+        {
+            await _debugService.ValidateAcrossBackendsAsync(kernelName, args);
+        }
+        
+        return await _inner.ExecuteAsync<T>(kernelName, args);
+    }
 }
 ```
 
-**Optimization Strategies:**
-- **Size-based Buckets**: Efficient allocation patterns
-- **NUMA Awareness**: CPU topology optimization
-- **Usage Tracking**: Performance monitoring
-- **Fragmentation Management**: Memory compaction
+### 3. Memory Layer (`DotCompute.Memory`)
 
-### Backend System
-
-#### CPU Backend
-✅ **Production-ready** CPU compute with SIMD optimization.
-
-**Architecture Components:**
-- **SIMD Dispatcher**: AVX512/AVX2/NEON detection and dispatch
-- **Thread Pool**: Work-stealing parallel execution
-- **Memory Manager**: NUMA-aware allocation
-- **Kernel Compiler**: C# source to native code compilation
-
-**Performance Optimizations:**
-- **Vectorization**: 8-23x speedup with SIMD instructions
-- **Cache Optimization**: Data locality and prefetching
-- **Load Balancing**: Dynamic work distribution
-- **Memory Bandwidth**: Optimal memory access patterns
-
-#### CUDA Backend  
-✅ **Production-ready** NVIDIA GPU support with complete implementation.
-
-**Architecture Components:**
-- **Device Management**: Multi-GPU enumeration and selection
-- **Kernel Compiler**: OpenCL C to PTX compilation via NVRTC
-- **Memory Manager**: Device memory allocation and P2P transfers
-- **Execution Engine**: Stream management and synchronization
-- **Capability Detection**: Compute capability 5.0+ support
-
-**Key Capabilities:**
-- **P2P Transfers**: Direct GPU-to-GPU memory copying
-- **Multi-GPU Support**: Data and model parallelism
-- **Unified Memory**: Automatic data migration
-- **Performance Profiling**: Kernel execution metrics
-
-#### Plugin Architecture
-Hot-reload capable backend system with assembly isolation.
+Advanced memory management with unified addressing:
 
 ```csharp
-public abstract class BackendPluginBase : IBackendPlugin
+// Unified buffer with lazy transfer semantics
+public sealed class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    public abstract string Name { get; }
-    public abstract AcceleratorType SupportedType { get; }
-    public abstract ValueTask<IAccelerator> CreateAcceleratorAsync();
+    private BufferState _state;
+    private T[]? _hostArray;
+    private DeviceMemory _deviceMemory;
+    
+    public void EnsureOnDevice()
+    {
+        switch (_state)
+        {
+            case BufferState.HostOnly:
+            case BufferState.HostDirty:
+                TransferHostToDevice();
+                _state = BufferState.Synchronized;
+                break;
+        }
+    }
 }
 ```
 
-**Plugin Lifecycle:**
-1. **Discovery**: Assembly scanning and metadata extraction
-2. **Validation**: Security scanning and compatibility checking
-3. **Loading**: Assembly loading with isolation
-4. **Registration**: Service registration and dependency injection
-5. **Hot Reload**: Runtime assembly replacement
+### 4. Runtime Layer (`DotCompute.Runtime`)
 
-## 🔄 Execution Flow
+Service orchestration and dependency injection integration:
 
-### Kernel Compilation Pipeline
-
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant CS as ComputeService  
-    participant KM as KernelManager
-    participant BE as Backend
-    participant HW as Hardware
+```csharp
+// Production-grade kernel execution service
+public class KernelExecutionService : IComputeOrchestrator
+{
+    private readonly AcceleratorRuntime _runtime;
+    private readonly IKernelCache _cache;
+    private readonly IKernelProfiler _profiler;
     
-    App->>CS: ExecuteAsync("KernelName", params)
-    CS->>KM: CompileAsync(definition)
-    
-    alt Cached Kernel
-        KM-->>CS: Return cached kernel
-    else New Kernel
-        KM->>BE: CompileKernel(source)
-        BE->>BE: Source → Binary
-        BE-->>KM: Compiled kernel
-        KM->>KM: Cache kernel
-        KM-->>CS: Return kernel
-    end
-    
-    CS->>BE: ExecuteAsync(kernel, params)
-    BE->>HW: Launch kernel
-    HW-->>BE: Execution complete
-    BE-->>CS: Results
-    CS-->>App: Results
+    public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
+    {
+        // 1. Resolve kernel from registry
+        var kernel = await ResolveKernelAsync(kernelName);
+        
+        // 2. Select optimal accelerator
+        var accelerator = await SelectAcceleratorAsync(kernel);
+        
+        // 3. Compile if needed (with caching)
+        var compiled = await CompileKernelAsync(kernel, accelerator);
+        
+        // 4. Execute with profiling
+        return await ExecuteWithProfilingAsync<T>(compiled, args);
+    }
+}
 ```
 
-### Memory Transfer Optimization
+## Backend Abstraction Layer
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant UB as UnifiedBuffer
-    participant CPU as CPU Memory
-    participant GPU as GPU Memory
+### Backend Discovery and Selection
+
+```csharp
+public class AcceleratorRuntime
+{
+    private readonly List<IAccelerator> _accelerators = new();
     
-    App->>UB: Create buffer (CPU)
-    UB->>CPU: Allocate memory
+    public async Task InitializeAsync()
+    {
+        // Discover available backends
+        await DiscoverCpuAcceleratorsAsync();
+        await DiscoverCudaAcceleratorsAsync();
+        await DiscoverPluginAcceleratorsAsync();
+        
+        // Initialize backend-specific resources
+        foreach (var accelerator in _accelerators)
+        {
+            await accelerator.InitializeAsync();
+        }
+    }
     
-    App->>UB: Write data
-    UB->>CPU: Store data
-    
-    App->>UB: ExecuteAsync(gpu_kernel)
-    
-    Note over UB: Lazy transfer triggered
-    UB->>GPU: Allocate GPU memory
-    UB->>GPU: Copy data CPU→GPU
-    UB->>GPU: Execute kernel
-    
-    App->>UB: Read results
-    Note over UB: Auto-sync if needed
-    UB->>CPU: Copy results GPU→CPU
-    UB-->>App: Return data
+    public IAccelerator? SelectOptimal(KernelDefinition kernel, WorkloadCharacteristics workload)
+    {
+        return _backendSelector.SelectOptimal(_accelerators, kernel, workload);
+    }
+}
 ```
 
-## 🔧 Configuration & Extensibility
+### CPU Backend Architecture
 
-### Service Registration
+```csharp
+public class CpuAccelerator : IAccelerator
+{
+    private readonly SimdProcessor _simdProcessor;
+    private readonly ThreadPoolScheduler _scheduler;
+    
+    public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition)
+    {
+        // Compile to optimized CPU code with SIMD intrinsics
+        var optimizedCode = _simdProcessor.OptimizeForTarget(definition, _cpuInfo);
+        return new CpuCompiledKernel(optimizedCode, _scheduler);
+    }
+}
+```
+
+### CUDA Backend Architecture
+
+```csharp
+public class CudaAccelerator : IAccelerator
+{
+    private readonly CudaKernelCompiler _compiler;
+    private readonly CudaCapabilityManager _capabilityManager;
+    
+    public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition)
+    {
+        // Determine target architecture
+        var computeCapability = _capabilityManager.GetTargetComputeCapability();
+        
+        // Compile CUDA C to PTX/CUBIN
+        var options = new CompilationOptions
+        {
+            TargetArchitecture = computeCapability,
+            OptimizationLevel = OptimizationLevel.Maximum,
+            GenerateDebugInfo = _debugMode
+        };
+        
+        return await _compiler.CompileAsync(definition, options);
+    }
+}
+```
+
+## Memory Management System
+
+### Unified Memory Architecture
+
+DotCompute's memory system provides automatic, lazy transfers between host and device memory:
+
+```csharp
+public enum BufferState
+{
+    Uninitialized,    // No memory allocated
+    HostOnly,         // Data exists only on host
+    DeviceOnly,       // Data exists only on device  
+    Synchronized,     // Data synchronized between host/device
+    HostDirty,        // Host has newer data
+    DeviceDirty       // Device has newer data
+}
+
+public class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T>
+{
+    private BufferState _state;
+    
+    // Automatic transfer management
+    public Span<T> AsSpan()
+    {
+        EnsureOnHost();      // Transfer from device if needed
+        return _hostSpan;
+    }
+    
+    public DeviceMemory GetDeviceMemory()
+    {
+        EnsureOnDevice();    // Transfer from host if needed
+        return _deviceMemory;
+    }
+}
+```
+
+### Memory Pool Management
+
+```csharp
+public class MemoryPool : IUnifiedMemoryManager
+{
+    private readonly ConcurrentDictionary<int, ConcurrentQueue<IUnifiedMemoryBuffer>> _pools = new();
+    
+    public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(int length) where T : unmanaged
+    {
+        var sizeCategory = GetSizeCategory(length * sizeof(T));
+        
+        // Try to reuse from pool first
+        if (_pools[sizeCategory].TryDequeue(out var pooled))
+        {
+            return (IUnifiedMemoryBuffer<T>)pooled;
+        }
+        
+        // Allocate new buffer
+        return new UnifiedBuffer<T>(_deviceMemoryManager, length);
+    }
+}
+```
+
+### Peer-to-Peer (P2P) Transfers
+
+```csharp
+public class P2PManager
+{
+    public async Task<bool> CanTransferDirectlyAsync(IAccelerator source, IAccelerator destination)
+    {
+        // Check for CUDA P2P capabilities
+        if (source is CudaAccelerator srcCuda && destination is CudaAccelerator destCuda)
+        {
+            return await CheckCudaP2PAsync(srcCuda.DeviceId, destCuda.DeviceId);
+        }
+        
+        return false; // Fallback to host-mediated transfer
+    }
+}
+```
+
+## Kernel Compilation Pipeline
+
+### Source Generation Phase
+
+```csharp
+[Generator]
+public class KernelSourceGenerator : IIncrementalGenerator
+{
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        // Find methods with [Kernel] attribute
+        var kernelMethods = context.SyntaxProvider
+            .CreateSyntaxProvider(IsKernelMethod, GetKernelMethodInfo)
+            .Where(m => m is not null);
+        
+        // Generate wrapper code
+        context.RegisterSourceOutput(kernelMethods, GenerateKernelWrapper);
+    }
+    
+    private static void GenerateKernelWrapper(SourceProductionContext context, KernelMethodInfo method)
+    {
+        var source = $$"""
+            // Generated wrapper for {{method.Name}}
+            public static class {{method.ContainingType}}_Generated
+            {
+                public static KernelDefinition {{method.Name}} => new()
+                {
+                    Name = "{{method.FullyQualifiedName}}",
+                    SourceCode = "{{EscapeSourceCode(method.SourceCode)}}",
+                    Parameters = new[] { {{GenerateParameters(method.Parameters)}} },
+                    ThreadingModel = ThreadingModel.{{method.ThreadingModel}}
+                };
+            }
+            """;
+        
+        context.AddSource($"{method.ContainingType}_{method.Name}.g.cs", source);
+    }
+}
+```
+
+### Runtime Compilation
+
+```csharp
+public class CudaKernelCompiler : IKernelCompiler
+{
+    public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, CompilationOptions options)
+    {
+        // 1. Generate CUDA C source
+        var cudaSource = GenerateCudaSource(definition);
+        
+        // 2. Compile with NVRTC
+        var ptxCode = await CompileWithNvrtcAsync(cudaSource, options);
+        
+        // 3. Create executable module
+        var module = await LoadModuleAsync(ptxCode);
+        
+        // 4. Return compiled kernel
+        return new CudaCompiledKernel(module, definition.Name);
+    }
+    
+    private async Task<string> CompileWithNvrtcAsync(string source, CompilationOptions options)
+    {
+        var program = nvrtcCreateProgram(source, "kernel.cu", 0, null, null);
+        
+        var compileOptions = new[]
+        {
+            $"--gpu-architecture=compute_{options.TargetArchitecture.Major}{options.TargetArchitecture.Minor}",
+            "--use_fast_math",
+            options.OptimizationLevel == OptimizationLevel.Maximum ? "-O3" : "-O2"
+        };
+        
+        var result = nvrtcCompileProgram(program, compileOptions.Length, compileOptions);
+        if (result != nvrtcResult.NVRTC_SUCCESS)
+        {
+            var log = GetCompilationLog(program);
+            throw new KernelCompilationException($"CUDA compilation failed: {log}");
+        }
+        
+        return GetPTXCode(program);
+    }
+}
+```
+
+## Plugin Architecture
+
+### Plugin Discovery and Loading
+
+```csharp
+public class PluginManager
+{
+    private readonly List<IAcceleratorPlugin> _plugins = new();
+    
+    public async Task LoadPluginsAsync(string pluginDirectory)
+    {
+        var assemblyFiles = Directory.GetFiles(pluginDirectory, "*.dll");
+        
+        foreach (var file in assemblyFiles)
+        {
+            try
+            {
+                var assembly = Assembly.LoadFrom(file);
+                var pluginTypes = assembly.GetTypes()
+                    .Where(t => typeof(IAcceleratorPlugin).IsAssignableFrom(t) && !t.IsAbstract);
+                
+                foreach (var type in pluginTypes)
+                {
+                    var plugin = (IAcceleratorPlugin)Activator.CreateInstance(type)!;
+                    await plugin.InitializeAsync();
+                    _plugins.Add(plugin);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Failed to load plugin from {File}: {Error}", file, ex.Message);
+            }
+        }
+    }
+}
+
+// Plugin interface
+public interface IAcceleratorPlugin
+{
+    string Name { get; }
+    Version Version { get; }
+    Task InitializeAsync();
+    Task<IAccelerator> CreateAcceleratorAsync(AcceleratorConfig config);
+    bool IsSupported();
+}
+```
+
+## Runtime Integration
+
+### Dependency Injection Setup
 
 ```csharp
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddDotCompute(this IServiceCollection services)
+    public static IServiceCollection AddDotComputeRuntime(this IServiceCollection services)
     {
         // Core services
-        services.AddSingleton<IComputeService, ComputeService>();
-        services.AddSingleton<IAcceleratorManager, AcceleratorManager>();
-        services.AddSingleton<IKernelManager, KernelManager>();
+        services.AddSingleton<AcceleratorRuntime>();
+        services.AddSingleton<IComputeOrchestrator, KernelExecutionService>();
+        services.AddSingleton<IKernelCache, DistributedKernelCache>();
         
-        // Memory system
-        services.AddSingleton<IMemoryPool, MemoryPool>();
-        services.AddTransient(typeof(IUnifiedBuffer<>), typeof(UnifiedBuffer<>));
+        // Memory management
+        services.AddSingleton<IUnifiedMemoryManager, MemoryPool>();
+        services.AddTransient<UnifiedBuffer<float>>(); // Example typed buffer
         
-        // Plugin system
-        services.AddSingleton<IPluginRegistry, PluginRegistry>();
+        // Backend selection
+        services.AddSingleton<IBackendSelector, AdaptiveBackendSelector>();
+        
+        // Discovery services
+        services.AddSingleton<GeneratedKernelDiscoveryService>();
         
         return services;
     }
     
-    public static IServiceCollection AddCpuBackend(this IServiceCollection services)
+    public static IServiceCollection AddProductionOptimization(this IServiceCollection services)
     {
-        services.AddSingleton<IBackendPlugin, CpuBackendPlugin>();
+        // Wrap orchestrator with optimization
+        services.Decorate<IComputeOrchestrator, PerformanceOptimizedOrchestrator>();
+        
+        // Add profiling
+        services.AddSingleton<IKernelProfiler, HardwareCounterProfiler>();
+        
+        // Add adaptive selection with ML
+        services.AddSingleton<IBackendSelector, MLBackendSelector>();
+        
         return services;
     }
     
-    public static IServiceCollection AddCudaBackend(this IServiceCollection services)
+    public static IServiceCollection AddProductionDebugging(this IServiceCollection services)
     {
-        services.AddSingleton<IBackendPlugin, CudaBackendPlugin>();
+        // Wrap orchestrator with debugging
+        services.Decorate<IComputeOrchestrator, DebugIntegratedOrchestrator>();
+        
+        // Add debug services
+        services.AddSingleton<IKernelDebugService, KernelDebugService>();
+        
         return services;
     }
 }
 ```
 
-### Backend Plugin Implementation
+## Performance Optimization
+
+### Adaptive Backend Selection
 
 ```csharp
-public class CustomBackendPlugin : BackendPluginBase
+public class AdaptiveBackendSelector : IBackendSelector
 {
-    public override string Name => "Custom";
-    public override AcceleratorType SupportedType => AcceleratorType.Custom;
+    private readonly Dictionary<string, BackendPerformanceHistory> _performanceHistory = new();
     
-    public override ValueTask<IAccelerator> CreateAcceleratorAsync()
+    public IAccelerator SelectOptimal(IEnumerable<IAccelerator> available, KernelDefinition kernel, WorkloadCharacteristics workload)
     {
-        // Custom accelerator implementation
-        return new ValueTask<IAccelerator>(new CustomAccelerator());
+        // Get historical performance data
+        var history = _performanceHistory.GetValueOrDefault(kernel.Name);
+        
+        if (history == null || workload.DataSize > history.LargestTestedSize)
+        {
+            // No history available, use heuristics
+            return UseHeuristics(available, workload);
+        }
+        
+        // Select based on measured performance
+        return history.GetBestAcceleratorFor(workload);
     }
     
-    protected override ValueTask<IKernelCompiler> CreateCompilerAsync()
+    private IAccelerator UseHeuristics(IEnumerable<IAccelerator> available, WorkloadCharacteristics workload)
     {
-        // Custom kernel compiler
-        return new ValueTask<IKernelCompiler>(new CustomKernelCompiler());
+        // Simple heuristics for backend selection
+        if (workload.DataSize < 10000 && workload.ComputeIntensity < 0.5)
+        {
+            return available.FirstOrDefault(a => a.Type == AcceleratorType.CPU) ?? available.First();
+        }
+        
+        return available.FirstOrDefault(a => a.Type == AcceleratorType.GPU) ?? available.First();
     }
 }
 ```
 
-## 📊 Performance Characteristics
+### Caching Strategy
 
-### CPU Backend Performance
-- **SIMD Vectorization**: 8-23x speedup with AVX512/AVX2
-- **Memory Bandwidth**: 95%+ of theoretical peak
-- **Thread Scaling**: Near-linear scaling to CPU core count
-- **Overhead**: Sub-microsecond kernel launch latency
+```csharp
+public class DistributedKernelCache : IKernelCache
+{
+    private readonly IMemoryCache _l1Cache;  // Fast in-memory cache
+    private readonly IDistributedCache _l2Cache; // Persistent distributed cache
+    
+    public async Task<ICompiledKernel?> GetAsync(string kernelName, IAccelerator accelerator)
+    {
+        var key = $"{kernelName}_{accelerator.Info.Id}";
+        
+        // Check L1 cache first
+        if (_l1Cache.TryGetValue(key, out ICompiledKernel? cached))
+        {
+            return cached;
+        }
+        
+        // Check L2 cache
+        var serialized = await _l2Cache.GetAsync(key);
+        if (serialized != null)
+        {
+            var compiled = DeserializeKernel(serialized);
+            _l1Cache.Set(key, compiled, TimeSpan.FromHours(1));
+            return compiled;
+        }
+        
+        return null;
+    }
+}
+```
 
-### CUDA Backend Performance  
-- **GPU Utilization**: 90%+ occupancy on modern hardware
-- **Memory Bandwidth**: 80%+ of GPU memory bandwidth
-- **P2P Transfers**: Full NVLink bandwidth utilization
-- **Kernel Launch**: 5-10μs launch overhead
+## Cross-Cutting Concerns
 
-### Memory System Performance
-- **Pool Efficiency**: 90%+ allocation reuse
-- **Transfer Optimization**: Zero-copy when possible
-- **Fragmentation**: <2% memory waste
-- **NUMA Optimization**: 15-30% performance improvement
+### Logging and Telemetry
 
-## 🔒 Security Architecture
+```csharp
+public partial class KernelExecutionService
+{
+    // High-performance logging with source generators
+    [LoggerMessage(
+        EventId = 1001,
+        Level = LogLevel.Debug,
+        Message = "Executing kernel {KernelName} on {AcceleratorType} with {ElementCount} elements")]
+    private partial void LogKernelExecution(string kernelName, string acceleratorType, int elementCount);
+    
+    // Performance telemetry
+    private void RecordExecutionMetrics(string kernelName, IAccelerator accelerator, TimeSpan duration, int elementCount)
+    {
+        _telemetryService.RecordMetric("kernel.execution.duration", duration.TotalMilliseconds, new TagList
+        {
+            ["kernel"] = kernelName,
+            ["accelerator"] = accelerator.Type.ToString(),
+            ["elements"] = elementCount.ToString()
+        });
+    }
+}
+```
 
-### Code Validation Pipeline
-1. **Static Analysis**: Source code security scanning
-2. **Binary Validation**: Compiled kernel verification  
-3. **Runtime Checks**: Buffer bounds and access validation
-4. **Plugin Security**: Assembly signing and malware detection
+### Error Handling and Resilience
 
-### Memory Protection
-- **Buffer Overflow Protection**: Runtime bounds checking
-- **Memory Isolation**: Separate address spaces per context
-- **Secure Allocation**: Zeroed memory and secure deallocation
-- **Access Control**: Permission-based memory access
+```csharp
+public class ResilientKernelExecutor
+{
+    public async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, int maxRetries = 3)
+    {
+        var exceptions = new List<Exception>();
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (CudaException ex) when (ex.CudaError == CudaError.OutOfMemory && attempt < maxRetries)
+            {
+                // Handle GPU OOM by falling back to CPU
+                exceptions.Add(ex);
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * Math.Pow(2, attempt))); // Exponential backoff
+            }
+            catch (Exception ex) when (attempt < maxRetries)
+            {
+                exceptions.Add(ex);
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt));
+            }
+        }
+        
+        throw new AggregateException("Kernel execution failed after all retries", exceptions);
+    }
+}
+```
 
-## 🔮 Future Architecture
-
-### Implemented Features (v0.2.0-alpha)
-- ✅ **Source Generators**: Kernel wrapper generation from `[Kernel]` attributes
-- ✅ **Roslyn Analyzers**: 12 diagnostic rules with automated fixes
-- ✅ **Cross-Backend Debugging**: CPU/GPU validation service
-- ✅ **Performance Profiling**: Telemetry integration with hardware counters
-- ✅ **Adaptive Selection**: Intelligent backend selection
-- ✅ **Memory Pooling**: Allocation reduction through reuse
-
-### Planned Enhancements
-- 📋 **Distributed Computing**: Network-based GPU clusters
-- 📋 **Advanced Scheduling**: Predictive workload distribution
-- 📋 **Compiler Optimization**: Cross-backend kernel optimization
-- 📋 **Enhanced Telemetry**: Advanced performance analytics
-
-### Backend Status & Roadmap
-- **Metal Backend**: ❌ **Stub Implementation** - Interface complete but no Metal runtime integration
-- **OpenCL Backend**: 🚧 **Basic Implementation** - Functional but needs optimization  
-- **ROCm Backend**: ❌ **Placeholder Only** - No implementation, planned for future
-- **Vulkan Compute**: 📋 **Planned** - Cross-vendor compute shaders
-- **Cloud Integration**: 📋 **Planned** - Azure/AWS GPU instances
-
----
-
-This architecture enables DotCompute to deliver production-ready GPU acceleration while maintaining the flexibility to evolve and expand across new compute platforms.
+This architecture provides a robust, scalable foundation for high-performance computing in .NET, with clear separation of concerns and extensibility points for future enhancements.

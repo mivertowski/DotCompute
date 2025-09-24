@@ -8,6 +8,7 @@ using System.Xml;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
+using System.Globalization;
 
 namespace DotCompute.Core.Security;
 
@@ -354,7 +355,7 @@ public sealed class SecurityAuditLogger
         var datePart = fileName.Replace("security_audit_", "");
         
         if (DateTime.TryParseExact(datePart, "yyyyMMdd", null, 
-            System.Globalization.DateTimeStyles.None, out var fileDate))
+            DateTimeStyles.None, out var fileDate))
         {
             return fileDate >= startDate.Date && fileDate <= endDate.Date;
         }

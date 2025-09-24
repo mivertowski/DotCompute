@@ -4,6 +4,7 @@ using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -569,7 +570,7 @@ public sealed class DistributedTracer : IDisposable
             {
                 bottlenecks.Add(new PerformanceBottleneck
                 {
-                    Type = BottleneckType.DeviceUtilization,
+                    Type = BottleneckType.Occupancy,
                     DeviceId = span.DeviceId,
                     Severity = BottleneckSeverity.Medium,
                     Description = $"Span '{span.SpanName}' took {span.Duration.TotalMilliseconds:F1}ms " +
@@ -753,7 +754,3 @@ public sealed class DistributedTracer : IDisposable
         ActivitySource.Dispose();
     }
 }
-
-
-
-// Supporting classes and enums continue in next part due to length...

@@ -180,8 +180,8 @@ internal sealed class KernelDebugReporter : IDisposable
         }
         else
         {
-            var errorCount = validationResult.Issues.Count(i => i.Severity == Abstractions.Debugging.ValidationSeverity.Error);
-            var warningCount = validationResult.Issues.Count(i => i.Severity == Abstractions.Debugging.ValidationSeverity.Warning);
+            var errorCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Error);
+            var warningCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Warning);
             report.AppendLine($"✗ Validation failed with {errorCount} error(s) and {warningCount} warning(s)");
         }
         report.AppendLine($"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms");
@@ -272,6 +272,8 @@ internal sealed class KernelDebugReporter : IDisposable
 
     public static async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
     {
+        await Task.CompletedTask;
+
         // This would typically query the actual system for available backends
         // For now, return a static list of common backends
         return new List<BackendInfo>
@@ -379,12 +381,16 @@ internal sealed class KernelDebugReporter : IDisposable
 
     private static async Task<string> ExportToXmlAsync(object report)
     {
+        await Task.CompletedTask;
+
         // Simplified XML export - in practice, you'd use a proper XML serializer
         return $"<Report>{JsonSerializer.Serialize(report)}</Report>";
     }
 
     private static async Task<string> ExportToCsvAsync(object report)
     {
+        await Task.CompletedTask;
+
         // Simplified CSV export - in practice, you'd extract specific properties
         if (report is KernelValidationResult validation)
         {
@@ -442,5 +448,3 @@ public class ComparisonIssue
     public required string Description { get; set; }
     public string Details { get; set; } = string.Empty;
 }
-
-// ResultComparisonReport moved to DotCompute.Abstractions.Debugging.IKernelDebugService

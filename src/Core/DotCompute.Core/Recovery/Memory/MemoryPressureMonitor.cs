@@ -3,8 +3,9 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Types;
-
 using System;
+using System.Diagnostics;
+
 namespace DotCompute.Core.Recovery.Memory;
 
 /// <summary>
@@ -22,7 +23,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     private readonly Timer _monitorTimer;
     private volatile MemoryPressureInfo _currentPressure;
 #if WINDOWS
-    private readonly System.Diagnostics.PerformanceCounter? _availableMemoryCounter;
+    private readonly PerformanceCounter? _availableMemoryCounter;
 #endif
     private bool _disposed;
 
@@ -45,7 +46,7 @@ public sealed class MemoryPressureMonitor : IDisposable
         try
         {
 #if WINDOWS
-            _availableMemoryCounter = new System.Diagnostics.PerformanceCounter("Memory", "Available MBytes");
+            _availableMemoryCounter = new PerformanceCounter("Memory", "Available MBytes");
 #endif
         }
         catch (Exception ex)
@@ -110,7 +111,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// The pressure level is determined by comparing the usage ratio against
     /// predefined thresholds (95% = Critical, 85% = High, 70% = Medium, &lt;70% = Low).
     /// </remarks>
-    private static MemoryPressureInfo CalculateMemoryPressure()
+    private MemoryPressureInfo CalculateMemoryPressure()
     {
         var gcMemory = GC.GetTotalMemory(false);
         var totalMemory = GC.GetTotalMemory(true); // Force GC for more accurate reading

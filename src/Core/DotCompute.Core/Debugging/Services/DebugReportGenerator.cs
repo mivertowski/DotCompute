@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.Json;

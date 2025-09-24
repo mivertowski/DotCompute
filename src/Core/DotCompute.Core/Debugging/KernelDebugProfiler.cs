@@ -461,7 +461,7 @@ public sealed class KernelDebugProfiler : IDisposable
             .Where(r => r.KernelName == kernelName)
             .ToList();
 
-        var bottlenecks = new List<DotCompute.Core.Debugging.Core.Bottleneck>();
+        var bottlenecks = new List<Bottleneck>();
 
         if (relevantResults.Any())
         {
@@ -470,7 +470,7 @@ public sealed class KernelDebugProfiler : IDisposable
 
             if (slowExecutions.Any())
             {
-                bottlenecks.Add(new DotCompute.Core.Debugging.Core.Bottleneck
+                bottlenecks.Add(new Bottleneck
                 {
                     Type = DotCompute.Abstractions.Types.BottleneckType.Execution,
                     Severity = DotCompute.Core.Debugging.Core.BottleneckSeverity.Medium,
