@@ -11,7 +11,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DotCompute.Generators.Models.Kernel;
 using DotCompute.Generators.Kernel.Attributes;
 using DotCompute.Generators.Kernel.Enums;
-using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel;
 

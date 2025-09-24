@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Core.Debugging.Analytics;
 
 namespace DotCompute.Core.Debugging;
 
@@ -27,7 +28,7 @@ internal sealed class CoreKernelDebugOrchestrator : IKernelDebugService, IDispos
     // Specialized components
     private readonly KernelDebugValidator _validator;
     private readonly KernelDebugProfiler _profiler;
-    private readonly KernelDebugAnalyzer _analyzer;
+    private readonly Analytics.KernelDebugAnalyzer _analyzer;
     private readonly KernelDebugReporter _reporter;
 
     private DebugServiceOptions _options;
@@ -50,8 +51,8 @@ internal sealed class CoreKernelDebugOrchestrator : IKernelDebugService, IDispos
         var validatorLogger = logger.CreateLogger<KernelDebugValidator>();
         _validator = new KernelDebugValidator(validatorLogger, _accelerators, _profiler);
 
-        var analyzerLogger = logger.CreateLogger<KernelDebugAnalyzer>();
-        _analyzer = new KernelDebugAnalyzer(analyzerLogger, _accelerators, _profiler);
+        var analyzerLogger = logger.CreateLogger<Analytics.KernelDebugAnalyzer>();
+        _analyzer = new Analytics.KernelDebugAnalyzer(analyzerLogger, _accelerators, _profiler);
 
         var reporterLogger = logger.CreateLogger<KernelDebugReporter>();
         _reporter = new KernelDebugReporter(reporterLogger);

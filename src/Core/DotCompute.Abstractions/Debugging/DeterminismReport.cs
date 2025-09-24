@@ -52,4 +52,9 @@ public class DeterminismReport
     /// Components identified as non-deterministic.
     /// </summary>
     public List<string> NonDeterministicComponents { get; init; } = [];
+
+    /// <summary>
+    /// Time taken to perform the analysis.
+    /// </summary>
+    public TimeSpan AnalysisTime { get; init; }
 }

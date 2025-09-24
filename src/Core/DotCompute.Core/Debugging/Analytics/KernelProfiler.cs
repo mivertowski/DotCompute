@@ -117,7 +117,7 @@ public sealed partial class KernelProfiler : IDisposable
                 StartCpuTime = session.StartCpuTime,
                 EndCpuTime = endCpuTime.TotalMilliseconds,
                 CpuTime = endCpuTime - TimeSpan.FromMilliseconds(session.StartCpuTime),
-                CpuUtilization = CalculateCpuUtilization(session.StartCpuTime, endCpuTime, session.StartTime, endTime)
+                CpuUtilization = endCpuTime - TimeSpan.FromMilliseconds(session.StartCpuTime)
             },
             Result = result,
             Error = error,

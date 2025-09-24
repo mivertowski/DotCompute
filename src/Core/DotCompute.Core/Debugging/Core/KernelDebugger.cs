@@ -120,7 +120,7 @@ public sealed partial class KernelDebugger : IDisposable
                     {
                         KernelName = kernel.Name,
                         BackendType = accelerator.Type.ToString(),
-                        Result = result,
+                        Result = kernelResult,
                         ExecutionTime = stopwatch.Elapsed,
                         MemoryUsed = 0, // TODO: Add memory tracking
                         Success = true,

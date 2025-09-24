@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using DotCompute.Generators.Kernel.Enums;
-using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Models.Kernel;
 

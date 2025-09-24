@@ -4,7 +4,6 @@
 using System.Text;
 using DotCompute.Generators.Kernel.Attributes;
 using DotCompute.Generators.Kernel.Enums;
-using DotCompute.Generators.Kernel.Enums;
 using DotCompute.Generators.Models.Kernel;
 using Microsoft.CodeAnalysis;
 

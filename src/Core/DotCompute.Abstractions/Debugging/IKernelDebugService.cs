@@ -189,6 +189,11 @@ public class MemoryAnalysisReport
     /// Probability of memory leaks (0-1).
     /// </summary>
     public double LeakProbability { get; init; }
+
+    /// <summary>
+    /// Cache efficiency score (0-100).
+    /// </summary>
+    public double CacheEfficiency { get; init; }
 }
 
 /// <summary>
