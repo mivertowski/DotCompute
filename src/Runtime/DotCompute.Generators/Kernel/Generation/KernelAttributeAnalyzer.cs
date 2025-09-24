@@ -177,7 +177,7 @@ public sealed class KernelAttributeAnalyzer
             {
                 0 => MemoryAccessPattern.Sequential,
                 1 => MemoryAccessPattern.Random,
-                2 => MemoryAccessPattern.Streaming,
+                2 => MemoryAccessPattern.Sequential, // Map streaming to sequential
                 3 => MemoryAccessPattern.Gather,
                 4 => MemoryAccessPattern.Scatter,
                 _ => MemoryAccessPattern.Sequential
@@ -325,33 +325,3 @@ public enum OptimizationLevel
     Maximum = 3
 }
 
-/// <summary>
-/// Defines memory access patterns for optimization.
-/// </summary>
-public enum MemoryAccessPattern
-{
-    /// <summary>
-    /// Sequential memory access pattern.
-    /// </summary>
-    Sequential = 0,
-
-    /// <summary>
-    /// Random memory access pattern.
-    /// </summary>
-    Random = 1,
-
-    /// <summary>
-    /// Streaming memory access pattern.
-    /// </summary>
-    Streaming = 2,
-
-    /// <summary>
-    /// Gather operation pattern.
-    /// </summary>
-    Gather = 3,
-
-    /// <summary>
-    /// Scatter operation pattern.
-    /// </summary>
-    Scatter = 4
-}

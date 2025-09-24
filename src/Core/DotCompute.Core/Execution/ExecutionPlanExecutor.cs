@@ -1,18 +1,17 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Execution.Types;
-using DotCompute.Core.Execution.Plans;
-using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
-
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Metrics;
-
-using System;
+using DotCompute.Core.Execution.Plans;
+using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Logging;
+using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Execution
 {
 
@@ -954,194 +953,6 @@ namespace DotCompute.Core.Execution
             _disposed = true;
             _logger.LogInfoMessage("ExecutionPlanExecutor disposed");
         }
-    }
-
-    // Supporting classes for execution results and resource tracking
-
-    public class DeviceTaskResult
-    {
-        public int TaskIndex { get; set; }
-        public required string DeviceId { get; set; }
-        public bool Success { get; set; }
-        public double ExecutionTimeMs { get; set; }
-        public int ElementsProcessed { get; set; }
-        public double ThroughputGFLOPS { get; set; }
-        public double MemoryBandwidthGBps { get; set; }
-        public string? ErrorMessage { get; set; }
-        public required ExecutionEvent CompletionEvent { get; set; }
-    }
-
-    public class LayerExecutionResult
-    {
-        public int LayerId { get; set; }
-        public required string DeviceId { get; set; }
-        public bool Success { get; set; }
-        public double ExecutionTimeMs { get; set; }
-        public long ComputeFLOPS { get; set; }
-        public long MemoryUsageBytes { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public class StageExecutionResult
-    {
-        public int StageId { get; set; }
-        public int MicrobatchIndex { get; set; }
-        public required string DeviceId { get; set; }
-        public bool Success { get; set; }
-        public double ExecutionTimeMs { get; set; }
-        public required string StageName { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public class ResourceTracker : IAsyncDisposable
-    {
-        private readonly ILogger _logger;
-        private readonly Dictionary<string, DeviceResourceUsage> _deviceUsage;
-        private bool _disposed;
-
-        public ResourceTracker(ILogger logger)
-        {
-            _logger = logger;
-            _deviceUsage = [];
-        }
-
-        public async ValueTask TrackExecutionStartAsync(IAccelerator[] devices, CancellationToken cancellationToken)
-        {
-            foreach (var device in devices)
-            {
-                _deviceUsage[device.Info.Id] = new DeviceResourceUsage
-                {
-                    DeviceId = device.Info.Id,
-                    StartTime = DateTimeOffset.UtcNow,
-                    InitialMemoryUsage = device.Info.TotalMemory - device.Info.AvailableMemory
-                };
-            }
-
-            _logger.LogTrace("Started resource tracking for {DeviceCount} devices", devices.Length);
-            await ValueTask.CompletedTask;
-        }
-
-        public async ValueTask TrackExecutionEndAsync(CancellationToken cancellationToken = default)
-        {
-            var endTime = DateTimeOffset.UtcNow;
-
-            foreach (var usage in _deviceUsage.Values)
-            {
-                usage.EndTime = endTime;
-                usage.TotalExecutionTime = endTime - usage.StartTime;
-            }
-
-            _logger.LogTrace("Ended resource tracking, total execution time: {MaxExecutionTime:F2}ms",
-                _deviceUsage.Values.Max(u => u.TotalExecutionTime.TotalMilliseconds));
-
-            await ValueTask.CompletedTask;
-        }
-
-        public Dictionary<string, DeviceResourceUsage> GetResourceUsage() => new(_deviceUsage);
-
-        public async ValueTask DisposeAsync()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _deviceUsage.Clear();
-            _disposed = true;
-            await ValueTask.CompletedTask;
-        }
-    }
-
-    public class DeviceResourceUsage
-    {
-        public required string DeviceId { get; set; }
-        public DateTimeOffset StartTime { get; set; }
-        public DateTimeOffset EndTime { get; set; }
-        public TimeSpan TotalExecutionTime { get; set; }
-        public long InitialMemoryUsage { get; set; }
-        public long PeakMemoryUsage { get; set; }
-        public double AverageUtilization { get; set; }
-    }
-
-    public class ExecutionProfiler : IAsyncDisposable
-    {
-        private readonly ILogger _logger;
-        private readonly Dictionary<Guid, ExecutionProfilingData> _profilingData;
-        private bool _disposed;
-
-        public ExecutionProfiler(ILogger logger)
-        {
-            _logger = logger;
-            _profilingData = [];
-        }
-
-        public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
-        {
-            _profilingData[executionId] = new ExecutionProfilingData
-            {
-                ExecutionId = executionId,
-                Strategy = strategy,
-                StartTime = DateTimeOffset.UtcNow,
-                Events = []
-            };
-
-            _logger.LogTrace("Started profiling for execution {ExecutionId} with strategy {Strategy}", executionId, strategy);
-            await ValueTask.CompletedTask;
-        }
-
-        public async ValueTask<ExecutionProfilingData> StopProfilingAsync(Guid executionId, CancellationToken cancellationToken)
-        {
-            if (_profilingData.TryGetValue(executionId, out var data))
-            {
-                data.EndTime = DateTimeOffset.UtcNow;
-                data.TotalDuration = data.EndTime - data.StartTime;
-
-                _logger.LogTrace("Stopped profiling for execution {ExecutionId}, duration: {Duration:F2}ms",
-                    executionId, data.TotalDuration.TotalMilliseconds);
-
-                return data;
-            }
-
-            await Task.CompletedTask.ConfigureAwait(false);
-            return new ExecutionProfilingData
-            {
-                ExecutionId = executionId,
-                Strategy = ExecutionStrategyType.Single,
-                StartTime = DateTimeOffset.UtcNow,
-                EndTime = DateTimeOffset.UtcNow,
-                Events = []
-            };
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _profilingData.Clear();
-            _disposed = true;
-            await ValueTask.CompletedTask;
-        }
-    }
-
-    public class ExecutionProfilingData
-    {
-        public Guid ExecutionId { get; set; }
-        public ExecutionStrategyType Strategy { get; set; }
-        public DateTimeOffset StartTime { get; set; }
-        public DateTimeOffset EndTime { get; set; }
-        public TimeSpan TotalDuration { get; set; }
-        public List<ProfilingEvent> Events { get; set; } = [];
-    }
-
-    public class ProfilingEvent
-    {
-        public DateTimeOffset Timestamp { get; set; }
-        public string EventType { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public Dictionary<string, object> Properties { get; set; } = [];
     }
 
     // Extension to ParallelExecutionResult to include profiling data

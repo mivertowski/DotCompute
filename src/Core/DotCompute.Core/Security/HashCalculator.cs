@@ -290,7 +290,7 @@ public sealed class HashCalculator : IDisposable
         if (WeakHashAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.SecurityIssues.Add($"Hash algorithm '{algorithm}' is cryptographically weak");
+            result.Issues.Add($"Hash algorithm '{algorithm}' is cryptographically weak");
             result.Recommendations.Add($"Use approved alternatives: {string.Join(", ", ApprovedHashAlgorithms)}");
             return result;
         }
@@ -299,7 +299,7 @@ public sealed class HashCalculator : IDisposable
         if (!ApprovedHashAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.SecurityIssues.Add($"Hash algorithm '{algorithm}' is not in the approved list");
+            result.Issues.Add($"Hash algorithm '{algorithm}' is not in the approved list");
             result.Recommendations.Add($"Use approved algorithms: {string.Join(", ", ApprovedHashAlgorithms)}");
             return result;
         }

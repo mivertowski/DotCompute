@@ -297,13 +297,27 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         // Check kernel name
         if (string.IsNullOrWhiteSpace(kernel.Name))
         {
-            result.Issues.Add(new ValidationIssue("STR001", "Kernel name is null or empty", ValidationSeverity.Error));
+            result.Issues.Add(new DebugValidationIssue
+            {
+                Severity = ValidationSeverity.Error,
+                Message = "Kernel name is null or empty",
+                BackendAffected = "All",
+                Context = "STR001",
+                Suggestion = "Provide a meaningful name for the kernel"
+            });
         }
 
         // Check for descriptive naming
         if (kernel.Name != null && (kernel.Name.Length < 3 || !char.IsLetter(kernel.Name[0])))
         {
-            result.Issues.Add(new ValidationIssue("STR002", "Kernel name should be descriptive and start with a letter", ValidationSeverity.Warning));
+            result.Issues.Add(new DebugValidationIssue
+            {
+                Severity = ValidationSeverity.Warning,
+                Message = "Kernel name should be descriptive and start with a letter",
+                BackendAffected = "All",
+                Context = "STR002",
+                Suggestion = "Use a descriptive name that starts with a letter and is at least 3 characters long"
+            });
         }
     }
 
@@ -362,7 +376,9 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         using var timeoutCts = new CancellationTokenSource(_options.ExecutionTimeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-        return await kernel.ExecuteAsync(accelerator, inputs, combinedCts.Token).ConfigureAwait(false);
+        // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
+        // This would typically be done through IComputeOrchestrator or IKernelExecutor
+        throw new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator");
     }
 
     /// <summary>

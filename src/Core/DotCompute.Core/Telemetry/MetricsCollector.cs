@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -665,10 +666,4 @@ public sealed class PerformanceBottleneck
 }
 
 
-public enum BottleneckSeverity
-{
-    Low,
-    Medium,
-    High,
-    Critical
-}
+// BottleneckSeverity enum consolidated to DotCompute.Abstractions.Debugging.PerformanceAnalysisResult

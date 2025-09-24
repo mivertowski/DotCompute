@@ -521,7 +521,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         {
             var name when name.Contains("transpose") => MemoryAccessPattern.Strided,
             var name when name.Contains("random") => MemoryAccessPattern.Random,
-            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.Scattered,
+            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.ScatterGather,
             var name when name.Contains("convolution") => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };

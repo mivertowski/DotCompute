@@ -111,7 +111,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = kernelName,
                     Devices = selectedDevices,
-                    StrategyType = DotCompute.Core.Execution.Types.ExecutionStrategyType.DataParallel,
+                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.DataParallel,
                     InputBuffers = inputBuffers,
                     OutputBuffers = outputBuffers,
                     DeviceTasks = deviceTasks,

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using DotCompute.Abstractions.Types;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Types.Abstractions;
@@ -280,14 +281,14 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     /// <param name="pluginId">The plugin ID.</param>
     /// <param name="timeRange">The time range to analyze.</param>
     /// <returns>Performance trend analysis.</returns>
-    public PerformanceTrend GetPerformanceTrend(string pluginId, TimeSpan timeRange)
+    public PluginPerformanceTrend GetPerformanceTrend(string pluginId, TimeSpan timeRange)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
         if (!_metricsData.TryGetValue(pluginId, out var metricsData))
         {
-            return new PerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Unknown };
+            return new PluginPerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Unknown };
         }
 
         lock (metricsData)
@@ -299,7 +300,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
             if (!recentExecutions.Any())
             {
-                return new PerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Unknown };
+                return new PluginPerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Unknown };
             }
 
             // Analyze performance trends
@@ -308,7 +309,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
             if (!firstHalf.Any() || !secondHalf.Any())
             {
-                return new PerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Stable };
+                return new PluginPerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Stable };
             }
 
             var firstHalfAvg = firstHalf.Average(e => e.Duration.TotalMilliseconds);
@@ -322,7 +323,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
                 _ => TrendDirection.Stable
             };
 
-            return new PerformanceTrend
+            return new PluginPerformanceTrend
             {
                 PluginId = pluginId,
                 TrendDirection = trendDirection,
@@ -636,9 +637,9 @@ public sealed class SystemMetrics
 }
 
 /// <summary>
-/// Represents performance trend analysis.
+/// Represents plugin-specific performance trend analysis.
 /// </summary>
-public sealed class PerformanceTrend
+public sealed class PluginPerformanceTrend
 {
     public required string PluginId { get; init; }
     public TrendDirection TrendDirection { get; init; }

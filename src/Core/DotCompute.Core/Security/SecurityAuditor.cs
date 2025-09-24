@@ -197,7 +197,7 @@ public sealed class SecurityAuditor : IDisposable
         if (WeakAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.SecurityIssues.Add($"Algorithm '{algorithm}' is considered cryptographically weak");
+            result.Issues.Add($"Algorithm '{algorithm}' is considered cryptographically weak");
             result.Recommendations.Add($"Consider using approved alternatives: {string.Join(", ", ApprovedCiphers)}");
             return result;
         }
@@ -216,7 +216,7 @@ public sealed class SecurityAuditor : IDisposable
         // Check for timing attack vulnerabilities
         if (result.IsApproved && !IsTimingAttackSafe(algorithm))
         {
-            result.SecurityIssues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
+            result.Issues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
@@ -233,14 +233,14 @@ public sealed class SecurityAuditor : IDisposable
         var validKeySizes = new[] { 128, 192, 256 };
         if (!validKeySizes.Contains(keySize))
         {
-            result.SecurityIssues.Add($"Invalid AES key size: {keySize}. Valid sizes: 128, 192, 256");
+            result.Issues.Add($"Invalid AES key size: {keySize}. Valid sizes: 128, 192, 256");
             result.Recommendations.Add("Use a standard AES key size");
             return false;
         }
 
         if (algorithm.Contains("ECB"))
         {
-            result.SecurityIssues.Add("AES-ECB mode is not secure for most applications");
+            result.Issues.Add("AES-ECB mode is not secure for most applications");
             result.Recommendations.Add("Use AES-GCM or AES-CBC with proper IV");
             return false;
         }
@@ -252,7 +252,7 @@ public sealed class SecurityAuditor : IDisposable
     {
         if (keySize < 2048)
         {
-            result.SecurityIssues.Add($"RSA key size {keySize} is below minimum secure size of 2048 bits");
+            result.Issues.Add($"RSA key size {keySize} is below minimum secure size of 2048 bits");
             result.Recommendations.Add("Use RSA-2048, RSA-3072, or RSA-4096");
             return false;
         }
@@ -265,7 +265,7 @@ public sealed class SecurityAuditor : IDisposable
         var validSizes = new[] { 256, 384, 521 };
         if (!validSizes.Contains(keySize))
         {
-            result.SecurityIssues.Add($"Invalid ECDSA key size: {keySize}. Valid sizes: 256, 384, 521");
+            result.Issues.Add($"Invalid ECDSA key size: {keySize}. Valid sizes: 256, 384, 521");
             result.Recommendations.Add("Use P-256, P-384, or P-521 curves");
             return false;
         }
@@ -277,7 +277,7 @@ public sealed class SecurityAuditor : IDisposable
     {
         if (algorithm.Equals("SHA-1", StringComparison.OrdinalIgnoreCase))
         {
-            result.SecurityIssues.Add("SHA-1 is cryptographically broken and should not be used");
+            result.Issues.Add("SHA-1 is cryptographically broken and should not be used");
             result.Recommendations.Add("Use SHA-256, SHA-384, or SHA-512");
             return false;
         }
@@ -289,7 +289,7 @@ public sealed class SecurityAuditor : IDisposable
     {
         if (keySize != 256)
         {
-            result.SecurityIssues.Add($"ChaCha20 requires 256-bit keys, got {keySize}");
+            result.Issues.Add($"ChaCha20 requires 256-bit keys, got {keySize}");
             result.Recommendations.Add("Use 256-bit keys for ChaCha20");
             return false;
         }
@@ -302,7 +302,7 @@ public sealed class SecurityAuditor : IDisposable
         // Add basic validation for other algorithms
         if (string.IsNullOrWhiteSpace(algorithm))
         {
-            result.SecurityIssues.Add("Algorithm name cannot be empty");
+            result.Issues.Add("Algorithm name cannot be empty");
             return false;
         }
 
@@ -325,14 +325,14 @@ public sealed class SecurityAuditor : IDisposable
             case "transmission":
                 if (!algorithm.Contains("GCM") && !algorithm.Contains("Poly1305"))
                 {
-                    result.SecurityIssues.Add("Non-authenticated encryption may be vulnerable to tampering during transmission");
+                    result.Issues.Add("Non-authenticated encryption may be vulnerable to tampering during transmission");
                     result.Recommendations.Add("Use authenticated encryption modes like AES-GCM or ChaCha20-Poly1305");
                 }
                 break;
             case "signing":
                 if (!algorithm.StartsWith("RSA") && !algorithm.StartsWith("ECDSA"))
                 {
-                    result.SecurityIssues.Add("Algorithm not suitable for digital signatures");
+                    result.Issues.Add("Algorithm not suitable for digital signatures");
                     result.Recommendations.Add("Use RSA or ECDSA for digital signatures");
                 }
                 break;

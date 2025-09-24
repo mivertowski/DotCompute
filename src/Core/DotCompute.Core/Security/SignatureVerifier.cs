@@ -57,15 +57,8 @@ public sealed class SignatureVerifier : IDisposable
             using var rsa = RSA.Create(keySize);
             var privateKey = rsa.ExportRSAPrivateKey();
 
-            return new SecureKeyContainer
+            return new SecureKeyContainer(KeyType.RSA, privateKey, identifier, purpose, keySize)
             {
-                KeyType = KeyType.RSA,
-                KeySize = keySize,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = privateKey,
                 PublicKeyData = rsa.ExportRSAPublicKey()
             };
         });
@@ -89,15 +82,8 @@ public sealed class SignatureVerifier : IDisposable
             using var ecdsa = ECDsa.Create();
             var privateKey = ecdsa.ExportECPrivateKey();
 
-            return new SecureKeyContainer
+            return new SecureKeyContainer(KeyType.ECDSA, privateKey, identifier, purpose, keySize)
             {
-                KeyType = KeyType.ECDSA,
-                KeySize = keySize,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = privateKey,
                 PublicKeyData = ecdsa.ExportSubjectPublicKeyInfo()
             };
         });
@@ -122,8 +108,12 @@ public sealed class SignatureVerifier : IDisposable
             // Validate hash algorithm
             if (!ApprovedHashAlgorithms.Contains(hashAlgorithm))
             {
-                result.ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}";
-                return result;
+                return new SignatureResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}",
+                    Algorithm = hashAlgorithm
+                };
             }
 
             // Perform signing based on key type
@@ -137,8 +127,13 @@ public sealed class SignatureVerifier : IDisposable
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Signing failed for key {keyContainer.Identifier}");
-            result.ErrorMessage = $"Signing failed: {ex.Message}";
-            return result;
+            return new SignatureResult
+            {
+                Success = false,
+                ErrorMessage = $"Signing failed: {ex.Message}",
+                Algorithm = hashAlgorithm,
+                KeyId = keyContainer.Identifier
+            };
         }
     }
 
@@ -166,18 +161,28 @@ public sealed class SignatureVerifier : IDisposable
                 if (_verificationCache.TryGetValue(cacheKey, out var cachedResult) &&
                     DateTimeOffset.UtcNow - cachedResult.ValidationTime < TimeSpan.FromMinutes(5))
                 {
-                    result.IsValid = cachedResult.IsValid;
-                    result.IsSuccessful = true;
                     _logger.LogDebugMessage($"Signature verification result retrieved from cache: {keyContainer.Identifier}");
-                    return result;
+                    return new SignatureVerificationResult
+                    {
+                        IsValid = cachedResult.IsValid,
+                        Success = true,
+                        Algorithm = hashAlgorithm,
+                        KeyId = keyContainer.Identifier
+                    };
                 }
             }
 
             // Validate hash algorithm
             if (!ApprovedHashAlgorithms.Contains(hashAlgorithm))
             {
-                result.ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}";
-                return result;
+                return new SignatureVerificationResult
+                {
+                    IsValid = false,
+                    Success = false,
+                    ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}",
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
 
             // Perform verification based on key type with timing protection
@@ -203,8 +208,14 @@ public sealed class SignatureVerifier : IDisposable
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Signature verification failed for key {keyContainer.Identifier}");
-            result.ErrorMessage = $"Verification failed: {ex.Message}";
-            return result;
+            return new SignatureVerificationResult
+            {
+                IsValid = false,
+                Success = false,
+                ErrorMessage = $"Verification failed: {ex.Message}",
+                Algorithm = hashAlgorithm,
+                KeyId = keyContainer.Identifier
+            };
         }
     }
 
@@ -262,7 +273,7 @@ public sealed class SignatureVerifier : IDisposable
         return await Task.Run(() =>
         {
             using var rsa = RSA.Create();
-            rsa.ImportRSAPrivateKey(keyContainer.RawKeyData, out _);
+            rsa.ImportRSAPrivateKey(keyContainer.GetKeyBytes(), out _);
 
             var hashName = GetHashAlgorithmName(hashAlgorithm);
 
@@ -272,18 +283,26 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var signature = rsa.SignData(data.Span, hashName, RSASignaturePadding.Pkcs1);
-                result.Signature = signature;
-                result.IsSuccessful = true;
-                
                 _logger.LogDebugMessage($"RSA signature created successfully for key {keyContainer.Identifier}");
+                return new SignatureResult
+                {
+                    Success = true,
+                    Signature = signature,
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, $"RSA signing failed for key {keyContainer.Identifier}");
-                result.ErrorMessage = "RSA signing failed";
+                return new SignatureResult
+                {
+                    Success = false,
+                    ErrorMessage = "RSA signing failed",
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
-
-            return result;
         });
     }
 
@@ -296,7 +315,7 @@ public sealed class SignatureVerifier : IDisposable
         return await Task.Run(() =>
         {
             using var ecdsa = ECDsa.Create();
-            ecdsa.ImportECPrivateKey(keyContainer.RawKeyData, out _);
+            ecdsa.ImportECPrivateKey(keyContainer.GetKeyBytes(), out _);
 
             var hashName = GetHashAlgorithmName(hashAlgorithm);
 
@@ -306,18 +325,26 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var signature = ecdsa.SignData(data.Span, hashName);
-                result.Signature = signature;
-                result.IsSuccessful = true;
-                
                 _logger.LogDebugMessage($"ECDSA signature created successfully for key {keyContainer.Identifier}");
+                return new SignatureResult
+                {
+                    Success = true,
+                    Signature = signature,
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogErrorMessage(ex, $"ECDSA signing failed for key {keyContainer.Identifier}");
-                result.ErrorMessage = "ECDSA signing failed";
+                return new SignatureResult
+                {
+                    Success = false,
+                    ErrorMessage = "ECDSA signing failed",
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
-
-            return result;
         });
     }
 
@@ -339,7 +366,7 @@ public sealed class SignatureVerifier : IDisposable
             }
             else
             {
-                rsa.ImportRSAPrivateKey(keyContainer.RawKeyData, out _);
+                rsa.ImportRSAPrivateKey(keyContainer.GetKeyBytes(), out _);
             }
 
             var hashName = GetHashAlgorithmName(hashAlgorithm);
@@ -350,19 +377,27 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var isValid = rsa.VerifyData(data.Span, signature.Span, hashName, RSASignaturePadding.Pkcs1);
-                result.IsValid = isValid;
-                result.IsSuccessful = true;
-                
                 _logger.LogDebugMessage($"RSA signature verification completed for key {keyContainer.Identifier}: Valid={isValid}");
+                return new SignatureVerificationResult
+                {
+                    IsValid = isValid,
+                    Success = true,
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, $"RSA signature verification failed for key {keyContainer.Identifier}");
-                result.IsValid = false;
-                result.IsSuccessful = true; // Verification completed, just failed
+                return new SignatureVerificationResult
+                {
+                    IsValid = false,
+                    Success = true, // Verification completed, just failed
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier,
+                    ErrorMessage = ex.Message
+                };
             }
-
-            return result;
         });
     }
 
@@ -384,7 +419,7 @@ public sealed class SignatureVerifier : IDisposable
             }
             else
             {
-                ecdsa.ImportECPrivateKey(keyContainer.RawKeyData, out _);
+                ecdsa.ImportECPrivateKey(keyContainer.GetKeyBytes(), out _);
             }
 
             var hashName = GetHashAlgorithmName(hashAlgorithm);
@@ -395,19 +430,27 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var isValid = ecdsa.VerifyData(data.Span, signature.Span, hashName);
-                result.IsValid = isValid;
-                result.IsSuccessful = true;
-                
                 _logger.LogDebugMessage($"ECDSA signature verification completed for key {keyContainer.Identifier}: Valid={isValid}");
+                return new SignatureVerificationResult
+                {
+                    IsValid = isValid,
+                    Success = true,
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, $"ECDSA signature verification failed for key {keyContainer.Identifier}");
-                result.IsValid = false;
-                result.IsSuccessful = true; // Verification completed, just failed
+                return new SignatureVerificationResult
+                {
+                    IsValid = false,
+                    Success = true, // Verification completed, just failed
+                    Algorithm = hashAlgorithm,
+                    KeyId = keyContainer.Identifier,
+                    ErrorMessage = ex.Message
+                };
             }
-
-            return result;
         });
     }
 

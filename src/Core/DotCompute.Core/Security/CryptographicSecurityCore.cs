@@ -400,6 +400,7 @@ namespace DotCompute.Core.Security
         public string Identifier { get; init; }
         public string Purpose { get; init; }
         public DateTimeOffset CreationTime { get; init; }
+        public byte[]? PublicKeyData { get; init; }
         private readonly byte[] _keyData;
         private bool _disposed;
 

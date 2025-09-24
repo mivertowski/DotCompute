@@ -9,6 +9,9 @@ using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Exceptions;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Kernels.Types;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -268,17 +271,26 @@ internal static partial class CpuKernelCompiler
             writeOnlyParams = access.Count(a => a == "WriteOnly");
         }
 
+        // Map CPU-specific access patterns to canonical spatial patterns
         if (bufferParams == 0)
         {
-            return MemoryAccessPattern.ComputeIntensive;
+            // Compute-intensive kernels typically have sequential access
+            return MemoryAccessPattern.Sequential;
         }
         else if (readOnlyParams == bufferParams)
         {
-            return MemoryAccessPattern.ReadOnly;
+            // Read-only access typically sequential for good cache behavior
+            return MemoryAccessPattern.Sequential;
+        }
+        else if (writeOnlyParams == bufferParams)
+        {
+            // Write-only access, often streaming pattern
+            return MemoryAccessPattern.Sequential;
         }
         else
         {
-            return writeOnlyParams == bufferParams ? MemoryAccessPattern.WriteOnly : MemoryAccessPattern.ReadWrite;
+            // Mixed read-write, use sequential as default
+            return MemoryAccessPattern.Sequential;
         }
     }
 
@@ -352,10 +364,11 @@ internal static partial class CpuKernelCompiler
         // Calculate optimal prefetch distance based on access pattern
         return analysis.MemoryAccessPattern switch
         {
-            MemoryAccessPattern.ReadOnly => 128,      // Aggressive prefetch for read-only
-            MemoryAccessPattern.WriteOnly => 64,      // Moderate prefetch for write-only
-            MemoryAccessPattern.ReadWrite => 32,      // Conservative for read-write
-            MemoryAccessPattern.ComputeIntensive => 0, // No prefetch for compute-only
+            MemoryAccessPattern.Sequential => 128,    // Aggressive prefetch for sequential
+            MemoryAccessPattern.Coalesced => 64,      // Moderate prefetch for coalesced
+            MemoryAccessPattern.Strided => 32,        // Conservative for strided
+            MemoryAccessPattern.Random => 16,         // Minimal prefetch for random
+            MemoryAccessPattern.Tiled => 64,          // Moderate for tiled access
             _ => 64
         };
     }
@@ -541,197 +554,6 @@ internal static partial class CpuKernelCompiler
 
         return definition;
     }
-}
-
-/// <summary>
-/// Context for kernel compilation.
-/// </summary>
-internal sealed class CpuKernelCompilationContext
-{
-    public required KernelDefinition Definition { get; init; }
-    public required CompilationOptions Options { get; init; }
-    public required SimdSummary SimdCapabilities { get; init; }
-    public required CpuThreadPool ThreadPool { get; init; }
-    public required ILogger Logger { get; init; }
-}
-
-/// <summary>
-/// Analysis results for a kernel.
-/// </summary>
-internal sealed class KernelAnalysis
-{
-    public required KernelDefinition Definition { get; init; }
-    public required bool CanVectorize { get; init; }
-    public required int VectorizationFactor { get; init; }
-    public required MemoryAccessPattern MemoryAccessPattern { get; init; }
-    public required ComputeIntensity ComputeIntensity { get; init; }
-    public required int PreferredWorkGroupSize { get; init; }
-    public bool HasBranching { get; set; }
-    public bool HasLoops { get; set; }
-    public int EstimatedComplexity { get; set; }
-}
-
-/// <summary>
-/// Execution plan for a compiled kernel.
-/// </summary>
-internal sealed class KernelExecutionPlan
-{
-    public required KernelAnalysis Analysis { get; init; }
-    public required bool UseVectorization { get; init; }
-    public required int VectorWidth { get; init; }
-    public required int VectorizationFactor { get; init; }
-    public required int WorkGroupSize { get; init; }
-    public required int MemoryPrefetchDistance { get; init; }
-    public required bool EnableLoopUnrolling { get; init; }
-    public required IReadOnlySet<string> InstructionSets { get; init; }
-}
-
-/// <summary>
-/// Memory access pattern for a kernel.
-/// </summary>
-internal enum MemoryAccessPattern
-{
-    ReadOnly,
-    WriteOnly,
-    ReadWrite,
-    ComputeIntensive
-}
-
-/// <summary>
-/// Compute intensity level.
-/// </summary>
-internal enum ComputeIntensity
-{
-    Low,
-    Medium,
-    High,
-    VeryHigh
-}
-
-/// <summary>
-/// Represents a validation result for kernel compilation.
-/// </summary>
-internal readonly struct UnifiedValidationResult(bool isValid, string? errorMessage)
-{
-    public bool IsValid { get; } = isValid;
-    public string? ErrorMessage { get; } = errorMessage;
-}
-
-/// <summary>
-/// Exception thrown when kernel compilation fails.
-/// </summary>
-public sealed class KernelCompilationException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    public KernelCompilationException() : base() { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    public KernelCompilationException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelCompilationException"/> class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="innerException">The inner exception.</param>
-    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
-}
-
-/// <summary>
-/// Abstract Syntax Tree representation of a kernel.
-/// </summary>
-internal sealed class KernelAst
-{
-    public List<AstNode> Operations { get; set; } = [];
-    public List<AstNode> MemoryOperations { get; set; } = [];
-    public List<string> Variables { get; set; } = [];
-    public List<string> Parameters { get; set; } = [];
-    public List<string> FunctionCalls { get; set; } = [];
-    public bool HasConditionals { get; set; }
-    public bool HasLoops { get; set; }
-    public bool HasRecursion { get; set; }
-    public bool HasIndirectMemoryAccess { get; set; }
-    public bool HasComplexControlFlow { get; set; }
-    public int ComplexityScore { get; set; }
-    public long EstimatedInstructions { get; set; }
-}
-
-/// <summary>
-/// AST node representing an operation.
-/// </summary>
-internal sealed class AstNode
-{
-    public AstNodeType NodeType { get; set; }
-    public List<AstNode> Children { get; set; } = [];
-    public object? Value { get; set; }
-    public int Position { get; set; }
-    public string? Text { get; set; }
-}
-
-/// <summary>
-/// Types of AST nodes.
-/// </summary>
-internal enum AstNodeType
-{
-    // Arithmetic operations
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
-
-    // Math functions
-    Abs,
-    Min,
-    Max,
-    Sqrt,
-    Pow,
-    Exp,
-    Log,
-    Sin,
-    Cos,
-    Tan,
-
-    // Logical operations
-    LogicalAnd,
-    LogicalOr,
-
-    // Comparison operations
-    Equal,
-    NotEqual,
-    LessThan,
-    GreaterThan,
-    LessThanOrEqual,
-    GreaterThanOrEqual,
-
-    // Bitwise operations
-    BitwiseAnd,
-    BitwiseOr,
-    BitwiseXor,
-    LeftShift,
-    RightShift,
-
-    // Memory operations
-    Load,
-    Store,
-
-    // Control flow
-    If,
-    For,
-    While,
-    Return,
-
-    // Literals and identifiers
-    Constant,
-    Variable,
-    Parameter,
-
-    // Unknown/error case
-    Unknown
 }
 
 /// <summary>

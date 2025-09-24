@@ -530,17 +530,6 @@ public class DataFlowBottleneckDetectedEvent : DataFlowEvent
 /// <summary>
 /// Severity levels for bottleneck impact assessment.
 /// </summary>
-public enum BottleneckSeverity
-{
-    /// <summary>Minor impact on performance.</summary>
-    Minor,
-    
-    /// <summary>Moderate impact on performance.</summary>
-    Moderate,
-    
-    /// <summary>Major impact on performance.</summary>
-    Major,
-    
-    /// <summary>Critical impact preventing optimal performance.</summary>
-    Critical
-}
+// BottleneckSeverity enum consolidated to DotCompute.Abstractions.Debugging.PerformanceAnalysisResult
+// Use: using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
+// Note: Minor=Low, Moderate=Medium, Major=High for compatibility

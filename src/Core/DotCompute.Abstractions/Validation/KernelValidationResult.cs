@@ -79,6 +79,12 @@ public sealed class KernelValidationResult
     public TimeSpan ValidationTime { get; set; }
 
     /// <summary>
+    /// Gets the actual execution time of the kernel during validation.
+    /// This represents the runtime performance of the kernel.
+    /// </summary>
+    public TimeSpan ExecutionTime { get; init; }
+
+    /// <summary>
     /// Gets optimization recommendations for the kernel.
     /// </summary>
     public List<string> Recommendations { get; init; } = [];

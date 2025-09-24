@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CUDA.Advanced
 {
@@ -114,14 +115,21 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             var totalSize = elements * elementSize;
 
-            // Ada's memory hierarchy optimizations
+            // Ada's memory hierarchy optimizations - map to canonical patterns
             if (totalSize <= RTX2000Specs.SharedMemoryPerSM)
             {
-                return MemoryAccessPattern.SharedMemory;
+                // Small data fits in shared memory - use tiled pattern
+                return MemoryAccessPattern.Tiled;
+            }
+            else if (totalSize <= RTX2000Specs.L2CacheSize)
+            {
+                // Data fits in L2 cache - use sequential pattern
+                return MemoryAccessPattern.Sequential;
             }
             else
             {
-                return totalSize <= RTX2000Specs.L2CacheSize ? MemoryAccessPattern.L2Cache : MemoryAccessPattern.GlobalMemoryCoalesced;
+                // Large data - use coalesced pattern for optimal bandwidth
+                return MemoryAccessPattern.Coalesced;
             }
         }
 
@@ -227,16 +235,6 @@ namespace DotCompute.Backends.CUDA.Advanced
         public double Occupancy { get; set; }
     }
 
-    /// <summary>
-    /// Memory access patterns for optimization
-    /// </summary>
-    public enum MemoryAccessPattern
-    {
-        SharedMemory,
-        L2Cache,
-        GlobalMemoryCoalesced,
-        GlobalMemoryStrided
-    }
 
     /// <summary>
     /// Validation result for Ada configurations

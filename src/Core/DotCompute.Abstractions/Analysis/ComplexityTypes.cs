@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Analysis;
 
@@ -36,30 +37,6 @@ public enum ComplexityClass
 
     /// <summary>O(n!) - Factorial time.</summary>
     Factorial
-}
-
-/// <summary>
-/// Types of memory access patterns.
-/// </summary>
-public enum MemoryAccessPattern
-{
-    /// <summary>Sequential access pattern.</summary>
-    Sequential,
-
-    /// <summary>Random access pattern.</summary>
-    Random,
-
-    /// <summary>Strided access pattern.</summary>
-    Strided,
-
-    /// <summary>Coalesced access pattern (GPU).</summary>
-    Coalesced,
-
-    /// <summary>Broadcast access pattern.</summary>
-    Broadcast,
-
-    /// <summary>Gather/scatter access pattern.</summary>
-    GatherScatter
 }
 
 /// <summary>

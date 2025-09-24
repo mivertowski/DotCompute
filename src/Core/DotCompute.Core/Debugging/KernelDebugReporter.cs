@@ -87,10 +87,10 @@ internal sealed class KernelDebugReporter : IDisposable
             }
 
             // Compare memory usage
-            if (result1.MemoryUsage > 0 && result2.MemoryUsage > 0)
+            if (result1.MemoryUsed > 0 && result2.MemoryUsed > 0)
             {
-                var memoryDifference = Math.Abs(result1.MemoryUsage - result2.MemoryUsage);
-                var averageMemory = (result1.MemoryUsage + result2.MemoryUsage) / 2.0;
+                var memoryDifference = Math.Abs(result1.MemoryUsed - result2.MemoryUsed);
+                var averageMemory = (result1.MemoryUsed + result2.MemoryUsed) / 2.0;
 
                 if (memoryDifference / averageMemory > 0.3) // >30% difference
                 {
@@ -99,8 +99,8 @@ internal sealed class KernelDebugReporter : IDisposable
                         Severity = ComparisonSeverity.Warning,
                         Category = "Memory Usage",
                         Description = "Significant memory usage difference detected",
-                        Details = $"{result1.BackendType}: {result1.MemoryUsage:N0} bytes | " +
-                                 $"{result2.BackendType}: {result2.MemoryUsage:N0} bytes"
+                        Details = $"{result1.BackendType}: {result1.MemoryUsed:N0} bytes | " +
+                                 $"{result2.BackendType}: {result2.MemoryUsed:N0} bytes"
                     });
                 }
             }
@@ -120,18 +120,16 @@ internal sealed class KernelDebugReporter : IDisposable
                     });
                 }
 
-                report.ResultsMatch = resultComparison.IsMatch;
-                report.ResultDifference = resultComparison.Difference;
+                // ResultsMatch is set in the report object creation
+                // ResultDifference is a computed property from Differences list
             }
             else
             {
-                report.ResultsMatch = false;
-                report.ResultDifference = float.MaxValue;
+                // ResultsMatch is set in the report object creation
+                // ResultDifference is a computed property from Differences list
             }
 
-            // Generate summary
-            report.Summary = GenerateComparisonSummary(report);
-
+            // Return the report
             return report;
         }
         catch (Exception ex)
@@ -152,7 +150,7 @@ internal sealed class KernelDebugReporter : IDisposable
                     Description = "Failed to compare results",
                     Details = ex.Message
                 }],
-                Summary = "Comparison failed due to error"
+                Differences = []
             };
         }
     }
@@ -191,28 +189,31 @@ internal sealed class KernelDebugReporter : IDisposable
         if (validationResult.Results?.Any() == true)
         {
             report.AppendLine("--- Backend Execution Results ---");
-            foreach (var result in validationResult.Results)
+            foreach (var kvp in validationResult.Results)
             {
-                report.AppendLine($"Backend: {result.BackendType}");
-                report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
-                report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
-                if (result.MemoryUsage > 0)
+                if (kvp.Value is KernelExecutionResult result)
                 {
-                    report.AppendLine($"  Memory Usage: {result.MemoryUsage:N0} bytes");
+                    report.AppendLine($"Backend: {result.BackendType}");
+                    report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
+                    report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
+                    if (result.MemoryUsed > 0)
+                    {
+                        report.AppendLine($"  Memory Usage: {result.MemoryUsed:N0} bytes");
+                    }
+                    if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        report.AppendLine($"  Error: {result.ErrorMessage}");
+                    }
+                    report.AppendLine();
                 }
-                if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
-                {
-                    report.AppendLine($"  Error: {result.ErrorMessage}");
-                }
-                report.AppendLine();
             }
         }
 
         // Cross-Backend Comparisons
-        if (validationResult.Comparisons?.Any() == true)
+        if (validationResult.CrossBackendComparisons?.Any() == true)
         {
             report.AppendLine("--- Cross-Backend Comparisons ---");
-            foreach (var comparison in validationResult.Comparisons)
+            foreach (var comparison in validationResult.CrossBackendComparisons)
             {
                 var status = comparison.IsMatch ? "✓ MATCH" : "✗ DIFFER";
                 report.AppendLine($"{comparison.Backend1} vs {comparison.Backend2}: {status}");
@@ -237,7 +238,7 @@ internal sealed class KernelDebugReporter : IDisposable
                     report.AppendLine($"  • {issue.Message}");
                     if (!string.IsNullOrEmpty(issue.Details))
                     {
-                        report.AppendLine($"    Details: {issue.Details}");
+                        report.AppendLine($"    Details: {issue.Context ?? issue.Details}");
                     }
                 }
                 report.AppendLine();
@@ -259,13 +260,13 @@ internal sealed class KernelDebugReporter : IDisposable
                 ReportFormat.Json => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
                 ReportFormat.Xml => await ExportToXmlAsync(report),
                 ReportFormat.Csv => await ExportToCsvAsync(report),
-                ReportFormat.Text => await ExportToTextAsync(report),
+                ReportFormat.PlainText => await ExportToTextAsync(report),
                 _ => throw new ArgumentException($"Unsupported report format: {format}")
             };
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error exporting report in format {format}", format);
+            _logger.LogError(ex, "Error exporting report in format {format}", format);
             throw;
         }
     }
@@ -434,17 +435,4 @@ internal sealed class KernelDebugReporter : IDisposable
 // Supporting enums and classes
 // ReportFormat moved to DotCompute.Abstractions.Debugging.ReportingTypes
 
-public enum ComparisonSeverity
-{
-    Info,
-    Warning,
-    Error
-}
-
-public class ComparisonIssue
-{
-    public ComparisonSeverity Severity { get; set; }
-    public required string Category { get; set; }
-    public required string Description { get; set; }
-    public string Details { get; set; } = string.Empty;
-}
+// ComparisonSeverity and ComparisonIssue types have been moved to DotCompute.Abstractions.Debugging

@@ -9,6 +9,7 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
+using DotCompute.Core.Debugging.Types;
 using KernelDebugProfiler = DotCompute.Core.Debugging.KernelDebugProfiler;
 using Microsoft.Extensions.Logging;
 
@@ -231,10 +232,10 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             await _debugLogger.LogTracingStartAsync(kernelName, backendType, tracePoints);
 
             // Perform execution tracing
-            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
+            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, backendType, inputs);
 
             // Enhance with additional analysis
-            var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace);
+            var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace) ?? trace;
 
             // Log tracing completion
             await _debugLogger.LogTracingCompletionAsync(kernelName, enhancedTrace);
@@ -256,7 +257,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <param name="timeWindow">Time window for historical analysis.</param>
     /// <returns>Comprehensive performance analysis.</returns>
-    public async Task<PerformanceAnalysisResult> AnalyzePerformanceAsync(
+    public async Task<DotCompute.Core.Debugging.Core.PerformanceAnalysisResult> AnalyzePerformanceAsync(
         string kernelName,
         TimeSpan? timeWindow = null)
     {
@@ -284,7 +285,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
                 kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
             // Combine all analyses
-            var result = new PerformanceAnalysisResult
+            var result = new DotCompute.Core.Debugging.Core.PerformanceAnalysisResult
             {
                 KernelName = kernelName,
                 PerformanceReport = performanceReport,
@@ -624,16 +625,16 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// <summary>
     /// Converts Core PerformanceAnalysisResult to Abstractions PerformanceAnalysisResult.
     /// </summary>
-    private static DotCompute.Abstractions.Debugging.PerformanceAnalysisResult ConvertToAbstractionsPerformanceAnalysisResult(PerformanceAnalysisResult coreResult)
+    private static DotCompute.Abstractions.Debugging.PerformanceAnalysisResult ConvertToAbstractionsPerformanceAnalysisResult(DotCompute.Core.Debugging.Core.PerformanceAnalysisResult coreResult)
     {
         return new DotCompute.Abstractions.Debugging.PerformanceAnalysisResult
         {
             KernelName = coreResult.KernelName,
             BackendType = "Unknown", // Not available in core result
-            ExecutionTime = TimeSpan.FromMilliseconds(coreResult.ExecutionStatistics.AverageExecutionTime),
+            ExecutionTime = TimeSpan.FromMilliseconds(coreResult.ExecutionStatistics?.AverageExecutionTime ?? 0),
             MemoryUsage = 0, // Could be extracted from MemoryAnalysis if needed
             ThroughputOpsPerSecond = 0.0, // ThroughputOpsPerSecond not available in current PerformanceReport
-            Bottlenecks = coreResult.BottleneckAnalysis.Bottlenecks.Select(b => b.Description).ToList()
+            Bottlenecks = coreResult.BottleneckAnalysis?.Bottlenecks?.Select(b => b.Description).ToList() ?? new List<string>()
         };
     }
 
@@ -681,18 +682,4 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             }
         }
     }
-}
-
-/// <summary>
-/// Comprehensive performance analysis result.
-/// </summary>
-public record PerformanceAnalysisResult
-{
-    public string KernelName { get; init; } = string.Empty;
-    public KernelPerformanceReport PerformanceReport { get; init; } = new();
-    public MemoryUsageAnalysis MemoryAnalysis { get; init; } = new();
-    public DotCompute.Core.Debugging.Core.BottleneckAnalysis BottleneckAnalysis { get; init; } = new();
-    public DotCompute.Core.Debugging.Core.ExecutionStatistics ExecutionStatistics { get; init; } = new();
-    public AdvancedPerformanceAnalysis AdvancedAnalysis { get; init; } = new();
-    public DateTime GeneratedAt { get; init; }
 }

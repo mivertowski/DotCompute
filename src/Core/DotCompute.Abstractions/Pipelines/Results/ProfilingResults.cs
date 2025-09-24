@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Pipelines.Statistics;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Pipelines.Results;
 
@@ -159,23 +160,4 @@ public sealed class PerformanceRecommendation
     public required string Impact { get; init; }
 }
 
-/// <summary>
-/// Performance trend data for aggregated results.
-/// </summary>
-public sealed class PerformanceTrend
-{
-    /// <summary>
-    /// Gets the metric name.
-    /// </summary>
-    public required string MetricName { get; init; }
-
-    /// <summary>
-    /// Gets the trend direction.
-    /// </summary>
-    public required string Direction { get; init; }
-
-    /// <summary>
-    /// Gets the trend magnitude.
-    /// </summary>
-    public required double Magnitude { get; init; }
-}
+// PerformanceTrend class removed - using unified version from DotCompute.Abstractions.Types

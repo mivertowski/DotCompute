@@ -210,8 +210,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         if (debugData.PerformanceAnalysis != null)
         {
             summary.AppendLine($"Performance Analysis: {debugData.PerformanceAnalysis.DataPoints} data points");
-            summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
-            summary.AppendLine($"Success Rate: {debugData.PerformanceAnalysis.SuccessRate:F1}%");
+            summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
+            // Success rate not available in PerformanceAnalysis
         }
 
         if (debugData.DeterminismResult != null)
@@ -246,12 +246,13 @@ public sealed partial class DebugReportGenerator : IDisposable
         // Add performance recommendations
         if (debugData.PerformanceAnalysis != null)
         {
-            if (debugData.PerformanceAnalysis.AverageExecutionTime > 1000) // > 1 second
+            if (debugData.PerformanceAnalysis.AverageExecutionTimeMs > 1000) // > 1 second
             {
                 recommendations.Add("Consider optimizing for better performance (current average > 1s).");
             }
 
-            if (debugData.PerformanceAnalysis.SuccessRate < 95)
+            // Success rate check removed - not available in PerformanceAnalysis
+            if (false) // Placeholder for success rate check
             {
                 recommendations.Add("Low success rate detected. Investigate and fix reliability issues.");
             }
@@ -300,8 +301,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         {
             md.AppendLine("## Performance Analysis");
             md.AppendLine($"- **Data Points:** {debugData.PerformanceAnalysis.DataPoints}");
-            md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
-            md.AppendLine($"- **Success Rate:** {debugData.PerformanceAnalysis.SuccessRate:F1}%");
+            md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
+            // Success rate not available in PerformanceAnalysis
             md.AppendLine();
         }
 

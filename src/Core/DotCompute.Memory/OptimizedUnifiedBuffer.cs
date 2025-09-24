@@ -6,6 +6,7 @@ using global::System.Runtime.InteropServices;
 using global::System.Buffers;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Memory.Types;
 using Microsoft.Extensions.ObjectPool;
 using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
@@ -1120,29 +1121,3 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     #endregion
 }
 
-/// <summary>
-/// Performance metrics for unified buffer operations.
-/// </summary>
-public record BufferPerformanceMetrics
-{
-    public long TransferCount { get; init; }
-    public TimeSpan AverageTransferTime { get; init; }
-    public DateTimeOffset LastAccessTime { get; init; }
-    public long SizeInBytes { get; init; }
-    public string AllocationSource { get; init; } = "Unknown";
-    public double TransfersPerSecond => TransferCount > 0 && AverageTransferTime > TimeSpan.Zero
-        ? 1.0 / AverageTransferTime.TotalSeconds : 0;
-}
-
-/// <summary>
-/// Simple wrapper to make ArrayPool compatible with ObjectPool interface.
-/// </summary>
-/// <typeparam name="T">Element type.</typeparam>
-internal class ArrayPoolWrapper<T> : ObjectPool<T[]> where T : unmanaged
-{
-    private readonly ArrayPool<T> _arrayPool = ArrayPool<T>.Shared;
-
-    public override T[] Get() => _arrayPool.Rent(1024); // Default size, will be resized as needed
-
-    public override void Return(T[] obj) => _arrayPool.Return(obj);
-}

@@ -733,13 +733,6 @@ public enum OptimizationType
     Threading
 }
 
-public enum MemoryAccessPattern
-{
-    Sequential,
-    Strided,
-    Random
-}
-
 public class OptimizationProfile
 {
     public required string KernelName { get; set; }

@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
+using DotCompute.Core.Debugging.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Debugging.Core;
@@ -339,7 +340,7 @@ public sealed class KernelProfiler : IDisposable
     /// <param name="kernelName">Name of the kernel.</param>
     /// <param name="timeWindow">Time window for analysis.</param>
     /// <returns>Execution statistics.</returns>
-    public ExecutionStatistics GetExecutionStatistics(string kernelName, TimeSpan? timeWindow = null)
+    public DotCompute.Core.Debugging.Types.ExecutionStatistics GetExecutionStatistics(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
@@ -351,7 +352,7 @@ public sealed class KernelProfiler : IDisposable
 
         if (relevantExecutions.Count == 0)
         {
-            return new ExecutionStatistics
+            return new DotCompute.Core.Debugging.Types.ExecutionStatistics
             {
                 KernelName = kernelName,
                 TotalExecutions = 0,
@@ -694,65 +695,4 @@ public record PerformanceProfile
     public PerformanceMetrics Metrics { get; init; } = new();
     public DateTime LastUpdated { get; init; }
     public int SampleCount { get; init; }
-}
-
-public record KernelPerformanceReport
-{
-    public string KernelName { get; init; } = string.Empty;
-    public int ExecutionCount { get; init; }
-    public Dictionary<string, PerformanceMetrics> BackendMetrics { get; init; } = new();
-    public List<string> Recommendations { get; init; } = new();
-    public TimeSpan AnalysisTimeWindow { get; init; }
-    public DateTime GeneratedAt { get; init; }
-}
-
-public record MemoryUsageAnalysis
-{
-    public string KernelName { get; init; } = string.Empty;
-    public int SampleCount { get; init; }
-    public long AverageMemoryUsage { get; init; }
-    public long PeakMemoryUsage { get; init; }
-    public long MinimumMemoryUsage { get; init; }
-    public double MemoryEfficiencyScore { get; init; }
-    public double MemoryVariance { get; init; }
-    public long RecommendedMemoryAllocation { get; init; }
-}
-
-public record BottleneckAnalysis
-{
-    public string KernelName { get; init; } = string.Empty;
-    public List<PerformanceBottleneck> Bottlenecks { get; init; } = new();
-    public double OverallPerformanceScore { get; init; }
-    public List<string> RecommendedOptimizations { get; init; } = new();
-}
-
-public record PerformanceBottleneck
-{
-    public BottleneckType Type { get; init; }
-    public BottleneckSeverity Severity { get; init; }
-    public string Description { get; init; } = string.Empty;
-    public List<string> AffectedComponents { get; init; } = new();
-    public List<string> RecommendedActions { get; init; } = new();
-}
-
-public record ExecutionStatistics
-{
-    public string KernelName { get; init; } = string.Empty;
-    public int TotalExecutions { get; init; }
-    public int SuccessfulExecutions { get; init; }
-    public int FailedExecutions { get; init; }
-    public double SuccessRate { get; init; }
-    public double AverageExecutionTime { get; init; }
-    public double MinExecutionTime { get; init; }
-    public double MaxExecutionTime { get; init; }
-    public double StandardDeviation { get; init; }
-}
-
-
-public enum BottleneckSeverity
-{
-    Low,
-    Medium,
-    High,
-    Critical
 }

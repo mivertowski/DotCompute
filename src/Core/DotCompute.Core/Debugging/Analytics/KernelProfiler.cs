@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Core.Debugging.Enums;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -298,16 +299,16 @@ public sealed partial class KernelProfiler : IDisposable
             return new PerformanceTrend
             {
                 KernelName = kernelName,
-                TimeRange = timeRange,
+                TimeRange = GetTimeSpanForRange(timeRange),
                 DataPoints = 0,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
         var trend = AnalyzeTrend(recentData);
-        trend.KernelName = kernelName;
-        trend.TimeRange = timeRange;
-        trend.AnalysisTime = DateTime.UtcNow;
+        // Note: AnalyzeTrend should return a properly constructed PerformanceTrend
+        // Analysis timestamp is tracked separately if needed
 
         LogTrendAnalysisCompleted(kernelName, recentData.Count, trend.TrendDirection.ToString());
 
@@ -348,10 +349,10 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new PerformanceAnomaly
             {
-                Type = AnomalyType.ExecutionTime,
+                Type = AnomalyType.PerformanceSpike,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
-                Value = data.ExecutionTime.TotalMilliseconds,
+                ActualValue = data.ExecutionTime.TotalMilliseconds,
                 ExpectedValue = meanTime,
                 Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
                 Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
@@ -368,10 +369,10 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new PerformanceAnomaly
             {
-                Type = AnomalyType.MemoryUsage,
+                Type = AnomalyType.MemorySpike,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
-                Value = data.MemoryUsage.AllocatedMemory,
+                ActualValue = data.MemoryUsage.AllocatedMemory,
                 ExpectedValue = meanMemory,
                 Severity = data.MemoryUsage.AllocatedMemory > meanMemory + (3 * memoryStdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
                 Description = $"Memory usage ({data.MemoryUsage.AllocatedMemory:N0} bytes) significantly higher than average ({meanMemory:F0} bytes)"
@@ -563,6 +564,18 @@ public sealed partial class KernelProfiler : IDisposable
         return Math.Sqrt(sumOfSquaredDifferences / valueList.Count);
     }
 
+    private static TimeSpan GetTimeSpanForRange(TimeRange range)
+    {
+        return range switch
+        {
+            TimeRange.LastHour => TimeSpan.FromHours(1),
+            TimeRange.LastDay => TimeSpan.FromDays(1),
+            TimeRange.LastWeek => TimeSpan.FromDays(7),
+            TimeRange.LastMonth => TimeSpan.FromDays(30),
+            _ => TimeSpan.FromDays(7)
+        };
+    }
+
     private static double CalculateThroughputScore(List<ProfilingData> data)
     {
         if (!data.Any())
@@ -613,8 +626,11 @@ public sealed partial class KernelProfiler : IDisposable
         {
             return new PerformanceTrend
             {
+                KernelName = data.FirstOrDefault()?.KernelName ?? string.Empty,
+                TimeRange = data.Count > 0 ? data.Last().EndTime - data.First().StartTime : TimeSpan.Zero,
                 DataPoints = data.Count,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
@@ -626,19 +642,18 @@ public sealed partial class KernelProfiler : IDisposable
 
         var trendDirection = slope switch
         {
-            > 1.0 => TrendDirection.Increasing,
-            < -1.0 => TrendDirection.Decreasing,
+            > 1.0 => TrendDirection.Degrading,
+            < -1.0 => TrendDirection.Improving,
             _ => TrendDirection.Stable
         };
 
         return new PerformanceTrend
         {
+            KernelName = data.First().KernelName,
+            TimeRange = data.Last().EndTime - data.First().StartTime,
             DataPoints = data.Count,
             TrendDirection = trendDirection,
-            Slope = slope,
-            FirstDataPoint = data.First().ExecutionTime,
-            LastDataPoint = data.Last().ExecutionTime,
-            AverageChange = (data.Last().ExecutionTime.TotalMilliseconds - data.First().ExecutionTime.TotalMilliseconds) / data.Count
+            AnalysisTime = DateTime.UtcNow
         };
     }
 

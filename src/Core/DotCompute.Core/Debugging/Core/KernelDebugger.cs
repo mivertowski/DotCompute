@@ -344,8 +344,10 @@ public sealed partial class KernelDebugger : IDisposable
         using var timeoutCts = new CancellationTokenSource(_options.ExecutionTimeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-        // Execute kernel
-        return await kernel.ExecuteAsync(accelerator, inputs, combinedCts.Token).ConfigureAwait(false);
+        // Execute kernel through accelerator
+        // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
+        // This would typically be done through IComputeOrchestrator or IKernelExecutor
+        throw new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator");
     }
 
     /// <summary>

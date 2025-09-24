@@ -213,7 +213,7 @@ public sealed class EncryptionManager : IDisposable
         if (WeakAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.SecurityIssues.Add($"Encryption algorithm '{algorithm}' is considered weak");
+            result.Issues.Add($"Encryption algorithm '{algorithm}' is considered weak");
             result.Recommendations.Add($"Use approved alternatives: {string.Join(", ", ApprovedCiphers)}");
             return result;
         }
@@ -222,7 +222,7 @@ public sealed class EncryptionManager : IDisposable
         if (!ApprovedCiphers.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.SecurityIssues.Add($"Encryption algorithm '{algorithm}' is not in the approved list");
+            result.Issues.Add($"Encryption algorithm '{algorithm}' is not in the approved list");
             result.Recommendations.Add($"Use approved algorithms: {string.Join(", ", ApprovedCiphers)}");
             return result;
         }
@@ -233,7 +233,7 @@ public sealed class EncryptionManager : IDisposable
         // Check for timing attack vulnerabilities
         if (result.IsApproved && !IsTimingAttackSafe(algorithm))
         {
-            result.SecurityIssues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
+            result.Issues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
@@ -522,7 +522,7 @@ public sealed class EncryptionManager : IDisposable
 
         if (!validSizes.Contains(keySize))
         {
-            result.SecurityIssues.Add($"Invalid key size {keySize} for {algorithm}. Valid sizes: {string.Join(", ", validSizes)}");
+            result.Issues.Add($"Invalid key size {keySize} for {algorithm}. Valid sizes: {string.Join(", ", validSizes)}");
             result.Recommendations.Add($"Use appropriate key size for {algorithm}");
             return false;
         }

@@ -7,8 +7,10 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Core;
+using DotCompute.Core.Debugging.Types;
+using DotCompute.Core.Optimization.Performance;
 using Microsoft.Extensions.Logging;
-using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
+using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
@@ -145,8 +147,8 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <returns>Advanced performance analysis result.</returns>
     public async Task<AdvancedPerformanceAnalysis> PerformAdvancedPerformanceAnalysisAsync(
         string kernelName,
-        KernelPerformanceReport performanceReport,
-        MemoryUsageAnalysis memoryAnalysis,
+        DotCompute.Core.Debugging.Types.PerformanceReport performanceReport,
+        DotCompute.Core.Debugging.Types.MemoryUsageAnalysis memoryAnalysis,
         DotCompute.Core.Debugging.Core.BottleneckAnalysis bottleneckAnalysis)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -162,19 +164,22 @@ public sealed class KernelDebugAnalyzer : IDisposable
             // Analyze performance trends
             var trendAnalysis = AnalyzePerformanceTrends(kernelName, performanceReport);
 
+            // Convert BackendPerformanceStats to PerformanceMetrics
+            var backendMetrics = ConvertBackendStatsToMetrics(performanceReport.Backends);
+
             // Perform regression analysis
-            var regressionAnalysis = PerformRegressionAnalysis(performanceReport.BackendMetrics);
+            var regressionAnalysis = PerformRegressionAnalysis(backendMetrics);
 
             // Generate optimization opportunities
             var optimizationOpportunities = IdentifyOptimizationOpportunities(
                 performanceReport, memoryAnalysis, bottleneckAnalysis);
 
             // Predict performance scaling
-            var scalingPredictions = PredictPerformanceScaling(performanceReport.BackendMetrics);
+            var scalingPredictions = PredictPerformanceScaling(backendMetrics);
 
             // Calculate efficiency scores
             var efficiencyScores = CalculateEfficiencyScores(
-                performanceReport.BackendMetrics, memoryAnalysis);
+                backendMetrics, memoryAnalysis);
 
             return new AdvancedPerformanceAnalysis
             {
@@ -479,7 +484,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Analyzes performance trends for a kernel.
     /// </summary>
-    private static TrendAnalysis AnalyzePerformanceTrends(string kernelName, KernelPerformanceReport report)
+    private static TrendAnalysis AnalyzePerformanceTrends(string kernelName, DotCompute.Core.Debugging.Types.PerformanceReport report)
     {
         // Simplified trend analysis
         var trend = PerformanceTrend.Stable;
@@ -504,7 +509,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Performs regression analysis on backend metrics.
     /// </summary>
-    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, PerformanceMetrics> backendMetrics)
+    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics)
     {
         // Simplified regression analysis
         return new RegressionAnalysis
@@ -521,14 +526,15 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Identifies optimization opportunities based on analysis.
     /// </summary>
     private static List<OptimizationOpportunity> IdentifyOptimizationOpportunities(
-        KernelPerformanceReport performanceReport,
+        DotCompute.Core.Debugging.Types.PerformanceReport performanceReport,
         MemoryUsageAnalysis memoryAnalysis,
         DotCompute.Core.Debugging.Core.BottleneckAnalysis bottleneckAnalysis)
     {
         var opportunities = new List<OptimizationOpportunity>();
 
         // Memory optimization opportunities
-        if (memoryAnalysis.MemoryEfficiencyScore < 0.7)
+        var memoryEfficiency = CalculateMemoryEfficiency(memoryAnalysis);
+        if (memoryEfficiency < 0.7)
         {
             opportunities.Add(new OptimizationOpportunity
             {
@@ -541,15 +547,15 @@ public sealed class KernelDebugAnalyzer : IDisposable
         }
 
         // Performance bottleneck opportunities
-        foreach (var bottleneck in bottleneckAnalysis.Bottlenecks.Where(b => b.Severity >= CoreBottleneckSeverity.Medium))
+        foreach (var bottleneck in bottleneckAnalysis.Bottlenecks.Where(b => b.Severity >= BottleneckSeverity.Medium))
         {
             opportunities.Add(new OptimizationOpportunity
             {
                 Type = OptimizationType.Performance,
-                Impact = bottleneck.Severity == CoreBottleneckSeverity.High ? OptimizationImpact.High : OptimizationImpact.Medium,
+                Impact = bottleneck.Severity == BottleneckSeverity.High ? OptimizationImpact.High : OptimizationImpact.Medium,
                 Description = bottleneck.Description,
-                Recommendation = string.Join("; ", bottleneck.RecommendedActions),
-                EstimatedImprovement = bottleneck.Severity == CoreBottleneckSeverity.High ? 0.5 : 0.2
+                Recommendation = bottleneck.Recommendation,
+                EstimatedImprovement = bottleneck.Severity == BottleneckSeverity.High ? 0.5 : 0.2
             });
         }
 
@@ -559,7 +565,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Predicts performance scaling characteristics.
     /// </summary>
-    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, PerformanceMetrics> backendMetrics)
+    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics)
     {
         // Simplified scaling predictions
         return new ScalingPredictions
@@ -575,7 +581,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Calculates efficiency scores for different backends.
     /// </summary>
     private static Dictionary<string, double> CalculateEfficiencyScores(
-        Dictionary<string, PerformanceMetrics> backendMetrics,
+        Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics,
         MemoryUsageAnalysis memoryAnalysis)
     {
         var efficiencyScores = new Dictionary<string, double>();
@@ -587,7 +593,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
 
             // Simple efficiency calculation based on throughput and memory usage
             var throughputScore = Math.Min(metrics.ThroughputOpsPerSecond / 1000.0, 1.0);
-            var memoryScore = memoryAnalysis.MemoryEfficiencyScore;
+            var memoryScore = CalculateMemoryEfficiency(memoryAnalysis);
             var efficiency = (throughputScore + memoryScore) / 2.0;
 
             efficiencyScores[backend] = efficiency;
@@ -896,6 +902,63 @@ public sealed class KernelDebugAnalyzer : IDisposable
             string str => str.Length * 2, // 2 bytes per char
             _ => 4 // Default size
         });
+    }
+
+    /// <summary>
+    /// Calculates memory efficiency from memory usage analysis.
+    /// </summary>
+    /// <param name="memoryAnalysis">Memory usage analysis.</param>
+    /// <returns>Memory efficiency score (0.0 to 1.0).</returns>
+    private static double CalculateMemoryEfficiency(MemoryUsageAnalysis memoryAnalysis)
+    {
+        // Simple heuristic based on memory analysis properties
+        // In a real implementation, this would be more sophisticated
+        if (memoryAnalysis.PeakMemoryUsage == 0)
+        {
+            return 1.0; // Perfect efficiency for zero memory usage
+        }
+
+        // Calculate efficiency based on peak vs average memory usage
+        var averageUsage = memoryAnalysis.AverageMemoryUsage;
+        var peakUsage = memoryAnalysis.PeakMemoryUsage;
+
+        if (peakUsage == 0)
+        {
+            return 1.0;
+        }
+
+        return Math.Min(1.0, averageUsage / peakUsage);
+    }
+
+    /// <summary>
+    /// Converts a dictionary of BackendPerformanceStats to PerformanceMetrics.
+    /// </summary>
+    /// <param name="backendStats">Dictionary of backend performance statistics.</param>
+    /// <returns>Dictionary of performance metrics.</returns>
+    private static Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> ConvertBackendStatsToMetrics(
+        Dictionary<string, BackendPerformanceStats> backendStats)
+    {
+        var metrics = new Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics>();
+
+        foreach (var kvp in backendStats)
+        {
+            var backend = kvp.Key;
+            var stats = kvp.Value;
+
+            // Convert BackendPerformanceStats to PerformanceMetrics
+            var performanceMetrics = new DotCompute.Abstractions.Debugging.PerformanceMetrics
+            {
+                ExecutionTime = TimeSpan.FromMilliseconds(stats.AverageExecutionTimeMs),
+                MemoryUsage = (long)stats.AverageMemoryUsage,
+                CpuUtilization = 0f, // Not available in BackendPerformanceStats
+                GpuUtilization = 0f, // Not available in BackendPerformanceStats
+                ThroughputOpsPerSecond = (int)stats.AverageThroughput
+            };
+
+            metrics[backend] = performanceMetrics;
+        }
+
+        return metrics;
     }
 
     public void Dispose()

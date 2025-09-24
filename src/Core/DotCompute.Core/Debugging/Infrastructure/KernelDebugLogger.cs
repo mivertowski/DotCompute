@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 // Using aliases to resolve LogLevel conflicts
 using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
+using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
@@ -382,7 +382,7 @@ public sealed class KernelDebugLogger : IDisposable
     /// </summary>
     /// <param name="kernelName">Name of the kernel that was analyzed.</param>
     /// <param name="analysisResult">Performance analysis result.</param>
-    public async Task LogPerformanceAnalysisAsync(string kernelName, PerformanceAnalysisResult analysisResult)
+    public async Task LogPerformanceAnalysisAsync(string kernelName, DotCompute.Abstractions.Debugging.PerformanceAnalysisResult analysisResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 

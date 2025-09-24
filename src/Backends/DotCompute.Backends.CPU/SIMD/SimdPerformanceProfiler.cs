@@ -160,12 +160,12 @@ public sealed class SimdPerformanceProfiler : IDisposable
     /// <summary>
     /// Analyzes performance trends over time
     /// </summary>
-    public PerformanceTrend AnalyzeTrends(SimdExecutionStrategy strategy, TimeSpan timeWindow)
+    public SimdPerformanceTrend AnalyzeTrends(SimdExecutionStrategy strategy, TimeSpan timeWindow)
     {
         var metrics = _strategyMetrics.GetValueOrDefault(strategy);
         if (metrics == null)
         {
-            return new PerformanceTrend
+            return new SimdPerformanceTrend
             {
                 Strategy = strategy,
                 IsValid = false,
@@ -175,7 +175,7 @@ public sealed class SimdPerformanceProfiler : IDisposable
 
         lock (metrics)
         {
-            return new PerformanceTrend
+            return new SimdPerformanceTrend
             {
                 Strategy = strategy,
                 IsValid = true,
@@ -491,9 +491,9 @@ public sealed class StrategyComparison
 }
 
 /// <summary>
-/// Performance trend analysis
+/// SIMD-specific performance trend analysis
 /// </summary>
-public sealed class PerformanceTrend
+public sealed class SimdPerformanceTrend
 {
     public SimdExecutionStrategy Strategy { get; init; }
     public bool IsValid { get; init; }
