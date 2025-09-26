@@ -109,7 +109,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
     private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
     {
         // Intelligent buffer size calculation that considers multiple optimization factors
-        var calculator = new IntelligentBufferSizeCalculator();
+        _ = new IntelligentBufferSizeCalculator();
 
         return IntelligentBufferSizeCalculator.CalculateOptimalBufferSize(stage1, stage2);
     }

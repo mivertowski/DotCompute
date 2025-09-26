@@ -70,4 +70,14 @@ public class SecurityScanResult
     /// Gets or sets the scan duration.
     /// </summary>
     public TimeSpan ScanDuration { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the scan had errors.
+    /// </summary>
+    public bool HasErrors { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error messages from the scan.
+    /// </summary>
+    public List<string> ErrorMessages { get; set; } = [];
 }

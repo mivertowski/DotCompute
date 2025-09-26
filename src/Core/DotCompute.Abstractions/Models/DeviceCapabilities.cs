@@ -73,7 +73,8 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the supported data types
     /// </summary>
-    public DataTypeSupport SupportedDataTypes { get; set; } = new();
+    public DataTypeSupport SupportedDataTypes { get; set; }
+
 
     /// <summary>
     /// Gets or sets the clock frequency in MHz
@@ -113,17 +114,20 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the maximum block dimensions
     /// </summary>
-    public Dim3 MaxBlockDimensions { get; set; } = new();
+    public Dim3 MaxBlockDimensions { get; set; }
+
 
     /// <summary>
     /// Gets or sets the maximum grid dimensions
     /// </summary>
-    public Dim3 MaxGridDimensions { get; set; } = new();
+    public Dim3 MaxGridDimensions { get; set; }
+
 
     /// <summary>
     /// Gets or sets the available device features
     /// </summary>
-    public DeviceFeatures Features { get; set; } = new();
+    public DeviceFeatures Features { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether the device supports async operations

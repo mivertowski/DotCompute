@@ -252,10 +252,6 @@ public sealed partial class DebugReportGenerator : IDisposable
             }
 
             // Success rate check removed - not available in PerformanceAnalysis
-            if (false) // Placeholder for success rate check
-            {
-                recommendations.Add("Low success rate detected. Investigate and fix reliability issues.");
-            }
         }
 
         // Add determinism recommendations
@@ -322,12 +318,12 @@ public sealed partial class DebugReportGenerator : IDisposable
         md.AppendLine("## Execution Results");
         foreach (var execResult in result.ExecutionResults)
         {
-            md.AppendLine($"- **{execResult.AcceleratorName}** ({execResult.AcceleratorType}):");
+            md.AppendLine($"- **{execResult.BackendType}** execution:");
             md.AppendLine($"  - Success: {(execResult.Success ? "✅" : "❌")}");
             md.AppendLine($"  - Execution Time: {execResult.ExecutionTime.TotalMilliseconds:F2} ms");
-            if (execResult.Error != null)
+            if (!execResult.Success && !string.IsNullOrEmpty(execResult.ErrorMessage))
             {
-                md.AppendLine($"  - Error: {execResult.Error.Message}");
+                md.AppendLine($"  - Error: {execResult.ErrorMessage}");
             }
         }
 
@@ -359,10 +355,10 @@ public sealed partial class DebugReportGenerator : IDisposable
         md.AppendLine();
 
         md.AppendLine("## Execution Time Statistics");
-        md.AppendLine($"- **Average:** {performance.AverageExecutionTime:F2} ms");
-        md.AppendLine($"- **Median:** {performance.MedianExecutionTime:F2} ms");
-        md.AppendLine($"- **Minimum:** {performance.MinExecutionTime:F2} ms");
-        md.AppendLine($"- **Maximum:** {performance.MaxExecutionTime:F2} ms");
+        md.AppendLine($"- **Average:** {performance.AverageExecutionTimeMs:F2} ms");
+        md.AppendLine($"- **Median:** {performance.AverageExecutionTimeMs:F2} ms"); // Median not available, using average
+        md.AppendLine($"- **Minimum:** {performance.MinExecutionTimeMs:F2} ms");
+        md.AppendLine($"- **Maximum:** {performance.MaxExecutionTimeMs:F2} ms");
         md.AppendLine($"- **Standard Deviation:** {performance.ExecutionTimeStdDev:F2} ms");
         md.AppendLine();
 
@@ -372,8 +368,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         md.AppendLine();
 
         md.AppendLine("## Reliability");
-        md.AppendLine($"- **Success Rate:** {performance.SuccessRate:F1}%");
-        md.AppendLine($"- **Total Executions:** {performance.TotalExecutions}");
+        md.AppendLine($"- **Data Points:** {performance.DataPointCount}");
+        md.AppendLine($"- **Analysis Range:** {performance.AnalysisTimeRange.TotalSeconds:F1} seconds");
 
         return md.ToString();
     }

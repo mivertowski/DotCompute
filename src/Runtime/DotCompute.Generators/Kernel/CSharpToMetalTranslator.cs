@@ -150,10 +150,11 @@ internal sealed class CSharpToMetalTranslator
     private string ConvertToMetalParameterType(string csharpType, string paramName)
     {
         // Remove generic type arguments for analysis
-        var baseType = csharpType.Contains('<') ? 
+        _ = csharpType.Contains('<') ?
             csharpType.Substring(0, csharpType.IndexOf('<')) : csharpType;
-        
+
         // Check if it's read-only
+
         var isReadOnly = csharpType.Contains("ReadOnlySpan") || 
                          paramName.StartsWith("input") || 
                          paramName.StartsWith("source");

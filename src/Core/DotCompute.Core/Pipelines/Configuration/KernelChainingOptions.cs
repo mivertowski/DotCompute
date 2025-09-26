@@ -26,7 +26,8 @@ namespace DotCompute.Core.Pipelines.Configuration
         /// <summary>
         /// Gets or sets whether profiling is enabled by default.
         /// </summary>
-        public bool EnableProfilingByDefault { get; set; } = false;
+        public bool EnableProfilingByDefault { get; set; }
+
 
         /// <summary>
         /// Gets or sets whether validation is enabled by default.
@@ -46,7 +47,8 @@ namespace DotCompute.Core.Pipelines.Configuration
         /// <summary>
         /// Gets or sets whether to use optimistic execution (continue on errors when possible).
         /// </summary>
-        public bool UseOptimisticExecution { get; set; } = false;
+        public bool UseOptimisticExecution { get; set; }
+
 
         /// <summary>
         /// Gets or sets the maximum cache memory size in bytes.

@@ -408,7 +408,7 @@ namespace DotCompute.Backends.CUDA.P2P
         private void Initialize()
         {
             // Initialize CUDA and discover devices
-            var deviceCount = GetDeviceCount();
+            _ = GetDeviceCount();
 
             _logger.LogDebugMessage("Initializing P2P manager with {deviceCount} devices");
         }

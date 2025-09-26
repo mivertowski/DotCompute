@@ -590,9 +590,9 @@ public sealed class MetalAlertsManager : IDisposable
             alert.Resolution = resolution;
             
             _logger.LogInformation("Alert resolved: {Title} - {Resolution}", alert.Title, resolution);
-            
+
             // Archive resolved alert
-            var archiveKey = $"{alert.RuleId}_resolved_{DateTimeOffset.UtcNow:yyyyMMdd}";
+            _ = $"{alert.RuleId}_resolved_{DateTimeOffset.UtcNow:yyyyMMdd}";
             // In production, you'd store this in persistent storage
         }
     }

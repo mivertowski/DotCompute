@@ -70,9 +70,33 @@ public class PerformanceAnalysisResult
 public class ExecutionStatistics
 {
     /// <summary>
+    /// Name of the kernel.
+    /// </summary>
+    public string KernelName { get; set; } = string.Empty;
+
+    /// <summary>
     /// Total number of executions performed.
     /// </summary>
     public int TotalExecutions { get; set; }
+
+    /// <summary>
+    /// Number of successful executions.
+    /// </summary>
+    public int SuccessfulExecutions { get; set; }
+
+    /// <summary>
+    /// Number of failed executions.
+    /// </summary>
+    public int FailedExecutions { get; set; }
+
+    /// <summary>
+    /// Execution count (alias for TotalExecutions for compatibility).
+    /// </summary>
+    public long ExecutionCount
+    {
+        get => TotalExecutions;
+        set => TotalExecutions = (int)value;
+    }
 
     /// <summary>
     /// Success rate of executions (0-1).
@@ -83,6 +107,36 @@ public class ExecutionStatistics
     /// Average execution time across all runs.
     /// </summary>
     public TimeSpan AverageExecutionTime { get; set; }
+
+    /// <summary>
+    /// Total execution time in milliseconds.
+    /// </summary>
+    public double TotalExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Average execution time in milliseconds.
+    /// </summary>
+    public double AverageExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Last execution timestamp.
+    /// </summary>
+    public DateTime? LastExecutionTime { get; set; }
+
+    /// <summary>
+    /// Whether vectorization is used (CPU-specific).
+    /// </summary>
+    public bool UseVectorization { get; set; }
+
+    /// <summary>
+    /// Vectorization factor (CPU-specific).
+    /// </summary>
+    public int VectorizationFactor { get; set; }
+
+    /// <summary>
+    /// Vector width (CPU-specific).
+    /// </summary>
+    public int VectorWidth { get; set; }
 }
 
 /// <summary>

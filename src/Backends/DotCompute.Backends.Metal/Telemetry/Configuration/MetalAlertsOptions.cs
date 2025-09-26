@@ -26,7 +26,8 @@ public sealed class MetalAlertsOptions
     /// <summary>
     /// Gets or sets whether to enable notifications
     /// </summary>
-    public bool EnableNotifications { get; set; } = false;
+    public bool EnableNotifications { get; set; }
+
 
     /// <summary>
     /// Gets or sets the notification endpoints

@@ -29,7 +29,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private double _efficiencyScore;
         private double _launchOverheadMs;
         private long _operationCount;
-        private double _totalExecutionTimeMs;
+        private readonly double _totalExecutionTimeMs;
 
 
         private bool _disposed;

@@ -407,7 +407,7 @@ public sealed class MetalCommandStream : IDisposable
     {
         ThrowIfDisposed();
 
-        if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
+        if (!_activeStreams.TryGetValue(streamId, out _))
         {
             return false;
         }

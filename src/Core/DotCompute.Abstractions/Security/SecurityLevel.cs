@@ -57,7 +57,13 @@ public enum SecurityLevel
     /// Critical security level - ultra-strict restrictions.
     /// Most restrictive security mode with comprehensive auditing.
     /// </summary>
-    Critical = 7
+    Critical = 7,
+
+    /// <summary>
+    /// Informational security level - used for logging informational events.
+    /// No restrictions, purely for audit trail and information purposes.
+    /// </summary>
+    Informational = 8
 }
 
 /// <summary>
@@ -216,6 +222,7 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => "High security - strict restrictions",
             SecurityLevel.Maximum => "Maximum security - comprehensive protection",
             SecurityLevel.Critical => "Critical security - ultra-strict restrictions",
+            SecurityLevel.Informational => "Informational - for audit trails and logging",
             _ => "Unknown security level"
         };
     }
@@ -238,6 +245,7 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => 80,
             SecurityLevel.Maximum => 95,
             SecurityLevel.Critical => 100,
+            SecurityLevel.Informational => 0, // Same as None - no enforcement
             _ => 50 // Default to standard
         };
     }
@@ -281,6 +289,7 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => operation is SecurityOperation.MemoryManagement or SecurityOperation.GpuKernelExecution,
             SecurityLevel.Maximum => operation is SecurityOperation.GpuKernelExecution,
             SecurityLevel.Critical => false,
+            SecurityLevel.Informational => true, // Same as None - allows all for informational purposes
             _ => false
         };
     }

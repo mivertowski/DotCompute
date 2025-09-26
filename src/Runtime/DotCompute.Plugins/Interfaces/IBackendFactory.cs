@@ -117,7 +117,8 @@ namespace DotCompute.Plugins.Interfaces
         /// largest single device memory, depending on the backend's memory model.
         /// A value of 0 indicates that the memory limit is unknown or unlimited.
         /// </remarks>
-        public long MaxMemory { get; set; } = 0;
+        public long MaxMemory { get; set; }
+
 
         /// <summary>
         /// List of supported features specific to this backend.

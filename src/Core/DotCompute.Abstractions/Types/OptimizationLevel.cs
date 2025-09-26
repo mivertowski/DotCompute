@@ -56,5 +56,17 @@ public enum OptimizationLevel
     /// Aggressive optimization alias for maximum performance.
     /// Maps to O3 optimization level.
     /// </summary>
-    Aggressive = O3
+    Aggressive = O3,
+
+    /// <summary>
+    /// Balanced optimization - good balance between performance and compilation time.
+    /// Maps to O2 optimization level. Alias for Default.
+    /// </summary>
+    Balanced = O2,
+
+    /// <summary>
+    /// Full optimization - comprehensive optimization with maximum performance.
+    /// Maps to O3 optimization level. Alias for Aggressive.
+    /// </summary>
+    Full = O3
 }

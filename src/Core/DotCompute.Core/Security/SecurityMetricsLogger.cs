@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
@@ -74,7 +73,7 @@ public sealed class SecurityMetricsLogger
     public void UpdateMetrics(SecurityLogEntry entry)
     {
         // Update total event count
-        Interlocked.Increment(ref _metrics.TotalEventCount);
+        _metrics.TotalEventCount++;
 
         // Update event type counters
         UpdateEventTypeMetrics(entry.EventType);
@@ -191,28 +190,28 @@ public sealed class SecurityMetricsLogger
         switch (eventType)
         {
             case SecurityEventType.AuthenticationSuccess:
-                Interlocked.Increment(ref _metrics.AuthenticationSuccessCount);
+                _metrics.AuthenticationSuccessCount++;
                 break;
             case SecurityEventType.AuthenticationFailure:
-                Interlocked.Increment(ref _metrics.AuthenticationFailureCount);
+                _metrics.AuthenticationFailureCount++;
                 break;
             case SecurityEventType.AccessGranted:
-                Interlocked.Increment(ref _metrics.AccessGrantedCount);
+                _metrics.AccessGrantedCount++;
                 break;
             case SecurityEventType.AccessDenied:
-                Interlocked.Increment(ref _metrics.AccessDeniedCount);
+                _metrics.AccessDeniedCount++;
                 break;
             case SecurityEventType.SecurityViolation:
-                Interlocked.Increment(ref _metrics.SecurityViolationCount);
+                _metrics.SecurityViolationCount++;
                 break;
             case SecurityEventType.DataAccess:
-                Interlocked.Increment(ref _metrics.DataAccessCount);
+                _metrics.DataAccessCount++;
                 break;
             case SecurityEventType.DataModification:
-                Interlocked.Increment(ref _metrics.DataModificationCount);
+                _metrics.DataModificationCount++;
                 break;
             case SecurityEventType.DataDeletion:
-                Interlocked.Increment(ref _metrics.DataDeletionCount);
+                _metrics.DataDeletionCount++;
                 break;
         }
     }
@@ -222,19 +221,19 @@ public sealed class SecurityMetricsLogger
         switch (level)
         {
             case SecurityLevel.Critical:
-                Interlocked.Increment(ref _metrics.CriticalEventCount);
+                _metrics.CriticalEventCount++;
                 break;
             case SecurityLevel.High:
-                Interlocked.Increment(ref _metrics.HighEventCount);
+                _metrics.HighEventCount++;
                 break;
             case SecurityLevel.Medium:
-                Interlocked.Increment(ref _metrics.MediumEventCount);
+                _metrics.MediumEventCount++;
                 break;
             case SecurityLevel.Low:
-                Interlocked.Increment(ref _metrics.LowEventCount);
+                _metrics.LowEventCount++;
                 break;
             case SecurityLevel.Informational:
-                Interlocked.Increment(ref _metrics.InformationalEventCount);
+                _metrics.InformationalEventCount++;
                 break;
         }
     }
@@ -245,17 +244,17 @@ public sealed class SecurityMetricsLogger
 /// </summary>
 public sealed class SecurityMetricsSummary
 {
-    public TimeSpan Period { get; init; }
-    public DateTimeOffset GeneratedAt { get; init; }
-    public long TotalEvents { get; init; }
-    public int UniqueUsers { get; init; }
-    public long SecurityViolations { get; init; }
-    public long CriticalEvents { get; init; }
-    public long FailedAuthentications { get; init; }
-    public long AccessDeniedEvents { get; init; }
-    public double EventsPerHour { get; init; }
-    public double ViolationsPerHour { get; init; }
-    public double FailedAuthPerHour { get; init; }
-    public double AuthenticationSuccessRate { get; init; }
-    public double AccessSuccessRate { get; init; }
+    public TimeSpan Period { get; set; }
+    public DateTimeOffset GeneratedAt { get; set; }
+    public long TotalEvents { get; set; }
+    public int UniqueUsers { get; set; }
+    public long SecurityViolations { get; set; }
+    public long CriticalEvents { get; set; }
+    public long FailedAuthentications { get; set; }
+    public long AccessDeniedEvents { get; set; }
+    public double EventsPerHour { get; set; }
+    public double ViolationsPerHour { get; set; }
+    public double FailedAuthPerHour { get; set; }
+    public double AuthenticationSuccessRate { get; set; }
+    public double AccessSuccessRate { get; set; }
 }

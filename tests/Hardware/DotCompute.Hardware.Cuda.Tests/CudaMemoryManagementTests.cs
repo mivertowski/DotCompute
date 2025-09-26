@@ -281,7 +281,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         await buffer1.DisposeAsync();
 
         // Allocate again - should reuse
-        var buffer2 = await _memoryManager.AllocateAsync<float>(elementCount);
+        _ = await _memoryManager.AllocateAsync<float>(elementCount);
         // var devicePtr2 = buffer2.DevicePointer; // Not exposed in interface
 
         // Assert
@@ -415,13 +415,13 @@ public class CudaMemoryManagementTests : CudaTestBase
 
         // Arrange
         // var initialPeak = _memoryManager.Statistics.PeakMemoryUsage; // Statistics not implemented yet
-        var initialPeak = _memoryManager.TotalAllocated;
+        _ = _memoryManager.TotalAllocated;
 
         // Act - Allocate increasing sizes
         var buffer1 = await _memoryManager.AllocateAsync<float>(1024);
         // var peak1 = _memoryManager.Statistics.PeakMemoryUsage;
 
-        var buffer2 = await _memoryManager.AllocateAsync<float>(2048);
+        _ = await _memoryManager.AllocateAsync<float>(2048);
         // var peak2 = _memoryManager.Statistics.PeakMemoryUsage;
 
         await buffer1.DisposeAsync();

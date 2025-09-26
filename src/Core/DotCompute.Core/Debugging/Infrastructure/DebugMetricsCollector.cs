@@ -262,9 +262,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
             };
         }
 
-        var trend = AnalyzeTrend(recentPoints);
-        trend.MetricName = metricName;
-        trend.TimeRange = timeRange;
+        var trend = AnalyzeTrend(recentPoints, metricName, timeRange);
 
         LogTrendAnalysisCompleted(metricName, recentPoints.Count, trend.TrendDirection.ToString());
 
@@ -307,7 +305,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
                     ExpectedValue = mean,
                     Deviation = Math.Abs(point.Value - mean),
                     Severity = Math.Abs(point.Value - mean) > (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                    Type = point.Value > threshold ? AnomalyType.Spike : AnomalyType.Drop
+                    Type = point.Value > threshold ? AnomalyType.PerformanceSpike : AnomalyType.ThroughputDrop
                 });
             }
         }
@@ -456,7 +454,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         return sorted[lowerIndex] * (1 - weight) + sorted[upperIndex] * weight;
     }
 
-    private static PerformanceTrend AnalyzeTrend(List<MetricPoint> points)
+    private static PerformanceTrend AnalyzeTrend(List<MetricPoint> points, string metricName, TimeSpan timeRange)
     {
         if (points.Count < 3)
         {
@@ -475,19 +473,21 @@ public sealed partial class DebugMetricsCollector : IDisposable
 
         var trendDirection = slope switch
         {
-            > 0.1 => TrendDirection.Increasing,
-            < -0.1 => TrendDirection.Decreasing,
+            > 0.1 => TrendDirection.Improving,
+            < -0.1 => TrendDirection.Degrading,
             _ => TrendDirection.Stable
         };
 
         return new PerformanceTrend
         {
+            MetricName = metricName,
+            TimeRange = timeRange,
             DataPoints = points.Count,
             TrendDirection = trendDirection,
-            Slope = slope,
-            StartValue = points.First().Value,
-            EndValue = points.Last().Value,
-            AverageChange = (points.Last().Value - points.First().Value) / points.Count
+            Magnitude = Math.Abs(slope),
+            RateOfChange = slope,
+            PercentChange = points.Count > 0 && points.First().Value != 0 ? (points.Last().Value - points.First().Value) / Math.Abs(points.First().Value) : 0,
+            AnalysisTime = DateTime.UtcNow
         };
     }
 

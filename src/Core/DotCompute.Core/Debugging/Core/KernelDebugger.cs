@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Performance;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Http;
@@ -23,7 +24,7 @@ public sealed partial class KernelDebugger : IDisposable
     private readonly ILogger<KernelDebugger> _logger;
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
-    private DebugServiceOptions _options;
+    private readonly DebugServiceOptions _options;
     private bool _disposed;
 
     public KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null)
@@ -65,7 +66,7 @@ public sealed partial class KernelDebugger : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_accelerators.TryRemove(name, out var accelerator))
+        if (_accelerators.TryRemove(name, out _))
         {
             LogAcceleratorRemoved(name);
             return true;
@@ -334,7 +335,7 @@ public sealed partial class KernelDebugger : IDisposable
     /// <summary>
     /// Safely executes a kernel with error handling.
     /// </summary>
-    private async Task<object?> ExecuteKernelSafelyAsync(
+    private Task<object?> ExecuteKernelSafelyAsync(
         IKernel kernel,
         IAccelerator accelerator,
         object[] inputs,
@@ -347,7 +348,7 @@ public sealed partial class KernelDebugger : IDisposable
         // Execute kernel through accelerator
         // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
         // This would typically be done through IComputeOrchestrator or IKernelExecutor
-        throw new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator");
+        return Task.FromException<object?>(new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator"));
     }
 
     /// <summary>
@@ -396,7 +397,7 @@ public sealed partial class KernelDebugger : IDisposable
             issues.Add(new DebugValidationIssue
             {
                 Severity = DebugValidationSeverity.Warning,
-                Message = $"Performance anomaly detected on {slowResult.AcceleratorName}: {maxTime:F2}ms vs avg {averageTime:F2}ms",
+                Message = $"Performance anomaly detected on {slowResult.BackendType}: {maxTime:F2}ms vs avg {averageTime:F2}ms",
                 Context = "Performance consistency check"
             });
         }
@@ -409,28 +410,34 @@ public sealed partial class KernelDebugger : IDisposable
     /// </summary>
     private static InputValidationResult ValidateInputs(IKernel kernel, object[] inputs)
     {
-        var result = new InputValidationResult { IsValid = true };
         var issues = new List<string>();
+        var isValid = true;
 
         // Basic validation
         if (inputs == null || inputs.Length == 0)
         {
             issues.Add("No inputs provided");
-            result.IsValid = false;
+            isValid = false;
         }
 
         // Check for null inputs
-        for (var i = 0; i < inputs.Length; i++)
+        if (inputs != null)
         {
-            if (inputs[i] == null)
+            for (var i = 0; i < inputs.Length; i++)
             {
-                issues.Add($"Input at index {i} is null");
-                result.IsValid = false;
+                if (inputs[i] == null)
+                {
+                    issues.Add($"Input at index {i} is null");
+                    isValid = false;
+                }
             }
         }
 
-        result.Issues = issues;
-        return result;
+        return new InputValidationResult
+        {
+            IsValid = isValid,
+            Issues = issues
+        };
     }
 
     /// <summary>
@@ -440,10 +447,10 @@ public sealed partial class KernelDebugger : IDisposable
     {
         return new PerformanceMetrics
         {
-            ExecutionTimeMs = debugInfo.ExecutionTime.TotalMilliseconds,
-            MemoryAllocatedBytes = debugInfo.MemoryAllocated,
-            ThroughputOpsPerSec = CalculateThroughput(debugInfo),
-            EfficiencyScore = CalculateEfficiencyScore(debugInfo)
+            ExecutionTimeMs = (long)debugInfo.ExecutionTime.TotalMilliseconds,
+            MemoryUsageBytes = debugInfo.MemoryAllocated,
+            OperationsPerSecond = (long)CalculateThroughput(debugInfo),
+            Operation = "Kernel Debug Analysis"
         };
     }
 

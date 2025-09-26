@@ -577,7 +577,7 @@ public sealed class MetalComputeGraph : IDisposable
         // 2. They have compatible threadgroup configurations
         // 3. Combined resource usage is within Metal limits
 
-        var hasDirectDependency = kernel1.Dependencies.Contains(kernel2) ||
+        _ = kernel1.Dependencies.Contains(kernel2) ||
                                  kernel2.Dependencies.Contains(kernel1);
 
         // Check threadgroup compatibility (simplified check)

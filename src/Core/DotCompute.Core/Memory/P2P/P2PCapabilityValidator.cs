@@ -380,6 +380,7 @@ namespace DotCompute.Core.Memory.P2P
 
         public async ValueTask DisposeAsync()
         {
+            await Task.CompletedTask.ConfigureAwait(false);
             if (!_disposed)
             {
                 _benchmarkSemaphore?.Dispose();

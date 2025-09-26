@@ -12,7 +12,6 @@ namespace DotCompute.Memory;
 /// Synchronization implementation for unified buffers.
 /// Handles data transfer between host and device memory.
 /// </summary>
-/// <typeparam name="T">The element type.</typeparam>
 public sealed partial class UnifiedBuffer<T>
 {
     /// <summary>
@@ -96,7 +95,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Asynchronously ensures the buffer data is available on the host.
     /// </summary>
-    public async Task EnsureOnHostAsync()
+    public async ValueTask EnsureOnHostAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -139,7 +138,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Asynchronously ensures the buffer data is available on the device.
     /// </summary>
-    public async Task EnsureOnDeviceAsync()
+    public async ValueTask EnsureOnDeviceAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -241,7 +240,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Asynchronously synchronizes the buffer so that both host and device have the same data.
     /// </summary>
-    public async Task SynchronizeAsync()
+    public async ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -426,7 +425,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Copies data from host to device memory asynchronously.
     /// </summary>
-    private async Task CopyFromHostToDeviceAsync()
+    private async ValueTask CopyFromHostToDeviceAsync()
     {
         if (_hostArray == null || !_pinnedHandle.IsAllocated)
         {
@@ -445,7 +444,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Copies data from device to host memory asynchronously.
     /// </summary>
-    private async Task CopyFromDeviceToHostAsync()
+    private async ValueTask CopyFromDeviceToHostAsync()
     {
         if (_hostArray == null || !_pinnedHandle.IsAllocated)
         {
@@ -459,5 +458,60 @@ public sealed partial class UnifiedBuffer<T>
 
         var hostPtr = _pinnedHandle.AddrOfPinnedObject();
         await _memoryManager.CopyDeviceToHostAsync(_deviceMemory, hostPtr, SizeInBytes);
+    }
+
+    // Interface implementations for missing methods
+
+    /// <summary>
+    /// Asynchronously ensures the buffer is available on the host.
+    /// </summary>
+    public async ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await ValueTask.CompletedTask;
+        EnsureOnHost();
+    }
+
+    /// <summary>
+    /// Asynchronously ensures the buffer is available on the device.
+    /// </summary>
+    public async ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await ValueTask.CompletedTask;
+        EnsureOnDevice();
+    }
+
+    /// <summary>
+    /// Maps this buffer to host memory for direct access.
+    /// </summary>
+    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureOnHost();
+        return new MappedMemory<T>(_hostArray.AsMemory());
+    }
+
+    /// <summary>
+    /// Maps a portion of this buffer to host memory for direct access.
+    /// </summary>
+    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
+        EnsureOnHost();
+        return new MappedMemory<T>(_hostArray.AsMemory(offset, length));
+    }
+
+    /// <summary>
+    /// Asynchronously maps this buffer to host memory.
+    /// </summary>
+    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await EnsureOnHostAsync(default, cancellationToken);
+        return new MappedMemory<T>(_hostArray.AsMemory());
     }
 }

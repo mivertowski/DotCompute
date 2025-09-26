@@ -26,7 +26,8 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets or sets whether malware scanning is enabled.
         /// </summary>
-        public bool EnableMalwareScanning { get; set; } = false;
+        public bool EnableMalwareScanning { get; set; }
+
 
         /// <summary>
         /// Gets or sets the maximum assembly size in bytes.

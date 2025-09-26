@@ -32,12 +32,14 @@ namespace DotCompute.Backends.CUDA.Persistent.Types
         /// <summary>
         /// Gets or sets whether to use cooperative groups for inter-block synchronization.
         /// </summary>
-        public bool UseCooperativeGroups { get; set; } = false;
+        public bool UseCooperativeGroups { get; set; }
+
 
         /// <summary>
         /// Gets or sets the shared memory size per block in bytes.
         /// </summary>
-        public uint SharedMemoryBytes { get; set; } = 0;
+        public uint SharedMemoryBytes { get; set; }
+
 
         /// <summary>
         /// Gets or sets the block size for the persistent kernel.

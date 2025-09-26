@@ -109,6 +109,48 @@ public sealed class PluginCircuitBreaker : IDisposable
     }
 
     /// <summary>
+    /// Checks if circuit breaker is open for a plugin
+    /// </summary>
+    public bool IsOpen(string pluginId)
+    {
+        if (!_circuitStates.TryGetValue(pluginId, out var state))
+        {
+            return false;
+        }
+
+        lock (state)
+        {
+            return state.State == CircuitState.Open;
+        }
+    }
+
+    /// <summary>
+    /// Gets the circuit breaker state for a plugin
+    /// </summary>
+    public CircuitBreakerStatus? GetState(string pluginId)
+    {
+        if (!_circuitStates.TryGetValue(pluginId, out var state))
+        {
+            return null;
+        }
+
+        lock (state)
+        {
+            return new CircuitBreakerStatus
+            {
+                PluginId = pluginId,
+                State = state.State,
+                ConsecutiveFailures = state.ConsecutiveFailures,
+                TotalFailures = state.TotalFailures,
+                LastFailureTime = state.LastFailureTime,
+                LastSuccessTime = state.LastSuccessTime,
+                OpenTime = state.OpenTime,
+                HalfOpenAttempts = state.HalfOpenAttempts
+            };
+        }
+    }
+
+    /// <summary>
     /// Gets current circuit breaker status for all plugins
     /// </summary>
     public Dictionary<string, CircuitBreakerStatus> GetStatus()
@@ -223,7 +265,7 @@ public sealed class PluginCircuitBreaker : IDisposable
 /// <summary>
 /// Internal state of a circuit breaker
 /// </summary>
-internal sealed class CircuitBreakerState
+public sealed class CircuitBreakerState
 {
     public required string PluginId { get; init; }
     public CircuitState State { get; set; } = CircuitState.Closed;
@@ -258,4 +300,14 @@ public sealed class CircuitBreakerStatus
     public DateTimeOffset? LastSuccessTime { get; init; }
     public DateTimeOffset? OpenTime { get; init; }
     public int HalfOpenAttempts { get; init; }
+
+    /// <summary>
+    /// Gets whether the circuit breaker is open
+    /// </summary>
+    public bool IsOpen => State == CircuitState.Open;
+
+    /// <summary>
+    /// Gets the failure count (alias for TotalFailures)
+    /// </summary>
+    public int FailureCount => TotalFailures;
 }

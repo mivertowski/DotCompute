@@ -107,7 +107,8 @@ internal static class CubinCompiler
     {
         // Use CUBIN for optimization levels O2 and above, and when device capability is sufficient
         var useOptimizations = options?.OptimizationLevel >= OptimizationLevel.O2;
-        var (major, minor) = GetTargetComputeCapability();
+
+        var (major, _) = GetTargetComputeCapability();
         var supportsCubin = major >= 7; // CUBIN works best on compute capability 7.0+
 
         return useOptimizations && supportsCubin && !IsDebugMode(options);

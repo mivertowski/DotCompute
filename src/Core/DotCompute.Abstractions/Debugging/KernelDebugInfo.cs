@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Abstractions.Debugging;
 

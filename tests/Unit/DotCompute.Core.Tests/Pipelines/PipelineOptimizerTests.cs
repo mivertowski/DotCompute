@@ -1089,7 +1089,8 @@ public class ExtendedTestPipelineStage : TestPipelineStage
     public int EstimatedExecutionTimeMs { get; set; } = 10;
     public int MemoryUsageMB { get; set; } = 1;
     public int CpuUsagePercent { get; set; } = 10;
-    public int IoOperationsPerSecond { get; set; } = 0;
+    public int IoOperationsPerSecond { get; set; }
+
     public int WorkerCount { get; set; } = 1;
     public string ComputationSignature { get; set; } = "";
 

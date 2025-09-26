@@ -295,8 +295,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             EnableDetailedMetrics = _options.EnableDetailedProfiling,
             SampleIntervalMs = _options.ProfilingSampleIntervalMs
         };
-
-        var profileTask = _performanceProfiler.CreateProfileAsync(correlationId, profileOptions);
+        _ = _performanceProfiler.CreateProfileAsync(correlationId, profileOptions);
 
         // Record execution start metrics
         PerformanceMonitor.ExecutionMetrics.StartExecution();
@@ -315,7 +314,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             // Record execution end metrics
 
-            var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
+
+            var (_, allocatedBytes, _) = PerformanceMonitor.ExecutionMetrics.EndExecution();
 
             // Record kernel execution in profiler
 
@@ -690,7 +690,8 @@ public class PerformanceOptimizationOptions
     public bool EnableMemoryOptimization { get; set; } = true;
     public bool EnableKernelOptimization { get; set; } = true;
     public bool EnableWarmupOptimization { get; set; } = true;
-    public bool EnableDetailedProfiling { get; set; } = false;
+    public bool EnableDetailedProfiling { get; set; }
+
     public int ProfilingSampleIntervalMs { get; set; } = 100;
     public int MaxWorkloadCacheSize { get; set; } = 1000;
     public double MaxCpuUtilizationThreshold { get; set; } = 0.9;

@@ -250,7 +250,7 @@ public sealed class HashCalculator : IDisposable
 
         try
         {
-            var hashResult = await CalculateHashAsync(keyContainer.RawKeyData, "SHA-256", enableCaching: false);
+            var hashResult = await CalculateHashAsync(keyContainer.GetKeyBytes(), "SHA-256", enableCaching: false);
             if (!hashResult.IsSuccessful)
             {
                 throw new InvalidOperationException($"Failed to calculate key fingerprint: {hashResult.ErrorMessage}");
@@ -290,7 +290,7 @@ public sealed class HashCalculator : IDisposable
         if (WeakHashAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.Issues.Add($"Hash algorithm '{algorithm}' is cryptographically weak");
+            result.SecurityIssues.Add($"Hash algorithm '{algorithm}' is cryptographically weak");
             result.Recommendations.Add($"Use approved alternatives: {string.Join(", ", ApprovedHashAlgorithms)}");
             return result;
         }
@@ -299,7 +299,7 @@ public sealed class HashCalculator : IDisposable
         if (!ApprovedHashAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.Issues.Add($"Hash algorithm '{algorithm}' is not in the approved list");
+            result.SecurityIssues.Add($"Hash algorithm '{algorithm}' is not in the approved list");
             result.Recommendations.Add($"Use approved algorithms: {string.Join(", ", ApprovedHashAlgorithms)}");
             return result;
         }

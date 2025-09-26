@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Performance;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
@@ -16,7 +17,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     public sealed class GpuOptimizationStrategies
     {
         private readonly ILogger<GpuOptimizationStrategies> _logger;
-        private readonly Dictionary<string, PerformanceMetrics> _performanceCache;
+        private readonly Dictionary<string, LinearAlgebraPerformanceMetrics> _performanceCache;
         private readonly object _cacheLock = new();
 
         /// <summary>
@@ -26,7 +27,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         public GpuOptimizationStrategies(ILogger<GpuOptimizationStrategies> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceCache = new Dictionary<string, PerformanceMetrics>();
+            _performanceCache = new Dictionary<string, LinearAlgebraPerformanceMetrics>();
         }
 
         /// <summary>
@@ -156,7 +157,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 }
                 else
                 {
-                    _performanceCache[operationKey] = new PerformanceMetrics(executionTime, memoryUsage, success);
+                    _performanceCache[operationKey] = new LinearAlgebraPerformanceMetrics(executionTime, memoryUsage, success);
                 }
             }
         }
@@ -166,7 +167,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <param name="operationKey">Unique key identifying the operation.</param>
         /// <returns>Performance metrics or null if not found.</returns>
-        public PerformanceMetrics? GetPerformanceMetrics(string operationKey)
+        public LinearAlgebraPerformanceMetrics? GetPerformanceMetrics(string operationKey)
         {
             lock (_cacheLock)
             {
@@ -518,9 +519,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     }
 
     /// <summary>
-    /// Performance metrics for tracking operation efficiency.
+    /// Performance metrics for tracking linear algebra operation efficiency.
     /// </summary>
-    public class PerformanceMetrics
+    public class LinearAlgebraPerformanceMetrics
     {
         public double AverageExecutionTime { get; private set; }
         public long AverageMemoryUsage { get; private set; }
@@ -531,7 +532,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         private long _totalMemoryUsage;
         private int _successCount;
 
-        public PerformanceMetrics(double executionTime, long memoryUsage, bool success)
+        public LinearAlgebraPerformanceMetrics(double executionTime, long memoryUsage, bool success)
         {
             _totalExecutionTime = executionTime;
             _totalMemoryUsage = memoryUsage;

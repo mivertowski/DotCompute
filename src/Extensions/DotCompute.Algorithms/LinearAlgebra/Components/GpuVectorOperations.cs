@@ -2,10 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels.Compilation;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {

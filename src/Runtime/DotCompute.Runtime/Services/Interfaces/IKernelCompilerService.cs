@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Runtime.Services.Types;
 
 namespace DotCompute.Runtime.Services.Interfaces;
 

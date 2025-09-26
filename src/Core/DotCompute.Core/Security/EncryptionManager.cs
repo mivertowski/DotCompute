@@ -58,16 +58,7 @@ public sealed class EncryptionManager : IDisposable
             aes.KeySize = keySize;
             aes.GenerateKey();
 
-            return new SecureKeyContainer
-            {
-                KeyType = KeyType.AES,
-                KeySize = keySize,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = (byte[])aes.Key.Clone()
-            };
+            return new SecureKeyContainer(KeyType.AES, (byte[])aes.Key.Clone(), identifier, purpose, keySize);
         });
     }
 
@@ -89,16 +80,7 @@ public sealed class EncryptionManager : IDisposable
             var keyBytes = new byte[32]; // ChaCha20 uses 256-bit keys
             _randomGenerator.GetBytes(keyBytes);
 
-            return new SecureKeyContainer
-            {
-                KeyType = KeyType.ChaCha20,
-                KeySize = 256,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = keyBytes
-            };
+            return new SecureKeyContainer(KeyType.ChaCha20, keyBytes, identifier, purpose, 256);
         });
     }
 
@@ -213,7 +195,7 @@ public sealed class EncryptionManager : IDisposable
         if (WeakAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.Issues.Add($"Encryption algorithm '{algorithm}' is considered weak");
+            result.SecurityIssues.Add($"Encryption algorithm '{algorithm}' is considered weak");
             result.Recommendations.Add($"Use approved alternatives: {string.Join(", ", ApprovedCiphers)}");
             return result;
         }
@@ -222,7 +204,7 @@ public sealed class EncryptionManager : IDisposable
         if (!ApprovedCiphers.Contains(algorithm))
         {
             result.IsApproved = false;
-            result.Issues.Add($"Encryption algorithm '{algorithm}' is not in the approved list");
+            result.SecurityIssues.Add($"Encryption algorithm '{algorithm}' is not in the approved list");
             result.Recommendations.Add($"Use approved algorithms: {string.Join(", ", ApprovedCiphers)}");
             return result;
         }
@@ -233,7 +215,7 @@ public sealed class EncryptionManager : IDisposable
         // Check for timing attack vulnerabilities
         if (result.IsApproved && !IsTimingAttackSafe(algorithm))
         {
-            result.Issues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
+            result.SecurityIssues.Add($"Algorithm '{algorithm}' may be vulnerable to timing attacks");
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
@@ -252,7 +234,7 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.GetKeyBytes(), AesGcm.TagByteSizes.MaxSize);
 
                 var nonce = new byte[AesGcm.NonceByteSizes.MaxSize];
                 var tag = new byte[AesGcm.TagByteSizes.MaxSize];
@@ -297,7 +279,7 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.RawKeyData;
+                aes.Key = keyContainer.GetKeyBytes();
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.GenerateIV();
@@ -388,7 +370,7 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.GetKeyBytes(), AesGcm.TagByteSizes.MaxSize);
 
                 var plaintext = new byte[encryptedData.Length];
 
@@ -425,7 +407,7 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.RawKeyData;
+                aes.Key = keyContainer.GetKeyBytes();
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.IV = nonce.ToArray();
@@ -522,7 +504,7 @@ public sealed class EncryptionManager : IDisposable
 
         if (!validSizes.Contains(keySize))
         {
-            result.Issues.Add($"Invalid key size {keySize} for {algorithm}. Valid sizes: {string.Join(", ", validSizes)}");
+            result.SecurityIssues.Add($"Invalid key size {keySize} for {algorithm}. Valid sizes: {string.Join(", ", validSizes)}");
             result.Recommendations.Add($"Use appropriate key size for {algorithm}");
             return false;
         }

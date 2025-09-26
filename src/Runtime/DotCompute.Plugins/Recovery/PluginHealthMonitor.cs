@@ -46,7 +46,7 @@ public sealed class PluginHealthMonitor : IDisposable
                 IsIsolated = state.IsIsolated,
                 ErrorCount = state.ErrorCount,
                 RestartCount = state.RestartCount,
-                LastError = state.LastError,
+                LastErrorTime = state.LastError,
                 LastRestart = state.LastRestart,
                 LastHealthCheck = state.LastHealthCheck,
                 ConsecutiveFailures = state.ConsecutiveFailures,
@@ -57,7 +57,7 @@ public sealed class PluginHealthMonitor : IDisposable
         return new PluginHealthReport
         {
             PluginId = "All Plugins",
-            Status = pluginHealth.Values.All(p => p.IsHealthy) ? CorePluginHealthStatus.Healthy : CorePluginHealthStatus.Warning,
+            Status = pluginHealth.Values.All(p => p.IsHealthy) ? PluginHealthStatus.Healthy : PluginHealthStatus.Warning,
             Timestamp = DateTimeOffset.UtcNow,
             MemoryUsageBytes = pluginHealth.Values.Sum(p => p.MemoryUsageBytes),
             CpuUsagePercent = pluginHealth.Values.Where(p => p.CpuUsagePercent > 0).DefaultIfEmpty(new PluginHealthInfo()).Average(p => p.CpuUsagePercent),
@@ -85,7 +85,7 @@ public sealed class PluginHealthMonitor : IDisposable
             IsIsolated = state.IsIsolated,
             ErrorCount = state.ErrorCount,
             RestartCount = state.RestartCount,
-            LastError = state.LastError,
+            LastErrorTime = state.LastError,
             LastRestart = state.LastRestart,
             LastHealthCheck = DateTimeOffset.UtcNow,
             ConsecutiveFailures = state.ConsecutiveFailures,
@@ -128,6 +128,30 @@ public sealed class PluginHealthMonitor : IDisposable
         {
             _logger.LogError(ex, "Error during plugin health check");
         }
+    }
+
+    /// <summary>
+    /// Records a failure for a plugin
+    /// </summary>
+    public void RecordFailure(string pluginId, Exception exception)
+    {
+        _logger.LogError(exception, "Plugin {PluginId} failed", pluginId);
+    }
+
+    /// <summary>
+    /// Records a successful recovery for a plugin
+    /// </summary>
+    public void RecordRecovery(string pluginId)
+    {
+        _logger.LogInformation("Plugin {PluginId} successfully recovered", pluginId);
+    }
+
+    /// <summary>
+    /// Records a plugin shutdown event
+    /// </summary>
+    public void RecordShutdown(string pluginId)
+    {
+        _logger.LogInformation("Plugin {PluginId} has been shut down", pluginId);
     }
 
     private static double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)

@@ -87,9 +87,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             {
                 throw new ArgumentException("Matrix must be square for Schur decomposition.");
             }
-            
+
             // Use QR algorithm with shifts (similar to eigenvalue computation)
-            var (eigenvalues, eigenvectors) = await MatrixDecomposition.EigenDecompositionAsync(matrix, accelerator, maxIterations, tolerance, cancellationToken).ConfigureAwait(false);
+
+            var (_, eigenvectors) = await MatrixDecomposition.EigenDecompositionAsync(matrix, accelerator, maxIterations, tolerance, cancellationToken).ConfigureAwait(false);
             
             // For real matrices, the Schur form is the result of the QR algorithm
             // The eigenvectors matrix Q is already orthogonal from the QR algorithm

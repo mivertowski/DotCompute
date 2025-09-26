@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Backends.Metal.Utilities;
 
@@ -12,7 +13,7 @@ namespace DotCompute.Backends.Metal.Utilities;
 public sealed class MetalPerformanceProfiler : IDisposable
 {
     private readonly ILogger<MetalPerformanceProfiler> _logger;
-    private readonly Dictionary<string, PerformanceMetrics> _metrics = [];
+    private readonly Dictionary<string, MetalOperationMetrics> _metrics = [];
     private readonly object _lock = new();
     private int _disposed;
 
@@ -57,7 +58,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
         {
             if (!_metrics.TryGetValue(operationName, out var metrics))
             {
-                metrics = new PerformanceMetrics(operationName);
+                metrics = new MetalOperationMetrics(operationName);
                 _metrics[operationName] = metrics;
             }
 
@@ -80,7 +81,7 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// </summary>
     /// <param name="operationName">Name of the operation.</param>
     /// <returns>Performance metrics or null if not found.</returns>
-    public PerformanceMetrics? GetMetrics(string operationName)
+    public MetalOperationMetrics? GetMetrics(string operationName)
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
@@ -95,13 +96,13 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// Gets all performance metrics.
     /// </summary>
     /// <returns>Dictionary of operation names to metrics.</returns>
-    public Dictionary<string, PerformanceMetrics> GetAllMetrics()
+    public Dictionary<string, MetalOperationMetrics> GetAllMetrics()
     {
         ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         lock (_lock)
         {
-            return new Dictionary<string, PerformanceMetrics>(_metrics);
+            return new Dictionary<string, MetalOperationMetrics>(_metrics);
         }
     }
 
@@ -215,18 +216,18 @@ public sealed class MetalPerformanceProfiler : IDisposable
 }
 
 /// <summary>
-/// Represents performance metrics for a specific operation.
+/// Represents performance metrics for a specific Metal operation.
 /// </summary>
-public sealed class PerformanceMetrics
+public sealed class MetalOperationMetrics
 {
     private readonly List<double> _executionTimes = [];
     private readonly object _lock = new();
 
     /// <summary>
-    /// Initializes a new instance of the PerformanceMetrics class.
+    /// Initializes a new instance of the MetalOperationMetrics class.
     /// </summary>
     /// <param name="operationName">Name of the operation.</param>
-    public PerformanceMetrics(string operationName)
+    public MetalOperationMetrics(string operationName)
     {
         OperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
     }

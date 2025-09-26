@@ -13,14 +13,14 @@ namespace DotCompute.Algorithms.Management.Discovery;
 /// <summary>
 /// Handles plugin discovery and scanning operations with comprehensive directory traversal and filtering.
 /// </summary>
-public sealed class AlgorithmPluginDiscovery : IDisposable
+public sealed class AlgorithmPluginScanner : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginDiscovery> _logger;
+    private readonly ILogger<AlgorithmPluginScanner> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly ConcurrentDictionary<string, DateTime> _lastScanTimes;
     private bool _disposed;
 
-    public AlgorithmPluginDiscovery(ILogger<AlgorithmPluginDiscovery> logger, AlgorithmPluginManagerOptions options)
+    public AlgorithmPluginScanner(ILogger<AlgorithmPluginScanner> logger, AlgorithmPluginManagerOptions options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? throw new ArgumentNullException(nameof(options));

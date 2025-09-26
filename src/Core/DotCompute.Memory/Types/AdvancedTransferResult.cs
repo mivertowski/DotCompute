@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Memory.Types;
 
@@ -29,10 +31,10 @@ public class AdvancedTransferResult
     public DateTimeOffset EndTime { get; set; }
 
     /// <summary>
-    /// Gets the duration of the transfer operation.
+    /// Gets or sets the duration of the transfer operation.
     /// </summary>
     /// <value>The time taken to complete the transfer.</value>
-    public TimeSpan Duration => EndTime - StartTime;
+    public TimeSpan Duration { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of bytes transferred.
@@ -77,6 +79,12 @@ public class AdvancedTransferResult
     public double ThroughputBytesPerSecond { get; set; }
 
     /// <summary>
+    /// Gets or sets the transfer throughput in megabytes per second.
+    /// </summary>
+    /// <value>The average transfer rate in megabytes per second.</value>
+    public double ThroughputMBps { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether data integrity was verified.
     /// </summary>
     /// <value>True if data integrity verification was performed; otherwise, false.</value>
@@ -95,16 +103,40 @@ public class AdvancedTransferResult
     public object? ResultBuffer { get; set; }
 
     /// <summary>
+    /// Gets or sets the efficiency ratio of the transfer operation.
+    /// </summary>
+    /// <value>A ratio indicating the efficiency of the transfer (higher values indicate better efficiency).</value>
+    public double EfficiencyRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the index of the transfer in a batch operation.
+    /// </summary>
+    /// <value>The zero-based index of the transfer operation in a batch.</value>
+    public int TransferIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transferred unified memory buffer.
+    /// </summary>
+    /// <value>The unified memory buffer that was transferred, or null if the transfer failed.</value>
+    public IUnifiedMemoryBuffer? TransferredBuffer { get; set; }
+
+    /// <summary>
     /// Gets or sets any error that occurred during the transfer.
     /// </summary>
     /// <value>The exception that occurred, or null if the transfer succeeded.</value>
     public Exception? Error { get; set; }
 
     /// <summary>
-    /// Gets a value indicating whether the transfer succeeded.
+    /// Gets or sets any error message that occurred during the transfer.
+    /// </summary>
+    /// <value>The error message, or null if the transfer succeeded.</value>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the transfer succeeded.
     /// </summary>
     /// <value>True if the transfer completed without errors; otherwise, false.</value>
-    public bool Success => Error == null;
+    public bool Success { get; set; }
 
     /// <summary>
     /// Gets or sets the memory pressure at the time of transfer.

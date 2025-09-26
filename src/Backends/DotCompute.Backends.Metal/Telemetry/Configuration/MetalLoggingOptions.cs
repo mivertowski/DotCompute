@@ -26,12 +26,14 @@ public sealed class MetalLoggingOptions
     /// <summary>
     /// Gets or sets whether to enable stack trace logging
     /// </summary>
-    public bool EnableStackTraceLogging { get; set; } = false;
+    public bool EnableStackTraceLogging { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to use JSON format
     /// </summary>
-    public bool UseJsonFormat { get; set; } = false;
+    public bool UseJsonFormat { get; set; }
+
 
     /// <summary>
     /// Gets or sets the buffer flush interval

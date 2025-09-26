@@ -3,6 +3,7 @@
 
 using System;
 using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Core.Debugging.Core;
 

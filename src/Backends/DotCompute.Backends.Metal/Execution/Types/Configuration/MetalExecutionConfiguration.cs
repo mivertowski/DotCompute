@@ -73,5 +73,6 @@ public sealed class MetalExecutionConfiguration
     /// <summary>
     /// Enable debug mode with additional validation
     /// </summary>
-    public bool EnableDebugMode { get; set; } = false;
+    public bool EnableDebugMode { get; set; }
+
 }

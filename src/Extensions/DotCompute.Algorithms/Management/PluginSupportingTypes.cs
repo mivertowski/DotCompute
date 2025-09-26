@@ -376,9 +376,9 @@ namespace DotCompute.Algorithms.Management
     }
 
     /// <summary>
-    /// Information about cached NuGet packages.
+    /// Information about cached NuGet packages used in management operations.
     /// </summary>
-    public sealed class CachedPackageInfo
+    public sealed class ManagementPackageInfo
     {
         /// <summary>
         /// Gets or sets the package ID.

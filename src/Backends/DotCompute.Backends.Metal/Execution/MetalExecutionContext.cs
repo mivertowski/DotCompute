@@ -32,7 +32,7 @@ public sealed class MetalExecutionContext : IDisposable
     private volatile bool _executionPaused;
     private long _totalOperationsExecuted;
     private long _totalResourcesTracked;
-    private DateTimeOffset _contextCreatedAt;
+    private readonly DateTimeOffset _contextCreatedAt;
     private readonly object _lockObject = new();
 
     // Performance tracking
@@ -681,7 +681,8 @@ public sealed class MetalExecutionOptions
     public MetalOperationPriority Priority { get; set; } = MetalOperationPriority.Normal;
     public string[]? Dependencies { get; set; }
     public TimeSpan? Timeout { get; set; }
-    public bool EnableProfiling { get; set; } = false;
+    public bool EnableProfiling { get; set; }
+
     public MetalProfilingLevel ProfilingLevel { get; set; } = MetalProfilingLevel.None;
     public MetalExecutionConfiguration ExecutionConfiguration { get; set; } = new();
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
@@ -12,7 +13,6 @@ namespace DotCompute.Memory;
 /// Memory management implementation for unified buffers.
 /// Handles host and device memory allocation, deallocation, and lifecycle management.
 /// </summary>
-/// <typeparam name="T">The element type.</typeparam>
 public sealed partial class UnifiedBuffer<T>
 {
     /// <summary>
@@ -145,7 +145,7 @@ public sealed partial class UnifiedBuffer<T>
                     return false;
                 }
 
-                if (_deviceMemory.SizeInBytes != SizeInBytes)
+                if (_deviceMemory.Size != SizeInBytes)
                 {
                     return false;
                 }
@@ -212,7 +212,7 @@ public sealed partial class UnifiedBuffer<T>
             DeallocateHostMemory();
 
             // Update length and recalculate size
-            var newSizeInBytes = newLength * sizeof(T);
+            var newSizeInBytes = newLength * Unsafe.SizeOf<T>();
             
             // Use reflection to update readonly properties
             var lengthField = typeof(UnifiedBuffer<T>).GetField("<Length>k__BackingField", 

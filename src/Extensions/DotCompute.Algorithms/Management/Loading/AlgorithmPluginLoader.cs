@@ -14,15 +14,15 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// <summary>
 /// Handles plugin loading operations with assembly isolation and lifecycle management.
 /// </summary>
-public sealed class AlgorithmPluginLoader : IDisposable
+public sealed class AlgorithmAssemblyLoader : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginLoader> _logger;
+    private readonly ILogger<AlgorithmAssemblyLoader> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts;
     private readonly SemaphoreSlim _loadingSemaphore;
     private bool _disposed;
 
-    public AlgorithmPluginLoader(ILogger<AlgorithmPluginLoader> logger, AlgorithmPluginManagerOptions options)
+    public AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoader> logger, AlgorithmPluginManagerOptions options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? throw new ArgumentNullException(nameof(options));

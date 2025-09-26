@@ -33,7 +33,7 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         var settings = new PipelineOptimizationSettings
         {
             OptimizationTypes = OptimizationType.DeadCodeElimination,
-            Level = (DotCompute.Abstractions.Pipelines.Models.OptimizationLevel)OptimizationLevel.Balanced
+            Level = OptimizationLevel.Balanced
         };
 
         var result = await ApplyInternalAsync(pipeline.Stages.ToList(), settings, cancellationToken);

@@ -135,6 +135,18 @@ public enum BottleneckType
     Throttling,
 
     /// <summary>
+    /// Memory utilization bottleneck.
+    /// Performance is limited by high memory utilization.
+    /// </summary>
+    MemoryUtilization,
+
+    /// <summary>
+    /// Kernel failures bottleneck.
+    /// Performance is limited by kernel execution failures.
+    /// </summary>
+    KernelFailures,
+
+    /// <summary>
     /// Unknown or unidentified bottleneck.
     /// The bottleneck type could not be determined or doesn't fit standard categories.
     /// </summary>

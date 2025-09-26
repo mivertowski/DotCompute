@@ -87,7 +87,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+        if (!_kernelRegistry.TryGetValue(kernelName, out _))
         {
             throw new ArgumentException($"Kernel not found: {kernelName}", nameof(kernelName));
         }
@@ -178,7 +178,8 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     /// <inheritdoc />
     public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
     {
-        if (!_kernelRegistry.TryGetValue(kernelName, out var registration))
+
+        if (!_kernelRegistry.TryGetValue(kernelName, out _))
         {
             return false;
         }

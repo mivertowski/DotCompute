@@ -559,7 +559,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     public void GetEventFrequency_ByTimeWindow_CalculatesCorrectRate()
     {
         // Arrange
-        var startTime = DateTimeOffset.UtcNow;
+        _ = DateTimeOffset.UtcNow;
         for (var i = 0; i < 100; i++)
         {
             _telemetryProvider.TrackEvent("frequency_test", new Dictionary<string, object> { { "index", i } });
@@ -818,7 +818,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
     protected override string GetBackendType() => "Test";
 
-    private bool _disposed;
+    private readonly bool _disposed;
 
     private void ThrowIfDisposed()
     {

@@ -105,7 +105,7 @@ internal static class KernelAnalysisHelpers
             return null;
         }
 
-        var backends = new List<string>();
+        _ = new List<string>();
 
         // Look for named arguments with 'Backends' parameter
         foreach (var namedArg in attribute.NamedArguments)

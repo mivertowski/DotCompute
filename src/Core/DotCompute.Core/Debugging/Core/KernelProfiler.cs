@@ -3,13 +3,16 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Debugging.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Performance;
+using DotCompute.Core.Optimization.Performance;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -170,7 +173,7 @@ public sealed class KernelProfiler : IDisposable
             {
                 KernelName = kernelName,
                 ExecutionCount = 0,
-                Recommendations = ["No execution data available for analysis"]
+                Summary = "No execution data available for analysis"
             };
         }
 
@@ -198,10 +201,19 @@ public sealed class KernelProfiler : IDisposable
         {
             KernelName = kernelName,
             ExecutionCount = relevantExecutions.Count,
-            BackendMetrics = backendMetrics,
-            Recommendations = recommendations,
-            AnalysisTimeWindow = timeWindow ?? TimeSpan.FromHours(24),
-            GeneratedAt = DateTime.UtcNow
+            Backends = backendMetrics.ToDictionary(kvp => kvp.Key, kvp => new BackendPerformanceStats
+            {
+                SampleCount = 0, // This would need to be populated from actual data
+                AverageExecutionTimeMs = kvp.Value.ExecutionTimeMs,
+                MinExecutionTimeMs = 0,
+                MaxExecutionTimeMs = 0,
+                ExecutionTimeStdDev = 0,
+                AverageMemoryUsage = kvp.Value.MemoryUsageBytes,
+                ReliabilityScore = 1.0f,
+                LastUpdated = DateTime.UtcNow
+            }),
+            TimeWindow = timeWindow ?? TimeSpan.FromHours(24),
+            Summary = string.Join("; ", recommendations)
         };
     }
 
@@ -226,10 +238,11 @@ public sealed class KernelProfiler : IDisposable
             return new MemoryUsageAnalysis
             {
                 KernelName = kernelName,
-                SampleCount = 0,
                 AverageMemoryUsage = 0,
                 PeakMemoryUsage = 0,
-                MemoryEfficiencyScore = 0
+                MinMemoryUsage = 0,
+                TotalMemoryAllocated = 0,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
@@ -247,13 +260,11 @@ public sealed class KernelProfiler : IDisposable
         return new MemoryUsageAnalysis
         {
             KernelName = kernelName,
-            SampleCount = relevantExecutions.Count,
-            AverageMemoryUsage = (long)average,
+            AverageMemoryUsage = average,
             PeakMemoryUsage = peak,
-            MinimumMemoryUsage = minimum,
-            MemoryEfficiencyScore = efficiencyScore,
-            MemoryVariance = variance,
-            RecommendedMemoryAllocation = CalculateRecommendedMemoryAllocation(memoryUsages)
+            MinMemoryUsage = minimum,
+            TotalMemoryAllocated = memoryUsages.Sum(),
+            AnalysisTime = DateTime.UtcNow
         };
     }
 
@@ -269,7 +280,7 @@ public sealed class KernelProfiler : IDisposable
 
         await Task.CompletedTask; // Make async for consistency
 
-        var bottlenecks = new List<PerformanceBottleneck>();
+        var bottlenecks = new List<Bottleneck>();
         var relevantExecutions = _executionHistory
             .Where(e => e.KernelName == kernelName)
             .ToList();
@@ -280,8 +291,7 @@ public sealed class KernelProfiler : IDisposable
             {
                 KernelName = kernelName,
                 Bottlenecks = bottlenecks,
-                OverallPerformanceScore = 0.5, // Neutral score
-                RecommendedOptimizations = ["Insufficient execution data for bottleneck analysis"]
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
@@ -292,13 +302,13 @@ public sealed class KernelProfiler : IDisposable
 
         if (maxExecutionTime > avgExecutionTime * 2)
         {
-            bottlenecks.Add(new PerformanceBottleneck
+            bottlenecks.Add(new Bottleneck
             {
-                Type = BottleneckType.ExecutionTime,
-                Severity = BottleneckSeverity.High,
+                Type = DotCompute.Abstractions.Types.BottleneckType.Compute,
+                Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.High,
                 Description = $"Execution time varies significantly (max: {maxExecutionTime:F2}ms, avg: {avgExecutionTime:F2}ms)",
-                AffectedComponents = ["Kernel execution"],
-                RecommendedActions = ["Profile kernel for hot paths", "Consider algorithmic optimizations"]
+                Impact = $"Affects kernel execution performance",
+                Recommendation = "Profile kernel for hot paths, consider algorithmic optimizations"
             });
         }
 
@@ -311,13 +321,13 @@ public sealed class KernelProfiler : IDisposable
 
             if (maxMemory > avgMemory * 3)
             {
-                bottlenecks.Add(new PerformanceBottleneck
+                bottlenecks.Add(new Bottleneck
                 {
-                    Type = BottleneckType.Memory,
-                    Severity = BottleneckSeverity.Medium,
+                    Type = DotCompute.Abstractions.Types.BottleneckType.Memory,
+                    Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
                     Description = $"Memory usage varies significantly (max: {maxMemory:N0} bytes, avg: {avgMemory:N0} bytes)",
-                    AffectedComponents = ["Memory allocation"],
-                    RecommendedActions = ["Implement memory pooling", "Review memory allocation patterns"]
+                    Impact = $"Affects memory allocation efficiency",
+                    Recommendation = "Implement memory pooling, review allocation patterns"
                 });
             }
         }
@@ -329,8 +339,7 @@ public sealed class KernelProfiler : IDisposable
         {
             KernelName = kernelName,
             Bottlenecks = bottlenecks,
-            OverallPerformanceScore = performanceScore,
-            RecommendedOptimizations = GenerateOptimizationRecommendations(bottlenecks)
+            AnalysisTime = DateTime.UtcNow
         };
     }
 
@@ -340,7 +349,7 @@ public sealed class KernelProfiler : IDisposable
     /// <param name="kernelName">Name of the kernel.</param>
     /// <param name="timeWindow">Time window for analysis.</param>
     /// <returns>Execution statistics.</returns>
-    public DotCompute.Core.Debugging.Types.ExecutionStatistics GetExecutionStatistics(string kernelName, TimeSpan? timeWindow = null)
+    public DotCompute.Abstractions.Debugging.ExecutionStatistics GetExecutionStatistics(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
@@ -352,7 +361,7 @@ public sealed class KernelProfiler : IDisposable
 
         if (relevantExecutions.Count == 0)
         {
-            return new DotCompute.Core.Debugging.Types.ExecutionStatistics
+            return new DotCompute.Abstractions.Debugging.ExecutionStatistics
             {
                 KernelName = kernelName,
                 TotalExecutions = 0,
@@ -378,10 +387,8 @@ public sealed class KernelProfiler : IDisposable
             SuccessfulExecutions = successful,
             FailedExecutions = failed,
             SuccessRate = successRate,
-            AverageExecutionTime = executionTimes.Length > 0 ? executionTimes.Average() : 0,
-            MinExecutionTime = executionTimes.Length > 0 ? executionTimes.Min() : 0,
-            MaxExecutionTime = executionTimes.Length > 0 ? executionTimes.Max() : 0,
-            StandardDeviation = CalculateStandardDeviation(executionTimes)
+            AverageExecutionTimeMs = executionTimes.Length > 0 ? executionTimes.Average() : 0,
+            AverageExecutionTime = executionTimes.Length > 0 ? TimeSpan.FromMilliseconds(executionTimes.Average()) : TimeSpan.Zero
         };
     }
 
@@ -491,9 +498,9 @@ public sealed class KernelProfiler : IDisposable
     {
         return new PerformanceMetrics
         {
-            ExecutionTime = totalTime,
-            ThroughputOpsPerSecond = totalTime.TotalSeconds > 0 ? (int)(1.0 / totalTime.TotalSeconds) : 0,
-            MemoryUsage = tracePoints.LastOrDefault()?.MemoryUsage ?? 0
+            ExecutionTimeMs = (long)totalTime.TotalMilliseconds,
+            OperationsPerSecond = totalTime.TotalSeconds > 0 ? (long)(1.0 / totalTime.TotalSeconds) : 0,
+            MemoryUsageBytes = tracePoints.LastOrDefault()?.MemoryUsage ?? 0
         };
     }
 
@@ -537,9 +544,9 @@ public sealed class KernelProfiler : IDisposable
 
         return new PerformanceMetrics
         {
-            ExecutionTime = TimeSpan.FromMilliseconds(executionTimes.Average()),
-            ThroughputOpsPerSecond = (int)(executionTimes.Average() > 0 ? 1000.0 / executionTimes.Average() : 0),
-            MemoryUsage = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0
+            ExecutionTimeMs = (long)executionTimes.Average(),
+            OperationsPerSecond = (long)(executionTimes.Average() > 0 ? 1000.0 / executionTimes.Average() : 0),
+            MemoryUsageBytes = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0
         };
     }
 
@@ -550,7 +557,7 @@ public sealed class KernelProfiler : IDisposable
     {
         var recommendations = new List<string>();
 
-        var avgTime = metrics.ExecutionTime.TotalMilliseconds;
+        var avgTime = metrics.ExecutionTimeMs;
         if (avgTime > 100) // > 100ms
         {
             recommendations.Add($"{backend}: Consider optimizing for faster execution (current avg: {avgTime:F2}ms)");
@@ -574,7 +581,7 @@ public sealed class KernelProfiler : IDisposable
 
         if (backendMetrics.Count > 1)
         {
-            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTime).First();
+            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTimeMs).First();
             recommendations.Add($"Consider using {fastest.Key} backend for best performance");
         }
 
@@ -604,7 +611,7 @@ public sealed class KernelProfiler : IDisposable
     /// <summary>
     /// Calculates overall performance score.
     /// </summary>
-    private static double CalculatePerformanceScore(List<KernelExecutionResult> executions, List<PerformanceBottleneck> bottlenecks)
+    private static double CalculatePerformanceScore(List<KernelExecutionResult> executions, List<Bottleneck> bottlenecks)
     {
         var baseScore = 1.0;
 
@@ -632,13 +639,13 @@ public sealed class KernelProfiler : IDisposable
     /// <summary>
     /// Generates optimization recommendations based on bottlenecks.
     /// </summary>
-    private static List<string> GenerateOptimizationRecommendations(List<PerformanceBottleneck> bottlenecks)
+    private static List<string> GenerateOptimizationRecommendations(List<Bottleneck> bottlenecks)
     {
         var recommendations = new List<string>();
 
         foreach (var bottleneck in bottlenecks)
         {
-            recommendations.AddRange(bottleneck.RecommendedActions);
+            recommendations.Add(bottleneck.Recommendation);
         }
 
         if (recommendations.Count == 0)

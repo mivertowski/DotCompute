@@ -4,12 +4,12 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
-using DotCompute.Core.Debugging.Types;
 using KernelDebugProfiler = DotCompute.Core.Debugging.KernelDebugProfiler;
 using Microsoft.Extensions.Logging;
 
@@ -631,7 +631,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         {
             KernelName = coreResult.KernelName,
             BackendType = "Unknown", // Not available in core result
-            ExecutionTime = TimeSpan.FromMilliseconds(coreResult.ExecutionStatistics?.AverageExecutionTime ?? 0),
+            ExecutionTime = coreResult.ExecutionStatistics?.AverageExecutionTime ?? TimeSpan.Zero,
             MemoryUsage = 0, // Could be extracted from MemoryAnalysis if needed
             ThroughputOpsPerSecond = 0.0, // ThroughputOpsPerSecond not available in current PerformanceReport
             Bottlenecks = coreResult.BottleneckAnalysis?.Bottlenecks?.Select(b => b.Description).ToList() ?? new List<string>()

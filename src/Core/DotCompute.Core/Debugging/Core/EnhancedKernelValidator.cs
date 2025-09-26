@@ -367,7 +367,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Safely executes a kernel with timeout protection.
     /// </summary>
-    private async Task<object?> ExecuteKernelSafelyAsync(
+    private Task<object?> ExecuteKernelSafelyAsync(
         IKernel kernel,
         IAccelerator accelerator,
         object[] inputs,
@@ -378,7 +378,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
 
         // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
         // This would typically be done through IComputeOrchestrator or IKernelExecutor
-        throw new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator");
+        return Task.FromException<object?>(new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator"));
     }
 
     /// <summary>

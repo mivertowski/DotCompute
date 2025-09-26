@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Debugging;
 
@@ -35,7 +37,7 @@ internal sealed class KernelDebugReporter : IDisposable
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<ResultComparisonReport> CompareResultsAsync(
+    public Task<ResultComparisonReport> CompareResultsAsync(
         KernelExecutionResult result1,
         KernelExecutionResult result2,
         float tolerance = 1e-6f)
@@ -130,13 +132,13 @@ internal sealed class KernelDebugReporter : IDisposable
             }
 
             // Return the report
-            return report;
+            return Task.FromResult(report);
         }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, "Error during result comparison");
 
-            return new ResultComparisonReport
+            return Task.FromResult(new ResultComparisonReport
             {
                 Result1 = result1,
                 Result2 = result2,
@@ -151,11 +153,11 @@ internal sealed class KernelDebugReporter : IDisposable
                     Details = ex.Message
                 }],
                 Differences = []
-            };
+            });
         }
     }
 
-    public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
+    public Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(validationResult);
@@ -210,16 +212,21 @@ internal sealed class KernelDebugReporter : IDisposable
         }
 
         // Cross-Backend Comparisons
-        if (validationResult.CrossBackendComparisons?.Any() == true)
+        if (validationResult.Results?.Any() == true && validationResult.Results.Count > 1)
         {
             report.AppendLine("--- Cross-Backend Comparisons ---");
-            foreach (var comparison in validationResult.CrossBackendComparisons)
+            var results = validationResult.Results.Values.OfType<KernelExecutionResult>().ToList();
+            if (results.Count >= 2)
             {
-                var status = comparison.IsMatch ? "✓ MATCH" : "✗ DIFFER";
-                report.AppendLine($"{comparison.Backend1} vs {comparison.Backend2}: {status}");
-                if (!comparison.IsMatch)
+                var result1 = results[0];
+                var result2 = results[1];
+                var match = result1.Success == result2.Success;
+                var status = match ? "✓ MATCH" : "✗ DIFFER";
+                report.AppendLine($"{result1.BackendType} vs {result2.BackendType}: {status}");
+                if (!match)
                 {
-                    report.AppendLine($"  Difference: {comparison.Difference:F6}");
+                    var timeDiff = Math.Abs(result1.ExecutionTime.TotalMilliseconds - result2.ExecutionTime.TotalMilliseconds);
+                    report.AppendLine($"  Time Difference: {timeDiff:F6}ms");
                 }
             }
             report.AppendLine();
@@ -236,16 +243,17 @@ internal sealed class KernelDebugReporter : IDisposable
                 foreach (var issue in group)
                 {
                     report.AppendLine($"  • {issue.Message}");
-                    if (!string.IsNullOrEmpty(issue.Details))
+                    if (issue.Details?.Any() == true)
                     {
-                        report.AppendLine($"    Details: {issue.Context ?? issue.Details}");
+                        var details = issue.Details.TryGetValue("message", out var msg) ? msg?.ToString() : "No details available";
+                        report.AppendLine($"    Details: {issue.Context ?? details}");
                     }
                 }
                 report.AppendLine();
             }
         }
 
-        return report.ToString();
+        return Task.FromResult(report.ToString());
     }
 
     public async Task<string> ExportReportAsync(object report, ReportFormat format)
@@ -363,9 +371,10 @@ internal sealed class KernelDebugReporter : IDisposable
         else
         {
             summary.Append("Results differ");
-            if (report.ResultDifference < float.MaxValue)
+            if (report.Differences.Any())
             {
-                summary.Append($" (difference: {report.ResultDifference:F6})");
+                var maxDiff = report.Differences.Max(d => d.Difference);
+                summary.Append($" (max difference: {maxDiff:F6})");
             }
         }
 
@@ -400,10 +409,13 @@ internal sealed class KernelDebugReporter : IDisposable
 
             if (validation.Results != null)
             {
-                foreach (var result in validation.Results)
+                foreach (var kvp in validation.Results)
                 {
-                    csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
-                                 $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsage}");
+                    if (kvp.Value is KernelExecutionResult result)
+                    {
+                        csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
+                                     $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsed}");
+                    }
                 }
             }
 

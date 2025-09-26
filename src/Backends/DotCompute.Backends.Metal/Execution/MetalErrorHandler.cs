@@ -616,7 +616,7 @@ public sealed class MetalErrorRecoveryOptions
     /// <summary>
     /// Whether to allow device reset operations
     /// </summary>
-    public bool AllowDeviceReset { get; set; } = false; // More restrictive for Metal
+    public bool AllowDeviceReset { get; set; }  // More restrictive for Metal
 
     /// <summary>
     /// Whether to enable CPU fallback for supported operations

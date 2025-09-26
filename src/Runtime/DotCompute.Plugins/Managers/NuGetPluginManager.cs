@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Loaders;
+using DotCompute.Plugins.Loaders.NuGet;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Configuration;
 using DotCompute.Plugins.Security;
@@ -52,7 +53,7 @@ public class NuGetPluginManager : IDisposable
         var pluginLoaderLogger = _logger as ILogger<NuGetPluginLoader> ??
 
                                  Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance;
-        _pluginLoader = new NuGetPluginLoader(pluginLoaderLogger, loaderOptions);
+        _pluginLoader = new NuGetPluginLoader(pluginLoaderLogger);
         _healthMonitor = new PluginHealthMonitor(_logger);
         _metricsCollector = new PluginMetricsCollector(_logger);
 
@@ -142,7 +143,7 @@ public class NuGetPluginManager : IDisposable
         _logger.LogInfoMessage("Starting plugin discovery and loading");
 
         var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken);
-        _logger.LogInfoMessage("Discovered {manifests.Count} plugins");
+        _logger.LogInfoMessage($"Discovered {manifests.Count()} plugins");
 
         var loadTasks = new List<Task<(string PluginId, bool Success)>>();
 
@@ -150,7 +151,7 @@ public class NuGetPluginManager : IDisposable
         {
             if (_managedPlugins.ContainsKey(manifest.Id))
             {
-                _logger.LogDebugMessage("Plugin {manifest.Id} is already loaded, skipping");
+                _logger.LogDebugMessage($"Plugin {manifest.Id} is already loaded, skipping");
                 continue;
             }
 
@@ -160,7 +161,7 @@ public class NuGetPluginManager : IDisposable
         var results = await Task.WhenAll(loadTasks);
         var successCount = results.Count(r => r.Success);
 
-        _logger.LogInfoMessage($"Plugin discovery and loading completed. Loaded: {successCount}/{manifests.Count}");
+        _logger.LogInfoMessage($"Plugin discovery and loading completed. Loaded: {successCount}/{manifests.Count()}");
     }
 
     /// <summary>
@@ -173,11 +174,11 @@ public class NuGetPluginManager : IDisposable
 
         if (_managedPlugins.ContainsKey(pluginId))
         {
-            _logger.LogWarningMessage("Plugin {pluginId} is already loaded");
+            _logger.LogWarningMessage($"Plugin {pluginId} is already loaded");
             return true;
         }
 
-        _logger.LogInfoMessage("Loading plugin: {pluginId}");
+        _logger.LogInfoMessage($"Loading plugin: {pluginId}");
 
         // Discover plugins to find the requested one
         var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken);
@@ -189,7 +190,8 @@ public class NuGetPluginManager : IDisposable
             return false;
         }
 
-        var (_, success) = await LoadPluginSafeAsync(manifest, cancellationToken);
+        var result = await LoadPluginSafeAsync(manifest, cancellationToken);
+        var success = result.Success;
         return success;
     }
 
@@ -203,11 +205,11 @@ public class NuGetPluginManager : IDisposable
 
         if (!_managedPlugins.TryGetValue(pluginId, out var managedPlugin))
         {
-            _logger.LogWarningMessage("Plugin not found: {pluginId}");
+            _logger.LogWarningMessage($"Plugin not found: {pluginId}");
             return false;
         }
 
-        _logger.LogInfoMessage("Unloading plugin: {pluginId}");
+        _logger.LogInfoMessage($"Unloading plugin: {pluginId}");
 
         await _operationSemaphore.WaitAsync(cancellationToken);
         try
@@ -219,7 +221,7 @@ public class NuGetPluginManager : IDisposable
             }
 
             // Unload from the loader
-            _ = await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
+            await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
 
             // Remove from managed plugins
             _ = _managedPlugins.TryRemove(pluginId, out _);
@@ -230,7 +232,7 @@ public class NuGetPluginManager : IDisposable
             // Clean up metrics
             _metricsCollector.RemovePlugin(pluginId);
 
-            _logger.LogInfoMessage("Plugin unloaded successfully: {pluginId}");
+            _logger.LogInfoMessage($"Plugin unloaded successfully: {pluginId}");
             return true;
         }
         catch (Exception ex)
@@ -252,7 +254,7 @@ public class NuGetPluginManager : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ThrowIfDisposed();
 
-        _logger.LogInfoMessage("Reloading plugin: {pluginId}");
+        _logger.LogInfoMessage($"Reloading plugin: {pluginId}");
 
         var wasRunning = false;
         if (_managedPlugins.TryGetValue(pluginId, out var managedPlugin))
@@ -282,7 +284,7 @@ public class NuGetPluginManager : IDisposable
             try
             {
                 await newManagedPlugin.Plugin!.StartAsync(cancellationToken);
-                _logger.LogInfoMessage("Plugin reloaded and started successfully: {pluginId}");
+                _logger.LogInfoMessage($"Plugin reloaded and started successfully: {pluginId}");
             }
             catch (Exception ex)
             {
@@ -316,16 +318,16 @@ public class NuGetPluginManager : IDisposable
 
         if (managedPlugin.Plugin.State == PluginState.Running)
         {
-            _logger.LogWarningMessage("Plugin is already running: {pluginId}");
+            _logger.LogWarningMessage($"Plugin is already running: {pluginId}");
             return true;
         }
 
-        _logger.LogInfoMessage("Starting plugin: {pluginId}");
+        _logger.LogInfoMessage($"Starting plugin: {pluginId}");
 
         try
         {
             await managedPlugin.Plugin.StartAsync(cancellationToken);
-            _logger.LogInfoMessage("Plugin started successfully: {pluginId}");
+            _logger.LogInfoMessage($"Plugin started successfully: {pluginId}");
             return true;
         }
         catch (Exception ex)
@@ -357,16 +359,16 @@ public class NuGetPluginManager : IDisposable
 
         if (managedPlugin.Plugin.State != PluginState.Running)
         {
-            _logger.LogWarningMessage("Plugin is not running: {PluginId} (State: {pluginId, managedPlugin.Plugin.State})");
+            _logger.LogWarningMessage($"Plugin is not running: {pluginId} (State: {managedPlugin.Plugin.State})");
             return true;
         }
 
-        _logger.LogInfoMessage("Stopping plugin: {pluginId}");
+        _logger.LogInfoMessage($"Stopping plugin: {pluginId}");
 
         try
         {
             await managedPlugin.Plugin.StopAsync(cancellationToken);
-            _logger.LogInfoMessage("Plugin stopped successfully: {pluginId}");
+            _logger.LogInfoMessage($"Plugin stopped successfully: {pluginId}");
             return true;
         }
         catch (Exception ex)
@@ -487,7 +489,7 @@ public class NuGetPluginManager : IDisposable
     {
         try
         {
-            _logger.LogDebugMessage("Loading plugin: {manifest.Id}");
+            _logger.LogDebugMessage($"Loading plugin: {manifest.Id}");
 
             var loadResult = await _pluginLoader.LoadPluginAsync(manifest, cancellationToken);
 
@@ -523,7 +525,7 @@ public class NuGetPluginManager : IDisposable
             // Start metrics collection
             _metricsCollector.AddPlugin(manifest.Id, managedPlugin);
 
-            _logger.LogInfoMessage("Successfully loaded plugin: {manifest.Id}");
+            _logger.LogInfoMessage($"Successfully loaded plugin: {manifest.Id}");
             return (manifest.Id, true);
         }
         catch (Exception ex)
@@ -585,7 +587,7 @@ public class NuGetPluginManager : IDisposable
 
                 if (health.Health == PluginHealth.Critical && _options.AutoRestartFailedPlugins)
                 {
-                    _logger.LogWarningMessage("Plugin {pluginId} is critical, attempting restart");
+                    _logger.LogWarningMessage($"Plugin {pluginId} is critical, attempting restart");
                     _ = await ReloadPluginAsync(pluginId);
                 }
             }
@@ -611,7 +613,7 @@ public class NuGetPluginManager : IDisposable
     /// </summary>
     private void OnPluginStateChanged(object? sender, PluginStateChangedEventArgs e)
     {
-        _logger.LogInfoMessage("Plugin state changed: {OldState} -> {e.OldState, e.NewState}");
+        _logger.LogInfoMessage($"Plugin state changed: {e.OldState} -> {e.NewState}");
         PluginStateChanged?.Invoke(sender, e);
     }
 
@@ -629,7 +631,7 @@ public class NuGetPluginManager : IDisposable
     /// </summary>
     private void OnPluginHealthChanged(object? sender, PluginHealthChangedEventArgs e)
     {
-        _logger.LogInfoMessage("Plugin health changed: {OldHealth} -> {e.OldHealth, e.NewHealth}");
+        _logger.LogInfoMessage($"Plugin health changed: {e.OldHealth} -> {e.NewHealth}");
         PluginHealthChanged?.Invoke(sender, e);
     }
 

@@ -199,7 +199,8 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     /// <summary>
     /// Gets or sets the execution priority.
     /// </summary>
-    public int Priority { get; set; } = 0;
+    public int Priority { get; set; }
+
 
     /// <summary>
     /// Gets a value indicating whether the execution has been cancelled.
@@ -403,7 +404,8 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets whether to enable automatic retry on failure.
     /// </summary>
-    public bool EnableAutoRetry { get; set; } = false;
+    public bool EnableAutoRetry { get; set; }
+
 
     /// <summary>
     /// Gets or sets the maximum retry count.
@@ -428,7 +430,8 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets whether to continue execution on error.
     /// </summary>
-    public bool ContinueOnError { get; set; } = false;
+    public bool ContinueOnError { get; set; }
+
 
     /// <summary>
     /// Gets or sets additional configuration options.

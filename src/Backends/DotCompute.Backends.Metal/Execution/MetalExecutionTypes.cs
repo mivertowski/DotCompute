@@ -415,11 +415,13 @@ public sealed class MetalExecutionConfiguration
     /// Enable performance optimizations
     /// </summary>
     public bool EnableOptimizations { get; set; } = true;
-    
+
+
     /// <summary>
     /// Enable debug mode with additional validation
     /// </summary>
-    public bool EnableDebugMode { get; set; } = false;
+    public bool EnableDebugMode { get; set; }
+
 }
 
 /// <summary>

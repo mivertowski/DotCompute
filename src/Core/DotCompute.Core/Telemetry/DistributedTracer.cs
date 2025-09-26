@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Core.Telemetry;
 

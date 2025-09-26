@@ -26,7 +26,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly ConcurrentDictionary<IntPtr, PinnedAllocation> _allocations;
         private readonly SemaphoreSlim _allocationSemaphore;
         private long _totalAllocated;
-        private long _maxPinnedMemory;
+        private readonly long _maxPinnedMemory;
         private bool _disposed;
 
         // Constants for pinned memory management

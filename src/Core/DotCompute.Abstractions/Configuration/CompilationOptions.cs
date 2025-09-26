@@ -35,7 +35,8 @@ public class CompilationOptions
     /// <summary>
     /// Generate line information for debugging
     /// </summary>
-    public bool GenerateLineInfo { get; set; } = false;
+    public bool GenerateLineInfo { get; set; }
+
 
     /// <summary>
     /// Enable profiling support during compilation and execution

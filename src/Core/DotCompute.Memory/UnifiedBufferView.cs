@@ -166,7 +166,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
         var sourceSpan = source.Span;
         var originalSpan = MemoryMarshal.Cast<TView, TOriginal>(sourceSpan);
 
-        await _parentBuffer.WriteAsync(originalSpan.ToArray(), 0, cancellationToken).ConfigureAwait(false);
+        await _parentBuffer.CopyFromAsync(originalSpan.ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -179,7 +179,9 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
         var bytesToRead = destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<TView>();
         var originalElementsToRead = bytesToRead / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
-        var parentData = await _parentBuffer.ReadAsync(0, originalElementsToRead, cancellationToken).ConfigureAwait(false);
+        var parentData = new TOriginal[originalElementsToRead];
+        var slice = _parentBuffer.Slice(0, originalElementsToRead);
+        await slice.CopyToAsync(parentData.AsMemory(), cancellationToken).ConfigureAwait(false);
         var viewData = MemoryMarshal.Cast<TOriginal, TView>(parentData.AsSpan());
 
         var actualLength = Math.Min(destination.Length, viewData.Length);
@@ -235,7 +237,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
         var parentElementOffset = bytesOffset / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
         // Create a slice of the parent buffer first, then create a view of that slice
-        var parentSlice = _parentBuffer.Slice(parentElementOffset,
+        _ = _parentBuffer.Slice(parentElementOffset,
             (length * System.Runtime.CompilerServices.Unsafe.SizeOf<TView>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>());
 
         // For now, return a simple slice implementation
@@ -277,11 +279,12 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
         var bytesOffset = offset * System.Runtime.CompilerServices.Unsafe.SizeOf<TView>();
         var parentElementOffset = bytesOffset / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
-        await _parentBuffer.WriteAsync(originalSpan.ToArray(), parentElementOffset, cancellationToken).ConfigureAwait(false);
+        var slice = _parentBuffer.Slice(parentElementOffset, originalSpan.Length);
+        await slice.CopyFromAsync(originalSpan.ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> Map(MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<TView> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -289,7 +292,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<TView> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -300,7 +303,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask<MappedMemory<TView>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<TView>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -325,14 +328,14 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
@@ -346,7 +349,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.SynchronizeAsync(context, cancellationToken);

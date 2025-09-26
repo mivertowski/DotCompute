@@ -3,6 +3,7 @@
 
 using global::System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
@@ -13,7 +14,6 @@ namespace DotCompute.Memory;
 /// Diagnostics and monitoring implementation for unified buffers.
 /// Provides state tracking, performance metrics, and debugging support.
 /// </summary>
-/// <typeparam name="T">The element type.</typeparam>
 public sealed partial class UnifiedBuffer<T> : IDisposable
 {
     private readonly Stopwatch _transferStopwatch = new();
@@ -195,7 +195,7 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
             result.IsValid = false;
         }
 
-        if (SizeInBytes != Length * sizeof(T))
+        if (SizeInBytes != Length * Unsafe.SizeOf<T>())
         {
             result.Issues.Add("Size calculation mismatch");
             result.IsValid = false;
@@ -263,9 +263,34 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
 
         // Dispose synchronization primitives
         _asyncLock.Dispose();
-        
+
         // Clear device buffer reference
         _deviceBuffer = null;
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the buffer and releases all resources.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        // Deallocate memory resources
+        DeallocateDeviceMemory();
+        DeallocateHostMemory();
+
+        // Dispose synchronization primitives
+        _asyncLock.Dispose();
+
+        // Clear device buffer reference
+        _deviceBuffer = null;
+
+        await ValueTask.CompletedTask;
     }
 }
 

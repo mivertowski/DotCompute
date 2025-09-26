@@ -448,7 +448,7 @@ namespace DotCompute.Plugins.Recovery
 
         #endregion
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (_disposed)
             {

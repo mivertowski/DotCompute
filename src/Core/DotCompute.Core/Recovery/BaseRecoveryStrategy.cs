@@ -776,7 +776,8 @@ public sealed class RecoveryOptions
     public int MaxConsecutiveFailures { get; init; } = 5;
     public TimeSpan RateLimitWindow { get; init; } = TimeSpan.FromMinutes(1);
     public int MaxAttemptsPerWindow { get; init; } = 10;
-    public bool AllowConcurrentRecovery { get; init; } = false;
+    public bool AllowConcurrentRecovery { get; init; }
+
     public TimeSpan RecoveryTimeout { get; init; } = TimeSpan.FromMinutes(5);
 }
 

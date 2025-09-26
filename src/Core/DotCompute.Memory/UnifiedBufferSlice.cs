@@ -144,7 +144,8 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(source.Length, _length);
 
-        await _parentBuffer.WriteAsync(source, _offset, cancellationToken).ConfigureAwait(false);
+        var slice = _parentBuffer.Slice(_offset, source.Length);
+        await slice.CopyFromAsync(source, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -153,8 +154,8 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(destination.Length, _length);
 
-        var sliceData = await _parentBuffer.ReadAsync(_offset, destination.Length, cancellationToken).ConfigureAwait(false);
-        sliceData.CopyTo(destination);
+        var slice = _parentBuffer.Slice(_offset, destination.Length);
+        await slice.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -163,8 +164,8 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         ArgumentNullException.ThrowIfNull(destination);
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
-        var sliceData = await _parentBuffer.ReadAsync(_offset, _length, cancellationToken).ConfigureAwait(false);
-        await destination.CopyFromAsync(sliceData, cancellationToken).ConfigureAwait(false);
+        var slice = _parentBuffer.Slice(_offset, _length);
+        await slice.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -229,11 +230,12 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         var fillData = new T[count];
         fillData.AsSpan().Fill(value);
 
-        await _parentBuffer.WriteAsync(fillData, _offset + offset, cancellationToken).ConfigureAwait(false);
+        var slice = _parentBuffer.Slice(_offset + offset, count);
+        await slice.CopyFromAsync(fillData, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -241,7 +243,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -252,7 +254,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -277,14 +279,14 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
@@ -298,7 +300,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.SynchronizeAsync(context, cancellationToken);
@@ -329,7 +331,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         }
 
         var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
-        var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        _ = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
 
         return CopyFromAsync(typedSource.ToArray().AsMemory(), cancellationToken);
     }
@@ -343,7 +345,10 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
         }
 
         var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-        var sliceData = await _parentBuffer.ReadAsync(_offset + elementOffset, destination.Length, cancellationToken).ConfigureAwait(false);
+        var slice = _parentBuffer.Slice(_offset + elementOffset, destination.Length);
+        var tempArray = new T[destination.Length];
+        await slice.CopyToAsync(tempArray.AsMemory(), cancellationToken).ConfigureAwait(false);
+        var sliceData = tempArray;
 
         var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
         sliceData.AsSpan().CopyTo(typedDestination);

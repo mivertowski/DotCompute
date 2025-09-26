@@ -529,7 +529,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             // OptimizationLevel.Debug => 0.90, // Commented out as may be unreachable
             OptimizationLevel.Default => 0.80,
             OptimizationLevel.Full => 0.70,
-            OptimizationLevel.Aggressive => 0.60,
+            // OptimizationLevel.Aggressive => 0.60, // Removed - same as Full (both map to O3)
             _ => 0.85
         };
 

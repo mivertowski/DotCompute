@@ -488,7 +488,8 @@ public sealed class PluginRequirements
     public Type? ExpectedOutputType { get; set; }
     public string? MinimumVersion { get; set; }
     public TimeSpan? MaxExecutionTime { get; set; }
-    public bool RequireHighReliability { get; set; } = false;
+    public bool RequireHighReliability { get; set; }
+
 
     public override string ToString()
     {

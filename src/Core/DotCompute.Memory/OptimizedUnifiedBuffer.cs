@@ -31,7 +31,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private readonly bool _usePooling;
 
     // Lazy-initialized fields for performance
-    private Lazy<GCHandle> _pinnedHandle;
+    private readonly Lazy<GCHandle> _pinnedHandle;
     private T[]? _hostArray;
     private DeviceMemory _deviceMemory;
     private IUnifiedMemoryBuffer<T>? _deviceBuffer;
@@ -316,7 +316,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Asynchronously ensures the buffer is available on the host with improved performance.
     /// </summary>
-    public async ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public async ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -363,7 +363,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Asynchronously ensures the buffer is available on the device.
     /// </summary>
-    public async ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public async ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -464,7 +464,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask AllocateDeviceMemoryAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask AllocateDeviceMemoryAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_deviceBuffer != null)
         {
@@ -501,7 +501,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask EnsureDeviceAllocatedAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask EnsureDeviceAllocatedAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_deviceBuffer == null)
         {
@@ -557,7 +557,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask TransferHostToDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask TransferHostToDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
         {
@@ -585,7 +585,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask TransferDeviceToHostAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask TransferDeviceToHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
         {
@@ -693,42 +693,6 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    public async ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        UpdateAccessTime();
-
-        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            switch (_state)
-            {
-                case BufferState.HostDirty:
-                    await EnsureDeviceAllocatedAsync(context, cancellationToken).ConfigureAwait(false);
-                    await TransferHostToDeviceAsync(context, cancellationToken).ConfigureAwait(false);
-                    _state = BufferState.Synchronized;
-                    break;
-
-                case BufferState.DeviceDirty:
-                    await TransferDeviceToHostAsync(context, cancellationToken).ConfigureAwait(false);
-                    _state = BufferState.Synchronized;
-                    break;
-
-                case BufferState.Synchronized:
-                case BufferState.HostOnly:
-                case BufferState.DeviceOnly:
-                case BufferState.Uninitialized:
-                    break;
-
-                default:
-                    throw new InvalidOperationException($"Cannot synchronize from state: {_state}");
-            }
-        }
-        finally
-        {
-            _asyncLock.Release();
-        }
-    }
 
     #endregion
 
@@ -871,14 +835,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         UpdateAccessTime();
         EnsureOnHost();
         return new MappedMemory<T>(AsMemory());
     }
 
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -890,7 +854,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         return new MappedMemory<T>(memory);
     }
 
-    public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         UpdateAccessTime();
         await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
@@ -1116,6 +1080,18 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
             _asyncLock.Dispose();
             GC.SuppressFinalize(this);
         }
+    }
+
+
+    /// <summary>
+    /// Asynchronously synchronizes the buffer state between host and device.
+    /// </summary>
+    public async ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        UpdateAccessTime();
+        await ValueTask.CompletedTask;
+        Synchronize();
     }
 
     #endregion

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DotCompute.Memory.Types;
 
@@ -136,6 +137,32 @@ public class ConcurrentTransferResult
     /// </summary>
     /// <value>A dictionary containing additional transfer metadata.</value>
     public Dictionary<string, object>? Metadata { get; set; }
+
+    /// <summary>
+    /// Gets or sets the concurrency benefit ratio.
+    /// </summary>
+    /// <value>A value indicating the benefit gained from running transfers concurrently.</value>
+    public double ConcurrencyBenefit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total bytes transferred (alias for TotalBytesTransferred).
+    /// </summary>
+    /// <value>The aggregate size of all data transferred in bytes.</value>
+    public long TotalBytes
+    {
+        get => TotalBytesTransferred;
+        set => TotalBytesTransferred = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the list of individual transfer results (alias for IndividualResults).
+    /// </summary>
+    /// <value>A read-only list containing the result of each individual transfer operation.</value>
+    public IReadOnlyList<AdvancedTransferResult> Results
+    {
+        get => IndividualResults;
+        set => IndividualResults = value?.ToList() ?? [];
+    }
 
     /// <summary>
     /// Gets the success rate as a percentage.

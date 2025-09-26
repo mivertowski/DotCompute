@@ -7,9 +7,10 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Core;
-using DotCompute.Core.Debugging.Types;
 using DotCompute.Core.Optimization.Performance;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Performance;
+using DotCompute.Core.Debugging.Types;
 using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
@@ -509,7 +510,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Performs regression analysis on backend metrics.
     /// </summary>
-    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics)
+    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified regression analysis
         return new RegressionAnalysis
@@ -565,7 +566,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Predicts performance scaling characteristics.
     /// </summary>
-    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics)
+    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified scaling predictions
         return new ScalingPredictions
@@ -573,7 +574,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
             LinearScalingFactor = 0.8,
             OptimalWorkloadSize = 1000,
             ScalingEfficiency = 0.75,
-            RecommendedBackend = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTime).First().Key
+            RecommendedBackend = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTimeMs).First().Key
         };
     }
 
@@ -581,7 +582,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Calculates efficiency scores for different backends.
     /// </summary>
     private static Dictionary<string, double> CalculateEfficiencyScores(
-        Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> backendMetrics,
+        Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics,
         MemoryUsageAnalysis memoryAnalysis)
     {
         var efficiencyScores = new Dictionary<string, double>();
@@ -592,7 +593,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
             var metrics = kvp.Value;
 
             // Simple efficiency calculation based on throughput and memory usage
-            var throughputScore = Math.Min(metrics.ThroughputOpsPerSecond / 1000.0, 1.0);
+            var throughputScore = Math.Min(metrics.OperationsPerSecond / 1000.0, 1.0);
             var memoryScore = CalculateMemoryEfficiency(memoryAnalysis);
             var efficiency = (throughputScore + memoryScore) / 2.0;
 
@@ -935,10 +936,10 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// </summary>
     /// <param name="backendStats">Dictionary of backend performance statistics.</param>
     /// <returns>Dictionary of performance metrics.</returns>
-    private static Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics> ConvertBackendStatsToMetrics(
+    private static Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> ConvertBackendStatsToMetrics(
         Dictionary<string, BackendPerformanceStats> backendStats)
     {
-        var metrics = new Dictionary<string, DotCompute.Abstractions.Debugging.PerformanceMetrics>();
+        var metrics = new Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics>();
 
         foreach (var kvp in backendStats)
         {
@@ -946,13 +947,12 @@ public sealed class KernelDebugAnalyzer : IDisposable
             var stats = kvp.Value;
 
             // Convert BackendPerformanceStats to PerformanceMetrics
-            var performanceMetrics = new DotCompute.Abstractions.Debugging.PerformanceMetrics
+            var performanceMetrics = new DotCompute.Abstractions.Performance.PerformanceMetrics
             {
-                ExecutionTime = TimeSpan.FromMilliseconds(stats.AverageExecutionTimeMs),
-                MemoryUsage = (long)stats.AverageMemoryUsage,
-                CpuUtilization = 0f, // Not available in BackendPerformanceStats
-                GpuUtilization = 0f, // Not available in BackendPerformanceStats
-                ThroughputOpsPerSecond = (int)stats.AverageThroughput
+                ExecutionTimeMs = (long)stats.AverageExecutionTimeMs,
+                MemoryUsageBytes = (long)stats.AverageMemoryUsage,
+                ComputeUtilization = 0.0, // Not available in BackendPerformanceStats
+                OperationsPerSecond = (long)stats.AverageThroughput
             };
 
             metrics[backend] = performanceMetrics;

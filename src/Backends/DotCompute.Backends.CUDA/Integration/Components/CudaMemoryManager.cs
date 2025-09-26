@@ -436,7 +436,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
 
         // Simple fragmentation calculation
-        var freeMemory = totalMemory - allocatedMemory;
+        _ = totalMemory - allocatedMemory;
         var utilizationRatio = (double)allocatedMemory / totalMemory;
 
         // Estimate fragmentation based on allocation patterns
@@ -560,7 +560,8 @@ public sealed class MemoryPoolingPolicy
 public sealed class MemoryTrackingPolicy
 {
     public bool EnableDetailedTracking { get; init; } = true;
-    public bool TrackStackTraces { get; init; } = false;
+    public bool TrackStackTraces { get; init; }
+
     public TimeSpan AnalyticsWindow { get; init; } = TimeSpan.FromMinutes(30);
 }
 
@@ -684,7 +685,7 @@ internal sealed class MemoryPool : IDisposable
     private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools;
     private readonly object _lock = new();
     private volatile bool _disposed;
-    private int _hitCount;
+    private readonly int _hitCount;
     private int _missCount;
 
     public DateTimeOffset LastOptimizationTime { get; private set; } = DateTimeOffset.UtcNow;

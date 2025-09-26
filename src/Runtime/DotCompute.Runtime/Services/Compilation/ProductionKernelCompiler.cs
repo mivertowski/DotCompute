@@ -29,7 +29,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
     {
-        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.Minimal, OptimizationLevel.Aggressive } },
+        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.O1, OptimizationLevel.Aggressive } },
         { "MaxKernelSize", 1024 * 1024 }, // 1MB
         { "SupportsAsync", true },
         { "SupportsDebugging", false },
@@ -323,7 +323,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         var sizeMultiplier = optimizationLevel switch
         {
             OptimizationLevel.None => 1.5,
-            OptimizationLevel.Minimal => 1.2,
+            OptimizationLevel.O1 => 1.2,
             OptimizationLevel.Balanced => 1.0,
             OptimizationLevel.Aggressive => 0.8,
             _ => 1.0

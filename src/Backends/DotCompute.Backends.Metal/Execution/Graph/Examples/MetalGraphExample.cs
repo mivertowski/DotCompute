@@ -371,8 +371,7 @@ public static class MetalGraphExample
             new object[] { CreateMockBuffer(2048) },
             dependencies: new[] { stage1 }
         );
-
-        var merge = graph.AddKernelNode(
+        _ = graph.AddKernelNode(
             CreateMockKernel("merge_results"),
             MTLSize.Make(32, 32),
             MTLSize.Make(16, 16),
@@ -395,8 +394,7 @@ public static class MetalGraphExample
 
         var copy1 = graph.AddMemoryCopyNode(largeBuffer1, largeBuffer2, 1024 * 1024);
         var copy2 = graph.AddMemoryCopyNode(largeBuffer2, largeBuffer3, 1024 * 1024, new[] { copy1 });
-
-        var process = graph.AddKernelNode(
+        _ = graph.AddKernelNode(
             CreateMockKernel("memory_intensive_kernel"),
             MTLSize.Make(128, 128),
             MTLSize.Make(8, 8),

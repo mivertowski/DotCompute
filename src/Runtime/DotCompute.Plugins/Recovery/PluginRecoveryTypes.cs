@@ -121,6 +121,11 @@ namespace DotCompute.Plugins.Recovery
         public Exception? LastError { get; set; }
 
         /// <summary>
+        /// Timestamp of the last error
+        /// </summary>
+        public DateTimeOffset LastErrorTime { get; set; }
+
+        /// <summary>
         /// Timestamp of the last restart
         /// </summary>
         public DateTimeOffset? LastRestart { get; set; }
@@ -220,6 +225,11 @@ namespace DotCompute.Plugins.Recovery
         public List<string> Warnings { get; set; } = [];
 
         /// <summary>
+        /// Error message if compatibility check fails
+        /// </summary>
+        public string? Error { get; set; }
+
+        /// <summary>
         /// Assessment timestamp
         /// </summary>
         public DateTimeOffset AssessmentTime { get; set; } = DateTimeOffset.UtcNow;
@@ -228,6 +238,22 @@ namespace DotCompute.Plugins.Recovery
         /// Detailed assessment report
         /// </summary>
         public string Report { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets whether framework is compatible
+        /// </summary>
+        public bool FrameworkCompatible => string.IsNullOrEmpty(RequiredFramework) ||
+                                          RequiredFramework.Equals(CurrentFramework, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Gets dependency conflicts
+        /// </summary>
+        public List<string> DependencyConflicts => VersionConflicts;
+
+        /// <summary>
+        /// Gets security issues
+        /// </summary>
+        public List<string> SecurityIssues { get; set; } = [];
 
         public override string ToString()
             => $"Plugin={PluginId}, Compatible={IsCompatible}, MissingDeps={MissingDependencies.Count}, Conflicts={VersionConflicts.Count}";
@@ -368,6 +394,96 @@ namespace DotCompute.Plugins.Recovery
                 Status = PluginHealthStatus.Failed;
             }
         }
+
+        /// <summary>
+        /// Records a failed recovery attempt
+        /// </summary>
+        public void RecordFailedRecovery()
+        {
+            lock (_lock)
+            {
+                ConsecutiveFailures++;
+                UpdateHealthStatus();
+            }
+        }
+
+        /// <summary>
+        /// Sets the plugin as isolated
+        /// </summary>
+        public void SetIsolated()
+        {
+            lock (_lock)
+            {
+                Status = PluginHealthStatus.Isolated;
+            }
+        }
+
+        /// <summary>
+        /// Sets the plugin for emergency shutdown
+        /// </summary>
+        public void SetEmergencyShutdown()
+        {
+            lock (_lock)
+            {
+                Status = PluginHealthStatus.ShuttingDown;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the plugin is currently healthy
+        /// </summary>
+        public bool IsHealthy => Status == PluginHealthStatus.Healthy;
+
+        /// <summary>
+        /// Checks if the plugin is isolated
+        /// </summary>
+        public bool IsIsolated => Status == PluginHealthStatus.Isolated;
+
+        /// <summary>
+        /// Gets the last health check timestamp
+        /// </summary>
+        public DateTimeOffset LastHealthCheck { get; private set; } = DateTimeOffset.UtcNow;
+
+        /// <summary>
+        /// Calculates uptime percentage over monitoring period
+        /// </summary>
+        public double CalculateUptimePercent()
+        {
+            lock (_lock)
+            {
+                var totalTime = DateTimeOffset.UtcNow - LastRestart;
+                if (totalTime.TotalMinutes < 1) return 100.0; // Not enough data
+
+                var errorTime = TimeSpan.FromMinutes(ConsecutiveFailures);
+                var uptime = totalTime - errorTime;
+
+                return Math.Max(0, Math.Min(100, (uptime.TotalMilliseconds / totalTime.TotalMilliseconds) * 100));
+            }
+        }
+
+        /// <summary>
+        /// Updates the last health check timestamp
+        /// </summary>
+        public void UpdateHealthCheck()
+        {
+            lock (_lock)
+            {
+                LastHealthCheck = DateTimeOffset.UtcNow;
+            }
+        }
+
+        /// <summary>
+        /// Records a restart event
+        /// </summary>
+        public void RecordRestart()
+        {
+            lock (_lock)
+            {
+                RestartCount++;
+                LastRestart = DateTimeOffset.UtcNow;
+                UpdateHealthStatus();
+            }
+        }
     }
 
     /// <summary>
@@ -444,6 +560,16 @@ namespace DotCompute.Plugins.Recovery
         public double OverallHealthPercent => TotalPlugins == 0 ? 100.0 : (double)HealthyPlugins / TotalPlugins * 100.0;
         public DateTimeOffset ReportTime { get; set; } = DateTimeOffset.UtcNow;
 
+        // Additional properties for compatibility with PluginHealthMonitor
+        public string PluginId { get; set; } = string.Empty;
+        public PluginHealthStatus Status { get; set; }
+        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+        public long MemoryUsageBytes { get; set; }
+        public double CpuUsagePercent { get; set; }
+        public int ActiveOperations { get; set; }
+        public double OverallHealth { get; set; }
+        public Dictionary<string, object> Metrics { get; set; } = [];
+
         /// <summary>
         /// Gets critical plugins that need immediate attention
         /// </summary>
@@ -458,4 +584,6 @@ namespace DotCompute.Plugins.Recovery
 
         public override string ToString() => GetSummary();
     }
+
+
 }

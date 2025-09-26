@@ -91,7 +91,7 @@ public sealed class KernelFormatters
     public static string FormatImplementationMethodName(string methodName, string backend, string variant)
     {
         var sanitizedMethod = SanitizeIdentifier(methodName);
-        var pascalMethod = ToPascalCase(sanitizedMethod);
+        _ = ToPascalCase(sanitizedMethod);
         var pascalVariant = ToPascalCase(variant);
 
         return $"Execute{pascalVariant}";

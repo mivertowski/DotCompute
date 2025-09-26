@@ -94,7 +94,8 @@ public sealed class FusionCriteria
 public sealed class MemoryConstraints
 {
     public long MaxMemoryUsage { get; set; } = long.MaxValue;
-    public bool PreferMemoryEfficiency { get; set; } = false;
+    public bool PreferMemoryEfficiency { get; set; }
+
     public int MemoryAlignment { get; set; } = 64;
 
     public MemoryConstraints Clone()
@@ -125,8 +126,10 @@ public sealed class LoopOptimizations
 
 public sealed class DataLayoutPreferences
 {
-    public bool PreferStructureOfArrays { get; set; } = false;
-    public bool PreferArrayOfStructures { get; set; } = false;
+    public bool PreferStructureOfArrays { get; set; }
+
+    public bool PreferArrayOfStructures { get; set; }
+
     public bool AllowReordering { get; set; } = true;
     public int PreferredAlignment { get; set; } = 64;
 }
@@ -142,7 +145,8 @@ public sealed class OptimizationValidationResult
 public sealed class OptimizationImpactEstimate
 {
     public double EstimatedSpeedup { get; set; } = 1.0;
-    public double EstimatedMemoryReduction { get; set; } = 0.0;
+    public double EstimatedMemoryReduction { get; set; }
+
     public double ConfidenceLevel { get; set; } = 0.5;
     public TimeSpan EstimatedOptimizationTime { get; set; }
 }

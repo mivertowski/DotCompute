@@ -1,0 +1,50 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+using System.Reflection;
+using System.Runtime.Loader;
+
+namespace DotCompute.Plugins.Loaders.NuGet;
+
+/// <summary>
+/// Custom AssemblyLoadContext for NuGet-based plugins with proper isolation
+/// </summary>
+public sealed class NuGetPluginLoadContext : AssemblyLoadContext
+{
+    private readonly AssemblyDependencyResolver _resolver;
+    private readonly string _pluginPath;
+
+    public NuGetPluginLoadContext(string pluginPath, string contextName, bool isCollectible = true)
+        : base(contextName, isCollectible)
+    {
+        _pluginPath = pluginPath ?? throw new ArgumentNullException(nameof(pluginPath));
+        _resolver = new AssemblyDependencyResolver(pluginPath);
+    }
+
+    protected override Assembly? Load(AssemblyName assemblyName)
+    {
+        if (assemblyName.Name == null)
+            return null;
+
+        string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
+
+        if (assemblyPath != null)
+        {
+            return LoadFromAssemblyPath(assemblyPath);
+        }
+
+        return null;
+    }
+
+    protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
+    {
+        string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+
+        if (libraryPath != null)
+        {
+            return LoadUnmanagedDllFromPath(libraryPath);
+        }
+
+        return IntPtr.Zero;
+    }
+}

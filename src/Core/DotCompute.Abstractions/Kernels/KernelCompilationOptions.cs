@@ -17,7 +17,8 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to generate debug information
     /// </summary>
-    public bool GenerateDebugInfo { get; set; } = false;
+    public bool GenerateDebugInfo { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to enable fast math optimizations
@@ -62,12 +63,14 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to use PTX intermediate representation (CUDA only)
     /// </summary>
-    public bool UsePtx { get; set; } = false;
+    public bool UsePtx { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to generate relocatable device code
     /// </summary>
-    public bool GenerateRelocatableCode { get; set; } = false;
+    public bool GenerateRelocatableCode { get; set; }
+
 
     /// <summary>
     /// Gets or sets the maximum register count per thread
@@ -77,12 +80,14 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to enable line-info generation
     /// </summary>
-    public bool GenerateLineInfo { get; set; } = false;
+    public bool GenerateLineInfo { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to enable verbose compilation output
     /// </summary>
-    public bool VerboseOutput { get; set; } = false;
+    public bool VerboseOutput { get; set; }
+
 
     /// <summary>
     /// Gets or sets the preferred cache configuration
@@ -112,7 +117,8 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to treat warnings as errors
     /// </summary>
-    public bool WarningsAsErrors { get; set; } = false;
+    public bool WarningsAsErrors { get; set; }
+
 
     /// <summary>
     /// Creates a new instance of KernelCompilationOptions with default values

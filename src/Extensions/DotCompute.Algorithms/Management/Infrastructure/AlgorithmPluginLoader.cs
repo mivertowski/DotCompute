@@ -18,16 +18,16 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
 /// Manages assembly load contexts, dependency resolution, and plugin instantiation.
 /// </summary>
-public sealed class AlgorithmPluginLoader : IDisposable
+public sealed class AlgorithmAssemblyManager : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginLoader> _logger;
+    private readonly ILogger<AlgorithmAssemblyManager> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     private bool _disposed;
 
-    public AlgorithmPluginLoader(
-        ILogger<AlgorithmPluginLoader> logger,
+    public AlgorithmAssemblyManager(
+        ILogger<AlgorithmAssemblyManager> logger,
         AlgorithmPluginManagerOptions options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

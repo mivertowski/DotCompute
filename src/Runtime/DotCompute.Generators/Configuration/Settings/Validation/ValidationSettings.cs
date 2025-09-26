@@ -82,5 +82,6 @@ public class ValidationSettings
     /// numerical algorithms, these checks add significant overhead to mathematical
     /// operations and are typically disabled in production code.
     /// </remarks>
-    public bool CheckForNaNInfinity { get; set; } = false;
+    public bool CheckForNaNInfinity { get; set; }
+
 }

@@ -383,7 +383,7 @@ public static class AdvancedIntegration
 
         var A = alpha2 + alpha * sinAlpha * cosAlpha - 2 * sinAlpha * sinAlpha;
         var B = 2 * alpha * (1 + cosAlpha * cosAlpha) - 2 * sinAlpha * cosAlpha;
-        var C = 4 * (sinAlpha - alpha * cosAlpha);
+        _ = 4 * (sinAlpha - alpha * cosAlpha);
 
         A /= alpha2 * alpha;
         B /= alpha2 * alpha;

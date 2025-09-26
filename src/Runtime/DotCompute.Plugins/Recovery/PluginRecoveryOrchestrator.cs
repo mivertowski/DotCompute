@@ -123,6 +123,14 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     }
 
     /// <summary>
+    /// Executes recovery for a plugin context
+    /// </summary>
+    public async Task<RecoveryResult> ExecuteRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken = default)
+    {
+        return await RecoverAsync(context, cancellationToken);
+    }
+
+    /// <summary>
     /// Isolates a plugin in its own container for crash protection
     /// </summary>
     public async Task<IsolatedPluginContainer> IsolatePluginAsync(
@@ -139,7 +147,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
 
         // Monitor the container
         var healthState = _pluginStates.GetOrAdd(pluginId, id => new PluginHealthState(id, _config));
-        healthState.SetIsolated(true);
+        healthState.SetIsolated();
 
         Logger.LogInformation("Plugin {PluginId} successfully isolated", pluginId);
         return container;
@@ -168,7 +176,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
             // Mark as unhealthy immediately
             if (_pluginStates.TryGetValue(pluginId, out var healthState))
             {
-                healthState.SetEmergencyShutdown(reason);
+                healthState.SetEmergencyShutdown();
             }
 
             // Force stop the plugin

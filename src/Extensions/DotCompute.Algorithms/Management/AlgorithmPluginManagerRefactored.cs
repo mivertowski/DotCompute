@@ -27,7 +27,7 @@ public sealed class AlgorithmPluginManagerRefactored : IAsyncDisposable
     // Core components - focused responsibilities
     private readonly AlgorithmRegistry _registry;
     private readonly AlgorithmLoader _loader;
-    private readonly AlgorithmValidator _validator;
+    private readonly AlgorithmPluginValidator _validator;
     private readonly AlgorithmLifecycleManager _lifecycleManager;
     private readonly AlgorithmDependencyResolver _dependencyResolver;
     private readonly AlgorithmMetadata _metadataManager;
@@ -67,7 +67,7 @@ public sealed class AlgorithmPluginManagerRefactored : IAsyncDisposable
         // Initialize core components with proper logger instances
         _registry = new AlgorithmRegistry(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmRegistry>.Instance);
         _loader = new AlgorithmLoader(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmLoader>.Instance, _options);
-        _validator = new AlgorithmValidator(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmValidator>.Instance, _options);
+        _validator = new AlgorithmPluginValidator(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginValidator>.Instance, _options);
         _lifecycleManager = new AlgorithmLifecycleManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmLifecycleManager>.Instance, _options, _registry);
         _dependencyResolver = new AlgorithmDependencyResolver(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmDependencyResolver>.Instance, _options, _registry);
         _metadataManager = new AlgorithmMetadata(Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmMetadata>.Instance);

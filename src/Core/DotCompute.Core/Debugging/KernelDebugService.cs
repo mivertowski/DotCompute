@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
@@ -158,7 +160,13 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return await _orchestrator.GenerateDetailedReportAsync(validationResult);
+        // TODO: Implement GenerateDetailedReportAsync in KernelDebugOrchestrator
+        await Task.CompletedTask;
+        return $"Debug Report for {validationResult.KernelName}:\n" +
+               $"Status: {(validationResult.IsValid ? "VALID" : "INVALID")}\n" +
+               $"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms\n" +
+               $"Backends Tested: {string.Join(", ", validationResult.BackendsTested)}\n" +
+               $"Issues Found: {validationResult.Issues.Count}";
     }
 
     /// <summary>
@@ -167,7 +175,14 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<string> ExportReportAsync(object report, ReportFormat format)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return await _orchestrator.ExportReportAsync(report, format);
+        // TODO: Implement ExportReportAsync in KernelDebugOrchestrator
+        await Task.CompletedTask;
+        return format switch
+        {
+            ReportFormat.Json => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
+            ReportFormat.PlainText => report.ToString() ?? "No data available",
+            _ => throw new ArgumentException($"Unsupported report format: {format}")
+        };
     }
 
     /// <summary>
@@ -176,7 +191,14 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return await _orchestrator.GeneratePerformanceReportAsync(kernelName, timeWindow);
+        // TODO: Implement GeneratePerformanceReportAsync in KernelDebugOrchestrator
+        await Task.CompletedTask;
+        return new PerformanceReport
+        {
+            KernelName = kernelName,
+            TimeWindow = timeWindow ?? TimeSpan.FromHours(1),
+            Summary = $"Performance report for {kernelName} - not yet implemented"
+        };
     }
 
     // TODO: Implement resource utilization analysis
@@ -198,7 +220,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public void AddAccelerator(string name, IAccelerator accelerator)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _orchestrator.AddAccelerator(name, accelerator);
+        _orchestrator.RegisterAccelerator(name, accelerator);
     }
 
     /// <summary>
@@ -207,7 +229,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public bool RemoveAccelerator(string name)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _orchestrator.RemoveAccelerator(name);
+        return _orchestrator.UnregisterAccelerator(name);
     }
 
     // TODO: Implement debug service statistics

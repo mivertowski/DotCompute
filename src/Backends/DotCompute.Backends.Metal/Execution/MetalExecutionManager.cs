@@ -21,7 +21,7 @@ public sealed class MetalExecutionManager : IDisposable
     private MetalErrorHandler _errorHandler = null!;
     private MetalExecutionContext _executionContext = null!;
     private MetalCommandEncoderFactory _encoderFactory = null!;
-    private MetalExecutionTelemetry _telemetry = null!;
+    private readonly MetalExecutionTelemetry _telemetry = null!;
     private volatile bool _disposed;
 
     /// <summary>

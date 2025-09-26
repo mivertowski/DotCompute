@@ -85,7 +85,8 @@ public sealed class MemoryPoolOptions
     /// <summary>
     /// Gets or sets whether to pre-allocate memory blocks on pool initialization.
     /// </summary>
-    public bool PreAllocateBlocks { get; set; } = false;
+    public bool PreAllocateBlocks { get; set; }
+
 
     /// <summary>
     /// Gets or sets the number of blocks to pre-allocate.
@@ -95,12 +96,14 @@ public sealed class MemoryPoolOptions
     /// <summary>
     /// Gets or sets whether to zero-initialize allocated memory.
     /// </summary>
-    public bool ZeroInitialize { get; set; } = false;
+    public bool ZeroInitialize { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to validate pool integrity during operations.
     /// </summary>
-    public bool ValidateIntegrity { get; set; } = false;
+    public bool ValidateIntegrity { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to collect pool usage statistics.
@@ -135,12 +138,14 @@ public sealed class MemoryPoolOptions
     /// <summary>
     /// Gets or sets whether to use large pages for better performance.
     /// </summary>
-    public bool UseLargePages { get; set; } = false;
+    public bool UseLargePages { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to pin memory to prevent paging.
     /// </summary>
-    public bool PinMemory { get; set; } = false;
+    public bool PinMemory { get; set; }
+
 
     /// <summary>
     /// Creates a copy of the current options.

@@ -12,8 +12,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     public class KernelNodeParams
     {
         public nint Function { get; set; }
-        public GridDimensions GridDim { get; set; } = new();
-        public BlockDimensions BlockDim { get; set; } = new();
+        public GridDimensions GridDim { get; set; }
+
+        public BlockDimensions BlockDim { get; set; }
+
         public uint SharedMemoryBytes { get; set; }
         public nint KernelParams { get; set; }
     }
@@ -38,7 +40,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// Block dimensions for kernel launch
     /// </summary>
-    public struct BlockDimensions
+    public struct BlockDimensions : IEquatable<BlockDimensions>
     {
         public uint X { get; set; }
         public uint Y { get; set; }
@@ -49,6 +51,31 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
             X = x;
             Y = y;
             Z = z;
+        }
+
+        public override bool Equals(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static bool operator ==(BlockDimensions left, BlockDimensions right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(BlockDimensions left, BlockDimensions right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(BlockDimensions other)
+        {
+            throw new NotImplementedException();
         }
     }
 

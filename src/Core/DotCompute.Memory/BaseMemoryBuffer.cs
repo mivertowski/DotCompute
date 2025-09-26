@@ -111,15 +111,32 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
 
     /// <inheritdoc/>
-    public abstract MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite);
-
+    public virtual MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    {
+        ThrowIfDisposed();
+        EnsureOnHost();
+        return new MappedMemory<T>(AsMemory());
+    }
 
     /// <inheritdoc/>
-    public abstract MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite);
+    public virtual MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
 
+        EnsureOnHost();
+        return new MappedMemory<T>(AsMemory().Slice(offset, length));
+    }
 
     /// <inheritdoc/>
-    public abstract ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default);
+    public virtual async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
+        return new MappedMemory<T>(AsMemory());
+    }
 
 
     /// <inheritdoc/>
@@ -131,36 +148,29 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
 
     /// <inheritdoc/>
-    public abstract ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
-
+    public abstract ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
-    public abstract ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
-
+    public abstract ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
     public abstract void Synchronize();
 
-
     /// <inheritdoc/>
-    public abstract ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    public abstract ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
 
     /// <inheritdoc/>
     public abstract void MarkHostDirty();
 
-
     /// <inheritdoc/>
     public abstract void MarkDeviceDirty();
-
 
     /// <inheritdoc/>
     public abstract ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default);
 
-
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default);
-
 
     /// <inheritdoc/>
     public abstract ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default);
@@ -199,24 +209,19 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     {
         if (typeof(U) != typeof(T))
         {
-
             throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
         }
-
 
         var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
         return CopyFromAsync(typedSource.ToArray(), offset, cancellationToken);
     }
 
-
     ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
     {
         if (typeof(U) != typeof(T))
         {
-
             throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
         }
-
 
         var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
         return CopyToAsync(typedDestination.ToArray(), offset, cancellationToken);

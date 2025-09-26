@@ -114,13 +114,13 @@ public sealed class AlgorithmPluginManagerOptions
     /// Gets or sets whether plugins are allowed to access the file system.
     /// When disabled, plugins will be restricted from file I/O operations.
     /// </summary>
-    public bool AllowFileSystemAccess { get; set; } = false; // Secure by default
+    public bool AllowFileSystemAccess { get; set; }  // Secure by default
 
     /// <summary>
     /// Gets or sets whether plugins are allowed to access the network.
     /// When disabled, plugins will be restricted from network operations.
     /// </summary>
-    public bool AllowNetworkAccess { get; set; } = false; // Secure by default
+    public bool AllowNetworkAccess { get; set; }  // Secure by default
 
     /// <summary>
     /// Gets or sets whether plugins must be security transparent.

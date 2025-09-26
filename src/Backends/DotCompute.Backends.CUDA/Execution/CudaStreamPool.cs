@@ -226,7 +226,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
             }
 
-            var totalCreated = _highPriorityStreams.Count + _normalPriorityStreams.Count + _lowPriorityStreams.Count;
+            _ = _highPriorityStreams.Count + _normalPriorityStreams.Count + _lowPriorityStreams.Count;
             _logger.LogDebugMessage(" streams in pool");
         }
 

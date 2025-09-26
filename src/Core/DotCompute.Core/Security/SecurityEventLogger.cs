@@ -156,7 +156,7 @@ public sealed class SecurityEventLogger
 
         await LogSecurityEventAsync(SecurityEventType.AuthenticationFailure,
             $"Authentication failed for user '{userId}': {failureReason}",
-            SecurityLevel.Warning, userId, null, data, null, callerName, sourceFile, lineNumber);
+            SecurityLevel.Medium, userId, null, data, null, callerName, sourceFile, lineNumber);
     }
 
     /// <summary>
@@ -167,18 +167,18 @@ public sealed class SecurityEventLogger
         [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
         [CallerLineNumber] int lineNumber = 0)
     {
-        var eventType = result == AccessResult.Granted 
-            ? SecurityEventType.AccessGranted 
+        var eventType = result.Granted
+            ? SecurityEventType.AccessGranted
             : SecurityEventType.AccessDenied;
-        
-        var level = result == AccessResult.Granted 
-            ? SecurityLevel.Informational 
-            : SecurityLevel.Warning;
+
+        var level = result.Granted
+            ? SecurityLevel.Informational
+            : SecurityLevel.Medium;
 
         var data = new Dictionary<string, object>
         {
             ["Action"] = action,
-            ["Result"] = result.ToString(),
+            ["Result"] = result.Granted ? "Granted" : "Denied",
             ["Reason"] = reason ?? "Not specified"
         };
 
@@ -191,7 +191,7 @@ public sealed class SecurityEventLogger
         }
 
         await LogSecurityEventAsync(eventType,
-            $"Access {result.ToString().ToLowerInvariant()} for user '{userId}' to resource '{resource}' for action '{action}'",
+            $"Access {(result.Granted ? "granted" : "denied")} for user '{userId}' to resource '{resource}' for action '{action}'",
             level, userId, resource, data, null, callerName, sourceFile, lineNumber);
     }
 
@@ -212,7 +212,7 @@ public sealed class SecurityEventLogger
             _ => SecurityEventType.DataAccess
         };
 
-        var level = isSuccessful ? SecurityLevel.Informational : SecurityLevel.Warning;
+        var level = isSuccessful ? SecurityLevel.Informational : SecurityLevel.Medium;
         var message = isSuccessful
             ? $"Data {operation.ToString().ToLowerInvariant()} operation successful for user '{userId}' on {dataType}"
             : $"Data {operation.ToString().ToLowerInvariant()} operation failed for user '{userId}' on {dataType}: {failureReason}";
@@ -256,7 +256,7 @@ public sealed class SecurityEventLogger
 
         var entry = new SecurityLogEntry
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             SequenceNumber = sequenceId,
             Timestamp = DateTimeOffset.UtcNow,
             EventType = eventType,
@@ -266,9 +266,9 @@ public sealed class SecurityEventLogger
             ResourceId = resourceId,
             CorrelationId = correlationId,
             CallerName = callerName,
-            SourceFile = _configuration.IncludeStackTraces ? sourceFile : null,
-            LineNumber = _configuration.IncludeStackTraces ? lineNumber : null,
-            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            SourceFile = _configuration.IncludeStackTraces ? sourceFile : string.Empty,
+            LineNumber = _configuration.IncludeStackTraces ? lineNumber : 0,
+            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
 
         // Update correlation context if enabled

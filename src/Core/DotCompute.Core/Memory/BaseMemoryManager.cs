@@ -455,5 +455,52 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
         GC.SuppressFinalize(this);
     }
+
+    // Device-specific operations (default implementations throw NotImplementedException)
+
+    public virtual DeviceMemory AllocateDevice(long sizeInBytes)
+    {
+        throw new NotImplementedException($"AllocateDevice not implemented in {GetType().Name}");
+    }
+
+    public virtual void FreeDevice(DeviceMemory deviceMemory)
+    {
+        throw new NotImplementedException($"FreeDevice not implemented in {GetType().Name}");
+    }
+
+    public virtual void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    {
+        throw new NotImplementedException($"MemsetDevice not implemented in {GetType().Name}");
+    }
+
+    public virtual ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException($"MemsetDeviceAsync not implemented in {GetType().Name}");
+    }
+
+    public virtual void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    {
+        throw new NotImplementedException($"CopyHostToDevice not implemented in {GetType().Name}");
+    }
+
+    public virtual void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    {
+        throw new NotImplementedException($"CopyDeviceToHost not implemented in {GetType().Name}");
+    }
+
+    public virtual ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException($"CopyHostToDeviceAsync not implemented in {GetType().Name}");
+    }
+
+    public virtual ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException($"CopyDeviceToHostAsync not implemented in {GetType().Name}");
+    }
+
+    public virtual void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    {
+        throw new NotImplementedException($"CopyDeviceToDevice not implemented in {GetType().Name}");
+    }
 }
 

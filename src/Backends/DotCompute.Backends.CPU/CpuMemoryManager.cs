@@ -971,7 +971,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     {
         // Calculate the new element count based on size
         var newElementSize = Unsafe.SizeOf<TNew>();
-        var oldElementSize = Unsafe.SizeOf<T>();
+        _ = Unsafe.SizeOf<T>();
 
         if (SizeInBytes % newElementSize != 0)
         {

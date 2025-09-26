@@ -29,9 +29,9 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly Timer _metricsTimer;
         private readonly object _metricsLock = new();
         private double _efficiencyScore = 0.5;
-        private double _synchronizationOverhead = 0.0;
-        private long _totalCooperativeLaunches = 0;
-        private long _totalSynchronizationPoints = 0;
+        private double _synchronizationOverhead;
+        private long _totalCooperativeLaunches;
+        private long _totalSynchronizationPoints;
         private bool _disposed;
 
         public CudaCooperativeGroupsManager(

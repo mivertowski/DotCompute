@@ -183,7 +183,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = $"ModelParallel_{workload.ModelLayers.Count}Layers",
                     Devices = devices,
-                    StrategyType = DotCompute.Core.Execution.Types.ExecutionStrategyType.ModelParallel,
+                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.ModelParallel,
                     ModelLayers = [.. workload.ModelLayers],
                     LayerAssignments = layerAssignments,
                     CommunicationSchedule = communicationSchedule,
@@ -266,7 +266,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = $"Pipeline_{pipelineDefinition.Stages.Count}Stages",
                     Devices = devices,
-                    StrategyType = DotCompute.Core.Execution.Types.ExecutionStrategyType.PipelineParallel,
+                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.PipelineParallel,
                     Stages = pipelineStages,
                     MicrobatchConfig = microbatchConfig,
                     BufferStrategy = bufferStrategy,
@@ -481,7 +481,7 @@ namespace DotCompute.Core.Execution
         private static ManagedCompiledKernel CompileKernelForDeviceAsync(string kernelName, IAccelerator device, CancellationToken cancellationToken)
         {
             // Compile kernel for the specific device type with appropriate optimizations
-            var compilationOptions = new KernelCompilationOptions
+            _ = new KernelCompilationOptions
             {
                 OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Balanced,
                 TargetArchitecture = device.DeviceType.ToString(),
@@ -527,7 +527,7 @@ namespace DotCompute.Core.Execution
 
             foreach (var inputSpec in stageDef.InputSpecs)
             {
-                var bufferSize = inputSpec.ElementCount * Unsafe.SizeOf<T>();
+                _ = inputSpec.ElementCount * Unsafe.SizeOf<T>();
                 var memoryOptions = DotCompute.Abstractions.Memory.MemoryOptions.None;
 
                 // Adjust memory options based on device type
@@ -563,7 +563,7 @@ namespace DotCompute.Core.Execution
 
             foreach (var outputSpec in stageDef.OutputSpecs)
             {
-                var bufferSize = outputSpec.ElementCount * Unsafe.SizeOf<T>();
+                _ = outputSpec.ElementCount * Unsafe.SizeOf<T>();
                 var memoryOptions = DotCompute.Abstractions.Memory.MemoryOptions.None;
 
                 // Adjust memory options based on device type

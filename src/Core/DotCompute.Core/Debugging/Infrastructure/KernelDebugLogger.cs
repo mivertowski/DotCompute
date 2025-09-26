@@ -4,12 +4,13 @@
 using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve LogLevel conflicts
-using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
+using DebugLogLevel = DotCompute.Abstractions.Debugging.Types.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
@@ -408,7 +409,7 @@ public sealed class KernelDebugLogger : IDisposable
             kernelName, analysisResult.ExecutionStatistics.TotalExecutions, analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
 
         // Log significant bottlenecks
-        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)CoreBottleneckSeverity.Medium))
+        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium))
         {
             _logger.LogWarning("Performance bottleneck detected in kernel {KernelName}: {Description} (Severity: {Severity})",
                 kernelName, bottleneck.Description, bottleneck.Severity);

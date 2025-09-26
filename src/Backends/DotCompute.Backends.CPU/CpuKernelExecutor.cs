@@ -15,6 +15,7 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Kernels.Generators;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -32,7 +33,7 @@ internal sealed class CpuKernelExecutor : IDisposable
     private readonly SimdKernelExecutor? _kernelExecutor;
     private Delegate? _compiledDelegate;
     private long _executionCount;
-    private double _totalExecutionTimeMs;
+    private readonly double _totalExecutionTimeMs;
     private bool _disposed;
 
     public CpuKernelExecutor(
@@ -428,16 +429,3 @@ internal sealed class VectorizedExecutionContext
     public CancellationToken CancellationToken { get; set; }
 }
 
-/// <summary>
-/// Statistics for kernel execution performance.
-/// </summary>
-public class ExecutionStatistics
-{
-    public required string KernelName { get; set; }
-    public long ExecutionCount { get; set; }
-    public double TotalExecutionTimeMs { get; set; }
-    public double AverageExecutionTimeMs { get; set; }
-    public bool UseVectorization { get; set; }
-    public int VectorizationFactor { get; set; }
-    public int VectorWidth { get; set; }
-}

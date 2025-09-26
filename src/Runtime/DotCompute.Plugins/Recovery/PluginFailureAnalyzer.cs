@@ -649,13 +649,13 @@ public sealed class FailureAnalysisResult
     public required string PluginId { get; init; }
     public required DateTimeOffset AnalysisTimestamp { get; init; }
     public required int TotalFailures { get; init; }
-    public required FailureSeverity Severity { get; init; }
-    public string? MostCommonExceptionType { get; init; }
-    public Dictionary<string, int> ExceptionTypeDistribution { get; init; } = [];
-    public Dictionary<string, double> FailureFrequency { get; init; } = [];
-    public Dictionary<string, long> MemoryPatterns { get; init; } = [];
-    public List<string> Recommendations { get; init; } = [];
-    public required double Confidence { get; init; }
+    public required FailureSeverity Severity { get; set; }
+    public string? MostCommonExceptionType { get; set; }
+    public Dictionary<string, int> ExceptionTypeDistribution { get; set; } = [];
+    public Dictionary<string, double> FailureFrequency { get; set; } = [];
+    public Dictionary<string, long> MemoryPatterns { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
+    public required double Confidence { get; set; }
 }
 
 public sealed class FailurePattern
@@ -685,11 +685,11 @@ public sealed class FailurePrediction
     public required string PluginId { get; init; }
     public required DateTimeOffset PredictionTimestamp { get; init; }
     public required TimeSpan LookAheadPeriod { get; init; }
-    public required FailureRiskLevel RiskLevel { get; init; }
-    public required double ConfidenceScore { get; init; }
-    public required int EstimatedFailuresInPeriod { get; init; }
-    public DateTimeOffset? NextLikelyFailureTime { get; init; }
-    public List<string> PrimaryRiskFactors { get; init; } = [];
+    public required FailureRiskLevel RiskLevel { get; set; }
+    public required double ConfidenceScore { get; set; }
+    public required int EstimatedFailuresInPeriod { get; set; }
+    public DateTimeOffset? NextLikelyFailureTime { get; set; }
+    public List<string> PrimaryRiskFactors { get; set; } = [];
 }
 
 public enum FailureSeverity

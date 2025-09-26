@@ -45,10 +45,8 @@ public sealed class SecurityAuditLogger
     {
         var result = new AuditExportResult
         {
-            StartDate = startDate,
-            EndDate = endDate,
-            ExportPath = exportPath,
-            Format = format,
+            ExportFilePath = exportPath,
+            Format = format.ToString(),
             ExportTime = DateTime.UtcNow
         };
 
@@ -59,14 +57,24 @@ public sealed class SecurityAuditLogger
             // Validate date range
             if (startDate > endDate)
             {
-                result.ErrorMessage = "Start date cannot be after end date";
-                return result;
+                return new AuditExportResult
+                {
+                    ExportFilePath = exportPath,
+                    Format = format.ToString(),
+                    ExportTime = DateTime.UtcNow,
+                    ErrorMessage = "Start date cannot be after end date"
+                };
             }
 
             if (startDate > DateTime.UtcNow)
             {
-                result.ErrorMessage = "Start date cannot be in the future";
-                return result;
+                return new AuditExportResult
+                {
+                    ExportFilePath = exportPath,
+                    Format = format.ToString(),
+                    ExportTime = DateTime.UtcNow,
+                    ErrorMessage = "Start date cannot be in the future"
+                };
             }
 
             // Ensure export directory exists
@@ -78,12 +86,17 @@ public sealed class SecurityAuditLogger
 
             // Read and filter audit logs
             var entries = await ReadAndFilterAuditLogsAsync(startDate, endDate, null);
-            result.EntryCount = entries.Count;
 
             if (entries.Count == 0)
             {
-                result.ErrorMessage = "No audit entries found for the specified date range";
-                return result;
+                return new AuditExportResult
+                {
+                    ExportFilePath = exportPath,
+                    Format = format.ToString(),
+                    ExportTime = DateTime.UtcNow,
+                    EntriesExported = entries.Count,
+                    ErrorMessage = "No audit entries found for the specified date range"
+                };
             }
 
             // Export entries in the specified format
@@ -91,18 +104,30 @@ public sealed class SecurityAuditLogger
 
             // Calculate file size
             var fileInfo = new FileInfo(exportPath);
-            result.FileSizeBytes = fileInfo.Length;
-            result.IsSuccessful = true;
+            var fileSizeBytes = fileInfo.Length;
 
-            _logger.LogInfoMessage($"Audit log export completed: {entries.Count} entries, {result.FileSizeBytes} bytes");
+            _logger.LogInfoMessage($"Audit log export completed: {entries.Count} entries, {fileSizeBytes} bytes");
 
-            return result;
+            return new AuditExportResult
+            {
+                ExportFilePath = exportPath,
+                Format = format.ToString(),
+                ExportTime = DateTime.UtcNow,
+                Success = true,
+                EntriesExported = entries.Count,
+                FileSizeBytes = fileSizeBytes
+            };
         }
         catch (Exception ex)
         {
-            result.ErrorMessage = $"Export failed: {ex.Message}";
             _logger.LogErrorMessage(ex, "Audit log export failed");
-            return result;
+            return new AuditExportResult
+            {
+                ExportFilePath = exportPath,
+                Format = format.ToString(),
+                ExportTime = DateTime.UtcNow,
+                ErrorMessage = $"Export failed: {ex.Message}"
+            };
         }
     }
 
@@ -285,7 +310,7 @@ public sealed class SecurityAuditLogger
                           $"{EscapeCsv(entry.Message)}," +
                           $"{EscapeCsv(entry.UserId ?? "")}," +
                           $"{EscapeCsv(entry.ResourceId ?? "")}," +
-                          $"{EscapeCsv(entry.CorrelationId)}," +
+                          $"{EscapeCsv(entry.CorrelationId ?? "")}," +
                           $"{EscapeCsv(entry.CallerName ?? "")}");
         }
         
@@ -326,7 +351,10 @@ public sealed class SecurityAuditLogger
                 await xmlWriter.WriteElementStringAsync(null, "ResourceId", null, entry.ResourceId);
             }
 
-            await xmlWriter.WriteElementStringAsync(null, "CorrelationId", null, entry.CorrelationId);
+            if (entry.CorrelationId != null)
+            {
+                await xmlWriter.WriteElementStringAsync(null, "CorrelationId", null, entry.CorrelationId);
+            }
             await xmlWriter.WriteEndElementAsync();
         }
 

@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Runtime.DependencyInjection.Core;
 
 namespace DotCompute.Runtime;
 

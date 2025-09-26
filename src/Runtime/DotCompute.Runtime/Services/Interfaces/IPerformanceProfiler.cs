@@ -31,7 +31,7 @@ public interface IPerformanceProfiler
     /// <param name="startTime">The start time of the period.</param>
     /// <param name="endTime">The end time of the period.</param>
     /// <returns>Performance metrics for the specified period.</returns>
-    public Task<PerformanceMetrics> GetMetricsAsync(DateTime startTime, DateTime endTime);
+    public Task<AggregatedPerformanceMetrics> GetMetricsAsync(DateTime startTime, DateTime endTime);
 
     /// <summary>
     /// Gets real-time performance data.

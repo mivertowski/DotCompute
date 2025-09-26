@@ -327,13 +327,16 @@ namespace DotCompute.Core.Security
     }
 
     // Supporting types - essential subset for compilation
-    public enum SecurityLevel { Weak, Moderate, Strong, Unknown }
+    public enum SecurityLevel { Weak, Low, Moderate, Medium, Strong, High, Critical, Unknown, Informational }
 
     public class CryptographicConfiguration
     {
         public static CryptographicConfiguration Default => new();
         public TimeSpan KeyRotationInterval { get; set; } = TimeSpan.FromHours(24);
         public TimeSpan KeyLifetime { get; set; } = TimeSpan.FromDays(30);
+        public bool EnableTimingAttackProtection { get; set; } = true;
+        public TimeSpan KeyMaxAge { get; set; } = TimeSpan.FromDays(365);
+        public bool RequireApprovedAlgorithms { get; set; } = true;
     }
 
     public interface ICryptographicResult
@@ -355,6 +358,7 @@ namespace DotCompute.Core.Security
         public string? ErrorMessage { get; set; }
         public bool Success { get; set; }
         public string? Fingerprint { get; set; }
+        public string? KeyFingerprint { get; set; }
     }
 
     public class EncryptionResult : ICryptographicResult
@@ -389,6 +393,7 @@ namespace DotCompute.Core.Security
         public SecurityLevel SecurityLevel { get; set; }
         public string ValidationMessage { get; set; } = string.Empty;
         public List<string> Issues { get; set; } = new();
+        public List<string> SecurityIssues { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
     }
@@ -401,6 +406,8 @@ namespace DotCompute.Core.Security
         public string Purpose { get; init; }
         public DateTimeOffset CreationTime { get; init; }
         public byte[]? PublicKeyData { get; init; }
+        public SecureString? KeyData { get; init; }
+        public byte[]? RawKeyData { get; init; }
         private readonly byte[] _keyData;
         private bool _disposed;
 

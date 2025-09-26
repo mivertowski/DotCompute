@@ -15,6 +15,7 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Core.Debugging;
 
@@ -56,7 +57,7 @@ public sealed class KernelDebugProfiler : IDisposable
         ArgumentNullException.ThrowIfNull(accelerator);
 
         var stopwatch = Stopwatch.StartNew();
-        var memoryBefore = GC.GetTotalMemory(false);
+        _ = GC.GetTotalMemory(false);
 
         try
         {
@@ -81,7 +82,7 @@ public sealed class KernelDebugProfiler : IDisposable
                 Result = result,
                 ExecutionTime = stopwatch.Elapsed,
                 ErrorMessage = null,
-                ExecutedAt = DateTimeOffset.UtcNow
+                ExecutedAt = DateTime.UtcNow
             };
 
             // Store in execution history
@@ -109,7 +110,7 @@ public sealed class KernelDebugProfiler : IDisposable
                 Result = null,
                 ExecutionTime = stopwatch.Elapsed,
                 ErrorMessage = ex.Message,
-                ExecutedAt = DateTimeOffset.UtcNow
+                ExecutedAt = DateTime.UtcNow
             };
 
             _executionHistory.Enqueue(failedResult);
@@ -236,9 +237,9 @@ public sealed class KernelDebugProfiler : IDisposable
                 PerformanceMetrics = new PerformanceMetrics
                 {
                     ExecutionTimeMs = overallStopwatch.ElapsedMilliseconds,
-                    ThroughputMBps = 0, // Would need to calculate based on actual data
-                    Utilization = 0.8, // Example utilization
-                    Efficiency = 0.9 // Example efficiency
+                    ThroughputGBps = 0, // Would need to calculate based on actual data
+                    ComputeUtilization = 80.0, // Example utilization
+                    MemoryUtilization = 90.0 // Example efficiency
                 }
             };
         }
@@ -260,31 +261,29 @@ public sealed class KernelDebugProfiler : IDisposable
         }
     }
 
-    public async Task<DotCompute.Core.Debugging.Types.PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
+    public Task<DotCompute.Core.Debugging.Types.PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
 
         var window = timeWindow ?? TimeSpan.FromHours(1);
-        var cutoffTime = DateTimeOffset.UtcNow - window;
+        var cutoffTime = DateTime.UtcNow - window;
 
         var relevantResults = _executionHistory
             .Where(r => r.KernelName == kernelName &&
-                       r.PerformanceCounters != null &&
-                       r.PerformanceCounters.TryGetValue("Timestamp", out var timestamp) &&
-                       timestamp is DateTimeOffset dt && dt >= cutoffTime)
+                       r.ExecutedAt >= cutoffTime)
             .ToList();
 
         if (!relevantResults.Any())
         {
-            return new PerformanceReport
+            return Task.FromResult(new PerformanceReport
             {
                 KernelName = kernelName,
                 TimeWindow = window,
                 ExecutionCount = 0,
                 Backends = [],
                 Summary = "No execution data available for the specified time window"
-            };
+            });
         }
 
         var backendGroups = relevantResults.GroupBy(r => r.BackendType).ToList();
@@ -304,28 +303,28 @@ public sealed class KernelDebugProfiler : IDisposable
                 ExecutionTimeStdDev = CalculateStandardDeviation(execTimes),
                 AverageMemoryUsage = memoryUsages.Any() ? memoryUsages.Average() : 0,
                 ReliabilityScore = (float)(group.Count(r => r.Success) / (double)group.Count()),
-                LastUpdated = DateTimeOffset.UtcNow
+                LastUpdated = DateTime.UtcNow
             };
         }
 
         var overallStats = new OverallPerformanceStats
         {
-            TotalExecutions = relevantResults.Count,
+            TotalExecutions = relevantResults.Count(),
             SuccessfulExecutions = relevantResults.Count(r => r.Success),
             FailedExecutions = relevantResults.Count(r => !r.Success),
             AverageExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average(),
             TotalMemoryUsed = relevantResults.Sum(r => GetMemoryUsage(r))
         };
 
-        return new PerformanceReport
+        return Task.FromResult(new PerformanceReport
         {
             KernelName = kernelName,
             TimeWindow = window,
-            ExecutionCount = relevantResults.Count,
+            ExecutionCount = relevantResults.Count(),
             Backends = backendStats,
             OverallStats = overallStats,
             Summary = GeneratePerformanceSummary(backendStats, overallStats)
-        };
+        });
     }
 
     private static long CalculateInputSize(object[] inputs)
@@ -411,8 +410,8 @@ public sealed class KernelDebugProfiler : IDisposable
 
         if (backendStats.Count > 1)
         {
-            var fastest = backendStats.OrderBy(kvp => kvp.Value.AverageExecutionTime).First();
-            summary += $", fastest backend: {fastest.Key} ({fastest.Value.AverageExecutionTime:F2}ms avg)";
+            var fastest = backendStats.OrderBy(kvp => kvp.Value.AverageExecutionTimeMs).First();
+            summary += $", fastest backend: {fastest.Key} ({fastest.Value.AverageExecutionTimeMs:F2}ms avg)";
         }
 
         if (overallStats.FailedExecutions > 0)
@@ -430,10 +429,9 @@ public sealed class KernelDebugProfiler : IDisposable
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <param name="timeWindow">Time window for analysis.</param>
     /// <returns>Memory usage analysis result.</returns>
-    public async Task<MemoryUsageAnalysis> AnalyzeMemoryUsageAsync(string kernelName, TimeSpan timeWindow)
+    public Task<MemoryUsageAnalysis> AnalyzeMemoryUsageAsync(string kernelName, TimeSpan timeWindow)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        await Task.CompletedTask; // Make async for consistency
 
         var cutoffTime = DateTime.UtcNow - timeWindow;
         var relevantResults = _executionHistory
@@ -442,7 +440,7 @@ public sealed class KernelDebugProfiler : IDisposable
 
         if (!relevantResults.Any())
         {
-            return new MemoryUsageAnalysis
+            return Task.FromResult(new MemoryUsageAnalysis
             {
                 KernelName = kernelName,
                 AverageMemoryUsage = 0,
@@ -450,12 +448,12 @@ public sealed class KernelDebugProfiler : IDisposable
                 MinMemoryUsage = 0,
                 TotalMemoryAllocated = 0,
                 AnalysisTime = DateTime.UtcNow
-            };
+            });
         }
 
         var memoryUsages = relevantResults.Select(r => r.MemoryUsed).ToList();
 
-        return new MemoryUsageAnalysis
+        return Task.FromResult(new MemoryUsageAnalysis
         {
             KernelName = kernelName,
             AverageMemoryUsage = memoryUsages.Average(),
@@ -463,7 +461,7 @@ public sealed class KernelDebugProfiler : IDisposable
             MinMemoryUsage = memoryUsages.Min(),
             TotalMemoryAllocated = memoryUsages.Sum(),
             AnalysisTime = DateTime.UtcNow
-        };
+        });
     }
 
     /// <summary>
@@ -480,7 +478,7 @@ public sealed class KernelDebugProfiler : IDisposable
             .Where(r => r.KernelName == kernelName)
             .ToList();
 
-        var bottlenecks = new List<Bottleneck>();
+        var bottlenecks = new List<DotCompute.Abstractions.Debugging.PerformanceBottleneck>();
 
         if (relevantResults.Any())
         {
@@ -489,13 +487,11 @@ public sealed class KernelDebugProfiler : IDisposable
 
             if (slowExecutions.Any())
             {
-                bottlenecks.Add(new Bottleneck
+                bottlenecks.Add(new DotCompute.Abstractions.Debugging.PerformanceBottleneck
                 {
-                    Type = DotCompute.Abstractions.Types.BottleneckType.Execution,
-                    Severity = DotCompute.Core.Debugging.Core.BottleneckSeverity.Medium,
-                    Description = $"Slow execution detected in {slowExecutions.Count()} runs",
-                    Impact = $"{(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
-                    Recommendation = "Consider optimizing algorithm or increasing resources"
+                    Description = $"Slow execution detected in {slowExecutions.Count()} runs - {(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
+                    Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
+                    Component = "Execution Performance"
                 });
             }
         }
@@ -503,7 +499,14 @@ public sealed class KernelDebugProfiler : IDisposable
         return new DotCompute.Core.Debugging.Core.BottleneckAnalysis
         {
             KernelName = kernelName,
-            Bottlenecks = bottlenecks,
+            Bottlenecks = bottlenecks.Select(b => new DotCompute.Core.Debugging.Core.Bottleneck
+            {
+                Type = DotCompute.Abstractions.Types.BottleneckType.Unknown,
+                Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
+                Description = b.Description,
+                Impact = "Performance impact",
+                Recommendation = "Optimize for better performance"
+            }).ToList(),
             AnalysisTime = DateTime.UtcNow
         };
     }
@@ -513,7 +516,7 @@ public sealed class KernelDebugProfiler : IDisposable
     /// </summary>
     /// <param name="kernelName">Name of the kernel.</param>
     /// <returns>Execution statistics.</returns>
-    public DotCompute.Core.Debugging.Types.ExecutionStatistics GetExecutionStatistics(string kernelName)
+    public DotCompute.Abstractions.Debugging.ExecutionStatistics GetExecutionStatistics(string kernelName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -523,7 +526,7 @@ public sealed class KernelDebugProfiler : IDisposable
 
         if (!relevantResults.Any())
         {
-            return new DotCompute.Core.Debugging.Types.ExecutionStatistics
+            return new DotCompute.Abstractions.Debugging.ExecutionStatistics
             {
                 KernelName = kernelName,
                 TotalExecutions = 0,
@@ -541,7 +544,7 @@ public sealed class KernelDebugProfiler : IDisposable
         return new ExecutionStatistics
         {
             KernelName = kernelName,
-            TotalExecutions = relevantResults.Count,
+            TotalExecutions = relevantResults.Count(),
             SuccessfulExecutions = successfulExecutions,
             FailedExecutions = relevantResults.Count - successfulExecutions,
             AverageExecutionTime = avgTime,

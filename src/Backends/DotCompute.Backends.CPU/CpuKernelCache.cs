@@ -298,8 +298,8 @@ internal sealed class CpuKernelCache : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var kernelStats = CalculateKernelCacheStatistics();
-        var optimizationStats = CalculateOptimizationCacheStatistics();
-        var performanceStats = CalculatePerformanceCacheStatistics();
+        _ = CalculateOptimizationCacheStatistics();
+        _ = CalculatePerformanceCacheStatistics();
 
         return new CacheStatistics
         {

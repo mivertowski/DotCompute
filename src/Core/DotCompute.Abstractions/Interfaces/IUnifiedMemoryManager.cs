@@ -170,4 +170,81 @@ public interface IUnifiedMemoryManager : IAsyncDisposable, IDisposable
     /// Clears all allocated memory and resets the manager.
     /// </summary>
     public void Clear();
+
+    // Device-specific Operations (Legacy Support)
+
+    /// <summary>
+    /// Allocates device-specific memory.
+    /// </summary>
+    /// <param name="sizeInBytes">Size in bytes to allocate.</param>
+    /// <returns>Device memory handle.</returns>
+    public DeviceMemory AllocateDevice(long sizeInBytes);
+
+    /// <summary>
+    /// Frees device-specific memory.
+    /// </summary>
+    /// <param name="deviceMemory">Device memory to free.</param>
+    public void FreeDevice(DeviceMemory deviceMemory);
+
+    /// <summary>
+    /// Sets device memory to a specific value.
+    /// </summary>
+    /// <param name="deviceMemory">Device memory to set.</param>
+    /// <param name="value">Value to set.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes);
+
+    /// <summary>
+    /// Asynchronously sets device memory to a specific value.
+    /// </summary>
+    /// <param name="deviceMemory">Device memory to set.</param>
+    /// <param name="value">Value to set.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the operation.</returns>
+    public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Copies data from host to device memory.
+    /// </summary>
+    /// <param name="hostPointer">Host memory pointer.</param>
+    /// <param name="deviceMemory">Device memory.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes);
+
+    /// <summary>
+    /// Copies data from device to host memory.
+    /// </summary>
+    /// <param name="deviceMemory">Device memory.</param>
+    /// <param name="hostPointer">Host memory pointer.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes);
+
+    /// <summary>
+    /// Asynchronously copies data from host to device memory.
+    /// </summary>
+    /// <param name="hostPointer">Host memory pointer.</param>
+    /// <param name="deviceMemory">Device memory.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the operation.</returns>
+    public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asynchronously copies data from device to host memory.
+    /// </summary>
+    /// <param name="deviceMemory">Device memory.</param>
+    /// <param name="hostPointer">Host memory pointer.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the operation.</returns>
+    public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Copies data between device memories.
+    /// </summary>
+    /// <param name="sourceDevice">Source device memory.</param>
+    /// <param name="destinationDevice">Destination device memory.</param>
+    /// <param name="sizeInBytes">Size in bytes.</param>
+    public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes);
 }

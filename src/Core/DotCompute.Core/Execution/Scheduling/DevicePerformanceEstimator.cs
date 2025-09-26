@@ -750,7 +750,8 @@ internal class DevicePerformanceEstimator
         public double ComputeIntensity { get; set; } = 10.0; // Operations per byte
         public double MemoryAccessPatternFactor { get; set; } = 1.2; // Complexity factor
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-        public int SampleCount { get; set; } = 0;
+        public int SampleCount { get; set; }
+
     }
 
     #endregion

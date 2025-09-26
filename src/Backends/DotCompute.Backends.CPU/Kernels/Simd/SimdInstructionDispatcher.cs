@@ -102,7 +102,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
             return default;
         }
 
-        var context = GetExecutionContext();
+        _ = GetExecutionContext();
         var startTime = DateTimeOffset.UtcNow;
 
         try

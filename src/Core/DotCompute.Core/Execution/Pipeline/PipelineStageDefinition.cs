@@ -84,6 +84,7 @@ namespace DotCompute.Core.Execution.Pipeline
         /// <summary>
         /// Gets or sets whether the data is optional.
         /// </summary>
-        public bool IsOptional { get; set; } = false;
+        public bool IsOptional { get; set; }
+
     }
 }

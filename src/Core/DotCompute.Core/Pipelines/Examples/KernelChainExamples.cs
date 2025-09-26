@@ -252,15 +252,15 @@ namespace DotCompute.Core.Pipelines.Examples
         public static async Task QuickOperationsExample()
         {
             // Simple one-shot kernel execution
-            var result1 = await KernelChain.Quick<float[]>("GenerateRandomNumbers", 1000);
+            _ = await KernelChain.Quick<float[]>("GenerateRandomNumbers", 1000);
 
             // Quick execution with backend preference
-            var result2 = await KernelChain.OnBackend("CUDA")
+            _ = await KernelChain.OnBackend("CUDA")
                 .Kernel("MatrixMultiply", new float[,] { { 1, 2 }, { 3, 4 } }, new float[,] { { 5, 6 }, { 7, 8 } })
                 .ExecuteAsync<float[,]>();
 
             // Quick execution with profiling
-            var result3 = await KernelChain.WithProfiling("QuickTest")
+            _ = await KernelChain.WithProfiling("QuickTest")
                 .Kernel("SortArray", new int[] { 3, 1, 4, 1, 5, 9 })
                 .ExecuteAsync<int[]>();
         }

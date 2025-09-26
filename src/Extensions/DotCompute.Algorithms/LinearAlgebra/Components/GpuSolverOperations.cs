@@ -2,11 +2,15 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels.Compilation;
+using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
+using DotCompute.Algorithms.LinearAlgebra.Components;
+using DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Algorithms.LinearAlgebra.Components;
+using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
+using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {

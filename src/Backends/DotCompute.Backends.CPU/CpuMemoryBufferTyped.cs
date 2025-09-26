@@ -285,7 +285,7 @@ public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposab
 
         var elementSize = Unsafe.SizeOf<T>();
         var byteOffset = offset * elementSize;
-        var byteLength = length * elementSize;
+        _ = length * elementSize;
 
         return new CpuMemoryBufferTypedSlice<T>(_parentBuffer, byteOffset, length, _memoryManager, _logger);
     }

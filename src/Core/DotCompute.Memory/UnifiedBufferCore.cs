@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
@@ -22,7 +23,9 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     private GCHandle _pinnedHandle;
     private T[]? _hostArray;
     private DeviceMemory _deviceMemory;
+#pragma warning disable CS0414 // Field is assigned but never used
     private IUnifiedMemoryBuffer<T>? _deviceBuffer;
+#pragma warning restore CS0414
     private BufferState _state;
     private volatile bool _disposed;
 
@@ -101,7 +104,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
 
         _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         Length = length;
-        SizeInBytes = length * sizeof(T);
+        SizeInBytes = length * Unsafe.SizeOf<T>();
         _state = BufferState.Uninitialized;
 
         // Initialize host array immediately
@@ -244,7 +247,8 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     /// Copies data to another buffer from this buffer.
     /// </summary>
     /// <param name="destination">Destination buffer to copy to.</param>
-    public void CopyTo(IUnifiedMemoryBuffer<T> destination)
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(destination);
@@ -254,7 +258,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             throw new ArgumentException("Buffer lengths must match", nameof(destination));
         }
 
-        destination.CopyFrom(this);
+        await destination.CopyFromAsync(this.AsMemory(), cancellationToken: default);
     }
 
     private void CopyFromUnified(UnifiedBuffer<T> source)
@@ -281,8 +285,9 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         MarkHostDirty();
     }
 
-    private void MarkHostDirty()
+    public void MarkHostDirty()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _state = _state switch
         {
             BufferState.HostOnly => BufferState.HostOnly,
@@ -293,8 +298,9 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         };
     }
 
-    private void MarkDeviceDirty()
+    public void MarkDeviceDirty()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _state = _state switch
         {
             BufferState.DeviceOnly => BufferState.DeviceOnly,
@@ -304,4 +310,144 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             _ => BufferState.DeviceDirty
         };
     }
+
+    // Synchronization methods are implemented in UnifiedBufferSync.cs
+
+    // Interface implementations are provided by other partial class files:
+    // - Map, MapRange, MapAsync: UnifiedBufferSync.cs
+    // - EnsureOnHostAsync, EnsureOnDeviceAsync, SynchronizeAsync: UnifiedBufferSync.cs
+
+    public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(source.Length, Length);
+        await Task.CompletedTask.ConfigureAwait(false);
+        EnsureOnHost();
+        source.Span.CopyTo(_hostArray.AsSpan());
+        MarkHostDirty();
+    }
+
+    public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(destination.Length, Length);
+        await Task.CompletedTask.ConfigureAwait(false);
+        EnsureOnHost();
+        _hostArray.AsSpan().CopyTo(destination.Span);
+    }
+
+    // Duplicate method removed - already defined above
+
+    public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(destination);
+        ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
+        ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset);
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(sourceOffset + count, Length);
+
+        await Task.CompletedTask.ConfigureAwait(false);
+        EnsureOnHost();
+        var sourceSpan = _hostArray.AsSpan(sourceOffset, count);
+        if (destination is UnifiedBuffer<T> unified)
+        {
+            unified.EnsureOnHost();
+            sourceSpan.CopyTo(unified._hostArray.AsSpan(destinationOffset, count));
+            unified.MarkHostDirty();
+        }
+        else
+        {
+            // Use the slice for non-UnifiedBuffer destinations
+            var destSlice = destination.Slice(destinationOffset, count);
+            await destSlice.CopyFromAsync(sourceSpan.ToArray(), cancellationToken);
+        }
+    }
+
+    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await Task.CompletedTask.ConfigureAwait(false);
+        EnsureOnHost();
+        _hostArray.AsSpan().Fill(value);
+        MarkHostDirty();
+    }
+
+    public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + count, Length);
+        await Task.CompletedTask.ConfigureAwait(false);
+        EnsureOnHost();
+        _hostArray.AsSpan(offset, count).Fill(value);
+        MarkHostDirty();
+    }
+
+    public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Calculate the new length ensuring the byte size remains valid
+        var originalSizeInBytes = SizeInBytes;
+        var newElementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var newLength = (int)(originalSizeInBytes / newElementSize);
+
+        if (originalSizeInBytes % newElementSize != 0)
+        {
+            throw new ArgumentException(
+                $"Cannot cast buffer of size {originalSizeInBytes} bytes to type {typeof(TNew).Name} " +
+                $"(element size: {newElementSize} bytes) - sizes are not compatible.");
+        }
+
+        // Create a new buffer and copy the data
+        var newBuffer = new UnifiedBuffer<TNew>(_memoryManager, newLength);
+        var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(_hostArray.AsSpan());
+        var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(newBuffer._hostArray.AsSpan());
+        sourceBytes.CopyTo(destBytes);
+
+        return newBuffer;
+    }
+
+    // Non-generic interface implementation
+    ValueTask IUnifiedMemoryBuffer.CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+        var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<U, T>(source.Span);
+        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+
+        // Create a slice and copy data
+        if (elementOffset + typedSource.Length > Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(source), "Source data exceeds buffer capacity");
+        }
+
+        EnsureOnHost();
+        typedSource.CopyTo(_hostArray.AsSpan(elementOffset, typedSource.Length));
+        MarkHostDirty();
+        return ValueTask.CompletedTask;
+    }
+
+    ValueTask IUnifiedMemoryBuffer.CopyToAsync<U>(Memory<U> destination, long offset, CancellationToken cancellationToken)
+    {
+        if (typeof(U) != typeof(T))
+        {
+            throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
+        }
+
+        var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
+        var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<U, T>(destination.Span);
+
+        EnsureOnHost();
+        var sourceSpan = _hostArray.AsSpan(elementOffset, Math.Min(typedDestination.Length, Length - elementOffset));
+        sourceSpan.CopyTo(typedDestination);
+        return ValueTask.CompletedTask;
+    }
+
+    // Disposal methods are implemented in UnifiedBufferDiagnostics.cs
 }

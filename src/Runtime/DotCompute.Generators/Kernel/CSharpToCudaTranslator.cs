@@ -258,7 +258,7 @@ internal sealed class CSharpToCudaTranslator
 
 
         var variable = forStmt.Declaration.Variables[0];
-        var varName = variable.Identifier.Text;
+        _ = variable.Identifier.Text;
 
         // Check if initializer contains thread/block index references
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Core.Debugging;
@@ -92,7 +93,7 @@ public static class DebugServiceExtensions
             debugService =>
 
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Warning;
+                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)Microsoft.Extensions.Logging.LogLevel.Warning;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = false;
                 debugService.SaveExecutionLogs = false;
@@ -122,7 +123,7 @@ public static class DebugServiceExtensions
         return services.AddComprehensiveDebugging(
             debugService =>
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Debug;
+                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)Microsoft.Extensions.Logging.LogLevel.Debug;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = true;
                 debugService.SaveExecutionLogs = true;
@@ -154,7 +155,7 @@ public static class DebugServiceExtensions
         return services.AddComprehensiveDebugging(
             debugService =>
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Trace;
+                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)Microsoft.Extensions.Logging.LogLevel.Trace;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = true;
                 debugService.SaveExecutionLogs = true;

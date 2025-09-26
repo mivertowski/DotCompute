@@ -97,7 +97,7 @@ public static class IntegrationExample
 
         // Register a sample kernel to demonstrate discovery
 
-        var discoveryService = serviceProvider.GetRequiredService<GeneratedKernelDiscoveryService>();
+        _ = serviceProvider.GetRequiredService<GeneratedKernelDiscoveryService>();
         var executionService = serviceProvider.GetRequiredService<KernelExecutionServiceSimplified>();
 
         // Manually register a demo kernel (normally this would be done by the generator)

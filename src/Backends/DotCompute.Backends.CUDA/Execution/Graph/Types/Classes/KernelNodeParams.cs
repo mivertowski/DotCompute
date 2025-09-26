@@ -11,8 +11,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Classes
     public class KernelNodeParams
     {
         public nint Function { get; set; }
-        public GridDimensions GridDim { get; set; } = new();
-        public BlockDimensions BlockDim { get; set; } = new();
+        public GridDimensions GridDim { get; set; }
+
+        public BlockDimensions BlockDim { get; set; }
+
         public uint SharedMemoryBytes { get; set; }
         public nint KernelParams { get; set; }
     }

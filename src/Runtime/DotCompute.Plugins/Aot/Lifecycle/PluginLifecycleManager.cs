@@ -295,7 +295,7 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
 
         lock (_lock)
         {
-            var totalPlugins = _managedPlugins.Count;
+            _ = _managedPlugins.Count;
             _logger.LogInfoMessage("Disposing PluginLifecycleManager and unloading {totalPlugins} plugins");
 
             foreach (var plugin in _managedPlugins.Values.ToList())

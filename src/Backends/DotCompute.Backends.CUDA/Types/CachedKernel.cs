@@ -61,7 +61,8 @@ namespace DotCompute.Backends.CUDA.Types
         /// This property tracks usage frequency and can be used for cache statistics
         /// and eviction policies that favor frequently used kernels.
         /// </remarks>
-        public int AccessCount { get; set; } = 0;
+        public int AccessCount { get; set; }
+
 
         /// <summary>
         /// Gets or sets the unique cache key for this kernel.
@@ -79,7 +80,8 @@ namespace DotCompute.Backends.CUDA.Types
         /// This includes the size of the compiled binary and any associated metadata.
         /// Used for memory management and cache size tracking.
         /// </remarks>
-        public long Size { get; set; } = 0;
+        public long Size { get; set; }
+
 
         /// <summary>
         /// Gets or sets the timestamp when this kernel cache entry was created.

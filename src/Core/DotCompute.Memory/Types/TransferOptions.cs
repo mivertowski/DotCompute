@@ -60,6 +60,12 @@ public class TransferOptions
     public double IntegritySampleRate { get; set; } = 0.01; // Sample 1% by default
 
     /// <summary>
+    /// Gets or sets the sample size for integrity verification.
+    /// </summary>
+    /// <value>The number of bytes to sample for verification. Default is 1000 bytes.</value>
+    public int IntegritySampleSize { get; set; } = 1000;
+
+    /// <summary>
     /// Gets or sets the memory options for allocation.
     /// </summary>
     /// <value>The memory allocation options.</value>
@@ -191,6 +197,7 @@ public class TransferOptions
             MemoryMappingThreshold = MemoryMappingThreshold,
             VerifyIntegrity = VerifyIntegrity,
             IntegritySampleRate = IntegritySampleRate,
+            IntegritySampleSize = IntegritySampleSize,
             MemoryOptions = MemoryOptions,
             MaxRetryAttempts = MaxRetryAttempts,
             RetryDelay = RetryDelay,

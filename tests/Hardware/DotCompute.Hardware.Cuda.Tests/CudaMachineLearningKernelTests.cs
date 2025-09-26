@@ -460,8 +460,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             int inputH, int inputW, int inputC,
             int outputC, int kernelSize, int stride, int padding)
         {
-            var outputH = (inputH + 2 * padding - kernelSize) / stride + 1;
-            var outputW = (inputW + 2 * padding - kernelSize) / stride + 1;
+            _ = (inputH + 2 * padding - kernelSize) / stride + 1;
+            _ = (inputW + 2 * padding - kernelSize) / stride + 1;
 
 
             await using var bufferInput = await _accelerator.Memory.AllocateAsync<float>(input.Length);

@@ -52,12 +52,14 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets whether to preserve debugging information after optimization.
     /// </summary>
-    public bool PreserveDebugInfo { get; set; } = false;
+    public bool PreserveDebugInfo { get; set; }
+
 
     /// <summary>
     /// Gets or sets whether to enable aggressive optimizations that may affect numerical precision.
     /// </summary>
-    public bool AllowPrecisionLoss { get; set; } = false;
+    public bool AllowPrecisionLoss { get; set; }
+
 
     /// <summary>
     /// Gets or sets the parallel degree for optimization operations.

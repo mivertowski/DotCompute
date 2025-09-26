@@ -269,9 +269,9 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
 
             var result = new SignatureResult
             {
-                KeyIdentifier = keyIdentifier,
-                HashAlgorithm = hashAlgorithm,
-                OperationTime = DateTimeOffset.UtcNow
+                KeyId = keyIdentifier,
+                Algorithm = hashAlgorithm,
+                Timestamp = DateTimeOffset.UtcNow
             };
 
             // Validate hash algorithm
@@ -283,14 +283,24 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
             // Get the key
             if (!_keyStore.TryGetValue(keyIdentifier, out var keyContainer))
             {
-                result.ErrorMessage = $"Signing key not found: {keyIdentifier}";
-                return result;
+                return new SignatureResult
+                {
+                    KeyId = keyIdentifier,
+                    Algorithm = hashAlgorithm,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    ErrorMessage = $"Signing key not found: {keyIdentifier}"
+                };
             }
 
             if (keyContainer.KeyType is not KeyType.RSA and not KeyType.ECDSA)
             {
-                result.ErrorMessage = $"Key type not suitable for signing: {keyContainer.KeyType}";
-                return result;
+                return new SignatureResult
+                {
+                    KeyId = keyIdentifier,
+                    Algorithm = hashAlgorithm,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    ErrorMessage = $"Key type not suitable for signing: {keyContainer.KeyType}"
+                };
             }
 
             // Perform signing using signature verifier
@@ -330,9 +340,9 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
 
             var result = new SignatureVerificationResult
             {
-                KeyIdentifier = keyIdentifier,
-                HashAlgorithm = hashAlgorithm,
-                OperationTime = DateTimeOffset.UtcNow
+                KeyId = keyIdentifier,
+                Algorithm = hashAlgorithm,
+                Timestamp = DateTimeOffset.UtcNow
             };
 
             // Validate hash algorithm
@@ -344,8 +354,13 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
             // Get the key
             if (!_keyStore.TryGetValue(keyIdentifier, out var keyContainer))
             {
-                result.ErrorMessage = $"Verification key not found: {keyIdentifier}";
-                return result;
+                return new SignatureVerificationResult
+                {
+                    KeyId = keyIdentifier,
+                    Algorithm = hashAlgorithm,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    ErrorMessage = $"Verification key not found: {keyIdentifier}"
+                };
             }
 
             // Perform verification using signature verifier
@@ -398,7 +413,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
 
             var result = new KeyRotationResult
             {
-                StartTime = DateTimeOffset.UtcNow,
+                RotationTime = DateTimeOffset.UtcNow,
                 ForceRotation = forceRotation
             };
 
@@ -411,19 +426,18 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
                 try
                 {
                     await RotateKeyAsync(keyContainer);
-                    result.SuccessfulRotations.Add(keyContainer.Identifier);
+                    result.RotatedKeys.Add(keyContainer.Identifier);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogErrorMessage(ex, $"Failed to rotate key: {keyContainer.Identifier}");
-                    result.FailedRotations[keyContainer.Identifier] = ex.Message;
+                    result.FailedRotations.Add($"{keyContainer.Identifier}: {ex.Message}");
                 }
             }
 
-            result.EndTime = DateTimeOffset.UtcNow;
-            result.TotalKeysProcessed = keysToRotate.Count;
+            result.IsSuccessful = result.FailedRotations.Count == 0;
 
-            _logger.LogInfoMessage($"Key rotation completed: Processed={result.TotalKeysProcessed}, Successful={result.SuccessfulRotations.Count}, Failed={result.FailedRotations.Count}");
+            _logger.LogInfoMessage($"Key rotation completed: Processed={keysToRotate.Count}, Successful={result.RotatedKeys.Count}, Failed={result.FailedRotations.Count}");
 
             return result;
         }

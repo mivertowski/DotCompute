@@ -204,7 +204,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
 
         // Allocate and release buffer
         var buffer1 = await pooledManager.AllocateAsync<byte>((int)bufferSize);
-        var initialAllocations = pooledManager.AllocationCount;
+        _ = pooledManager.AllocationCount;
         buffer1.Dispose();
 
         // Allocate same size again - should reuse from pool
@@ -772,8 +772,8 @@ internal sealed class TestMemoryManager : BaseMemoryManager
     private readonly object _lock = new();
     private readonly Dictionary<long, Queue<byte[]>> _pool = [];
     private long _currentAllocatedMemory;
-    private int _allocationCount;
-    private int _poolHitCount;
+    private readonly int _allocationCount;
+    private readonly int _poolHitCount;
     private int _cleanupCallCount;
 
     // Test state

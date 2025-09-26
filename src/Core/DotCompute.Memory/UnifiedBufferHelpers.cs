@@ -66,8 +66,10 @@ public static class UnifiedBufferHelpers
         else
         {
             // Fall back to CPU-mediated copy
-            var sourceData = await source.ReadAsync(sourceOffset, length, cancellationToken);
-            await destination.WriteAsync(sourceData.AsMemory(), destinationOffset, cancellationToken);
+            // Create temporary array for the slice
+            var tempArray = new T[length];
+            await source.CopyToAsync(tempArray.AsMemory(), cancellationToken);
+            await destination.CopyFromAsync(tempArray.AsMemory(), cancellationToken);
         }
     }
 
@@ -108,8 +110,11 @@ public static class UnifiedBufferHelpers
         }
 
 
-        var firstArray = await first.ReadAsync(cancellationToken: cancellationToken);
-        var secondArray = await second.ReadAsync(cancellationToken: cancellationToken);
+        // Copy buffers to arrays for comparison
+        var firstArray = new T[first.Length];
+        var secondArray = new T[second.Length];
+        await first.CopyToAsync(firstArray.AsMemory(), cancellationToken);
+        await second.CopyToAsync(secondArray.AsMemory(), cancellationToken);
 
         return firstArray.SequenceEqual(secondArray);
     }

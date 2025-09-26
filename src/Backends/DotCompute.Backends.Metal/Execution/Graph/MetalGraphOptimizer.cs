@@ -815,8 +815,8 @@ public sealed class MetalGraphOptimizer
     private static double CalculatePerformanceImprovement(MetalGraphAnalysis before, MetalGraphAnalysis after)
     {
         // Calculate estimated performance improvement
-        var beforeScore = before.NodeCount * 1.0; // Simplified scoring
-        var afterScore = after.NodeCount * 1.0;
+        _ = before.NodeCount * 1.0; // Simplified scoring
+        _ = after.NodeCount * 1.0;
 
         // Factor in optimizations
         var improvementFactor = 1.0 + 

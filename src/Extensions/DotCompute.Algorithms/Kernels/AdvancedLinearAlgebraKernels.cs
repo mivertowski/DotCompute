@@ -24,27 +24,58 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all sparse matrix operation kernels.
     /// </summary>
-    public static class SparseMatrix => SparseMatrixKernels;
+    public static class SparseMatrix
+    {
+        /// <summary>
+        /// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
+        /// </summary>
+        public static string OpenCLSparseMatrixVectorKernel => SparseMatrixKernels.OpenCLSparseMatrixVectorKernel;
+
+        /// <summary>
+        /// CUDA kernel for sparse matrix operations with warp-level optimizations.
+        /// </summary>
+        public static string CUDASparseMatrixKernel => SparseMatrixKernels.CUDASparseMatrixKernel;
+    }
 
     /// <summary>
     /// Gets all LAPACK-style iterative solver kernels.
     /// </summary>
-    public static class Solvers => LAPACKKernels;
+    public static class Solvers
+    {
+        /// <summary>
+        /// OpenCL kernel for Conjugate Gradient iteration.
+        /// </summary>
+        public static string OpenCLConjugateGradientKernel => LAPACKKernels.OpenCLConjugateGradientKernel;
+
+        /// <summary>
+        /// CUDA kernel for BiCGSTAB iteration with preconditioning.
+        /// </summary>
+        public static string CUDABiCGSTABKernel => LAPACKKernels.CUDABiCGSTABKernel;
+    }
 
     /// <summary>
     /// Gets all eigenvalue computation kernels.
     /// </summary>
-    public static class Eigenvalues => EigenKernels;
+    public static class Eigenvalues
+    {
+        // Forward references to EigenKernels methods when they exist
+    }
 
     /// <summary>
     /// Gets all BLAS operation kernels.
     /// </summary>
-    public static class BLAS => BLASKernels;
+    public static class BLAS
+    {
+        // Forward references to BLASKernels methods when they exist
+    }
 
     /// <summary>
     /// Gets all matrix decomposition kernels.
     /// </summary>
-    public static class Decomposition => DecompositionKernels;
+    public static class Decomposition
+    {
+        // Forward references to DecompositionKernels methods when they exist
+    }
 
     #endregion
 

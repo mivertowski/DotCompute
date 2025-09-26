@@ -30,7 +30,8 @@ public sealed class SecurityLoggingConfiguration
     /// <summary>
     /// Gets or sets whether to include sensitive data in logs.
     /// </summary>
-    public bool IncludeSensitiveData { get; set; } = false;
+    public bool IncludeSensitiveData { get; set; }
+
 
     /// <summary>
     /// Gets or sets the log retention period.
@@ -41,6 +42,22 @@ public sealed class SecurityLoggingConfiguration
     /// Gets or sets the minimum security level to log.
     /// </summary>
     public SecurityLevel MinimumLogLevel { get; set; } = SecurityLevel.Medium;
+
+    /// <summary>
+    /// Gets or sets whether critical security event alerts are enabled.
+    /// </summary>
+    public bool EnableCriticalEventAlerts { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to include stack traces in log entries.
+    /// </summary>
+    public bool IncludeStackTraces { get; set; }
+
+
+    /// <summary>
+    /// Gets or sets whether correlation tracking is enabled.
+    /// </summary>
+    public bool EnableCorrelationTracking { get; set; } = true;
 }
 
 /// <summary>
@@ -48,6 +65,11 @@ public sealed class SecurityLoggingConfiguration
 /// </summary>
 public sealed class SecurityLogEntry
 {
+    /// <summary>
+    /// Gets the unique identifier for this log entry.
+    /// </summary>
+    public string Id { get; init; } = Guid.NewGuid().ToString();
+
     /// <summary>
     /// Gets the unique sequence number for this log entry.
     /// </summary>
@@ -171,6 +193,11 @@ public sealed class CorrelationContext
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     /// <summary>
+    /// Gets the start time for this correlation context.
+    /// </summary>
+    public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets the user ID associated with this correlation.
     /// </summary>
     public string? UserId { get; init; }
@@ -179,6 +206,11 @@ public sealed class CorrelationContext
     /// Gets the operation name that started this correlation.
     /// </summary>
     public string? OperationName { get; init; }
+
+    /// <summary>
+    /// Gets the number of events in this correlation.
+    /// </summary>
+    public int EventCount { get; set; }
 
     /// <summary>
     /// Gets additional context data.
@@ -265,23 +297,72 @@ public enum SecurityEventType
     /// <summary>
     /// General security information.
     /// </summary>
-    Information
+    Information,
+
+    /// <summary>
+    /// Security violation events - breaches of security policies or rules.
+    /// </summary>
+    SecurityViolation,
+
+    /// <summary>
+    /// Successful authentication events.
+    /// </summary>
+    AuthenticationSuccess,
+
+    /// <summary>
+    /// Failed authentication events.
+    /// </summary>
+    AuthenticationFailure,
+
+    /// <summary>
+    /// Access granted events.
+    /// </summary>
+    AccessGranted,
+
+    /// <summary>
+    /// Access denied events.
+    /// </summary>
+    AccessDenied,
+
+    /// <summary>
+    /// Data access events (read operations).
+    /// </summary>
+    DataAccess,
+
+    /// <summary>
+    /// Data modification events (create/update operations).
+    /// </summary>
+    DataModification,
+
+    /// <summary>
+    /// Data deletion events.
+    /// </summary>
+    DataDeletion
 }
 
 /// <summary>
 /// Represents the result of a digital signature operation.
 /// </summary>
-public sealed class SignatureResult
+public sealed class SignatureResult : ICryptographicResult
 {
     /// <summary>
     /// Gets whether the signature operation was successful.
     /// </summary>
-    public bool Success { get; init; }
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the operation was successful (ICryptographicResult implementation).
+    /// </summary>
+    public bool IsSuccessful
+    {
+        get => Success;
+        set => throw new NotSupportedException("Use Success property instead");
+    }
 
     /// <summary>
     /// Gets the generated signature bytes.
     /// </summary>
-    public byte[] Signature { get; init; } = [];
+    public byte[] Signature { get; set; } = [];
 
     /// <summary>
     /// Gets the algorithm used for signing.
@@ -299,9 +380,23 @@ public sealed class SignatureResult
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
 
     /// <summary>
+    /// Gets the operation time (ICryptographicResult implementation).
+    /// </summary>
+    public DateTimeOffset OperationTime { get; init; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets any error message if the operation failed.
     /// </summary>
-    public string? ErrorMessage { get; init; }
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message (ICryptographicResult implementation).
+    /// </summary>
+    string? ICryptographicResult.ErrorMessage
+    {
+        get => ErrorMessage;
+        set => throw new NotSupportedException("Use ErrorMessage property instead");
+    }
 
     /// <summary>
     /// Gets additional metadata about the signature.
@@ -312,17 +407,26 @@ public sealed class SignatureResult
 /// <summary>
 /// Represents the result of a signature verification operation.
 /// </summary>
-public sealed class SignatureVerificationResult
+public sealed class SignatureVerificationResult : ICryptographicResult
 {
     /// <summary>
     /// Gets whether the signature verification was successful.
     /// </summary>
-    public bool IsValid { get; init; }
+    public bool IsValid { get; set; }
 
     /// <summary>
     /// Gets whether the verification operation completed without errors.
     /// </summary>
-    public bool Success { get; init; }
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets whether the verification operation completed without errors (alias for Success).
+    /// </summary>
+    public bool IsSuccessful
+    {
+        get => Success;
+        set => throw new NotSupportedException("Use Success property instead");
+    }
 
     /// <summary>
     /// Gets the algorithm used for verification.
@@ -340,9 +444,23 @@ public sealed class SignatureVerificationResult
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
 
     /// <summary>
+    /// Gets the operation time (ICryptographicResult implementation).
+    /// </summary>
+    public DateTimeOffset OperationTime { get; init; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Gets any error message if the operation failed.
     /// </summary>
-    public string? ErrorMessage { get; init; }
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message (ICryptographicResult implementation).
+    /// </summary>
+    string? ICryptographicResult.ErrorMessage
+    {
+        get => ErrorMessage;
+        set => ErrorMessage = value;
+    }
 
     /// <summary>
     /// Gets additional metadata about the verification.
@@ -360,6 +478,11 @@ public sealed class SignatureVerificationResult
 /// </summary>
 public enum SecurityViolationType
 {
+    /// <summary>
+    /// Input validation failure.
+    /// </summary>
+    InputValidation,
+
     /// <summary>
     /// Unauthorized access attempt.
     /// </summary>
@@ -393,7 +516,62 @@ public enum SecurityViolationType
     /// <summary>
     /// Audit trail tampering attempt.
     /// </summary>
-    AuditTampering
+    AuditTampering,
+
+    /// <summary>
+    /// Authentication bypass attempt.
+    /// </summary>
+    AuthenticationBypass,
+
+    /// <summary>
+    /// Privilege escalation attempt.
+    /// </summary>
+    PrivilegeEscalation,
+
+    /// <summary>
+    /// SQL injection attempt.
+    /// </summary>
+    SqlInjection,
+
+    /// <summary>
+    /// Cross-site scripting attempt.
+    /// </summary>
+    XssAttempt,
+
+    /// <summary>
+    /// Path traversal attack attempt.
+    /// </summary>
+    PathTraversal,
+
+    /// <summary>
+    /// Command injection attempt.
+    /// </summary>
+    CommandInjection,
+
+    /// <summary>
+    /// Data exfiltration attempt.
+    /// </summary>
+    DataExfiltration,
+
+    /// <summary>
+    /// Malicious code detected.
+    /// </summary>
+    MaliciousCode,
+
+    /// <summary>
+    /// Cryptographic operation failure.
+    /// </summary>
+    CryptographicFailure,
+
+    /// <summary>
+    /// Data integrity violation.
+    /// </summary>
+    IntegrityViolation,
+
+    /// <summary>
+    /// Buffer overflow attack attempt.
+    /// </summary>
+    BufferOverflow
 }
 
 /// <summary>
@@ -405,6 +583,16 @@ public sealed class AccessResult
     /// Gets whether access was granted.
     /// </summary>
     public bool Granted { get; init; }
+
+    /// <summary>
+    /// Gets a static instance representing granted access.
+    /// </summary>
+    public static AccessResult GrantedResult { get; } = new() { Granted = true, Reason = "Access granted" };
+
+    /// <summary>
+    /// Gets a static instance representing denied access.
+    /// </summary>
+    public static AccessResult DeniedResult { get; } = new() { Granted = false, Reason = "Access denied" };
 
     /// <summary>
     /// Gets the reason for the access decision.
@@ -446,6 +634,11 @@ public enum DataOperation
     /// Data write operation.
     /// </summary>
     Write,
+
+    /// <summary>
+    /// Data create operation.
+    /// </summary>
+    Create,
 
     /// <summary>
     /// Data update operation.

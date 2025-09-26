@@ -220,7 +220,7 @@ internal sealed class KernelExecutionModeHandler
     /// </summary>
     public string GenerateKernelBody(string baseBody)
     {
-        var sb = new StringBuilder();
+        _ = new StringBuilder();
 
 
         switch (_mode)

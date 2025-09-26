@@ -230,6 +230,7 @@ internal sealed class CryptographicValidator : IDisposable
     /// </summary>
     public async Task<EntropyValidationResult> ValidateEntropyAsync(byte[] randomData)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(randomData);
 
@@ -274,6 +275,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task ValidateAgainstWeakAlgorithmsAsync(string algorithm, AlgorithmValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         if (WeakAlgorithmReplacements.ContainsKey(algorithm.ToUpperInvariant()))
         {
             result.IsApproved = false;
@@ -285,6 +287,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task ValidateKeySizeRequirementsAsync(string algorithm, int keySize, AlgorithmValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         var minimumSizes = new Dictionary<string, int>
         {
             ["AES"] = 128,
@@ -305,6 +308,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task ValidateAgainstSecurityStandardAsync(string algorithm, int keySize, string standard, AlgorithmValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         if (!SecurityStandards.TryGetValue(standard.ToUpperInvariant(), out var securityStandard))
         {
             result.Warnings.Add($"Unknown security standard: {standard}");
@@ -330,6 +334,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task ValidateForContextAsync(string algorithm, int keySize, string context, AlgorithmValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         // Context-specific validation logic
         switch (context.ToLowerInvariant())
         {
@@ -359,6 +364,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task ValidateImplementationSecurityAsync(string algorithm, AlgorithmValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         // Check for implementation-specific security considerations
         if (algorithm.Contains("CBC"))
         {
@@ -375,6 +381,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task ValidateKeyRotationSettingsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         if (config.KeyRotationInterval > TimeSpan.FromDays(90))
         {
             result.Issues.Add("Key rotation interval exceeds recommended maximum of 90 days");
@@ -388,6 +395,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task ValidateEntropyRequirementsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         // Validate entropy source configuration
         // This would typically check if hardware RNG is available and properly configured
         result.Recommendations.Add("Ensure entropy source meets minimum randomness requirements");
@@ -395,12 +403,14 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task ValidateTimingAttackProtectionsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         // Validate timing attack protection measures
         result.Recommendations.Add("Implement constant-time comparisons for sensitive operations");
     }
 
     private static async Task ValidateAgainstStandardAsync(CryptographicConfiguration config, string standard, ConfigurationValidationResult result)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         if (SecurityStandards.TryGetValue(standard.ToUpperInvariant(), out var securityStandard))
         {
             // Validate configuration against specific standard requirements
@@ -410,6 +420,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task<OperationAuditResult> AuditSingleOperationAsync(CryptographicOperation operation)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         var result = new OperationAuditResult
         {
             OperationType = operation.Type,
@@ -435,6 +446,7 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task<List<string>> GenerateSecurityRecommendationsAsync(List<OperationAuditResult> results)
     {
+        await Task.CompletedTask.ConfigureAwait(false);
         var recommendations = new List<string>();
 
         var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm"))).ToList();

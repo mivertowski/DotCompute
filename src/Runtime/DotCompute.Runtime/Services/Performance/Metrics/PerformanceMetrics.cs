@@ -8,10 +8,10 @@ using DotCompute.Runtime.Services.Performance.Types;
 namespace DotCompute.Runtime.Services.Performance.Metrics;
 
 /// <summary>
-/// Comprehensive performance metrics collection.
+/// Comprehensive aggregated performance metrics collection.
 /// Contains aggregated performance data for a specific time period.
 /// </summary>
-public class PerformanceMetrics
+public class AggregatedPerformanceMetrics
 {
     /// <summary>
     /// Gets the time period for these metrics.

@@ -107,7 +107,8 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         }
 
         // Check the cache first
-        if (_kernelCache.TryGetKernel(definition, options, out var cachedLibrary, out var cachedFunction, out var cachedPipelineState))
+
+        if (_kernelCache.TryGetKernel(definition, options, out _, out _, out var cachedPipelineState))
         {
             _logger.LogDebug("Cache hit for kernel '{Name}' - using cached pipeline state", definition.Name);
             

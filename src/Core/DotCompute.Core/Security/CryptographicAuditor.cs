@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Text;
 using System.Security;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
 
@@ -640,4 +641,29 @@ public class SecurityMetrics
     public int CryptographicOperations { get; set; }
     public double AverageResponseTime { get; set; }
     public double SecurityScore { get; set; }
+    public int ActiveCorrelations { get; set; }
+    public double AverageEventsPerCorrelation { get; set; }
+
+    // Properties expected by SecurityMetricsLogger
+    public Dictionary<SecurityEventType, long> EventsByType { get; set; } = new();
+    public long AuthenticationSuccessCount { get; set; }
+    public long AuthenticationFailureCount { get; set; }
+    public long AccessGrantedCount { get; set; }
+    public long AccessDeniedCount { get; set; }
+    public long SecurityViolationCount { get; set; }
+    public long DataAccessCount { get; set; }
+    public long DataModificationCount { get; set; }
+    public long DataDeletionCount { get; set; }
+    public Dictionary<DotCompute.Core.Security.SecurityLevel, long> EventsByLevel { get; set; } = new();
+    public long CriticalEventCount { get; set; }
+    public long HighEventCount { get; set; }
+    public long MediumEventCount { get; set; }
+    public long LowEventCount { get; set; }
+    public long InformationalEventCount { get; set; }
+    public long TotalEventCount { get; set; }
+    public int UniqueUsersCount { get; set; }
+    public ConcurrentDictionary<string, long> UserEventCounts { get; set; } = new();
+    public ConcurrentDictionary<string, long> ResourceEventCounts { get; set; } = new();
+    public DateTimeOffset FirstEventTime { get; set; }
+    public DateTimeOffset LastEventTime { get; set; }
 }

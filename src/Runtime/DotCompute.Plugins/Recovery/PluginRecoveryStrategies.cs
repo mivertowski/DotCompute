@@ -8,6 +8,7 @@ using System.Runtime.Loader;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using RecoveryResult = DotCompute.Abstractions.Interfaces.Recovery.RecoveryResult;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -113,8 +114,8 @@ public sealed class PluginRecoveryStrategies : IDisposable
             stopwatch.Stop();
 
             var result = startResult
-                ? RecoveryResult.Success($"Plugin {context.PluginId} restarted successfully", stopwatch.Elapsed)
-                : RecoveryResult.Failure($"Failed to restart plugin {context.PluginId}");
+                ? new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} restarted successfully", Duration = stopwatch.Elapsed }
+                : new RecoveryResult { Success = false, Message = $"Failed to restart plugin {context.PluginId}" };
 
             RecordStrategyResult(strategyKey, result.Success, stopwatch.Elapsed);
 
@@ -123,7 +124,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            var result = RecoveryResult.Failure($"Restart strategy failed: {ex.Message}", ex);
+            var result = new RecoveryResult { Success = false, Message = $"Restart strategy failed: {ex.Message}", Exception = ex };
             RecordStrategyResult(strategyKey, false, stopwatch.Elapsed);
             return result;
         }
@@ -161,8 +162,8 @@ public sealed class PluginRecoveryStrategies : IDisposable
             stopwatch.Stop();
 
             var result = reloadResult
-                ? RecoveryResult.Success($"Plugin {context.PluginId} reloaded successfully", stopwatch.Elapsed)
-                : RecoveryResult.Failure($"Failed to reload plugin {context.PluginId}");
+                ? new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} reloaded successfully", Duration = stopwatch.Elapsed }
+                : new RecoveryResult { Success = false, Message = $"Failed to reload plugin {context.PluginId}" };
 
             RecordStrategyResult(strategyKey, result.Success, stopwatch.Elapsed);
 
@@ -171,7 +172,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            var result = RecoveryResult.Failure($"Reload strategy failed: {ex.Message}", ex);
+            var result = new RecoveryResult { Success = false, Message = $"Reload strategy failed: {ex.Message}", Exception = ex };
             RecordStrategyResult(strategyKey, false, stopwatch.Elapsed);
             return result;
         }
@@ -189,7 +190,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
 
         if (context.Plugin is not IBackendPlugin plugin)
         {
-            return RecoveryResult.Failure("Cannot isolate plugin - plugin instance not available or invalid type");
+            return new RecoveryResult { Success = false, Message = "Cannot isolate plugin - plugin instance not available or invalid type" };
         }
 
         _logger.LogInformation("Executing isolation strategy for plugin {PluginId}", context.PluginId);
@@ -203,7 +204,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
 
             stopwatch.Stop();
 
-            var result = RecoveryResult.Success($"Plugin {context.PluginId} isolated successfully", stopwatch.Elapsed);
+            var result = new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} isolated successfully", Duration = stopwatch.Elapsed };
             RecordStrategyResult(strategyKey, true, stopwatch.Elapsed);
 
             return result;
@@ -211,7 +212,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            var result = RecoveryResult.Failure($"Isolation strategy failed: {ex.Message}", ex);
+            var result = new RecoveryResult { Success = false, Message = $"Isolation strategy failed: {ex.Message}", Exception = ex };
             RecordStrategyResult(strategyKey, false, stopwatch.Elapsed);
             return result;
         }
@@ -246,7 +247,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
 
             stopwatch.Stop();
 
-            var result = RecoveryResult.Success($"Plugin {context.PluginId} shut down safely", stopwatch.Elapsed);
+            var result = new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} shut down safely", Duration = stopwatch.Elapsed };
             RecordStrategyResult(strategyKey, true, stopwatch.Elapsed);
 
             return result;
@@ -254,7 +255,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            var result = RecoveryResult.Failure($"Shutdown strategy failed: {ex.Message}", ex);
+            var result = new RecoveryResult { Success = false, Message = $"Shutdown strategy failed: {ex.Message}", Exception = ex };
             RecordStrategyResult(strategyKey, false, stopwatch.Elapsed);
             return result;
         }
@@ -278,7 +279,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
             var stableVersion = await FindStableVersionAsync(context.PluginId, cancellationToken);
             if (stableVersion == null)
             {
-                return RecoveryResult.Failure($"No stable version found for plugin {context.PluginId}");
+                return new RecoveryResult { Success = false, Message = $"No stable version found for plugin {context.PluginId}" };
             }
 
             // Unload current version
@@ -290,8 +291,8 @@ public sealed class PluginRecoveryStrategies : IDisposable
             stopwatch.Stop();
 
             var result = rollbackResult
-                ? RecoveryResult.Success($"Plugin {context.PluginId} rolled back to stable version {stableVersion}", stopwatch.Elapsed)
-                : RecoveryResult.Failure($"Failed to rollback plugin {context.PluginId}");
+                ? new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} rolled back to stable version {stableVersion}", Duration = stopwatch.Elapsed }
+                : new RecoveryResult { Success = false, Message = $"Failed to rollback plugin {context.PluginId}" };
 
             RecordStrategyResult(strategyKey, result.Success, stopwatch.Elapsed);
 
@@ -300,7 +301,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            var result = RecoveryResult.Failure($"Rollback strategy failed: {ex.Message}", ex);
+            var result = new RecoveryResult { Success = false, Message = $"Rollback strategy failed: {ex.Message}", Exception = ex };
             RecordStrategyResult(strategyKey, false, stopwatch.Elapsed);
             return result;
         }
@@ -582,33 +583,4 @@ public sealed record StrategyEffectiveness
     public DateTimeOffset LastUsed { get; init; }
 }
 
-/// <summary>
-/// Recovery strategies available for plugin error handling
-/// </summary>
-public enum PluginRecoveryStrategy
-{
-    /// <summary>
-    /// Restart the plugin process
-    /// </summary>
-    RestartPlugin,
-
-    /// <summary>
-    /// Reload plugin assembly
-    /// </summary>
-    ReloadPlugin,
-
-    /// <summary>
-    /// Isolate plugin in separate container
-    /// </summary>
-    IsolatePlugin,
-
-    /// <summary>
-    /// Shutdown plugin safely
-    /// </summary>
-    ShutdownPlugin,
-
-    /// <summary>
-    /// Rollback to previous plugin version
-    /// </summary>
-    RollbackVersion
-}
+// PluginRecoveryStrategy enum already defined in PluginRecoveryTypes.cs

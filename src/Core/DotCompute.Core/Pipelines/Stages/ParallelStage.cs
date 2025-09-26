@@ -220,7 +220,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     foreach (var error in stageValidation.Issues)
                     {
-                        errors.Add(new ValidationIssue(ValidationSeverity.Error, $"Sub-stage '{stage.Name}': {error.Message}", "PARALLEL_003"));
+                        errors.Add(new ValidationIssue("PARALLEL_003", $"Sub-stage '{stage.Name}': {error.Message}", ValidationSeverity.Error));
                     }
                 }
 

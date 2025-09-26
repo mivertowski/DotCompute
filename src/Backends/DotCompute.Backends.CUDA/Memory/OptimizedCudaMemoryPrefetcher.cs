@@ -251,7 +251,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
 
         var optimizedCount = 0;
-        var currentTime = DateTimeOffset.UtcNow;
+        _ = DateTimeOffset.UtcNow;
 
         foreach (var pattern in _accessPatterns.Values)
         {
@@ -695,7 +695,8 @@ public sealed class PrefetcherConfiguration
     public double PrefetchMultiplier { get; init; } = 2.0;
     public TimeSpan MaintenanceInterval { get; init; } = TimeSpan.FromMinutes(5);
     public TimeSpan PatternRetentionTime { get; init; } = TimeSpan.FromHours(1);
-    public bool SynchronousMode { get; init; } = false;
+    public bool SynchronousMode { get; init; }
+
 
     public static PrefetcherConfiguration Default => new();
     

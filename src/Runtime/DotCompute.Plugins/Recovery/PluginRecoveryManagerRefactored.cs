@@ -3,9 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+// using DotCompute.Backends.Metal.Telemetry; // Commented out - invalid namespace
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -385,25 +387,4 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
 /// <summary>
 /// Extended plugin health information with circuit breaker integration
 /// </summary>
-public sealed class PluginHealthInfo
-{
-    public string PluginId { get; set; } = string.Empty;
-    public bool IsHealthy { get; set; }
-    public bool IsIsolated { get; set; }
-    public int ErrorCount { get; set; }
-    public int RestartCount { get; set; }
-    public Exception? LastError { get; set; }
-    public DateTimeOffset? LastRestart { get; set; }
-    public DateTimeOffset LastHealthCheck { get; set; } = DateTimeOffset.UtcNow;
-    public int ConsecutiveFailures { get; set; }
-    public double UptimePercent { get; set; } = 100.0;
-    public long MemoryUsageBytes { get; set; }
-    public double CpuUsagePercent { get; set; }
-    public int ActiveOperations { get; set; }
-    public Dictionary<string, object> CustomMetrics { get; set; } = [];
-    public DateTimeOffset StartTime { get; set; } = DateTimeOffset.UtcNow;
-    public TimeSpan Runtime => DateTimeOffset.UtcNow - StartTime;
-
-    public override string ToString()
-        => $"Plugin={PluginId}, Healthy={IsHealthy}, Errors={ErrorCount}, Restarts={RestartCount}, Uptime={UptimePercent:F1}%";
-}
+// PluginHealthInfo is defined in PluginRecoveryTypes.cs

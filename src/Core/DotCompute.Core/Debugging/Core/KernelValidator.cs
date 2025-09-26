@@ -5,13 +5,16 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Interfaces;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Performance;
 
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using DebugLogLevel = DotCompute.Abstractions.Debugging.Types.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -221,9 +224,10 @@ public sealed class KernelValidator : IDisposable
         {
             performanceComparison[result.BackendType] = new PerformanceMetrics
             {
-                ExecutionTime = result.ExecutionTime,
-                MemoryUsage = result.MemoryUsed,
-                ThroughputOpsPerSecond = (int)CalculateThroughput(result)
+                ExecutionTimeMs = (long)result.ExecutionTime.TotalMilliseconds,
+                MemoryUsageBytes = result.MemoryUsed,
+                OperationsPerSecond = (long)CalculateThroughput(result),
+                Operation = result.KernelName
             };
         }
 
@@ -237,7 +241,7 @@ public sealed class KernelValidator : IDisposable
             BackendsCompared = backendNames,
             Differences = differences,
             Strategy = comparisonStrategy,
-            Tolerance = _options.VerbosityLevel == Abstractions.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
+            Tolerance = _options.VerbosityLevel == DebugLogLevel.Trace ? 1e-8f : 1e-6f,
             PerformanceComparison = performanceComparison
         };
     }
@@ -453,7 +457,7 @@ public sealed class KernelValidator : IDisposable
     {
         // Simplified comparison logic - would be more sophisticated in practice
         var baseline = results[0];
-        var tolerance = _options.VerbosityLevel == Abstractions.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f;
+        var tolerance = _options.VerbosityLevel == DebugLogLevel.Trace ? 1e-8f : 1e-6f;
 
         for (var i = 1; i < results.Count; i++)
         {

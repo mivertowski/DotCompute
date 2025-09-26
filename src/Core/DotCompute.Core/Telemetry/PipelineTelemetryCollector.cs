@@ -582,7 +582,8 @@ public sealed class PipelineTelemetryOptions
     /// <summary>
     /// Whether to export metrics to console for debugging.
     /// </summary>
-    public bool ExportToConsole { get; set; } = false;
+    public bool ExportToConsole { get; set; }
+
 
     /// <summary>
     /// Maximum number of events to process in each batch.
