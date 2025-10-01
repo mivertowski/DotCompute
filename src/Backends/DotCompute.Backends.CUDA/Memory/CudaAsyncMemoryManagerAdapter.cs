@@ -435,6 +435,124 @@ namespace DotCompute.Backends.CUDA.Memory
             return ValueTask.CompletedTask;
         }
 
+        /// <inheritdoc/>
+        public DeviceMemory AllocateDevice(long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            var devicePtr = IntPtr.Zero;
+            var result = CudaRuntime.cudaMalloc(ref devicePtr, (nuint)sizeInBytes);
+            CudaRuntime.CheckError(result, "allocating device memory");
+
+            return new DeviceMemory(devicePtr, sizeInBytes);
+        }
+
+        /// <inheritdoc/>
+        public void FreeDevice(DeviceMemory deviceMemory)
+        {
+            if (deviceMemory.IsValid && !_disposed)
+            {
+                try
+                {
+                    var result = CudaRuntime.cudaFree(deviceMemory.Handle);
+                    CudaRuntime.CheckError(result, "freeing device memory");
+                }
+                catch (Exception ex)
+                {
+                    // Log warning but don't throw during cleanup
+                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to free device memory: {ex.Message}");
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            var result = CudaRuntime.cudaMemset(deviceMemory.Handle, value, (nuint)sizeInBytes);
+            CudaRuntime.CheckError(result, "setting device memory");
+        }
+
+        /// <inheritdoc/>
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask(Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken));
+        }
+
+        /// <inheritdoc/>
+        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (hostPointer == IntPtr.Zero)
+            {
+                throw new ArgumentException("Invalid host pointer", nameof(hostPointer));
+            }
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(deviceMemory.Handle, hostPointer, (nuint)sizeInBytes, CudaMemcpyKind.HostToDevice);
+            CudaRuntime.CheckError(result, "copying host to device memory");
+        }
+
+        /// <inheritdoc/>
+        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!deviceMemory.IsValid)
+            {
+                throw new ArgumentException("Invalid device memory handle", nameof(deviceMemory));
+            }
+
+            if (hostPointer == IntPtr.Zero)
+            {
+                throw new ArgumentException("Invalid host pointer", nameof(hostPointer));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(hostPointer, deviceMemory.Handle, (nuint)sizeInBytes, CudaMemcpyKind.DeviceToHost);
+            CudaRuntime.CheckError(result, "copying device to host memory");
+        }
+
+        /// <inheritdoc/>
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask(Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken));
+        }
+
+        /// <inheritdoc/>
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask(Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken));
+        }
+
+        /// <inheritdoc/>
+        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+        {
+            ThrowIfDisposed();
+
+            if (!sourceDevice.IsValid)
+            {
+                throw new ArgumentException("Invalid source device memory handle", nameof(sourceDevice));
+            }
+
+            if (!destinationDevice.IsValid)
+            {
+                throw new ArgumentException("Invalid destination device memory handle", nameof(destinationDevice));
+            }
+
+            var result = CudaRuntime.cudaMemcpy(destinationDevice.Handle, sourceDevice.Handle, (nuint)sizeInBytes, CudaMemcpyKind.DeviceToDevice);
+            CudaRuntime.CheckError(result, "copying device to device memory");
+        }
 
         private void ThrowIfDisposed()
         {

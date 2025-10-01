@@ -2,13 +2,16 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using MSLogger = Microsoft.Extensions.Logging.ILogger;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using NuGet.Packaging.Core;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Management.Models;
+using DotCompute.Algorithms.Management.Types;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -18,12 +21,12 @@ namespace DotCompute.Algorithms.Management
     /// </summary>
     internal sealed class NuGetPackageResolver : IDisposable
     {
-        private readonly ILogger _logger;
+        private readonly MSLogger _logger;
         private readonly NuGetPluginLoaderOptions _options;
         private readonly SourceRepositoryProvider _sourceRepositoryProvider;
         private bool _disposed;
 
-        public NuGetPackageResolver(ILogger logger, NuGetPluginLoaderOptions options)
+        public NuGetPackageResolver(MSLogger logger, NuGetPluginLoaderOptions options)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options ?? throw new ArgumentNullException(nameof(options));

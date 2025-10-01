@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Management.Configuration;
 
@@ -156,4 +156,10 @@ public sealed class AlgorithmPluginManagerOptions
     /// How long the circuit breaker stays open before attempting to reset.
     /// </summary>
     public int CircuitBreakerDurationSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Gets or sets the cache expiration time.
+    /// Determines how long plugin metadata and compiled assemblies are cached.
+    /// </summary>
+    public TimeSpan CacheExpiration { get; set; } = TimeSpan.FromHours(1);
 }

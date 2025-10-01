@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,37 @@ internal static class PTXCompiler
 {
     // Static storage for mangled function names - shared across all compiler instances
     private static readonly ConcurrentDictionary<string, Dictionary<string, string>> _mangledNamesCache = new();
+
+    /// <summary>
+    /// Checks if NVRTC is available on the system.
+    /// </summary>
+    /// <returns>True if NVRTC is available; otherwise, false.</returns>
+    public static bool IsNvrtcAvailable()
+    {
+        try
+        {
+            var result = NvrtcInterop.nvrtcVersion(out _, out _);
+            return result == NvrtcResult.Success;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets the NVRTC version.
+    /// </summary>
+    /// <returns>A tuple containing the major and minor version numbers.</returns>
+    public static (int major, int minor) GetNvrtcVersion()
+    {
+        var result = NvrtcInterop.nvrtcVersion(out var major, out var minor);
+        if (result != NvrtcResult.Success)
+        {
+            return (0, 0);
+        }
+        return (major, minor);
+    }
 
     /// <summary>
     /// Compiles CUDA source code to PTX using NVRTC.

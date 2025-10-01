@@ -99,7 +99,7 @@ public sealed class NumaScheduler : IDisposable
         }
 
 
-        return ScheduleOnNode(async () => function(), nodeId, priority);
+        return ScheduleOnNode(() => Task.FromResult(function()), nodeId, priority);
     }
 
     /// <summary>

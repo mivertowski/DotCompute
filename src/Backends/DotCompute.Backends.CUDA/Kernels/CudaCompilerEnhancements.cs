@@ -4,11 +4,15 @@
 using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
+using KernelSource = DotCompute.Backends.CUDA.Compilation.CudaCompilationPipeline.KernelSource;
+using KernelLanguage = DotCompute.Backends.CUDA.Compilation.CudaCompilationPipeline.KernelLanguage;
 
 namespace DotCompute.Backends.CUDA.Compilation
 {

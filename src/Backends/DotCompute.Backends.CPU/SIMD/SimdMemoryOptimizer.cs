@@ -1,8 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using global::System.Runtime.CompilerServices;
+using DotCompute.Backends.CPU.Kernels.Simd;
 
 namespace DotCompute.Backends.CPU.SIMD;
 
@@ -53,7 +54,8 @@ public sealed class SimdMemoryOptimizer : IDisposable
         fixed (T* ptr1 = input1, ptr2 = input2, ptrOut = output)
         {
             // Prefetch first few cache lines
-            for (var i = 0; i < Math.Min(prefetchDistance, input1.Length); i += 64 / sizeof(T))
+            var elementSize = Unsafe.SizeOf<T>();
+            for (var i = 0; i < Math.Min(prefetchDistance, input1.Length); i += 64 / elementSize)
             {
                 if (System.Runtime.Intrinsics.X86.Sse.IsSupported)
                 {
@@ -75,7 +77,8 @@ public sealed class SimdMemoryOptimizer : IDisposable
             fixed (T* ptr = data)
             {
                 var address = (nint)ptr;
-                var alignment = sizeof(T) >= 32 ? 32 : 16; // AVX requires 32-byte alignment
+                var elementSize = Unsafe.SizeOf<T>();
+                var alignment = elementSize >= 32 ? 32 : 16; // AVX requires 32-byte alignment
                 return (address & (alignment - 1)) == 0;
             }
         }
@@ -89,7 +92,7 @@ public sealed class SimdMemoryOptimizer : IDisposable
         const int l1CacheSize = 32 * 1024; // 32KB L1 cache (typical)
         const int l2CacheSize = 256 * 1024; // 256KB L2 cache (typical)
 
-        var elementSize = sizeof(T);
+        var elementSize = Unsafe.SizeOf<T>();
         var elementsInL1 = l1CacheSize / elementSize;
         var elementsInL2 = l2CacheSize / elementSize;
 
@@ -133,12 +136,13 @@ public sealed class SimdMemoryOptimizer : IDisposable
     /// </summary>
     private static int GetVectorSize<T>(SimdExecutionStrategy strategy) where T : unmanaged
     {
+        var elementSize = Unsafe.SizeOf<T>();
         return strategy switch
         {
-            SimdExecutionStrategy.Avx512 => 512 / (sizeof(T) * 8),
-            SimdExecutionStrategy.Avx2 => 256 / (sizeof(T) * 8),
-            SimdExecutionStrategy.Sse => 128 / (sizeof(T) * 8),
-            SimdExecutionStrategy.Neon => 128 / (sizeof(T) * 8),
+            SimdExecutionStrategy.Avx512 => 512 / (elementSize * 8),
+            SimdExecutionStrategy.Avx2 => 256 / (elementSize * 8),
+            SimdExecutionStrategy.Sse => 128 / (elementSize * 8),
+            SimdExecutionStrategy.Neon => 128 / (elementSize * 8),
             _ => 1
         };
     }
@@ -150,16 +154,17 @@ public sealed class SimdMemoryOptimizer : IDisposable
         ReadOnlySpan<T> data,
         int accessStride) where T : unmanaged
     {
+        var elementSize = Unsafe.SizeOf<T>();
         var result = new MemoryAnalysisResult
         {
             DataSize = data.Length,
             AccessStride = accessStride,
             IsAligned = IsDataAligned(data),
-            ElementSize = sizeof(T)
+            ElementSize = elementSize
         };
 
         // Analyze cache efficiency
-        result.CacheEfficiency = CalculateCacheEfficiency(data.Length, accessStride, sizeof(T));
+        result.CacheEfficiency = CalculateCacheEfficiency(data.Length, accessStride, elementSize);
 
         // Suggest optimizations
         if (!result.IsAligned)

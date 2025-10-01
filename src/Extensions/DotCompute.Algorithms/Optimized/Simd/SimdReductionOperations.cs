@@ -98,6 +98,84 @@ internal static class SimdReductionOperations
         }
     }
 
+    /// <summary>
+    /// Cross-platform SIMD minimum value with optimal reduction.
+    /// </summary>
+    /// <param name="values">Values to find minimum of</param>
+    /// <returns>Minimum value</returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static unsafe float Min(ReadOnlySpan<float> values)
+    {
+        var length = values.Length;
+        if (length == 0)
+        {
+            return float.PositiveInfinity;
+        }
+
+        fixed (float* valuesPtr = values)
+        {
+            if (SimdCapabilities.HasAvx512 && length >= SimdCapabilities.Vector512Size)
+            {
+                return MinAvx512(valuesPtr, length);
+            }
+            else if (SimdCapabilities.HasAvx2 && length >= SimdCapabilities.Vector256Size)
+            {
+                return MinAvx2(valuesPtr, length);
+            }
+            else if (SimdCapabilities.HasNeon && length >= SimdCapabilities.Vector128Size)
+            {
+                return MinNeon(valuesPtr, length);
+            }
+            else if (Sse.IsSupported && length >= SimdCapabilities.Vector128Size)
+            {
+                return MinSse(valuesPtr, length);
+            }
+            else
+            {
+                return MinFallback(valuesPtr, length);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cross-platform SIMD maximum value with optimal reduction.
+    /// </summary>
+    /// <param name="values">Values to find maximum of</param>
+    /// <returns>Maximum value</returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static unsafe float Max(ReadOnlySpan<float> values)
+    {
+        var length = values.Length;
+        if (length == 0)
+        {
+            return float.NegativeInfinity;
+        }
+
+        fixed (float* valuesPtr = values)
+        {
+            if (SimdCapabilities.HasAvx512 && length >= SimdCapabilities.Vector512Size)
+            {
+                return MaxAvx512(valuesPtr, length);
+            }
+            else if (SimdCapabilities.HasAvx2 && length >= SimdCapabilities.Vector256Size)
+            {
+                return MaxAvx2(valuesPtr, length);
+            }
+            else if (SimdCapabilities.HasNeon && length >= SimdCapabilities.Vector128Size)
+            {
+                return MaxNeon(valuesPtr, length);
+            }
+            else if (Sse.IsSupported && length >= SimdCapabilities.Vector128Size)
+            {
+                return MaxSse(valuesPtr, length);
+            }
+            else
+            {
+                return MaxFallback(valuesPtr, length);
+            }
+        }
+    }
+
     #region AVX-512 Implementations
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -344,6 +422,286 @@ internal static class SimdReductionOperations
         var temp = Sse.Add(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
         temp = Sse.Add(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
         return temp.ToScalar();
+    }
+
+    #endregion
+
+    #region Min/Max Implementation Methods
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MinAvx512(float* values, int length)
+    {
+        var min = Vector512.Create(float.PositiveInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector512Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector512Size)
+        {
+            var vec = Avx512F.LoadVector512(values + i);
+            min = Avx512F.Min(min, vec);
+        }
+
+        var result = MinVector512(min);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] < result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MaxAvx512(float* values, int length)
+    {
+        var max = Vector512.Create(float.NegativeInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector512Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector512Size)
+        {
+            var vec = Avx512F.LoadVector512(values + i);
+            max = Avx512F.Max(max, vec);
+        }
+
+        var result = MaxVector512(max);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] > result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MinAvx2(float* values, int length)
+    {
+        var min = Vector256.Create(float.PositiveInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector256Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector256Size)
+        {
+            var vec = Avx.LoadVector256(values + i);
+            min = Avx.Min(min, vec);
+        }
+
+        var result = MinVector256(min);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] < result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MaxAvx2(float* values, int length)
+    {
+        var max = Vector256.Create(float.NegativeInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector256Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector256Size)
+        {
+            var vec = Avx.LoadVector256(values + i);
+            max = Avx.Max(max, vec);
+        }
+
+        var result = MaxVector256(max);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] > result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MinNeon(float* values, int length)
+    {
+        var min = Vector128.Create(float.PositiveInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var vec = AdvSimd.LoadVector128(values + i);
+            min = AdvSimd.Min(min, vec);
+        }
+
+        var result = MinVector128(min);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] < result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MaxNeon(float* values, int length)
+    {
+        var max = Vector128.Create(float.NegativeInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var vec = AdvSimd.LoadVector128(values + i);
+            max = AdvSimd.Max(max, vec);
+        }
+
+        var result = MaxVector128(max);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] > result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MinSse(float* values, int length)
+    {
+        var min = Vector128.Create(float.PositiveInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var vec = Sse.LoadVector128(values + i);
+            min = Sse.Min(min, vec);
+        }
+
+        var result = MinVector128(min);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] < result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MaxSse(float* values, int length)
+    {
+        var max = Vector128.Create(float.NegativeInfinity);
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var vec = Sse.LoadVector128(values + i);
+            max = Sse.Max(max, vec);
+        }
+
+        var result = MaxVector128(max);
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            if (values[i] > result)
+                result = values[i];
+        }
+
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MinVector512(Vector512<float> vec)
+    {
+        var hi256 = Avx512F.ExtractVector256(vec, 1);
+        var lo256 = Avx512F.ExtractVector256(vec, 0);
+        var min256 = Avx.Min(hi256, lo256);
+        return MinVector256(min256);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MaxVector512(Vector512<float> vec)
+    {
+        var hi256 = Avx512F.ExtractVector256(vec, 1);
+        var lo256 = Avx512F.ExtractVector256(vec, 0);
+        var max256 = Avx.Max(hi256, lo256);
+        return MaxVector256(max256);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MinVector256(Vector256<float> vec)
+    {
+        var hi128 = Avx.ExtractVector128(vec, 1);
+        var lo128 = Avx.ExtractVector128(vec, 0);
+        var min128 = Sse.Min(hi128, lo128);
+        return MinVector128(min128);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MaxVector256(Vector256<float> vec)
+    {
+        var hi128 = Avx.ExtractVector128(vec, 1);
+        var lo128 = Avx.ExtractVector128(vec, 0);
+        var max128 = Sse.Max(hi128, lo128);
+        return MaxVector128(max128);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MinVector128(Vector128<float> vec)
+    {
+        var temp = Sse.Min(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
+        temp = Sse.Min(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
+        return temp.ToScalar();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float MaxVector128(Vector128<float> vec)
+    {
+        var temp = Sse.Max(vec, Sse.Shuffle(vec, vec, 0b_11_10_01_00));
+        temp = Sse.Max(temp, Sse.Shuffle(temp, temp, 0b_01_00_11_10));
+        return temp.ToScalar();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MinFallback(float* values, int length)
+    {
+        var min = float.PositiveInfinity;
+        for (var i = 0; i < length; i++)
+        {
+            if (values[i] < min)
+                min = values[i];
+        }
+        return min;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe float MaxFallback(float* values, int length)
+    {
+        var max = float.NegativeInfinity;
+        for (var i = 0; i < length; i++)
+        {
+            if (values[i] > max)
+                max = values[i];
+        }
+        return max;
     }
 
     #endregion

@@ -2,7 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text.Json;
+using DotCompute.Algorithms.Management.Metadata;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Infrastructure;
@@ -10,7 +13,7 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// <summary>
 /// Handles plugin metadata loading, validation, and management.
 /// </summary>
-public sealed class AlgorithmMetadata : IDisposable
+public sealed partial class AlgorithmMetadata : IDisposable
 {
     private readonly ILogger<AlgorithmMetadata> _logger;
     private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache;
@@ -53,14 +56,14 @@ public sealed class AlgorithmMetadata : IDisposable
             if (metadata != null)
             {
                 _metadataCache.TryAdd(assemblyPath, metadata);
-                LogMetadataLoaded(assemblyPath, metadata.Id);
+                LogMetadataLoaded(_logger, assemblyPath, metadata.Id);
             }
 
             return metadata;
         }
         catch (Exception ex)
         {
-            LogMetadataLoadFailed(assemblyPath, ex.Message);
+            LogMetadataLoadFailed(_logger, assemblyPath, ex.Message);
             return null;
         }
     }
@@ -118,19 +121,12 @@ public sealed class AlgorithmMetadata : IDisposable
         }
 
         // Framework version validation
-        if (!string.IsNullOrEmpty(metadata.RequiredFrameworkVersion))
+        if (metadata.RequiredFrameworkVersion != null)
         {
-            if (!Version.TryParse(metadata.RequiredFrameworkVersion, out var requiredVersion))
+            var currentVersion = Environment.Version;
+            if (currentVersion < metadata.RequiredFrameworkVersion)
             {
-                issues.Add($"Invalid framework version format: {metadata.RequiredFrameworkVersion}");
-            }
-            else
-            {
-                var currentVersion = Environment.Version;
-                if (currentVersion < requiredVersion)
-                {
-                    issues.Add($"Framework version {requiredVersion} is higher than current {currentVersion}");
-                }
+                issues.Add($"Framework version {metadata.RequiredFrameworkVersion} is higher than current {currentVersion}");
             }
         }
 
@@ -148,7 +144,7 @@ public sealed class AlgorithmMetadata : IDisposable
 
         if (!result.IsValid)
         {
-            LogMetadataValidationFailed(metadata.Id, string.Join(", ", issues));
+            LogMetadataValidationFailed(_logger, metadata.Id, string.Join(", ", issues));
         }
 
         return result;
@@ -178,7 +174,13 @@ public sealed class AlgorithmMetadata : IDisposable
             Author = "Unknown",
             AssemblyPath = assemblyPath,
             LoadTime = DateTime.UtcNow,
-            RequiredFrameworkVersion = Environment.Version.ToString()
+            RequiredFrameworkVersion = Environment.Version,
+            AssemblyName = assemblyName,
+            TypeName = pluginType.FullName ?? pluginType.Name,
+            Capabilities = Array.Empty<string>(),
+            SupportedAccelerators = Array.Empty<string>(),
+            LoadContextName = "Default",
+            AdditionalMetadata = new Dictionary<string, object>()
         };
     }
 
@@ -200,7 +202,7 @@ public sealed class AlgorithmMetadata : IDisposable
         metadata.AdditionalMetadata["ProcessorArchitecture"] = runtimeInfo.ProcessorArchitecture;
         metadata.AdditionalMetadata["OperatingSystem"] = runtimeInfo.OperatingSystem;
 
-        LogMetadataUpdated(metadata.Id);
+        LogMetadataUpdated(_logger, metadata.Id);
     }
 
     /// <summary>
@@ -210,7 +212,7 @@ public sealed class AlgorithmMetadata : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _metadataCache.Clear();
-        LogMetadataCacheCleared();
+        LogMetadataCacheCleared(_logger);
     }
 
     /// <summary>
@@ -257,7 +259,7 @@ public sealed class AlgorithmMetadata : IDisposable
         }
         catch (Exception ex)
         {
-            LogManifestLoadFailed(manifestPath, ex.Message);
+            LogManifestLoadFailed(_logger, manifestPath, ex.Message);
             return null;
         }
     }
@@ -283,16 +285,23 @@ public sealed class AlgorithmMetadata : IDisposable
                 return null; // No meaningful attributes found
             }
 
+            var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
             var metadata = new PluginMetadata
             {
-                Id = assembly.GetName().Name ?? Path.GetFileNameWithoutExtension(assemblyPath),
-                Name = titleAttribute?.Title ?? assembly.GetName().Name ?? Path.GetFileNameWithoutExtension(assemblyPath),
+                Id = assembly.GetName().Name ?? assemblyName,
+                Name = titleAttribute?.Title ?? assembly.GetName().Name ?? assemblyName,
                 Version = versionAttribute?.Version ?? assembly.GetName().Version?.ToString() ?? "1.0.0",
                 Description = descriptionAttribute?.Description ?? "Plugin loaded from assembly attributes",
                 Author = companyAttribute?.Company ?? "Unknown",
                 AssemblyPath = assemblyPath,
                 LoadTime = DateTime.UtcNow,
-                RequiredFrameworkVersion = assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName
+                RequiredFrameworkVersion = ParseFrameworkVersion(assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName),
+                AssemblyName = assemblyName,
+                TypeName = "Unknown",
+                Capabilities = Array.Empty<string>(),
+                SupportedAccelerators = Array.Empty<string>(),
+                LoadContextName = "Default",
+                AdditionalMetadata = new Dictionary<string, object>()
             };
 
             await Task.CompletedTask; // Make method async for consistency
@@ -300,7 +309,7 @@ public sealed class AlgorithmMetadata : IDisposable
         }
         catch (Exception ex)
         {
-            LogAttributeLoadFailed(assemblyPath, ex.Message);
+            LogAttributeLoadFailed(_logger, assemblyPath, ex.Message);
             return null;
         }
     }
@@ -317,44 +326,74 @@ public sealed class AlgorithmMetadata : IDisposable
     #region Logger Messages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Metadata loaded for assembly {AssemblyPath}, plugin ID: {PluginId}")]
-    private static partial void LogMetadataLoaded(string assemblyPath, string pluginId);
+    private static partial void LogMetadataLoaded(ILogger logger, string assemblyPath, string pluginId);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to load metadata from {AssemblyPath}: {Reason}")]
-    private static partial void LogMetadataLoadFailed(string assemblyPath, string reason);
+    private static partial void LogMetadataLoadFailed(ILogger logger, string assemblyPath, string reason);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Metadata validation failed for plugin {PluginId}: {Issues}")]
-    private static partial void LogMetadataValidationFailed(string pluginId, string issues);
+    private static partial void LogMetadataValidationFailed(ILogger logger, string pluginId, string issues);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Metadata updated for plugin {PluginId}")]
-    private static partial void LogMetadataUpdated(string pluginId);
+    private static partial void LogMetadataUpdated(ILogger logger, string pluginId);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Metadata cache cleared")]
-    private static partial void LogMetadataCacheCleared();
+    private static partial void LogMetadataCacheCleared(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to load manifest from {ManifestPath}: {Reason}")]
-    private static partial void LogManifestLoadFailed(string manifestPath, string reason);
+    private static partial void LogManifestLoadFailed(ILogger logger, string manifestPath, string reason);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to load attributes from {AssemblyPath}: {Reason}")]
-    private static partial void LogAttributeLoadFailed(string assemblyPath, string reason);
+    private static partial void LogAttributeLoadFailed(ILogger logger, string assemblyPath, string reason);
 
     #endregion
-}
 
-/// <summary>
-/// Metadata about a plugin loaded from manifest or assembly.
-/// </summary>
-public sealed class PluginMetadata
-{
-    public required string Id { get; set; }
-    public required string Name { get; set; }
-    public required string Version { get; set; }
-    public required string Description { get; set; }
-    public required string Author { get; set; }
-    public required string AssemblyPath { get; set; }
-    public DateTime LoadTime { get; set; }
-    public string? RequiredFrameworkVersion { get; set; }
-    public List<string> Dependencies { get; } = [];
-    public Dictionary<string, object> AdditionalMetadata { get; } = [];
+    /// <summary>
+    /// Parses a framework version string to extract the Version object.
+    /// Handles framework names like ".NETCoreApp,Version=v9.0" or ".NET Framework 4.8".
+    /// </summary>
+    /// <param name="frameworkName">The framework name string.</param>
+    /// <returns>The parsed Version object, or null if parsing fails.</returns>
+    private static Version? ParseFrameworkVersion(string? frameworkName)
+    {
+        if (string.IsNullOrWhiteSpace(frameworkName))
+        {
+            return null;
+        }
+
+        try
+        {
+            // Handle formats like ".NETCoreApp,Version=v9.0"
+            if (frameworkName.Contains("Version="))
+            {
+                var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=") + 8);
+                if (versionPart.StartsWith("v"))
+                {
+                    versionPart = versionPart.Substring(1);
+                }
+                return Version.Parse(versionPart);
+            }
+
+            // Handle formats like ".NET Framework 4.8"
+            var parts = frameworkName.Split(' ');
+            if (parts.Length >= 2 && Version.TryParse(parts[^1], out var version))
+            {
+                return version;
+            }
+
+            // Try direct parsing
+            if (Version.TryParse(frameworkName, out var directVersion))
+            {
+                return directVersion;
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
 
 /// <summary>

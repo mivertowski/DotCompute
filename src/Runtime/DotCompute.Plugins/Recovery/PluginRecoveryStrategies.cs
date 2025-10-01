@@ -418,15 +418,14 @@ public sealed class PluginRecoveryStrategies : IDisposable
         return candidates;
     }
 
-    private async Task<PluginRecoveryStrategy> SelectOptimalStrategyAsync(
+    private Task<PluginRecoveryStrategy> SelectOptimalStrategyAsync(
         string pluginId,
         List<PluginRecoveryStrategy> candidates,
         CancellationToken cancellationToken)
     {
         if (candidates.Count == 1)
         {
-
-            return candidates[0];
+            return Task.FromResult(candidates[0]);
         }
 
         // Score each candidate based on historical effectiveness
@@ -451,7 +450,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
             .ThenBy(c => GetStrategyPriority(c.Strategy))
             .First();
 
-        return bestStrategy.Strategy;
+        return Task.FromResult(bestStrategy.Strategy);
     }
 
     private static int GetStrategyPriority(PluginRecoveryStrategy strategy) => strategy switch

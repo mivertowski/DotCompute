@@ -9,7 +9,7 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Management.Validation;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Loading;
@@ -110,7 +110,7 @@ public sealed partial class PluginDiscoveryService : IPluginDiscoveryService
             // Version compatibility check
             if (metadata != null && !_securityValidator.IsVersionCompatible(metadata.RequiredFrameworkVersion))
             {
-                LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion ?? "Unknown");
+                LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion?.ToString() ?? "Unknown");
                 return 0;
             }
 

@@ -11,7 +11,7 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Handles discovery of algorithm plugins from directories and file system monitoring.
 /// Manages file watchers for hot reload functionality and plugin file detection.
 /// </summary>
-public sealed class AlgorithmPluginDiscovery : IDisposable
+public sealed partial class AlgorithmPluginDiscovery : IDisposable
 {
     private readonly ILogger<AlgorithmPluginDiscovery> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -551,7 +551,7 @@ public sealed class AlgorithmPluginDiscovery : IDisposable
 /// <summary>
 /// Event arguments for plugin file change events.
 /// </summary>
-public sealed class PluginFileChangedEventArgs : EventArgs
+public sealed partial class PluginFileChangedEventArgs : EventArgs
 {
     public required string AssemblyPath { get; init; }
     public required string ChangedFilePath { get; init; }
@@ -561,7 +561,7 @@ public sealed class PluginFileChangedEventArgs : EventArgs
 /// <summary>
 /// Event arguments for file watcher error events.
 /// </summary>
-public sealed class FileWatcherErrorEventArgs : EventArgs
+public sealed partial class FileWatcherErrorEventArgs : EventArgs
 {
     public required Exception Error { get; init; }
     public required FileSystemWatcher? Watcher { get; init; }

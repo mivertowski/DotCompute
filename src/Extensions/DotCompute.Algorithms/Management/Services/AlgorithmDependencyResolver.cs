@@ -1,9 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Services;
@@ -11,7 +12,7 @@ namespace DotCompute.Algorithms.Management.Services;
 /// <summary>
 /// Resolves plugin dependencies and provides best-match plugin selection.
 /// </summary>
-public sealed class AlgorithmDependencyResolver : IDisposable
+public sealed partial class AlgorithmDependencyResolver : IDisposable
 {
     private readonly ILogger<AlgorithmDependencyResolver> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -33,7 +34,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// </summary>
     /// <param name="requirements">The plugin requirements.</param>
     /// <returns>The best matching plugin if found; otherwise, null.</returns>
-    public IAlgorithmPlugin? ResolvePlugin(PluginRequirements requirements)
+    public IAlgorithmPlugin? ResolvePlugin(AlgorithmRequirements requirements)
     {
         ArgumentNullException.ThrowIfNull(requirements);
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -59,7 +60,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// </summary>
     /// <param name="requirements">The plugin requirements.</param>
     /// <returns>Collection of matching plugins ordered by score.</returns>
-    public IEnumerable<IAlgorithmPlugin> ResolveMultiplePlugins(PluginRequirements requirements)
+    public IEnumerable<IAlgorithmPlugin> ResolveMultiplePlugins(AlgorithmRequirements requirements)
     {
         ArgumentNullException.ThrowIfNull(requirements);
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -147,7 +148,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// <summary>
     /// Gets candidate plugins that match the basic requirements.
     /// </summary>
-    private IEnumerable<IAlgorithmPlugin> GetCandidatePlugins(PluginRequirements requirements)
+    private IEnumerable<IAlgorithmPlugin> GetCandidatePlugins(AlgorithmRequirements requirements)
     {
         var healthyPlugins = _registry.GetHealthyPlugins();
 
@@ -199,7 +200,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// <summary>
     /// Scores plugins and selects the best match.
     /// </summary>
-    private IAlgorithmPlugin? ScoreAndSelectBestMatch(IEnumerable<IAlgorithmPlugin> candidates, PluginRequirements requirements)
+    private IAlgorithmPlugin? ScoreAndSelectBestMatch(IEnumerable<IAlgorithmPlugin> candidates, AlgorithmRequirements requirements)
     {
         var scores = ScorePlugins(candidates, requirements);
         return scores.OrderByDescending(kvp => kvp.Value).FirstOrDefault().Key;
@@ -208,7 +209,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// <summary>
     /// Scores plugins based on how well they match the requirements.
     /// </summary>
-    private Dictionary<IAlgorithmPlugin, double> ScorePlugins(IEnumerable<IAlgorithmPlugin> candidates, PluginRequirements requirements)
+    private Dictionary<IAlgorithmPlugin, double> ScorePlugins(IEnumerable<IAlgorithmPlugin> candidates, AlgorithmRequirements requirements)
     {
         var scores = new Dictionary<IAlgorithmPlugin, double>();
 
@@ -297,7 +298,7 @@ public sealed class AlgorithmDependencyResolver : IDisposable
     /// <summary>
     /// Calculates performance score based on execution history.
     /// </summary>
-    private double CalculatePerformanceScore(IAlgorithmPlugin plugin, PluginRequirements requirements)
+    private double CalculatePerformanceScore(IAlgorithmPlugin plugin, AlgorithmRequirements requirements)
     {
         var loadedPlugin = _registry.GetLoadedPluginInfo(plugin.Id);
         if (loadedPlugin == null || loadedPlugin.ExecutionCount == 0)
@@ -479,9 +480,9 @@ public sealed class AlgorithmDependencyResolver : IDisposable
 }
 
 /// <summary>
-/// Requirements for plugin resolution.
+/// Requirements for algorithm dependency resolution.
 /// </summary>
-public sealed class PluginRequirements
+public sealed partial class AlgorithmRequirements
 {
     public AcceleratorType? PreferredAcceleratorType { get; set; }
     public Type? InputType { get; set; }

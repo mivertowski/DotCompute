@@ -1,13 +1,16 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
+using DotCompute.Abstractions.Kernels;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
@@ -34,7 +37,11 @@ public sealed class CudaKernelIntegration : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         _compiler = new CudaKernelCompiler(context, logger);
-        _executor = new CudaKernelExecutor(context.ToIAccelerator(), context, null!, null!, logger);
+        // Create logger with correct generic type for CudaKernelExecutor
+        var executorLogger = logger is ILogger<Execution.CudaKernelExecutor> typedLogger
+            ? typedLogger
+            : (ILogger<Execution.CudaKernelExecutor>)(object)logger;
+        _executor = new CudaKernelExecutor(context.ToIAccelerator(), context, null!, null!, executorLogger);
         _cache = new CudaKernelCache(logger);
         _executionStats = new Dictionary<string, KernelExecutionStats>();
 
@@ -81,19 +88,22 @@ public sealed class CudaKernelIntegration : IDisposable
             if (_cache.TryGetKernel(cacheKey, out var cachedKernel))
             {
                 _logger.LogDebugMessage($"Kernel '{kernelName}' loaded from cache");
-                return cachedKernel;
+                return (cachedKernel as CudaCompiledKernel)!; // Non-null when TryGetKernel returns true, cast to specific type
             }
 
             // Compile with optimizations
             var optimizedOptions = OptimizeCompilationOptions(options);
-            var compiledKernel = await _compiler.CompileKernelAsync(kernelSource, kernelName, optimizedOptions, cancellationToken);
+            // Create KernelDefinition for compiler
+            var kernelDef = new KernelDefinition { Name = kernelName };
+            var compiled = await _compiler.CompileKernelAsync(kernelDef, optimizedOptions, cancellationToken);
+            var compiledKernel = compiled as CudaCompiledKernel ?? throw new InvalidOperationException($"Expected CudaCompiledKernel but got {compiled?.GetType().Name}");
 
             // Cache the result
-            _cache.CacheKernel(cacheKey, compiledKernel);
+            _cache.CacheKernel(cacheKey, compiledKernel!); // Non-null after successful compilation and cast
             
             _logger.LogDebugMessage($"Kernel '{kernelName}' compiled and cached");
             
-            return compiledKernel;
+            return compiledKernel!; // Non-null after successful compilation
         }
         catch (Exception ex)
         {
@@ -174,7 +184,7 @@ public sealed class CudaKernelIntegration : IDisposable
                 LocalWorkSize = new[] { Math.Min(256, problemSize[0]) },
                 DynamicSharedMemorySize = 0,
                 Stream = null,
-                Flags = KernelLaunchFlags.None,
+                Flags = 0, // KernelLaunchFlags.None
                 CaptureTimings = false
             };
         }
@@ -323,7 +333,7 @@ public sealed class CudaKernelIntegration : IDisposable
         // Create optimized compilation options
         return new CudaCompilationOptions
         {
-            OptimizationLevel = Math.Max(options.OptimizationLevel, 2), // Ensure at least O2
+            OptimizationLevel = options.OptimizationLevel, // Use as-is
             GenerateDebugInfo = options.GenerateDebugInfo,
             UseRestrictedPointers = true, // Enable restrict for better optimization
             EnableFastMath = options.EnableFastMath,
@@ -340,7 +350,7 @@ public sealed class CudaKernelIntegration : IDisposable
             Value = arg.Value ?? new object(),
             Type = arg.Type,
             IsDeviceMemory = arg.IsDeviceMemory,
-            MemoryBuffer = arg.MemoryBuffer,
+            MemoryBuffer = arg.MemoryBuffer as IUnifiedMemoryBuffer,
             SizeInBytes = arg.SizeInBytes,
             IsOutput = arg.IsOutput
         }).ToArray();

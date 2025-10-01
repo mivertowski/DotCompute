@@ -4,7 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types.LinearAlgebra;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
 
@@ -38,7 +38,7 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
     public override string Description => "Provides high-performance linear algebra operations including matrix multiplication, decomposition, and solving linear systems.";
 
     /// <inheritdoc/>
-    public override AcceleratorType[] SupportedAccelerators => [
+    public override AcceleratorType[] SupportedAcceleratorTypes => [
         AcceleratorType.CPU,
         AcceleratorType.CUDA,
         AcceleratorType.ROCm,

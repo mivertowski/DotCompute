@@ -4,7 +4,7 @@
 using System.Reflection;
 using global::System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Validation;
@@ -184,22 +184,21 @@ public sealed partial class SecurityValidator : ISecurityValidator
     }
 
     /// <inheritdoc/>
-    public bool IsVersionCompatible(string? requiredVersion)
+    public bool IsVersionCompatible(Version? requiredVersion)
     {
-        if (string.IsNullOrEmpty(requiredVersion))
+        if (requiredVersion == null)
         {
             return true;
         }
 
         try
         {
-            var required = Version.Parse(requiredVersion);
             var current = Environment.Version;
-            return current >= required;
+            return current >= requiredVersion;
         }
         catch
         {
-            return true; // If we can't parse, assume compatible
+            return true; // If we can't compare, assume compatible
         }
     }
 

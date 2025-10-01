@@ -110,4 +110,14 @@ public class KernelParameter
     /// Gets or inits the memory space for this parameter.
     /// </summary>
     public MemorySpace MemorySpace { get; init; }
+
+    /// <summary>
+    /// Gets or sets the minimum value for numeric parameter validation.
+    /// </summary>
+    public object? MinValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum value for numeric parameter validation.
+    /// </summary>
+    public object? MaxValue { get; set; }
 }

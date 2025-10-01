@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels.Simd;
@@ -134,7 +135,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
 
         // Create a basic execution context for analysis
         var capabilities = SimdCapabilities.GetSummary();
-        var context = new ExecutionContext(capabilities);
+        var context = new Simd.ExecutionContext(capabilities);
 
         return _optimizationEngine.AnalyzeWorkload<T>(elementCount, context);
     }

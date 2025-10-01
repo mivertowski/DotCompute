@@ -14,9 +14,8 @@ using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
-using DotCompute.Core.Pipelines.Analysis;
 using DotCompute.Abstractions.Types;
+using DotCompute.Core.Pipelines.Analysis;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -169,10 +168,10 @@ namespace DotCompute.Backends.CUDA.Advanced
                         Type = bottlenecks.PrimaryBottleneck switch
                         {
                             BottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
-                            BottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.Cpu,
+                            BottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.CPU,
                             BottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
-                            BottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.Gpu,
-                            BottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                            BottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.GPU,
+                            BottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.GPU,
                             _ => DotCompute.Abstractions.Types.BottleneckType.None
                         },
                         Severity = bottlenecks.Severity,

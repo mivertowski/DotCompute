@@ -5,11 +5,13 @@ using System.Collections.Concurrent;
 using global::System.IO.Compression;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using MSLogger = Microsoft.Extensions.Logging.ILogger;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Packaging.Core;
+using DotCompute.Algorithms.Management.Models;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -19,14 +21,14 @@ namespace DotCompute.Algorithms.Management
     /// </summary>
     internal sealed class NuGetDownloader : IDisposable
     {
-        private readonly ILogger _logger;
+        private readonly MSLogger _logger;
         private readonly NuGetPluginLoaderOptions _options;
         private readonly SourceRepositoryProvider _sourceRepositoryProvider;
         private readonly SemaphoreSlim _downloadSemaphore;
         private readonly ConcurrentDictionary<string, string> _downloadCache;
         private bool _disposed;
 
-        public NuGetDownloader(ILogger logger, NuGetPluginLoaderOptions options, int maxConcurrentDownloads = 4)
+        public NuGetDownloader(MSLogger logger, NuGetPluginLoaderOptions options, int maxConcurrentDownloads = 4)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -84,7 +86,7 @@ namespace DotCompute.Algorithms.Management
                             identity,
                             new PackageDownloadContext(NullSourceCacheContext.Instance),
                             _options.CacheDirectory,
-                            new NuGetLogger(_logger),
+                            new NuGetLoggerAdapter(_logger),
                             cancellationToken).ConfigureAwait(false);
 
                         if (downloadResult.Status == DownloadResourceResultStatus.Available && downloadResult.PackageStream != null)
@@ -285,6 +287,7 @@ namespace DotCompute.Algorithms.Management
                 }
 
                 // Validate ZIP structure
+                bool isValid = false;
                 await Task.Run(() =>
                 {
                     using var archive = ZipFile.OpenRead(packagePath);
@@ -294,7 +297,8 @@ namespace DotCompute.Algorithms.Management
                     if (!hasNuspec)
                     {
                         _logger.LogWarning("Package missing required .nuspec file: {PackagePath}", packagePath);
-                        return false;
+                        isValid = false;
+                        return;
                     }
 
                     // Basic entry validation
@@ -308,11 +312,15 @@ namespace DotCompute.Algorithms.Management
                             entry.FullName.Contains(":"))
                         {
                             _logger.LogWarning("Suspicious entry found in package: {EntryName}", entry.FullName);
-                            return false;
+                            isValid = false;
+                            return;
                         }
                     }
 
+                    isValid = true;
                 }, cancellationToken);
+
+                return isValid;
 
                 return true;
             }
@@ -375,9 +383,96 @@ namespace DotCompute.Algorithms.Management
             if (!_disposed)
             {
                 _downloadSemaphore?.Dispose();
-                _sourceRepositoryProvider?.Dispose();
+                // SourceRepositoryProvider doesn't implement IDisposable
+                // _sourceRepositoryProvider?.Dispose();
                 _disposed = true;
             }
+        }
+    }
+
+    /// <summary>
+    /// Adapter to bridge Microsoft.Extensions.Logging.ILogger to NuGet.Common.ILogger.
+    /// </summary>
+    internal sealed class NuGetLoggerAdapter : NuGet.Common.ILogger
+    {
+        private readonly MSLogger _logger;
+
+        public NuGetLoggerAdapter(MSLogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        public void LogDebug(string data)
+        {
+            _logger.LogDebug("{Data}", data);
+        }
+
+        public void LogVerbose(string data)
+        {
+            _logger.LogTrace("{Data}", data);
+        }
+
+        public void LogInformation(string data)
+        {
+            _logger.LogInformation("{Data}", data);
+        }
+
+        public void LogMinimal(string data)
+        {
+            _logger.LogInformation("{Data}", data);
+        }
+
+        public void LogWarning(string data)
+        {
+            _logger.LogWarning("{Data}", data);
+        }
+
+        public void LogError(string data)
+        {
+            _logger.LogError("{Data}", data);
+        }
+
+        public void LogInformationSummary(string data)
+        {
+            _logger.LogInformation("{Data}", data);
+        }
+
+        public void LogErrorSummary(string data)
+        {
+            _logger.LogError("{Data}", data);
+        }
+
+        public void Log(NuGet.Common.LogLevel level, string data)
+        {
+            var msLogLevel = level switch
+            {
+                NuGet.Common.LogLevel.Debug => Microsoft.Extensions.Logging.LogLevel.Debug,
+                NuGet.Common.LogLevel.Verbose => Microsoft.Extensions.Logging.LogLevel.Trace,
+                NuGet.Common.LogLevel.Information => Microsoft.Extensions.Logging.LogLevel.Information,
+                NuGet.Common.LogLevel.Minimal => Microsoft.Extensions.Logging.LogLevel.Information,
+                NuGet.Common.LogLevel.Warning => Microsoft.Extensions.Logging.LogLevel.Warning,
+                NuGet.Common.LogLevel.Error => Microsoft.Extensions.Logging.LogLevel.Error,
+                _ => Microsoft.Extensions.Logging.LogLevel.Information
+            };
+
+            _logger.Log(msLogLevel, "{Data}", data);
+        }
+
+        public async Task LogAsync(NuGet.Common.LogLevel level, string data)
+        {
+            Log(level, data);
+            await Task.CompletedTask;
+        }
+
+        public void Log(NuGet.Common.ILogMessage message)
+        {
+            Log(message.Level, message.Message);
+        }
+
+        public async Task LogAsync(NuGet.Common.ILogMessage message)
+        {
+            Log(message);
+            await Task.CompletedTask;
         }
     }
 }

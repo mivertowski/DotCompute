@@ -7,12 +7,19 @@ using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
 using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
 using DotCompute.Backends.CUDA.Execution.Graph.Results;
-using DotCompute.Backends.CUDA.Execution.Graph.Types;
+using CudaGraphCaptureMode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
+using CudaGraphNode = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphNode;
+using CudaGraphExecutable = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphExecutable;
+using HostNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.HostNodeParams;
+using MemsetNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemsetNodeParams;
+using KernelNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.KernelNodeParams;
+using MemcpyNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemcpyNodeParams;
 using DotCompute.Backends.CUDA.Graphs.Models;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -203,7 +210,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 dstArray = IntPtr.Zero,
                 dstPos = new CudaPos { x = 0, y = 0, z = 0 },
                 dstPtr = nodeParams.Destination,
-                extent = new CudaExtent { width = nodeParams.ByteCount, height = 1, depth = 1 },
+                extent = new CudaExtent { Width = nodeParams.ByteCount, Height = 1, Depth = 1 },
                 kind = CudaMemcpyKind.DeviceToDevice
             };
 

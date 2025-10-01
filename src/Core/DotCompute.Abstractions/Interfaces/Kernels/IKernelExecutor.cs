@@ -142,7 +142,7 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
     /// <summary>
     /// Kernel execution configuration.
     /// </summary>
-    public sealed class KernelExecutionConfig
+    public sealed record KernelExecutionConfig
     {
         /// <summary>
         /// Gets or sets the global work size (total threads).

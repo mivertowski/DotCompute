@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -231,7 +232,7 @@ public sealed class CudaDeviceManager : IDisposable
         return new CudaDeviceInfo
         {
             DeviceId = deviceId,
-            Name = props.Name,
+            Name = props.DeviceName,
             ComputeCapabilityMajor = props.Major,
             ComputeCapabilityMinor = props.Minor,
             TotalMemory = (long)totalMemory,
@@ -239,9 +240,9 @@ public sealed class CudaDeviceManager : IDisposable
             MaxThreadsPerBlock = props.MaxThreadsPerBlock,
             MultiProcessorCount = props.MultiProcessorCount,
             WarpSize = props.WarpSize,
-            MaxBlockDimX = props.MaxBlockDim[0],
-            MaxBlockDimY = props.MaxBlockDim[1],
-            MaxBlockDimZ = props.MaxBlockDim[2],
+            MaxBlockDimX = props.MaxThreadsDim[0],
+            MaxBlockDimY = props.MaxThreadsDim[1],
+            MaxBlockDimZ = props.MaxThreadsDim[2],
             MaxGridDimX = props.MaxGridDim[0],
             MaxGridDimY = props.MaxGridDim[1],
             MaxGridDimZ = props.MaxGridDim[2],
@@ -370,6 +371,14 @@ public sealed class CudaDeviceManager : IDisposable
             _disposed = true;
             _logger.LogDebugMessage("CUDA Device Manager disposed");
         }
+    }
+
+    /// <summary>
+    /// Creates an IAccelerator wrapper for the given context
+    /// </summary>
+    public IAccelerator CreateAcceleratorWrapper(CudaContext context)
+    {
+        return new CudaAccelerator(context.DeviceId);
     }
 }
 

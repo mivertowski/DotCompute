@@ -6,7 +6,7 @@ using System.Diagnostics;
 using DotCompute.Abstractions.Types;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Services;
@@ -22,8 +22,9 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     private readonly AlgorithmPluginRegistry _registry;
     private readonly ConcurrentDictionary<string, PluginMetricsData> _metricsData = new();
     private readonly Timer _metricsCollectionTimer;
-    private readonly PerformanceCounter? _cpuCounter;
-    private readonly PerformanceCounter? _memoryCounter;
+    // PerformanceCounter is not available in modern .NET without additional NuGet package
+    // private readonly PerformanceCounter? _cpuCounter;
+    // private readonly PerformanceCounter? _memoryCounter;
     private bool _disposed;
 
     /// <summary>
@@ -93,8 +94,9 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         {
             if (OperatingSystem.IsWindows())
             {
-                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
+                // PerformanceCounter is not available in modern .NET without additional NuGet package
+                // _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                // _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
             }
         }
         catch (Exception ex)
@@ -449,7 +451,8 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     {
         try
         {
-            return _cpuCounter?.NextValue() ?? 0;
+            // return _cpuCounter?.NextValue() ?? 0;
+            return 0; // PerformanceCounter not available
         }
         catch
         {
@@ -586,8 +589,8 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         {
             _disposed = true;
             _metricsCollectionTimer.Dispose();
-            _cpuCounter?.Dispose();
-            _memoryCounter?.Dispose();
+            // _cpuCounter?.Dispose();
+            // _memoryCounter?.Dispose();
             
             _logger.LogInformation("Plugin metrics service disposed");
         }

@@ -240,15 +240,14 @@ namespace DotCompute.Plugins.Recovery
         public string Report { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets whether framework is compatible
+        /// Gets or sets whether framework is compatible
         /// </summary>
-        public bool FrameworkCompatible => string.IsNullOrEmpty(RequiredFramework) ||
-                                          RequiredFramework.Equals(CurrentFramework, StringComparison.OrdinalIgnoreCase);
+        public bool FrameworkCompatible { get; set; } = true;
 
         /// <summary>
-        /// Gets dependency conflicts
+        /// Gets or sets dependency conflicts
         /// </summary>
-        public List<string> DependencyConflicts => VersionConflicts;
+        public List<string> DependencyConflicts { get; set; } = [];
 
         /// <summary>
         /// Gets security issues

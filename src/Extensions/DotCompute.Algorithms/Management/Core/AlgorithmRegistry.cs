@@ -1,9 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +13,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Manages registration and discovery of algorithm plugins.
 /// </summary>
-public sealed class AlgorithmRegistry : IDisposable
+public sealed partial class AlgorithmRegistry : IDisposable
 {
     private readonly ILogger<AlgorithmRegistry> _logger;
     private readonly ConcurrentDictionary<string, LoadedPluginInfo> _plugins;
@@ -119,7 +120,7 @@ public sealed class AlgorithmRegistry : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         return _plugins.Values
-            .Where(lp => lp.Plugin.SupportedInputTypes.Contains(inputType))
+            .Where(lp => lp.Plugin.InputTypes.Contains(inputType))
             .Select(lp => lp.Plugin);
     }
 
@@ -151,8 +152,10 @@ public sealed class AlgorithmRegistry : IDisposable
             Name = lp.Plugin.Name,
             Version = lp.Plugin.Version,
             Description = lp.Plugin.Description,
-            SupportedAcceleratorTypes = lp.Plugin.SupportedAcceleratorTypes.ToArray(),
-            SupportedInputTypes = lp.Plugin.SupportedInputTypes.ToArray(),
+            SupportedAccelerators = lp.Plugin.SupportedAcceleratorTypes.ToArray(),
+            InputTypes = lp.Plugin.InputTypes.Select(t => t.Name).ToArray(),
+            OutputType = lp.Plugin.OutputType.Name,
+            PerformanceProfile = lp.Plugin.GetPerformanceProfile(),
             LoadTime = lp.LoadTime,
             State = lp.State,
             Health = lp.Health,

@@ -33,6 +33,15 @@ public class CompilationOptions
     }
 
     /// <summary>
+    /// Enable device-level debugging (alias for EnableDebugInfo)
+    /// </summary>
+    public bool EnableDeviceDebugging
+    {
+        get => EnableDebugInfo;
+        set => EnableDebugInfo = value;
+    }
+
+    /// <summary>
     /// Generate line information for debugging
     /// </summary>
     public bool GenerateLineInfo { get; set; }

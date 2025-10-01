@@ -41,6 +41,11 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
         }
     }
 
+    public async Task<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, DotCompute.Abstractions.CompilationOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        return await CompileAsync(definition, options, cancellationToken);
+    }
+
     public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, DotCompute.Abstractions.CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();

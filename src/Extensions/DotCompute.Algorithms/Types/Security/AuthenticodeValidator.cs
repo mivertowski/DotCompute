@@ -201,6 +201,11 @@ public class AuthenticodeValidationResult
     public string? CertificateThumbprint { get; set; }
 
     /// <summary>
+    /// Gets or sets the certificate information.
+    /// </summary>
+    public System.Security.Cryptography.X509Certificates.X509Certificate2? CertificateInfo { get; set; }
+
+    /// <summary>
     /// Gets or sets the error message if validation failed.
     /// </summary>
     public string? ErrorMessage { get; set; }
@@ -235,6 +240,11 @@ public enum TrustLevel
     /// Trusted signature.
     /// </summary>
     Trusted,
+
+    /// <summary>
+    /// High trust level signature.
+    /// </summary>
+    High,
 
     /// <summary>
     /// Highly trusted signature.

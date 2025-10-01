@@ -3,10 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.Loader;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Loading;
@@ -14,7 +15,7 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// <summary>
 /// Handles plugin loading operations with assembly isolation and lifecycle management.
 /// </summary>
-public sealed class AlgorithmAssemblyLoader : IDisposable
+public sealed partial class AlgorithmAssemblyLoader : IDisposable
 {
     private readonly ILogger<AlgorithmAssemblyLoader> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -342,7 +343,7 @@ public sealed class AlgorithmAssemblyLoader : IDisposable
 /// <summary>
 /// Result of a plugin loading operation.
 /// </summary>
-public sealed class LoadedPluginResult
+public sealed partial class LoadedPluginResult
 {
     /// <summary>
     /// Gets or sets the loaded plugin instance (if successful).
@@ -383,7 +384,7 @@ public sealed class LoadedPluginResult
 /// <summary>
 /// Information about a loaded assembly.
 /// </summary>
-public sealed class LoadedAssemblyInfo
+public sealed partial class LoadedAssemblyInfo
 {
     /// <summary>
     /// Gets or sets the assembly name.
@@ -406,81 +407,4 @@ public sealed class LoadedAssemblyInfo
     public bool IsCollectible { get; init; }
 }
 
-/// <summary>
-/// Enhanced plugin assembly load context with isolation support.
-/// </summary>
-public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
-{
-    private readonly AssemblyDependencyResolver _resolver;
-    private readonly bool _enableIsolation;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginAssemblyLoadContext"/> class.
-    /// </summary>
-    /// <param name="name">The name of the load context.</param>
-    /// <param name="pluginPath">The path to the plugin assembly.</param>
-    /// <param name="enableIsolation">Whether to enable isolation.</param>
-    public PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation)
-        : base(name, isCollectible: true)
-    {
-        _resolver = new AssemblyDependencyResolver(pluginPath);
-        _enableIsolation = enableIsolation;
-    }
-
-    /// <inheritdoc/>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Plugin assembly loading requires dynamic loading")]
-    protected override Assembly? Load(AssemblyName assemblyName)
-    {
-        // For isolation, only load plugin dependencies from plugin directory
-        if (_enableIsolation)
-        {
-            var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-            if (assemblyPath != null)
-            {
-                return LoadFromAssemblyPath(assemblyPath);
-            }
-
-            // Don't load system assemblies in isolated context
-            if (IsSystemAssembly(assemblyName))
-            {
-                return null; // Let default context handle it
-            }
-        }
-        else
-        {
-            // Non-isolated: try to resolve dependencies first
-            var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-            if (assemblyPath != null)
-            {
-                return LoadFromAssemblyPath(assemblyPath);
-            }
-        }
-
-        return null;
-    }
-
-    /// <inheritdoc/>
-    protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
-    {
-        var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
-        if (libraryPath != null)
-        {
-            return LoadUnmanagedDllFromPath(libraryPath);
-        }
-
-        return IntPtr.Zero;
-    }
-
-    /// <summary>
-    /// Determines if an assembly is a system assembly.
-    /// </summary>
-    private static bool IsSystemAssembly(AssemblyName assemblyName)
-    {
-        var name = assemblyName.Name?.ToLowerInvariant();
-        return name != null && (
-            name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
-            name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
-            name.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
-            name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
-    }
-}
+// PluginAssemblyLoadContext class moved to dedicated file: Management/Loading/PluginAssemblyLoadContext.cs

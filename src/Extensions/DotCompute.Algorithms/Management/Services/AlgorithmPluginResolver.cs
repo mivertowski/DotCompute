@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Factories;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -131,7 +133,7 @@ public sealed class AlgorithmPluginResolver : IDisposable
         // Check accelerator type compatibility
         if (requirements.RequiredAcceleratorType.HasValue)
         {
-            var hasAccelerator = plugin.SupportedAccelerators.Contains(requirements.RequiredAcceleratorType.Value);
+            var hasAccelerator = plugin.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value);
             if (!hasAccelerator)
             {
                 result.IsCompatible = false;
@@ -301,7 +303,7 @@ public sealed class AlgorithmPluginResolver : IDisposable
         // Filter by accelerator type
         if (requirements.RequiredAcceleratorType.HasValue)
         {
-            filtered = filtered.Where(p => p.SupportedAccelerators.Contains(requirements.RequiredAcceleratorType.Value)).ToList();
+            filtered = filtered.Where(p => p.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value)).ToList();
         }
 
         // Filter by input type

@@ -317,15 +317,15 @@ namespace DotCompute.Plugins.Recovery
                 PluginRecoveryStrategy.IsolatePlugin => await IsolatePluginRecoveryAsync(context, cancellationToken),
                 PluginRecoveryStrategy.ShutdownPlugin => await ShutdownPluginRecoveryAsync(context, cancellationToken),
                 PluginRecoveryStrategy.RollbackVersion => await RollbackPluginRecoveryAsync(context, cancellationToken),
-                _ => RecoveryResult.Failed($"Unknown strategy: {strategy}")
+                _ => RecoveryResult.CreateFailure($"Unknown strategy: {strategy}")
             };
         }
 
         private async Task<RecoveryResult> RestartPluginRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken)
         {
             var success = await RestartPluginAsync(context.PluginId, cancellationToken);
-            return success ? RecoveryResult.Success("Plugin restarted successfully")
-                          : RecoveryResult.Failed("Plugin restart failed");
+            return success ? RecoveryResult.CreateSuccess("Plugin restarted successfully")
+                          : RecoveryResult.CreateFailure("Plugin restart failed");
         }
 
         private async Task<RecoveryResult> ReloadPluginRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken)
@@ -334,11 +334,11 @@ namespace DotCompute.Plugins.Recovery
             {
                 // Simplified reload logic
                 await Task.Delay(100, cancellationToken);
-                return RecoveryResult.Success("Plugin reloaded successfully");
+                return RecoveryResult.CreateSuccess("Plugin reloaded successfully");
             }
             catch (Exception ex)
             {
-                return RecoveryResult.Failed($"Plugin reload failed: {ex.Message}");
+                return RecoveryResult.CreateFailure($"Plugin reload failed: {ex.Message}");
             }
         }
 
@@ -346,24 +346,24 @@ namespace DotCompute.Plugins.Recovery
         {
             try
             {
-                if (context.Plugin != null)
+                if (context.Plugin is IBackendPlugin backendPlugin)
                 {
-                    await IsolatePluginAsync(context.PluginId, context.Plugin, cancellationToken);
-                    return RecoveryResult.Success("Plugin isolated successfully");
+                    await IsolatePluginAsync(context.PluginId, backendPlugin, cancellationToken);
+                    return RecoveryResult.CreateSuccess("Plugin isolated successfully");
                 }
-                return RecoveryResult.Failed("No plugin instance available for isolation");
+                return RecoveryResult.CreateFailure("No plugin instance available for isolation");
             }
             catch (Exception ex)
             {
-                return RecoveryResult.Failed($"Plugin isolation failed: {ex.Message}");
+                return RecoveryResult.CreateFailure($"Plugin isolation failed: {ex.Message}");
             }
         }
 
         private async Task<RecoveryResult> ShutdownPluginRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken)
         {
             var success = await EmergencyShutdownAsync(context.PluginId, "Recovery shutdown", cancellationToken);
-            return success ? RecoveryResult.Success("Plugin shutdown successfully")
-                          : RecoveryResult.Failed("Plugin shutdown failed");
+            return success ? RecoveryResult.CreateSuccess("Plugin shutdown successfully")
+                          : RecoveryResult.CreateFailure("Plugin shutdown failed");
         }
 
         private async Task<RecoveryResult> RollbackPluginRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken)
@@ -372,11 +372,11 @@ namespace DotCompute.Plugins.Recovery
             {
                 // Simplified rollback logic
                 await Task.Delay(100, cancellationToken);
-                return RecoveryResult.Success("Plugin rollback completed");
+                return RecoveryResult.CreateSuccess("Plugin rollback completed");
             }
             catch (Exception ex)
             {
-                return RecoveryResult.Failed($"Plugin rollback failed: {ex.Message}");
+                return RecoveryResult.CreateFailure($"Plugin rollback failed: {ex.Message}");
             }
         }
 

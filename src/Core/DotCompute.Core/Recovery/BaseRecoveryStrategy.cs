@@ -793,6 +793,27 @@ public sealed class RecoveryResult
     public TimeSpan Duration { get; set; }
     public bool RequiresManualIntervention { get; init; }
     public Dictionary<string, object> Metadata { get; init; } = [];
+
+    /// <summary>
+    /// Creates a successful recovery result.
+    /// </summary>
+    public static RecoveryResult CreateSuccess(string message, string strategy = "Unknown") => new()
+    {
+        Success = true,
+        Message = message,
+        Strategy = strategy
+    };
+
+    /// <summary>
+    /// Creates a failed recovery result.
+    /// </summary>
+    public static RecoveryResult CreateFailure(string message, string strategy = "Unknown", Exception? exception = null) => new()
+    {
+        Success = false,
+        Message = message,
+        Strategy = strategy,
+        Exception = exception
+    };
 }
 
 /// <summary>

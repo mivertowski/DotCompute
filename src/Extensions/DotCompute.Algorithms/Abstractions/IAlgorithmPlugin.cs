@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Types.Abstractions;
 
 namespace DotCompute.Algorithms.Abstractions;
 
@@ -34,7 +35,7 @@ public interface IAlgorithmPlugin
     /// <summary>
     /// Gets the supported accelerator types for this algorithm.
     /// </summary>
-    public AcceleratorType[] SupportedAccelerators { get; }
+    public AcceleratorType[] SupportedAcceleratorTypes { get; }
 
     /// <summary>
     /// Gets the list of operations supported by this plugin.
@@ -93,45 +94,4 @@ public interface IAlgorithmPlugin
     /// Disposes of any resources used by the plugin.
     /// </summary>
     public ValueTask DisposeAsync();
-}
-
-/// <summary>
-/// Represents the performance characteristics of an algorithm.
-/// </summary>
-public sealed class AlgorithmPerformanceProfile
-{
-    /// <summary>
-    /// Gets or sets the computational complexity (e.g., O(n), O(n^2), O(n log n)).
-    /// </summary>
-    public required string Complexity { get; init; }
-
-    /// <summary>
-    /// Gets or sets whether this algorithm benefits from parallelization.
-    /// </summary>
-    public required bool IsParallelizable { get; init; }
-
-    /// <summary>
-    /// Gets or sets the optimal thread/work-item count for parallel execution.
-    /// </summary>
-    public int OptimalParallelism { get; init; }
-
-    /// <summary>
-    /// Gets or sets whether this algorithm is memory-bound.
-    /// </summary>
-    public bool IsMemoryBound { get; init; }
-
-    /// <summary>
-    /// Gets or sets whether this algorithm is compute-bound.
-    /// </summary>
-    public bool IsComputeBound { get; init; }
-
-    /// <summary>
-    /// Gets or sets the estimated FLOPS (floating-point operations per second) for this algorithm.
-    /// </summary>
-    public long EstimatedFlops { get; init; }
-
-    /// <summary>
-    /// Gets or sets additional performance metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; init; } = [];
 }

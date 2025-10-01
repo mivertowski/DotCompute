@@ -99,6 +99,7 @@ internal class PluginHealthMonitor : IDisposable
                     break;
                 case PluginState.Loading:
                 case PluginState.Starting:
+                case PluginState.Initializing:
                 case PluginState.Stopping:
                     result.Health = PluginHealth.Degraded;
                     result.Issues.Add($"Plugin is in transitional state: {state}");

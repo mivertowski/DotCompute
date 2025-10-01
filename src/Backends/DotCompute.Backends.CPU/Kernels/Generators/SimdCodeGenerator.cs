@@ -4,6 +4,7 @@
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels.Generators.InstructionSets;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels.Generators;
 

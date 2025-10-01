@@ -2,10 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +17,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// Core registry for managing algorithm plugin registration and lookup.
 /// Handles plugin collection, metadata storage, and state management.
 /// </summary>
-public sealed class AlgorithmPluginRegistry : IDisposable
+public sealed partial class AlgorithmPluginRegistry : IAsyncDisposable, IDisposable
 {
     private readonly ILogger<AlgorithmPluginRegistry> _logger;
     private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
@@ -24,7 +26,7 @@ public sealed class AlgorithmPluginRegistry : IDisposable
     /// <summary>
     /// Represents a loaded plugin with its context and metadata.
     /// </summary>
-    public sealed class LoadedPlugin
+    public sealed partial class LoadedPlugin
     {
         public required IAlgorithmPlugin Plugin { get; init; }
         public required PluginAssemblyLoadContext LoadContext { get; init; }
@@ -143,6 +145,8 @@ public sealed class AlgorithmPluginRegistry : IDisposable
         {
             Plugin = loadedPlugin.Plugin,
             Metadata = loadedPlugin.Metadata,
+            LoadContext = loadedPlugin.LoadContext,
+            Assembly = loadedPlugin.Assembly,
             State = loadedPlugin.State,
             Health = loadedPlugin.Health,
             LoadTime = loadedPlugin.LoadTime,
@@ -187,7 +191,7 @@ public sealed class AlgorithmPluginRegistry : IDisposable
         return _plugins.Values
             .Where(lp => lp.Health != PluginHealth.Critical && lp.State == PluginState.Running)
             .Select(lp => lp.Plugin)
-            .Where(p => p.SupportedAccelerators.Contains(acceleratorType));
+            .Where(p => p.SupportedAcceleratorTypes.Contains(acceleratorType));
     }
 
     /// <summary>
@@ -232,7 +236,7 @@ public sealed class AlgorithmPluginRegistry : IDisposable
             Name = lp.Plugin.Name,
             Version = lp.Plugin.Version,
             Description = lp.Plugin.Description,
-            SupportedAccelerators = lp.Plugin.SupportedAccelerators,
+            SupportedAccelerators = lp.Plugin.SupportedAcceleratorTypes,
             InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
             OutputType = lp.Plugin.OutputType.FullName ?? lp.Plugin.OutputType.Name,
             PerformanceProfile = lp.Plugin.GetPerformanceProfile()
@@ -317,6 +321,49 @@ public sealed class AlgorithmPluginRegistry : IDisposable
         }
     }
 
+    /// <summary>
+    /// Registers a plugin asynchronously in the registry.
+    /// </summary>
+    /// <param name="plugin">The plugin to register.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if registered successfully; otherwise, false.</returns>
+    public async Task<bool> RegisterPluginAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(plugin);
+
+        await Task.CompletedTask;
+
+        // For direct registration without load context, create minimal metadata
+        var metadata = new PluginMetadata
+        {
+            Id = plugin.Id,
+            Name = plugin.Name,
+            Version = plugin.Version?.ToString() ?? "1.0.0",
+            Description = plugin.Description,
+            Author = "Unknown",
+            AssemblyPath = plugin.GetType().Assembly.Location,
+            LoadTime = DateTime.UtcNow
+        };
+
+        // Use default load context for direct registration
+        var loadContext = new PluginAssemblyLoadContext($"DirectPlugin_{plugin.Id}", plugin.GetType().Assembly.Location, false);
+
+        return RegisterPlugin(plugin, loadContext, plugin.GetType().Assembly, metadata);
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+            _plugins.Clear();
+            await Task.CompletedTask;
+        }
+    }
+
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (!_disposed)

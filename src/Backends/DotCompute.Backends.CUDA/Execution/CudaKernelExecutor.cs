@@ -13,9 +13,10 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using InterfaceKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 using KernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Advanced.Profiling.Types;
 using System.Linq;
-using CudaBottleneckType = DotCompute.Backends.CUDA.Advanced.Profiling.Types.BottleneckType;
+using DotCompute.Abstractions.Types;
+using CudaBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
+
 namespace DotCompute.Backends.CUDA.Execution
 {
 
@@ -567,10 +568,10 @@ namespace DotCompute.Backends.CUDA.Execution
                 Type = type switch
                 {
                     CudaBottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
-                    CudaBottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                    CudaBottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.GPU,
                     CudaBottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
-                    CudaBottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.Cpu,
-                    CudaBottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.Gpu,
+                    CudaBottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.CPU,
+                    CudaBottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.GPU,
                     _ => DotCompute.Abstractions.Types.BottleneckType.None
                 },
                 Severity = Math.Min(1.0, severity),
@@ -587,7 +588,7 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             var suggestions = new List<string>();
 
-            if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.Gpu)
+            if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.GPU)
             {
                 suggestions.Add("Consider increasing occupancy by reducing register usage or shared memory");
                 suggestions.Add("Optimize thread divergence to improve warp utilization");

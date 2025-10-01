@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {
@@ -337,7 +338,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <param name="point">Point or vector to transform.</param>
         /// <param name="isPoint">True if transforming a point, false for a vector.</param>
         /// <returns>Transformed point or vector.</returns>
-        public static async Task<Matrix> ApplyTransformAsync(Matrix transformation, Matrix point, bool isPoint = true, IAccelerator accelerator = null, CancellationToken cancellationToken = default)
+        public static async Task<Matrix> ApplyTransformAsync(Matrix transformation, Matrix point, bool isPoint = true, IAccelerator? accelerator = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(transformation);
             ArgumentNullException.ThrowIfNull(point);

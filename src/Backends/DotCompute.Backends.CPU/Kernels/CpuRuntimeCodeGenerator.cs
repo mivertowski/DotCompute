@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels;
 

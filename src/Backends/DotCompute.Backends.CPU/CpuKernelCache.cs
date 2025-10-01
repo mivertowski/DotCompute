@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
+using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -68,7 +71,7 @@ internal sealed class CpuKernelCache : IDisposable
             {
                 // Update access time and hit count
                 cachedKernel.LastAccessed = DateTimeOffset.UtcNow;
-                Interlocked.Increment(ref cachedKernel.HitCount);
+                cachedKernel.HitCount++;
 
                 _logger.LogDebug("Cache hit for kernel: {cacheKey}", cacheKey);
                 return cachedKernel.CompiledKernel;
@@ -142,7 +145,7 @@ internal sealed class CpuKernelCache : IDisposable
     /// <summary>
     /// Removes a kernel from the cache.
     /// </summary>
-    public async Task<bool> RemoveKernelAsync(string cacheKey)
+    public Task<bool> RemoveKernelAsync(string cacheKey)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheKey);
@@ -156,16 +159,16 @@ internal sealed class CpuKernelCache : IDisposable
             }
 
             _logger.LogDebug("Removed kernel from cache: {cacheKey}", cacheKey);
-            return true;
+            return Task.FromResult(true);
         }
 
-        return false;
+        return Task.FromResult(false);
     }
 
     /// <summary>
     /// Gets an optimization profile from the cache.
     /// </summary>
-    public async Task<OptimizationProfile?> GetOptimizationProfileAsync(string profileKey)
+    public Task<OptimizationProfile?> GetOptimizationProfileAsync(string profileKey)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(profileKey);
@@ -176,7 +179,7 @@ internal sealed class CpuKernelCache : IDisposable
             {
                 profile.LastAccessed = DateTimeOffset.UtcNow;
                 _logger.LogTrace("Optimization profile cache hit: {profileKey}", profileKey);
-                return profile;
+                return Task.FromResult<OptimizationProfile?>(profile);
             }
             else
             {
@@ -185,13 +188,13 @@ internal sealed class CpuKernelCache : IDisposable
             }
         }
 
-        return null;
+        return Task.FromResult<OptimizationProfile?>(null);
     }
 
     /// <summary>
     /// Stores an optimization profile in the cache.
     /// </summary>
-    public async Task<bool> StoreOptimizationProfileAsync(string profileKey, OptimizationProfile profile)
+    public Task<bool> StoreOptimizationProfileAsync(string profileKey, OptimizationProfile profile)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(profileKey);
@@ -205,13 +208,13 @@ internal sealed class CpuKernelCache : IDisposable
             _logger.LogTrace("Stored optimization profile: {profileKey}", profileKey);
         }
 
-        return added;
+        return Task.FromResult(added);
     }
 
     /// <summary>
     /// Gets performance metrics from the cache.
     /// </summary>
-    public async Task<PerformanceMetrics?> GetPerformanceMetricsAsync(string metricsKey)
+    public Task<PerformanceMetrics?> GetPerformanceMetricsAsync(string metricsKey)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(metricsKey);
@@ -221,7 +224,7 @@ internal sealed class CpuKernelCache : IDisposable
             if (IsMetricsValid(metrics))
             {
                 _logger.LogTrace("Performance metrics cache hit: {metricsKey}", metricsKey);
-                return metrics;
+                return Task.FromResult<PerformanceMetrics?>(metrics);
             }
             else
             {
@@ -230,13 +233,13 @@ internal sealed class CpuKernelCache : IDisposable
             }
         }
 
-        return null;
+        return Task.FromResult<PerformanceMetrics?>(null);
     }
 
     /// <summary>
     /// Stores performance metrics in the cache.
     /// </summary>
-    public async Task<bool> StorePerformanceMetricsAsync(string metricsKey, PerformanceMetrics metrics)
+    public Task<bool> StorePerformanceMetricsAsync(string metricsKey, PerformanceMetrics metrics)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(metricsKey);
@@ -249,13 +252,13 @@ internal sealed class CpuKernelCache : IDisposable
             _logger.LogTrace("Stored performance metrics: {metricsKey}", metricsKey);
         }
 
-        return added;
+        return Task.FromResult(added);
     }
 
     /// <summary>
     /// Updates performance metrics for a kernel.
     /// </summary>
-    public async Task UpdateKernelPerformanceAsync(string cacheKey, ExecutionStatistics statistics)
+    public Task UpdateKernelPerformanceAsync(string cacheKey, ExecutionStatistics statistics)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheKey);
@@ -268,6 +271,8 @@ internal sealed class CpuKernelCache : IDisposable
 
             _logger.LogTrace("Updated performance metrics for kernel: {cacheKey}", cacheKey);
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -280,11 +285,11 @@ internal sealed class CpuKernelCache : IDisposable
     {
         var key = $"{definition.Name}_{workDimensions.X}x{workDimensions.Y}x{workDimensions.Z}_{optimizationLevel}";
 
-        // Include parameter types in key for disambiguation
-        if (definition.Parameters?.Any() == true)
+        // Include metadata types in key for disambiguation if available
+        if (definition.Metadata?.Count > 0)
         {
-            var paramTypes = string.Join(",", definition.Parameters.Select(p => p.Type.Name));
-            key += $"_{paramTypes.GetHashCode():X}";
+            var metadataHash = string.Join(",", definition.Metadata.Keys.OrderBy(k => k));
+            key += $"_{metadataHash.GetHashCode():X}";
         }
 
         return key;
@@ -348,7 +353,7 @@ internal sealed class CpuKernelCache : IDisposable
     /// <summary>
     /// Preloads frequently used kernels into the cache.
     /// </summary>
-    public async Task PreloadFrequentKernelsAsync(IEnumerable<string> kernelNames)
+    public Task PreloadFrequentKernelsAsync(IEnumerable<string> kernelNames)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(kernelNames);
@@ -359,6 +364,8 @@ internal sealed class CpuKernelCache : IDisposable
             // For now, this is a placeholder that could be implemented based on usage patterns
             _logger.LogDebug("Preload requested for kernel: {kernelName}", kernelName);
         }
+
+        return Task.CompletedTask;
     }
 
     // Private implementation methods
@@ -377,13 +384,13 @@ internal sealed class CpuKernelCache : IDisposable
     private bool IsMetricsValid(PerformanceMetrics metrics)
     {
         var maxAge = _configuration.MetricsMaxAge ?? TimeSpan.FromHours(1);
-        return DateTimeOffset.UtcNow - metrics.LastUpdated < maxAge;
+        return DateTimeOffset.UtcNow - metrics.Timestamp < maxAge;
     }
 
-    private async Task<bool> ShouldEvictCacheEntries()
+    private Task<bool> ShouldEvictCacheEntries()
     {
         var maxSize = _configuration.MaxCacheSize ?? DefaultMaxCacheSize;
-        return _kernelCache.Count >= maxSize;
+        return Task.FromResult(_kernelCache.Count >= maxSize);
     }
 
     private async Task EvictLeastRecentlyUsedEntriesAsync()
@@ -483,9 +490,11 @@ internal sealed class CpuKernelCache : IDisposable
         size += definition.Code?.Length * 2 ?? 0;
 
         // Add estimated size for parameters
-        if (definition.Parameters != null)
+        // NOTE: KernelDefinition.Parameters doesn't exist in current API
+        // Use metadata count as a rough estimate if available
+        if (definition.Metadata?.Count > 0)
         {
-            size += definition.Parameters.Count * 64; // Estimated parameter overhead
+            size += definition.Metadata.Count * 64; // Estimated metadata overhead
         }
 
         return size;
@@ -530,7 +539,7 @@ internal sealed class CpuKernelCache : IDisposable
         {
             EntryCount = _performanceCache.Count,
             AverageAge = _performanceCache.Values.Any()
-                ? _performanceCache.Values.Average(m => (DateTimeOffset.UtcNow - m.LastUpdated).TotalMinutes)
+                ? _performanceCache.Values.Average(m => (DateTimeOffset.UtcNow - m.Timestamp).TotalMinutes)
                 : 0
         };
     }

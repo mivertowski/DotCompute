@@ -11,14 +11,14 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 
 namespace DotCompute.Algorithms.Management
 {
     /// <summary>
     /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
     /// </summary>
-    public sealed partial class AlgorithmPluginLoader : IDisposable
+    public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposable
     {
         private readonly ILogger<AlgorithmPluginLoader> _logger;
         private readonly AlgorithmPluginManagerOptions _options;
@@ -60,7 +60,7 @@ namespace DotCompute.Algorithms.Management
                 // Version compatibility check
                 if (metadata != null && !IsVersionCompatible(metadata.RequiredFrameworkVersion))
                 {
-                    LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion ?? "Unknown");
+                    LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion?.ToString() ?? "Unknown");
                     return Array.Empty<LoadedPluginResult>();
                 }
 
@@ -326,29 +326,34 @@ namespace DotCompute.Algorithms.Management
                 Description = plugin.Description,
                 Author = "Unknown",
                 AssemblyPath = assemblyPath,
-                LoadTime = DateTime.UtcNow
+                LoadTime = DateTime.UtcNow,
+                AssemblyName = Path.GetFileName(assemblyPath),
+                TypeName = plugin.GetType().FullName ?? "Unknown",
+                Capabilities = plugin.SupportedOperations.ToArray(),
+                SupportedAccelerators = plugin.SupportedAcceleratorTypes.Select(t => t.ToString()).ToArray(),
+                LoadContextName = "Default",
+                AdditionalMetadata = new Dictionary<string, object>()
             };
         }
 
         /// <summary>
         /// Checks if the required framework version is compatible.
         /// </summary>
-        private static bool IsVersionCompatible(string? requiredVersion)
+        private static bool IsVersionCompatible(Version? requiredVersion)
         {
-            if (string.IsNullOrEmpty(requiredVersion))
+            if (requiredVersion == null)
             {
                 return true;
             }
 
             try
             {
-                var required = Version.Parse(requiredVersion);
                 var current = Environment.Version;
-                return current >= required;
+                return current >= requiredVersion;
             }
             catch
             {
-                return true; // If we can't parse, assume compatible
+                return true; // If we can't compare, assume compatible
             }
         }
 
@@ -371,6 +376,33 @@ namespace DotCompute.Algorithms.Management
             }
         }
 
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+
+                // Unload all contexts
+                foreach (var context in _loadContexts.Values)
+                {
+                    try
+                    {
+                        context.Unload();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to unload context {ContextName}", context.Name);
+                    }
+                }
+
+                _loadContexts.Clear();
+                _loadingSemaphore.Dispose();
+                await Task.CompletedTask;
+            }
+        }
+
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (!_disposed)

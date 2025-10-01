@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels.Generators;
 

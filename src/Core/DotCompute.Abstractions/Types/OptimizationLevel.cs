@@ -23,6 +23,11 @@ public enum OptimizationLevel
     O0 = 0,
 
     /// <summary>
+    /// Minimal optimization - alias for None/O0.
+    /// </summary>
+    Minimal = 0,
+
+    /// <summary>
     /// Basic optimization - minimal performance improvements with fast compilation.
     /// Equivalent to compiler flag -O1. Enables basic optimizations like dead code elimination.
     /// </summary>
@@ -39,6 +44,11 @@ public enum OptimizationLevel
     /// Equivalent to compiler flag -O3. Enables aggressive optimizations that may increase code size.
     /// </summary>
     O3 = 3,
+
+    /// <summary>
+    /// Maximum optimization - alias for O3.
+    /// </summary>
+    Maximum = 3,
 
     /// <summary>
     /// Size optimization - optimize for smallest code size rather than speed.

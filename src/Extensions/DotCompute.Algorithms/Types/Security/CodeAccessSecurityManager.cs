@@ -3,7 +3,7 @@
 
 // using global::System.Security.Permissions; // Commented out for .NET compatibility
 using System.Text.Json;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Types.Security

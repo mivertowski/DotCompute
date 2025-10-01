@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Management.Lifecycle;
 /// <summary>
 /// Manages plugin lifecycle operations including initialization, state transitions, and shutdown.
 /// </summary>
-public sealed class AlgorithmPluginLifecycle : IDisposable
+public sealed partial class AlgorithmPluginLifecycle : IDisposable
 {
     private readonly ILogger<AlgorithmPluginLifecycle> _logger;
     private readonly AlgorithmPluginManagerOptions _options;

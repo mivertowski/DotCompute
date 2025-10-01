@@ -3,12 +3,15 @@
 
 using System.Numerics;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using DotCompute.Abstractions.Memory;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {
@@ -789,11 +792,11 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         null,
                         cancellationToken).ConfigureAwait(false);
 
-                    var columnBuffer = await accelerator.Memory.AllocateAsync(columnData.Length * sizeof(float), 
+                    var columnBuffer = await accelerator.Memory.AllocateAsync<float>(columnData.Length,
                         DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                    var householderBuffer = await accelerator.Memory.AllocateAsync(columnData.Length * sizeof(float), 
+                    var householderBuffer = await accelerator.Memory.AllocateAsync<float>(columnData.Length,
                         DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                    var normBuffer = await accelerator.Memory.AllocateAsync(sizeof(float), 
+                    var normBuffer = await accelerator.Memory.AllocateAsync<float>(1,
                         DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                     try
@@ -843,7 +846,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                             cancellationToken).ConfigureAwait(false);
 
                         var matrixData = a.ToArray();
-                        var matrixBuffer = await accelerator.Memory.AllocateAsync(matrixData.Length * sizeof(float), 
+                        var matrixBuffer = await accelerator.Memory.AllocateAsync<float>(matrixData.Length,
                             DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                         await matrixBuffer.WriteAsync(matrixData, 0, cancellationToken).ConfigureAwait(false);
@@ -968,13 +971,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 var uData = u.ToArray();
                 var vData = v.ToArray();
                 
-                var aBuffer = await accelerator.Memory.AllocateAsync(aData.Length * sizeof(float), 
+                var aBuffer = await accelerator.Memory.AllocateAsync<float>(aData.Length,
                     DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var uBuffer = await accelerator.Memory.AllocateAsync(uData.Length * sizeof(float), 
+                var uBuffer = await accelerator.Memory.AllocateAsync<float>(uData.Length,
                     DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var vBuffer = await accelerator.Memory.AllocateAsync(vData.Length * sizeof(float), 
+                var vBuffer = await accelerator.Memory.AllocateAsync<float>(vData.Length,
                     DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var convergenceBuffer = await accelerator.Memory.AllocateAsync(sizeof(float), 
+                var convergenceBuffer = await accelerator.Memory.AllocateAsync<float>(1,
                     DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                 try
@@ -1064,7 +1067,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         cancellationToken).ConfigureAwait(false);
 
                     var sData = new float[Math.Min(m, n) * Math.Min(m, n)];
-                    var sBuffer = await accelerator.Memory.AllocateAsync(sData.Length * sizeof(float), 
+                    var sBuffer = await accelerator.Memory.AllocateAsync<float>(sData.Length,
                         DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
                     var svdArgs = new[]

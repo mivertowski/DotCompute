@@ -183,7 +183,7 @@ internal sealed class NuGetPluginLoader : IDisposable
     /// <summary>
     /// Discovers plugins from configured directories and returns manifest information.
     /// </summary>
-    public async Task<IEnumerable<NuGetPluginManifest>> DiscoverPluginsAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<NuGetPluginManifest>> DiscoverPluginsAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -195,12 +195,12 @@ internal sealed class NuGetPluginLoader : IDisposable
 
             // For now, return empty collection as manifest discovery would need implementation
             // This would normally scan plugin directories and build manifests from plugin metadata
-            return manifests;
+            return Task.FromResult<IEnumerable<NuGetPluginManifest>>(manifests);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to discover plugin manifests");
-            return manifests;
+            return Task.FromResult<IEnumerable<NuGetPluginManifest>>(manifests);
         }
     }
 

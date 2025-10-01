@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
+using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
@@ -31,17 +32,17 @@ public sealed class CpuAccelerator : BaseAccelerator
     #region LoggerMessage Delegates
 
 
-    private static readonly Action<ILogger, string, int, Exception?> LogOptimizedKernelCompiled =
+    private static readonly Action<ILogger, string, int, Exception?> _logOptimizedKernelCompiled =
         LoggerMessage.Define<string, int>(
             LogLevel.Debug,
-            new EventId(2001, nameof(LogOptimizedKernelCompiled)),
+            new EventId(2001, nameof(_logOptimizedKernelCompiled)),
             "Successfully compiled optimized kernel '{KernelName}' with {VectorWidth}-bit vectorization");
 
 
-    private static readonly Action<ILogger, string, Exception?> LogOptimizedKernelFallback =
+    private static readonly Action<ILogger, string, Exception?> _logOptimizedKernelFallback =
         LoggerMessage.Define<string>(
             LogLevel.Debug,
-            new EventId(2002, nameof(LogOptimizedKernelFallback)),
+            new EventId(2002, nameof(_logOptimizedKernelFallback)),
             "Failed to create optimized kernel for {KernelName}, falling back to standard compilation");
 
     #endregion
@@ -83,7 +84,7 @@ public sealed class CpuAccelerator : BaseAccelerator
             var optimizedKernel = TryCreateOptimizedKernel(definition, options);
             if (optimizedKernel != null)
             {
-                LogOptimizedKernelCompiled(_logger, definition.Name, SimdCapabilities.PreferredVectorWidth, null);
+                _logOptimizedKernelCompiled(_logger, definition.Name, SimdCapabilities.PreferredVectorWidth, null);
                 return optimizedKernel;
             }
         }
@@ -171,7 +172,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         }
         catch (Exception ex)
         {
-            LogOptimizedKernelFallback(_logger, definition.Name, ex);
+            _logOptimizedKernelFallback(_logger, definition.Name, ex);
             return null;
         }
     }

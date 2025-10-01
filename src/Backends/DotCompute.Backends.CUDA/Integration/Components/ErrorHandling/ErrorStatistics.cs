@@ -17,7 +17,7 @@ internal sealed class ErrorStatistics
     private long _recoverableErrors;
     private long _recoveryAttempts;
     private long _recoverySuccesses;
-    private readonly long _recentOperations;
+    private long _recentOperations;
     private long _recentErrors;
     private readonly Dictionary<CudaError, long> _errorCounts = [];
     private readonly object _lock = new();

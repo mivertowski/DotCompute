@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -72,8 +72,8 @@ public class AlgorithmPluginHealthMonitor
             await Task.CompletedTask; // Keep async for future compatibility
 
             // Simple health check - if plugin can validate basic input, it's healthy
-            var testInput = new object();
-            if (plugin.ValidateInput(testInput))
+            var testInput = new object[] { new object() };
+            if (plugin.ValidateInputs(testInput))
             {
                 _logger.LogDebug("Plugin {PluginId} passed basic health check", plugin.Id);
                 return PluginHealth.Healthy;

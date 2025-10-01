@@ -6,17 +6,23 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Advanced;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Integration.Components;
+using DotCompute.Backends.CUDA.Integration.Components.Health;
 using DotCompute.Backends.CUDA.P2P;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-// Resolve KernelArgument ambiguity
+// Resolve type ambiguities
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using CudaStreamManager = DotCompute.Backends.CUDA.Execution.CudaStreamManager;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
 using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
+using CudaHealthStatus = DotCompute.Backends.CUDA.Integration.Components.Enums.CudaHealthStatus;
 
 namespace DotCompute.Backends.CUDA.Integration;
 
@@ -457,7 +463,7 @@ public sealed class CudaBackendIntegration : IDisposable
     private static ICompiledKernel ConvertToCompiledKernel(CudaCompiledKernel cudaKernel)
     {
         // Convert CUDA-specific kernel to ICompiledKernel interface
-        return cudaKernel.ToCompiledKernel();
+        return cudaKernel; // CudaCompiledKernel implements ICompiledKernel
     }
 
     private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
@@ -527,9 +533,9 @@ public sealed class CudaBackendIntegration : IDisposable
     {
         var healthScore = healthAssessment.OverallHealth switch
         {
-            Components.CudaHealthStatus.Healthy => 1.0,
-            Components.CudaHealthStatus.Warning => 0.7,
-            Components.CudaHealthStatus.Critical => 0.3,
+            CudaHealthStatus.Healthy => 1.0,
+            CudaHealthStatus.Warning => 0.7,
+            CudaHealthStatus.Critical => 0.3,
             _ => 0.5
         };
 
@@ -745,12 +751,15 @@ public sealed class CudaExecutionResult
 public sealed class CudaSystemHealth
 {
     public double OverallHealth { get; set; }
+    public double DeviceHealth { get; set; }
+    public double ContextHealth { get; set; }
+    public double MemoryHealth { get; set; }
+    public double KernelHealth { get; set; }
     public double StreamHealth { get; set; }
     public double EventHealth { get; set; }
     public double P2PHealth { get; set; }
     public double AdvancedFeaturesHealth { get; set; }
     public double PerformanceHealth { get; set; }
-    public double MemoryHealth { get; set; }
     public DateTimeOffset LastChecked { get; set; }
     public string? ErrorMessage { get; set; }
 }

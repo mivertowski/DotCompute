@@ -84,24 +84,13 @@ public sealed class CudaErrorHandler : IDisposable
         // Log error with appropriate level
         LogError(errorRecord, severity);
 
-        var result = new CudaErrorHandlingResult
-        {
-            OriginalError = error,
-            Severity = severity,
-            ErrorMessage = GetErrorDescription(error),
-            Timestamp = errorRecord.Timestamp,
-            RecoveryAttempted = shouldRecover
-        };
-
         // Attempt recovery if appropriate
+        CudaErrorHandlingResult result;
         if (shouldRecover)
         {
             try
             {
                 var recoveryResult = _recoveryStrategies.AttemptRecovery(error, operation, context);
-                result.RecoverySuccessful = recoveryResult.Success;
-                result.RecoveryActions = recoveryResult.ActionsPerformed;
-                result.RecoveryMessage = recoveryResult.Message;
 
                 if (recoveryResult.Success)
                 {
@@ -115,13 +104,46 @@ public sealed class CudaErrorHandler : IDisposable
                         error, operation, recoveryResult.Message);
                     _errorStatistics.RecordRecoveryFailure();
                 }
+
+                result = new CudaErrorHandlingResult
+                {
+                    OriginalError = error,
+                    Severity = severity,
+                    ErrorMessage = GetErrorDescription(error),
+                    Timestamp = errorRecord.Timestamp,
+                    RecoveryAttempted = true,
+                    RecoverySuccessful = recoveryResult.Success,
+                    RecoveryActions = recoveryResult.ActionsPerformed,
+                    RecoveryMessage = recoveryResult.Message
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception during error recovery for {Error} in {Operation}", error, operation);
-                result.RecoveryMessage = $"Recovery failed with exception: {ex.Message}";
                 _errorStatistics.RecordRecoveryFailure();
+
+                result = new CudaErrorHandlingResult
+                {
+                    OriginalError = error,
+                    Severity = severity,
+                    ErrorMessage = GetErrorDescription(error),
+                    Timestamp = errorRecord.Timestamp,
+                    RecoveryAttempted = true,
+                    RecoverySuccessful = false,
+                    RecoveryMessage = $"Recovery failed with exception: {ex.Message}"
+                };
             }
+        }
+        else
+        {
+            result = new CudaErrorHandlingResult
+            {
+                OriginalError = error,
+                Severity = severity,
+                ErrorMessage = GetErrorDescription(error),
+                Timestamp = errorRecord.Timestamp,
+                RecoveryAttempted = false
+            };
         }
 
         return result;
@@ -189,44 +211,45 @@ public sealed class CudaErrorHandler : IDisposable
     {
         ThrowIfDisposed();
 
-        var assessment = new CudaSystemHealthAssessment
-        {
-            Timestamp = DateTimeOffset.UtcNow,
-            OverallHealth = CudaHealthStatus.Healthy
-        };
+        var healthChecks = new Dictionary<string, HealthCheckResult>();
+        bool deviceAccessible = false;
+        CudaHealthStatus memoryHealth = CudaHealthStatus.Critical;
+        CudaHealthStatus errorRateHealth = CudaHealthStatus.Critical;
+        CudaHealthStatus contextHealth = CudaHealthStatus.Critical;
+        CudaHealthStatus overallHealth;
 
         try
         {
             // Check device accessibility
             var deviceCheck = CheckDeviceAccessibility();
-            assessment.DeviceAccessible = deviceCheck.Success;
-            assessment.HealthChecks.Add("Device Accessibility", deviceCheck);
+            deviceAccessible = deviceCheck.Success;
+            healthChecks.Add("Device Accessibility", deviceCheck);
 
             // Check memory status
             var memoryCheck = CheckMemoryStatus();
-            assessment.MemoryHealth = memoryCheck.Status;
-            assessment.HealthChecks.Add("Memory Status", memoryCheck);
+            memoryHealth = memoryCheck.Status;
+            healthChecks.Add("Memory Status", memoryCheck);
 
             // Check error rates
             var errorCheck = CheckErrorRates();
-            assessment.ErrorRateHealth = errorCheck.Status;
-            assessment.HealthChecks.Add("Error Rates", errorCheck);
+            errorRateHealth = errorCheck.Status;
+            healthChecks.Add("Error Rates", errorCheck);
 
             // Check context status
             var contextCheck = CheckContextStatus();
-            assessment.ContextHealth = contextCheck.Status;
-            assessment.HealthChecks.Add("Context Status", contextCheck);
+            contextHealth = contextCheck.Status;
+            healthChecks.Add("Context Status", contextCheck);
 
             // Determine overall health
-            assessment.OverallHealth = DetermineOverallHealth(assessment.HealthChecks.Values);
+            overallHealth = DetermineOverallHealth(healthChecks.Values);
 
-            _logger.LogDebug("Health check completed: {OverallHealth}", assessment.OverallHealth);
+            _logger.LogDebug("Health check completed: {OverallHealth}", overallHealth);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during health check");
-            assessment.OverallHealth = CudaHealthStatus.Critical;
-            assessment.HealthChecks.Add("Health Check Error", new HealthCheckResult
+            overallHealth = CudaHealthStatus.Critical;
+            healthChecks.Add("Health Check Error", new HealthCheckResult
             {
                 Success = false,
                 Status = CudaHealthStatus.Critical,
@@ -234,7 +257,16 @@ public sealed class CudaErrorHandler : IDisposable
             });
         }
 
-        return assessment;
+        return new CudaSystemHealthAssessment
+        {
+            Timestamp = DateTimeOffset.UtcNow,
+            OverallHealth = overallHealth,
+            DeviceAccessible = deviceAccessible,
+            MemoryHealth = memoryHealth,
+            ErrorRateHealth = errorRateHealth,
+            ContextHealth = contextHealth,
+            HealthChecks = healthChecks
+        };
     }
 
     /// <summary>

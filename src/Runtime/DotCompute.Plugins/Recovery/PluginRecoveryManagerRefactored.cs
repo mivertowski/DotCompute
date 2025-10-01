@@ -84,7 +84,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         if (_circuitBreaker.IsOpen(context.PluginId))
         {
             Logger.LogWarning("Circuit breaker is open for plugin {PluginId}, blocking recovery attempt", context.PluginId);
-            return RecoveryResult.Failure("Circuit breaker is open - plugin in failure state");
+            return RecoveryResult.CreateFailure("Circuit breaker is open - plugin in failure state");
         }
 
         await _recoveryLock.WaitAsync(cancellationToken);
@@ -166,7 +166,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         await container.InitializeAsync(cancellationToken);
 
         var healthState = _pluginStates.GetOrAdd(pluginId, id => new PluginHealthState(id, _config));
-        healthState.SetIsolated(true);
+        healthState.SetIsolated();
 
         return container;
     }
@@ -200,7 +200,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     /// </summary>
     public PluginHealthReport GetHealthReport()
     {
-        var healthReport = _healthMonitor.GenerateHealthReport();
+        var healthReport = _healthMonitor.GenerateHealthReport(_pluginStates.Values);
         var pluginHealth = new Dictionary<string, PluginHealthInfo>();
 
         foreach (var kvp in _pluginStates)
@@ -215,7 +215,8 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
                 IsIsolated = state.IsIsolated,
                 ErrorCount = state.ErrorCount,
                 RestartCount = state.RestartCount,
-                LastError = state.LastError,
+                LastError = state.GetRecentErrors().LastOrDefault(),
+                LastErrorTime = state.LastError,
                 LastRestart = state.LastRestart,
                 LastHealthCheck = state.LastHealthCheck,
                 ConsecutiveFailures = state.ConsecutiveFailures,
@@ -230,7 +231,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
             var circuitBreakerState = _circuitBreaker.GetState(pluginId);
 
             // Update health info with circuit breaker data
-            if (circuitBreakerState.IsOpen)
+            if (circuitBreakerState?.IsOpen == true)
             {
                 info.CustomMetrics["CircuitBreakerOpen"] = true;
                 info.CustomMetrics["CircuitBreakerFailureCount"] = circuitBreakerState.FailureCount;
@@ -243,8 +244,8 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         {
             PluginId = "All Plugins",
             Status = pluginHealth.Values.All(p => p.IsHealthy)
-                ? DotCompute.Core.Recovery.PluginHealthStatus.Healthy
-                : DotCompute.Core.Recovery.PluginHealthStatus.Warning,
+                ? PluginHealthStatus.Healthy
+                : PluginHealthStatus.Warning,
             Timestamp = DateTimeOffset.UtcNow,
             MemoryUsageBytes = pluginHealth.Values.Sum(p => p.MemoryUsageBytes),
             CpuUsagePercent = pluginHealth.Values.Where(p => p.CpuUsagePercent > 0)
@@ -280,7 +281,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         // Mark as unhealthy immediately
         if (_pluginStates.TryGetValue(pluginId, out var healthState))
         {
-            healthState.SetEmergencyShutdown(reason);
+            healthState.SetEmergencyShutdown();
         }
 
         // Open circuit breaker to prevent further operations
@@ -340,11 +341,24 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     /// <summary>
     /// Gets circuit breaker status for a specific plugin
     /// </summary>
-    public CircuitBreakerState GetCircuitBreakerStatus(string pluginId)
+    public CircuitBreakerState? GetCircuitBreakerStatus(string pluginId)
     {
         ArgumentNullException.ThrowIfNull(pluginId);
 
-        return _circuitBreaker.GetState(pluginId);
+        var status = _circuitBreaker.GetState(pluginId);
+        if (status == null) return null;
+
+        return new CircuitBreakerState
+        {
+            PluginId = status.PluginId,
+            State = status.State,
+            ConsecutiveFailures = status.ConsecutiveFailures,
+            TotalFailures = status.TotalFailures,
+            LastFailureTime = status.LastFailureTime,
+            LastSuccessTime = status.LastSuccessTime,
+            OpenTime = status.OpenTime,
+            HalfOpenAttempts = status.HalfOpenAttempts
+        };
     }
 
     private static bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
@@ -383,8 +397,3 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         }
     }
 }
-
-/// <summary>
-/// Extended plugin health information with circuit breaker integration
-/// </summary>
-// PluginHealthInfo is defined in PluginRecoveryTypes.cs

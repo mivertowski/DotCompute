@@ -96,11 +96,11 @@ public sealed class PluginHealthMonitor : IDisposable
     /// <summary>
     /// Performs automated health check on plugin states
     /// </summary>
-    public async Task PerformHealthCheckAsync(IEnumerable<PluginHealthState> pluginStates)
+    public Task PerformHealthCheckAsync(IEnumerable<PluginHealthState> pluginStates)
     {
         if (_disposed)
         {
-            return;
+            return Task.CompletedTask;
         }
 
 
@@ -128,6 +128,8 @@ public sealed class PluginHealthMonitor : IDisposable
         {
             _logger.LogError(ex, "Error during plugin health check");
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -149,9 +151,9 @@ public sealed class PluginHealthMonitor : IDisposable
     /// <summary>
     /// Records a plugin shutdown event
     /// </summary>
-    public void RecordShutdown(string pluginId)
+    public void RecordShutdown(string pluginId, string reason = "Unknown reason")
     {
-        _logger.LogInformation("Plugin {PluginId} has been shut down", pluginId);
+        _logger.LogInformation("Plugin {PluginId} has been shut down: {Reason}", pluginId, reason);
     }
 
     private static double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)

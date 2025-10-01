@@ -2,7 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -224,7 +227,7 @@ public sealed class CudaDeviceManager : IDisposable
             return new CudaDeviceInfo
             {
                 DeviceId = deviceId,
-                Name = props.GetName(),
+                Name = props.DeviceName,
                 ComputeCapabilityMajor = props.Major,
                 ComputeCapabilityMinor = props.Minor,
                 TotalMemory = totalMemory,
@@ -233,16 +236,16 @@ public sealed class CudaDeviceManager : IDisposable
                 MaxGridDimX = props.MaxGridSizeX,
                 MaxGridDimY = props.MaxGridSizeY,
                 MaxGridDimZ = props.MaxGridSizeZ,
-                MaxBlockDimX = props.MaxBlockDimX,
-                MaxBlockDimY = props.MaxBlockDimY,
-                MaxBlockDimZ = props.MaxBlockDimZ,
+                MaxBlockDimX = props.MaxThreadsDimX,
+                MaxBlockDimY = props.MaxThreadsDimY,
+                MaxBlockDimZ = props.MaxThreadsDimZ,
                 WarpSize = props.WarpSize,
                 MultiProcessorCount = props.MultiProcessorCount,
                 ClockRate = props.ClockRate,
                 MemoryClockRate = props.MemoryClockRate,
                 GlobalMemoryBusWidth = props.MemoryBusWidth,
                 L2CacheSize = props.L2CacheSize,
-                MaxSharedMemoryPerBlock = props.SharedMemPerBlock,
+                MaxSharedMemoryPerBlock = (long)props.SharedMemPerBlock,
                 MaxRegistersPerBlock = props.RegsPerBlock,
                 IsIntegratedDevice = props.Integrated != 0,
                 CanMapHostMemory = props.CanMapHostMemory != 0,
@@ -292,7 +295,7 @@ public sealed class CudaDeviceManager : IDisposable
                 {
                     try
                     {
-                        accelerator.Dispose();
+                        (accelerator as IDisposable)?.Dispose();
                     }
                     catch (Exception ex)
                     {
@@ -398,8 +401,8 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
     public AcceleratorInfo Info => _info;
     public AcceleratorType Type => AcceleratorType.CUDA;
     public string DeviceType => "GPU";
-    public IUnifiedMemoryManager Memory => _memoryManager;
-    public IUnifiedMemoryManager MemoryManager => _memoryManager;
+    public IUnifiedMemoryManager Memory => _memoryManager.UnderlyingManager;
+    public IUnifiedMemoryManager MemoryManager => _memoryManager.UnderlyingManager;
     public AcceleratorContext Context => _acceleratorContext;
     public bool IsAvailable => !_disposed;
 
@@ -410,7 +413,9 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
     {
         try
         {
-            var kernel = new CudaContextCompiledKernel(_context, _logger, definition.Name);
+            // Return a minimal stub - actual compilation happens via the pipeline
+            var emptyPtx = Array.Empty<byte>();
+            var kernel = new CudaCompiledKernel(_context, definition.Name, definition.Name, emptyPtx, options, _logger);
             return ValueTask.FromResult<ICompiledKernel>(kernel);
         }
         catch (Exception ex)

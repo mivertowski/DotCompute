@@ -9,6 +9,7 @@ using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Backends.CPU.Kernels.Exceptions;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Types;
@@ -211,7 +212,7 @@ internal static partial class CpuKernelCompiler
             VectorizationFactor = analysis.VectorizationFactor,
             WorkGroupSize = analysis.PreferredWorkGroupSize,
             MemoryPrefetchDistance = CalculateMemoryPrefetchDistance(analysis),
-            EnableLoopUnrolling = (OptimizationLevel)(int)context.Options.OptimizationLevel == OptimizationLevel.Maximum,
+            EnableLoopUnrolling = (OptimizationLevel)(int)context.Options.OptimizationLevel == OptimizationLevel.O3,
             InstructionSets = simdCapabilities.SupportedInstructionSets
         };
     }
@@ -400,17 +401,14 @@ internal static partial class CpuKernelCompiler
                 }
                 break;
 
-            case OptimizationLevel.Maximum:
-                // Aggressive optimizations
+            case OptimizationLevel.O3:
+                // Aggressive optimizations (O3, Aggressive, and Full all map to value 3, but only use O3 case)
+                // Note: OptimizationLevel.Aggressive and OptimizationLevel.Full are aliases for O3
                 ast = KernelOptimizer.ApplyAggressiveOptimizations(ast);
                 if (analysis.CanVectorize)
                 {
                     ast = KernelOptimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
                     ast = KernelOptimizer.ApplyLoopUnrolling(ast, analysis.VectorizationFactor);
-                }
-                // Fast math for maximum optimization
-                if ((OptimizationLevel)(int)options.OptimizationLevel == OptimizationLevel.Maximum)
-                {
                     ast = KernelOptimizer.ApplyFastMathOptimizations(ast);
                 }
                 break;

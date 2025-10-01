@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.Metal.Telemetry;
 
@@ -620,12 +621,12 @@ public sealed class MetalPerformanceCounters : IDisposable
         return analysis;
     }
 
-    private static PerformanceTrends AnalyzePerformanceTrends(Dictionary<string, object> counters)
+    private static PerformanceTrend AnalyzePerformanceTrends(Dictionary<string, object> counters)
     {
         // Simplified trend analysis - would use time series data in production
-        return new PerformanceTrends
+        return new PerformanceTrend
         {
-            TrendDirection = "stable",
+            TrendDirection = TrendDirection.Stable,
             PerformanceChange = 0.0,
             Confidence = 0.5
         };

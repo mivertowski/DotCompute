@@ -2,10 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Discovery;
@@ -13,7 +15,7 @@ namespace DotCompute.Algorithms.Management.Discovery;
 /// <summary>
 /// Handles plugin discovery and scanning operations with comprehensive directory traversal and filtering.
 /// </summary>
-public sealed class AlgorithmPluginScanner : IDisposable
+public sealed partial class AlgorithmPluginScanner : IDisposable
 {
     private readonly ILogger<AlgorithmPluginScanner> _logger;
     private readonly AlgorithmPluginManagerOptions _options;

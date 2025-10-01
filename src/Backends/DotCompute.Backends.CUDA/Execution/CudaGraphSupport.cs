@@ -23,6 +23,8 @@ using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Execution.Optimization;
 using Microsoft.Extensions.Logging;
+using GraphOptimizationLevel = DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel;
+using CudaArchitecture = DotCompute.Backends.CUDA.Types.CudaArchitecture;
 using DotCompute.Backends.CUDA.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution
@@ -448,7 +450,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 EnableOptimization = true,
                 EnableKernelFusion = true,
-                OptimizationLevel = CudaGraphOptimizationLevel.Aggressive,
+                OptimizationLevel = DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel.Aggressive,
                 TargetArchitecture = CudaArchitecture.Ada // RTX 2000 Ada specific
             };
 

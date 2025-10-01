@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
@@ -37,13 +38,15 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <returns>Matrix properties including sparsity, symmetry, and positive definiteness.</returns>
         public MatrixProperties AnalyzeMatrixProperties(Matrix matrix)
         {
-            return new MatrixProperties
+            var properties = new MatrixProperties
             {
-                Size = matrix.Size,
+                Rows = matrix.Rows,
+                Columns = matrix.Columns,
                 SparsityRatio = ComputeSparsityRatio(matrix),
                 IsSymmetric = IsSymmetric(matrix),
                 IsPositiveDefinite = IsPositiveDefinite(matrix)
             };
+            return properties;
         }
 
         /// <summary>
@@ -54,11 +57,23 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <returns>Combined matrix properties.</returns>
         public MatrixProperties AnalyzeMatrixProperties(Matrix a, Matrix b)
         {
-            return new MatrixProperties
+            var maxSizeA = a.Rows * a.Columns;
+            var maxSizeB = b.Rows * b.Columns;
+            var properties = new MatrixProperties();
+
+            if (maxSizeA >= maxSizeB)
             {
-                Size = Math.Max(a.Size, b.Size),
-                SparsityRatio = Math.Max(ComputeSparsityRatio(a), ComputeSparsityRatio(b))
-            };
+                properties.Rows = a.Rows;
+                properties.Columns = a.Columns;
+            }
+            else
+            {
+                properties.Rows = b.Rows;
+                properties.Columns = b.Columns;
+            }
+
+            properties.SparsityRatio = Math.Max(ComputeSparsityRatio(a), ComputeSparsityRatio(b));
+            return properties;
         }
 
         /// <summary>
@@ -71,7 +86,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             return new LAHardwareInfo
             {
                 GlobalMemorySize = accelerator.Info.TotalMemory,
-                SharedMemorySize = (int)accelerator.Info.MaxSharedMemoryPerBlock,
+                SharedMemorySize = (int)accelerator.Info.LocalMemorySize,
                 MaxWorkGroupSize = accelerator.Info.MaxThreadsPerBlock,
                 ComputeUnits = accelerator.Info.ComputeUnits
             };
@@ -86,10 +101,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <returns>Optimized kernel parameters.</returns>
         public LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
         {
-            return LinearAlgebraKernels.GetOptimizedParameters(
-                operation, 
-                ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)), 
-                hardware.ToString() ?? "Unknown");
+            // Create a fallback implementation since GetOptimizedParameters doesn't exist
+            return new LAKernelParams
+            {
+                GlobalWorkSize = new[] { (ulong)properties.Rows, (ulong)properties.Columns },
+                LocalWorkSize = new[] { 16UL, 16UL },
+                WorkGroupSize = Math.Min(hardware.MaxWorkGroupSize, 256)
+            };
         }
 
         /// <summary>

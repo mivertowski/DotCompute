@@ -454,11 +454,291 @@ internal static class SimdMathOperations
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SubtractFallback(float* left, float* right, float* result, int length)
+    {
+        for (var i = 0; i < length; i++)
+        {
+            result[i] = left[i] - right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void DivideFallback(float* left, float* right, float* result, int length)
+    {
+        for (var i = 0; i < length; i++)
+        {
+            result[i] = left[i] / right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe void FmaFallback(float* a, float* b, float* c, float* result, int length)
     {
         for (var i = 0; i < length; i++)
         {
             result[i] = a[i] * b[i] + c[i];
+        }
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Cross-platform SIMD vector subtraction with optimal instruction selection.
+    /// </summary>
+    /// <param name="left">Left operand span</param>
+    /// <param name="right">Right operand span</param>
+    /// <param name="result">Result span</param>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void Subtract(ReadOnlySpan<float> left, ReadOnlySpan<float> right, Span<float> result)
+    {
+        if (left.Length != right.Length || left.Length != result.Length)
+        {
+            throw new ArgumentException("All spans must have the same length");
+        }
+
+        var length = left.Length;
+        if (length == 0)
+        {
+            return;
+        }
+
+        fixed (float* leftPtr = left, rightPtr = right, resultPtr = result)
+        {
+            if (SimdCapabilities.HasAvx512 && length >= SimdCapabilities.Vector512Size)
+            {
+                SubtractAvx512(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (SimdCapabilities.HasAvx2 && length >= SimdCapabilities.Vector256Size)
+            {
+                SubtractAvx2(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (SimdCapabilities.HasNeon && length >= SimdCapabilities.Vector128Size)
+            {
+                SubtractNeon(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (Sse.IsSupported && length >= SimdCapabilities.Vector128Size)
+            {
+                SubtractSse(leftPtr, rightPtr, resultPtr, length);
+            }
+            else
+            {
+                SubtractFallback(leftPtr, rightPtr, resultPtr, length);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cross-platform SIMD vector division with optimal instruction selection.
+    /// </summary>
+    /// <param name="left">Left operand span</param>
+    /// <param name="right">Right operand span</param>
+    /// <param name="result">Result span</param>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void Divide(ReadOnlySpan<float> left, ReadOnlySpan<float> right, Span<float> result)
+    {
+        if (left.Length != right.Length || left.Length != result.Length)
+        {
+            throw new ArgumentException("All spans must have the same length");
+        }
+
+        var length = left.Length;
+        if (length == 0)
+        {
+            return;
+        }
+
+        fixed (float* leftPtr = left, rightPtr = right, resultPtr = result)
+        {
+            if (SimdCapabilities.HasAvx512 && length >= SimdCapabilities.Vector512Size)
+            {
+                DivideAvx512(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (SimdCapabilities.HasAvx2 && length >= SimdCapabilities.Vector256Size)
+            {
+                DivideAvx2(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (SimdCapabilities.HasNeon && length >= SimdCapabilities.Vector128Size)
+            {
+                DivideNeon(leftPtr, rightPtr, resultPtr, length);
+            }
+            else if (Sse.IsSupported && length >= SimdCapabilities.Vector128Size)
+            {
+                DivideSse(leftPtr, rightPtr, resultPtr, length);
+            }
+            else
+            {
+                DivideFallback(leftPtr, rightPtr, resultPtr, length);
+            }
+        }
+    }
+
+    #region Additional Implementation Methods
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SubtractAvx512(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector512Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector512Size)
+        {
+            var leftVec = Avx512F.LoadVector512(left + i);
+            var rightVec = Avx512F.LoadVector512(right + i);
+            var resultVec = Avx512F.Subtract(leftVec, rightVec);
+            Avx512F.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] - right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void DivideAvx512(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector512Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector512Size)
+        {
+            var leftVec = Avx512F.LoadVector512(left + i);
+            var rightVec = Avx512F.LoadVector512(right + i);
+            var resultVec = Avx512F.Divide(leftVec, rightVec);
+            Avx512F.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] / right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SubtractAvx2(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector256Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector256Size)
+        {
+            var leftVec = Avx.LoadVector256(left + i);
+            var rightVec = Avx.LoadVector256(right + i);
+            var resultVec = Avx.Subtract(leftVec, rightVec);
+            Avx.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] - right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void DivideAvx2(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector256Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector256Size)
+        {
+            var leftVec = Avx.LoadVector256(left + i);
+            var rightVec = Avx.LoadVector256(right + i);
+            var resultVec = Avx.Divide(leftVec, rightVec);
+            Avx.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] / right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SubtractNeon(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var leftVec = AdvSimd.LoadVector128(left + i);
+            var rightVec = AdvSimd.LoadVector128(right + i);
+            var resultVec = AdvSimd.Subtract(leftVec, rightVec);
+            AdvSimd.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] - right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void DivideNeon(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var leftVec = AdvSimd.LoadVector128(left + i);
+            var rightVec = AdvSimd.LoadVector128(right + i);
+            var resultVec = AdvSimd.Divide(leftVec, rightVec);
+            AdvSimd.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] / right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void SubtractSse(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var leftVec = Sse.LoadVector128(left + i);
+            var rightVec = Sse.LoadVector128(right + i);
+            var resultVec = Sse.Subtract(leftVec, rightVec);
+            Sse.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] - right[i];
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void DivideSse(float* left, float* right, float* result, int length)
+    {
+        var i = 0;
+        var vectorCount = length - (length % SimdCapabilities.Vector128Size);
+
+        for (; i < vectorCount; i += SimdCapabilities.Vector128Size)
+        {
+            var leftVec = Sse.LoadVector128(left + i);
+            var rightVec = Sse.LoadVector128(right + i);
+            var resultVec = Sse.Divide(leftVec, rightVec);
+            Sse.Store(result + i, resultVec);
+        }
+
+        // Handle remaining elements
+        for (; i < length; i++)
+        {
+            result[i] = left[i] / right[i];
         }
     }
 

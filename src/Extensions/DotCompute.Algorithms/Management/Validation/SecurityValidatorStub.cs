@@ -45,7 +45,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// <summary>
     /// Checks if the required framework version is compatible.
     /// </summary>
-    public bool IsVersionCompatible(string? requiredVersion)
+    public bool IsVersionCompatible(Version? requiredVersion)
         // Stub implementation - always returns true
 
 

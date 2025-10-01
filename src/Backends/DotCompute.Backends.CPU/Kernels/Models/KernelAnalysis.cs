@@ -3,13 +3,14 @@
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Kernels.Enums;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CPU.Kernels.Models;
 
 /// <summary>
 /// Analysis results for a kernel.
 /// </summary>
-internal sealed class KernelAnalysis
+public sealed class KernelAnalysis
 {
     public required KernelDefinition Definition { get; init; }
     public required bool CanVectorize { get; init; }
@@ -20,4 +21,10 @@ internal sealed class KernelAnalysis
     public bool HasBranching { get; set; }
     public bool HasLoops { get; set; }
     public int EstimatedComplexity { get; set; }
+
+    // Additional properties required by CpuKernelOptimizer
+    public WorkDimensions WorkDimensions { get; set; }
+    public long TotalWorkItems { get; set; }
+    public int OptimalVectorWidth { get; set; }
+    public double ThreadingOverhead { get; set; }
 }

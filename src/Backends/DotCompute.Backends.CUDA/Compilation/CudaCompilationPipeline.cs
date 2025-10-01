@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
@@ -75,12 +76,12 @@ internal sealed class CudaCompilationPipeline
         try
         {
             // Phase 1: Check cache first
-            var cacheKey = _cache.GenerateCacheKey(definition, options);
+            var cacheKey = CudaCompilationCache.GenerateCacheKey(definition, options);
             if (_cache.TryGetCachedKernel(cacheKey, out var cachedKernel, out var metadata))
             {
                 _logger.LogDebug("Using cached kernel {KernelName} (access count: {AccessCount})", 
                     definition.Name, metadata?.AccessCount ?? 0);
-                return cachedKernel;
+                return cachedKernel!; // Non-null when TryGetCachedKernel returns true
             }
 
             // Phase 2: Prepare source code

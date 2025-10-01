@@ -7,7 +7,7 @@ using global::System.Runtime.Loader;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using DotCompute.Algorithms.Management.Loading;
 using Microsoft.Extensions.Logging;
@@ -138,7 +138,13 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Description = plugin.Description,
             Author = "External",
             AssemblyPath = plugin.GetType().Assembly.Location,
-            LoadTime = DateTime.UtcNow
+            LoadTime = DateTime.UtcNow,
+            AssemblyName = plugin.GetType().Assembly.GetName().Name ?? "Unknown",
+            TypeName = plugin.GetType().FullName ?? plugin.GetType().Name,
+            Capabilities = Array.Empty<string>(),
+            SupportedAccelerators = Array.Empty<string>(),
+            LoadContextName = $"External_{plugin.Id}",
+            AdditionalMetadata = new Dictionary<string, object>()
         };
 
         // Use default load context for external plugins
@@ -230,15 +236,17 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         {
             Plugin = loadedPlugin.Plugin,
             Metadata = loadedPlugin.Metadata,
+            LoadContext = loadedPlugin.LoadContext,
+            Assembly = loadedPlugin.Assembly,
+            AssemblyLocation = loadedPlugin.Assembly.Location,
+            LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown",
             State = loadedPlugin.State,
             Health = loadedPlugin.Health,
             LoadTime = loadedPlugin.LoadTime,
             ExecutionCount = loadedPlugin.ExecutionCount,
             LastExecution = loadedPlugin.LastExecution,
             TotalExecutionTime = loadedPlugin.TotalExecutionTime,
-            LastError = loadedPlugin.LastError,
-            AssemblyLocation = loadedPlugin.Assembly.Location,
-            LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown"
+            LastError = loadedPlugin.LastError
         };
     }
 
@@ -251,7 +259,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Name = lp.Plugin.Name,
             Version = new Version(lp.Plugin.Version.ToString()),
             Description = lp.Plugin.Description,
-            SupportedAccelerators = [.. lp.Plugin.SupportedAccelerators],
+            SupportedAccelerators = [.. lp.Plugin.SupportedAcceleratorTypes],
             InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
             OutputType = lp.Plugin.GetType().Name, // Simplified - plugin type as output
             PerformanceProfile = lp.Plugin.GetPerformanceProfile()
@@ -264,7 +272,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         return _plugins.Values
             .Where(lp => lp.Health != PluginHealth.Critical && lp.State == PluginState.Running)
             .Select(lp => lp.Plugin)
-            .Where(p => p.SupportedAccelerators.Contains(acceleratorType));
+            .Where(p => p.SupportedAcceleratorTypes.Contains(acceleratorType));
     }
 
     /// <inheritdoc/>

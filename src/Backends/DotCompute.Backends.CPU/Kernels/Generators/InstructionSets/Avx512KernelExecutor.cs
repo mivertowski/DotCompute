@@ -8,6 +8,7 @@ using global::System.Runtime.Intrinsics;
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Kernels.Generators.Utilities;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels.Generators.InstructionSets;
 

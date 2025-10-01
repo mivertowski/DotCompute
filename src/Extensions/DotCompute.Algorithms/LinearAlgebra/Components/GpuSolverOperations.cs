@@ -2,13 +2,15 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels.Compilation;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
 using DotCompute.Algorithms.LinearAlgebra.Components;
 using DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
 
@@ -114,7 +116,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             var (q, r) = await _matrixOps.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
             
             // Solve R * x = Q^T * b
-            var qTranspose = await _matrixOps.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false);
+            var qTranspose = await GpuMatrixOperations.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false);
             var qtb = await _matrixOps.MultiplyAsync(qTranspose, b, accelerator, GetOptimalKernelConfig(matrixProperties), cancellationToken).ConfigureAwait(false);
             
             return await BackSubstitutionAsync(r, qtb, cancellationToken).ConfigureAwait(false);

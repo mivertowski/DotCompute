@@ -5,9 +5,14 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.Json;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Management.Info;
+using DotCompute.Algorithms.Management.Metadata;
+using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Management.Loading;
+using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -15,7 +20,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Responsible for loading algorithm plugins from assemblies with isolation and security validation.
 /// </summary>
-public sealed class AlgorithmLoader : IDisposable
+public sealed partial class AlgorithmLoader : IDisposable
 {
     private readonly ILogger<AlgorithmLoader> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -60,7 +65,7 @@ public sealed class AlgorithmLoader : IDisposable
             // Version compatibility check
             if (metadata != null && !IsVersionCompatible(metadata.RequiredFrameworkVersion))
             {
-                LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion ?? "Unknown");
+                LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion?.ToString() ?? "Unknown");
                 return Enumerable.Empty<LoadedPluginInfo>();
             }
 
@@ -104,7 +109,13 @@ public sealed class AlgorithmLoader : IDisposable
                                 Description = plugin.Description,
                                 Author = "Unknown",
                                 AssemblyPath = assemblyPath,
-                                LoadTime = DateTime.UtcNow
+                                LoadTime = DateTime.UtcNow,
+                                AssemblyName = assembly.GetName().Name ?? "Unknown",
+                                TypeName = pluginType.FullName ?? pluginType.Name,
+                                Capabilities = Array.Empty<string>(),
+                                SupportedAccelerators = Array.Empty<string>(),
+                                LoadContextName = loadContextName,
+                                AdditionalMetadata = new Dictionary<string, object>()
                             };
 
                             var loadedPlugin = new LoadedPluginInfo
@@ -223,22 +234,21 @@ public sealed class AlgorithmLoader : IDisposable
     /// <summary>
     /// Checks if the required framework version is compatible.
     /// </summary>
-    private static bool IsVersionCompatible(string? requiredVersion)
+    private static bool IsVersionCompatible(Version? requiredVersion)
     {
-        if (string.IsNullOrEmpty(requiredVersion))
+        if (requiredVersion == null)
         {
             return true;
         }
 
         try
         {
-            var required = Version.Parse(requiredVersion);
             var current = Environment.Version;
-            return current >= required;
+            return current >= requiredVersion;
         }
         catch
         {
-            return true; // If we can't parse, assume compatible
+            return true; // If we can't compare, assume compatible
         }
     }
 
@@ -283,90 +293,5 @@ public sealed class AlgorithmLoader : IDisposable
     #endregion
 }
 
-/// <summary>
-/// Information about a loaded plugin including runtime context.
-/// </summary>
-public sealed class LoadedPluginInfo
-{
-    public required IAlgorithmPlugin Plugin { get; init; }
-    public required PluginMetadata Metadata { get; init; }
-    public required PluginAssemblyLoadContext LoadContext { get; init; }
-    public required Assembly Assembly { get; init; }
-    public required DateTime LoadTime { get; init; }
-    public PluginState State { get; set; } = PluginState.Loaded;
-    public PluginHealth Health { get; set; } = PluginHealth.Unknown;
-    public long ExecutionCount { get; set; }
-    public DateTime LastExecution { get; set; }
-    public TimeSpan TotalExecutionTime { get; set; }
-    public Exception? LastError { get; set; }
-    public required string AssemblyLocation { get; set; }
-    public required string LoadContextName { get; set; }
-}
-
-/// <summary>
-/// Enhanced plugin assembly load context with isolation support.
-/// </summary>
-public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
-{
-    private readonly AssemblyDependencyResolver _resolver;
-    private readonly bool _enableIsolation;
-
-    public PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation)
-        : base(name, isCollectible: true)
-    {
-        _resolver = new AssemblyDependencyResolver(pluginPath);
-        _enableIsolation = enableIsolation;
-    }
-
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Plugin assembly loading requires dynamic loading")]
-    protected override Assembly? Load(AssemblyName assemblyName)
-    {
-        // For isolation, only load plugin dependencies from plugin directory
-        if (_enableIsolation)
-        {
-            var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-            if (assemblyPath != null)
-            {
-                return LoadFromAssemblyPath(assemblyPath);
-            }
-
-            // Don't load system assemblies in isolated context
-            if (IsSystemAssembly(assemblyName))
-            {
-                return null; // Let default context handle it
-            }
-        }
-        else
-        {
-            // Non-isolated: try to resolve dependencies first
-            var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-            if (assemblyPath != null)
-            {
-                return LoadFromAssemblyPath(assemblyPath);
-            }
-        }
-
-        return null;
-    }
-
-    protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
-    {
-        var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
-        if (libraryPath != null)
-        {
-            return LoadUnmanagedDllFromPath(libraryPath);
-        }
-
-        return IntPtr.Zero;
-    }
-
-    private static bool IsSystemAssembly(AssemblyName assemblyName)
-    {
-        var name = assemblyName.Name?.ToLowerInvariant();
-        return name != null && (
-            name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
-            name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
-            name.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
-            name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
-    }
-}
+// LoadedPluginInfo moved to dedicated file: Management/Info/LoadedPluginInfo.cs
+// PluginAssemblyLoadContext class moved to dedicated file: Management/Loading/PluginAssemblyLoadContext.cs

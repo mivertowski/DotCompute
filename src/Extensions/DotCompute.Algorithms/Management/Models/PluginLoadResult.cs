@@ -3,7 +3,7 @@
 
 using System.Reflection;
 using DotCompute.Algorithms.Management.Loading;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 
 namespace DotCompute.Algorithms.Management.Models
 {

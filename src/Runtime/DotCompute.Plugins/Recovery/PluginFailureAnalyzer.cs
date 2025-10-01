@@ -203,7 +203,9 @@ public sealed class PluginFailureAnalyzer : IDisposable
         {
             PluginId = pluginId,
             AnalysisTimestamp = DateTimeOffset.UtcNow,
-            TotalFailures = failures.Count
+            TotalFailures = failures.Count,
+            Severity = FailureSeverity.None,
+            Confidence = 0.0
         };
 
         // Analyze failure patterns
@@ -306,7 +308,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         };
     }
 
-    private static async Task<List<string>> GenerateRecommendationsAsync(
+    private static Task<List<string>> GenerateRecommendationsAsync(
         List<FailureInstance> failures,
         CancellationToken cancellationToken)
     {
@@ -354,7 +356,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
             recommendations.Add("Monitor plugin behavior and consider implementing health checks");
         }
 
-        return recommendations;
+        return Task.FromResult(recommendations);
     }
 
     private static double CalculateAnalysisConfidence(List<FailureInstance> failures)

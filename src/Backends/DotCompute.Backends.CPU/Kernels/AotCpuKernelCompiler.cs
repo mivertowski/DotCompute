@@ -5,8 +5,11 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CPU.Logging;
@@ -47,7 +50,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 3,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Matrix multiplication kernel
@@ -57,7 +60,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 5,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Element-wise operations
@@ -67,7 +70,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 3,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadWrite
+            MemoryPattern = MemoryAccessPattern.Mixed
         });
 
         // Reduction operations
@@ -77,7 +80,7 @@ internal sealed class AotCpuKernelCompiler
             ParameterCount = 2,
             SupportsVectorization = true,
             PreferredVectorWidth = 8,
-            MemoryPattern = MemoryAccessPattern.ReadOnly
+            MemoryPattern = MemoryAccessPattern.Sequential
         });
     }
 
@@ -202,10 +205,16 @@ internal sealed class AotCpuKernelCompiler
     {
         return metadata.MemoryPattern switch
         {
-            MemoryAccessPattern.ReadOnly => 128,
-            MemoryAccessPattern.WriteOnly => 64,
-            MemoryAccessPattern.ReadWrite => 32,
-            MemoryAccessPattern.ComputeIntensive => 0,
+            MemoryAccessPattern.Sequential => 128,
+            MemoryAccessPattern.Coalesced => 128,
+            MemoryAccessPattern.Strided => 64,
+            MemoryAccessPattern.Random => 32,
+            MemoryAccessPattern.Mixed => 64,
+            MemoryAccessPattern.Scatter => 32,
+            MemoryAccessPattern.Gather => 32,
+            MemoryAccessPattern.ScatterGather => 32,
+            MemoryAccessPattern.Broadcast => 0,
+            MemoryAccessPattern.Tiled => 64,
             _ => 64
         };
     }

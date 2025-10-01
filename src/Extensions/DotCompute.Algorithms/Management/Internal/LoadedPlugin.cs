@@ -6,7 +6,7 @@
 using System.Reflection;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 
 namespace DotCompute.Algorithms.Management.Internal;

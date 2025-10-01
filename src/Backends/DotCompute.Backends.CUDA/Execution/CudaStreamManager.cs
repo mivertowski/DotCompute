@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Advanced CUDA stream manager with RTX 2000 optimizations, priority scheduling, and graph-like execution patterns
     /// </summary>
-    public sealed class CudaStreamManager : IDisposable
+    public sealed partial class CudaStreamManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -960,5 +960,29 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         public List<CudaExecutionLevel> Levels { get; set; } = [];
         public int TotalNodes { get; set; }
+    }
+
+    // Extension to add missing GetStreamHealth method
+    public partial class CudaStreamManager
+    {
+        public double GetStreamHealth()
+        {
+            if (_disposed) return 0.0;
+
+            try
+            {
+                // Simple health metric based on active streams
+                var activeCount = _activeStreams.Count;
+                var maxStreams = 32; // Reasonable default
+
+                // Health decreases as we approach capacity
+                var utilizationHealth = 1.0 - ((double)activeCount / maxStreams * 0.5);
+                return Math.Max(0.0, Math.Min(1.0, utilizationHealth));
+            }
+            catch
+            {
+                return 0.5;
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
+using CudaGraphCaptureModeCanonical = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types
 {
@@ -53,14 +54,14 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
             Z = z;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            throw new NotImplementedException();
+            return obj is BlockDimensions other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            throw new NotImplementedException();
+            return HashCode.Combine(X, Y, Z);
         }
 
         public static bool operator ==(BlockDimensions left, BlockDimensions right)
@@ -75,7 +76,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
 
         public bool Equals(BlockDimensions other)
         {
-            throw new NotImplementedException();
+            return X == other.X && Y == other.Y && Z == other.Z;
         }
     }
 
@@ -152,7 +153,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         public float TotalExecutionTimeMs { get; set; }
         public float LastExecutionTimeMs { get; set; }
         public string? ClonedFrom { get; set; }
-        public CudaGraphCaptureMode? CaptureMode { get; set; }
+        public CudaGraphCaptureModeCanonical? CaptureMode { get; set; }
     }
 
     /// <summary>

@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 // TODO: Add Polly package reference to DotCompute.Algorithms.csproj for resilience patterns
 
@@ -66,7 +66,7 @@ public class AlgorithmPluginExecutor
             }
             else
             {
-                result = await plugin.ExecuteAsync(input, cancellationToken);
+                result = await plugin.ExecuteAsync(new object[] { input }, null, cancellationToken);
             }
 
             stopwatch.Stop();
@@ -133,7 +133,7 @@ public class AlgorithmPluginExecutor
                 _logger.LogDebug("Executing plugin {PluginId} with execution ID: {ExecutionId}",
                     plugin.Id, executionId);
 
-                return await plugin.ExecuteAsync(input, cancellationToken);
+                return await plugin.ExecuteAsync(new object[] { input }, null, cancellationToken);
             }
             catch (OperationCanceledException)
             {

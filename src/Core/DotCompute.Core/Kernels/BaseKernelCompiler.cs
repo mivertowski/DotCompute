@@ -18,6 +18,7 @@ using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 // Using aliases to resolve ValidationIssue conflicts
 using CoreValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 

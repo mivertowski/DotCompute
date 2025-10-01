@@ -43,32 +43,3 @@ public class KernelExecutionOptions
     /// </summary>
     public Dictionary<string, object> CustomOptions { get; set; } = [];
 }
-
-/// <summary>
-/// Context for kernel execution.
-/// </summary>
-public class KernelExecutionContext
-{
-    /// <summary>
-    /// Gets or sets the kernel to execute.
-    /// </summary>
-    public ICompiledKernel? Kernel { get; set; }
-
-
-    /// <summary>
-    /// Gets or sets the execution options.
-    /// </summary>
-    public KernelExecutionOptions Options { get; set; } = new();
-
-
-    /// <summary>
-    /// Gets or sets the kernel arguments.
-    /// </summary>
-    public object[]? Arguments { get; set; }
-
-
-    /// <summary>
-    /// Gets or sets the accelerator to execute on.
-    /// </summary>
-    public IAccelerator? Accelerator { get; set; }
-}

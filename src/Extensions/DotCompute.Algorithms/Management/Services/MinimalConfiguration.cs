@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
+using DotCompute.Algorithms.Management.Types;
 
 namespace DotCompute.Algorithms.Management.Services
 {
@@ -19,7 +20,7 @@ namespace DotCompute.Algorithms.Management.Services
 
         public IEnumerable<IConfigurationSection> GetChildren() => [];
 
-        public IChangeToken GetReloadToken() => NullChangeToken.Singleton;
+        public IChangeToken GetReloadToken() => Types.NullChangeToken.Singleton;
 
         public IConfigurationSection GetSection(string key) => new MinimalConfigurationSection(key);
     }

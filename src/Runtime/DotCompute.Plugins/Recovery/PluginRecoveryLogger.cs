@@ -185,11 +185,11 @@ public sealed class PluginRecoveryLogger : IDisposable
 
         try
         {
-            return System.Text.Json.JsonSerializer.Serialize(entries, new System.Text.Json.JsonSerializerOptions
+            return await Task.Run(() => System.Text.Json.JsonSerializer.Serialize(entries, new System.Text.Json.JsonSerializerOptions
             {
                 WriteIndented = true,
                 PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-            });
+            }));
         }
         catch (Exception ex)
         {

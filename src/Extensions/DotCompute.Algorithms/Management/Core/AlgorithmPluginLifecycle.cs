@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -13,7 +14,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// Manages the complete lifecycle of algorithm plugins from initialization to disposal.
 /// Handles plugin state transitions, health monitoring, and graceful shutdown.
 /// </summary>
-public sealed class AlgorithmPluginLifecycle : IDisposable
+public sealed partial class AlgorithmPluginLifecycle : IDisposable
 {
     private readonly ILogger<AlgorithmPluginLifecycle> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -228,7 +229,7 @@ public sealed class AlgorithmPluginLifecycle : IDisposable
         }
 
         // Validate supported accelerators
-        if (!plugin.SupportedAccelerators.Any())
+        if (!plugin.SupportedAcceleratorTypes.Any())
         {
             throw new InvalidOperationException("Plugin must support at least one accelerator type");
         }

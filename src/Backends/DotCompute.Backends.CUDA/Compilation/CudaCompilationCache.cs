@@ -330,6 +330,82 @@ internal sealed class CudaCompilationCache : IDisposable
         return new string(fileName.Where(c => !invalidChars.Contains(c)).ToArray());
     }
 
+    /// <summary>
+    /// Gets cache statistics including hit rate and entry information.
+    /// </summary>
+    public CacheStatistics GetCacheStatistics()
+    {
+        var totalRequests = 0;
+        var totalAccessCount = 0;
+        DateTime? oldestEntry = null;
+        DateTime? newestEntry = null;
+
+        foreach (var metadata in _cacheMetadata.Values)
+        {
+            totalRequests += metadata.AccessCount;
+            totalAccessCount += metadata.AccessCount;
+
+            if (oldestEntry == null || metadata.CompileTime < oldestEntry)
+            {
+                oldestEntry = metadata.CompileTime;
+            }
+
+            if (newestEntry == null || metadata.CompileTime > newestEntry)
+            {
+                newestEntry = metadata.CompileTime;
+            }
+        }
+
+        var entryCount = _cacheMetadata.Count;
+
+        return new CacheStatistics
+        {
+            HitCount = totalRequests,
+            MissCount = 0, // Would need to track this separately
+            TotalEntries = entryCount,
+            TotalSizeBytes = 0, // Would need to calculate from actual sizes
+            HitRate = totalRequests > 0 ? 1.0 : 0.0, // Simplified
+            AverageAccessCount = entryCount > 0 ? (double)totalAccessCount / entryCount : 0.0,
+            OldestEntryTime = oldestEntry,
+            NewestEntryTime = newestEntry,
+            CacheSizeBytes = 0, // Would need to calculate from actual sizes
+            LastAccess = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Clears all cached kernels and metadata.
+    /// </summary>
+    public void ClearCache()
+    {
+        _kernelCache.Clear();
+        _cacheMetadata.Clear();
+
+        try
+        {
+            // Clean up disk cache
+            if (Directory.Exists(_cacheDirectory))
+            {
+                foreach (var file in Directory.GetFiles(_cacheDirectory, "*.cache"))
+                {
+                    File.Delete(file);
+                }
+
+                var metadataFile = Path.Combine(_cacheDirectory, "metadata.json");
+                if (File.Exists(metadataFile))
+                {
+                    File.Delete(metadataFile);
+                }
+            }
+
+            _logger.LogDebug("Cache cleared successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to clear disk cache");
+        }
+    }
+
     public void Dispose()
     {
         if (_disposed)

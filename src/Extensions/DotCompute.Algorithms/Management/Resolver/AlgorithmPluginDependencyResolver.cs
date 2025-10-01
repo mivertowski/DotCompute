@@ -3,9 +3,10 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
+using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +15,7 @@ namespace DotCompute.Algorithms.Management.Resolver;
 /// <summary>
 /// Resolves plugin dependencies and provides intelligent plugin selection based on requirements.
 /// </summary>
-public sealed class AlgorithmPluginDependencyResolver : IDisposable
+public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
 {
     private readonly ILogger<AlgorithmPluginDependencyResolver> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -45,7 +46,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     /// <param name="requirements">The plugin requirements.</param>
     /// <returns>The best matching plugin if found; otherwise, null.</returns>
-    public IAlgorithmPlugin? ResolvePlugin(PluginRequirements requirements)
+    public IAlgorithmPlugin? ResolvePlugin(PluginDependencyRequirements requirements)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
@@ -99,13 +100,13 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     /// <param name="requirements">Collection of plugin requirements.</param>
     /// <returns>Dictionary mapping requirements to resolved plugins.</returns>
-    public Dictionary<PluginRequirements, IAlgorithmPlugin?> ResolvePlugins(
-        IEnumerable<PluginRequirements> requirements)
+    public Dictionary<PluginDependencyRequirements, IAlgorithmPlugin?> ResolvePlugins(
+        IEnumerable<PluginDependencyRequirements> requirements)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
 
-        var results = new Dictionary<PluginRequirements, IAlgorithmPlugin?>();
+        var results = new Dictionary<PluginDependencyRequirements, IAlgorithmPlugin?>();
 
         foreach (var requirement in requirements)
         {
@@ -121,7 +122,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <param name="outputType">The output type from the first plugin.</param>
     /// <param name="requirements">Requirements for the second plugin.</param>
     /// <returns>Collection of compatible plugin chains.</returns>
-    public IEnumerable<PluginChain> FindPluginChains(Type outputType, PluginRequirements requirements)
+    public IEnumerable<PluginChain> FindPluginChains(Type outputType, PluginDependencyRequirements requirements)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(outputType);
@@ -241,7 +242,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Finds candidate plugins based on requirements.
     /// </summary>
-    private IEnumerable<IAlgorithmPlugin> FindCandidatePlugins(PluginRequirements requirements)
+    private IEnumerable<IAlgorithmPlugin> FindCandidatePlugins(PluginDependencyRequirements requirements)
     {
         var candidates = _registry.GetHealthyPlugins();
 
@@ -278,7 +279,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Scores plugins based on how well they match requirements.
     /// </summary>
-    private IEnumerable<ScoredPlugin> ScorePlugins(IEnumerable<IAlgorithmPlugin> plugins, PluginRequirements requirements)
+    private IEnumerable<ScoredPlugin> ScorePlugins(IEnumerable<IAlgorithmPlugin> plugins, PluginDependencyRequirements requirements)
     {
         var scoredPlugins = new List<ScoredPlugin>();
 
@@ -294,7 +295,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Calculates a compatibility score for a plugin against requirements.
     /// </summary>
-    private double CalculatePluginScore(IAlgorithmPlugin plugin, PluginRequirements requirements)
+    private double CalculatePluginScore(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
     {
         double score = 0.0;
 
@@ -362,7 +363,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Checks if a plugin meets the specified requirements.
     /// </summary>
-    private bool MeetsRequirements(IAlgorithmPlugin plugin, PluginRequirements requirements)
+    private bool MeetsRequirements(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
     {
         // Check accelerator support
         if (requirements.PreferredAcceleratorType.HasValue &&
@@ -390,7 +391,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Calculates compatibility score for plugin chaining.
     /// </summary>
-    private double CalculateCompatibilityScore(IAlgorithmPlugin plugin, PluginRequirements requirements)
+    private double CalculateCompatibilityScore(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
     {
         return CalculatePluginScore(plugin, requirements);
     }
@@ -421,7 +422,7 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Creates a cache key for the requirements.
     /// </summary>
-    private static string CreateCacheKey(PluginRequirements requirements)
+    private static string CreateCacheKey(PluginDependencyRequirements requirements)
     {
         var keyParts = new List<string>
         {
@@ -609,9 +610,9 @@ public sealed class AlgorithmPluginDependencyResolver : IDisposable
 }
 
 /// <summary>
-/// Requirements for plugin resolution.
+/// Requirements for plugin dependency resolution.
 /// </summary>
-public sealed class PluginRequirements
+public sealed class PluginDependencyRequirements
 {
     /// <summary>
     /// Gets or sets the preferred accelerator type.
@@ -822,7 +823,7 @@ public sealed class ResolutionStatistics
 internal sealed class DependencyResolutionCache
 {
     public required string PluginId { get; init; }
-    public required PluginRequirements Requirements { get; init; }
+    public required PluginDependencyRequirements Requirements { get; init; }
     public DateTime ExpiryTime { get; set; }
     public double Score { get; set; }
 }

@@ -4,7 +4,9 @@
 // </copyright>
 
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
 
 namespace DotCompute.Algorithms.Management.Info;
 
@@ -61,4 +63,46 @@ public sealed class AlgorithmPluginInfo
     /// Contains performance metrics and resource requirements.
     /// </summary>
     public required AlgorithmPerformanceProfile PerformanceProfile { get; init; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when the plugin was loaded.
+    /// Used for uptime calculations and diagnostics.
+    /// </summary>
+    public DateTime LoadTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current state of the plugin.
+    /// Indicates the plugin's lifecycle stage.
+    /// </summary>
+    public PluginState State { get; set; }
+
+    /// <summary>
+    /// Gets or sets the health status of the plugin.
+    /// Indicates whether the plugin is functioning correctly.
+    /// </summary>
+    public PluginHealth Health { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of executions.
+    /// Counts how many times the plugin's algorithm has been invoked.
+    /// </summary>
+    public long ExecutionCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp of the last execution.
+    /// Used for monitoring plugin activity and idle time.
+    /// </summary>
+    public DateTime LastExecution { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cumulative execution time.
+    /// Total time spent executing the plugin's algorithm across all invocations.
+    /// </summary>
+    public TimeSpan TotalExecutionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last error message encountered by the plugin.
+    /// Null if no errors have occurred or if the last error has been cleared.
+    /// </summary>
+    public string? LastError { get; set; }
 }

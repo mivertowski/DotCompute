@@ -6,6 +6,8 @@ using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
+using DotCompute.Backends.CPU.Kernels.Enums;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -339,7 +341,7 @@ internal sealed class ILCodeGenerator
             notes.Add("Debug info enabled");
         }
 
-        if (ast.HasLoops && options.OptimizationLevel == OptimizationLevel.Maximum)
+        if (ast.HasLoops && options.OptimizationLevel == OptimizationLevel.O3)
         {
             notes.Add("Applied loop unrolling");
         }

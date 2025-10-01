@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 // using DotCompute.Core.Types; // Commented out missing namespace
 using Microsoft.Extensions.Logging;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.SignalProcessing
 {

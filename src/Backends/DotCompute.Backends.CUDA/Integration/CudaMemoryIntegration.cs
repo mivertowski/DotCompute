@@ -1,9 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
+using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -280,7 +284,7 @@ public sealed class CudaMemoryIntegration : IDisposable
             {
                 ElementType = typeof(T),
                 ElementCount = buffer.Length,
-                SizeInBytes = buffer.Length * sizeof(T),
+                SizeInBytes = buffer.Length * Unsafe.SizeOf<T>(),
                 AllocationTime = DateTimeOffset.UtcNow
             };
 

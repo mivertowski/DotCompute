@@ -567,12 +567,10 @@ public sealed class MemoryStatistics
 /// </summary>
 internal sealed class MemoryScope : IDisposable
 {
-    private readonly int _originalNode;
     private bool _disposed;
 
     public MemoryScope(int nodeId)
     {
-        _originalNode = -1; // We don't track original preferred node in this simplified implementation
         NumaInterop.SetPreferredNode(nodeId);
     }
 

@@ -6,12 +6,15 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics;
 using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using DotCompute.Abstractions.Memory;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {
@@ -320,9 +323,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var sizeB = bData.Length * sizeof(float);
             var sizeResult = resultData.Length * sizeof(float);
 
-            var bufferA = await accelerator.Memory.AllocateAsync(sizeA, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferB = await accelerator.Memory.AllocateAsync(sizeB, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferC = await accelerator.Memory.AllocateAsync(sizeResult, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferA = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferB = await accelerator.Memory.AllocateAsync<float>(bData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferC = await accelerator.Memory.AllocateAsync<float>(resultData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -419,9 +422,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var resultData = new float[aData.Length];
 
             var size = aData.Length * sizeof(float);
-            var bufferA = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferB = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferResult = await accelerator.Memory.AllocateAsync(size, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferA = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferB = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferResult = await accelerator.Memory.AllocateAsync<float>(aData.Length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
             try
             {

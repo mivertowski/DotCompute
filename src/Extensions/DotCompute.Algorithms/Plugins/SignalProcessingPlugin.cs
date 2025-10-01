@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.SignalProcessing;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +35,7 @@ public sealed class SignalProcessingPlugin : AlgorithmPluginBase
     public override string Description => "Provides digital signal processing operations including filtering, convolution, and spectral analysis.";
 
     /// <inheritdoc/>
-    public override AcceleratorType[] SupportedAccelerators => [
+    public override AcceleratorType[] SupportedAcceleratorTypes => [
         AcceleratorType.CPU,
         AcceleratorType.CUDA,
         AcceleratorType.ROCm

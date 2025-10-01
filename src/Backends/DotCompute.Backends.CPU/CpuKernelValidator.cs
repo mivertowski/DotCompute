@@ -11,6 +11,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -91,13 +92,10 @@ internal sealed class CpuKernelValidator : IDisposable
         {
             _logger.LogError(ex, "Kernel validation failed for {kernelName}", definition.Name);
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "ValidationError",
-                Message = $"Validation failed: {ex.Message}",
-                Details = ex.StackTrace
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_VALIDATION_001",
+                $"Validation failed: {ex.Message}\n{ex.StackTrace}",
+                ValidationSeverity.Error));
             return result;
         }
     }
@@ -216,7 +214,7 @@ internal sealed class CpuKernelValidator : IDisposable
         try
         {
             // Validate execution context
-            await ValidateExecutionContextAsync(context, result);
+            await ValidateExecutionContextInternalAsync(context, result);
 
             // Check for potential race conditions
             await ValidateRaceConditionsAsync(context, definition, result);
@@ -240,57 +238,51 @@ internal sealed class CpuKernelValidator : IDisposable
 
     // Private validation methods
 
-    private async Task ValidateKernelDefinitionAsync(KernelDefinition definition, CpuValidationResult result)
+    private Task ValidateKernelDefinitionAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Validate kernel name
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "KernelDefinition",
-                Message = "Kernel name cannot be null or empty"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_KERNEL_001",
+                "Kernel name cannot be null or empty",
+                ValidationSeverity.Error));
         }
 
         // Validate entry point
         if (string.IsNullOrWhiteSpace(definition.EntryPoint))
         {
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "KernelDefinition",
-                Message = "Kernel entry point cannot be null or empty"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_KERNEL_002",
+                "Kernel entry point cannot be null or empty",
+                ValidationSeverity.Error));
         }
 
-        // Validate kernel code or delegate
-        if (definition.Code == null && definition.CompiledDelegate == null)
+        // Validate kernel code
+        if (definition.Code == null)
         {
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "KernelDefinition",
-                Message = "Kernel must have either source code or compiled delegate"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_KERNEL_003",
+                "Kernel must have source code",
+                ValidationSeverity.Error));
         }
+
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateWorkDimensionsAsync(WorkDimensions workDimensions, CpuValidationResult result)
+    private Task ValidateWorkDimensionsAsync(WorkDimensions workDimensions, CpuValidationResult result)
     {
         // Validate dimension values
         if (workDimensions.X <= 0 || workDimensions.Y <= 0 || workDimensions.Z <= 0)
         {
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "WorkDimensions",
-                Message = "Work dimensions must be positive values"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_WORKDIM_001",
+                "Work dimensions must be positive values",
+                ValidationSeverity.Error));
         }
 
         // Check for excessive work items
@@ -298,12 +290,10 @@ internal sealed class CpuKernelValidator : IDisposable
         if (totalWorkItems > int.MaxValue)
         {
             result.IsValid = false;
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Category = "WorkDimensions",
-                Message = "Total work items exceeds maximum supported value"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_WORKDIM_002",
+                "Total work items exceeds maximum supported value",
+                ValidationSeverity.Error));
         }
 
         // Warn about very large workloads
@@ -316,28 +306,28 @@ internal sealed class CpuKernelValidator : IDisposable
                 Impact = "May cause memory pressure or excessive execution time"
             });
         }
+
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateCpuConstraintsAsync(
+    private Task ValidateCpuConstraintsAsync(
         KernelDefinition definition,
         WorkDimensions workDimensions,
         CpuValidationResult result)
     {
         // Validate against CPU capabilities
-        if (definition.RequiredFeatures != null)
+        if (definition.Metadata?.TryGetValue("RequiredFeatures", out var featuresObj) == true &&
+            featuresObj is IEnumerable<string> requiredFeatures)
         {
-            foreach (var feature in definition.RequiredFeatures)
+            foreach (var feature in requiredFeatures)
             {
                 if (!_cpuCapabilities.SupportedInstructionSets.Contains(feature))
                 {
                     result.IsValid = false;
-                    result.Issues.Add(new ValidationIssue
-                    {
-                        Severity = ValidationSeverity.Error,
-                        Category = "CpuCompatibility",
-                        Message = $"Required CPU feature '{feature}' is not supported",
-                        Details = $"Available features: {string.Join(", ", _cpuCapabilities.SupportedInstructionSets)}"
-                    });
+                    result.Issues.Add(new ValidationIssue(
+                        "CPU_FEATURE_001",
+                        $"Required CPU feature '{feature}' is not supported. Available features: {string.Join(", ", _cpuCapabilities.SupportedInstructionSets)}",
+                        ValidationSeverity.Error));
                 }
             }
         }
@@ -353,41 +343,20 @@ internal sealed class CpuKernelValidator : IDisposable
                 Impact = "May cause thread pool exhaustion"
             });
         }
+
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateMemoryAccessAsync(KernelDefinition definition, CpuValidationResult result)
+    private Task ValidateMemoryAccessAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Validate memory access patterns
-        if (definition.Parameters != null)
-        {
-            foreach (var param in definition.Parameters)
-            {
-                if (param.IsPointer && !param.IsReadOnly)
-                {
-                    result.Warnings.Add(new ValidationWarning
-                    {
-                        Category = "MemoryAccess",
-                        Message = $"Parameter '{param.Name}' allows mutable pointer access",
-                        Impact = "Potential for data races in multi-threaded execution"
-                    });
-                }
-
-                // Check for very large arrays
-                if (param.Size > MaxMemoryAllocation)
-                {
-                    result.IsValid = false;
-                    result.Issues.Add(new ValidationIssue
-                    {
-                        Severity = ValidationSeverity.Error,
-                        Category = "MemoryAccess",
-                        Message = $"Parameter '{param.Name}' size exceeds maximum allowed ({MaxMemoryAllocation} bytes)"
-                    });
-                }
-            }
-        }
+        // NOTE: KernelDefinition.Parameters property doesn't exist in current API
+        // Parameter validation is handled by the kernel compiler and metadata
+        // This validation would require extracting parameter info from metadata if needed
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateVectorizationCompatibilityAsync(KernelDefinition definition, CpuValidationResult result)
+    private Task ValidateVectorizationCompatibilityAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Check if vectorization is requested but not supported
         if (definition.Metadata?.ContainsKey("UseVectorization") == true &&
@@ -407,12 +376,10 @@ internal sealed class CpuKernelValidator : IDisposable
         {
             if (vectorWidth < MinVectorWidth || vectorWidth > MaxVectorWidth)
             {
-                result.Issues.Add(new ValidationIssue
-                {
-                    Severity = ValidationSeverity.Warning,
-                    Category = "Vectorization",
-                    Message = $"Vector width {vectorWidth} is outside supported range ({MinVectorWidth}-{MaxVectorWidth})"
-                });
+                result.Issues.Add(new ValidationIssue(
+                    "CPU_VECTOR_001",
+                    $"Vector width {vectorWidth} is outside supported range ({MinVectorWidth}-{MaxVectorWidth})",
+                    ValidationSeverity.Warning));
             }
 
             if (vectorWidth > Vector<float>.Count)
@@ -425,12 +392,16 @@ internal sealed class CpuKernelValidator : IDisposable
                 });
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateThreadSafetyAsync(KernelDefinition definition, CpuValidationResult result)
+    private static Task ValidateThreadSafetyAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Check for potential thread safety issues
-        if (definition.HasSharedState)
+        var hasSharedState = definition.Metadata?.TryGetValue("HasSharedState", out var sharedStateObj) == true &&
+                             sharedStateObj is bool sharedState && sharedState;
+        if (hasSharedState)
         {
             result.Warnings.Add(new ValidationWarning
             {
@@ -451,9 +422,11 @@ internal sealed class CpuKernelValidator : IDisposable
                 Impact = "May require single-threaded execution mode"
             });
         }
+
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateResourceUsageAsync(
+    private Task ValidateResourceUsageAsync(
         KernelDefinition definition,
         WorkDimensions workDimensions,
         CpuValidationResult result)
@@ -462,13 +435,10 @@ internal sealed class CpuKernelValidator : IDisposable
         var estimatedMemoryUsage = EstimateMemoryUsage(definition, workDimensions);
         if (estimatedMemoryUsage > MaxMemoryAllocation)
         {
-            result.Issues.Add(new ValidationIssue
-            {
-                Severity = ValidationSeverity.Warning,
-                Category = "ResourceUsage",
-                Message = $"Estimated memory usage ({estimatedMemoryUsage:N0} bytes) exceeds recommended limit",
-                Details = "Consider reducing work dimensions or optimizing data structures"
-            });
+            result.Issues.Add(new ValidationIssue(
+                "CPU_RESOURCE_001",
+                $"Estimated memory usage ({estimatedMemoryUsage:N0} bytes) exceeds recommended limit. Consider reducing work dimensions or optimizing data structures",
+                ValidationSeverity.Warning));
         }
 
         // Estimate execution time
@@ -482,11 +452,13 @@ internal sealed class CpuKernelValidator : IDisposable
                 Impact = "Consider chunking the workload or optimizing the algorithm"
             });
         }
+
+        return Task.CompletedTask;
     }
 
     // Execution plan validation methods
 
-    private static async Task ValidateVectorizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
+    private static Task ValidateVectorizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
     {
         if (plan.UseVectorization)
         {
@@ -506,9 +478,11 @@ internal sealed class CpuKernelValidator : IDisposable
                 result.Issues.Add($"Invalid vector width: {plan.VectorWidth} (max: {Vector<float>.Count})");
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateParallelizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
+    private static Task ValidateParallelizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
     {
         if (plan.UseParallelization)
         {
@@ -523,25 +497,31 @@ internal sealed class CpuKernelValidator : IDisposable
                 result.Issues.Add($"Thread count ({plan.OptimalThreadCount}) significantly exceeds CPU core count ({Environment.ProcessorCount})");
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateMemoryOptimizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
+    private static Task ValidateMemoryOptimizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
     {
         if (plan.MemoryOptimizations?.Contains("InvalidOptimization") == true)
         {
             result.Issues.Add("Invalid memory optimization specified");
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateCacheOptimizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
+    private static Task ValidateCacheOptimizationSettingsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
     {
         if (plan.CacheOptimizations?.Contains("InvalidOptimization") == true)
         {
             result.Issues.Add("Invalid cache optimization specified");
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateResourceConstraintsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
+    private static Task ValidateResourceConstraintsAsync(KernelExecutionPlan plan, ExecutionPlanValidationResult result)
     {
         // Validate resource constraints are reasonable
         var estimatedMemory = plan.OptimalThreadCount * 1024 * 1024; // 1MB per thread estimate
@@ -549,73 +529,57 @@ internal sealed class CpuKernelValidator : IDisposable
         {
             result.Issues.Add($"Execution plan may exceed memory limits: {estimatedMemory:N0} bytes estimated");
         }
+
+        return Task.CompletedTask;
     }
 
     // Argument validation methods
 
-    private static async Task ValidateArgumentCountAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
+    private static Task ValidateArgumentCountAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
     {
-        var expectedCount = definition.Parameters?.Count ?? 0;
-        if (arguments.Count != expectedCount)
+        // NOTE: KernelDefinition.Parameters property doesn't exist in current API
+        // Argument count validation is handled at the kernel execution level
+        // We can check if arguments exist but can't validate count without parameter metadata
+        if (arguments.Count == 0)
         {
-            result.IsValid = false;
-            result.Issues.Add($"Argument count mismatch: expected {expectedCount}, got {arguments.Count}");
+            result.Issues.Add("No arguments provided for kernel execution");
         }
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateArgumentTypesAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
+    private Task ValidateArgumentTypesAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
     {
-        if (definition.Parameters == null)
-        {
-            return;
-        }
-
-
-        for (var i = 0; i < Math.Min(arguments.Count, definition.Parameters.Count); i++)
+        // NOTE: KernelDefinition.Parameters property doesn't exist in current API
+        // Type validation is performed by the kernel compiler based on metadata
+        // We can only do basic null/existence checks here
+        for (var i = 0; i < arguments.Count; i++)
         {
             var argument = arguments[i];
-            var parameter = definition.Parameters[i];
-
-            if (!IsTypeCompatible(argument.GetType(), parameter.Type))
+            if (argument == null)
             {
-                result.IsValid = false;
-                result.Issues.Add($"Argument {i} type mismatch: expected {parameter.Type}, got {argument.GetType()}");
+                result.Issues.Add($"Argument {i} is null");
             }
         }
+        return Task.CompletedTask;
     }
 
-    private async Task ValidateArgumentConstraintsAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
+    private Task ValidateArgumentConstraintsAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
     {
-        if (definition.Parameters == null)
-        {
-            return;
-        }
-
-
-        for (var i = 0; i < Math.Min(arguments.Count, definition.Parameters.Count); i++)
+        // NOTE: KernelDefinition.Parameters property doesn't exist in current API
+        // Constraint validation would require parameter metadata which isn't available
+        // Basic validation: check for empty arrays
+        for (var i = 0; i < arguments.Count; i++)
         {
             var argument = arguments[i];
-            var parameter = definition.Parameters[i];
-
-            // Validate array sizes
-            if (argument is Array array && parameter.MinSize > 0)
+            if (argument is Array array && array.Length == 0)
             {
-                if (array.Length < parameter.MinSize)
-                {
-                    result.IsValid = false;
-                    result.Issues.Add($"Argument {i} array too small: {array.Length} < {parameter.MinSize}");
-                }
-            }
-
-            // Validate numeric ranges
-            if (parameter.MinValue.HasValue || parameter.MaxValue.HasValue)
-            {
-                ValidateNumericRange(argument, parameter, i, result);
+                result.Issues.Add($"Argument {i} is an empty array");
             }
         }
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateMemoryAlignmentAsync(KernelArguments arguments, ArgumentValidationResult result)
+    private static Task ValidateMemoryAlignmentAsync(KernelArguments arguments, ArgumentValidationResult result)
     {
         // Check for proper memory alignment for vectorization
         foreach (var (arg, index) in arguments.Select((arg, i) => (arg, i)))
@@ -630,11 +594,34 @@ internal sealed class CpuKernelValidator : IDisposable
                 }
             }
         }
+
+        return Task.CompletedTask;
     }
 
     // Runtime validation methods
 
-    private static async Task ValidateExecutionContextAsync(KernelExecutionContext context, RuntimeValidationResult result)
+    /// <summary>
+    /// Validates execution context for kernel execution (public overload).
+    /// </summary>
+    public async Task<RuntimeValidationResult> ValidateExecutionContextAsync(
+        KernelExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var result = new RuntimeValidationResult
+        {
+            KernelName = "ExecutionContext",
+            ValidationTime = DateTimeOffset.UtcNow,
+            IsValid = true
+        };
+
+        await ValidateExecutionContextInternalAsync(context, result);
+        return result;
+    }
+
+    private static Task ValidateExecutionContextInternalAsync(KernelExecutionContext context, RuntimeValidationResult result)
     {
         if (context.WorkDimensions.X <= 0 || context.WorkDimensions.Y <= 0 || context.WorkDimensions.Z <= 0)
         {
@@ -642,38 +629,43 @@ internal sealed class CpuKernelValidator : IDisposable
             result.Issues.Add("Invalid work dimensions in execution context");
         }
 
-        if (context.Arguments?.Any() != true)
+        if ((context.Buffers?.Any() != true) && (context.Scalars?.Any() != true))
         {
             result.Issues.Add("No arguments provided in execution context");
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateRaceConditionsAsync(KernelExecutionContext context, KernelDefinition definition, RuntimeValidationResult result)
+    private static Task ValidateRaceConditionsAsync(KernelExecutionContext context, KernelDefinition definition, RuntimeValidationResult result)
     {
         // Check for potential race conditions in shared memory access
-        if (definition.HasSharedState && context.WorkDimensions.X * context.WorkDimensions.Y * context.WorkDimensions.Z > 1)
+        var hasSharedState = definition.Metadata?.TryGetValue("HasSharedState", out var sharedStateObj) == true &&
+                             sharedStateObj is bool sharedState && sharedState;
+        if (hasSharedState && context.WorkDimensions.X * context.WorkDimensions.Y * context.WorkDimensions.Z > 1)
         {
             result.Issues.Add("Potential race condition: shared state access in parallel execution");
         }
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateMemoryBoundsAsync(KernelExecutionContext context, RuntimeValidationResult result)
+    private static Task ValidateMemoryBoundsAsync(KernelExecutionContext context, RuntimeValidationResult result)
     {
-        // Validate memory bounds for array arguments
-        foreach (var (arg, index) in context.Arguments.Select((arg, i) => (arg, i)))
+        // Validate memory bounds for buffer arguments
+        var totalWorkItems = context.WorkDimensions.X * context.WorkDimensions.Y * context.WorkDimensions.Z;
+
+        foreach (var (index, buffer) in context.Buffers)
         {
-            if (arg is Array array)
+            if (buffer.Length < totalWorkItems)
             {
-                var totalWorkItems = context.WorkDimensions.X * context.WorkDimensions.Y * context.WorkDimensions.Z;
-                if (array.Length < totalWorkItems)
-                {
-                    result.Issues.Add($"Argument {index} array size ({array.Length}) insufficient for work dimensions ({totalWorkItems})");
-                }
+                result.Issues.Add($"Buffer {index} size ({buffer.Length}) insufficient for work dimensions ({totalWorkItems})");
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ValidateStackUsageAsync(KernelExecutionContext context, RuntimeValidationResult result)
+    private static Task ValidateStackUsageAsync(KernelExecutionContext context, RuntimeValidationResult result)
     {
         // Estimate stack usage based on work dimensions and recursion depth
         var estimatedStackDepth = EstimateStackDepth(context);
@@ -681,6 +673,8 @@ internal sealed class CpuKernelValidator : IDisposable
         {
             result.Issues.Add($"Estimated stack depth ({estimatedStackDepth}) may cause stack overflow");
         }
+
+        return Task.CompletedTask;
     }
 
     // Helper methods
@@ -708,7 +702,8 @@ internal sealed class CpuKernelValidator : IDisposable
     private static long EstimateMemoryUsage(KernelDefinition definition, WorkDimensions workDimensions)
     {
         var totalWorkItems = workDimensions.X * workDimensions.Y * workDimensions.Z;
-        var averageParameterSize = definition.Parameters?.Average(p => p.Size) ?? 64;
+        // NOTE: KernelDefinition.Parameters doesn't exist, using default estimation
+        var averageParameterSize = 64; // Default estimate per work item
         return (long)(totalWorkItems * averageParameterSize);
     }
 
@@ -728,13 +723,13 @@ internal sealed class CpuKernelValidator : IDisposable
     {
         if (argument is IComparable comparable)
         {
-            if (parameter.MinValue.HasValue && comparable.CompareTo(parameter.MinValue.Value) < 0)
+            if (parameter.MinValue != null && comparable.CompareTo(parameter.MinValue) < 0)
             {
                 result.IsValid = false;
                 result.Issues.Add($"Argument {index} below minimum value: {argument} < {parameter.MinValue}");
             }
 
-            if (parameter.MaxValue.HasValue && comparable.CompareTo(parameter.MaxValue.Value) > 0)
+            if (parameter.MaxValue != null && comparable.CompareTo(parameter.MaxValue) > 0)
             {
                 result.IsValid = false;
                 result.Issues.Add($"Argument {index} above maximum value: {argument} > {parameter.MaxValue}");

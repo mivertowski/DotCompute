@@ -87,6 +87,14 @@ public sealed class PluginRecoveryContext
     }
 
     /// <summary>
+    /// Creates a new recovery context with plugin instance
+    /// </summary>
+    public PluginRecoveryContext(string pluginId, object plugin) : this(pluginId)
+    {
+        Plugin = plugin;
+    }
+
+    /// <summary>
     /// Creates a recovery context from an exception
     /// </summary>
     public static PluginRecoveryContext FromException(string pluginId, Exception exception)

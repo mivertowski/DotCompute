@@ -29,6 +29,18 @@ namespace DotCompute.Backends.CUDA
             Initialize();
         }
 
+        public CudaContext(IntPtr contextPtr, int deviceId)
+        {
+            _context = contextPtr;
+            _deviceId = deviceId;
+            // Context already created, just initialize stream
+            var result = CudaRuntime.cudaStreamCreate(ref _stream);
+            if (result != CudaError.Success)
+            {
+                throw new AcceleratorException($"Failed to create CUDA stream: {result}");
+            }
+        }
+
         private void Initialize()
         {
             // Ensure CUDA runtime is properly initialized
@@ -141,6 +153,14 @@ namespace DotCompute.Backends.CUDA
             }
 
             _disposed = true;
+        }
+
+        /// <summary>
+        /// Converts this CudaContext to an IAccelerator
+        /// </summary>
+        public IAccelerator ToIAccelerator()
+        {
+            return new CudaAccelerator(DeviceId);
         }
     }
 }

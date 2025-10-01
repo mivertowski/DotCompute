@@ -72,7 +72,7 @@ public sealed class KernelPerformanceModel
     /// <summary>
     /// Gets or sets identified performance bottlenecks.
     /// </summary>
-    public List<DotCompute.Backends.CUDA.Advanced.Profiling.Types.BottleneckType> Bottlenecks { get; set; } = [];
+    public List<BottleneckType> Bottlenecks { get; set; } = [];
 }
 
 /// <summary>

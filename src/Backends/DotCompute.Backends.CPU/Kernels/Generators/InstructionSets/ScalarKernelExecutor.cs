@@ -5,6 +5,7 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Kernels.Generators.Utilities;
+using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels.Generators.InstructionSets;
 

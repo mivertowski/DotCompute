@@ -1,7 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;
@@ -51,8 +53,8 @@ public sealed class SimdInstructionSelector : IDisposable
         var profile = new WorkloadProfile
         {
             ElementCount = elementCount,
-            ElementSize = sizeof(T),
-            DataSize = elementCount * sizeof(T),
+            ElementSize = Unsafe.SizeOf<T>(),
+            DataSize = elementCount * Unsafe.SizeOf<T>(),
             IsFloatingPoint = typeof(T) == typeof(float) || typeof(T) == typeof(double),
             IsLargeDataset = elementCount > 100_000,
             RequiresHighPrecision = typeof(T) == typeof(double),

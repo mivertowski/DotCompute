@@ -9,6 +9,9 @@ using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Backends.CUDA.Integration.Components;
 
@@ -22,7 +25,7 @@ public sealed class CudaKernelExecutor : IDisposable
     private readonly CudaContext _context;
     private readonly CudaStreamManager _streamManager;
     private readonly CudaEventManager _eventManager;
-    private readonly CudaKernelExecutor _internalExecutor;
+    private readonly IKernelExecutor _kernelExecutor;
     private readonly KernelConfigurationOptimizer _configurationOptimizer;
     private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
     private volatile bool _disposed;
@@ -39,7 +42,11 @@ public sealed class CudaKernelExecutor : IDisposable
         _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
         _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
 
-        _internalExecutor = new CudaKernelExecutor(accelerator, context, streamManager, eventManager, logger);
+        // Create logger with correct generic type for Execution.CudaKernelExecutor
+        var executorLogger = logger is ILogger<Execution.CudaKernelExecutor> typedLogger
+            ? typedLogger
+            : (ILogger<Execution.CudaKernelExecutor>)(object)logger;
+        _kernelExecutor = new Execution.CudaKernelExecutor(accelerator, context, streamManager, eventManager, executorLogger);
         _configurationOptimizer = new KernelConfigurationOptimizer(context, logger);
         _kernelCache = [];
 
@@ -80,9 +87,10 @@ public sealed class CudaKernelExecutor : IDisposable
                 await GetOptimalConfigurationAsync(kernel, arguments, cancellationToken).ConfigureAwait(false) :
                 config;
 
-            // Execute through internal executor
-            var result = await _internalExecutor.ExecuteAndWaitAsync(
-                kernel, arguments, executionConfig, cancellationToken).ConfigureAwait(false);
+            // Execute through kernel executor
+            var compiledKernel = kernel as Abstractions.Kernels.CompiledKernel ?? throw new InvalidOperationException("Kernel must be a CompiledKernel");
+            var result = await _kernelExecutor.ExecuteAndWaitAsync(
+                compiledKernel, arguments, executionConfig, cancellationToken).ConfigureAwait(false);
 
             var endTime = DateTimeOffset.UtcNow;
             var executionTime = endTime - startTime;
@@ -96,7 +104,7 @@ public sealed class CudaKernelExecutor : IDisposable
                 Success = result.Success,
                 ExecutionTime = executionTime,
                 ErrorMessage = result.ErrorMessage,
-                PerformanceMetrics = result.PerformanceMetrics,
+                // PerformanceMetrics handled by base result
                 OptimizationsApplied = true,
                 ConfigurationUsed = executionConfig
             };
@@ -169,7 +177,7 @@ public sealed class CudaKernelExecutor : IDisposable
             _logger.LogDebug("Compiling kernel {KernelName}", definition.Name);
 
             // Compile kernel using the accelerator
-            var accelerator = _internalExecutor.Accelerator;
+            var accelerator = _kernelExecutor.Accelerator;
             var compiledKernel = await accelerator.CompileKernelAsync(definition, options, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -262,14 +270,15 @@ public sealed class CudaKernelExecutor : IDisposable
     {
         ThrowIfDisposed();
 
+        // Note: Statistics would need to be implemented in IKernelExecutor
         return new KernelExecutorStatistics
         {
-            TotalExecutions = _internalExecutor.Statistics.TotalExecutions,
-            SuccessfulExecutions = _internalExecutor.Statistics.SuccessfulExecutions,
-            FailedExecutions = _internalExecutor.Statistics.FailedExecutions,
-            AverageExecutionTime = _internalExecutor.Statistics.AverageExecutionTime,
+            TotalExecutions = 0, // TODO: Implement statistics in IKernelExecutor
+            SuccessfulExecutions = 0,
+            FailedExecutions = 0,
+            AverageExecutionTime = TimeSpan.Zero,
             CachedKernels = _kernelCache.Count,
-            LastExecutionTime = _internalExecutor.Statistics.LastExecutionTime
+            LastExecutionTime = DateTimeOffset.MinValue
         };
     }
 
@@ -388,7 +397,7 @@ public sealed class CudaKernelExecutor : IDisposable
             _kernelCache.Clear();
 
             _configurationOptimizer?.Dispose();
-            _internalExecutor?.Dispose();
+            (_kernelExecutor as IDisposable)?.Dispose();
 
             _logger.LogDebug("CUDA kernel execution orchestrator disposed");
         }

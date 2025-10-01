@@ -7,21 +7,22 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
-// using DotCompute.Algorithms.Management.Security; // Namespace not yet implemented
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Abstractions;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Algorithms.Management
 {
     /// <summary>
     /// Handles validation of algorithm plugins including security, compatibility, and integrity checks.
     /// </summary>
-    public sealed partial class AlgorithmPluginValidator
+    public sealed partial class AlgorithmPluginValidator : IDisposable, IAsyncDisposable
     {
         private readonly ILogger<AlgorithmPluginValidator> _logger;
         private readonly AlgorithmPluginManagerOptions _options;
         private readonly ConcurrentDictionary<string, ValidationResult> _validationCache = new();
         // private readonly AssemblyValidator _assemblyValidator; // TODO: Implement security validation
-        // private readonly MalwareScanner _malwareScanner; // TODO: Implement malware scanning
+        private readonly MalwareScanner _malwareScanner;
 
         public AlgorithmPluginValidator(ILogger<AlgorithmPluginValidator> logger, AlgorithmPluginManagerOptions options)
         {
@@ -29,7 +30,7 @@ namespace DotCompute.Algorithms.Management
             _options = options ?? throw new ArgumentNullException(nameof(options));
             // TODO: Initialize security validators when implemented
             // _assemblyValidator = new AssemblyValidator(logger, options);
-            // _malwareScanner = new MalwareScanner(logger, options);
+            _malwareScanner = new MalwareScanner(logger, options);
         }
 
         /// <summary>
@@ -68,17 +69,13 @@ namespace DotCompute.Algorithms.Management
                 // Placeholder: Add basic security validation warning until security classes are implemented
                 validationTasks.Add(Task.FromResult(ValidationResult.Warning(
                     "Security validation not yet implemented - plugin loaded without security checks",
-                    ValidationSeverity.Medium)));
+                    ValidationSeverity.Warning)));
             }
 
-            // Malware scanning - TODO: Implement malware scanning classes
+            // Malware scanning
             if (_options.EnableMalwareScanning)
             {
-                // validationTasks.Add(_malwareScanner.ScanAssemblyAsync(assemblyPath, cancellationToken));
-                // Placeholder: Add basic malware scanning warning until security classes are implemented
-                validationTasks.Add(Task.FromResult(ValidationResult.Warning(
-                    "Malware scanning not yet implemented - plugin loaded without malware checks",
-                    ValidationSeverity.Medium)));
+                validationTasks.Add(ValidateAssemblyMalwareAsync(assemblyPath, cancellationToken));
             }
 
             // Digital signature validation
@@ -153,7 +150,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     return ValidationResult.Failure(
                         $"Assembly size ({fileInfo.Length:N0} bytes) exceeds maximum allowed size ({_options.MaxAssemblySize:N0} bytes)",
-                        ValidationSeverity.High);
+                        ValidationSeverity.Error);
                 }
 
                 // Extension validation
@@ -162,7 +159,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     return ValidationResult.Warning(
                         $"Unexpected file extension: {fileInfo.Extension}",
-                        ValidationSeverity.Low);
+                        ValidationSeverity.Info);
                 }
 
                 // Check if file is locked
@@ -175,7 +172,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     return ValidationResult.Failure(
                         "Assembly file is locked or inaccessible",
-                        ValidationSeverity.Medium);
+                        ValidationSeverity.Warning);
                 }
 
                 LogFileBasicsValid(assemblyPath, fileInfo.Length);
@@ -184,7 +181,7 @@ namespace DotCompute.Algorithms.Management
             catch (Exception ex)
             {
                 LogFileBasicsValidationFailed(assemblyPath, ex.Message);
-                return ValidationResult.Failure($"File basics validation failed: {ex.Message}", ValidationSeverity.High);
+                return ValidationResult.Failure($"File basics validation failed: {ex.Message}", ValidationSeverity.Error);
             }
         }
 
@@ -210,7 +207,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     return ValidationResult.Failure(
                         "Assembly is not strong-named",
-                        ValidationSeverity.High);
+                        ValidationSeverity.Error);
                 }
 
                 // Check against trusted publishers
@@ -224,7 +221,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         return ValidationResult.Warning(
                             "Assembly is not from a trusted publisher",
-                            ValidationSeverity.Medium);
+                            ValidationSeverity.Warning);
                     }
                 }
 
@@ -234,7 +231,7 @@ namespace DotCompute.Algorithms.Management
             catch (Exception ex)
             {
                 LogDigitalSignatureValidationFailed(assemblyPath, ex.Message);
-                return ValidationResult.Failure($"Digital signature validation failed: {ex.Message}", ValidationSeverity.High);
+                return ValidationResult.Failure($"Digital signature validation failed: {ex.Message}", ValidationSeverity.Error);
             }
         }
 
@@ -262,7 +259,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         validations.Add(ValidationResult.Warning(
                             $"Assembly targets potentially incompatible framework: {targetFramework.FrameworkName}",
-                            ValidationSeverity.Medium));
+                            ValidationSeverity.Warning));
                     }
                 }
 
@@ -272,7 +269,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     validations.Add(ValidationResult.Warning(
                         $"Assembly runtime version may be incompatible: {runtimeVersion}",
-                        ValidationSeverity.Low));
+                        ValidationSeverity.Info));
                 }
 
                 // Check for plugin interface implementation
@@ -283,7 +280,7 @@ namespace DotCompute.Algorithms.Management
                 {
                     validations.Add(ValidationResult.Failure(
                         "Assembly does not contain any classes implementing IAlgorithmPlugin",
-                        ValidationSeverity.High));
+                        ValidationSeverity.Error));
                 }
 
                 LogAssemblyMetadataValid(assemblyPath);
@@ -292,7 +289,53 @@ namespace DotCompute.Algorithms.Management
             catch (Exception ex)
             {
                 LogAssemblyMetadataValidationFailed(assemblyPath, ex.Message);
-                return ValidationResult.Failure($"Assembly metadata validation failed: {ex.Message}", ValidationSeverity.High);
+                return ValidationResult.Failure($"Assembly metadata validation failed: {ex.Message}", ValidationSeverity.Error);
+            }
+        }
+
+        /// <summary>
+        /// Validates an assembly for malware using the malware scanner.
+        /// </summary>
+        /// <param name="assemblyPath">Path to the assembly.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Validation result.</returns>
+        private async Task<ValidationResult> ValidateAssemblyMalwareAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var scanResult = await _malwareScanner.ScanAssemblyAsync(assemblyPath, cancellationToken);
+
+                if (!scanResult.IsSuccess)
+                {
+                    return ValidationResult.Failure(
+                        $"Malware scan failed: {string.Join(", ", scanResult.Errors)}",
+                        ValidationSeverity.Critical);
+                }
+
+                if (scanResult.IsMalwareDetected)
+                {
+                    var threatDetails = string.Join("; ", scanResult.DetectedThreats.Select(t => $"{t.Name}: {t.Description}"));
+                    return ValidationResult.Failure(
+                        $"Malware detected in assembly (Confidence: {scanResult.ConfidenceScore:P1}): {threatDetails}",
+                        ValidationSeverity.Critical);
+                }
+
+                if (scanResult.Warnings.Count > 0)
+                {
+                    var warnings = string.Join("; ", scanResult.Warnings);
+                    return ValidationResult.Warning(
+                        $"Malware scan completed with warnings: {warnings}",
+                        ValidationSeverity.Warning);
+                }
+
+                return ValidationResult.Success($"Malware scan completed successfully in {scanResult.ScanDuration.TotalMilliseconds:F1}ms");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during malware scanning of {AssemblyPath}", assemblyPath);
+                return ValidationResult.Failure(
+                    $"Malware scanning failed with exception: {ex.Message}",
+                    ValidationSeverity.High);
             }
         }
 
@@ -306,23 +349,23 @@ namespace DotCompute.Algorithms.Management
             // Required properties
             if (string.IsNullOrWhiteSpace(plugin.Id))
             {
-                validations.Add(ValidationResult.Failure("Plugin ID is required", ValidationSeverity.High));
+                validations.Add(ValidationResult.Failure("Plugin ID is required", ValidationSeverity.Error));
             }
 
             if (string.IsNullOrWhiteSpace(plugin.Name))
             {
-                validations.Add(ValidationResult.Failure("Plugin name is required", ValidationSeverity.High));
+                validations.Add(ValidationResult.Failure("Plugin name is required", ValidationSeverity.Error));
             }
 
             if (plugin.Version == null)
             {
-                validations.Add(ValidationResult.Failure("Plugin version is required", ValidationSeverity.High));
+                validations.Add(ValidationResult.Failure("Plugin version is required", ValidationSeverity.Error));
             }
 
             // Capabilities
             if (plugin.SupportedOperations?.Any() != true)
             {
-                validations.Add(ValidationResult.Warning("Plugin declares no supported operations", ValidationSeverity.Low));
+                validations.Add(ValidationResult.Warning("Plugin declares no supported operations", ValidationSeverity.Info));
             }
 
             return CombineValidationResults(validations.ToArray());
@@ -338,19 +381,19 @@ namespace DotCompute.Algorithms.Management
             // ID format validation (should be a valid identifier)
             if (!IsValidIdentifier(plugin.Id))
             {
-                validations.Add(ValidationResult.Warning("Plugin ID should be a valid identifier", ValidationSeverity.Low));
+                validations.Add(ValidationResult.Warning("Plugin ID should be a valid identifier", ValidationSeverity.Info));
             }
 
             // Version format validation
             if (plugin.Version != null && Version.TryParse(plugin.Version, out var version) && version.Major < 0)
             {
-                validations.Add(ValidationResult.Warning("Plugin version appears invalid", ValidationSeverity.Low));
+                validations.Add(ValidationResult.Warning("Plugin version appears invalid", ValidationSeverity.Info));
             }
 
             // Description validation
             if (string.IsNullOrWhiteSpace(plugin.Description))
             {
-                validations.Add(ValidationResult.Warning("Plugin description is missing", ValidationSeverity.Low));
+                validations.Add(ValidationResult.Warning("Plugin description is missing", ValidationSeverity.Info));
             }
 
             return CombineValidationResults(validations.ToArray());
@@ -376,7 +419,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         validations.Add(ValidationResult.Failure(
                             "Plugin requires file system access which is not allowed",
-                            ValidationSeverity.High));
+                            ValidationSeverity.Error));
                     }
                 }
 
@@ -386,7 +429,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         validations.Add(ValidationResult.Failure(
                             "Plugin requires network access which is not allowed",
-                            ValidationSeverity.High));
+                            ValidationSeverity.Error));
                     }
                 }
 
@@ -394,7 +437,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                return ValidationResult.Failure($"Capability validation failed: {ex.Message}", ValidationSeverity.Medium);
+                return ValidationResult.Failure($"Capability validation failed: {ex.Message}", ValidationSeverity.Warning);
             }
         }
 
@@ -412,14 +455,14 @@ namespace DotCompute.Algorithms.Management
                 {
                     validations.Add(ValidationResult.Failure(
                         $"Plugin requires {resourceAware.RequiredMemoryMB}MB memory, but limit is {_options.MaxMemoryUsageMB}MB",
-                        ValidationSeverity.High));
+                        ValidationSeverity.Error));
                 }
 
                 if (resourceAware.RequiredCpuCores > Environment.ProcessorCount)
                 {
                     validations.Add(ValidationResult.Warning(
                         $"Plugin requests {resourceAware.RequiredCpuCores} CPU cores, but only {Environment.ProcessorCount} available",
-                        ValidationSeverity.Medium));
+                        ValidationSeverity.Warning));
                 }
             }
 
@@ -441,7 +484,7 @@ namespace DotCompute.Algorithms.Management
             {
                 validations.Add(ValidationResult.Warning(
                     "Plugin assembly lacks security transparency attributes",
-                    ValidationSeverity.Medium));
+                    ValidationSeverity.Warning));
             }
 
             return CombineValidationResults(validations.ToArray());
@@ -563,6 +606,25 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Error, Message = "Assembly metadata validation failed for {AssemblyPath}: {Reason}")]
         private partial void LogAssemblyMetadataValidationFailed(string assemblyPath, string reason);
+
+        /// <summary>
+        /// Disposes resources used by the validator.
+        /// </summary>
+        public void Dispose()
+        {
+            _malwareScanner?.Dispose();
+        }
+
+        /// <summary>
+        /// Asynchronously disposes resources used by the validator.
+        /// </summary>
+        public async ValueTask DisposeAsync()
+        {
+            if (_malwareScanner != null)
+            {
+                await _malwareScanner.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     /// <summary>
@@ -583,22 +645,40 @@ namespace DotCompute.Algorithms.Management
         public ValidationSeverity Severity { get; }
         public bool HasWarnings { get; }
 
-        public static ValidationResult Success(string message) => new(true, message, ValidationSeverity.None);
+        public static ValidationResult Success(string message) => new(true, message, ValidationSeverity.Info);
         public static ValidationResult Warning(string message, ValidationSeverity severity) => new(true, message, severity, true);
         public static ValidationResult Failure(string message, ValidationSeverity severity) => new(false, message, severity);
     }
 
     /// <summary>
-    /// Legacy alias for ValidationSeverity. Use DotCompute.Abstractions.Validation.ValidationSeverity instead.
+    /// Severity level for validation results.
     /// </summary>
-    [System.Obsolete("Use DotCompute.Abstractions.Validation.ValidationSeverity instead. This alias will be removed in a future version.")]
     public enum ValidationSeverity
     {
-        None = 0,
-        Low = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Info,
-        Medium = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Warning,
-        High = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Error,
-        Critical = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Critical
+        /// <summary>
+        /// Informational message.
+        /// </summary>
+        Info = 0,
+
+        /// <summary>
+        /// Warning message.
+        /// </summary>
+        Warning = 1,
+
+        /// <summary>
+        /// Error message.
+        /// </summary>
+        Error = 2,
+
+        /// <summary>
+        /// High severity issue.
+        /// </summary>
+        High = 3,
+
+        /// <summary>
+        /// Critical issue.
+        /// </summary>
+        Critical = 4
     }
 
     /// <summary>

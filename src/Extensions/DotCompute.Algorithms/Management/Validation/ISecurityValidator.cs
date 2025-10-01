@@ -27,5 +27,5 @@ public interface ISecurityValidator
     /// </summary>
     /// <param name="requiredVersion">The required framework version.</param>
     /// <returns>True if the version is compatible; otherwise, false.</returns>
-    public bool IsVersionCompatible(string? requiredVersion);
+    public bool IsVersionCompatible(Version? requiredVersion);
 }

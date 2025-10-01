@@ -4,15 +4,19 @@
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Management.Info;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Sockets;
 
 namespace DotCompute.Algorithms.Management.Services;
 
 /// <summary>
 /// Manages the lifecycle of algorithm plugins including initialization, execution, and disposal.
 /// </summary>
-public sealed class AlgorithmLifecycleManager : IDisposable
+public sealed partial class AlgorithmLifecycleManager : IDisposable
 {
     private readonly ILogger<AlgorithmLifecycleManager> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -59,7 +63,7 @@ public sealed class AlgorithmLifecycleManager : IDisposable
         {
             _registry.UpdatePluginState(pluginId, PluginState.Initializing);
 
-            await loadedPlugin.Plugin.InitializeAsync(accelerator, cancellationToken).ConfigureAwait(false);
+            await loadedPlugin.Plugin.InitializeAsync(accelerator, _logger).ConfigureAwait(false);
 
             _registry.UpdatePluginState(pluginId, PluginState.Running);
             _registry.UpdatePluginHealth(pluginId, PluginHealth.Healthy);
@@ -219,7 +223,9 @@ public sealed class AlgorithmLifecycleManager : IDisposable
         {
             try
             {
-                return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
+                // Convert inputs array to single input object for plugin interface
+                var singleInput = inputs.Length == 1 ? inputs[0] : inputs;
+                return await plugin.ExecuteAsync(singleInput, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (attempt < maxRetries && IsTransientError(ex))
             {
@@ -229,7 +235,9 @@ public sealed class AlgorithmLifecycleManager : IDisposable
         }
 
         // Final attempt without retry handling
-        return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
+        // Convert inputs array to single input object for plugin interface
+        var singleInput = inputs.Length == 1 ? inputs[0] : inputs;
+        return await plugin.ExecuteAsync(singleInput, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -409,6 +417,10 @@ public sealed class AlgorithmLifecycleManager : IDisposable
                 totalErrorsObj is long totalErrors)
             {
                 errorCount = (int)totalErrors;
+            }
+            else
+            {
+                totalErrors = errorCount; // Initialize if not found
             }
 
             var errorRate = (double)errorCount / loadedPlugin.ExecutionCount;

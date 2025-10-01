@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Execution;
@@ -72,12 +73,12 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets the work dimensions for kernel execution.
     /// </summary>
-    public Dim3 WorkDimensions { get; set; } = new(1, 1, 1);
+    public WorkDimensions WorkDimensions { get; set; } = new(1, 1, 1);
 
     /// <summary>
     /// Gets or sets the local work size for kernel execution.
     /// </summary>
-    public Dim3 LocalWorkSize { get; set; } = new(1, 1, 1);
+    public WorkDimensions LocalWorkSize { get; set; } = new(1, 1, 1);
 
     /// <summary>
     /// Gets or sets the kernel name (alias for KernelName).

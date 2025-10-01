@@ -6,6 +6,7 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;
@@ -95,7 +96,7 @@ public sealed class SimdExecutor : IDisposable
             _vectorOps.ExecuteVectorized(strategy, input1, input2, output, elementCount, context);
 
             // Update performance counters
-            var (vectorized, scalar) = _profiler.CalculateVectorizationStats(strategy, elementCount);
+            var (vectorized, scalar) = SimdPerformanceProfiler.CalculateVectorizationStats(strategy, elementCount);
             Interlocked.Add(ref _vectorizedElements, vectorized);
             Interlocked.Add(ref _scalarElements, scalar);
 
@@ -201,7 +202,7 @@ public sealed class SimdExecutor : IDisposable
 /// <summary>
 /// Execution context for thread-local optimizations
 /// </summary>
-internal sealed class ExecutionContext
+public sealed class ExecutionContext
 {
     public SimdSummary Capabilities { get; }
     public long ThreadExecutions { get; set; }

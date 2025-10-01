@@ -359,6 +359,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 DotCompute is a high-performance, Native AOT-compatible universal compute framework for .NET 9+ with production-ready CPU and CUDA acceleration. The system is designed for sub-10ms startup times and provides measured performance improvements through SIMD vectorization and GPU acceleration.
 
+IMPORTANT: Quality first! No shortcuts! No backward compatibility needed. No rush. No compromise. Always production grade code.
+
 ## Essential Build Commands
 
 ```bash

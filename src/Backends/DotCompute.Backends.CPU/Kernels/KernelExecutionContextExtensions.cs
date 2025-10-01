@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Compute;
+using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -20,13 +21,12 @@ internal sealed class ExtendedKernelExecutionContext
         _innerContext = new KernelExecutionContext
         {
             Name = "CPU Kernel",
-            WorkDimensions = [1L]
+            WorkDimensions = new WorkDimensions(1)
         };
     }
 
-    public string Name => _innerContext.Name;
-    public IReadOnlyList<long>? WorkDimensions => _innerContext.WorkDimensions;
-    public object[]? Arguments => _innerContext.Arguments;
+    public string? Name => _innerContext.Name;
+    public WorkDimensions WorkDimensions => _innerContext.WorkDimensions;
 
     /// <summary>
     /// Sets a parameter at the given index.

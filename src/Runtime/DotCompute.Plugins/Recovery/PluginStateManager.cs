@@ -117,7 +117,7 @@ public sealed class PluginStateManager : IDisposable
         try
         {
             var states = _stateSnapshots.Values.Where(s => s.IsValid).ToList();
-            var json = System.Text.Json.JsonSerializer.Serialize(states);
+            var json = await Task.Run(() => System.Text.Json.JsonSerializer.Serialize(states));
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -135,7 +135,7 @@ public sealed class PluginStateManager : IDisposable
         try
         {
             var json = System.Text.Encoding.UTF8.GetString(data);
-            var states = System.Text.Json.JsonSerializer.Deserialize<List<PluginStateSnapshot>>(json);
+            var states = await Task.Run(() => System.Text.Json.JsonSerializer.Deserialize<List<PluginStateSnapshot>>(json));
 
             if (states != null)
             {

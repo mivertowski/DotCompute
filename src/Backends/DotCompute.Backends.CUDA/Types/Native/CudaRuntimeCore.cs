@@ -302,10 +302,10 @@ namespace DotCompute.Backends.CUDA.Native
         {
             if (error != CudaError.Success)
             {
-                var message = string.IsNullOrEmpty(operation) 
+                var message = string.IsNullOrEmpty(operation)
                     ? $"CUDA error: {GetErrorName(error)} - {GetErrorString(error)}"
                     : $"CUDA error in {operation}: {GetErrorName(error)} - {GetErrorString(error)}";
-                throw new CudaException(error, message);
+                throw new CudaException(message, error);
             }
         }
 

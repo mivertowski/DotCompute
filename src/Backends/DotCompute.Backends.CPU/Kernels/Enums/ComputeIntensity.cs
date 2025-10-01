@@ -6,7 +6,7 @@ namespace DotCompute.Backends.CPU.Kernels.Enums;
 /// <summary>
 /// Compute intensity level for CPU kernel optimization.
 /// </summary>
-internal enum ComputeIntensity
+public enum ComputeIntensity
 {
     /// <summary>
     /// Low computational complexity - simple operations.

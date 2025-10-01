@@ -5,6 +5,7 @@ using System.Numerics;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;

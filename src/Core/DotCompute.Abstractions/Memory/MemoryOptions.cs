@@ -87,7 +87,12 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Memory should be allocated local to the device for optimal access.
         /// </summary>
-        DeviceLocal = 1 << 14
+        DeviceLocal = 1 << 14,
+
+        /// <summary>
+        /// Memory should use pooling (alias for Pooled).
+        /// </summary>
+        UsePooling = Pooled
     }
 
     /// <summary>

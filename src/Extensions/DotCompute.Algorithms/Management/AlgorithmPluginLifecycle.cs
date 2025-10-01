@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
+// Using PluginState from Abstractions project
 
 namespace DotCompute.Algorithms.Management
 {
@@ -53,10 +54,10 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var state = GetOrCreatePluginState(plugin);
-                if (state.State != PluginState.Discovered)
+                if (state.State != PluginState.Loading)
                 {
                     LogPluginAlreadyInitialized(plugin.Id);
-                    return state.State == PluginState.Initialized;
+                    return state.State == PluginState.Loaded;
                 }
 
                 LogInitializingPlugin(plugin.Id);
@@ -67,7 +68,7 @@ namespace DotCompute.Algorithms.Management
                     // TODO: Get appropriate accelerator for plugin initialization
                     // For now, skip initialization that requires accelerator
                     // await plugin.InitializeAsync(accelerator, _logger).ConfigureAwait(false);
-                    state.SetState(PluginState.Initialized);
+                    state.SetState(PluginState.Loaded);
                     state.LastActivityTime = DateTime.UtcNow;
                     LogPluginInitialized(plugin.Id);
                     return true;
@@ -106,14 +107,14 @@ namespace DotCompute.Algorithms.Management
                     return true;
                 }
 
-                if (state.State != PluginState.Initialized)
+                if (state.State != PluginState.Loaded)
                 {
                     LogPluginNotInitialized(plugin.Id);
                     return false;
                 }
 
                 LogStartingPlugin(plugin.Id);
-                state.SetState(PluginState.Executing);
+                state.SetState(PluginState.Running);
 
                 try
                 {
@@ -152,7 +153,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var state = GetOrCreatePluginState(plugin);
-                if (state.State is PluginState.Unloaded or PluginState.Discovered)
+                if (state.State is PluginState.Unloaded or PluginState.Loading)
                 {
                     LogPluginAlreadyStopped(plugin.Id);
                     return true;
@@ -443,7 +444,7 @@ namespace DotCompute.Algorithms.Management
     public sealed class PluginLifecycleState
     {
         private readonly object _stateLock = new();
-        private PluginState _state = PluginState.Discovered;
+        private PluginState _state = PluginState.Loading;
 
         public PluginLifecycleState(string pluginId)
         {

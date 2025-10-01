@@ -2,9 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Types;
+using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Types.Native.Enums;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
+using CudaFuncCache = DotCompute.Backends.CUDA.Types.Native.Enums.CudaCacheConfig;
+using CudaSharedMemConfig = DotCompute.Backends.CUDA.Types.Native.Enums.CudaSharedMemConfig;
 
 namespace DotCompute.Backends.CUDA.Integration;
 
@@ -344,7 +348,7 @@ public sealed class CudaContextManager : IDisposable
             else if (profile.IsMemoryIntensive)
             {
                 // Prefer L1 cache for memory-intensive workloads
-                CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferL1);
+                CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferCache);
             }
             else
             {
@@ -355,11 +359,11 @@ public sealed class CudaContextManager : IDisposable
             // Set shared memory bank size for high-precision workloads
             if (profile.RequiresHighPrecision)
             {
-                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.EightByteBankSize);
+                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeEightByte);
             }
             else
             {
-                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.FourByteBankSize);
+                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeFourByte);
             }
         }
         catch (Exception ex)
@@ -398,25 +402,4 @@ public sealed class CudaContextManager : IDisposable
             _logger.LogDebugMessage("CUDA Context Manager disposed");
         }
     }
-}
-
-/// <summary>
-/// CUDA cache configuration options
-/// </summary>
-internal enum CudaFuncCache
-{
-    PreferNone = 0,
-    PreferShared = 1,
-    PreferL1 = 2,
-    PreferEqual = 3
-}
-
-/// <summary>
-/// CUDA shared memory configuration options
-/// </summary>
-internal enum CudaSharedMemConfig
-{
-    DefaultBankSize = 0,
-    FourByteBankSize = 1,
-    EightByteBankSize = 2
 }

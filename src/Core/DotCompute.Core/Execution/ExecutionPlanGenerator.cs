@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using ExecutionPerformanceMonitor = DotCompute.Core.Execution.PerformanceMonitor;
 using DotCompute.Core.Execution.Optimization;
+using ManagedCompiledKernel = DotCompute.Core.Execution.ManagedCompiledKernel;
 
 using System;
 namespace DotCompute.Core.Execution

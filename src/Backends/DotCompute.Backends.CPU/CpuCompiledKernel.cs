@@ -4,10 +4,11 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Debugging;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Core.Compute;
-using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
+using DotCompute.Backends.CPU.Kernels.Models;
+using DotCompute.Abstractions.Execution;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Accelerators;
@@ -16,7 +17,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Represents a compiled kernel for CPU execution with vectorization support.
 /// Orchestrates execution through specialized components for optimal performance.
 /// </summary>
-internal sealed class CpuCompiledKernel : ICompiledKernel
+public sealed class CpuCompiledKernel : ICompiledKernel
 {
     private readonly KernelDefinition _definition;
     private readonly KernelExecutionPlan _executionPlan;
@@ -45,7 +46,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         // Initialize orchestrated components
         _executor = new CpuKernelExecutor(definition, executionPlan, threadPool, logger);
         _validator = new CpuKernelValidator(logger);
-        _optimizer = new CpuKernelOptimizer(definition, executionPlan, logger);
+        _optimizer = new CpuKernelOptimizer(logger, threadPool);
         _cache = new CpuKernelCache(logger);
 
         _logger.LogDebug("CpuCompiledKernel initialized with orchestrated components for kernel {kernelName}", definition.Name);
@@ -91,7 +92,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         var context = new KernelExecutionContext
         {
             KernelName = _definition.Name,
-            WorkDimensions = new Dim3(1024, 1, 1) // Default work size - should be configurable
+            WorkDimensions = new WorkDimensions(1024, 1, 1) // Default work size - should be configurable
         };
 
         // Map arguments to context parameters
@@ -115,20 +116,12 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             }
 
             // Check cache for optimized execution plan
-            var cacheKey = _cache.GenerateCacheKey(_definition, _executionPlan, context);
-            var cachedDelegate = await _cache.GetCompiledKernelAsync(cacheKey, cancellationToken);
+            var cacheKey = CpuKernelCache.GenerateCacheKey(_definition, context.WorkDimensions, Abstractions.Types.OptimizationLevel.Balanced);
+            var cachedKernel = await _cache.GetKernelAsync(cacheKey);
 
-            if (cachedDelegate != null)
+            if (cachedKernel != null)
             {
-                _executor.SetCompiledDelegate(cachedDelegate);
-                _logger.LogDebug("Using cached compiled delegate for kernel {kernelName}", _definition.Name);
-            }
-
-            // Optimize execution plan if needed
-            var optimizedPlan = await _optimizer.OptimizeExecutionPlanAsync(context, cancellationToken);
-            if (optimizedPlan != null)
-            {
-                _logger.LogDebug("Using optimized execution plan for kernel {kernelName}", _definition.Name);
+                _logger.LogDebug("Using cached compiled kernel for kernel {kernelName}", _definition.Name);
             }
 
             // Execute using the executor component
@@ -138,7 +131,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 
             // Store performance metrics in cache
             var metrics = _executor.GetExecutionStatistics();
-            await _cache.StorePerformanceMetricsAsync(cacheKey, metrics, cancellationToken);
+            await _cache.UpdateKernelPerformanceAsync(cacheKey, metrics);
 
             _logger.LogDebug("Kernel {kernelName} executed successfully in {executionTime:F2}ms",
                 _definition.Name, stopwatch.Elapsed.TotalMilliseconds);

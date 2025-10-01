@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Text;
+using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Backends.CPU.Threading.NUMA;
 
@@ -109,10 +110,10 @@ public static class NumaDiagnostics
             // Validate CPU configuration
             ValidateCpuConfiguration(topology, issues);
 
-            var severity = issues.Count == 0 ? ValidationSeverity.Pass :
-                          issues.Any(i => i.Severity == ValidationSeverity.Error) ? ValidationSeverity.Error :
-                          issues.Any(i => i.Severity == ValidationSeverity.Warning) ? ValidationSeverity.Warning :
-                          ValidationSeverity.Pass;
+            var severity = issues.Count == 0 ? DotCompute.Abstractions.Validation.ValidationSeverity.Info :
+                          issues.Any(i => i.Severity == DotCompute.Abstractions.Validation.ValidationSeverity.Error) ? DotCompute.Abstractions.Validation.ValidationSeverity.Error :
+                          issues.Any(i => i.Severity == DotCompute.Abstractions.Validation.ValidationSeverity.Warning) ? DotCompute.Abstractions.Validation.ValidationSeverity.Warning :
+                          DotCompute.Abstractions.Validation.ValidationSeverity.Info;
 
             return new ValidationResult
             {
@@ -132,7 +133,7 @@ public static class NumaDiagnostics
                     new()
                     {
                         Component = "System",
-                        Severity = ValidationSeverity.Error,
+                        Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error,
                         Message = $"Validation failed: {ex.Message}",
                         Details = ex.ToString()
                     }
@@ -465,9 +466,9 @@ public static class NumaDiagnostics
             issues.Add(new ValidationIssue
             {
                 Component = "Topology",
-                Severity = ValidationSeverity.Error,
                 Message = "Node count mismatch",
-                Details = $"Reported {topology.NodeCount} nodes but found {topology.Nodes.Count}"
+                Details = $"Reported {topology.NodeCount} nodes but found {topology.Nodes.Count}",
+                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
             });
         }
 
@@ -478,9 +479,9 @@ public static class NumaDiagnostics
             issues.Add(new ValidationIssue
             {
                 Component = "Topology",
-                Severity = ValidationSeverity.Warning,
                 Message = "Processor count mismatch",
-                Details = $"Sum of node processors ({totalProcessors}) doesn't match total ({topology.ProcessorCount})"
+                Details = $"Sum of node processors ({totalProcessors}) doesn't match total ({topology.ProcessorCount})",
+                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Warning
             });
         }
     }
@@ -492,9 +493,9 @@ public static class NumaDiagnostics
             issues.Add(new ValidationIssue
             {
                 Component = "Platform",
-                Severity = ValidationSeverity.Error,
                 Message = "Invalid maximum node count",
-                Details = $"MaxNodes is {capabilities.MaxNodes}"
+                Details = $"MaxNodes is {capabilities.MaxNodes}",
+                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
             });
         }
     }
@@ -508,9 +509,9 @@ public static class NumaDiagnostics
                 issues.Add(new ValidationIssue
                 {
                     Component = "Memory",
-                    Severity = ValidationSeverity.Error,
                     Message = $"Invalid memory size for node {node.NodeId}",
-                    Details = $"Memory size is {node.MemorySize}"
+                    Details = $"Memory size is {node.MemorySize}",
+                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
                 });
             }
         }
@@ -525,9 +526,9 @@ public static class NumaDiagnostics
                 issues.Add(new ValidationIssue
                 {
                     Component = "CPU",
-                    Severity = ValidationSeverity.Error,
                     Message = $"Invalid processor count for node {node.NodeId}",
-                    Details = $"Processor count is {node.ProcessorCount}"
+                    Details = $"Processor count is {node.ProcessorCount}",
+                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
                 });
             }
 
@@ -537,9 +538,9 @@ public static class NumaDiagnostics
                 issues.Add(new ValidationIssue
                 {
                     Component = "CPU",
-                    Severity = ValidationSeverity.Warning,
                     Message = $"Processor mask/count mismatch for node {node.NodeId}",
-                    Details = $"Mask has {maskCount} bits but count is {node.ProcessorCount}"
+                    Details = $"Mask has {maskCount} bits but count is {node.ProcessorCount}",
+                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Warning
                 });
             }
         }
@@ -680,7 +681,7 @@ public sealed record DiagnosticIssue
 
 public sealed record ValidationResult
 {
-    public required ValidationSeverity OverallResult { get; init; }
+    public required DotCompute.Abstractions.Validation.ValidationSeverity OverallResult { get; init; }
     public required IReadOnlyList<ValidationIssue> Issues { get; init; }
     public required IReadOnlyList<string> TestedComponents { get; init; }
     public required DateTime ValidationTime { get; init; }
@@ -689,7 +690,7 @@ public sealed record ValidationResult
 public sealed record ValidationIssue
 {
     public required string Component { get; init; }
-    public required ValidationSeverity Severity { get; init; }
+    public required DotCompute.Abstractions.Validation.ValidationSeverity Severity { get; init; }
     public required string Message { get; init; }
     public required string Details { get; init; }
 }
@@ -725,14 +726,4 @@ public sealed record SystemInformation
 
 public enum IssueSeverity { Info, Warning, Error, Critical }
 public enum IssueCategory { System, Topology, Platform, Performance, Configuration, Memory, CPU }
-/// <summary>
-/// Legacy alias for ValidationSeverity. Use DotCompute.Abstractions.Validation.ValidationSeverity instead.
-/// </summary>
-[System.Obsolete("Use DotCompute.Abstractions.Validation.ValidationSeverity instead. This alias will be removed in a future version.")]
-public enum ValidationSeverity
-{
-    Pass = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Info,
-    Warning = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Warning,
-    Error = (int)DotCompute.Abstractions.Validation.ValidationSeverity.Error
-}
 public enum SystemHealth { Critical, Poor, Fair, Good, Excellent }

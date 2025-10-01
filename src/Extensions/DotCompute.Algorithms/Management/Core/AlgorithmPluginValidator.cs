@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Types.Security;
+using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -14,7 +14,7 @@ namespace DotCompute.Algorithms.Management.Core;
 /// Provides comprehensive security validation for algorithm plugins.
 /// Handles digital signatures, strong names, malware scanning, and security policy evaluation.
 /// </summary>
-public sealed class AlgorithmPluginValidator : IDisposable
+public sealed partial class AlgorithmPluginValidator : IDisposable
 {
     private readonly ILogger<AlgorithmPluginValidator> _logger;
     private readonly AlgorithmPluginManagerOptions _options;

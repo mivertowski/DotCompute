@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
+using DotCompute.Algorithms.Types.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Infrastructure;
@@ -13,13 +14,14 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Provides caching and performance optimization for algorithm plugin operations.
 /// Manages assembly loading cache, metadata cache, and compilation result cache.
 /// </summary>
-public sealed class AlgorithmPluginCache : IDisposable
+public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
 {
     private readonly ILogger<AlgorithmPluginCache> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly ConcurrentDictionary<string, CachedAssembly> _assemblyCache = new();
     private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache = new();
     private readonly ConcurrentDictionary<string, CachedExecutionResult> _executionCache = new();
+    private readonly ConcurrentDictionary<string, CachedPackageInfo> _packageCache = new();
     private readonly Timer _cleanupTimer;
     private bool _disposed;
 
@@ -496,6 +498,33 @@ public sealed class AlgorithmPluginCache : IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error during cache cleanup");
+        }
+    }
+
+    /// <summary>
+    /// Gets information about cached NuGet packages.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Array of cached package information.</returns>
+    public async Task<CachedPackageInfo[]> GetCachedNuGetPackagesAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // TODO: Implement actual NuGet package caching
+        // For now, return empty array as placeholder
+        await Task.CompletedTask;
+        return Array.Empty<CachedPackageInfo>();
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+            _cleanupTimer.Dispose();
+            ClearAll();
+            await Task.CompletedTask;
         }
     }
 

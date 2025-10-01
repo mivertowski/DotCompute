@@ -116,6 +116,12 @@ public sealed class CpuThreadPool : IAsyncDisposable
     public int WorkerCount => _threads.Length;
 
     /// <summary>
+    /// Gets the maximum concurrency level (number of worker threads).
+    /// This is an alias for WorkerCount for compatibility.
+    /// </summary>
+    public int MaxConcurrency => _threads.Length;
+
+    /// <summary>
     /// Enqueues work to be executed on the thread pool.
     /// </summary>
     public ValueTask EnqueueAsync(Action work, CancellationToken cancellationToken = default)

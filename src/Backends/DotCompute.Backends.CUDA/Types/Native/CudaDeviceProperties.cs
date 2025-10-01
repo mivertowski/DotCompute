@@ -162,6 +162,11 @@ namespace DotCompute.Backends.CUDA.Types.Native
         }
 
         /// <summary>
+        /// Maximum dimensions of a grid of thread blocks as an array [x, y, z] (alias for MaxGridSize).
+        /// </summary>
+        public unsafe int[] MaxGridDim => MaxGridSize;
+
+        /// <summary>
         /// Clock frequency of the device in kilohertz.
         /// </summary>
         [FieldOffset(332)]

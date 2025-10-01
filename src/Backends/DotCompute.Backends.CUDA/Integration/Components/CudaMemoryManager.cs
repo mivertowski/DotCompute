@@ -413,15 +413,16 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 
         return new MemoryStatistics
         {
-            TotalAllocatedMemory = baseStats.TotalAllocatedMemory,
-            TotalAvailableMemory = baseStats.TotalAvailableMemory,
+            TotalAllocated = baseStats.TotalAllocated,
+            AvailableMemory = baseStats.AvailableMemory,
             ActiveAllocations = baseStats.ActiveAllocations,
-            TotalAllocations = usageAnalytics.TotalAllocations,
-            TotalDeallocations = usageAnalytics.TotalDeallocations,
-            FailedAllocations = usageAnalytics.FailedAllocations,
-            FragmentationRatio = CalculateFragmentation(),
-            AverageAllocationSize = usageAnalytics.AverageAllocationSize,
-            PeakMemoryUsage = usageAnalytics.PeakMemoryUsage
+            AllocationCount = usageAnalytics.TotalAllocations,
+            DeallocationCount = usageAnalytics.TotalDeallocations,
+            CurrentUsed = baseStats.CurrentUsed,
+            CurrentUsage = baseStats.CurrentUsage,
+            PeakUsage = usageAnalytics.PeakMemoryUsage,
+            FragmentationPercentage = CalculateFragmentation() * 100,
+            TotalCapacity = baseStats.TotalCapacity
         };
     }
 
@@ -494,6 +495,160 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         {
             _logger.LogWarning(ex, "Error during async disposal");
             return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <inheritdoc/>
+    public DeviceMemory AllocateDevice(long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordAllocationRequest(sizeInBytes);
+            return _asyncAdapter.AllocateDevice(sizeInBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to allocate {SizeInBytes} bytes of device memory", sizeInBytes);
+            _usageTracker.RecordAllocationFailure(sizeInBytes);
+            throw new MemoryException($"Failed to allocate {sizeInBytes} bytes of device memory", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void FreeDevice(DeviceMemory deviceMemory)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            _usageTracker.RecordDeallocation();
+            _asyncAdapter.FreeDevice(deviceMemory);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Warning: Failed to free device memory");
+        }
+    }
+
+    /// <inheritdoc/>
+    public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _asyncAdapter.MemsetDevice(deviceMemory, value, sizeInBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to memset device memory");
+            throw new MemoryException("Failed to memset device memory", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            return _asyncAdapter.MemsetDeviceAsync(deviceMemory, value, sizeInBytes, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to async memset device memory");
+            throw new MemoryException("Failed to async memset device memory", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordTransfer(sizeInBytes, MemoryTransferDirection.HostToDevice);
+            _asyncAdapter.CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes from host to device", sizeInBytes);
+            throw new MemoryException($"Failed to copy {sizeInBytes} bytes from host to device", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordTransfer(sizeInBytes, MemoryTransferDirection.DeviceToHost);
+            _asyncAdapter.CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes from device to host", sizeInBytes);
+            throw new MemoryException($"Failed to copy {sizeInBytes} bytes from device to host", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordTransfer(sizeInBytes, MemoryTransferDirection.HostToDevice);
+            return _asyncAdapter.CopyHostToDeviceAsync(hostPointer, deviceMemory, sizeInBytes, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to async copy {SizeInBytes} bytes from host to device", sizeInBytes);
+            throw new MemoryException($"Failed to async copy {sizeInBytes} bytes from host to device", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordTransfer(sizeInBytes, MemoryTransferDirection.DeviceToHost);
+            return _asyncAdapter.CopyDeviceToHostAsync(deviceMemory, hostPointer, sizeInBytes, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to async copy {SizeInBytes} bytes from device to host", sizeInBytes);
+            throw new MemoryException($"Failed to async copy {sizeInBytes} bytes from device to host", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        try
+        {
+            _usageTracker.RecordTransfer(sizeInBytes, MemoryTransferDirection.DeviceToDevice);
+            _asyncAdapter.CopyDeviceToDevice(sourceDevice, destinationDevice, sizeInBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes between devices", sizeInBytes);
+            throw new MemoryException($"Failed to copy {sizeInBytes} bytes between devices", ex);
         }
     }
 
@@ -685,7 +840,7 @@ internal sealed class MemoryPool : IDisposable
     private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools;
     private readonly object _lock = new();
     private volatile bool _disposed;
-    private readonly int _hitCount;
+    private int _hitCount = 0; // Initialize to suppress warning
     private int _missCount;
 
     public DateTimeOffset LastOptimizationTime { get; private set; } = DateTimeOffset.UtcNow;

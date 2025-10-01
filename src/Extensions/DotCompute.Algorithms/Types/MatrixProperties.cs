@@ -62,6 +62,16 @@ public class MatrixProperties
     public int? Rank { get; set; }
 
     /// <summary>
+    /// Gets the size (number of elements) of the matrix.
+    /// </summary>
+    public int Size => Rows * Columns;
+
+    /// <summary>
+    /// Gets or sets whether the matrix is positive definite.
+    /// </summary>
+    public bool IsPositiveDefinite { get; set; }
+
+    /// <summary>
     /// Analyzes a matrix and returns its properties.
     /// </summary>
     /// <param name="matrix">The matrix to analyze.</param>

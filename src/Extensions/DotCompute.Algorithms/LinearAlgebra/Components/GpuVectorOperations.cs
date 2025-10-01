@@ -2,11 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels.Compilation;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -311,10 +312,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             if (!_disposed)
             {
-                foreach (var kernel in _kernelCache.Values)
-                {
-                    kernel?.Dispose();
-                }
+                // Clear kernel cache - ManagedCompiledKernel doesn't implement IDisposable
+                // The kernels will be disposed by the KernelManager
                 _kernelCache.Clear();
                 _disposed = true;
             }

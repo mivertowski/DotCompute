@@ -65,6 +65,15 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// </summary>
         public bool EnableUnifiedMemory { get; set; }
 
+        /// <summary>
+        /// Gets or sets whether to use restricted pointers for optimization.
+        /// </summary>
+        public bool UseRestrictedPointers { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional compiler options.
+        /// </summary>
+        public string? AdditionalOptions { get; set; }
 
         /// <summary>
         /// Gets or sets the CUDA compute mode.

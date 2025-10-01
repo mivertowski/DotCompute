@@ -127,4 +127,19 @@ public sealed class MemoryStatistics
     /// Gets the total available memory in the system in bytes.
     /// </summary>
     public long TotalAvailable { get; init; }
+
+    /// <summary>
+    /// Gets the currently allocated memory in bytes (alias for CurrentUsage).
+    /// </summary>
+    public long CurrentAllocatedMemory => CurrentUsage;
+
+    /// <summary>
+    /// Gets the total number of allocations (alias for AllocationCount).
+    /// </summary>
+    public long TotalAllocations => AllocationCount;
+
+    /// <summary>
+    /// Gets the total number of deallocations (alias for DeallocationCount).
+    /// </summary>
+    public long TotalDeallocations => DeallocationCount;
 }

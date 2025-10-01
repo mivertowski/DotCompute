@@ -9,7 +9,7 @@ using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Infrastructure;
@@ -18,16 +18,16 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
 /// Manages assembly load contexts, dependency resolution, and plugin instantiation.
 /// </summary>
-public sealed class AlgorithmAssemblyManager : IDisposable
+public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposable
 {
-    private readonly ILogger<AlgorithmAssemblyManager> _logger;
+    private readonly ILogger<AlgorithmPluginLoader> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     private bool _disposed;
 
-    public AlgorithmAssemblyManager(
-        ILogger<AlgorithmAssemblyManager> logger,
+    public AlgorithmPluginLoader(
+        ILogger<AlgorithmPluginLoader> logger,
         AlgorithmPluginManagerOptions options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -375,6 +375,45 @@ public sealed class AlgorithmAssemblyManager : IDisposable
         };
     }
 
+    /// <summary>
+    /// Asynchronous method for loading plugins from assembly returning plugin count.
+    /// </summary>
+    /// <param name="assemblyPath">The path to the assembly file.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of plugins loaded.</returns>
+    public async Task<int> LoadPluginsFromAssemblyCountAsync(string assemblyPath, CancellationToken cancellationToken = default)
+    {
+        var result = await LoadPluginsFromAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
+        return result.Success ? result.LoadedPlugins.Count : 0;
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+
+            // Unload all contexts
+            foreach (var context in _loadContexts.Values)
+            {
+                try
+                {
+                    context.Unload();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to unload context {ContextName}", context.Name);
+                }
+            }
+
+            _loadContexts.Clear();
+            _loadingSemaphore.Dispose();
+            await Task.CompletedTask;
+        }
+    }
+
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (!_disposed)
@@ -446,7 +485,7 @@ public sealed class AlgorithmAssemblyManager : IDisposable
 /// <summary>
 /// Result of loading plugins from an assembly.
 /// </summary>
-public sealed class LoadedAssemblyResult
+public sealed partial class LoadedAssemblyResult
 {
     public required string AssemblyPath { get; init; }
     public required List<LoadedPluginType> LoadedPlugins { get; init; }
@@ -457,7 +496,7 @@ public sealed class LoadedAssemblyResult
 /// <summary>
 /// Result of loading plugins from a NuGet package.
 /// </summary>
-public sealed class NuGetLoadResult
+public sealed partial class NuGetLoadResult
 {
     public required string PackageId { get; init; }
     public required string Version { get; init; }
@@ -472,7 +511,7 @@ public sealed class NuGetLoadResult
 /// <summary>
 /// Represents a loaded plugin type with its context.
 /// </summary>
-public sealed class LoadedPluginType
+public sealed partial class LoadedPluginType
 {
     public required Type Type { get; init; }
     public required PluginAssemblyLoadContext LoadContext { get; init; }

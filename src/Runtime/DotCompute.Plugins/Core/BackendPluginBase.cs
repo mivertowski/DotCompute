@@ -467,7 +467,7 @@ public abstract class BackendPluginBase : IBackendPlugin
                     }
                 }
 
-                State = PluginState.Unloaded;
+                State = PluginState.Stopped;
             }
 
             _disposed = true;

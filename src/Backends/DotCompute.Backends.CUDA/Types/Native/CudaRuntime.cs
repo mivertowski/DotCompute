@@ -7,8 +7,11 @@ using System.Text;
 using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
+using DotCompute.Backends.CUDA.Types.Native.Enums;
 using System.Runtime.Loader;
+using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -1021,6 +1024,49 @@ namespace DotCompute.Backends.CUDA.Native
 
             return paths.ToArray();
         }
+
+        #region Extended API Wrappers
+
+        /// <summary>
+        /// Sets the preferred cache configuration for the current device.
+        /// </summary>
+        /// <param name="cacheConfig">Preferred cache configuration.</param>
+        /// <returns>CUDA error code.</returns>
+        public static CudaError cudaDeviceSetCacheConfig(CudaCacheConfig cacheConfig)
+        {
+            return CudaRuntimeExtended.cudaDeviceSetCacheConfig(cacheConfig);
+        }
+
+        /// <summary>
+        /// Sets the shared memory configuration for the current device.
+        /// </summary>
+        /// <param name="config">Shared memory configuration.</param>
+        /// <returns>CUDA error code.</returns>
+        public static CudaError cudaDeviceSetSharedMemConfig(CudaSharedMemConfig config)
+        {
+            return CudaRuntimeExtended.cudaDeviceSetSharedMemConfig(config);
+        }
+
+        /// <summary>
+        /// Retains the primary context on the specified device.
+        /// </summary>
+        /// <param name="pctx">Returned context handle.</param>
+        /// <param name="dev">Device number.</param>
+        /// <returns>CUDA error code.</returns>
+        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        public static partial CudaError cudaDevicePrimaryCtxRetain(out IntPtr pctx, int dev);
+
+        /// <summary>
+        /// Releases the primary context on the specified device.
+        /// </summary>
+        /// <param name="dev">Device number.</param>
+        /// <returns>CUDA error code.</returns>
+        [LibraryImport(CUDA_DRIVER_LIBRARY)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        public static partial CudaError cudaDevicePrimaryCtxRelease(int dev);
+
+        #endregion
     }
 
 }

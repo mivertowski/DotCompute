@@ -2,13 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
+using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.Plugins
 {
@@ -68,7 +69,7 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
     public override string Description => "Performs element-wise addition of two vectors of equal length with GPU acceleration.";
 
     /// <inheritdoc/>
-    public override AcceleratorType[] SupportedAccelerators => [
+    public override AcceleratorType[] SupportedAcceleratorTypes => [
         AcceleratorType.CPU,
         AcceleratorType.CUDA,
         AcceleratorType.ROCm,
@@ -148,9 +149,9 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
 
             // Allocate device memory
             var sizeInBytes = length * sizeof(float);
-            var bufferA = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferB = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-            var bufferResult = await Accelerator.Memory.AllocateAsync(sizeInBytes, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferA = await Accelerator.Memory.AllocateAsync<float>(length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferB = await Accelerator.Memory.AllocateAsync<float>(length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
+            var bufferResult = await Accelerator.Memory.AllocateAsync<float>(length, DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
 
             try
             {

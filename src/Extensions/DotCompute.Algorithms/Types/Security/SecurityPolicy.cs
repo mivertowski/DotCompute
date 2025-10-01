@@ -133,7 +133,8 @@ public class SecurityPolicy
         {
             IsAllowed = true,
             SecurityLevel = SecurityLevel.High,
-            Violations = []
+            Violations = [],
+            Warnings = []
         };
 
         // Check directory-based policies
@@ -302,6 +303,16 @@ public class SecurityEvaluationContext
     public byte[]? AssemblyBytes { get; set; }
 
     /// <summary>
+    /// Gets or sets the certificate information extracted from the assembly.
+    /// </summary>
+    public System.Security.Cryptography.X509Certificates.X509Certificate2? Certificate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the strong name key extracted from the assembly.
+    /// </summary>
+    public byte[]? StrongNameKey { get; set; }
+
+    /// <summary>
     /// Gets or sets additional context metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = [];
@@ -326,6 +337,11 @@ public class SecurityEvaluationResult
     /// Gets or sets the list of security violations.
     /// </summary>
     public List<string> Violations { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the list of security warnings.
+    /// </summary>
+    public List<string> Warnings { get; set; } = [];
 }
 
 /// <summary>
@@ -363,7 +379,9 @@ public class FileSizeSecurityRule : ISecurityRule
         var result = new SecurityEvaluationResult
         {
             IsAllowed = true,
-            SecurityLevel = SecurityLevel.Medium
+            SecurityLevel = SecurityLevel.Medium,
+            Violations = [],
+            Warnings = []
         };
 
         if (context.AssemblyBytes != null && context.AssemblyBytes.Length > _maxSizeBytes)

@@ -1,13 +1,18 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Reflection;
+using global::System.Runtime.Loader;
+using System.Net.Sockets;
+using System.Net.Http;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Infrastructure;
 using DotCompute.Algorithms.Management.Info;
+using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Abstractions;
+using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +22,7 @@ namespace DotCompute.Algorithms.Management.Services;
 /// High-level orchestrator for algorithm plugin management operations.
 /// Coordinates discovery, loading, validation, registration, and execution of plugins.
 /// </summary>
-public sealed class AlgorithmPluginOrchestrator : IAsyncDisposable
+public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
 {
     private readonly ILogger<AlgorithmPluginOrchestrator> _logger;
     private readonly IAccelerator _accelerator;
@@ -57,7 +62,7 @@ public sealed class AlgorithmPluginOrchestrator : IAsyncDisposable
 
         // Setup event handlers
         _discovery.PluginFileChanged += OnPluginFileChanged;
-        _discovery.WatcherError += OnWatcherError;
+        // _discovery.WatcherError += OnWatcherError; // Event does not exist
 
         // Initialize health check timer if enabled
         if (_options.EnableHealthChecks)
@@ -147,28 +152,28 @@ public sealed class AlgorithmPluginOrchestrator : IAsyncDisposable
 
             // Step 2: Load assembly and discover plugin types
             var loadResult = await _loader.LoadPluginsFromAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
-            if (!loadResult.Success)
+            if (loadResult == null || loadResult.Count == 0)
             {
-                LogAssemblyLoadFailed(assemblyPath, loadResult.ErrorMessage ?? "Unknown error");
+                LogAssemblyLoadFailed(assemblyPath, "No plugins loaded from assembly");
                 return 0;
             }
 
             // Step 3: Instantiate and register plugins
             var loadedCount = 0;
-            foreach (var pluginType in loadResult.LoadedPlugins)
+            foreach (var pluginResult in loadResult)
             {
                 try
                 {
-                    var plugin = _loader.CreatePluginInstance(pluginType.Type);
-                    if (plugin != null)
+                    if (pluginResult.Plugin != null)
                     {
-                        await RegisterPluginAsync(plugin, pluginType.LoadContext, pluginType.Assembly, pluginType.Metadata, cancellationToken).ConfigureAwait(false);
+                        await RegisterPluginAsync(pluginResult.Plugin, pluginResult.LoadContext, pluginResult.Assembly, pluginResult.Metadata, cancellationToken).ConfigureAwait(false);
                         loadedCount++;
                     }
                 }
                 catch (Exception ex)
                 {
-                    LogPluginRegistrationFailed(pluginType.Type.FullName ?? pluginType.Type.Name, ex.Message);
+                    var typeName = pluginResult.Plugin?.GetType().FullName ?? pluginResult.Assembly.FullName ?? "Unknown";
+                    LogPluginRegistrationFailed(typeName, ex.Message);
                 }
             }
 
@@ -202,31 +207,32 @@ public sealed class AlgorithmPluginOrchestrator : IAsyncDisposable
         try
         {
             var loadResult = await _loader.LoadPluginsFromNuGetPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false);
-            if (!loadResult.Success)
+            if (loadResult == null || loadResult.Count == 0)
             {
-                LogNuGetPackageLoadFailed(packageSource, loadResult.ErrorMessage ?? "Unknown error");
+                LogNuGetPackageLoadFailed(packageSource, "No plugins loaded from NuGet package");
                 return 0;
             }
 
             var loadedCount = 0;
-            foreach (var pluginType in loadResult.LoadedPlugins)
+            foreach (var pluginResult in loadResult)
             {
                 try
                 {
-                    var plugin = _loader.CreatePluginInstance(pluginType.Type);
-                    if (plugin != null)
+                    if (pluginResult.Plugin != null)
                     {
-                        await RegisterPluginAsync(plugin, pluginType.LoadContext, pluginType.Assembly, pluginType.Metadata, cancellationToken).ConfigureAwait(false);
+                        await RegisterPluginAsync(pluginResult.Plugin, pluginResult.LoadContext, pluginResult.Assembly, pluginResult.Metadata, cancellationToken).ConfigureAwait(false);
                         loadedCount++;
                     }
                 }
                 catch (Exception ex)
                 {
-                    LogPluginRegistrationFailed(pluginType.Type.FullName ?? pluginType.Type.Name, ex.Message);
+                    var typeName = pluginResult.Plugin?.GetType().FullName ?? pluginResult.Assembly.FullName ?? "Unknown";
+                    LogPluginRegistrationFailed(typeName, ex.Message);
                 }
             }
 
-            LogNuGetPackageLoaded(loadResult.PackageId, loadResult.Version, loadedCount);
+            // LogNuGetPackageLoaded("Unknown", "Unknown", loadedCount); // Package info not available from LoadResult
+            LogPluginsDiscovered(loadedCount, packageSource);
             return loadedCount;
         }
         catch (Exception ex)
@@ -633,7 +639,7 @@ public sealed class AlgorithmPluginOrchestrator : IAsyncDisposable
 
             // Unsubscribe from events
             _discovery.PluginFileChanged -= OnPluginFileChanged;
-            _discovery.WatcherError -= OnWatcherError;
+            // _discovery.WatcherError -= OnWatcherError; // Event does not exist
 
             // Dispose all components
             var disposeTasks = _registry.GetAllLoadedPlugins().Select(async lp =>

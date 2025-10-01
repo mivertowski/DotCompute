@@ -90,7 +90,9 @@ public sealed class NuGetPluginService : INuGetPluginService, IDisposable
         {
             IsValid = true,
             PackageId = packageSource,
-            Version = "1.0.0"
+            Version = "1.0.0",
+            SecurityDetails = "Stub validation - no security checks performed",
+            Warnings = []
         });
     }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Types.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Abstractions;
@@ -38,7 +39,7 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
     public abstract string Description { get; }
 
     /// <inheritdoc/>
-    public abstract AcceleratorType[] SupportedAccelerators { get; }
+    public abstract AcceleratorType[] SupportedAcceleratorTypes { get; }
 
     /// <inheritdoc/>
     public abstract IReadOnlyList<string> SupportedOperations { get; }
@@ -82,7 +83,7 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
 
         // Check if accelerator type is supported
         var acceleratorType = GetAcceleratorType(accelerator);
-        if (!SupportedAccelerators.Contains(acceleratorType))
+        if (!SupportedAcceleratorTypes.Contains(acceleratorType))
         {
             throw new NotSupportedException($"Accelerator type {acceleratorType} is not supported by {Name}");
         }
