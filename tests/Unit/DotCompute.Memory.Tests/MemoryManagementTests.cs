@@ -776,6 +776,17 @@ public class MemoryManagementTests
             _pool.Dispose();
         }
 
+        // Device memory operations - stub implementations for testing
+        public DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
+        public void FreeDevice(DeviceMemory deviceMemory) { }
+        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
+        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
+
         public async ValueTask DisposeAsync()
         {
             if (_disposed)
@@ -875,13 +886,13 @@ public class MemoryManagementTests
             }
         }
 
-        public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             EnsureOnHost();
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             EnsureOnDevice();
             return ValueTask.CompletedTask;
@@ -896,7 +907,7 @@ public class MemoryManagementTests
             }
         }
 
-        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             Synchronize();
             return ValueTask.CompletedTask;
@@ -975,12 +986,12 @@ public class MemoryManagementTests
             // Return a mock type-converted buffer
             => new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(AsMemory());
+        public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory());
 
-        public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
+        public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller for disposal")]
-        public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
         public void Dispose()
         {
@@ -1028,10 +1039,10 @@ public class MemoryManagementTests
         public DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
         public static void EnsureOnHost() { }
         public static void EnsureOnDevice() { }
-        public static ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public static ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public static void Synchronize() { }
-        public static ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public static void MarkHostDirty() { }
         public static void MarkDeviceDirty() { }
 

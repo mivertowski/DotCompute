@@ -6,6 +6,8 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
+using DotCompute.Backends.CPU.Kernels.Exceptions;
+using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Common;
 using Xunit;

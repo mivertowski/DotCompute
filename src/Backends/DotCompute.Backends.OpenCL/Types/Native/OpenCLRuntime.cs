@@ -219,6 +219,36 @@ internal static class OpenCLRuntime
         out nint evt);
 
     /// <summary>
+    /// Fill buffer with a pattern.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern OpenCLError clEnqueueFillBuffer(
+        nint commandQueue,
+        nint buffer,
+        nint pattern,
+        nuint patternSize,
+        nuint offset,
+        nuint size,
+        uint numEventsInWaitList,
+        [In] nint[]? eventWaitList,
+        nint evt);
+
+    /// <summary>
+    /// Copy buffer to buffer.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern OpenCLError clEnqueueCopyBuffer(
+        nint commandQueue,
+        nint srcBuffer,
+        nint dstBuffer,
+        nuint srcOffset,
+        nuint dstOffset,
+        nuint size,
+        uint numEventsInWaitList,
+        [In] nint[]? eventWaitList,
+        nint evt);
+
+    /// <summary>
     /// Wait for events to complete.
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]

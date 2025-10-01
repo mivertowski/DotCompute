@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
+using MapMode = DotCompute.Abstractions.Memory.MapMode;
+using AcceleratorContext = DotCompute.Abstractions.AcceleratorContext;
+using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 
 namespace DotCompute.Tests.Common;
 

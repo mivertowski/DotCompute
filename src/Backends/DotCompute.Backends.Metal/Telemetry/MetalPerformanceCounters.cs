@@ -290,10 +290,10 @@ public sealed class MetalPerformanceCounters : IDisposable
             
             // Analyze resource utilization
             analysis.ResourceUtilizationAnalysis = AnalyzeResourceUtilization(counters);
-            
+
             // Analyze performance trends
-            analysis.PerformanceTrends = AnalyzePerformanceTrends(counters);
-            
+            analysis.PerformanceTrends = new List<PerformanceTrend> { AnalyzePerformanceTrends(counters) };
+
             // Generate performance score
             analysis.OverallPerformanceScore = CalculatePerformanceScore(analysis);
             

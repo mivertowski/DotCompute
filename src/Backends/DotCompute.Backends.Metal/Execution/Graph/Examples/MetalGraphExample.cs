@@ -4,7 +4,6 @@
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
-using DotCompute.Backends.Metal.Execution.Interfaces;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using Microsoft.Extensions.Logging;

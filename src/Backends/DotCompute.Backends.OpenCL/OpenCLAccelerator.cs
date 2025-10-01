@@ -47,6 +47,11 @@ public sealed class OpenCLAccelerator : IAccelerator
     public AcceleratorType Type => AcceleratorType.OpenCL;
 
     /// <summary>
+    /// Gets the device type as a string.
+    /// </summary>
+    public string DeviceType => Type.ToString();
+
+    /// <summary>
     /// Gets whether the accelerator is available for use.
     /// </summary>
     public bool IsAvailable => _context != null && !_context.IsDisposed && !_disposed;
@@ -92,6 +97,11 @@ public sealed class OpenCLAccelerator : IAccelerator
             return _memoryManager;
         }
     }
+
+    /// <summary>
+    /// Gets the memory manager for this accelerator (alias for Memory).
+    /// </summary>
+    public IUnifiedMemoryManager MemoryManager => Memory;
 
     /// <summary>
     /// Gets the accelerator context.
@@ -156,11 +166,11 @@ public sealed class OpenCLAccelerator : IAccelerator
 
         if (_context != null)
         {
-            _logger.LogDebugMessage("OpenCL accelerator already initialized");
+            _logger.LogDebug("OpenCL accelerator already initialized");
             return;
         }
 
-        _logger.LogInfoMessage("Initializing OpenCL accelerator");
+        _logger.LogInformation("Initializing OpenCL accelerator");
 
         await Task.Run(() =>
         {
@@ -186,11 +196,11 @@ public sealed class OpenCLAccelerator : IAccelerator
                     // Create memory manager
                     _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
                     
-                    _logger.LogInfoMessage($"OpenCL accelerator initialized successfully with device: {_selectedDevice.Name}");
+                    _logger.LogInformation($"OpenCL accelerator initialized successfully with device: {_selectedDevice.Name}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, $"Failed to initialize OpenCL context for device: {_selectedDevice.Name}");
+                    _logger.LogError(ex, $"Failed to initialize OpenCL context for device: {_selectedDevice.Name}");
                     throw;
                 }
             }
@@ -213,7 +223,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         ThrowIfDisposed();
         await EnsureInitializedAsync(cancellationToken);
 
-        _logger.LogDebugMessage($"Allocating OpenCL buffer: type={typeof(T).Name}, elements={elementCount}");
+        _logger.LogDebug($"Allocating OpenCL buffer: type={typeof(T).Name}, elements={elementCount}");
 
         // Convert nuint to int for the memory manager
         var count = (int)elementCount;
@@ -244,7 +254,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         if (string.IsNullOrWhiteSpace(definition.EntryPoint))
             throw new ArgumentException("Entry point cannot be null or empty", nameof(definition));
 
-        _logger.LogDebugMessage($"Compiling OpenCL kernel: {definition.EntryPoint} ({definition.Source.Length} chars)");
+        _logger.LogDebug($"Compiling OpenCL kernel: {definition.EntryPoint} ({definition.Source.Length} chars)");
 
         return await Task.Run(() =>
         {
@@ -287,7 +297,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         
         if (_context == null)
         {
-            _logger.LogDebugMessage("Synchronize called on uninitialized accelerator");
+            _logger.LogDebug("Synchronize called on uninitialized accelerator");
             return ValueTask.CompletedTask;
         }
 
@@ -328,15 +338,15 @@ public sealed class OpenCLAccelerator : IAccelerator
         // Map optimization level to OpenCL build options
         switch (options.OptimizationLevel)
         {
-            case OptimizationLevel.None:
+            case OptimizationLevel.None: // None, O0, Minimal all equal 0
                 buildOptions.Add("-cl-opt-disable");
                 break;
-            case OptimizationLevel.Minimal:
-            case OptimizationLevel.Default:
+            case OptimizationLevel.O1:
+            case OptimizationLevel.O2: // O2, Default, Balanced all equal 2
                 // Default optimization
                 break;
-            case OptimizationLevel.Aggressive:
-            case OptimizationLevel.Maximum:
+            case OptimizationLevel.O3: // O3, Maximum, Aggressive, Full all equal 3
+            case OptimizationLevel.Size:
                 buildOptions.Add("-cl-fast-relaxed-math");
                 break;
         }
@@ -384,7 +394,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         {
             if (_disposed) return;
 
-            _logger.LogInfoMessage("Disposing OpenCL accelerator: {Name}");
+            _logger.LogInformation("Disposing OpenCL accelerator: {Name}");
 
             try
             {

@@ -448,7 +448,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             result.Warnings.Add("Plugin has no supported accelerator types");
         }
 
-        if (plugin.SupportedDataTypes == null || !plugin.SupportedDataTypes.Any())
+        if (plugin.InputTypes == null || !plugin.InputTypes.Any())
         {
             result.Warnings.Add("Plugin has no supported data types");
         }

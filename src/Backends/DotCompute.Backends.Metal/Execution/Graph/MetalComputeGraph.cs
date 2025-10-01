@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
-using DotCompute.Backends.Metal.Execution.Interfaces;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;

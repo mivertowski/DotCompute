@@ -14,6 +14,8 @@ using DotCompute.Core.Memory;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
+using AcceleratorContext = DotCompute.Abstractions.AcceleratorContext;
+using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 
 namespace DotCompute.Tests.Common.Mocks;
 

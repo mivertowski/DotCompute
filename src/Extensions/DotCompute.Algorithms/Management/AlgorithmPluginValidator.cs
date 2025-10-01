@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
+using DotCompute.Algorithms.Types.Security;
 using DotCompute.Abstractions.Security;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Abstractions.Validation;

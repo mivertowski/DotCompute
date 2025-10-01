@@ -4,7 +4,6 @@
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
-using DotCompute.Backends.Metal.Execution.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution.Graph;

@@ -163,7 +163,7 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
 
             // Check input type compatibility
             if (requirements.InputType != null &&
-                !plugin.SupportedInputTypes.Any(supportedType =>
+                !plugin.InputTypes.Any(supportedType =>
                     supportedType.IsAssignableFrom(requirements.InputType) ||
                     requirements.InputType.IsAssignableFrom(supportedType)))
             {
@@ -257,7 +257,7 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
     /// </summary>
     private static double CalculateTypeCompatibilityScore(IAlgorithmPlugin plugin, Type inputType)
     {
-        foreach (var supportedType in plugin.SupportedInputTypes)
+        foreach (var supportedType in plugin.InputTypes)
         {
             if (supportedType == inputType)
             {
@@ -339,10 +339,10 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
         // Score based on health status
         var healthScore = loadedPlugin.Health switch
         {
-            PluginHealth.Healthy => 1.0,
-            PluginHealth.Degraded => 0.7,
-            PluginHealth.Unhealthy => 0.3,
-            PluginHealth.Critical => 0.0,
+            PluginHealthStatus.Healthy => 1.0,
+            PluginHealthStatus.Degraded => 0.7,
+            PluginHealthStatus.Unhealthy => 0.3,
+            PluginHealthStatus.Critical => 0.0,
             _ => 0.5
         };
 

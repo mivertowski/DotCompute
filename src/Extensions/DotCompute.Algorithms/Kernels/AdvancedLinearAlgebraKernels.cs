@@ -15,7 +15,6 @@ namespace DotCompute.Algorithms.Kernels;
 /// - <see cref="EigenKernels"/> for eigenvalue computations (power method, inverse power method)
 /// - <see cref="BLASKernels"/> for basic linear algebra operations (GEMM, Tensor Core operations)
 /// - <see cref="DecompositionKernels"/> for matrix decompositions (QR, LU, Cholesky)
-/// - <see cref="AdvancedKernelTypes"/> for supporting types and enumerations
 /// </summary>
 public static class AdvancedLinearAlgebraKernels
 {

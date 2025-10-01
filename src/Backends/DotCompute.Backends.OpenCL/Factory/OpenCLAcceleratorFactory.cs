@@ -49,7 +49,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <exception cref="InvalidOperationException">Thrown when no suitable OpenCL devices are found.</exception>
     public OpenCLAccelerator CreateBest()
     {
-        _logger.LogDebugMessage("Creating best available OpenCL accelerator");
+        _logger.LogDebug("Creating best available OpenCL accelerator");
 
         var bestDevice = _deviceManager.GetBestDevice();
         if (bestDevice == null)
@@ -57,7 +57,7 @@ public sealed class OpenCLAcceleratorFactory
             throw new InvalidOperationException("No suitable OpenCL devices found. Ensure OpenCL drivers are installed.");
         }
 
-        _logger.LogInfoMessage($"Creating OpenCL accelerator for device: {bestDevice.Name} ({bestDevice.Type})");
+        _logger.LogInformation($"Creating OpenCL accelerator for device: {bestDevice.Name} ({bestDevice.Type})");
 
         return new OpenCLAccelerator(bestDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -71,7 +71,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <exception cref="InvalidOperationException">Thrown when no device of the specified type is found.</exception>
     public OpenCLAccelerator CreateForDeviceType(DeviceType deviceType, int deviceIndex = 0)
     {
-        _logger.LogDebugMessage($"Creating OpenCL accelerator for device type: {deviceType}, index: {deviceIndex}");
+        _logger.LogDebug($"Creating OpenCL accelerator for device type: {deviceType}, index: {deviceIndex}");
 
         var devices = _deviceManager.GetDevices(deviceType).ToList();
         if (devices.Count == 0)
@@ -86,7 +86,7 @@ public sealed class OpenCLAcceleratorFactory
         }
 
         var selectedDevice = devices[deviceIndex];
-        _logger.LogInfoMessage($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Type})");
+        _logger.LogInformation($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Type})");
 
         return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -103,7 +103,7 @@ public sealed class OpenCLAcceleratorFactory
         if (string.IsNullOrWhiteSpace(vendorName))
             throw new ArgumentException("Vendor name cannot be null or empty", nameof(vendorName));
 
-        _logger.LogDebugMessage($"Creating OpenCL accelerator for vendor: {vendorName}, index: {deviceIndex}");
+        _logger.LogDebug($"Creating OpenCL accelerator for vendor: {vendorName}, index: {deviceIndex}");
 
         var devices = _deviceManager.GetDevicesByVendor(vendorName).ToList();
         if (devices.Count == 0)
@@ -118,7 +118,7 @@ public sealed class OpenCLAcceleratorFactory
         }
 
         var selectedDevice = devices[deviceIndex];
-        _logger.LogInfoMessage($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Vendor})");
+        _logger.LogInformation($"Creating OpenCL accelerator for device: {selectedDevice.Name} ({selectedDevice.Vendor})");
 
         return new OpenCLAccelerator(selectedDevice, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -131,7 +131,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <exception cref="InvalidOperationException">Thrown when the device is not found.</exception>
     public OpenCLAccelerator CreateForDevice(DeviceId deviceId)
     {
-        _logger.LogDebugMessage("Creating OpenCL accelerator for device ID: {deviceId.Handle}");
+        _logger.LogDebug("Creating OpenCL accelerator for device ID: {deviceId.Handle}");
 
         var device = _deviceManager.GetDevice(deviceId);
         if (device == null)
@@ -139,7 +139,7 @@ public sealed class OpenCLAcceleratorFactory
             throw new InvalidOperationException($"OpenCL device not found: {deviceId.Handle:X}");
         }
 
-        _logger.LogInfoMessage($"Creating OpenCL accelerator for device: {device.Name} ({device.Type})");
+        _logger.LogInformation($"Creating OpenCL accelerator for device: {device.Name} ({device.Type})");
 
         return new OpenCLAccelerator(device, _loggerFactory.CreateLogger<OpenCLAccelerator>());
     }
@@ -150,7 +150,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <returns>A list of all available OpenCL devices across all platforms.</returns>
     public IEnumerable<OpenCLDeviceInfo> GetAvailableDevices()
     {
-        _logger.LogDebugMessage("Retrieving all available OpenCL devices");
+        _logger.LogDebug("Retrieving all available OpenCL devices");
         return _deviceManager.AllDevices;
     }
 
@@ -160,7 +160,7 @@ public sealed class OpenCLAcceleratorFactory
     /// <returns>A list of all available OpenCL platforms.</returns>
     public IReadOnlyList<OpenCLPlatformInfo> GetAvailablePlatforms()
     {
-        _logger.LogDebugMessage("Retrieving all available OpenCL platforms");
+        _logger.LogDebug("Retrieving all available OpenCL platforms");
         return _deviceManager.Platforms;
     }
 

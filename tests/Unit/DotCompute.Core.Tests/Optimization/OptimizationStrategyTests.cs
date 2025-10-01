@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization;
 using DotCompute.Core.Optimization.Configuration;
 using DotCompute.Core.Optimization.Enums;
@@ -342,7 +343,7 @@ public class OptimizationStrategyTests : IDisposable
     [Theory]
     [InlineData(WorkloadPattern.ComputeIntensive, 1000000, MemoryAccessPattern.Sequential)]
     [InlineData(WorkloadPattern.MemoryIntensive, 100000, MemoryAccessPattern.Random)]
-    [InlineData(WorkloadPattern.IOBound, 10000, MemoryAccessPattern.Stride)]
+    [InlineData(WorkloadPattern.IOBound, 10000, MemoryAccessPattern.Strided)]
     [InlineData(WorkloadPattern.Mixed, 500000, MemoryAccessPattern.Sequential)]
     public void WorkloadCharacteristics_Creation_ValidatesCorrectly(
         WorkloadPattern pattern, int dataSize, MemoryAccessPattern memoryPattern)

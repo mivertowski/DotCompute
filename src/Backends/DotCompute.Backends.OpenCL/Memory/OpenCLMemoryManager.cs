@@ -72,7 +72,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _logger.LogDebugMessage("Created OpenCL memory manager for device: {_context.DeviceInfo.Name}");
+        _logger.LogDebug("Created OpenCL memory manager for device: {_context.DeviceInfo.Name}");
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         if ((long)sizeInBytes > MaxAllocationSize)
             throw new OutOfMemoryException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
 
-        _logger.LogDebugMessage($"Allocating OpenCL buffer: type={typeof(T).Name}, count={count}, size={sizeInBytes} bytes");
+        _logger.LogDebug($"Allocating OpenCL buffer: type={typeof(T).Name}, count={count}, size={sizeInBytes} bytes");
 
         var flags = DetermineMemoryFlags(options);
         var buffer = new OpenCLMemoryBuffer<T>(
@@ -285,7 +285,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            _logger.LogDebugMessage($"Memory optimization completed: removed {disposedBuffers.Count} disposed buffer references");
+            _logger.LogDebug($"Memory optimization completed: removed {disposedBuffers.Count} disposed buffer references");
         }, cancellationToken);
     }
 
@@ -298,7 +298,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         lock (_lock)
         {
-            _logger.LogInfoMessage("Clearing all OpenCL memory allocations");
+            _logger.LogInformation("Clearing all OpenCL memory allocations");
 
             // Dispose all tracked buffers
             foreach (var buffer in _allocatedBuffers.Values.ToArray())
@@ -316,8 +316,149 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             _allocatedBuffers.Clear();
             Interlocked.Exchange(ref _currentAllocatedMemory, 0);
 
-            _logger.LogInfoMessage("All OpenCL memory cleared");
+            _logger.LogInformation("All OpenCL memory cleared");
         }
+    }
+
+    // Device-specific Operations (Legacy Support)
+
+    /// <summary>
+    /// Allocates device-specific memory.
+    /// </summary>
+    public DeviceMemory AllocateDevice(long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        if (sizeInBytes <= 0)
+            throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
+
+        var memObject = _context.CreateBuffer(MemoryFlags.ReadWrite, (nuint)sizeInBytes);
+        Interlocked.Add(ref _currentAllocatedMemory, sizeInBytes);
+
+        return new DeviceMemory(memObject.Handle, sizeInBytes);
+    }
+
+    /// <summary>
+    /// Frees device-specific memory.
+    /// </summary>
+    public void FreeDevice(DeviceMemory deviceMemory)
+    {
+        ThrowIfDisposed();
+
+        if (deviceMemory.Handle != IntPtr.Zero)
+        {
+            OpenCLContext.ReleaseObject(deviceMemory.Handle, OpenCLRuntime.clReleaseMemObject, "device memory");
+            Interlocked.Add(ref _currentAllocatedMemory, -deviceMemory.Size);
+        }
+    }
+
+    /// <summary>
+    /// Sets device memory to a specific value.
+    /// </summary>
+    public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        unsafe
+        {
+            var pattern = stackalloc byte[1];
+            pattern[0] = value;
+            var error = OpenCLRuntime.clEnqueueFillBuffer(
+                _context.CommandQueue.Handle,
+                deviceMemory.Handle,
+                (IntPtr)pattern,
+                (nuint)1,
+                (nuint)0,
+                (nuint)sizeInBytes,
+                0,
+                null,
+                IntPtr.Zero);
+            OpenCLException.ThrowIfError(error, "Fill device buffer");
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously sets device memory to a specific value.
+    /// </summary>
+    public async ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken);
+    }
+
+    /// <summary>
+    /// Copies data from host to device memory.
+    /// </summary>
+    public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        var error = OpenCLRuntime.clEnqueueWriteBuffer(
+            _context.CommandQueue.Handle,
+            deviceMemory.Handle,
+            1u, // blocking write
+            (nuint)0,
+            (nuint)sizeInBytes,
+            hostPointer,
+            0,
+            null,
+            out _);
+        OpenCLException.ThrowIfError(error, "Copy host to device");
+    }
+
+    /// <summary>
+    /// Copies data from device to host memory.
+    /// </summary>
+    public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        var error = OpenCLRuntime.clEnqueueReadBuffer(
+            _context.CommandQueue.Handle,
+            deviceMemory.Handle,
+            1u, // blocking read
+            (nuint)0,
+            (nuint)sizeInBytes,
+            hostPointer,
+            0,
+            null,
+            out _);
+        OpenCLException.ThrowIfError(error, "Copy device to host");
+    }
+
+    /// <summary>
+    /// Asynchronously copies data from host to device memory.
+    /// </summary>
+    public async ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken);
+    }
+
+    /// <summary>
+    /// Asynchronously copies data from device to host memory.
+    /// </summary>
+    public async ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken);
+    }
+
+    /// <summary>
+    /// Copies data between device memories.
+    /// </summary>
+    public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+
+        var error = OpenCLRuntime.clEnqueueCopyBuffer(
+            _context.CommandQueue.Handle,
+            sourceDevice.Handle,
+            destinationDevice.Handle,
+            (nuint)0,
+            (nuint)0,
+            (nuint)sizeInBytes,
+            0,
+            null,
+            IntPtr.Zero);
+        OpenCLException.ThrowIfError(error, "Copy device to device");
     }
 
     /// <summary>
@@ -330,7 +471,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         // MemoryOptions is an enum, not flags, so we use simple checks
         // For now, use default ReadWrite for simplicity
         // In a full implementation, this could map specific enum values
-        
+
         if (options.HasFlag(MemoryOptions.Mapped))
             flags |= MemoryFlags.AllocHostPtr;
 
@@ -357,7 +498,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         {
             if (_disposed) return;
 
-            _logger.LogInfoMessage("Disposing OpenCL memory manager");
+            _logger.LogInformation("Disposing OpenCL memory manager");
 
             Clear(); // Dispose all buffers
             _disposed = true;

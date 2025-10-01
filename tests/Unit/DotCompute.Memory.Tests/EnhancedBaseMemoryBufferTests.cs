@@ -1087,9 +1087,9 @@ public class EnhancedBaseMemoryBufferTests
         public override IAccelerator Accelerator => throw new NotSupportedException();
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
         public override void EnsureOnHost() { }
-        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
 
         {
@@ -1114,9 +1114,9 @@ public class EnhancedBaseMemoryBufferTests
         public override bool IsOnDevice => false;
         public override bool IsOnHost => true;
         public override void EnsureOnDevice() { }
-        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
-        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
-        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public override void MarkDeviceDirty() { }
         public override void MarkHostDirty() { }
         public override bool IsDirty => false;
@@ -1175,9 +1175,9 @@ public class EnhancedBaseMemoryBufferTests
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
         public override void EnsureOnHost() { }
         public override void EnsureOnDevice() { }
-        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
@@ -1189,9 +1189,9 @@ public class EnhancedBaseMemoryBufferTests
         public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
         public override bool IsOnDevice => true;
         public override bool IsOnHost => false;
-        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
-        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
-        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public override void MarkDeviceDirty() { }
         public override void MarkHostDirty() { }
         public override bool IsDirty => false;
@@ -1236,9 +1236,9 @@ public class EnhancedBaseMemoryBufferTests
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
         public override void EnsureOnHost() { }
         public override void EnsureOnDevice() { }
-        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
@@ -1250,9 +1250,9 @@ public class EnhancedBaseMemoryBufferTests
         public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
         public override bool IsOnDevice => false;
         public override bool IsOnHost => true;
-        public override MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException();
-        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException();
-        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => throw new NotSupportedException();
+        public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public override void MarkDeviceDirty() { }
         public override void MarkHostDirty() { }
         public override bool IsDirty => false;
@@ -1293,9 +1293,9 @@ public class EnhancedBaseMemoryBufferTests
         public override BufferState State => IsDisposed ? BufferState.Disposed : BufferState.Allocated;
         public override void EnsureOnHost() { }
         public override void EnsureOnDevice() { }
-        public override ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public override ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public override IUnifiedMemoryBuffer<T> Slice(int start, int length) => this;
@@ -1307,9 +1307,9 @@ public class EnhancedBaseMemoryBufferTests
         public override DeviceMemory GetDeviceMemory() => throw new NotSupportedException();
         public override bool IsOnDevice => false;
         public override bool IsOnHost => true;
-        public override MappedMemory<T> Map(MapMode mode) => new(_memory);
-        public override MappedMemory<T> MapRange(int offset, int length, MapMode mode) => new(_memory.Slice(offset, length));
-        public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode) => new(_memory);
+        public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode) => new(_memory.Slice(offset, length));
+        public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
         public override void MarkDeviceDirty() { }
         public override void MarkHostDirty() { }
         public override bool IsDirty => false;

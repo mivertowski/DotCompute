@@ -302,7 +302,18 @@ public sealed class MetalAccelerator : BaseAccelerator
     public Dictionary<string, PerformanceMetrics> GetPerformanceMetrics()
     {
         ThrowIfDisposed();
-        return _profiler.GetAllMetrics();
+        var metalMetrics = _profiler.GetAllMetrics();
+        return metalMetrics.ToDictionary(
+            kvp => kvp.Key,
+            kvp => new PerformanceMetrics
+            {
+                AverageTimeMs = kvp.Value.AverageTime.TotalMilliseconds,
+                MinTimeMs = kvp.Value.MinTime == TimeSpan.MaxValue ? 0 : kvp.Value.MinTime.TotalMilliseconds,
+                MaxTimeMs = kvp.Value.MaxTime.TotalMilliseconds,
+                TotalExecutionTimeMs = (long)kvp.Value.TotalTime.TotalMilliseconds,
+                StandardDeviation = Math.Sqrt(kvp.Value.TimeVariance)
+            }
+        );
     }
 
     /// <summary>

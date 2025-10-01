@@ -257,7 +257,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         if (requirements.InputType != null)
         {
             candidates = candidates.Where(p =>
-                p.SupportedDataTypes?.Contains(requirements.InputType) == true);
+                p.InputTypes?.Contains(requirements.InputType) == true);
         }
 
         // Filter by output type
@@ -310,7 +310,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         }
 
         // Exact type matches
-        if (requirements.InputType != null && plugin.SupportedDataTypes?.Contains(requirements.InputType) == true)
+        if (requirements.InputType != null && plugin.InputTypes?.Contains(requirements.InputType) == true)
         {
             score += 15.0;
         }
@@ -374,7 +374,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
 
         // Check input type compatibility
         if (requirements.InputType != null &&
-            plugin.SupportedDataTypes?.Contains(requirements.InputType) != true)
+            plugin.InputTypes?.Contains(requirements.InputType) != true)
         {
             return false;
         }

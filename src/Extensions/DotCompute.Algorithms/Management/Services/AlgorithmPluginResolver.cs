@@ -375,22 +375,22 @@ public sealed class AlgorithmPluginResolver : IDisposable
         var result = new PerformanceCompatibilityResult { IsAcceptable = true, Score = 0 };
 
         // Check memory requirements
-        if (requirements.MaxMemoryUsage.HasValue && profile.MemoryUsage > requirements.MaxMemoryUsage.Value)
+        if (requirements.MaxMemoryUsage.HasValue && profile.MemoryRequirementMB > requirements.MaxMemoryUsage.Value)
         {
             result.IsAcceptable = false;
-            result.Warning = $"Memory usage {profile.MemoryUsage} exceeds maximum {requirements.MaxMemoryUsage}";
+            result.Warning = $"Memory usage {profile.MemoryRequirementMB} exceeds maximum {requirements.MaxMemoryUsage}";
             return result;
         }
 
         // Score based on performance characteristics
-        if (profile.ExecutionTime <= requirements.MaxExecutionTime)
+        if (profile.EstimatedExecutionTimeMs <= requirements.MaxExecutionTime)
         {
             result.Score += 10;
         }
         else
         {
             result.Score -= 5;
-            result.Warning = $"Execution time {profile.ExecutionTime} exceeds preferred maximum {requirements.MaxExecutionTime}";
+            result.Warning = $"Execution time {profile.EstimatedExecutionTimeMs} exceeds preferred maximum {requirements.MaxExecutionTime}";
         }
 
         return result;

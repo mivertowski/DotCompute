@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security.Core;
 
@@ -156,7 +157,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             return new UnifiedSecurityResult
             {
                 IsValid = false,
-                SecurityLevel = SecurityLevel.None,
+                SecurityLevel = SecurityLevel.Basic,
                 Violations = new[] { $"Validation error: {ex.Message}" },
                 ValidationDuration = duration
             };
@@ -282,7 +283,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             return new SecurityPolicyResult
             {
                 IsAllowed = false,
-                SecurityLevel = SecurityLevel.None,
+                SecurityLevel = SecurityLevel.Basic,
                 Violations = new[] { $"Policy evaluation error: {ex.Message}" }
             };
         }
@@ -370,9 +371,9 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         {
             level = level switch
             {
-                SecurityLevel.Low => SecurityLevel.Medium,
-                SecurityLevel.Medium => SecurityLevel.High,
-                SecurityLevel.High => SecurityLevel.Maximum,
+                DotCompute.Abstractions.Security.SecurityLevel.Low => DotCompute.Abstractions.Security.SecurityLevel.Medium,
+                DotCompute.Abstractions.Security.SecurityLevel.Medium => DotCompute.Abstractions.Security.SecurityLevel.High,
+                DotCompute.Abstractions.Security.SecurityLevel.High => DotCompute.Abstractions.Security.SecurityLevel.Maximum,
                 _ => level
             };
         }

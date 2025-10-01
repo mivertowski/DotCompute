@@ -44,11 +44,11 @@ public sealed partial class UnifiedPluginManager : IDisposable
 
         var config = configuration ?? new PluginManagerConfiguration();
 
-        _discoveryService = new PluginDiscoveryService(logger, config.DiscoveryOptions);
-        _lifecycleManager = new PluginLifecycleManager(logger, _securityValidator);
-        _executionService = new PluginExecutionService(logger);
-        _dependencyResolver = new PluginDependencyResolver(logger);
-        _healthMonitor = new PluginHealthMonitor(logger, config.HealthMonitoringOptions);
+        _discoveryService = new AlgorithmPluginDiscovery(logger, config.DiscoveryOptions);
+        _lifecycleManager = new AlgorithmLifecycleManager(logger, _securityValidator);
+        _executionService = new AlgorithmPluginExecutor(logger);
+        _dependencyResolver = new AlgorithmPluginDependencyResolver(logger);
+        _healthMonitor = new AlgorithmPluginHealthMonitor(logger, config.HealthMonitoringOptions);
         _loadedPlugins = new Dictionary<string, IAlgorithmPlugin>();
 
         LogUnifiedPluginManagerInitialized();

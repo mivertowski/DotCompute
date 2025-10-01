@@ -67,31 +67,31 @@ internal sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmana
     public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(Memory<T>.Empty, null);
+    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(Memory<T>.Empty, null);
+    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(Memory<T>.Empty, null));
+    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(Memory<T>.Empty, null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
@@ -210,31 +210,31 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override DeviceMemory GetDeviceMemory() => new(_pinnedPointer, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(AsMemory(), null);
+    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory(), null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(AsMemory().Slice(offset, length), null);
+    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory().Slice(offset, length), null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(AsMemory(), null));
+    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(AsMemory(), null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
@@ -371,31 +371,31 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(_memory, null);
+    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(_memory, null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite) => new(_memory.Slice(offset, length), null);
+    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(_memory.Slice(offset, length), null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(_memory, null));
+    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(_memory, null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
