@@ -43,8 +43,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
     private volatile bool _disposed;
-    private long _totalOperations;
-    private long _totalErrors;
+    private readonly long _totalOperations;
+    private readonly long _totalErrors;
 
     public MetalTelemetryManager(
         IOptions<MetalTelemetryOptions> options,
@@ -148,7 +148,6 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         {
             _ = Interlocked.Increment(ref _totalErrors);
         }
-
     }
 
     /// <summary>
@@ -207,7 +206,6 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         {
             _ = Interlocked.Increment(ref _totalErrors);
         }
-
     }
 
     /// <summary>

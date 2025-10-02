@@ -102,7 +102,7 @@ public sealed class KernelCodeBuilder
     /// <param name="methods">The kernel methods to validate.</param>
     /// <param name="classes">The kernel classes to validate.</param>
     /// <returns>A validation result containing any errors or warnings.</returns>
-    private KernelValidationResult ValidateKernels(
+    private static KernelValidationResult ValidateKernels(
         List<KernelMethodInfo> methods,
         List<KernelClassInfo> classes)
     {
@@ -167,7 +167,7 @@ public sealed class KernelCodeBuilder
     /// <param name="kernelMethods">The kernel methods to include in the registry.</param>
     /// <param name="kernelClasses">The kernel classes to include in the registry.</param>
     /// <param name="context">The source production context.</param>
-    private void GenerateKernelRegistry(
+    private static void GenerateKernelRegistry(
         List<KernelMethodInfo> kernelMethods,
         List<KernelClassInfo> kernelClasses,
         SourceProductionContext context)
@@ -208,7 +208,7 @@ public sealed class KernelCodeBuilder
     /// <param name="method">The kernel method to generate a wrapper for.</param>
     /// <param name="compilation">The compilation context.</param>
     /// <param name="context">The source production context.</param>
-    private void GenerateUnifiedWrapper(
+    private static void GenerateUnifiedWrapper(
         KernelMethodInfo method,
         Compilation compilation,
         SourceProductionContext context)
@@ -224,7 +224,7 @@ public sealed class KernelCodeBuilder
     /// <param name="kernelClass">The kernel class to generate an invoker for.</param>
     /// <param name="allMethods">All kernel methods for lookup.</param>
     /// <param name="context">The source production context.</param>
-    private void GenerateKernelInvoker(
+    private static void GenerateKernelInvoker(
         KernelClassInfo kernelClass,
         List<KernelMethodInfo> allMethods,
         SourceProductionContext context)
@@ -506,7 +506,7 @@ public sealed class KernelCodeBuilder
             }
         }
 
-        if (typeString.EndsWith("[]"))
+        if (typeString.EndsWith("[]", StringComparison.Ordinal))
         {
             return typeString.Substring(0, typeString.Length - 2);
         }

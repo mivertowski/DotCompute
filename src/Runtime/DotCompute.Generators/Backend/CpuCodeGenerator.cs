@@ -31,9 +31,7 @@ public class CpuCodeGenerator
 
     // Code generation constants
 
-    private const int BaseIndentLevel = 2;
     private const int MethodBodyIndentLevel = 3;
-    private const int LoopBodyIndentLevel = 4;
 
     #endregion
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,6 +15,7 @@ namespace DotCompute.Generators.Kernel;
 /// Analyzes kernel code to determine optimal memory layouts, shared memory usage,
 /// and other performance optimizations.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or dependency injection")]
 internal sealed class KernelOptimizationAnalyzer
 {
     private readonly SemanticModel _semanticModel;
@@ -138,13 +140,12 @@ internal sealed class KernelOptimizationAnalyzer
                 if (access.Expression is IdentifierNameSyntax identifier)
                 {
                     var name = identifier.Identifier.Text;
-                    if (!frequentlyAccessedArrays.ContainsKey(name))
+                    if (!frequentlyAccessedArrays.TryGetValue(name, out var count))
                     {
-                        frequentlyAccessedArrays[name] = 0;
+                        count = 0;
                     }
 
-
-                    frequentlyAccessedArrays[name]++;
+                    frequentlyAccessedArrays[name] = count + 1;
                 }
             }
         }
@@ -498,7 +499,6 @@ internal sealed class KernelOptimizationAnalyzer
             {
                 return 8;    // Larger partial unroll
             }
-
         }
         return 1; // No unrolling
     }

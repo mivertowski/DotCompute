@@ -637,7 +637,7 @@ internal sealed class RegisterSpillingOptimizer
     /// <summary>
     /// Analyzes data flow to optimize spilling decisions.
     /// </summary>
-    public class DataFlowAnalyzer
+    public sealed class DataFlowAnalyzer
     {
         private readonly Dictionary<string, VariableFlowInfo> _flowInfo;
         private readonly KernelMethodInfo _kernelInfo;

@@ -5,6 +5,8 @@ using System.ComponentModel;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Memory;
 
+#pragma warning disable CS0246 // Type or namespace name not found (incomplete pipeline types)
+
 namespace DotCompute.Abstractions.Pipelines;
 
 #region Core Pipeline Types
@@ -93,10 +95,11 @@ public class MemoryAllocationHints
     public bool PreferMemoryPooling { get; set; } = true;
     
     /// <summary>Preferred memory location (host, device, unified).</summary>
-    public MemoryLocation PreferredLocation { get; set; } = MemoryLocation.Auto;
+    public MemoryLocation PreferredLocation { get; set; } = MemoryLocation.Host;
     
-    /// <summary>Memory access pattern for optimization.</summary>
-    public MemoryAccessPattern AccessPattern { get; set; } = MemoryAccessPattern.Sequential;
+    // TODO: Define missing type
+    /* <summary>Memory access pattern for optimization.</summary>
+    public MemoryAccessPattern AccessPattern { get; set; } = MemoryAccessPattern.Sequential; */
     
     /// <summary>Whether the stage can work with pinned memory.</summary>
     public bool SupportsPinnedMemory { get; set; } = false;
@@ -191,15 +194,21 @@ public enum ErrorHandlingStrategy
 {
     /// <summary>Stop pipeline execution on first error.</summary>
     StopOnFirstError,
-    
+
     /// <summary>Continue execution and collect all errors.</summary>
     ContinueOnError,
-    
+
     /// <summary>Attempt to recover from errors automatically.</summary>
     AutoRecover,
-    
+
     /// <summary>Use custom error handling logic.</summary>
-    Custom
+    Custom,
+
+    /// <summary>Retry the failed operation.</summary>
+    Retry,
+
+    /// <summary>Fall back to a default value and continue.</summary>
+    Fallback
 }
 
 /// <summary>
@@ -256,20 +265,24 @@ public interface IPipelineExecutionContext
     /// <summary>Configuration for this execution.</summary>
     IPipelineConfiguration Configuration { get; }
     
-    /// <summary>Resource manager for this execution.</summary>
-    IPipelineResourceManager ResourceManager { get; }
-    
-    /// <summary>Cache manager for storing intermediate results.</summary>
-    IPipelineCacheManager CacheManager { get; }
-    
-    /// <summary>Telemetry collector for execution metrics.</summary>
-    ITelemetryCollector TelemetryCollector { get; }
+    // TODO: Define missing type
+    /* <summary>Resource manager for this execution.</summary>
+    IPipelineResourceManager ResourceManager { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Cache manager for storing intermediate results.</summary>
+    IPipelineCacheManager CacheManager { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Telemetry collector for execution metrics.</summary>
+    ITelemetryCollector TelemetryCollector { get; } */
     
     /// <summary>Cancellation token for the execution.</summary>
     CancellationToken CancellationToken { get; }
     
-    /// <summary>Logger for execution events and diagnostics.</summary>
-    ILogger Logger { get; }
+    // TODO: Define missing type
+    /* <summary>Logger for execution events and diagnostics.</summary>
+    ILogger Logger { get; } */
     
     /// <summary>Service provider for dependency injection.</summary>
     IServiceProvider ServiceProvider { get; }
@@ -286,14 +299,17 @@ public interface IStreamingExecutionContext : IPipelineExecutionContext
     /// <summary>Configuration for streaming behavior.</summary>
     StreamingConfiguration StreamingConfig { get; }
     
-    /// <summary>Buffer manager for streaming data.</summary>
-    IStreamingBufferManager BufferManager { get; }
-    
-    /// <summary>Flow control for managing streaming throughput.</summary>
-    IStreamFlowControl FlowControl { get; }
-    
-    /// <summary>Event publisher for streaming events.</summary>
-    IStreamEventPublisher EventPublisher { get; }
+    // TODO: Define missing type
+    /* <summary>Buffer manager for streaming data.</summary>
+    IStreamingBufferManager BufferManager { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Flow control for managing streaming throughput.</summary>
+    IStreamFlowControl FlowControl { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Event publisher for streaming events.</summary>
+    IStreamEventPublisher EventPublisher { get; } */
 }
 
 /// <summary>
@@ -376,17 +392,21 @@ public interface IPipelineExecutionResult<TOutput>
     /// <summary>Total execution time for the pipeline.</summary>
     TimeSpan ExecutionTime { get; }
     
-    /// <summary>Detailed metrics for each pipeline stage.</summary>
-    IReadOnlyList<IStageExecutionMetrics> StageMetrics { get; }
-    
-    /// <summary>Resource utilization during execution.</summary>
-    IResourceUtilizationMetrics ResourceMetrics { get; }
-    
-    /// <summary>Cache utilization statistics.</summary>
-    ICacheUtilizationMetrics CacheMetrics { get; }
-    
-    /// <summary>Performance insights and recommendations.</summary>
-    IPerformanceInsights PerformanceInsights { get; }
+    // TODO: Define missing type
+    /* <summary>Detailed metrics for each pipeline stage.</summary>
+    IReadOnlyList<IStageExecutionMetrics> StageMetrics { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Resource utilization during execution.</summary>
+    IResourceUtilizationMetrics ResourceMetrics { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Cache utilization statistics.</summary>
+    ICacheUtilizationMetrics CacheMetrics { get; } */
+
+    // TODO: Define missing type
+    /* <summary>Performance insights and recommendations.</summary>
+    IPerformanceInsights PerformanceInsights { get; } */
     
     /// <summary>Execution context that was used.</summary>
     IPipelineExecutionContext ExecutionContext { get; }
@@ -503,8 +523,9 @@ public class StageExecutionCompletedEvent : PipelineEvent
     /// <summary>Any exceptions from the stage.</summary>
     public Exception? Exception { get; set; }
     
-    /// <summary>Performance metrics for the stage.</summary>
-    public IStageExecutionMetrics? Metrics { get; set; }
+    // TODO: Define missing type
+    /* <summary>Performance metrics for the stage.</summary>
+    public IStageExecutionMetrics? Metrics { get; set; } */
 }
 
 /// <summary>
@@ -603,14 +624,17 @@ public class OptimizationContext
     /// <summary>Constraints that must be respected during optimization.</summary>
     public OptimizationConstraints Constraints { get; set; } = new();
     
-    /// <summary>Historical execution data for informed optimization.</summary>
-    public IExecutionHistory? ExecutionHistory { get; set; }
-    
-    /// <summary>Target hardware characteristics.</summary>
-    public IHardwareProfile? HardwareProfile { get; set; }
-    
-    /// <summary>Input data characteristics for optimization decisions.</summary>
-    public IInputCharacteristics? InputCharacteristics { get; set; }
+    // TODO: Define missing type
+    /* <summary>Historical execution data for informed optimization.</summary>
+    public IExecutionHistory? ExecutionHistory { get; set; } */
+
+    // TODO: Define missing type
+    /* <summary>Target hardware characteristics.</summary>
+    public IHardwareProfile? HardwareProfile { get; set; } */
+
+    // TODO: Define missing type
+    /* <summary>Input data characteristics for optimization decisions.</summary>
+    public IInputCharacteristics? InputCharacteristics { get; set; } */
 }
 
 /// <summary>

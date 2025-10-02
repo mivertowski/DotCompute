@@ -23,10 +23,10 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<IntPtr, long> _allocations;
         private readonly CudaPinnedMemoryAllocator _pinnedAllocator;
-        private long _totalAllocated;
+        private readonly long _totalAllocated;
         private long _totalMemory;
         private long _maxAllocationSize;
-        private long _deallocationCount;
+        private readonly long _deallocationCount;
         private bool _disposed;
         private IAccelerator? _accelerator;
 
@@ -142,7 +142,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Allocates device memory asynchronously with specific type.
         /// </summary>
-        public async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(long count, CancellationToken cancellationToken = default) where T : unmanaged
+        public static async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(long count, CancellationToken cancellationToken = default) where T : unmanaged
             => await AllocateAsync<T>(count, MemoryOptions.None, cancellationToken);
 
         /// <summary>

@@ -9,12 +9,12 @@ namespace DotCompute.Generators.Configuration.Style;
 /// including indentation, braces, line endings, and naming conventions.
 /// </summary>
 /// <remarks>
-/// The CodeStyle class provides a comprehensive set of configuration options
+/// The DotComputeCodeStyle class provides a comprehensive set of configuration options
 /// to ensure generated code follows consistent formatting and naming standards.
 /// These settings are applied during the code generation process to produce
 /// clean, readable, and maintainable code output.
 /// </remarks>
-public class CodeStyle
+public class DotComputeCodeStyle
 {
     /// <summary>
     /// Gets or sets the indentation style for generated code.

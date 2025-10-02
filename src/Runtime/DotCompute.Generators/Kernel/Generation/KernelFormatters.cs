@@ -443,7 +443,7 @@ public sealed class KernelFormatters
             return new[] { text };
         }
 
-        var words = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         var lines = new System.Collections.Generic.List<string>();
         var currentLine = new System.Text.StringBuilder();
 

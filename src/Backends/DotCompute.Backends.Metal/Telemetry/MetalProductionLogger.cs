@@ -354,7 +354,7 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs performance metrics
     /// </summary>
-    private void LogPerformanceMetrics(string correlationId, string kernelName, TimeSpan duration, double throughputMBps)
+    private static void LogPerformanceMetrics(string correlationId, string kernelName, TimeSpan duration, double throughputMBps)
     {
         var properties = new Dictionary<string, object>
         {

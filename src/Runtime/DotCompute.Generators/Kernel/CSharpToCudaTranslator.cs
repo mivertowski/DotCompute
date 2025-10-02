@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,6 +14,7 @@ namespace DotCompute.Generators.Kernel;
 /// Production-grade translator that converts C# kernel code to optimized CUDA C code.
 /// Handles complex patterns, optimizations, and various memory access patterns.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or dependency injection")]
 internal sealed class CSharpToCudaTranslator
 {
     private readonly SemanticModel _semanticModel;
@@ -231,7 +233,6 @@ internal sealed class CSharpToCudaTranslator
                     _ = _output.Append(", ");
                 }
 
-
                 TranslateExpression(forStmt.Incrementors[i]);
             }
         }
@@ -356,9 +357,9 @@ internal sealed class CSharpToCudaTranslator
                 TranslateAssignment(assignment);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _ = _output.Append("(");
+                _ = _output.Append('(');
                 TranslateExpression(parenthesized.Expression);
-                _ = _output.Append(")");
+                _ = _output.Append(')');
                 break;
             case PostfixUnaryExpressionSyntax postfix:
                 TranslateExpression(postfix.Operand);
@@ -457,7 +458,6 @@ internal sealed class CSharpToCudaTranslator
                 _ = _output.Append(", ");
             }
 
-
             TranslateExpression(elementAccess.ArgumentList.Arguments[i].Expression);
         }
 
@@ -497,7 +497,7 @@ internal sealed class CSharpToCudaTranslator
         }
 
 
-        _ = _output.Append("(");
+        _ = _output.Append('(');
         for (var i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
         {
             if (i > 0)
@@ -505,10 +505,9 @@ internal sealed class CSharpToCudaTranslator
                 _ = _output.Append(", ");
             }
 
-
             TranslateExpression(invocation.ArgumentList.Arguments[i].Expression);
         }
-        _ = _output.Append(")");
+        _ = _output.Append(')');
     }
 
     private void TranslateMemberAccess(MemberAccessExpressionSyntax memberAccess)
@@ -539,8 +538,7 @@ internal sealed class CSharpToCudaTranslator
 
     private static bool IsAtomicOperation(string methodName)
     {
-        return methodName.StartsWith("Interlocked") ||
-
+        return methodName.StartsWith("Interlocked", StringComparison.Ordinal) ||
                methodName.IndexOf("Atomic", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
@@ -564,7 +562,7 @@ internal sealed class CSharpToCudaTranslator
 
 
         _ = _output.Append(atomicOp);
-        _ = _output.Append("(");
+        _ = _output.Append('(');
 
 
         if (methodName == "InterlockedIncrement")
@@ -586,13 +584,12 @@ internal sealed class CSharpToCudaTranslator
                     _ = _output.Append(", ");
                 }
 
-
                 TranslateExpression(arguments.Arguments[i].Expression);
             }
         }
 
 
-        _ = _output.Append(")");
+        _ = _output.Append(')');
     }
 
     private static string TranslateMathFunction(string methodName)

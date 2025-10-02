@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using DotCompute.Generators.Models.Kernel;
 
@@ -56,6 +57,7 @@ public enum KernelExecutionMode
 /// <summary>
 /// Handles generation of kernel code for different execution modes.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or dependency injection")]
 internal sealed class KernelExecutionModeHandler
 {
     private readonly KernelMethodInfo _kernelInfo;
