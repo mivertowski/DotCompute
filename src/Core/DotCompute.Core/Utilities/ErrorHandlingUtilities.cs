@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Utilities.ErrorHandling.Enums;
 using DotCompute.Core.Utilities.ErrorHandling.Models;
+using System;
 
 namespace DotCompute.Core.Utilities;
 
@@ -334,13 +335,13 @@ public static class ErrorHandlingUtilities
 
         return message switch
         {
-            var m when m.Contains("memory") => ErrorClassification.MemoryExhaustion,
-            var m when m.Contains("device") && m.Contains("not") && m.Contains("found") => ErrorClassification.DeviceNotFound,
-            var m when m.Contains("busy") || m.Contains("in use") => ErrorClassification.DeviceBusy,
-            var m when m.Contains("timeout") => ErrorClassification.Timeout,
-            var m when m.Contains("hardware") || m.Contains("driver") => ErrorClassification.HardwareFailure,
+            var m when m.Contains("memory", StringComparison.OrdinalIgnoreCase) => ErrorClassification.MemoryExhaustion,
+            var m when m.Contains("device", StringComparison.OrdinalIgnoreCase) && m.Contains("not", StringComparison.CurrentCulture) && m.Contains("found", StringComparison.CurrentCulture) => ErrorClassification.DeviceNotFound,
+            var m when m.Contains("busy", StringComparison.CurrentCulture) || m.Contains("in use", StringComparison.CurrentCulture) => ErrorClassification.DeviceBusy,
+            var m when m.Contains("timeout", StringComparison.CurrentCulture) => ErrorClassification.Timeout,
+            var m when m.Contains("hardware", StringComparison.CurrentCulture) || m.Contains("driver", StringComparison.CurrentCulture) => ErrorClassification.HardwareFailure,
             var m when m.Contains("invalid") => ErrorClassification.InvalidInput,
-            var m when m.Contains("permission") || m.Contains("access") => ErrorClassification.PermissionDenied,
+            var m when m.Contains("permission", StringComparison.CurrentCulture) || m.Contains("access", StringComparison.CurrentCulture) => ErrorClassification.PermissionDenied,
             _ => ErrorClassification.ComputeError
         };
     }

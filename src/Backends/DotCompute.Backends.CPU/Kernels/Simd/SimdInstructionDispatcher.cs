@@ -19,6 +19,13 @@ public sealed class SimdInstructionDispatcher : IDisposable
     private readonly SimdPerformanceAnalyzer _performanceAnalyzer;
     private readonly ThreadLocal<ExecutionContext> _threadContext;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the SimdInstructionDispatcher class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="optimizationEngine">The optimization engine.</param>
+    /// <param name="performanceAnalyzer">The performance analyzer.</param>
+    /// <param name="capabilities">The capabilities.</param>
 
     public SimdInstructionDispatcher(
         ILogger<SimdInstructionDispatcher> logger,
@@ -279,6 +286,9 @@ public sealed class SimdInstructionDispatcher : IDisposable
             throw new ObjectDisposedException(nameof(SimdInstructionDispatcher));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -290,6 +300,9 @@ public sealed class SimdInstructionDispatcher : IDisposable
         }
     }
 }
+/// <summary>
+/// An reduction operation enumeration.
+/// </summary>
 
 #region Supporting Types
 

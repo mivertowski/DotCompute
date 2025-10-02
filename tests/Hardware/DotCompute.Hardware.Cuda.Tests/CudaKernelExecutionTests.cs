@@ -87,6 +87,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // }
                 // But this requires NVCC compilation with -rdc=true and cudadevrt linking
             }";
+        /// <summary>
+        /// Gets vector_ add_ kernel_ should_ execute_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Vector_Add_Kernel_Should_Execute_Correctly()
@@ -168,6 +172,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Throughput: {throughput:F2} GB/s");
             Output.WriteLine($"  Grid Size: {gridSize}, Block Size: {blockSize}");
         }
+        /// <summary>
+        /// Gets matrix_ multiply_ kernel_ should_ execute_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Matrix_Multiply_Kernel_Should_Execute_Correctly()
@@ -272,6 +280,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Performance: {gflops:F2} GFLOPS");
             Output.WriteLine($"  Grid: ({gridDim}x{gridDim}), Block: ({blockDim}x{blockDim})");
         }
+        /// <summary>
+        /// Gets shared_ memory_ kernel_ should_ execute_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Shared_Memory_Kernel_Should_Execute_Correctly()
@@ -355,6 +367,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Execution Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
             Output.WriteLine($"  Total Sum: {totalSum:F0} (expected: {elementCount})");
         }
+        /// <summary>
+        /// Gets dynamic_ parallelism_ should_ work_ if_ supported.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Dynamic_Parallelism_Should_Work_If_Supported()
@@ -435,6 +451,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Elements Processed: {elementsProcessed}/{elementCount}");
             Output.WriteLine($"  Execution Time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
         }
+        /// <summary>
+        /// Gets kernel_ performance_ should_ meet_ expectations.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Kernel_Performance_Should_Meet_Expectations()
@@ -517,6 +537,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = averageTime.Should().BeLessThan(10.0, "Kernel execution should be fast");
             _ = throughput.Should().BeGreaterThan(10.0, "Memory throughput should be reasonable");
         }
+        /// <summary>
+        /// Gets grid_ block_ configuration_ should_ be_ optimized.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Grid_Block_Configuration_Should_Be_Optimized()

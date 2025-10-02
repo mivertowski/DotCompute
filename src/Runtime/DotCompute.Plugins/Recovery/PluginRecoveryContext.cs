@@ -49,7 +49,7 @@ public sealed class PluginRecoveryContext(string pluginId)
     /// <summary>
     /// Gets or sets additional metadata for recovery
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 
     /// <summary>
     /// Gets or sets whether this is a critical recovery operation

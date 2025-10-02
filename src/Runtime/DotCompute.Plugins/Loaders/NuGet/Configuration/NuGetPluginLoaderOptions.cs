@@ -17,13 +17,13 @@ public class NuGetPluginLoaderOptions
     /// Gets or sets the directories to search for plugins.
     /// Local file system paths where plugin packages are stored.
     /// </summary>
-    public List<string> PluginDirectories { get; set; } = [];
+    public IList<string> PluginDirectories { get; } = [];
 
     /// <summary>
     /// Gets or sets the NuGet package sources to use.
     /// Remote repositories for downloading plugin packages.
     /// </summary>
-    public List<string> PackageSources { get; set; } = [];
+    public IList<string> PackageSources { get; } = [];
 
     /// <summary>
     /// Gets or sets the security policy for plugin loading.

@@ -26,6 +26,10 @@ internal sealed class CpuKernelValidator : IDisposable
     private const int MaxThreadCount = 1024;
     private const int MinVectorWidth = 2;
     private const int MaxVectorWidth = 64;
+    /// <summary>
+    /// Initializes a new instance of the CpuKernelValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public CpuKernelValidator(ILogger logger)
     {
@@ -733,6 +737,9 @@ internal sealed class CpuKernelValidator : IDisposable
         var totalWorkItems = context.WorkDimensions.X * context.WorkDimensions.Y * context.WorkDimensions.Z;
         return (int)Math.Min(totalWorkItems / 1000, MaxStackDepth);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -742,53 +749,167 @@ internal sealed class CpuKernelValidator : IDisposable
         }
     }
 }
+/// <summary>
+/// A class that represents cpu capabilities.
+/// </summary>
 
 // Supporting classes and enums for CPU validation
 
 public class CpuCapabilities
 {
+    /// <summary>
+    /// Gets or sets the core count.
+    /// </summary>
+    /// <value>The core count.</value>
     public int CoreCount { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether hardware accelerated.
+    /// </summary>
+    /// <value>The is hardware accelerated.</value>
     public bool IsHardwareAccelerated { get; set; }
+    /// <summary>
+    /// Gets or sets the vector width.
+    /// </summary>
+    /// <value>The vector width.</value>
     public int VectorWidth { get; set; }
-    public HashSet<string> SupportedInstructionSets { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the supported instruction sets.
+    /// </summary>
+    /// <value>The supported instruction sets.</value>
+    public HashSet<string> SupportedInstructionSets { get; } = [];
 }
+/// <summary>
+/// A class that represents cpu validation result.
+/// </summary>
 
 public class CpuValidationResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<ValidationIssue> Issues { get; set; } = [];
-    public List<ValidationWarning> Warnings { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<ValidationIssue> Issues { get; } = [];
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
+    public IList<ValidationWarning> Warnings { get; } = [];
 }
+/// <summary>
+/// A class that represents execution plan validation result.
+/// </summary>
 
 public class ExecutionPlanValidationResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
+/// <summary>
+/// A class that represents argument validation result.
+/// </summary>
 
 public class ArgumentValidationResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
+/// <summary>
+/// A class that represents runtime validation result.
+/// </summary>
 
 public class RuntimeValidationResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
+/// <summary>
+/// A class that represents validation warning.
+/// </summary>
 
 public class ValidationWarning
 {
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    /// <value>The category.</value>
     public required string Category { get; set; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public required string Message { get; set; }
+    /// <summary>
+    /// Gets or sets the impact.
+    /// </summary>
+    /// <value>The impact.</value>
     public required string Impact { get; set; }
 }

@@ -484,6 +484,11 @@ internal sealed class AffinityScope : IDisposable
     private readonly int _threadId;
     private readonly AffinityInfo? _originalAffinity;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AffinityScope class.
+    /// </summary>
+    /// <param name="manager">The manager.</param>
+    /// <param name="nodeId">The node identifier.</param>
 
     public AffinityScope(NumaAffinityManager manager, int nodeId)
     {
@@ -494,6 +499,9 @@ internal sealed class AffinityScope : IDisposable
         // Set new affinity
         _ = manager.SetThreadAffinity(_threadId, nodeId);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

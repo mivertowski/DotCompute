@@ -5,6 +5,7 @@ using System.Security;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Security;
 
@@ -29,6 +30,11 @@ public sealed class EncryptionManager : IDisposable
     {
         "DES", "3DES", "RC4", "AES-ECB"
     };
+    /// <summary>
+    /// Initializes a new instance of the EncryptionManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public EncryptionManager(ILogger logger, CryptographicConfiguration configuration)
     {
@@ -513,10 +519,10 @@ public sealed class EncryptionManager : IDisposable
     {
         var validSizes = algorithm switch
         {
-            var alg when alg.StartsWith("AES-256") => new[] { 256 },
-            var alg when alg.StartsWith("AES-192") => [192],
-            var alg when alg.StartsWith("AES-128") => [128],
-            var alg when alg.Contains("ChaCha20") => [256],
+            var alg when alg.StartsWith("AES-256", StringComparison.OrdinalIgnoreCase) => new[] { 256 },
+            var alg when alg.StartsWith("AES-192", StringComparison.OrdinalIgnoreCase) => [192],
+            var alg when alg.StartsWith("AES-128", StringComparison.CurrentCulture) => [128],
+            var alg when alg.Contains("ChaCha20", StringComparison.CurrentCulture) => [256],
             _ => [128, 192, 256] // Default AES sizes
         };
 
@@ -549,6 +555,9 @@ public sealed class EncryptionManager : IDisposable
         var delayMs = 1 + (delayBytes[0] % 5);
         Thread.Sleep(delayMs);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -568,13 +577,41 @@ public sealed class EncryptionManager : IDisposable
 /// </summary>
 public sealed class EncryptionAlgorithmValidationResult
 {
+    /// <summary>
+    /// Gets or sets the algorithm.
+    /// </summary>
+    /// <value>The algorithm.</value>
     public required string Algorithm { get; init; }
+    /// <summary>
+    /// Gets or sets the key size.
+    /// </summary>
+    /// <value>The key size.</value>
     public int KeySize { get; init; }
+    /// <summary>
+    /// Gets or sets the context.
+    /// </summary>
+    /// <value>The context.</value>
     public required string Context { get; init; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether approved.
+    /// </summary>
+    /// <value>The is approved.</value>
     public bool IsApproved { get; set; }
-    public List<string> SecurityIssues { get; } = [];
-    public List<string> Recommendations { get; } = [];
+    /// <summary>
+    /// Gets or sets the security issues.
+    /// </summary>
+    /// <value>The security issues.</value>
+    public IList<string> SecurityIssues { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
 }
 
 #endregion

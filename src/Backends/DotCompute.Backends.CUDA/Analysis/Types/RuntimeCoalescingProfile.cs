@@ -63,7 +63,7 @@ public sealed class RuntimeCoalescingProfile
     /// <summary>
     /// Gets or sets performance counters for detailed profiling metrics.
     /// </summary>
-    public Dictionary<string, long> PerformanceCounters { get; set; } = [];
+    public Dictionary<string, long> PerformanceCounters { get; } = [];
 
     /// <summary>
     /// Gets or sets the number of profiling runs executed.
@@ -83,5 +83,5 @@ public sealed class RuntimeCoalescingProfile
     /// <summary>
     /// Gets or sets additional profiling metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }

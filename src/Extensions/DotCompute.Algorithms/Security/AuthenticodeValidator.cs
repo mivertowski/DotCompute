@@ -335,7 +335,7 @@ public sealed class AuthenticodeValidationResult
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional validation metadata.

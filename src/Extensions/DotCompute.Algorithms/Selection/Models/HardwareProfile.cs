@@ -71,6 +71,9 @@ public static class HardwareProfile
     /// Gets the number of logical processor cores.
     /// </summary>
     public static int CoreCount => _coreCount;
+    /// <summary>
+    /// An cache level enumeration.
+    /// </summary>
 
     private enum CacheLevel { L1, L2, L3 }
 

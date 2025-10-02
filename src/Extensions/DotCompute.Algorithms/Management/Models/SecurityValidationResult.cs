@@ -16,12 +16,12 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the validation errors.
         /// </summary>
-        public List<string> Errors { get; } = [];
+        public IList<string> Errors { get; } = [];
 
         /// <summary>
         /// Gets the validation warnings.
         /// </summary>
-        public List<string> Warnings { get; } = [];
+        public IList<string> Warnings { get; } = [];
 
         /// <summary>
         /// Gets additional validation metadata.

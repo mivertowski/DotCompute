@@ -202,8 +202,20 @@ namespace DotCompute.Backends.CUDA.Types
         /// </summary>
         private sealed class MemoryAllocationInfo
         {
+            /// <summary>
+            /// Gets or sets the device pointer.
+            /// </summary>
+            /// <value>The device pointer.</value>
             public nint DevicePointer { get; init; }
+            /// <summary>
+            /// Gets or sets the size in bytes.
+            /// </summary>
+            /// <value>The size in bytes.</value>
             public long SizeInBytes { get; init; }
+            /// <summary>
+            /// Gets or sets the allocated at.
+            /// </summary>
+            /// <value>The allocated at.</value>
             public DateTime AllocatedAt { get; init; }
         }
     }

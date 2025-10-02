@@ -440,6 +440,10 @@ namespace DotCompute.Core.Pipelines
             _stageType = stageType;
             return this;
         }
+        /// <summary>
+        /// Gets build.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public IPipelineStage Build()
         {
@@ -481,6 +485,9 @@ namespace DotCompute.Core.Pipelines
         private bool _enableDetailedMetrics = false;
         private readonly List<AffinityRule> _affinityRules = [];
         private AdaptationPolicy _adaptationPolicy = AdaptationPolicy.Conservative;
+        /// <summary>
+        /// Initializes a new instance of the ParallelStageBuilder class.
+        /// </summary>
 
         public ParallelStageBuilder()
         {
@@ -648,6 +655,10 @@ namespace DotCompute.Core.Pipelines
             _hasBarrier = true;
             return this;
         }
+        /// <summary>
+        /// Gets build.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public IPipelineStage Build()
         {

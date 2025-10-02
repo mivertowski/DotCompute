@@ -37,6 +37,11 @@ namespace DotCompute.Core.Security
         {
             "DES", "3DES", "RC4", "MD5", "SHA-1", "RSA-1024"
         };
+        /// <summary>
+        /// Initializes a new instance of the CryptographicSecurityCore class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="configuration">The configuration.</param>
 
         public CryptographicSecurityCore(ILogger<CryptographicSecurityCore> logger, CryptographicConfiguration? configuration = null)
         {
@@ -299,6 +304,9 @@ namespace DotCompute.Core.Security
                 _logger.LogErrorMessage(ex, "Error during key rotation");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         #endregion
 
@@ -324,83 +332,295 @@ namespace DotCompute.Core.Security
             _disposed = true;
         }
     }
+    /// <summary>
+    /// An security level enumeration.
+    /// </summary>
 
     // Supporting types - essential subset for compilation
     public enum SecurityLevel { Weak, Moderate, Strong, Unknown }
+    /// <summary>
+    /// A class that represents cryptographic configuration.
+    /// </summary>
 
     public class CryptographicConfiguration
     {
+        /// <summary>
+        /// Gets or sets the default.
+        /// </summary>
+        /// <value>The default.</value>
         public static CryptographicConfiguration Default => new();
+        /// <summary>
+        /// Gets or sets the key rotation interval.
+        /// </summary>
+        /// <value>The key rotation interval.</value>
         public TimeSpan KeyRotationInterval { get; set; } = TimeSpan.FromHours(24);
+        /// <summary>
+        /// Gets or sets the key lifetime.
+        /// </summary>
+        /// <value>The key lifetime.</value>
         public TimeSpan KeyLifetime { get; set; } = TimeSpan.FromDays(30);
     }
+    /// <summary>
+    /// An i cryptographic result interface.
+    /// </summary>
 
     public interface ICryptographicResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the operation time.
+        /// </summary>
+        /// <value>The operation time.</value>
         public DateTimeOffset OperationTime { get; init; }
     }
+    /// <summary>
+    /// A class that represents key generation result.
+    /// </summary>
 
     public class KeyGenerationResult : ICryptographicResult
     {
+        /// <summary>
+        /// Gets or sets the key type.
+        /// </summary>
+        /// <value>The key type.</value>
         public KeyType KeyType { get; init; }
+        /// <summary>
+        /// Gets or sets the key size.
+        /// </summary>
+        /// <value>The key size.</value>
         public int KeySize { get; init; }
+        /// <summary>
+        /// Gets or sets the identifier.
+        /// </summary>
+        /// <value>The identifier.</value>
         public string Identifier { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the purpose.
+        /// </summary>
+        /// <value>The purpose.</value>
         public string Purpose { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the generation time.
+        /// </summary>
+        /// <value>The generation time.</value>
         public DateTimeOffset GenerationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the operation time.
+        /// </summary>
+        /// <value>The operation time.</value>
         public DateTimeOffset OperationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the fingerprint.
+        /// </summary>
+        /// <value>The fingerprint.</value>
         public string? Fingerprint { get; set; }
     }
+    /// <summary>
+    /// A class that represents encryption result.
+    /// </summary>
 
     public class EncryptionResult : ICryptographicResult
     {
+        /// <summary>
+        /// Gets or sets the key identifier.
+        /// </summary>
+        /// <value>The key identifier.</value>
         public string KeyIdentifier { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the algorithm.
+        /// </summary>
+        /// <value>The algorithm.</value>
         public string Algorithm { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the operation time.
+        /// </summary>
+        /// <value>The operation time.</value>
         public DateTimeOffset OperationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the encrypted data.
+        /// </summary>
+        /// <value>The encrypted data.</value>
         public byte[]? EncryptedData { get; set; }
+        /// <summary>
+        /// Gets or sets the nonce.
+        /// </summary>
+        /// <value>The nonce.</value>
         public byte[]? Nonce { get; set; }
+        /// <summary>
+        /// Gets or sets the authentication tag.
+        /// </summary>
+        /// <value>The authentication tag.</value>
         public byte[]? AuthenticationTag { get; set; }
     }
+    /// <summary>
+    /// A class that represents decryption result.
+    /// </summary>
 
     public class DecryptionResult : ICryptographicResult
     {
+        /// <summary>
+        /// Gets or sets the key identifier.
+        /// </summary>
+        /// <value>The key identifier.</value>
         public string KeyIdentifier { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the algorithm.
+        /// </summary>
+        /// <value>The algorithm.</value>
         public string Algorithm { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the operation time.
+        /// </summary>
+        /// <value>The operation time.</value>
         public DateTimeOffset OperationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the decrypted data.
+        /// </summary>
+        /// <value>The decrypted data.</value>
         public byte[]? DecryptedData { get; set; }
     }
+    /// <summary>
+    /// A class that represents algorithm validation result.
+    /// </summary>
 
     public class AlgorithmValidationResult
     {
+        /// <summary>
+        /// Gets or sets the algorithm.
+        /// </summary>
+        /// <value>The algorithm.</value>
         public required string Algorithm { get; init; }
+        /// <summary>
+        /// Gets or sets the key size.
+        /// </summary>
+        /// <value>The key size.</value>
         public int KeySize { get; init; }
+        /// <summary>
+        /// Gets or sets the context.
+        /// </summary>
+        /// <value>The context.</value>
         public required string Context { get; init; }
+        /// <summary>
+        /// Gets or sets the validation time.
+        /// </summary>
+        /// <value>The validation time.</value>
         public DateTimeOffset ValidationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether approved.
+        /// </summary>
+        /// <value>The is approved.</value>
         public bool IsApproved { get; set; }
+        /// <summary>
+        /// Gets or sets the security level.
+        /// </summary>
+        /// <value>The security level.</value>
         public SecurityLevel SecurityLevel { get; set; }
+        /// <summary>
+        /// Gets or sets the validation message.
+        /// </summary>
+        /// <value>The validation message.</value>
         public string ValidationMessage { get; set; } = string.Empty;
-        public List<string> Issues { get; set; } = [];
-        public List<string> Warnings { get; set; } = [];
-        public List<string> Recommendations { get; set; } = [];
+        /// <summary>
+        /// Gets or sets a value indicating whether sues.
+        /// </summary>
+        /// <value>The issues.</value>
+        public IList<string> Issues { get; } = [];
+        /// <summary>
+        /// Gets or sets the warnings.
+        /// </summary>
+        /// <value>The warnings.</value>
+        public IList<string> Warnings { get; } = [];
+        /// <summary>
+        /// Gets or sets the recommendations.
+        /// </summary>
+        /// <value>The recommendations.</value>
+        public IList<string> Recommendations { get; } = [];
     }
+    /// <summary>
+    /// A class that represents secure key container.
+    /// </summary>
 
     public class SecureKeyContainer : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the key type.
+        /// </summary>
+        /// <value>The key type.</value>
         public KeyType KeyType { get; init; }
+        /// <summary>
+        /// Gets or sets the key size.
+        /// </summary>
+        /// <value>The key size.</value>
         public int KeySize { get; init; }
+        /// <summary>
+        /// Gets or sets the identifier.
+        /// </summary>
+        /// <value>The identifier.</value>
         public string Identifier { get; init; }
+        /// <summary>
+        /// Gets or sets the purpose.
+        /// </summary>
+        /// <value>The purpose.</value>
         public string Purpose { get; init; }
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        /// <value>The creation time.</value>
         public DateTimeOffset CreationTime { get; init; }
         private readonly byte[] _keyData;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the SecureKeyContainer class.
+        /// </summary>
+        /// <param name="keyType">The key type.</param>
+        /// <param name="keyData">The key data.</param>
+        /// <param name="identifier">The identifier.</param>
+        /// <param name="purpose">The purpose.</param>
+        /// <param name="keySize">The key size.</param>
 
         public SecureKeyContainer(KeyType keyType, byte[] keyData, string identifier, string purpose, int keySize)
         {
@@ -412,6 +632,10 @@ namespace DotCompute.Core.Security
             _keyData = new byte[keyData.Length];
             Array.Copy(keyData, _keyData, keyData.Length);
         }
+        /// <summary>
+        /// Gets the key bytes.
+        /// </summary>
+        /// <returns>The key bytes.</returns>
 
         public byte[] GetKeyBytes()
         {
@@ -425,6 +649,9 @@ namespace DotCompute.Core.Security
             Array.Copy(_keyData, copy, _keyData.Length);
             return copy;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

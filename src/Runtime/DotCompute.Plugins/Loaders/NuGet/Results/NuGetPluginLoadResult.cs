@@ -41,7 +41,7 @@ public class NuGetPluginLoadResult
     /// Gets or sets additional error details.
     /// Detailed error information for troubleshooting.
     /// </summary>
-    public List<string> ErrorDetails { get; set; } = [];
+    public IList<string> ErrorDetails { get; } = [];
 
     /// <summary>
     /// Creates a successful load result.

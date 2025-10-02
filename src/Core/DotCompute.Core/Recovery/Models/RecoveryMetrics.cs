@@ -163,9 +163,25 @@ public class RecoveryMetrics
 
     private class RecoveryAttempt
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the duration.
+        /// </summary>
+        /// <value>The duration.</value>
         public TimeSpan Duration { get; set; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public Exception? Error { get; set; }
     }
 }

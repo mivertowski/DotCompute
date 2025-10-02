@@ -39,7 +39,7 @@ public sealed class KernelChainValidationResult
     /// <summary>
     /// Gets the number of steps validated.
     /// </summary>
-    public int StepsValidated { get; init; } = 0;
+    public int StepsValidated { get; init; }
 
     /// <summary>
     /// Creates a successful validation result with no errors or warnings.

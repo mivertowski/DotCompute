@@ -24,6 +24,11 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
     private readonly SemaphoreSlim _operationLock;
     private readonly Timer _keyRotationTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CryptographicSecurityOrchestrator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public CryptographicSecurityOrchestrator(
         ILogger<CryptographicSecurityOrchestrator> logger,
@@ -501,6 +506,9 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
 
         _logger.LogDebugMessage($"Key rotated successfully: {keyContainer.Identifier}");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

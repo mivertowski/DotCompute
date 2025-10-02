@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An data type enumeration.
+    /// </summary>
+    /// <summary>
     /// Data type enumeration for CUDA operations.
     /// </summary>
     public enum DataType

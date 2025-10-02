@@ -284,6 +284,10 @@ internal class PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogg
     private readonly long _lastNetworkIOCount;
 #pragma warning restore CS0649
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
 
     public Guid PluginId => _pluginId;
 
@@ -428,6 +432,9 @@ internal class PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogg
             _logger.LogWarningMessage($"Resource limits violated for plugin {_pluginId}: {string.Join(", ", _currentUsage.ViolatedLimits)}");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

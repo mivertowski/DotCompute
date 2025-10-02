@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda mem pool attribute enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA memory pool attribute enumeration
     /// </summary>
     public enum CudaMemPoolAttribute : uint
@@ -21,6 +24,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Used = AttrUsedMemCurrent,
         Reserved = AttrReservedMemCurrent
     }
+    /// <summary>
+    /// An cuda mem access flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA memory access flags enumeration
@@ -31,6 +37,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Read = 1,
         ReadWrite = 3
     }
+    /// <summary>
+    /// An cuda mem location type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA memory location type enumeration
@@ -43,6 +52,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         HostNuma = 3,
         HostNumaCurrent = 4
     }
+    /// <summary>
+    /// An cuda mem allocation type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA memory allocation type enumeration
@@ -53,6 +65,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Pinned = 1,
         Max = 0xFFFFFFFF
     }
+    /// <summary>
+    /// An cuda mem allocation handle type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA memory allocation handle type enumeration
@@ -65,6 +80,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Win32Kmt = 4,
         Max = 0xFFFFFFFF
     }
+    /// <summary>
+    /// An cuda mem allocation comp type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA memory allocation compression type enumeration

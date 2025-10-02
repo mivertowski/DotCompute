@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
+using System;
 
 namespace DotCompute.Plugins.Loaders;
 
@@ -344,11 +345,11 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
             targetFramework.StartsWith("net7.0", StringComparison.OrdinalIgnoreCase) ||
             targetFramework.StartsWith("net6.0", StringComparison.OrdinalIgnoreCase))
         {
-            return currentFramework.Contains(".NET 9.") ||
+            return currentFramework.Contains(".NET 9.", StringComparison.OrdinalIgnoreCase) ||
 
-                   currentFramework.Contains(".NET 8.") ||
-                   currentFramework.Contains(".NET 7.") ||
-                   currentFramework.Contains(".NET 6.");
+                   currentFramework.Contains(".NET 8.", StringComparison.OrdinalIgnoreCase) ||
+                   currentFramework.Contains(".NET 7.", StringComparison.CurrentCulture) ||
+                   currentFramework.Contains(".NET 6.", StringComparison.CurrentCulture);
         }
 
         if (targetFramework.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase))
@@ -370,11 +371,11 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
 
         return platformLower switch
         {
-            "windows" or "win" => osLower.Contains("windows"),
-            "linux" => osLower.Contains("linux"),
-            "macos" or "osx" => osLower.Contains("darwin") || osLower.Contains("macos"),
+            "windows" or "win" => osLower.Contains("windows", StringComparison.CurrentCulture),
+            "linux" => osLower.Contains("linux", StringComparison.CurrentCulture),
+            "macos" or "osx" => osLower.Contains("darwin", StringComparison.CurrentCulture) || osLower.Contains("macos", StringComparison.CurrentCulture),
             "any" or "*" => true,
-            _ => osLower.Contains(platformLower)
+            _ => osLower.Contains(platformLower, StringComparison.CurrentCulture)
         };
     }
 
@@ -386,24 +387,24 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
         var platformLower = platform.ToLowerInvariant();
         var archLower = currentArch.ToLowerInvariant();
 
-        if (platformLower.Contains("x64") || platformLower.Contains("x86_64"))
+        if (platformLower.Contains("x64", StringComparison.CurrentCulture) || platformLower.Contains("x86_64", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("x64") || archLower.Contains("x86_64");
+            return archLower.Contains("x64", StringComparison.CurrentCulture) || archLower.Contains("x86_64", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("x86"))
+        if (platformLower.Contains("x86", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("x86");
+            return archLower.Contains("x86", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("arm64"))
+        if (platformLower.Contains("arm64", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("arm64");
+            return archLower.Contains("arm64", StringComparison.CurrentCulture);
         }
 
-        if (platformLower.Contains("arm"))
+        if (platformLower.Contains("arm", StringComparison.CurrentCulture))
         {
-            return archLower.Contains("arm");
+            return archLower.Contains("arm", StringComparison.CurrentCulture);
         }
 
         // Default to compatible if we can't determine
@@ -660,12 +661,12 @@ public class CompatibilityCheckResult
     /// <summary>
     /// Gets the compatibility errors.
     /// </summary>
-    public List<string> CompatibilityErrors { get; } = [];
+    public IList<string> CompatibilityErrors { get; } = [];
 
     /// <summary>
     /// Gets the compatibility warnings.
     /// </summary>
-    public List<string> CompatibilityWarnings { get; } = [];
+    public IList<string> CompatibilityWarnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the framework compatibility information.
@@ -799,7 +800,7 @@ public class AssemblyCompatibilityInfo
     /// <summary>
     /// Gets analysis errors.
     /// </summary>
-    public List<string> AnalysisErrors { get; } = [];
+    public IList<string> AnalysisErrors { get; } = [];
 }
 
 /// <summary>
@@ -825,7 +826,7 @@ public class DependencyCompatibilityInfo
     /// <summary>
     /// Gets the compatibility issues.
     /// </summary>
-    public List<string> Issues { get; } = [];
+    public IList<string> Issues { get; } = [];
 }
 
 /// <summary>
@@ -833,6 +834,10 @@ public class DependencyCompatibilityInfo
 /// </summary>
 internal class CompatibilityMatrix
 {
+    /// <summary>
+    /// Gets or sets the framework compatibility.
+    /// </summary>
+    /// <value>The framework compatibility.</value>
     public FrameworkCompatibilityInfo FrameworkCompatibility { get; set; } = new();
 }
 
@@ -841,10 +846,34 @@ internal class CompatibilityMatrix
 /// </summary>
 internal class RuntimeEnvironment
 {
+    /// <summary>
+    /// Gets or sets the framework version.
+    /// </summary>
+    /// <value>The framework version.</value>
     public Version FrameworkVersion { get; } = Environment.Version;
+    /// <summary>
+    /// Gets or sets the framework description.
+    /// </summary>
+    /// <value>The framework description.</value>
     public string FrameworkDescription { get; } = RuntimeInformation.FrameworkDescription;
+    /// <summary>
+    /// Gets or sets the o s description.
+    /// </summary>
+    /// <value>The o s description.</value>
     public string OSDescription { get; } = RuntimeInformation.OSDescription;
+    /// <summary>
+    /// Gets or sets the architecture.
+    /// </summary>
+    /// <value>The architecture.</value>
     public Architecture Architecture { get; } = RuntimeInformation.OSArchitecture;
+    /// <summary>
+    /// Gets or sets the runtime identifier.
+    /// </summary>
+    /// <value>The runtime identifier.</value>
     public string RuntimeIdentifier { get; } = RuntimeInformation.RuntimeIdentifier;
+    /// <summary>
+    /// Gets or sets a value indicating whether aot runtime.
+    /// </summary>
+    /// <value>The is aot runtime.</value>
     public bool IsAotRuntime { get; } = !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 }

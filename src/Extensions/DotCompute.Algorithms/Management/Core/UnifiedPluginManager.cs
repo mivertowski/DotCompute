@@ -403,7 +403,7 @@ public sealed class PluginDiscoveryOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan.
     /// </summary>
-    public IList<string> PluginDirectories { get; set; } = [];
+    public IList<string> PluginDirectories { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to scan subdirectories.
@@ -442,15 +442,50 @@ public sealed class PluginHealthMonitoringOptions
 /// </summary>
 public readonly record struct PluginManagerStatistics
 {
+    /// <summary>
+    /// Gets or sets the total plugins loaded.
+    /// </summary>
+    /// <value>The total plugins loaded.</value>
     public int TotalPluginsLoaded { get; init; }
+    /// <summary>
+    /// Gets or sets the healthy plugins.
+    /// </summary>
+    /// <value>The healthy plugins.</value>
     public int HealthyPlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the unhealthy plugins.
+    /// </summary>
+    /// <value>The unhealthy plugins.</value>
     public int UnhealthyPlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the health status.
+    /// </summary>
+    /// <value>The health status.</value>
     public PluginHealthStatus HealthStatus { get; init; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>The successful executions.</value>
     public long SuccessfulExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the failed executions.
+    /// </summary>
+    /// <value>The failed executions.</value>
     public long FailedExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
 }
+/// <summary>
+/// An plugin health status enumeration.
+/// </summary>
 
 /// <summary>
 /// Plugin health status enumeration.
@@ -467,7 +502,16 @@ public enum PluginHealthStatus
 /// </summary>
 public sealed class PluginNotFoundException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the PluginNotFoundException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PluginNotFoundException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the PluginNotFoundException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public PluginNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 }
 
@@ -476,7 +520,16 @@ public sealed class PluginNotFoundException : Exception
 /// </summary>
 public sealed class PluginSecurityException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the PluginSecurityException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PluginSecurityException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the PluginSecurityException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public PluginSecurityException(string message, Exception innerException) : base(message, innerException) { }
 }
 

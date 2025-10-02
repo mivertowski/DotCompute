@@ -36,17 +36,17 @@ public class PerformanceAnalysisResult
     /// <summary>
     /// Bottlenecks identified during analysis.
     /// </summary>
-    public List<string> Bottlenecks { get; set; } = [];
+    public IList<string> Bottlenecks { get; } = [];
 
     /// <summary>
     /// Performance recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 
     /// <summary>
     /// Detailed performance metrics.
     /// </summary>
-    public Dictionary<string, object> DetailedMetrics { get; set; } = [];
+    public Dictionary<string, object> DetailedMetrics { get; } = [];
 
     /// <summary>
     /// Execution statistics for the analysis.
@@ -147,7 +147,7 @@ public class BottleneckAnalysis
     /// <summary>
     /// Identified bottlenecks.
     /// </summary>
-    public List<PerformanceBottleneck> Bottlenecks { get; set; } = [];
+    public IList<PerformanceBottleneck> Bottlenecks { get; } = [];
 
     /// <summary>
     /// Overall performance score (0-100).

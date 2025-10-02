@@ -86,6 +86,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     C[row * N + col] = sum;
                 }
             }";
+        /// <summary>
+        /// Gets memory_ bandwidth_ benchmark_ should_ achieve_ expected_ performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Bandwidth_Benchmark_Should_Achieve_Expected_Performance()
@@ -180,6 +184,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // memoryTracker.LogCurrentUsage("After benchmark");
         }
+        /// <summary>
+        /// Calculates the _ performance_ benchmark_ should_ meet_ expectations.
+        /// </summary>
+        /// <returns>The calculated _ performance_ benchmark_ should_ meet_ expectations.</returns>
 
         [SkippableFact]
         public async Task Compute_Performance_Benchmark_Should_Meet_Expectations()
@@ -266,6 +274,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = gflops.Should().BeGreaterThan(1.0, "Should achieve reasonable compute performance");
             _ = significantDifferences.Should().BeGreaterThan(900, "Most elements should be modified by computation");
         }
+        /// <summary>
+        /// Gets matrix_ multiply_ performance_ should_ be_ optimized.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Matrix_Multiply_Performance_Should_Be_Optimized()
@@ -394,6 +406,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = avgGflops.Should().BeGreaterThan(expectedMinGflops,
                 $"Matrix multiply should achieve reasonable performance for {matrixSize}x{matrixSize}");
         }
+        /// <summary>
+        /// Gets transfer_ performance_ should_ meet_ p c ie_ expectations.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Transfer_Performance_Should_Meet_PCIe_Expectations()
@@ -473,6 +489,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets stream_ concurrency_ performance_ should_ show_ benefit.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Stream_Concurrency_Performance_Should_Show_Benefit()

@@ -302,7 +302,7 @@ public static class AdvancedFFT
         return CooleyTukeyMixedRadix(x, factors);
     }
 
-    private static Complex[] GoodThomasFFT(Complex[] x, List<int> factors)
+    private static Complex[] GoodThomasFFT(Complex[] x, IReadOnlyList<int> factors)
     {
         // Prime Factor Algorithm (Good-Thomas)
         // For coprime factors only
@@ -342,7 +342,7 @@ public static class AdvancedFFT
         return result;
     }
 
-    private static Complex[] CooleyTukeyMixedRadix(Complex[] x, List<int> factors)
+    private static Complex[] CooleyTukeyMixedRadix(Complex[] x, IReadOnlyList<int> factors)
     {
         var result = (Complex[])x.Clone();
         var n = x.Length;
@@ -566,6 +566,9 @@ public static class AdvancedFFT
         return n + 1;
     }
 }
+/// <summary>
+/// An window type enumeration.
+/// </summary>
 
 /// <summary>
 /// Window function types for spectral analysis.

@@ -26,7 +26,7 @@ public sealed class TelemetryOptions
     /// <summary>
     /// Gets or sets the export endpoints.
     /// </summary>
-    public List<string> ExportEndpoints { get; set; } = [];
+    public IList<string> ExportEndpoints { get; } = [];
 }
 
 /// <summary>

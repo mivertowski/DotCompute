@@ -57,7 +57,7 @@ public class CompilationStatistics
     /// Maps each strategy to the number of times it resulted in successful compilation.
     /// </summary>
     /// <value>A dictionary of strategy types and their success counts.</value>
-    public Dictionary<CompilationFallbackStrategy, int> StrategySuccessRates { get; set; } = [];
+    public Dictionary<CompilationFallbackStrategy, int> StrategySuccessRates { get; } = [];
 
 
     /// <summary>
@@ -65,7 +65,7 @@ public class CompilationStatistics
     /// This helps identify systematic issues that may require code or configuration changes.
     /// </summary>
     /// <value>A dictionary of error messages and their frequency.</value>
-    public Dictionary<string, int> MostCommonErrors { get; set; } = [];
+    public Dictionary<string, int> MostCommonErrors { get; } = [];
 
 
     /// <summary>

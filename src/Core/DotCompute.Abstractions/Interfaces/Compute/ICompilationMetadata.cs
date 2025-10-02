@@ -57,7 +57,7 @@ namespace DotCompute.Abstractions.Interfaces.Compute
         /// These messages are typically formatted for developer consumption and may include
         /// line numbers and specific recommendations.
         /// </remarks>
-        public string[] Warnings { get; }
+        public IReadOnlyList<string> Warnings { get; }
 
         /// <summary>
         /// Gets the optimization level that was applied during compilation.

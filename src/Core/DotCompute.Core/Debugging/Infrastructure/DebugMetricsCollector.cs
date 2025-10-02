@@ -20,6 +20,11 @@ public sealed partial class DebugMetricsCollector : IDisposable
     private readonly Timer _metricsCollectionTimer;
     private readonly DebugServiceOptions _options;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the DebugMetricsCollector class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public DebugMetricsCollector(ILogger<DebugMetricsCollector> logger, DebugServiceOptions? options = null)
     {
@@ -455,7 +460,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         return sorted[lowerIndex] * (1 - weight) + sorted[upperIndex] * weight;
     }
 
-    private static PerformanceTrend AnalyzeTrend(List<MetricPoint> points)
+    private static PerformanceTrend AnalyzeTrend(IReadOnlyList<MetricPoint> points)
     {
         if (points.Count < 3)
         {
@@ -490,7 +495,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         };
     }
 
-    private static double CalculateSlope(List<double> x, List<double> y)
+    private static double CalculateSlope(List<double> x, IReadOnlyList<double> y)
     {
         if (x.Count != y.Count || x.Count < 2)
         {
@@ -507,6 +512,9 @@ public sealed partial class DebugMetricsCollector : IDisposable
         var denominator = n * sumX2 - sumX * sumX;
         return denominator != 0 ? (n * sumXY - sumX * sumY) / denominator : 0;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

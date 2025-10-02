@@ -90,5 +90,5 @@ public class PluginExecutionStatistics
     /// <summary>
     /// Gets or sets additional statistics.
     /// </summary>
-    public Dictionary<string, object> AdditionalStatistics { get; set; } = [];
+    public Dictionary<string, object> AdditionalStatistics { get; } = [];
 }

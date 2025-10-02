@@ -23,6 +23,12 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     private readonly ConcurrentDictionary<string, List<string>> _dependencyGraph;
     private readonly Timer? _cacheCleanupTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginDependencyResolver class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="registry">The registry.</param>
 
     public AlgorithmPluginDependencyResolver(
         ILogger<AlgorithmPluginDependencyResolver> logger,
@@ -563,6 +569,9 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
             _logger.LogWarning(ex, "Error during cache cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -630,6 +639,10 @@ public sealed class PluginDependencyRequirements
     /// Gets or sets performance requirements.
     /// </summary>
     public PerformanceRequirements? PerformanceRequirements { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
     {
@@ -729,27 +742,27 @@ public sealed class DependencyAnalysisResult
     /// <summary>
     /// Gets the list of dependencies.
     /// </summary>
-    public List<PluginDependency> Dependencies { get; } = [];
+    public IList<PluginDependency> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets the list of dependency conflicts.
     /// </summary>
-    public List<string> Conflicts { get; } = [];
+    public IList<string> Conflicts { get; } = [];
 
     /// <summary>
     /// Gets the list of analysis errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the list of interface dependencies.
     /// </summary>
-    public List<string> InterfaceDependencies { get; } = [];
+    public IList<string> InterfaceDependencies { get; } = [];
 
     /// <summary>
     /// Gets the list of resource dependencies.
     /// </summary>
-    public List<string> ResourceDependencies { get; } = [];
+    public IList<string> ResourceDependencies { get; } = [];
 }
 
 /// <summary>
@@ -801,7 +814,7 @@ public sealed class ResolutionStatistics
     /// <summary>
     /// Gets or sets the most requested plugins.
     /// </summary>
-    public Dictionary<string, int> MostRequestedPlugins { get; set; } = [];
+    public Dictionary<string, int> MostRequestedPlugins { get; } = [];
 
     /// <summary>
     /// Gets or sets the dependency graph size.
@@ -814,9 +827,25 @@ public sealed class ResolutionStatistics
 /// </summary>
 internal sealed class DependencyResolutionCache
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the requirements.
+    /// </summary>
+    /// <value>The requirements.</value>
     public required PluginDependencyRequirements Requirements { get; init; }
+    /// <summary>
+    /// Gets or sets the expiry time.
+    /// </summary>
+    /// <value>The expiry time.</value>
     public DateTime ExpiryTime { get; set; }
+    /// <summary>
+    /// Gets or sets the score.
+    /// </summary>
+    /// <value>The score.</value>
     public double Score { get; set; }
 }
 
@@ -825,6 +854,14 @@ internal sealed class DependencyResolutionCache
 /// </summary>
 internal sealed class ScoredPlugin
 {
+    /// <summary>
+    /// Gets or sets the plugin.
+    /// </summary>
+    /// <value>The plugin.</value>
     public required IAlgorithmPlugin Plugin { get; init; }
+    /// <summary>
+    /// Gets or sets the score.
+    /// </summary>
+    /// <value>The score.</value>
     public double Score { get; set; }
 }

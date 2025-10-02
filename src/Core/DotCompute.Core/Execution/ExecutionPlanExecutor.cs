@@ -904,7 +904,7 @@ namespace DotCompute.Core.Execution
             return result;
         }
 
-        private static void VisitLayer<T>(int layerId, ModelLayer<T>[] layers, HashSet<int> visited, List<int> result) where T : unmanaged
+        private static void VisitLayer<T>(int layerId, ModelLayer<T>[] layers, HashSet<int> visited, IReadOnlyList<int> result) where T : unmanaged
         {
             if (visited.Contains(layerId))
             {
@@ -924,6 +924,10 @@ namespace DotCompute.Core.Execution
 
             result.Add(layerId);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -949,46 +953,148 @@ namespace DotCompute.Core.Execution
 
     public class DeviceTaskResult
     {
+        /// <summary>
+        /// Gets or sets the task index.
+        /// </summary>
+        /// <value>The task index.</value>
         public int TaskIndex { get; set; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time ms.
+        /// </summary>
+        /// <value>The execution time ms.</value>
         public double ExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the elements processed.
+        /// </summary>
+        /// <value>The elements processed.</value>
         public int ElementsProcessed { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput g f l o p s.
+        /// </summary>
+        /// <value>The throughput g f l o p s.</value>
         public double ThroughputGFLOPS { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth g bps.
+        /// </summary>
+        /// <value>The memory bandwidth g bps.</value>
         public double MemoryBandwidthGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the completion event.
+        /// </summary>
+        /// <value>The completion event.</value>
         public required ExecutionEvent CompletionEvent { get; set; }
     }
 
     public class LayerExecutionResult
     {
+        /// <summary>
+        /// Gets or sets the layer identifier.
+        /// </summary>
+        /// <value>The layer id.</value>
         public int LayerId { get; set; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time ms.
+        /// </summary>
+        /// <value>The execution time ms.</value>
         public double ExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the compute f l o p s.
+        /// </summary>
+        /// <value>The compute f l o p s.</value>
         public long ComputeFLOPS { get; set; }
+        /// <summary>
+        /// Gets or sets the memory usage bytes.
+        /// </summary>
+        /// <value>The memory usage bytes.</value>
         public long MemoryUsageBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
 
     public class StageExecutionResult
     {
+        /// <summary>
+        /// Gets or sets the stage identifier.
+        /// </summary>
+        /// <value>The stage id.</value>
         public int StageId { get; set; }
+        /// <summary>
+        /// Gets or sets the microbatch index.
+        /// </summary>
+        /// <value>The microbatch index.</value>
         public int MicrobatchIndex { get; set; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time ms.
+        /// </summary>
+        /// <value>The execution time ms.</value>
         public double ExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the stage name.
+        /// </summary>
+        /// <value>The stage name.</value>
         public required string StageName { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
 
     public class ResourceTracker : IAsyncDisposable
     {
+        /// <summary>
+        /// Initializes a new instance of the ResourceTracker class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
         public ResourceTracker(ILogger logger)
         {
             _logger = logger;
             _deviceUsage = [];
         }
+        /// <summary>
+        /// Gets track execution start asynchronously.
+        /// </summary>
+        /// <param name="devices">The devices.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask TrackExecutionStartAsync(IAccelerator[] devices, CancellationToken cancellationToken)
         {
@@ -1005,6 +1111,11 @@ namespace DotCompute.Core.Execution
             _logger.LogTrace("Started resource tracking for {DeviceCount} devices", devices.Length);
             await ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets track execution end asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask TrackExecutionEndAsync(CancellationToken cancellationToken = default)
         {
@@ -1021,8 +1132,16 @@ namespace DotCompute.Core.Execution
 
             await ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets the resource usage.
+        /// </summary>
+        /// <returns>The resource usage.</returns>
 
         public Dictionary<string, DeviceResourceUsage> GetResourceUsage() => new(_deviceUsage);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -1039,22 +1158,61 @@ namespace DotCompute.Core.Execution
 
     public class DeviceResourceUsage
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTimeOffset StartTime { get; set; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the initial memory usage.
+        /// </summary>
+        /// <value>The initial memory usage.</value>
         public long InitialMemoryUsage { get; set; }
+        /// <summary>
+        /// Gets or sets the peak memory usage.
+        /// </summary>
+        /// <value>The peak memory usage.</value>
         public long PeakMemoryUsage { get; set; }
+        /// <summary>
+        /// Gets or sets the average utilization.
+        /// </summary>
+        /// <value>The average utilization.</value>
         public double AverageUtilization { get; set; }
     }
 
     public class ExecutionProfiler : IAsyncDisposable
     {
+        /// <summary>
+        /// Initializes a new instance of the ExecutionProfiler class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
         public ExecutionProfiler(ILogger logger)
         {
             _logger = logger;
             _profilingData = [];
         }
+        /// <summary>
+        /// Gets start profiling asynchronously.
+        /// </summary>
+        /// <param name="executionId">The execution identifier.</param>
+        /// <param name="strategy">The strategy.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
         {
@@ -1069,6 +1227,12 @@ namespace DotCompute.Core.Execution
             _logger.LogTrace("Started profiling for execution {ExecutionId} with strategy {Strategy}", executionId, strategy);
             await ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop profiling asynchronously.
+        /// </summary>
+        /// <param name="executionId">The execution identifier.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask<ExecutionProfilingData> StopProfilingAsync(Guid executionId, CancellationToken cancellationToken)
         {
@@ -1093,6 +1257,10 @@ namespace DotCompute.Core.Execution
                 Events = []
             };
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -1109,25 +1277,69 @@ namespace DotCompute.Core.Execution
 
     public class ExecutionProfilingData
     {
+        /// <summary>
+        /// Gets or sets the execution identifier.
+        /// </summary>
+        /// <value>The execution id.</value>
         public Guid ExecutionId { get; set; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public ExecutionStrategyType Strategy { get; set; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTimeOffset StartTime { get; set; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the total duration.
+        /// </summary>
+        /// <value>The total duration.</value>
         public TimeSpan TotalDuration { get; set; }
-        public List<ProfilingEvent> Events { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the events.
+        /// </summary>
+        /// <value>The events.</value>
+        public IList<ProfilingEvent> Events { get; } = [];
     }
 
     public class ProfilingEvent
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>
+        /// Gets or sets the event type.
+        /// </summary>
+        /// <value>The event type.</value>
         public string EventType { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description { get; set; } = string.Empty;
-        public Dictionary<string, object> Properties { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the properties.
+        /// </summary>
+        /// <value>The properties.</value>
+        public Dictionary<string, object> Properties { get; } = [];
     }
 
     // Extension to ParallelExecutionResult to include profiling data
     public partial class ParallelExecutionResult
     {
+        /// <summary>
+        /// Gets or sets the profiling data.
+        /// </summary>
+        /// <value>The profiling data.</value>
         public ExecutionProfilingData? ProfilingData { get; set; }
     }
 }

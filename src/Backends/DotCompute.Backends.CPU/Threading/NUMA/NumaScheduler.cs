@@ -425,16 +425,56 @@ public sealed class NumaScheduler : IDisposable
 /// </summary>
 internal sealed class ScheduledTask
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public required long Id { get; init; }
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public required TaskPriority Priority { get; init; }
+    /// <summary>
+    /// Gets or sets the node identifier.
+    /// </summary>
+    /// <value>The node id.</value>
     public required int NodeId { get; init; }
+    /// <summary>
+    /// Gets or sets the scheduled time.
+    /// </summary>
+    /// <value>The scheduled time.</value>
     public required DateTime ScheduledTime { get; init; }
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTime StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the completed time.
+    /// </summary>
+    /// <value>The completed time.</value>
     public DateTime CompletedTime { get; set; }
+    /// <summary>
+    /// Gets or sets the execute async.
+    /// </summary>
+    /// <value>The execute async.</value>
     public required Func<Task> ExecuteAsync { get; init; }
+    /// <summary>
+    /// Gets or sets the wait time.
+    /// </summary>
+    /// <value>The wait time.</value>
 
     public TimeSpan WaitTime => StartTime - ScheduledTime;
+    /// <summary>
+    /// Gets or sets the execution time.
+    /// </summary>
+    /// <value>The execution time.</value>
     public TimeSpan ExecutionTime => CompletedTime - StartTime;
+    /// <summary>
+    /// Gets or sets a value indicating whether completed.
+    /// </summary>
+    /// <value>The is completed.</value>
     public bool IsCompleted => CompletedTime != default;
 }
 

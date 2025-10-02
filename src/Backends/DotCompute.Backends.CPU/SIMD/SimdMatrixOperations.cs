@@ -464,6 +464,9 @@ public sealed class SimdMatrixOperations(SimdSummary capabilities, ILogger logge
 
         throw new NotSupportedException($"Type {typeof(T)} not supported for multiplication");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

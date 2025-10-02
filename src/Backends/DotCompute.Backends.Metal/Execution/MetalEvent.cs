@@ -878,7 +878,7 @@ public sealed class MetalProfilingResult
     public double AverageOverheadMs { get; set; }
 
     // Statistical analysis
-    public Dictionary<int, double> Percentiles { get; set; } = [];
+    public Dictionary<int, double> Percentiles { get; } = [];
     public double CoefficientOfVariation { get; set; }
     public int OutlierCount { get; set; }
     public double ThroughputOpsPerSecond { get; set; }

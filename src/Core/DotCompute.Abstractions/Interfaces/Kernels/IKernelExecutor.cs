@@ -146,12 +146,12 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets or sets the global work size (total threads).
         /// </summary>
-        public required int[] GlobalWorkSize { get; init; }
+        public required IReadOnlyList<int> GlobalWorkSize { get; init; }
 
         /// <summary>
         /// Gets or sets the local work size (threads per work group).
         /// </summary>
-        public int[]? LocalWorkSize { get; init; }
+        public IReadOnlyList<int>? LocalWorkSize { get; init; }
 
         /// <summary>
         /// Gets or sets the dynamic shared memory size in bytes.
@@ -171,7 +171,7 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets or sets events to wait for before execution.
         /// </summary>
-        public object[]? WaitEvents { get; init; }
+        public IReadOnlyList<object>? WaitEvents { get; init; }
 
         /// <summary>
         /// Gets or sets whether to capture timing information.
@@ -407,7 +407,7 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets optimization suggestions.
         /// </summary>
-        public List<string> OptimizationSuggestions { get; init; } = [];
+        public IReadOnlyList<string> OptimizationSuggestions { get; init; } = [];
     }
 
     /// <summary>

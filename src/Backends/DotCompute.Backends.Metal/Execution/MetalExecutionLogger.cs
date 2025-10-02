@@ -603,7 +603,7 @@ public sealed class MetalTelemetryEvent
 {
     public string Category { get; set; } = string.Empty;
     public string EventName { get; set; } = string.Empty;
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; } = [];
     public DateTimeOffset Timestamp { get; set; }
 }
 
@@ -614,10 +614,10 @@ public sealed class MetalTelemetryReport
 {
     public DateTimeOffset Timestamp { get; set; }
     public int TotalEvents { get; set; }
-    public Dictionary<string, object> Metrics { get; set; } = [];
-    public List<MetalTelemetryEvent> RecentEvents { get; set; } = [];
-    public Dictionary<string, int> EventSummary { get; set; } = [];
-    public Dictionary<string, object> MetricSummary { get; set; } = [];
+    public Dictionary<string, object> Metrics { get; } = [];
+    public IList<MetalTelemetryEvent> RecentEvents { get; } = [];
+    public Dictionary<string, int> EventSummary { get; } = [];
+    public Dictionary<string, object> MetricSummary { get; } = [];
 }
 
 

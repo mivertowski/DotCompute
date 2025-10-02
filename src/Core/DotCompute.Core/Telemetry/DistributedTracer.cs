@@ -25,6 +25,11 @@ public sealed class DistributedTracer : IDisposable
     private readonly Timer _cleanupTimer;
     private readonly SemaphoreSlim _exportSemaphore;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the DistributedTracer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public DistributedTracer(ILogger<DistributedTracer> logger, IOptions<DistributedTracingOptions> options)
     {
@@ -531,7 +536,7 @@ public sealed class DistributedTracer : IDisposable
         _logger.LogDebugMessage("Exported trace {correlationId} to custom format");
     }
 
-    private static List<SpanData> IdentifyCriticalPath(List<SpanData> spans)
+    private static List<SpanData> IdentifyCriticalPath(IReadOnlyList<SpanData> spans)
         // Simplified critical path analysis - find the longest sequential chain
 
 
@@ -556,7 +561,7 @@ public sealed class DistributedTracer : IDisposable
         return utilization;
     }
 
-    private static List<PerformanceBottleneck> IdentifyBottlenecks(List<SpanData> spans)
+    private static List<PerformanceBottleneck> IdentifyBottlenecks(IReadOnlyList<SpanData> spans)
     {
         var bottlenecks = new List<PerformanceBottleneck>();
 
@@ -587,7 +592,7 @@ public sealed class DistributedTracer : IDisposable
         return bottlenecks;
     }
 
-    private static Dictionary<string, object> AnalyzeMemoryAccessPatterns(List<SpanData> spans)
+    private static Dictionary<string, object> AnalyzeMemoryAccessPatterns(IReadOnlyList<SpanData> spans)
     {
         var patterns = new Dictionary<string, object>();
 
@@ -732,6 +737,9 @@ public sealed class DistributedTracer : IDisposable
             throw new ObjectDisposedException(nameof(DistributedTracer));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

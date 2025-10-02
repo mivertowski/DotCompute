@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 // Resolve ICompiledKernel ambiguity
 using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using System;
 
 namespace DotCompute.Core.Tests;
 
@@ -29,6 +30,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     private readonly Mock<ILogger> _mockLogger;
     private readonly TestKernelCompiler _compiler;
     private readonly List<TestKernelCompiler> _compilers = [];
+    /// <summary>
+    /// Initializes a new instance of the BaseKernelCompilerTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public BaseKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
@@ -40,6 +45,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
         TrackDisposable(_compiler);
     }
+    /// <summary>
+    /// Performs constructor_ initializes properties_ correctly.
+    /// </summary>
 
     #region Basic Functionality Tests
 
@@ -56,6 +64,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = _compiler.Capabilities.Should().ContainKey("SupportsOptimization");
         _ = _compiler.Capabilities["SupportsAsync"].Should().Be(true);
     }
+    /// <summary>
+    /// Performs constructor_ with null logger_ throws argument null exception.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "BasicFunctionality")]
@@ -65,6 +76,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var act = () => new TestKernelCompiler(null!);
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
+    /// <summary>
+    /// Gets compile async_ first compilation_ does not hit cache.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -93,11 +108,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Starting compilation")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Starting compilation", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ second compilation same kernel_ hits cache.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -123,11 +142,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Using cached compilation")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Using cached compilation", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ different optimization levels_ creates new entries.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -148,6 +171,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = _compiler.CompileKernelCoreCallCount.Should().Be(2, "different optimization levels should create separate cache entries");
         _ = _compiler.GetCacheCount().Should().Be(2);
     }
+    /// <summary>
+    /// Performs generate cache key_ same inputs_ returns same key.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -167,6 +193,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = key1.Should().Contain("Default");
         _ = key1.Should().Contain("TestCompiler");
     }
+    /// <summary>
+    /// Performs generate cache key_ different code_ returns different keys.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -184,6 +213,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         // Assert
         _ = key1.Should().NotBe(key2, "different code should produce different cache keys");
     }
+    /// <summary>
+    /// Gets compile async_ concurrent same kernel_ only compiles once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -207,6 +240,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = results.Should().AllSatisfy(r => r.Id.Should().Be(results[0].Id, "all should get same cached result"));
         _ = compiler.CompileKernelCoreCallCount.Should().Be(1, "should only compile once despite concurrent requests");
     }
+    /// <summary>
+    /// Gets clear cache_ removes all entries.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -230,11 +267,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Compilation cache cleared")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Compilation cache cleared", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ caching disabled_ always compiles.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationCaching")]
@@ -255,6 +296,11 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compiler.CompileKernelCoreCallCount.Should().Be(2, "should compile twice when caching disabled");
         _ = compiler.GetCacheCount().Should().Be(0, "cache should be empty when disabled");
     }
+    /// <summary>
+    /// Gets compile async_ different optimization levels_ passed correctly.
+    /// </summary>
+    /// <param name="level">The level.</param>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -281,6 +327,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = _compiler.LastCompilationOptions.Should().NotBeNull();
         _ = _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(level);
     }
+    /// <summary>
+    /// Gets compile async_ no options_ uses default optimization.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "OptimizationLevels")]
@@ -298,6 +348,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = _compiler.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         _ = _compiler.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
     }
+    /// <summary>
+    /// Gets compile async_ optimization levels_ recorded in metrics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "OptimizationLevels")]
@@ -317,6 +371,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = metric.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         _ = metric.Name.Should().Be("metrics_opt");
     }
+    /// <summary>
+    /// Gets optimize async_ calls optimize kernel core.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "OptimizationLevels")]
@@ -340,11 +398,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Optimizing kernel")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Optimizing kernel", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ null definition_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -358,6 +420,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var act = async () => await _compiler.CompileAsync((KernelDefinition)null!, (CompilationOptions?)null);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
+    /// <summary>
+    /// Gets compile async_ empty kernel name_ throws validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -372,6 +438,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*name cannot be empty*");
     }
+    /// <summary>
+    /// Gets compile async_ null kernel code_ throws validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -386,6 +456,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*code cannot be null*");
     }
+    /// <summary>
+    /// Gets compile async_ empty kernel code_ throws validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -400,6 +474,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             .WithMessage("*Kernel validation failed*")
             .WithMessage("*code cannot be null or empty*");
     }
+    /// <summary>
+    /// Gets compile async_ compilation failure_ throws kernel compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -420,11 +498,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ cancellation requested_ throws operation canceled exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -440,6 +522,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var act = async () => await compiler.CompileAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Validates the _ invalid kernel_ returns validation failure.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -456,6 +541,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = result.IsValid.Should().BeFalse();
         _ = result.ErrorMessage.Should().Contain("name cannot be empty");
     }
+    /// <summary>
+    /// Validates the async_ invalid kernel_ returns validation failure.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -472,6 +561,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = result.IsValid.Should().BeFalse();
         _ = result.ErrorMessage.Should().Contain("code cannot be null or empty");
     }
+    /// <summary>
+    /// Gets compile async_ invalid work dimensions_ throws validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -491,6 +584,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Work dimensions must be between 1 and 3*");
     }
+    /// <summary>
+    /// Gets compile async_ empty parameters_ throws validation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorReporting")]
@@ -510,6 +607,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Kernel must have at least one parameter*");
     }
+    /// <summary>
+    /// Gets compile async_ aot mode_ fallbacks gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -532,6 +633,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = result.Name.Should().Be("aot_test");
         _ = compiler.AotFallbackUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs generate cache key_ aot mode_ uses static hashing.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "AotCompatibility")]
@@ -552,6 +656,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = key.Should().Contain("Default");
         _ = compiler.StaticHashingUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets compile async_ runtime mode_ uses full features.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AotCompatibility")]
@@ -570,6 +678,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compiler.AotFallbackUsed.Should().BeFalse();
         _ = compiler.RuntimeCompilationUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets compile async_ tracks compilation time.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -599,6 +711,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = metric.CacheHit.Should().BeFalse();
         _ = metric.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
+    /// <summary>
+    /// Gets compile async_ logs performance metrics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "PerformanceMetrics")]
@@ -616,6 +732,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compiler.LogCompilationMetricsCallCount.Should().Be(1);
         _ = compiler.LastLoggedCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
+    /// <summary>
+    /// Performs log compilation metrics_ with bytecode size_ logs correct format.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "PerformanceMetrics")]
@@ -634,14 +753,17 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(kernelName) &&
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(kernelName, StringComparison.CurrentCulture) &&
 
-                                             v.ToString()!.Contains("150") &&
-                                             v.ToString()!.Contains("2048")),
+                                             v.ToString()!.Contains("150", StringComparison.CurrentCulture) &&
+                                             v.ToString()!.Contains("2048", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Performs log compilation metrics_ without bytecode size_ logs n a value.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "PerformanceMetrics")]
@@ -659,11 +781,15 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("N/A")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("N/A", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile async_ multiple kernels_ tracks all metrics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "PerformanceMetrics")]
@@ -687,6 +813,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = metrics.Values.Should().AllSatisfy(m => m.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero));
         _ = metrics.Values.Should().AllSatisfy(m => m.CacheHit.Should().BeFalse());
     }
+    /// <summary>
+    /// Gets compile async_ mixed concurrent operations_ handles correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -720,6 +850,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compiler.OptimizeKernelCoreCallCount.Should().Be(1);
         _ = compiler.MaxConcurrentCompilations.Should().BeGreaterThanOrEqualTo(1);
     }
+    /// <summary>
+    /// Gets compile async_ stress test concurrency_ maintains data integrity.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ConcurrentAccess")]
@@ -752,6 +886,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var uniqueIds = results.Select(r => r.Id).Distinct().Count();
         _ = uniqueIds.Should().Be(concurrentTasks, "each kernel should have unique ID");
     }
+    /// <summary>
+    /// Gets compile async_ concurrent cache operations_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ConcurrentAccess")]
@@ -787,6 +925,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var results = await Task.WhenAll(compileTasks);
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
     }
+    /// <summary>
+    /// Gets compile async_ optimization level performance_ shows measurable difference.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -827,6 +969,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = noneMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
         _ = maxMetric.CompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
+    /// <summary>
+    /// Gets compile async_ cache vs no cache performance_ shows significant difference.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "PerformanceImpact")]
@@ -871,6 +1017,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = sw3.Elapsed.Should().BeLessThan(sw1.Elapsed.Divide(2), "cached compilation should be much faster");
         _ = sw4.Elapsed.Should().BeGreaterThan(sw3.Elapsed, "non-cached should still take full time");
     }
+    /// <summary>
+    /// Gets compile async_ resource usage tracking_ monitors memory and c p u.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "PerformanceImpact")]
@@ -913,6 +1063,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         // Verify performance characteristics
         _ = stopwatch.ElapsedMilliseconds.Should().BeGreaterThan((long)(totalCompilationTime * 0.5), "wall clock time should be reasonable");
     }
+    /// <summary>
+    /// Gets optimize async_ with null kernel_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -926,6 +1080,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var act = async () => await _compiler.OptimizeAsync(null!, OptimizationLevel.Maximum);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
+    /// <summary>
+    /// Gets compile async_ multiple validation errors_ reports all errors.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorScenarios")]
@@ -947,6 +1105,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var exception = await act.Should().ThrowAsync<InvalidOperationException>();
         _ = exception.WithMessage("*name cannot be empty*");
     }
+    /// <summary>
+    /// Gets compile async_ compiler internal error_ wraps exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorScenarios")]
@@ -963,6 +1125,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var exception = await act.Should().ThrowAsync<KernelCompilationException>();
         _ = exception.Which.InnerException.Should().BeOfType<InvalidOperationException>();
     }
+    /// <summary>
+    /// Gets compile async_ out of memory during compilation_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ErrorScenarios")]
@@ -992,6 +1158,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Validates the _ complex validation scenarios_ handles all cases.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "ErrorScenarios")]
@@ -1029,6 +1198,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             _ = result.IsValid.Should().BeTrue($"work dimensions {workDim} should be valid");
         }
     }
+    /// <summary>
+    /// Gets compile async_ aot mode with complex kernel_ handles properly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -1067,6 +1240,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compiler.AotFallbackUsed.Should().BeTrue();
         _ = compiler.StaticHashingUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs generate cache key_ aot vs runtime_ produces different strategies.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "AotCompatibility")]
@@ -1097,6 +1273,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = aotCompiler.StaticHashingUsed.Should().BeTrue();
         _ = runtimeCompiler.StaticHashingUsed.Should().BeFalse();
     }
+    /// <summary>
+    /// Gets compile async_ aot mode validation_ uses safe validation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AotCompatibility")]
@@ -1126,6 +1306,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = compilationResult.Should().NotBeNull();
         _ = aotCompiler.AotFallbackUsed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets compile async_ metrics collection_ tracks resource usage.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -1169,6 +1353,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
         _ = compiler.LogCompilationMetricsCallCount.Should().Be(3);
     }
+    /// <summary>
+    /// Gets compile async_ large kernel compilation_ manages memory efficiently.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ResourceUsage")]
@@ -1200,6 +1388,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _ = metrics.Should().HaveCount(1);
         _ = metrics.Values.First().Name.Should().Be("large_kernel");
     }
+    /// <summary>
+    /// Gets the metrics_ after multiple operations_ provides complete metrics.
+    /// </summary>
+    /// <returns>The metrics_ after multiple operations_ provides complete metrics.</returns>
 
     [Fact]
     [Trait("TestType", "ResourceUsage")]
@@ -1265,8 +1457,16 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         private int _maxConcurrentCompilations;
 
         protected override string CompilerName => "TestCompiler";
+        /// <summary>
+        /// Gets or sets the supported source types.
+        /// </summary>
+        /// <value>The supported source types.</value>
 
         public override IReadOnlyList<KernelLanguage> SupportedSourceTypes => [KernelLanguage.OpenCL, KernelLanguage.CUDA];
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
 
         public override IReadOnlyDictionary<string, object> Capabilities { get; } = new Dictionary<string, object>
         {
@@ -1274,30 +1474,94 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             ["SupportsCaching"] = true,
             ["SupportsOptimization"] = true
         };
+        /// <summary>
+        /// Gets or sets the enable caching override.
+        /// </summary>
+        /// <value>The enable caching override.</value>
 
         // Test properties
         public bool EnableCachingOverride { get; set; } = true;
         protected override bool EnableCaching => EnableCachingOverride;
+        /// <summary>
+        /// Gets or sets the should throw on compilation.
+        /// </summary>
+        /// <value>The should throw on compilation.</value>
 
         public bool ShouldThrowOnCompilation { get; set; }
+        /// <summary>
+        /// Gets or sets the compilation delay.
+        /// </summary>
+        /// <value>The compilation delay.</value>
         public TimeSpan CompilationDelay { get; set; } = TimeSpan.Zero;
+        /// <summary>
+        /// Gets or sets a value indicating whether aot mode.
+        /// </summary>
+        /// <value>The is aot mode.</value>
         public bool IsAotMode { get; set; }
+        /// <summary>
+        /// Gets or sets the enable metrics logging.
+        /// </summary>
+        /// <value>The enable metrics logging.</value>
         public bool EnableMetricsLogging { get; set; }
+        /// <summary>
+        /// Gets or sets the compile kernel core call count.
+        /// </summary>
+        /// <value>The compile kernel core call count.</value>
 
         // State tracking
         public int CompileKernelCoreCallCount => _compileCallCount;
+        /// <summary>
+        /// Gets or sets the optimize kernel core call count.
+        /// </summary>
+        /// <value>The optimize kernel core call count.</value>
         public int OptimizeKernelCoreCallCount => _optimizeCallCount;
+        /// <summary>
+        /// Gets or sets the log compilation metrics call count.
+        /// </summary>
+        /// <value>The log compilation metrics call count.</value>
         public int LogCompilationMetricsCallCount => _logMetricsCallCount;
+        /// <summary>
+        /// Gets or sets the max concurrent compilations.
+        /// </summary>
+        /// <value>The max concurrent compilations.</value>
         public int MaxConcurrentCompilations => _maxConcurrentCompilations;
+        /// <summary>
+        /// Gets or sets the last compilation options.
+        /// </summary>
+        /// <value>The last compilation options.</value>
 
         public CompilationOptions? LastCompilationOptions { get; private set; }
+        /// <summary>
+        /// Gets or sets the last optimization level.
+        /// </summary>
+        /// <value>The last optimization level.</value>
         public OptimizationLevel? LastOptimizationLevel { get; private set; }
+        /// <summary>
+        /// Gets or sets the last cache hit.
+        /// </summary>
+        /// <value>The last cache hit.</value>
         public bool LastCacheHit { get; private set; }
+        /// <summary>
+        /// Gets or sets the last logged compilation time.
+        /// </summary>
+        /// <value>The last logged compilation time.</value>
         public TimeSpan LastLoggedCompilationTime { get; private set; }
+        /// <summary>
+        /// Gets or sets the aot fallback used.
+        /// </summary>
+        /// <value>The aot fallback used.</value>
 
         // AOT-specific tracking
         public bool AotFallbackUsed { get; private set; }
+        /// <summary>
+        /// Gets or sets the runtime compilation used.
+        /// </summary>
+        /// <value>The runtime compilation used.</value>
         public bool RuntimeCompilationUsed { get; private set; }
+        /// <summary>
+        /// Gets or sets the static hashing used.
+        /// </summary>
+        /// <value>The static hashing used.</value>
         public bool StaticHashingUsed { get; private set; }
 
         protected override async ValueTask<AbstractionsCompiledKernel> CompileKernelCoreAsync(
@@ -1378,15 +1642,42 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
 
             return base.GenerateCacheKey(definition, options);
         }
+        /// <summary>
+        /// Gets test generate cache key.
+        /// </summary>
+        /// <param name="definition">The definition.</param>
+        /// <param name="options">The options.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Test helper methods
         public string TestGenerateCacheKey(KernelDefinition definition, CompilationOptions options) => GenerateCacheKey(definition, options);
+        /// <summary>
+        /// Gets test get default compilation options.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public CompilationOptions TestGetDefaultCompilationOptions() => GetDefaultCompilationOptions();
+        /// <summary>
+        /// Gets test enrich definition with metadata.
+        /// </summary>
+        /// <param name="definition">The definition.</param>
+        /// <param name="metadata">The metadata.</param>
+        /// <returns>The result of the operation.</returns>
 
         public KernelDefinition TestEnrichDefinitionWithMetadata(KernelDefinition definition, Dictionary<string, object> metadata) => EnrichDefinitionWithMetadata(definition, metadata);
+        /// <summary>
+        /// Gets test validate kernel definition.
+        /// </summary>
+        /// <param name="definition">The definition.</param>
+        /// <returns>The result of the operation.</returns>
 
         public UnifiedValidationResult TestValidateKernelDefinition(KernelDefinition definition) => ValidateKernelDefinition(definition);
+        /// <summary>
+        /// Performs test log compilation metrics.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="compilationTime">The compilation time.</param>
+        /// <param name="byteCodeSize">The byte code size.</param>
 
         public void TestLogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize)
         {
@@ -1394,6 +1685,10 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             LastLoggedCompilationTime = compilationTime;
             LogCompilationMetrics(kernelName, compilationTime, byteCodeSize);
         }
+        /// <summary>
+        /// Gets the cache count.
+        /// </summary>
+        /// <returns>The cache count.</returns>
 
         public int GetCacheCount()
         {
@@ -1407,6 +1702,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             }
             return 0;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

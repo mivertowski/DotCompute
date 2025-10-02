@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms.Kernels.LinearAlgebra;
 public static class LAPACKKernels
 {
     /// <summary>
+    /// The open c l conjugate gradient kernel.
+    /// </summary>
+    /// <summary>
     /// OpenCL kernel for Conjugate Gradient iteration.
     /// </summary>
     public const string OpenCLConjugateGradientKernel = @"
@@ -36,6 +39,9 @@ __kernel void cg_iteration_step(
     // Update search direction: p = r + beta * p
     p[i] = new_r + beta * p[i];
 }";
+    /// <summary>
+    /// The c u d a bi c g s t a b kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for BiCGSTAB iteration with preconditioning.

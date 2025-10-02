@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.System;
 
@@ -19,6 +20,10 @@ public sealed partial class SystemInfoManager : IDisposable
     private readonly Timer _monitoringTimer;
     private SystemInfo? _cachedInfo;
     private volatile bool _isMonitoring;
+    /// <summary>
+    /// Initializes a new instance of the SystemInfoManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public SystemInfoManager(ILogger<SystemInfoManager> logger)
     {
@@ -401,7 +406,7 @@ public sealed partial class SystemInfoManager : IDisposable
 
             foreach (var line in lines)
             {
-                if (line.Contains("page size of"))
+                if (line.Contains("page size of", StringComparison.OrdinalIgnoreCase))
                 {
                     var match = Regex.Match(line, @"(\d+) bytes");
                     if (match.Success)
@@ -409,19 +414,19 @@ public sealed partial class SystemInfoManager : IDisposable
                         pageSize = long.Parse(match.Groups[1].Value);
                     }
                 }
-                else if (line.Contains("Pages free:"))
+                else if (line.Contains("Pages free:", StringComparison.OrdinalIgnoreCase))
                 {
                     freePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages inactive:"))
+                else if (line.Contains("Pages inactive:", StringComparison.CurrentCulture))
                 {
                     inactivePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages active:"))
+                else if (line.Contains("Pages active:", StringComparison.CurrentCulture))
                 {
                     activePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages wired down:"))
+                else if (line.Contains("Pages wired down:", StringComparison.CurrentCulture))
                 {
                     wiredPages = ParseMacOSPages(line);
                 }
@@ -622,7 +627,7 @@ public sealed partial class SystemInfoManager : IDisposable
                 {
                     _ = physicalIds.Add(line.Split(':', 2)[1].Trim());
                 }
-                else if (line.StartsWith("flags") && string.IsNullOrEmpty(info.Features))
+                else if (line.StartsWith("flags", StringComparison.CurrentCulture) && string.IsNullOrEmpty(info.Features))
                 {
                     var flags = line.Split(':', 2)[1].Trim().Split(' ');
                     info.Features = string.Join(", ", flags.Take(10)); // Take first 10 features
@@ -821,9 +826,21 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private struct MemoryInfo
     {
+        /// <summary>
+        /// The total.
+        /// </summary>
         public long Total;
+        /// <summary>
+        /// The available.
+        /// </summary>
         public long Available;
+        /// <summary>
+        /// The used.
+        /// </summary>
         public long Used;
+        /// <summary>
+        /// The usage percentage.
+        /// </summary>
         public double UsagePercentage;
     }
 
@@ -832,7 +849,13 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private struct VirtualMemoryInfo
     {
+        /// <summary>
+        /// The total.
+        /// </summary>
         public long Total;
+        /// <summary>
+        /// The available.
+        /// </summary>
         public long Available;
     }
 
@@ -841,12 +864,40 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private sealed class CpuInfo
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; } = "Unknown";
+        /// <summary>
+        /// Gets or sets the frequency m hz.
+        /// </summary>
+        /// <value>The frequency m hz.</value>
         public int FrequencyMHz { get; set; }
+        /// <summary>
+        /// Gets or sets the physical cores.
+        /// </summary>
+        /// <value>The physical cores.</value>
         public int PhysicalCores { get; set; }
+        /// <summary>
+        /// Gets or sets the logical cores.
+        /// </summary>
+        /// <value>The logical cores.</value>
         public int LogicalCores { get; set; }
+        /// <summary>
+        /// Gets or sets the usage percentage.
+        /// </summary>
+        /// <value>The usage percentage.</value>
         public double UsagePercentage { get; set; }
+        /// <summary>
+        /// Gets or sets the architecture.
+        /// </summary>
+        /// <value>The architecture.</value>
         public string Architecture { get; set; } = "Unknown";
+        /// <summary>
+        /// Gets or sets the features.
+        /// </summary>
+        /// <value>The features.</value>
         public string Features { get; set; } = string.Empty;
     }
 
@@ -855,11 +906,23 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private struct DiskInfo
     {
+        /// <summary>
+        /// The total.
+        /// </summary>
         public long Total;
+        /// <summary>
+        /// The available.
+        /// </summary>
         public long Available;
+        /// <summary>
+        /// The used.
+        /// </summary>
         public long Used;
     }
 }
+/// <summary>
+/// An platform type enumeration.
+/// </summary>
 
 /// <summary>
 /// Platform types.
@@ -878,48 +941,168 @@ public enum PlatformType
 /// </summary>
 public sealed class SystemInfo
 {
+    /// <summary>
+    /// Gets or sets the platform.
+    /// </summary>
+    /// <value>The platform.</value>
     // Platform
     public PlatformType Platform { get; init; }
+    /// <summary>
+    /// Gets or sets the architecture.
+    /// </summary>
+    /// <value>The architecture.</value>
     public string Architecture { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the o s description.
+    /// </summary>
+    /// <value>The o s description.</value>
     public string OSDescription { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the framework description.
+    /// </summary>
+    /// <value>The framework description.</value>
     public string FrameworkDescription { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the processor count.
+    /// </summary>
+    /// <value>The processor count.</value>
     public int ProcessorCount { get; init; }
+    /// <summary>
+    /// Gets or sets the machine name.
+    /// </summary>
+    /// <value>The machine name.</value>
     public string MachineName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets a value indicating whether 64 bit o s.
+    /// </summary>
+    /// <value>The is64 bit o s.</value>
     public bool Is64BitOS { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether 64 bit process.
+    /// </summary>
+    /// <value>The is64 bit process.</value>
     public bool Is64BitProcess { get; init; }
+    /// <summary>
+    /// Gets or sets the total physical memory.
+    /// </summary>
+    /// <value>The total physical memory.</value>
 
     // Memory
 
     public long TotalPhysicalMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the available physical memory.
+    /// </summary>
+    /// <value>The available physical memory.</value>
     public long AvailablePhysicalMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the used physical memory.
+    /// </summary>
+    /// <value>The used physical memory.</value>
     public long UsedPhysicalMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the memory usage percentage.
+    /// </summary>
+    /// <value>The memory usage percentage.</value>
     public double MemoryUsagePercentage { get; init; }
+    /// <summary>
+    /// Gets or sets the total virtual memory.
+    /// </summary>
+    /// <value>The total virtual memory.</value>
     public long TotalVirtualMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the available virtual memory.
+    /// </summary>
+    /// <value>The available virtual memory.</value>
     public long AvailableVirtualMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the cpu name.
+    /// </summary>
+    /// <value>The cpu name.</value>
 
     // CPU
 
     public string CpuName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the cpu frequency m hz.
+    /// </summary>
+    /// <value>The cpu frequency m hz.</value>
     public int CpuFrequencyMHz { get; init; }
+    /// <summary>
+    /// Gets or sets the cpu cores.
+    /// </summary>
+    /// <value>The cpu cores.</value>
     public int CpuCores { get; init; }
+    /// <summary>
+    /// Gets or sets the cpu threads.
+    /// </summary>
+    /// <value>The cpu threads.</value>
     public int CpuThreads { get; init; }
+    /// <summary>
+    /// Gets or sets the cpu usage percentage.
+    /// </summary>
+    /// <value>The cpu usage percentage.</value>
     public double CpuUsagePercentage { get; init; }
+    /// <summary>
+    /// Gets or sets the cpu architecture.
+    /// </summary>
+    /// <value>The cpu architecture.</value>
     public string CpuArchitecture { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the cpu features.
+    /// </summary>
+    /// <value>The cpu features.</value>
     public string CpuFeatures { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the process memory.
+    /// </summary>
+    /// <value>The process memory.</value>
 
     // Process
 
     public long ProcessMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the process virtual memory.
+    /// </summary>
+    /// <value>The process virtual memory.</value>
     public long ProcessVirtualMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the process thread count.
+    /// </summary>
+    /// <value>The process thread count.</value>
     public int ProcessThreadCount { get; init; }
+    /// <summary>
+    /// Gets or sets the process handle count.
+    /// </summary>
+    /// <value>The process handle count.</value>
     public int ProcessHandleCount { get; init; }
+    /// <summary>
+    /// Gets or sets the process uptime.
+    /// </summary>
+    /// <value>The process uptime.</value>
     public TimeSpan ProcessUptime { get; init; }
+    /// <summary>
+    /// Gets or sets the disk space total.
+    /// </summary>
+    /// <value>The disk space total.</value>
 
     // Disk
 
     public long DiskSpaceTotal { get; init; }
+    /// <summary>
+    /// Gets or sets the disk space available.
+    /// </summary>
+    /// <value>The disk space available.</value>
     public long DiskSpaceAvailable { get; init; }
+    /// <summary>
+    /// Gets or sets the disk space used.
+    /// </summary>
+    /// <value>The disk space used.</value>
     public long DiskSpaceUsed { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
 
     // Timestamp
 

@@ -640,6 +640,12 @@ namespace DotCompute.Core.Pipelines
     /// </summary>
     internal sealed class PipelineMemoryView<T> : IPipelineMemoryView<T> where T : unmanaged
     {
+        /// <summary>
+        /// Initializes a new instance of the PipelineMemoryView class.
+        /// </summary>
+        /// <param name="parent">The parent.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="length">The length.</param>
         public PipelineMemoryView(IPipelineMemory<T> parent, long offset, long length)
         {
             if (offset < 0 || length <= 0 || offset + length > parent.ElementCount)
@@ -690,11 +696,32 @@ namespace DotCompute.Core.Pipelines
 
         private sealed class PooledMemoryEntry
         {
+            /// <summary>
+            /// Gets or sets the memory.
+            /// </summary>
+            /// <value>The memory.</value>
             public required IDeviceMemory Memory { get; init; }
+            /// <summary>
+            /// Gets or sets the size in bytes.
+            /// </summary>
+            /// <value>The size in bytes.</value>
             public required long SizeInBytes { get; init; }
+            /// <summary>
+            /// Gets or sets the created at.
+            /// </summary>
+            /// <value>The created at.</value>
             public required DateTime CreatedAt { get; init; }
+            /// <summary>
+            /// Gets or sets the last used.
+            /// </summary>
+            /// <value>The last used.</value>
             public DateTime LastUsed { get; set; }
         }
+        /// <summary>
+        /// Initializes a new instance of the MemoryPool class.
+        /// </summary>
+        /// <param name="elementType">The element type.</param>
+        /// <param name="options">The options.</param>
 
         public MemoryPool(Type elementType, MemoryPoolOptions options)
         {
@@ -709,6 +736,11 @@ namespace DotCompute.Core.Pipelines
                     TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
             }
         }
+        /// <summary>
+        /// Attempts to rent.
+        /// </summary>
+        /// <param name="sizeInBytes">The size in bytes.</param>
+        /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
         public IDeviceMemory? TryRent(long sizeInBytes)
         {
@@ -751,6 +783,10 @@ namespace DotCompute.Core.Pipelines
 
             return null;
         }
+        /// <summary>
+        /// Performs return.
+        /// </summary>
+        /// <param name="memory">The memory.</param>
 
         public void Return(IDeviceMemory memory)
         {
@@ -782,6 +818,9 @@ namespace DotCompute.Core.Pipelines
                 _totalBytesPooled += memory.SizeInBytes;
             }
         }
+        /// <summary>
+        /// Performs trim.
+        /// </summary>
 
         public void Trim()
         {
@@ -817,6 +856,10 @@ namespace DotCompute.Core.Pipelines
                 }
             }
         }
+        /// <summary>
+        /// Gets the efficiency.
+        /// </summary>
+        /// <returns>The efficiency.</returns>
 
         public double GetEfficiency()
         {
@@ -830,6 +873,9 @@ namespace DotCompute.Core.Pipelines
                 return (double)_totalReturned / _totalRented;
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

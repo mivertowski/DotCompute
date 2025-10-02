@@ -25,6 +25,12 @@ internal partial class OpenCLKernelParser(ILogger logger)
     { @"memory_intensive|multiple.*input\[i\]", KernelType.MemoryIntensive },
     { @"compute_intensive|sin\(|cos\(|sqrt\(", KernelType.ComputeIntensive }
 };
+    /// <summary>
+    /// Gets parse kernel.
+    /// </summary>
+    /// <param name="kernelSource">The kernel source.</param>
+    /// <param name="entryPoint">The entry point.</param>
+    /// <returns>The result of the operation.</returns>
 
     public KernelInfo ParseKernel(string kernelSource, string entryPoint)
     {

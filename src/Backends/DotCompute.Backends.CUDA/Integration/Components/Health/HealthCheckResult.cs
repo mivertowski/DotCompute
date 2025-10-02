@@ -10,7 +10,19 @@ namespace DotCompute.Backends.CUDA.Integration.Components.Health;
 /// </summary>
 public sealed class HealthCheckResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the status.
+    /// </summary>
+    /// <value>The status.</value>
     public CudaHealthStatus Status { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public string Message { get; init; } = string.Empty;
 }

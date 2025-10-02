@@ -23,6 +23,11 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
     private readonly MalwareScanner _malwareScanner;
     private readonly SecurityPolicy _securityPolicy;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public AlgorithmPluginValidator(
         ILogger<AlgorithmPluginValidator> logger,
@@ -301,6 +306,9 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
             _securityPolicy.DirectoryPolicies[directory] = SecurityLevel.High;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

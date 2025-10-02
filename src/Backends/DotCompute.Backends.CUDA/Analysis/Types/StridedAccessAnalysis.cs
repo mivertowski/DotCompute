@@ -48,7 +48,7 @@ public sealed class StridedAccessAnalysis
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 
     /// <summary>
     /// Gets or sets the access regularity score (0-1).
@@ -68,5 +68,5 @@ public sealed class StridedAccessAnalysis
     /// <summary>
     /// Gets or sets suggested optimizations.
     /// </summary>
-    public List<string> OptimizationSuggestions { get; set; } = [];
+    public IList<string> OptimizationSuggestions { get; } = [];
 }

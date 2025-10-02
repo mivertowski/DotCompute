@@ -21,5 +21,5 @@ public sealed class MetalExportOptions
     /// <summary>
     /// Gets or sets the configured exporters
     /// </summary>
-    public List<ExporterConfiguration> Exporters { get; set; } = [];
+    public IList<ExporterConfiguration> Exporters { get; } = [];
 }

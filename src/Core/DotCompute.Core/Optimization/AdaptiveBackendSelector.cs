@@ -42,6 +42,12 @@ public class AdaptiveBackendSelector : IDisposable
 
     private readonly Timer _performanceUpdateTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AdaptiveBackendSelector class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="performanceProfiler">The performance profiler.</param>
+    /// <param name="options">The options.</param>
 
     public AdaptiveBackendSelector(
         ILogger<AdaptiveBackendSelector> logger,
@@ -710,6 +716,9 @@ public class AdaptiveBackendSelector : IDisposable
             _logger.LogWarning(ex, "Error updating backend performance states");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

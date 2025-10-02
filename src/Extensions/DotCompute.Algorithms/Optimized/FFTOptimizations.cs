@@ -461,7 +461,7 @@ public static class FFTOptimizations
     }
 
 
-    private static void MixedRadixDecomposition(Span<Complex> data, List<int> factors, bool inverse)
+    private static void MixedRadixDecomposition(Span<Complex> data, IReadOnlyList<int> factors, bool inverse)
     {
         var n = data.Length;
         var temp = new Complex[n];

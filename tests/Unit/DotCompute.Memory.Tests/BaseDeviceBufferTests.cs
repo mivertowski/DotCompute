@@ -12,6 +12,10 @@ namespace DotCompute.Memory.Tests;
 /// </summary>
 public class BaseDeviceBufferTests
 {
+    /// <summary>
+    /// Gets device buffer_ initializes correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     [Fact]
     [Trait("Category", "BufferTypes")]
     public async Task DeviceBuffer_InitializesCorrectly()
@@ -30,6 +34,11 @@ public class BaseDeviceBufferTests
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
+    /// <summary>
+    /// Gets device buffer_ supports multiple memory types.
+    /// </summary>
+    /// <param name="memoryType">The memory type.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -50,6 +59,10 @@ public class BaseDeviceBufferTests
         _ = buffer.MemoryType.Should().Be(memoryType);
         _ = buffer.State.Should().Be(BufferState.Allocated);
     }
+    /// <summary>
+    /// Gets device buffer_ throws on host operations.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -68,6 +81,10 @@ public class BaseDeviceBufferTests
         _ = spanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
         _ = readOnlySpanAccess.Should().Throw<NotSupportedException>("device buffers don't support direct span access");
     }
+    /// <summary>
+    /// Gets device buffer_ tracks disposal state.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]

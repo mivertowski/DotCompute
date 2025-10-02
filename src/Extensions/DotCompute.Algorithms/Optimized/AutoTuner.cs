@@ -40,14 +40,50 @@ public sealed class AutoTuner : IDisposable
     [Serializable]
     public sealed class TuningProfile
     {
+        /// <summary>
+        /// Gets or sets the algorithm name.
+        /// </summary>
+        /// <value>The algorithm name.</value>
         public string AlgorithmName { get; set; } = string.Empty;
-        public Dictionary<string, object> OptimalParameters { get; set; } = [];
-        public Dictionary<string, ParameterRange> ParameterRanges { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the optimal parameters.
+        /// </summary>
+        /// <value>The optimal parameters.</value>
+        public Dictionary<string, object> OptimalParameters { get; } = [];
+        /// <summary>
+        /// Gets or sets the parameter ranges.
+        /// </summary>
+        /// <value>The parameter ranges.</value>
+        public Dictionary<string, ParameterRange> ParameterRanges { get; } = [];
+        /// <summary>
+        /// Gets or sets the best performance.
+        /// </summary>
+        /// <value>The best performance.</value>
         public double BestPerformance { get; set; }
+        /// <summary>
+        /// Gets or sets the last tuned.
+        /// </summary>
+        /// <value>The last tuned.</value>
         public DateTime LastTuned { get; set; }
+        /// <summary>
+        /// Gets or sets the tuning iterations.
+        /// </summary>
+        /// <value>The tuning iterations.</value>
         public int TuningIterations { get; set; }
+        /// <summary>
+        /// Gets or sets the hardware fingerprint.
+        /// </summary>
+        /// <value>The hardware fingerprint.</value>
         public string HardwareFingerprint { get; set; } = string.Empty;
-        public Dictionary<string, double> PerformanceHistory { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the performance history.
+        /// </summary>
+        /// <value>The performance history.</value>
+        public Dictionary<string, double> PerformanceHistory { get; } = [];
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
 
 
         [JsonIgnore]
@@ -61,11 +97,35 @@ public sealed class AutoTuner : IDisposable
     [Serializable]
     public sealed class ParameterRange
     {
+        /// <summary>
+        /// Gets or sets the min value.
+        /// </summary>
+        /// <value>The min value.</value>
         public object MinValue { get; set; } = 0;
+        /// <summary>
+        /// Gets or sets the max value.
+        /// </summary>
+        /// <value>The max value.</value>
         public object MaxValue { get; set; } = 100;
+        /// <summary>
+        /// Gets or sets the step size.
+        /// </summary>
+        /// <value>The step size.</value>
         public object StepSize { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the parameter type.
+        /// </summary>
+        /// <value>The parameter type.</value>
         public Type ParameterType { get; set; } = typeof(int);
+        /// <summary>
+        /// Gets or sets a value indicating whether discrete.
+        /// </summary>
+        /// <value>The is discrete.</value>
         public bool IsDiscrete { get; set; } = true;
+        /// <summary>
+        /// Gets generate values.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public IEnumerable<object> GenerateValues()
@@ -110,10 +170,25 @@ public sealed class AutoTuner : IDisposable
 
         double performance, TimeSpan executionTime, double standardDeviation)
     {
+        /// <summary>
+        /// The parameters.
+        /// </summary>
         public readonly Dictionary<string, object> Parameters = parameters;
+        /// <summary>
+        /// The performance.
+        /// </summary>
         public readonly double Performance = performance;
+        /// <summary>
+        /// The execution time.
+        /// </summary>
         public readonly TimeSpan ExecutionTime = executionTime;
+        /// <summary>
+        /// The standard deviation.
+        /// </summary>
         public readonly double StandardDeviation = standardDeviation;
+        /// <summary>
+        /// The is valid.
+        /// </summary>
         public readonly bool IsValid = performance > 0 && !double.IsNaN(performance);
     }
 
@@ -123,12 +198,24 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     private abstract class ParameterOptimizer
     {
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
         public abstract Dictionary<string, object> GetNextParameters(
             List<PerformanceMeasurement> measurements,
             Dictionary<string, ParameterRange> ranges);
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public abstract bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration);
+        public abstract bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration);
     }
 
 
@@ -139,6 +226,12 @@ public sealed class AutoTuner : IDisposable
     {
         private readonly Queue<Dictionary<string, object>> _parameterQueue = new();
         private bool _initialized;
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -154,9 +247,15 @@ public sealed class AutoTuner : IDisposable
 
             return _parameterQueue.Count > 0 ? _parameterQueue.Dequeue() : [];
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration) => _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration) => _parameterQueue.Count > 0 && iteration < MAX_SEARCH_ITERATIONS;
 
 
         private void InitializeGrid(Dictionary<string, ParameterRange> ranges)
@@ -201,6 +300,12 @@ public sealed class AutoTuner : IDisposable
     private sealed class RandomSearchOptimizer : ParameterOptimizer
     {
         private readonly Random _random = new();
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -218,9 +323,15 @@ public sealed class AutoTuner : IDisposable
 
             return parameters;
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration)
         {
             if (iteration < MIN_MEASUREMENTS)
             {
@@ -281,6 +392,12 @@ public sealed class AutoTuner : IDisposable
     private sealed class BayesianOptimizer : ParameterOptimizer
     {
         private readonly Random _random = new();
+        /// <summary>
+        /// Gets the next parameters.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="ranges">The ranges.</param>
+        /// <returns>The next parameters.</returns>
 
 
         public override Dictionary<string, object> GetNextParameters(
@@ -311,9 +428,15 @@ public sealed class AutoTuner : IDisposable
 
             return parameters;
         }
+        /// <summary>
+        /// Determines should continue.
+        /// </summary>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="iteration">The iteration.</param>
+        /// <returns>The result of the operation.</returns>
 
 
-        public override bool ShouldContinue(List<PerformanceMeasurement> measurements, int iteration)
+        public override bool ShouldContinue(IReadOnlyList<PerformanceMeasurement> measurements, int iteration)
         {
             if (iteration < MIN_MEASUREMENTS)
             {
@@ -375,6 +498,11 @@ public sealed class AutoTuner : IDisposable
             return array.Average(v => Math.Pow(v - mean, 2));
         }
     }
+    /// <summary>
+    /// Initializes a new instance of the AutoTuner class.
+    /// </summary>
+    /// <param name="configPath">The config path.</param>
+    /// <param name="enablePeriodicTuning">The enable periodic tuning.</param>
 
 
     public AutoTuner(string? configPath = null, bool enablePeriodicTuning = true)
@@ -871,6 +999,9 @@ public sealed class AutoTuner : IDisposable
             Console.WriteLine($"Periodic auto-tuning failed: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

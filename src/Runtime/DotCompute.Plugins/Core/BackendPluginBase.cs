@@ -87,12 +87,21 @@ public abstract class BackendPluginBase : IBackendPlugin
             }
         }
     }
+    /// <summary>
+    /// Occurs when state changed.
+    /// </summary>
 
     /// <inheritdoc/>
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    /// <summary>
+    /// Occurs when error occurred.
+    /// </summary>
 
     /// <inheritdoc/>
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    /// <summary>
+    /// Occurs when health changed.
+    /// </summary>
 
     /// <inheritdoc/>
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;

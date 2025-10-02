@@ -689,7 +689,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private static async Task<IPipelineStage> OptimizeStageForBackendsAsync(IPipelineStage stage, List<string> targetBackends, CancellationToken cancellationToken)
+        private static async Task<IPipelineStage> OptimizeStageForBackendsAsync(IPipelineStage stage, IReadOnlyList<string> targetBackends, CancellationToken cancellationToken)
         {
             await Task.Delay(1, cancellationToken); // Simulate optimization time
 

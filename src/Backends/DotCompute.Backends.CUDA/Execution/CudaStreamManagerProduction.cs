@@ -42,6 +42,12 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private IntPtr _captureStream = IntPtr.Zero;
     private IntPtr _currentGraph = IntPtr.Zero;
     private bool _isCapturing;
+    /// <summary>
+    /// Initializes a new instance of the CudaStreamManagerProduction class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="maxPoolSize">The max pool size.</param>
 
     public CudaStreamManagerProduction(
         CudaContext context,
@@ -630,6 +636,9 @@ public sealed class CudaStreamManagerProduction : IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -663,10 +672,30 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private sealed class StreamInfo
     {
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; init; }
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public StreamPriority Priority { get; init; }
+        /// <summary>
+        /// Gets or sets the flags.
+        /// </summary>
+        /// <value>The flags.</value>
         public StreamFlags Flags { get; init; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; init; }
     }
 
@@ -675,11 +704,26 @@ public sealed class CudaStreamManagerProduction : IDisposable
     /// </summary>
     private sealed class StreamCallbackInfo
     {
+        /// <summary>
+        /// Gets or sets the callback.
+        /// </summary>
+        /// <value>The callback.</value>
         public Action Callback { get; init; } = () => { };
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string? Description { get; init; }
+        /// <summary>
+        /// Gets or sets the added at.
+        /// </summary>
+        /// <value>The added at.</value>
         public DateTimeOffset AddedAt { get; init; }
     }
 }
+/// <summary>
+/// An stream priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Stream priority levels.
@@ -692,6 +736,9 @@ public enum StreamPriority
     High,
     Highest
 }
+/// <summary>
+/// An stream flags enumeration.
+/// </summary>
 
 /// <summary>
 /// Stream creation flags.
@@ -708,10 +755,34 @@ public enum StreamFlags : uint
 /// </summary>
 public sealed class StreamStatistics
 {
+    /// <summary>
+    /// Gets or sets the total streams created.
+    /// </summary>
+    /// <value>The total streams created.</value>
     public int TotalStreamsCreated { get; init; }
+    /// <summary>
+    /// Gets or sets the named streams.
+    /// </summary>
+    /// <value>The named streams.</value>
     public int NamedStreams { get; init; }
+    /// <summary>
+    /// Gets or sets the pooled streams.
+    /// </summary>
+    /// <value>The pooled streams.</value>
     public int PooledStreams { get; init; }
+    /// <summary>
+    /// Gets or sets the active callbacks.
+    /// </summary>
+    /// <value>The active callbacks.</value>
     public int ActiveCallbacks { get; init; }
+    /// <summary>
+    /// Gets or sets the priorities supported.
+    /// </summary>
+    /// <value>The priorities supported.</value>
     public bool PrioritiesSupported { get; init; }
+    /// <summary>
+    /// Gets or sets the graph capture active.
+    /// </summary>
+    /// <value>The graph capture active.</value>
     public bool GraphCaptureActive { get; init; }
 }

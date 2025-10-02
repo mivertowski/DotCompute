@@ -8,8 +8,24 @@ namespace DotCompute.Plugins.Loaders.Internal;
 /// </summary>
 internal class SuspiciousCodePattern
 {
+    /// <summary>
+    /// Gets or sets the pattern.
+    /// </summary>
+    /// <value>The pattern.</value>
     public required string Pattern { get; set; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public SeverityLevel Severity { get; set; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; set; }
+    /// <summary>
+    /// Gets or sets the location.
+    /// </summary>
+    /// <value>The location.</value>
     public required string Location { get; set; }
 }

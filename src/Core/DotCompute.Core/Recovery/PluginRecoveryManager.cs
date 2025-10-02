@@ -113,6 +113,9 @@ public class PluginRecoveryManager(
             LastCheck = DateTimeOffset.UtcNow
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -146,7 +149,7 @@ public class PluginRecoveryContext
     /// <summary>
     /// Additional context data
     /// </summary>
-    public Dictionary<string, object> Context { get; set; } = [];
+    public Dictionary<string, object> Context { get; } = [];
 
     /// <summary>
     /// Path to plugin file or directory
@@ -157,6 +160,10 @@ public class PluginRecoveryContext
     /// Plugin instance (if available)
     /// </summary>
     public object? Plugin { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString() => $"Plugin={PluginId}, Attempt={AttemptNumber}";
 }

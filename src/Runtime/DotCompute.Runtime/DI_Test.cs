@@ -68,6 +68,9 @@ public static class DICompilationTest
 /// </summary>
 public static class ConfigurationTest
 {
+    /// <summary>
+    /// Validates the configuration.
+    /// </summary>
     public static void ValidateConfiguration()
     {
         // Test runtime options

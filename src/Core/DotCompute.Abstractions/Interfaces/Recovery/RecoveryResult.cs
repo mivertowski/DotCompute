@@ -15,5 +15,5 @@ public class RecoveryResult
     public string Strategy { get; set; } = string.Empty;
     public int RetryAttempt { get; set; }
     public bool RequiresManualIntervention { get; set; }
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }

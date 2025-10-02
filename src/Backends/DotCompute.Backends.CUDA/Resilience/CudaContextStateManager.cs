@@ -596,6 +596,9 @@ namespace DotCompute.Backends.CUDA.Resilience
                 }
             }, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -611,6 +614,9 @@ namespace DotCompute.Backends.CUDA.Resilience
             _logger.LogInfoMessage("Context state manager disposed. Recovery count: {_recoveryCount}");
         }
     }
+    /// <summary>
+    /// An memory type enumeration.
+    /// </summary>
 
     // Supporting types
     public enum MemoryType
@@ -620,6 +626,9 @@ namespace DotCompute.Backends.CUDA.Resilience
         Unified,
         Pinned
     }
+    /// <summary>
+    /// An stream priority enumeration.
+    /// </summary>
 
     public enum StreamPriority
     {
@@ -627,6 +636,9 @@ namespace DotCompute.Backends.CUDA.Resilience
         High,
         Low
     }
+    /// <summary>
+    /// An recovery strategy enumeration.
+    /// </summary>
 
     public enum RecoveryStrategy
     {
@@ -636,91 +648,322 @@ namespace DotCompute.Backends.CUDA.Resilience
         ContextReset,
         DeviceReset
     }
+    /// <summary>
+    /// A class that represents resource info.
+    /// </summary>
 
     public sealed class ResourceInfo
     {
+        /// <summary>
+        /// Gets or sets the pointer.
+        /// </summary>
+        /// <value>The pointer.</value>
         public IntPtr Pointer { get; init; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public ulong Size { get; init; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public MemoryType Type { get; init; }
+        /// <summary>
+        /// Gets or sets the tag.
+        /// </summary>
+        /// <value>The tag.</value>
         public string? Tag { get; init; }
+        /// <summary>
+        /// Gets or sets the allocation time.
+        /// </summary>
+        /// <value>The allocation time.</value>
         public DateTime AllocationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the last access time.
+        /// </summary>
+        /// <value>The last access time.</value>
         public DateTime? LastAccessTime { get; set; }
+        /// <summary>
+        /// Gets or sets the thread identifier.
+        /// </summary>
+        /// <value>The thread id.</value>
         public int ThreadId { get; init; }
     }
+    /// <summary>
+    /// A class that represents stream info.
+    /// </summary>
 
     public sealed class StreamInfo
     {
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; init; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public StreamPriority Priority { get; init; }
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        /// <value>The creation time.</value>
         public DateTime CreationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the last used time.
+        /// </summary>
+        /// <value>The last used time.</value>
         public DateTime LastUsedTime { get; set; }
     }
+    /// <summary>
+    /// A class that represents event info.
+    /// </summary>
 
     public sealed class EventInfo
     {
+        /// <summary>
+        /// Gets or sets the event.
+        /// </summary>
+        /// <value>The event.</value>
         public IntPtr Event { get; init; }
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        /// <value>The creation time.</value>
         public DateTime CreationTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether timing enabled.
+        /// </summary>
+        /// <value>The is timing enabled.</value>
         public bool IsTimingEnabled { get; init; }
     }
+    /// <summary>
+    /// A class that represents module info.
+    /// </summary>
 
     public sealed class ModuleInfo
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the module.
+        /// </summary>
+        /// <value>The module.</value>
         public IntPtr Module { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public DateTime LoadTime { get; init; }
     }
+    /// <summary>
+    /// A class that represents kernel info.
+    /// </summary>
 
     public sealed class KernelInfo
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the ptx code.
+        /// </summary>
+        /// <value>The ptx code.</value>
         public byte[] PtxCode { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the cubin code.
+        /// </summary>
+        /// <value>The cubin code.</value>
         public byte[]? CubinCode { get; init; }
+        /// <summary>
+        /// Gets or sets the compilation time.
+        /// </summary>
+        /// <value>The compilation time.</value>
         public DateTime CompilationTime { get; init; }
     }
+    /// <summary>
+    /// A class that represents context snapshot.
+    /// </summary>
 
     public sealed class ContextSnapshot
     {
+        /// <summary>
+        /// Gets or sets the snapshot identifier.
+        /// </summary>
+        /// <value>The snapshot id.</value>
         public Guid SnapshotId { get; init; }
+        /// <summary>
+        /// Gets or sets the snapshot time.
+        /// </summary>
+        /// <value>The snapshot time.</value>
         public DateTime SnapshotTime { get; init; }
+        /// <summary>
+        /// Gets or sets the memory allocations.
+        /// </summary>
+        /// <value>The memory allocations.</value>
         public Dictionary<IntPtr, ResourceInfo> MemoryAllocations { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>The active streams.</value>
         public Dictionary<IntPtr, StreamInfo> ActiveStreams { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public Dictionary<IntPtr, EventInfo> ActiveEvents { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the loaded modules.
+        /// </summary>
+        /// <value>The loaded modules.</value>
         public Dictionary<string, ModuleInfo> LoadedModules { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the compiled kernels.
+        /// </summary>
+        /// <value>The compiled kernels.</value>
         public Dictionary<string, KernelInfo> CompiledKernels { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
         public ResourceStatistics Statistics { get; init; } = new();
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the compute capability.
+        /// </summary>
+        /// <value>The compute capability.</value>
         public string ComputeCapability { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the free memory.
+        /// </summary>
+        /// <value>The free memory.</value>
         public nuint FreeMemory { get; set; }
+        /// <summary>
+        /// Gets or sets the total memory.
+        /// </summary>
+        /// <value>The total memory.</value>
         public nuint TotalMemory { get; set; }
     }
+    /// <summary>
+    /// A class that represents resource statistics.
+    /// </summary>
 
     public sealed class ResourceStatistics
     {
+        /// <summary>
+        /// Gets or sets the total memory allocated.
+        /// </summary>
+        /// <value>The total memory allocated.</value>
         public long TotalMemoryAllocated { get; init; }
+        /// <summary>
+        /// Gets or sets the total memory freed.
+        /// </summary>
+        /// <value>The total memory freed.</value>
         public long TotalMemoryFreed { get; init; }
+        /// <summary>
+        /// Gets or sets the current memory usage.
+        /// </summary>
+        /// <value>The current memory usage.</value>
         public long CurrentMemoryUsage { get; init; }
+        /// <summary>
+        /// Gets or sets the active allocations.
+        /// </summary>
+        /// <value>The active allocations.</value>
         public int ActiveAllocations { get; init; }
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>The active streams.</value>
         public int ActiveStreams { get; init; }
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public int ActiveEvents { get; init; }
+        /// <summary>
+        /// Gets or sets the loaded modules.
+        /// </summary>
+        /// <value>The loaded modules.</value>
         public int LoadedModules { get; init; }
+        /// <summary>
+        /// Gets or sets the compiled kernels.
+        /// </summary>
+        /// <value>The compiled kernels.</value>
         public int CompiledKernels { get; init; }
+        /// <summary>
+        /// Gets or sets the recovery count.
+        /// </summary>
+        /// <value>The recovery count.</value>
         public int RecoveryCount { get; init; }
     }
+    /// <summary>
+    /// A class that represents restore result.
+    /// </summary>
 
     public sealed class RestoreResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>The message.</value>
         public string Message { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the restored streams.
+        /// </summary>
+        /// <value>The restored streams.</value>
         public int RestoredStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the restored kernels.
+        /// </summary>
+        /// <value>The restored kernels.</value>
         public int RestoredKernels { get; set; }
+        /// <summary>
+        /// Gets or sets the memory allocations lost.
+        /// </summary>
+        /// <value>The memory allocations lost.</value>
         public int MemoryAllocationsLost { get; set; }
-        public List<string> Errors { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the errors.
+        /// </summary>
+        /// <value>The errors.</value>
+        public IList<string> Errors { get; } = [];
     }
+    /// <summary>
+    /// A class that represents recovery result.
+    /// </summary>
 
     public sealed class RecoveryResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; init; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public RecoveryStrategy Strategy { get; init; }
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>The message.</value>
         public string Message { get; init; } = string.Empty;
     }
 }

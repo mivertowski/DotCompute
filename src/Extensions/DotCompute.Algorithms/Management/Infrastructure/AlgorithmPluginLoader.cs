@@ -480,9 +480,25 @@ public sealed partial class AlgorithmPluginLoader(
 /// </summary>
 public sealed partial class LoadedAssemblyResult
 {
+    /// <summary>
+    /// Gets or sets the assembly path.
+    /// </summary>
+    /// <value>The assembly path.</value>
     public required string AssemblyPath { get; init; }
+    /// <summary>
+    /// Gets or sets the loaded plugins.
+    /// </summary>
+    /// <value>The loaded plugins.</value>
     public required List<LoadedPluginType> LoadedPlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
 }
 
@@ -491,13 +507,45 @@ public sealed partial class LoadedAssemblyResult
 /// </summary>
 public sealed partial class NuGetLoadResult
 {
+    /// <summary>
+    /// Gets or sets the package identifier.
+    /// </summary>
+    /// <value>The package id.</value>
     public required string PackageId { get; init; }
+    /// <summary>
+    /// Gets or sets the version.
+    /// </summary>
+    /// <value>The version.</value>
     public required string Version { get; init; }
+    /// <summary>
+    /// Gets or sets the loaded plugins.
+    /// </summary>
+    /// <value>The loaded plugins.</value>
     public required List<LoadedPluginType> LoadedPlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the security validation result.
+    /// </summary>
+    /// <value>The security validation result.</value>
     public required string SecurityValidationResult { get; init; }
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
     public required string[] Warnings { get; init; }
+    /// <summary>
+    /// Gets or sets the load time.
+    /// </summary>
+    /// <value>The load time.</value>
     public required TimeSpan LoadTime { get; init; }
 }
 
@@ -506,8 +554,24 @@ public sealed partial class NuGetLoadResult
 /// </summary>
 public sealed partial class LoadedPluginType
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public required Type Type { get; init; }
+    /// <summary>
+    /// Gets or sets the load context.
+    /// </summary>
+    /// <value>The load context.</value>
     public required PluginAssemblyLoadContext LoadContext { get; init; }
+    /// <summary>
+    /// Gets or sets the assembly.
+    /// </summary>
+    /// <value>The assembly.</value>
     public required Assembly Assembly { get; init; }
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public required PluginMetadata Metadata { get; init; }
 }

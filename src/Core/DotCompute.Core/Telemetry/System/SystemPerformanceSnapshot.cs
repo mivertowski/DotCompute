@@ -77,7 +77,7 @@ public sealed class SystemPerformanceSnapshot
     /// Maps counter names to their values for detailed hardware performance analysis.
     /// </summary>
     /// <value>A dictionary mapping hardware counter names to their values.</value>
-    public Dictionary<string, double> HardwareCounters { get; set; } = [];
+    public Dictionary<string, double> HardwareCounters { get; } = [];
 
     /// <summary>
     /// Gets or sets the CPU usage percentage (alias for ProcessorUsage).

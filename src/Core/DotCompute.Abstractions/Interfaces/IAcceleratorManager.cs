@@ -154,7 +154,7 @@ namespace DotCompute.Abstractions
         /// <summary>
         /// Gets the types of accelerators this provider can create.
         /// </summary>
-        public AcceleratorType[] SupportedTypes { get; }
+        public IReadOnlyList<AcceleratorType> SupportedTypes { get; }
 
         /// <summary>
         /// Discovers available accelerators.

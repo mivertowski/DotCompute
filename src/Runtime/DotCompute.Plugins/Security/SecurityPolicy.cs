@@ -41,7 +41,7 @@ public class SecurityPolicy
     /// <summary>
     /// Gets or sets the list of allowed dangerous assemblies.
     /// </summary>
-    public List<string> AllowedDangerousAssemblies { get; set; } = [];
+    public IList<string> AllowedDangerousAssemblies { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to block packages with critical vulnerabilities.

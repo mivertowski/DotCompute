@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Backends.CUDA.Integration.Components.Enums;
+/// <summary>
+/// An cuda error severity enumeration.
+/// </summary>
 
 /// <summary>
 /// CUDA error severity levels.

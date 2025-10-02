@@ -27,9 +27,9 @@ public sealed class StageExecutionResult
     public TimeSpan ExecutionTime { get; set; }
 
     /// <summary>
-    /// Gets or sets the output data produced by the stage.
+    /// Gets the output data produced by the stage.
     /// </summary>
-    public required Dictionary<string, object> OutputData { get; set; }
+    public Dictionary<string, object> OutputData { get; } = [];
 
     /// <summary>
     /// Gets or sets the amount of memory used during execution.
@@ -52,9 +52,9 @@ public sealed class StageExecutionResult
     public bool Skipped { get; set; }
 
     /// <summary>
-    /// Gets or sets additional execution metadata.
+    /// Gets additional execution metadata.
     /// </summary>
-    public Dictionary<string, object>? Metadata { get; set; }
+    public Dictionary<string, object>? Metadata { get; }
 }
 
 /// <summary>
@@ -70,7 +70,7 @@ public sealed class StageValidationResult
     /// <summary>
     /// Gets or sets validation issues.
     /// </summary>
-    public List<Validation.ValidationIssue>? Issues { get; set; }
+    public IList<Validation.ValidationIssue>? Issues { get; set; }
 
     /// <summary>
     /// Gets or sets validation errors.
@@ -258,7 +258,7 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets execution times for individual stages.
     /// </summary>
-    public IDictionary<string, double> StageExecutionTimes { get; set; } = new Dictionary<string, double>();
+    public IDictionary<string, double> StageExecutionTimes { get; } = new Dictionary<string, double>();
 
     /// <summary>
     /// Gets or sets the throughput in operations per second.

@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An cache config enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA cache configuration.
     /// </summary>
     public enum CacheConfig

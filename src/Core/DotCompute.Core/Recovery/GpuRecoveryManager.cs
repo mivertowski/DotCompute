@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Recovery;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Recovery;
 
@@ -23,6 +24,11 @@ public sealed class GpuRecoveryManager : IDisposable
     private readonly RecoveryMetrics _metrics;
     private readonly GpuRecoveryConfiguration _config;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the GpuRecoveryManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public GpuRecoveryManager(ILogger<GpuRecoveryManager> logger, GpuRecoveryConfiguration? config = null)
     {
@@ -207,8 +213,8 @@ public sealed class GpuRecoveryManager : IDisposable
         {
             OutOfMemoryException => GpuRecoveryStrategy.MemoryRecovery,
             TimeoutException => GpuRecoveryStrategy.KernelTermination,
-            AcceleratorException accelEx when accelEx.Message.Contains("hang") => GpuRecoveryStrategy.DeviceReset,
-            AcceleratorException accelEx when accelEx.Message.Contains("invalid") => GpuRecoveryStrategy.ContextReset,
+            AcceleratorException accelEx when accelEx.Message.Contains("hang", StringComparison.CurrentCulture) => GpuRecoveryStrategy.DeviceReset,
+            AcceleratorException accelEx when accelEx.Message.Contains("invalid", StringComparison.CurrentCulture) => GpuRecoveryStrategy.ContextReset,
             _ => deviceState.ConsecutiveFailures > 1 ? GpuRecoveryStrategy.ContextReset : GpuRecoveryStrategy.SimpleRetry
         };
     }
@@ -407,6 +413,9 @@ public sealed class GpuRecoveryManager : IDisposable
         var healthyDevices = deviceHealth.Values.Count(d => d.IsHealthy);
         return (double)healthyDevices / deviceHealth.Count;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

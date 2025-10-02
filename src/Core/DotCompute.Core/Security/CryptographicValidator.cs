@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Security;
 
@@ -53,6 +54,11 @@ internal sealed class CryptographicValidator : IDisposable
         ["RC4"] = "AES-256-GCM",
         ["RSA-1024"] = "RSA-2048"
     };
+    /// <summary>
+    /// Initializes a new instance of the CryptographicValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public CryptographicValidator(
         ILogger<CryptographicValidator> logger,
@@ -328,7 +334,7 @@ internal sealed class CryptographicValidator : IDisposable
         switch (context.ToLowerInvariant())
         {
             case "payment" or "financial":
-                if (!algorithm.Contains("AES") && !algorithm.Contains("RSA"))
+                if (!algorithm.Contains("AES", StringComparison.OrdinalIgnoreCase) && !algorithm.Contains("RSA", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Warnings.Add("Financial contexts typically require AES or RSA algorithms");
                 }
@@ -342,7 +348,7 @@ internal sealed class CryptographicValidator : IDisposable
                 break;
 
             case "government" or "classified":
-                if (!algorithm.Contains("AES-256") && !algorithm.Contains("RSA-3072"))
+                if (!algorithm.Contains("AES-256", StringComparison.CurrentCulture) && !algorithm.Contains("RSA-3072", StringComparison.CurrentCulture))
                 {
                     result.IsApproved = false;
                     result.Issues.Add("Government contexts require AES-256 or RSA-3072 minimum");
@@ -354,13 +360,13 @@ internal sealed class CryptographicValidator : IDisposable
     private static async Task ValidateImplementationSecurityAsync(string algorithm, AlgorithmValidationResult result)
     {
         // Check for implementation-specific security considerations
-        if (algorithm.Contains("CBC"))
+        if (algorithm.Contains("CBC", StringComparison.CurrentCulture))
         {
             result.Warnings.Add("CBC mode requires proper IV handling to prevent padding oracle attacks");
             result.Recommendations.Add("Consider using GCM mode for authenticated encryption");
         }
 
-        if (algorithm.Contains("RSA") && !algorithm.Contains("OAEP") && !algorithm.Contains("PSS"))
+        if (algorithm.Contains("RSA", StringComparison.CurrentCulture) && !algorithm.Contains("OAEP", StringComparison.CurrentCulture) && !algorithm.Contains("PSS", StringComparison.CurrentCulture))
         {
             result.Warnings.Add("RSA without OAEP padding may be vulnerable to chosen ciphertext attacks");
             result.Recommendations.Add("Use RSA with OAEP padding for encryption or PSS for signatures");
@@ -423,17 +429,17 @@ internal sealed class CryptographicValidator : IDisposable
         return result;
     }
 
-    private static async Task<List<string>> GenerateSecurityRecommendationsAsync(List<OperationAuditResult> results)
+    private static async Task<List<string>> GenerateSecurityRecommendationsAsync(IReadOnlyList<OperationAuditResult> results)
     {
         var recommendations = new List<string>();
 
-        var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm"))).ToList();
+        var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm", StringComparison.CurrentCulture))).ToList();
         if (weakAlgorithms.Any())
         {
             recommendations.Add("Replace weak cryptographic algorithms with approved alternatives");
         }
 
-        var smallKeys = results.Where(r => r.Issues.Any(i => i.Contains("Key size too small"))).ToList();
+        var smallKeys = results.Where(r => r.Issues.Any(i => i.Contains("Key size too small", StringComparison.CurrentCulture))).ToList();
         if (smallKeys.Any())
         {
             recommendations.Add("Increase key sizes to meet current security standards");
@@ -521,6 +527,9 @@ internal sealed class CryptographicValidator : IDisposable
 
         return EntropyQuality.Poor;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -530,14 +539,32 @@ internal sealed class CryptographicValidator : IDisposable
         }
     }
 }
+/// <summary>
+/// A class that represents security standard.
+/// </summary>
 
 // Supporting classes and enums
 public class SecurityStandard
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; set; }
-    public List<string> ApprovedAlgorithms { get; set; } = [];
-    public Dictionary<string, int> MinimumKeySizes { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the approved algorithms.
+    /// </summary>
+    /// <value>The approved algorithms.</value>
+    public IList<string> ApprovedAlgorithms { get; } = [];
+    /// <summary>
+    /// Gets or sets the minimum key sizes.
+    /// </summary>
+    /// <value>The minimum key sizes.</value>
+    public Dictionary<string, int> MinimumKeySizes { get; } = [];
 }
+/// <summary>
+/// An entropy quality enumeration.
+/// </summary>
 
 // Use the canonical SecurityLevel from DotCompute.Abstractions.Security
 // This local enum has been replaced with the unified type
@@ -549,54 +576,185 @@ public enum EntropyQuality
     Good,
     Excellent
 }
+/// <summary>
+/// A class that represents configuration validation result.
+/// </summary>
 
 // AlgorithmValidationResult moved to CryptographicSecurityCore.cs to avoid duplication
 
 public class ConfigurationValidationResult
 {
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    /// <value>The configuration.</value>
     public required CryptographicConfiguration Configuration { get; set; }
+    /// <summary>
+    /// Gets or sets the target standard.
+    /// </summary>
+    /// <value>The target standard.</value>
     public string? TargetStandard { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether compliant.
+    /// </summary>
+    /// <value>The is compliant.</value>
     public bool IsCompliant { get; set; }
-    public List<string> Issues { get; set; } = [];
-    public List<string> Recommendations { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
 }
+/// <summary>
+/// A class that represents security audit result.
+/// </summary>
 
 public class SecurityAuditResult
 {
+    /// <summary>
+    /// Gets or sets the audit context.
+    /// </summary>
+    /// <value>The audit context.</value>
     public required string AuditContext { get; set; }
+    /// <summary>
+    /// Gets or sets the audit time.
+    /// </summary>
+    /// <value>The audit time.</value>
     public DateTimeOffset AuditTime { get; set; }
+    /// <summary>
+    /// Gets or sets the operations audited.
+    /// </summary>
+    /// <value>The operations audited.</value>
     public int OperationsAudited { get; set; }
+    /// <summary>
+    /// Gets or sets the overall security level.
+    /// </summary>
+    /// <value>The overall security level.</value>
     public SecurityLevel OverallSecurityLevel { get; set; }
-    public List<OperationAuditResult> OperationResults { get; set; } = [];
-    public List<string> Recommendations { get; set; } = [];
-    public List<string> AuditErrors { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the operation results.
+    /// </summary>
+    /// <value>The operation results.</value>
+    public IList<OperationAuditResult> OperationResults { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
+    /// <summary>
+    /// Gets or sets the audit errors.
+    /// </summary>
+    /// <value>The audit errors.</value>
+    public IList<string> AuditErrors { get; } = [];
 }
+/// <summary>
+/// A class that represents operation audit result.
+/// </summary>
 
 public class OperationAuditResult
 {
+    /// <summary>
+    /// Gets or sets the operation type.
+    /// </summary>
+    /// <value>The operation type.</value>
     public required string OperationType { get; set; }
+    /// <summary>
+    /// Gets or sets the algorithm.
+    /// </summary>
+    /// <value>The algorithm.</value>
     public required string Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the security level.
+    /// </summary>
+    /// <value>The security level.</value>
     public SecurityLevel SecurityLevel { get; set; }
-    public List<string> Issues { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
+/// <summary>
+/// A class that represents entropy validation result.
+/// </summary>
 
 public class EntropyValidationResult
 {
+    /// <summary>
+    /// Gets or sets the data size.
+    /// </summary>
+    /// <value>The data size.</value>
     public int DataSize { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the shannon.
+    /// </summary>
+    /// <value>The shannon.</value>
     public double Shannon { get; set; }
+    /// <summary>
+    /// Gets or sets the chi square.
+    /// </summary>
+    /// <value>The chi square.</value>
     public double ChiSquare { get; set; }
+    /// <summary>
+    /// Gets or sets the compression ratio.
+    /// </summary>
+    /// <value>The compression ratio.</value>
     public double CompressionRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the quality.
+    /// </summary>
+    /// <value>The quality.</value>
     public EntropyQuality Quality { get; set; }
-    public List<string> Recommendations { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// A class that represents cryptographic operation.
+/// </summary>
 
 public class CryptographicOperation
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public required string Type { get; set; }
+    /// <summary>
+    /// Gets or sets the algorithm.
+    /// </summary>
+    /// <value>The algorithm.</value>
     public required string Algorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the key size.
+    /// </summary>
+    /// <value>The key size.</value>
     public int KeySize { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }

@@ -312,6 +312,9 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         // Assume processing takes roughly 1 second for estimation
         return bandwidth;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -328,13 +331,49 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
 /// </summary>
 internal sealed class WorkloadProfile
 {
+    /// <summary>
+    /// Gets or sets the element count.
+    /// </summary>
+    /// <value>The element count.</value>
     public long ElementCount { get; init; }
+    /// <summary>
+    /// Gets or sets the element size.
+    /// </summary>
+    /// <value>The element size.</value>
     public int ElementSize { get; init; }
+    /// <summary>
+    /// Gets or sets the data size.
+    /// </summary>
+    /// <value>The data size.</value>
     public long DataSize { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether floating point.
+    /// </summary>
+    /// <value>The is floating point.</value>
     public bool IsFloatingPoint { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether large dataset.
+    /// </summary>
+    /// <value>The is large dataset.</value>
     public bool IsLargeDataset { get; init; }
+    /// <summary>
+    /// Gets or sets the requires high precision.
+    /// </summary>
+    /// <value>The requires high precision.</value>
     public bool RequiresHighPrecision { get; init; }
+    /// <summary>
+    /// Gets or sets the thread executions.
+    /// </summary>
+    /// <value>The thread executions.</value>
     public long ThreadExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the computational intensity.
+    /// </summary>
+    /// <value>The computational intensity.</value>
     public double ComputationalIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the memory bandwidth requirement.
+    /// </summary>
+    /// <value>The memory bandwidth requirement.</value>
     public double MemoryBandwidthRequirement { get; set; }
 }

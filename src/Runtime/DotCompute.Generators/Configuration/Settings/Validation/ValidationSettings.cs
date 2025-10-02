@@ -83,5 +83,4 @@ public class ValidationSettings
     /// operations and are typically disabled in production code.
     /// </remarks>
     public bool CheckForNaNInfinity { get; set; }
-
 }

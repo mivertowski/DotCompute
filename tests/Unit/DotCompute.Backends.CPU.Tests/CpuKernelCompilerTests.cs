@@ -23,6 +23,9 @@ public class CpuKernelCompilerTests : IDisposable
 {
     private readonly ILogger<CpuKernelCompilerTests> _logger;
     private readonly CpuThreadPool _threadPool;
+    /// <summary>
+    /// Initializes a new instance of the CpuKernelCompilerTests class.
+    /// </summary>
 
 
     public CpuKernelCompilerTests()
@@ -39,6 +42,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         _threadPool = new CpuThreadPool(threadPoolOptions);
     }
+    /// <summary>
+    /// Gets compile async_ with valid kernel_ compiles successfully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -60,6 +67,11 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with different optimization levels_ applies optimizations.
+    /// </summary>
+    /// <param name="level">The level.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -91,6 +103,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with vectorizable kernel_ enables vectorization.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -119,6 +135,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with non vectorizable kernel_ falls back to scalar.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -139,6 +159,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with memory intensive kernel_ optimizes memory access.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -159,6 +183,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with invalid kernel_ throws kernel compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -181,6 +209,10 @@ public class CpuKernelCompilerTests : IDisposable
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(context);
         _ = await act.Should().ThrowAsync<KernelCompilationException>();
     }
+    /// <summary>
+    /// Gets compile async_ with null context_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -191,6 +223,11 @@ public class CpuKernelCompilerTests : IDisposable
         Func<Task> act = async () => await CpuKernelCompiler.CompileAsync(null!);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
+    /// <summary>
+    /// Gets compile async_ with different dimensions_ calculates correct work group size.
+    /// </summary>
+    /// <param name="dimensions">The dimensions.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -214,6 +251,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ compilation performance_ meets timing requirements.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -237,6 +278,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ concurrent compilation_ handles parallel requests.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -271,6 +316,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await Task.WhenAll(compiledKernels.Select(k => k.DisposeAsync().AsTask()));
     }
+    /// <summary>
+    /// Gets compile async_ with debug info_ includes debugging symbols.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -297,6 +346,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with a o t path_ uses a o t compiler.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -317,6 +370,10 @@ public class CpuKernelCompilerTests : IDisposable
 
         await compiledKernel.DisposeAsync();
     }
+    /// <summary>
+    /// Gets compile async_ with j i t path_ uses j i t compiler.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -521,6 +578,9 @@ public class CpuKernelCompilerTests : IDisposable
             Logger = _logger
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose()

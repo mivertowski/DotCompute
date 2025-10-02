@@ -28,7 +28,7 @@ public class DeviceHealthReport
     /// The key is the device identifier, and the value contains comprehensive
     /// health metrics for that specific device.
     /// </remarks>
-    public Dictionary<string, DeviceHealthStatus> DeviceHealth { get; set; } = [];
+    public Dictionary<string, DeviceHealthStatus> DeviceHealth { get; } = [];
 
     /// <summary>
     /// Gets or sets the overall health score for the entire GPU subsystem.

@@ -1,10 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
+using System.Linq;
+
 namespace DotCompute.Generators.Models
 {
-    using System;
-    using System.Linq;
 
     /// <summary>
     /// Represents a parameter for a kernel method, including its name, type, and buffer status.

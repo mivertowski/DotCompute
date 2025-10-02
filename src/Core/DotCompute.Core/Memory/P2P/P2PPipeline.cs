@@ -25,6 +25,14 @@ namespace DotCompute.Core.Memory.P2P
         private readonly CancellationTokenSource _pipelineCts;
         private bool _disposed;
         private const int MaxPipelineDepth = 8;
+        /// <summary>
+        /// Initializes a new instance of the P2PPipeline class.
+        /// </summary>
+        /// <param name="sourceBuffer">The source buffer.</param>
+        /// <param name="destinationBuffer">The destination buffer.</param>
+        /// <param name="chunkSize">The chunk size.</param>
+        /// <param name="pipelineDepth">The pipeline depth.</param>
+        /// <param name="logger">The logger.</param>
 
         public P2PPipeline(
             IUnifiedMemoryBuffer<T> sourceBuffer,
@@ -265,6 +273,10 @@ namespace DotCompute.Core.Memory.P2P
             _logger.LogTrace("Initialized {StageCount} pipeline stages with {ElementsPerChunk} elements each",
                 _pipelineDepth, elementsPerChunk);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -307,11 +319,35 @@ namespace DotCompute.Core.Memory.P2P
         /// </summary>
         internal sealed class P2PPipelineStage
         {
+            /// <summary>
+            /// Gets or sets the stage identifier.
+            /// </summary>
+            /// <value>The stage id.</value>
             public int StageId { get; init; }
+            /// <summary>
+            /// Gets or sets the staging buffer.
+            /// </summary>
+            /// <value>The staging buffer.</value>
             public required T[] StagingBuffer { get; init; }
+            /// <summary>
+            /// Gets or sets a value indicating whether in use.
+            /// </summary>
+            /// <value>The is in use.</value>
             public bool IsInUse { get; set; }
+            /// <summary>
+            /// Gets or sets the chunk index.
+            /// </summary>
+            /// <value>The chunk index.</value>
             public int ChunkIndex { get; set; }
+            /// <summary>
+            /// Gets or sets the staging completed.
+            /// </summary>
+            /// <value>The staging completed.</value>
             public DateTimeOffset? StagingCompleted { get; set; }
+            /// <summary>
+            /// Gets or sets the transfer completed.
+            /// </summary>
+            /// <value>The transfer completed.</value>
             public DateTimeOffset? TransferCompleted { get; set; }
         }
     }

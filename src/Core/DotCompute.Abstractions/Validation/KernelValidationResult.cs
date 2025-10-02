@@ -25,24 +25,24 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets the list of backends that were tested during validation.
     /// </summary>
-    public string[] BackendsTested { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> BackendsTested { get; init; } = Array.Empty<string>();
 
     /// <summary>
     /// Gets validation errors that prevent kernel compilation.
     /// Empty list indicates no errors found.
     /// </summary>
-    public List<ValidationIssue> Errors { get; init; } = [];
+    public IReadOnlyList<ValidationIssue> Errors { get; init; } = [];
 
     /// <summary>
     /// Gets validation warnings that don't prevent compilation.
     /// Warnings indicate potential issues or optimization opportunities.
     /// </summary>
-    public List<ValidationWarning> Warnings { get; init; } = [];
+    public IReadOnlyList<ValidationWarning> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets debug validation issues found during cross-backend validation.
     /// </summary>
-    public List<DebugValidationIssue> Issues { get; init; } = [];
+    public IReadOnlyList<DebugValidationIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the results from different backends as key-value pairs.
@@ -79,7 +79,7 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets optimization recommendations for the kernel.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 }
 
 // ValidationWarning, ValidationIssue, WarningSeverity, and ResourceUsageEstimate

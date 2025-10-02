@@ -286,6 +286,9 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         source._hostArray.AsSpan().CopyTo(_hostArray.AsSpan());
         MarkHostDirty();
     }
+    /// <summary>
+    /// Performs mark host dirty.
+    /// </summary>
 
     public void MarkHostDirty()
     {
@@ -299,6 +302,9 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             _ => BufferState.HostDirty
         };
     }
+    /// <summary>
+    /// Performs mark device dirty.
+    /// </summary>
 
     public void MarkDeviceDirty()
     {
@@ -312,6 +318,12 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             _ => BufferState.DeviceDirty
         };
     }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Synchronization methods are implemented in UnifiedBufferSync.cs
 
@@ -328,6 +340,12 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         source.Span.CopyTo(_hostArray.AsSpan());
         MarkHostDirty();
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
@@ -337,6 +355,15 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         EnsureOnHost();
         _hostArray.AsSpan().CopyTo(destination.Span);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Duplicate method removed - already defined above
 
@@ -365,6 +392,12 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             await destSlice.CopyFromAsync(sourceSpan.ToArray(), cancellationToken);
         }
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
@@ -374,6 +407,14 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         _hostArray.AsSpan().Fill(value);
         MarkHostDirty();
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
@@ -386,6 +427,11 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         _hostArray.AsSpan(offset, count).Fill(value);
         MarkHostDirty();
     }
+    /// <summary>
+    /// Gets as type.
+    /// </summary>
+    /// <typeparam name="TNew">The TNew type parameter.</typeparam>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {

@@ -536,6 +536,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             }
             return result;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

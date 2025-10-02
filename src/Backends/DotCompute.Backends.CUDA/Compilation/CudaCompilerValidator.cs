@@ -134,7 +134,7 @@ internal static class CudaCompilerValidator
     /// </summary>
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="warnings">List to add performance warnings to.</param>
-    private static void ValidatePerformancePatterns(string cudaSource, List<string> warnings)
+    private static void ValidatePerformancePatterns(string cudaSource, IReadOnlyList<string> warnings)
     {
         // Check for excessive register usage indicators
         if (cudaSource.Contains("register", StringComparison.Ordinal) &&
@@ -184,7 +184,7 @@ internal static class CudaCompilerValidator
     /// </summary>
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="warnings">List to add security warnings to.</param>
-    private static void ValidateSecurityPatterns(string cudaSource, List<string> warnings)
+    private static void ValidateSecurityPatterns(string cudaSource, IReadOnlyList<string> warnings)
     {
         // Check for buffer overflow risks
         if (cudaSource.Contains("char[", StringComparison.Ordinal) &&
@@ -233,7 +233,7 @@ internal static class CudaCompilerValidator
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="kernelName">Expected kernel name.</param>
     /// <returns>List of naming and structure validation warnings.</returns>
-    public static List<string> ValidateKernelStructure(string cudaSource, string kernelName)
+    public static IReadOnlyList<string> ValidateKernelStructure(string cudaSource, string kernelName)
     {
         var warnings = new List<string>();
 
@@ -289,7 +289,7 @@ internal static class CudaCompilerValidator
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="computeCapability">Target compute capability (major, minor).</param>
     /// <returns>List of compatibility warnings.</returns>
-    public static List<string> ValidateComputeCapabilityCompatibility(string cudaSource, (int major, int minor) computeCapability)
+    public static IReadOnlyList<string> ValidateComputeCapabilityCompatibility(string cudaSource, (int major, int minor) computeCapability)
     {
         var warnings = new List<string>();
 

@@ -5,8 +5,13 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
+DC0001 | DotCompute.Kernel | Error | Unsupported type in kernel
+DC0002 | DotCompute.Kernel | Error | Kernel method missing buffer parameter
+DC0003 | DotCompute.Kernel | Error | Invalid vector size
+DC0004 | DotCompute.Kernel | Warning | Unsafe code context required
+DC0005 | DotCompute.Performance | Warning | Potential performance issue
 DC001 | DotCompute.Kernel | Error | Kernel methods must be static
-DC002 | DotCompute.Kernel | Error | Kernel method has invalid parameters  
+DC002 | DotCompute.Kernel | Error | Kernel method has invalid parameters
 DC003 | DotCompute.Kernel | Error | Kernel method uses unsupported language construct
 DC004 | DotCompute.Performance | Info | Kernel can benefit from vectorization
 DC005 | DotCompute.Performance | Warning | Kernel has suboptimal memory access pattern

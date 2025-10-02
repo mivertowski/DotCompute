@@ -243,7 +243,7 @@ namespace DotCompute.Core.Pipelines.Stages
             PipelineExecutionContext context,
             CancellationToken cancellationToken) => await stage.ExecuteAsync(context, cancellationToken);
 
-        private static double CalculateParallelEfficiency(List<AbsStageExecutionResult> results)
+        private static double CalculateParallelEfficiency(IReadOnlyList<AbsStageExecutionResult> results)
         {
             if (results.Count == 0)
             {
@@ -256,7 +256,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return maxTime > 0 ? (totalTime / (results.Count * maxTime)) : 0;
         }
 
-        private static double CalculateLoadBalance(List<AbsStageExecutionResult> results)
+        private static double CalculateLoadBalance(IReadOnlyList<AbsStageExecutionResult> results)
         {
             if (results.Count == 0)
             {
@@ -271,7 +271,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return mean > 0 ? Math.Max(0, 1 - (stdDev / mean)) : 1;
         }
 
-        private static double CalculateSynchronizationOverhead(List<AbsStageExecutionResult> results)
+        private static double CalculateSynchronizationOverhead(IReadOnlyList<AbsStageExecutionResult> results)
         {
             if (results.Count <= 1)
             {
@@ -312,7 +312,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return 0.0;
         }
 
-        private static double CalculateActualParallelism(List<AbsStageExecutionResult> results, TimeSpan totalDuration)
+        private static double CalculateActualParallelism(IReadOnlyList<AbsStageExecutionResult> results, TimeSpan totalDuration)
         {
             if (results.Count == 0 || totalDuration.TotalMilliseconds == 0)
             {
@@ -332,7 +332,7 @@ namespace DotCompute.Core.Pipelines.Stages
         /// <summary>
         /// Executes custom synchronization strategies for parallel stages.
         /// </summary>
-        private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, IReadOnlyList<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             // Implementation of custom synchronization patterns
             var customStrategy = DetermineCustomStrategy(context);
@@ -379,7 +379,7 @@ namespace DotCompute.Core.Pipelines.Stages
             return SynchronizationStrategyEnum.Default;
         }
 
-        private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, IReadOnlyList<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             using var barrier = new Barrier(_parallelStages.Count);
             var tasks = new List<Task<AbsStageExecutionResult>>();
@@ -400,7 +400,7 @@ namespace DotCompute.Core.Pipelines.Stages
             results.AddRange(stageResults);
         }
 
-        private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, IReadOnlyList<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             var channel = global::System.Threading.Channels.Channel.CreateUnbounded<object>();
             var writer = channel.Writer;
@@ -439,7 +439,7 @@ namespace DotCompute.Core.Pipelines.Stages
             writer.Complete();
         }
 
-        private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, List<AbsStageExecutionResult> results, CancellationToken cancellationToken)
+        private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, IReadOnlyList<AbsStageExecutionResult> results, CancellationToken cancellationToken)
         {
             var workQueue = new global::System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
             var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);

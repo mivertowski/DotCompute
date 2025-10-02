@@ -29,8 +29,19 @@ internal sealed class KernelDebugValidator(
     private readonly KernelDebugProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
     private DebugServiceOptions _options = new();
     private bool _disposed;
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="options">The options.</param>
 
     public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
+    /// <summary>
+    /// Validates the kernel async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="inputs">The inputs.</param>
+    /// <param name="tolerance">The tolerance.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<KernelValidationResult> ValidateKernelAsync(
         string kernelName,
@@ -141,6 +152,13 @@ internal sealed class KernelDebugValidator(
             };
         }
     }
+    /// <summary>
+    /// Gets execute on backend asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="backendType">The backend type.</param>
+    /// <param name="inputs">The inputs.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<KernelExecutionResult> ExecuteOnBackendAsync(
         string kernelName,
@@ -362,6 +380,9 @@ internal sealed class KernelDebugValidator(
             return null;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

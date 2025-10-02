@@ -6,6 +6,7 @@ using System.Runtime.Loader;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using System;
 
 namespace DotCompute.Plugins.Security;
 
@@ -165,9 +166,9 @@ public class IsolatedPluginLoadContext(
             return false;
         }
 
-        return name.StartsWith("System.") ||
-               name.StartsWith("Microsoft.") ||
-               name.StartsWith("netstandard") ||
+        return name.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("netstandard", StringComparison.CurrentCulture) ||
                name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase) ||
                name.Equals("System.Private.CoreLib", StringComparison.OrdinalIgnoreCase);
     }
@@ -198,7 +199,7 @@ public class IsolatedPluginLoadContext(
             var fileName = Path.GetFileName(fullPath);
 
 
-            if (fileName.Contains("..") || fileName.Contains("~") || fileName.StartsWith("."))
+            if (fileName.Contains("..") || fileName.Contains("~", StringComparison.CurrentCulture) || fileName.StartsWith("."))
             {
                 _logger.LogWarningMessage("Unsafe assembly path detected: {assemblyPath}");
                 return false;
@@ -224,9 +225,9 @@ public class IsolatedPluginLoadContext(
     private static bool IsUnmanagedDllSafe(string dllName)
     {
         // Check for path traversal attacks
-        if (dllName.Contains("..") || dllName.Contains("~") ||
+        if (dllName.Contains("..") || dllName.Contains("~", StringComparison.CurrentCulture) ||
 
-            dllName.Contains(":") || dllName.StartsWith("."))
+            dllName.Contains(":", StringComparison.CurrentCulture) || dllName.StartsWith("."))
         {
             return false;
         }

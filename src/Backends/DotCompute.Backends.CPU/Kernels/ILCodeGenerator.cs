@@ -18,6 +18,9 @@ namespace DotCompute.Backends.CPU.Kernels;
 internal sealed class ILCodeGenerator
 {
     private readonly AotSafeCodeGenerator? _aotGenerator;
+    /// <summary>
+    /// Initializes a new instance of the ILCodeGenerator class.
+    /// </summary>
 
     public ILCodeGenerator()
     {
@@ -224,7 +227,7 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static List<Expression> GenerateDefaultVectorAddition(List<ParameterExpression> parameters, Expression indexExpr)
+    private static List<Expression> GenerateDefaultVectorAddition(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr)
     {
         // Default implementation for C = A + B using Memory<float>
         if (parameters.Count < 3)
@@ -258,15 +261,15 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultVectorAddition(parameters, indexExpr); // Same as vector addition but without SIMD
+    private static List<Expression> GenerateDefaultScalarAddition(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultVectorAddition(parameters, indexExpr); // Same as vector addition but without SIMD
 
-    private static List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use global::System.Numerics.Vector<T>
+    private static List<Expression> GenerateVectorAdd(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use global::System.Numerics.Vector<T>
 
-    private static List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
+    private static List<Expression> GenerateVectorMultiply(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
 
-    private static List<Expression> GenerateScalarAdd(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultScalarAddition(parameters, indexExpr);
+    private static List<Expression> GenerateScalarAdd(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultScalarAddition(parameters, indexExpr);
 
-    private static List<Expression> GenerateScalarMultiply(List<ParameterExpression> parameters, Expression indexExpr)
+    private static List<Expression> GenerateScalarMultiply(IReadOnlyList<ParameterExpression> parameters, Expression indexExpr)
     {
         if (parameters.Count < 3)
         {
@@ -355,9 +358,29 @@ internal sealed class ILCodeGenerator
 /// </summary>
 internal sealed class CompiledKernelCode
 {
+    /// <summary>
+    /// Gets or sets the compiled delegate.
+    /// </summary>
+    /// <value>The compiled delegate.</value>
     public Delegate CompiledDelegate { get; set; } = null!;
+    /// <summary>
+    /// Gets or sets a value indicating whether vectorized.
+    /// </summary>
+    /// <value>The is vectorized.</value>
     public bool IsVectorized { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization level.
+    /// </summary>
+    /// <value>The optimization level.</value>
     public OptimizationLevel OptimizationLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the estimated code size.
+    /// </summary>
+    /// <value>The estimated code size.</value>
     public long EstimatedCodeSize { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization notes.
+    /// </summary>
+    /// <value>The optimization notes.</value>
     public string[] OptimizationNotes { get; set; } = [];
 }

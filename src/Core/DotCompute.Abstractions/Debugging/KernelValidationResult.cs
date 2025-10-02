@@ -80,7 +80,7 @@ public class ResultDifference
     public object ExpectedValue { get; init; } = new();
     public object ActualValue { get; init; } = new();
     public float Difference { get; init; }
-    public string[] BackendsInvolved { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> BackendsInvolved { get; init; } = Array.Empty<string>();
 
     /// <summary>
     /// First backend involved in the comparison.

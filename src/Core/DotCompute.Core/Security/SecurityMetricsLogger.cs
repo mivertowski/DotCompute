@@ -239,17 +239,69 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
 /// </summary>
 public sealed class SecurityMetricsSummary
 {
+    /// <summary>
+    /// Gets or sets the period.
+    /// </summary>
+    /// <value>The period.</value>
     public TimeSpan Period { get; set; }
+    /// <summary>
+    /// Gets or sets the generated at.
+    /// </summary>
+    /// <value>The generated at.</value>
     public DateTimeOffset GeneratedAt { get; set; }
+    /// <summary>
+    /// Gets or sets the total events.
+    /// </summary>
+    /// <value>The total events.</value>
     public long TotalEvents { get; set; }
+    /// <summary>
+    /// Gets or sets the unique users.
+    /// </summary>
+    /// <value>The unique users.</value>
     public int UniqueUsers { get; set; }
+    /// <summary>
+    /// Gets or sets the security violations.
+    /// </summary>
+    /// <value>The security violations.</value>
     public long SecurityViolations { get; set; }
+    /// <summary>
+    /// Gets or sets the critical events.
+    /// </summary>
+    /// <value>The critical events.</value>
     public long CriticalEvents { get; set; }
+    /// <summary>
+    /// Gets or sets the failed authentications.
+    /// </summary>
+    /// <value>The failed authentications.</value>
     public long FailedAuthentications { get; set; }
+    /// <summary>
+    /// Gets or sets the access denied events.
+    /// </summary>
+    /// <value>The access denied events.</value>
     public long AccessDeniedEvents { get; set; }
+    /// <summary>
+    /// Gets or sets the events per hour.
+    /// </summary>
+    /// <value>The events per hour.</value>
     public double EventsPerHour { get; set; }
+    /// <summary>
+    /// Gets or sets the violations per hour.
+    /// </summary>
+    /// <value>The violations per hour.</value>
     public double ViolationsPerHour { get; set; }
+    /// <summary>
+    /// Gets or sets the failed auth per hour.
+    /// </summary>
+    /// <value>The failed auth per hour.</value>
     public double FailedAuthPerHour { get; set; }
+    /// <summary>
+    /// Gets or sets the authentication success rate.
+    /// </summary>
+    /// <value>The authentication success rate.</value>
     public double AuthenticationSuccessRate { get; set; }
+    /// <summary>
+    /// Gets or sets the access success rate.
+    /// </summary>
+    /// <value>The access success rate.</value>
     public double AccessSuccessRate { get; set; }
 }

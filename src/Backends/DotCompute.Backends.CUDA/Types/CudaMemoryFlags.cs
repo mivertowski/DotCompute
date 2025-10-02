@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An cuda memory flags enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA memory allocation flags and options
     /// </summary>
     [Flags]

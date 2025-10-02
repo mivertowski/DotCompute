@@ -6,9 +6,16 @@ using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
+/// <summary>
+/// A class that represents argument passing debug test.
+/// </summary>
 
 public class ArgumentPassingDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
+    /// <summary>
+    /// Gets simple_ argument_ passing_ should_ work.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     [SkippableFact]
     public async Task Simple_Argument_Passing_Should_Work()
     {
@@ -108,6 +115,10 @@ public class ArgumentPassingDebugTest(ITestOutputHelper output) : CudaTestBase(o
 
         Output.WriteLine($"Test passed! Successfully passed {args.Count} arguments of mixed types.");
     }
+    /// <summary>
+    /// Gets matrix_ style_ arguments_ should_ work.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [SkippableFact]

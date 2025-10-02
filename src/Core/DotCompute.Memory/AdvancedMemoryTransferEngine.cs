@@ -36,6 +36,10 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     // Memory pressure tracking
     private double _currentMemoryPressure;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AdvancedMemoryTransferEngine class.
+    /// </summary>
+    /// <param name="memoryManager">The memory manager.</param>
 
     public AdvancedMemoryTransferEngine(IUnifiedMemoryManager memoryManager)
     {
@@ -540,6 +544,10 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

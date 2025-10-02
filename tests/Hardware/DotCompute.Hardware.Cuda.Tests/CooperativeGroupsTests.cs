@@ -13,6 +13,10 @@ public class CooperativeGroupsTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ITestOutputHelper _output = output;
     private readonly CudaAcceleratorFactory _factory = new();
+    /// <summary>
+    /// Gets cooperative groups_ basic reduction_ executes correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
@@ -136,6 +140,10 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
         Assert.True(Math.Abs(expectedSum - actualSum) < 0.01f,
             $"Sum mismatch: expected {expectedSum}, got {actualSum}");
     }
+    /// <summary>
+    /// Gets tensor core ops_ matrix multiply_ with shared memory spilling.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
@@ -256,10 +264,17 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
         Assert.True(hasValidResults, "Kernel should produce valid non-zero results with shared memory spilling");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
         // Factory will dispose of created accelerators
         => _factory?.Dispose();
+    /// <summary>
+    /// A class that represents x unit logger.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
 
     // Test logger implementation
     private class XUnitLogger<T>(ITestOutputHelper output) : ILogger<T>
@@ -267,7 +282,21 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
         private readonly ITestOutputHelper _output = output;
 
         IDisposable ILogger.BeginScope<TState>(TState state) => null!;
+        /// <summary>
+        /// Determines whether enabled.
+        /// </summary>
+        /// <param name="logLevel">The log level.</param>
+        /// <returns>true if the condition is met; otherwise, false.</returns>
         public bool IsEnabled(LogLevel logLevel) => true;
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <typeparam name="TState">The TState type parameter.</typeparam>
+        /// <param name="logLevel">The log level.</param>
+        /// <param name="eventId">The event identifier.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="exception">The exception.</param>
+        /// <param name="formatter">The formatter.</param>
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
 

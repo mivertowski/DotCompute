@@ -40,14 +40,21 @@ public sealed class KernelAttributeAnalyzer
         var optimizationLevel = ExtractOptimizationLevel(kernelAttribute);
         var memoryPattern = ExtractMemoryPattern(kernelAttribute);
 
-        return new KernelConfiguration
+        var configuration = new KernelConfiguration
         {
-            SupportedBackends = backends,
             VectorSize = vectorSize,
             IsParallel = isParallel,
             OptimizationLevel = optimizationLevel,
             MemoryPattern = memoryPattern
         };
+
+        // Populate read-only collection
+        foreach (var backend in backends)
+        {
+            configuration.SupportedBackends.Add(backend);
+        }
+
+        return configuration;
     }
 
     /// <summary>
@@ -212,7 +219,7 @@ public sealed class KernelAttributeAnalyzer
     /// </summary>
     /// <param name="configuration">The configuration to validate.</param>
     /// <returns>A list of validation errors, or empty if valid.</returns>
-    public static List<string> ValidateConfiguration(KernelConfiguration configuration)
+    public static IReadOnlyList<string> ValidateConfiguration(KernelConfiguration configuration)
     {
         var errors = new List<string>();
 
@@ -273,7 +280,7 @@ public sealed class KernelConfiguration
     /// <summary>
     /// Gets or sets the list of supported backend accelerators.
     /// </summary>
-    public List<string> SupportedBackends { get; set; } = [];
+    public IList<string> SupportedBackends { get; } = [];
 
     /// <summary>
     /// Gets or sets the vector size for SIMD operations.

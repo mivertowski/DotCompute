@@ -39,16 +39,60 @@ public sealed partial class PluginLifecycleManager(
     /// </summary>
     public sealed class LoadedPlugin
     {
+        /// <summary>
+        /// Gets or sets the plugin.
+        /// </summary>
+        /// <value>The plugin.</value>
         public required IAlgorithmPlugin Plugin { get; init; }
+        /// <summary>
+        /// Gets or sets the load context.
+        /// </summary>
+        /// <value>The load context.</value>
         public required PluginAssemblyLoadContext LoadContext { get; init; }
+        /// <summary>
+        /// Gets or sets the assembly.
+        /// </summary>
+        /// <value>The assembly.</value>
         public required Assembly Assembly { get; init; }
+        /// <summary>
+        /// Gets or sets the metadata.
+        /// </summary>
+        /// <value>The metadata.</value>
         public required PluginMetadata Metadata { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public required DateTime LoadTime { get; init; }
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State { get; set; } = PluginState.Loaded;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health { get; set; } = PluginHealth.Unknown;
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public long ExecutionCount { get; set; }
+        /// <summary>
+        /// Gets or sets the last execution.
+        /// </summary>
+        /// <value>The last execution.</value>
         public DateTime LastExecution { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public Exception? LastError { get; set; }
     }
 

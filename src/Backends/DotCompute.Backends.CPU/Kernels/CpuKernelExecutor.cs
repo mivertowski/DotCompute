@@ -1010,6 +1010,9 @@ internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger
         };
     }
 }
+/// <summary>
+/// An execution strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Execution strategy for kernel execution.
@@ -1021,6 +1024,9 @@ internal enum ExecutionStrategy
     Vectorized,
     ParallelVectorized
 }
+/// <summary>
+/// An vector operation type enumeration.
+/// </summary>
 
 /// <summary>
 /// Vector operation type for optimized execution.
@@ -1042,9 +1048,25 @@ internal enum VectorOperationType
 /// </summary>
 internal readonly ref struct VectorizedBuffers
 {
+    /// <summary>
+    /// Gets or sets the input1.
+    /// </summary>
+    /// <value>The input1.</value>
     public required Span<byte> Input1 { get; init; }
+    /// <summary>
+    /// Gets or sets the input2.
+    /// </summary>
+    /// <value>The input2.</value>
     public Span<byte> Input2 { get; init; }
+    /// <summary>
+    /// Gets or sets the input3.
+    /// </summary>
+    /// <value>The input3.</value>
     public Span<byte> Input3 { get; init; }
+    /// <summary>
+    /// Gets or sets the output.
+    /// </summary>
+    /// <value>The output.</value>
     public required Span<byte> Output { get; init; }
 }
 

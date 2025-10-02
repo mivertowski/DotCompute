@@ -15,6 +15,9 @@ internal sealed class ExtendedKernelExecutionContext
     private readonly Dictionary<int, object> _parameters = [];
     private readonly Dictionary<int, Memory<byte>> _buffers = [];
     private readonly KernelExecutionContext _innerContext;
+    /// <summary>
+    /// Initializes a new instance of the ExtendedKernelExecutionContext class.
+    /// </summary>
 
     public ExtendedKernelExecutionContext()
     {
@@ -24,8 +27,16 @@ internal sealed class ExtendedKernelExecutionContext
             WorkDimensions = new WorkDimensions(1)
         };
     }
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
 
     public string? Name => _innerContext.Name;
+    /// <summary>
+    /// Gets or sets the work dimensions.
+    /// </summary>
+    /// <value>The work dimensions.</value>
     public WorkDimensions WorkDimensions => _innerContext.WorkDimensions;
 
     /// <summary>

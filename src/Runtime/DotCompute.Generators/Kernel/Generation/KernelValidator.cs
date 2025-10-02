@@ -38,7 +38,7 @@ public sealed class KernelValidator
     /// <param name="kernelClass">The kernel class to validate.</param>
     /// <param name="allMethods">All kernel methods for reference.</param>
     /// <returns>A validation result.</returns>
-    public static KernelValidationResult ValidateKernelClass(KernelClassInfo kernelClass, List<KernelMethodInfo> allMethods)
+    public static KernelValidationResult ValidateKernelClass(KernelClassInfo kernelClass, IReadOnlyList<KernelMethodInfo> allMethods)
     {
         var result = new KernelValidationResult();
 

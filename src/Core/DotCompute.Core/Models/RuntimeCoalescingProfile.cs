@@ -264,13 +264,45 @@ namespace DotCompute.Core.Models
     /// </summary>
     public class CoalescingStatistics
     {
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public int ExecutionCount { get; set; }
+        /// <summary>
+        /// Gets or sets the average time ms.
+        /// </summary>
+        /// <value>The average time ms.</value>
         public double AverageTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the min time ms.
+        /// </summary>
+        /// <value>The min time ms.</value>
         public double MinTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the max time ms.
+        /// </summary>
+        /// <value>The max time ms.</value>
         public double MaxTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the total memory transferred.
+        /// </summary>
+        /// <value>The total memory transferred.</value>
         public double TotalMemoryTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth g bps.
+        /// </summary>
+        /// <value>The memory bandwidth g bps.</value>
         public double MemoryBandwidthGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the coalescing efficiency.
+        /// </summary>
+        /// <value>The coalescing efficiency.</value>
         public double CoalescingEfficiency { get; set; }
+        /// <summary>
+        /// Gets or sets the standard deviation.
+        /// </summary>
+        /// <value>The standard deviation.</value>
         public double StandardDeviation { get; set; }
     }
 }

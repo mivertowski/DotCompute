@@ -15,13 +15,45 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// </summary>
 internal sealed class KernelCacheMetadata
 {
+    /// <summary>
+    /// Gets or sets the cache key.
+    /// </summary>
+    /// <value>The cache key.</value>
     public required string CacheKey { get; set; }
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the source code hash.
+    /// </summary>
+    /// <value>The source code hash.</value>
     public int SourceCodeHash { get; set; }
+    /// <summary>
+    /// Gets or sets the compile time.
+    /// </summary>
+    /// <value>The compile time.</value>
     public DateTime CompileTime { get; set; }
+    /// <summary>
+    /// Gets or sets the last accessed.
+    /// </summary>
+    /// <value>The last accessed.</value>
     public DateTime LastAccessed { get; set; }
+    /// <summary>
+    /// Gets or sets the access count.
+    /// </summary>
+    /// <value>The access count.</value>
     public int AccessCount { get; set; }
+    /// <summary>
+    /// Gets or sets the compilation options.
+    /// </summary>
+    /// <value>The compilation options.</value>
     public CompilationOptions? CompilationOptions { get; set; }
+    /// <summary>
+    /// Gets or sets the ptx size.
+    /// </summary>
+    /// <value>The ptx size.</value>
     public int PtxSize { get; set; }
 }
 
@@ -46,6 +78,11 @@ internal sealed class CudaCompilationCache : IDisposable
     {
         WriteIndented = true
     };
+    /// <summary>
+    /// Initializes a new instance of the CudaCompilationCache class.
+    /// </summary>
+    /// <param name="cacheDirectory">The cache directory.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaCompilationCache(string cacheDirectory, ILogger logger)
     {
@@ -402,6 +439,9 @@ internal sealed class CudaCompilationCache : IDisposable
             _logger.LogWarning(ex, "Failed to clear disk cache");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

@@ -123,7 +123,7 @@ public class DetailedExecutionReport
     /// <summary>
     /// Gets or sets the per-step execution metrics.
     /// </summary>
-    public List<KernelStepMetrics> StepMetrics { get; set; } = [];
+    public IList<KernelStepMetrics> StepMetrics { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory usage metrics.
@@ -138,12 +138,12 @@ public class DetailedExecutionReport
     /// <summary>
     /// Gets or sets any errors that occurred during execution.
     /// </summary>
-    public List<Exception> Errors { get; set; } = [];
+    public IList<Exception> Errors { get; } = [];
 
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>

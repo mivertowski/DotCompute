@@ -26,6 +26,12 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
     private readonly CudaStreamManager _streamManager;
     private readonly Timer _healthCheckTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaIntegrationOrchestrator class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaIntegrationOrchestrator(
         IServiceProvider serviceProvider,
@@ -326,6 +332,9 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
             throw new ObjectDisposedException(nameof(CudaIntegrationOrchestrator));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

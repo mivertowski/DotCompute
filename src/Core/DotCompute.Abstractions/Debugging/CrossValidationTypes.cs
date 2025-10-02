@@ -23,12 +23,12 @@ public sealed class CrossValidationResult
     /// <summary>
     /// Gets the execution results from each accelerator.
     /// </summary>
-    public List<KernelExecutionResult> ExecutionResults { get; init; } = [];
+    public IReadOnlyList<KernelExecutionResult> ExecutionResults { get; init; } = [];
 
     /// <summary>
     /// Gets validation issues found during cross-validation.
     /// </summary>
-    public List<DebugValidationIssue> ValidationIssues { get; init; } = [];
+    public IReadOnlyList<DebugValidationIssue> ValidationIssues { get; init; } = [];
 
     /// <summary>
     /// Gets when the validation was performed.

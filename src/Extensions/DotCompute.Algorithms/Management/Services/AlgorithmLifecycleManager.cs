@@ -22,6 +22,12 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
     private readonly AlgorithmRegistry _registry;
     private readonly Timer? _healthCheckTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmLifecycleManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="registry">The registry.</param>
 
     public AlgorithmLifecycleManager(
         ILogger<AlgorithmLifecycleManager> logger,
@@ -480,6 +486,9 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
             _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", loadedPlugin.Plugin.Id);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

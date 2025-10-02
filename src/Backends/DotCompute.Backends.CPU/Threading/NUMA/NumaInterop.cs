@@ -15,26 +15,74 @@ internal static class NumaInterop
     [StructLayout(LayoutKind.Sequential)]
     internal struct GROUP_AFFINITY
     {
+        /// <summary>
+        /// The mask.
+        /// </summary>
         public ulong Mask;
+        /// <summary>
+        /// The group.
+        /// </summary>
         public ushort Group;
+        /// <summary>
+        /// The reserved1.
+        /// </summary>
         public ushort Reserved1;
+        /// <summary>
+        /// The reserved2.
+        /// </summary>
         public ushort Reserved2;
+        /// <summary>
+        /// The reserved3.
+        /// </summary>
         public ushort Reserved3;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct SYSTEM_INFO
     {
+        /// <summary>
+        /// The processor architecture.
+        /// </summary>
         public ushort ProcessorArchitecture;
+        /// <summary>
+        /// The reserved.
+        /// </summary>
         public ushort Reserved;
+        /// <summary>
+        /// The page size.
+        /// </summary>
         public uint PageSize;
+        /// <summary>
+        /// The minimum application address.
+        /// </summary>
         public IntPtr MinimumApplicationAddress;
+        /// <summary>
+        /// The maximum application address.
+        /// </summary>
         public IntPtr MaximumApplicationAddress;
+        /// <summary>
+        /// The active processor mask.
+        /// </summary>
         public IntPtr ActiveProcessorMask;
+        /// <summary>
+        /// The number of processors.
+        /// </summary>
         public uint NumberOfProcessors;
+        /// <summary>
+        /// The processor type.
+        /// </summary>
         public uint ProcessorType;
+        /// <summary>
+        /// The allocation granularity.
+        /// </summary>
         public uint AllocationGranularity;
+        /// <summary>
+        /// The processor level.
+        /// </summary>
         public ushort ProcessorLevel;
+        /// <summary>
+        /// The processor revision.
+        /// </summary>
         public ushort ProcessorRevision;
     }
 

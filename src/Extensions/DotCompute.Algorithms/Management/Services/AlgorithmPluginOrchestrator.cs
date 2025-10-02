@@ -36,6 +36,12 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
     // Health monitoring
     private readonly Timer _healthCheckTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginOrchestrator class.
+    /// </summary>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public AlgorithmPluginOrchestrator(
         IAccelerator accelerator,
@@ -616,6 +622,10 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             LogPluginHealthCheckFailed(loadedPlugin.Plugin.Id, ex.Message);
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

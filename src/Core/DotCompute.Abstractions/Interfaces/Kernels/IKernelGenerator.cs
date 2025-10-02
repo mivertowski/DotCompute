@@ -64,7 +64,7 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets or sets the work group dimensions.
         /// </summary>
-        public int[]? WorkGroupDimensions { get; init; }
+        public IReadOnlyList<int>? WorkGroupDimensions { get; init; }
 
         /// <summary>
         /// Gets or sets whether to use shared memory.
@@ -110,12 +110,12 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets or sets the kernel parameters.
         /// </summary>
-        public required KernelParameter[] Parameters { get; init; }
+        public required IReadOnlyList<KernelParameter> Parameters { get; init; }
 
         /// <summary>
         /// Gets or sets the required work group size.
         /// </summary>
-        public int[]? RequiredWorkGroupSize { get; init; }
+        public IReadOnlyList<int>? RequiredWorkGroupSize { get; init; }
 
         /// <summary>
         /// Gets or sets the shared memory size in bytes.

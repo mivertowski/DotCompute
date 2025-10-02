@@ -28,9 +28,22 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
     // Emergency reserve
     private volatile byte[]? _emergencyReserve;
     private readonly object _reserveLock = new();
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
 
     public override RecoveryCapability Capability => RecoveryCapability.MemoryErrors;
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public override int Priority => 100;
+    /// <summary>
+    /// Initializes a new instance of the MemoryRecoveryStrategy class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public MemoryRecoveryStrategy(ILogger<MemoryRecoveryStrategy> logger, Models.MemoryRecoveryConfiguration? config = null)
         : base(logger)
@@ -54,6 +67,12 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         Logger.LogInformation("Memory Recovery Strategy initialized with {ReserveSize}MB emergency reserve",
             _config.EmergencyReserveSizeMB);
     }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public override bool CanHandle(Exception error, Models.MemoryRecoveryContext context)
     {
@@ -65,6 +84,14 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             _ => false
         };
     }
+    /// <summary>
+    /// Gets recover asynchronously.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
         Exception error,
@@ -537,6 +564,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             Logger.LogWarning(ex, "Error during periodic defragmentation check");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public override void Dispose()
     {

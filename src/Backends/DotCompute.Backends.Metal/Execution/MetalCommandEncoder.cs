@@ -468,7 +468,7 @@ public sealed class MetalEncodingStats
     public DateTimeOffset? FirstCommandTime { get; set; }
     public DateTimeOffset? LastCommandTime { get; set; }
     public TimeSpan? EncodingDuration { get; set; }
-    public Dictionary<MetalCommandType, int> CommandTypeCounts { get; set; } = [];
+    public Dictionary<MetalCommandType, int> CommandTypeCounts { get; } = [];
 }
 
 

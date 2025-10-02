@@ -85,7 +85,7 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets detailed metrics for each stage.
     /// </summary>
-    public List<StageExecutionMetrics> StageMetrics { get; set; } = [];
+    public IList<StageExecutionMetrics> StageMetrics { get; } = [];
 
     /// <summary>
     /// Gets or sets memory usage statistics.
@@ -170,7 +170,7 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets additional metrics for the pipeline.
     /// </summary>
-    public IDictionary<string, object> AdditionalMetrics { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> AdditionalMetrics { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets memory usage statistics.
@@ -190,12 +190,12 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets execution times for individual stages.
     /// </summary>
-    public IDictionary<string, double> StageExecutionTimes { get; set; } = new Dictionary<string, double>();
+    public IDictionary<string, double> StageExecutionTimes { get; } = new Dictionary<string, double>();
 
     /// <summary>
     /// Gets or sets custom user-defined metrics.
     /// </summary>
-    public IDictionary<string, object> CustomMetrics { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> CustomMetrics { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets the throughput in operations per second.
@@ -396,7 +396,7 @@ public sealed class DataTransferMetrics
     /// <summary>
     /// Gets or sets transfer statistics by type.
     /// </summary>
-    public IDictionary<DataTransferType, TransferTypeMetrics> TransfersByType { get; set; } =
+    public IDictionary<DataTransferType, TransferTypeMetrics> TransfersByType { get; } =
         new Dictionary<DataTransferType, TransferTypeMetrics>();
 }
 
@@ -578,5 +578,5 @@ public sealed class QualityMetrics
     /// <summary>
     /// Gets or sets any quality warnings or issues.
     /// </summary>
-    public IList<string> QualityWarnings { get; set; } = [];
+    public IList<string> QualityWarnings { get; } = [];
 }

@@ -21,6 +21,11 @@ internal sealed class CryptographicKeyManager : IDisposable
     private readonly Timer _keyRotationTimer;
     private readonly SemaphoreSlim _operationLock;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CryptographicKeyManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public CryptographicKeyManager(
         ILogger<CryptographicKeyManager> logger,
@@ -521,6 +526,9 @@ internal sealed class CryptographicKeyManager : IDisposable
             _logger.LogErrorMessage(ex, "Automatic key rotation failed");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -541,6 +549,9 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
     }
 }
+/// <summary>
+/// An key export format enumeration.
+/// </summary>
 
 // Supporting classes and enums
 public enum KeyExportFormat
@@ -549,36 +560,129 @@ public enum KeyExportFormat
     Pkcs12,
     Jwk
 }
+/// <summary>
+/// A class that represents key metadata.
+/// </summary>
 
 public class KeyMetadata
 {
+    /// <summary>
+    /// Gets or sets the identifier.
+    /// </summary>
+    /// <value>The identifier.</value>
     public required string Identifier { get; set; }
+    /// <summary>
+    /// Gets or sets the key type.
+    /// </summary>
+    /// <value>The key type.</value>
     public KeyType KeyType { get; set; }
+    /// <summary>
+    /// Gets or sets the key size.
+    /// </summary>
+    /// <value>The key size.</value>
     public int KeySize { get; set; }
+    /// <summary>
+    /// Gets or sets the purpose.
+    /// </summary>
+    /// <value>The purpose.</value>
     public required string Purpose { get; set; }
+    /// <summary>
+    /// Gets or sets the creation time.
+    /// </summary>
+    /// <value>The creation time.</value>
     public DateTimeOffset CreationTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether expired.
+    /// </summary>
+    /// <value>The is expired.</value>
     public bool IsExpired { get; set; }
+    /// <summary>
+    /// Gets or sets the fingerprint.
+    /// </summary>
+    /// <value>The fingerprint.</value>
     public required string Fingerprint { get; set; }
 }
+/// <summary>
+/// A class that represents key export result.
+/// </summary>
 
 public class KeyExportResult
 {
+    /// <summary>
+    /// Gets or sets the identifier.
+    /// </summary>
+    /// <value>The identifier.</value>
     public required string Identifier { get; set; }
+    /// <summary>
+    /// Gets or sets the format.
+    /// </summary>
+    /// <value>The format.</value>
     public KeyExportFormat Format { get; set; }
+    /// <summary>
+    /// Gets or sets the export time.
+    /// </summary>
+    /// <value>The export time.</value>
     public DateTimeOffset ExportTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether successful.
+    /// </summary>
+    /// <value>The is successful.</value>
     public bool IsSuccessful { get; set; }
+    /// <summary>
+    /// Gets or sets the exported data.
+    /// </summary>
+    /// <value>The exported data.</value>
     public byte[]? ExportedData { get; set; }
+    /// <summary>
+    /// Gets or sets the export format.
+    /// </summary>
+    /// <value>The export format.</value>
     public string? ExportFormat { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// A class that represents key rotation result.
+/// </summary>
 
 public class KeyRotationResult
 {
+    /// <summary>
+    /// Gets or sets the rotation time.
+    /// </summary>
+    /// <value>The rotation time.</value>
     public DateTimeOffset RotationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the force rotation.
+    /// </summary>
+    /// <value>The force rotation.</value>
     public bool ForceRotation { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether successful.
+    /// </summary>
+    /// <value>The is successful.</value>
     public bool IsSuccessful { get; set; }
-    public List<string> RotatedKeys { get; set; } = [];
-    public List<string> FailedRotations { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the rotated keys.
+    /// </summary>
+    /// <value>The rotated keys.</value>
+    public IList<string> RotatedKeys { get; } = [];
+    /// <summary>
+    /// Gets or sets the failed rotations.
+    /// </summary>
+    /// <value>The failed rotations.</value>
+    public IList<string> FailedRotations { get; } = [];
+    /// <summary>
+    /// Gets or sets the new key identifier.
+    /// </summary>
+    /// <value>The new key identifier.</value>
     public string? NewKeyIdentifier { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }

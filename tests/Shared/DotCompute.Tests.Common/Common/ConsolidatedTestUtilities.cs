@@ -313,15 +313,42 @@ public static class ConsolidatedTestUtilities
     /// </summary>
     public static class Categories
     {
+        /// <summary>
+        /// The memory allocation.
+        /// </summary>
         public const string MemoryAllocation = "MemoryAllocation";
+        /// <summary>
+        /// The buffer types.
+        /// </summary>
         public const string BufferTypes = "BufferTypes";
+        /// <summary>
+        /// The performance.
+        /// </summary>
 
         public const string Performance = "Performance";
+        /// <summary>
+        /// The hardware.
+        /// </summary>
         public const string Hardware = "Hardware";
+        /// <summary>
+        /// The unit.
+        /// </summary>
         public const string Unit = "Unit";
+        /// <summary>
+        /// The integration.
+        /// </summary>
         public const string Integration = "Integration";
+        /// <summary>
+        /// The gpu.
+        /// </summary>
         public const string Gpu = "Gpu";
+        /// <summary>
+        /// The cuda.
+        /// </summary>
         public const string Cuda = "Cuda";
+        /// <summary>
+        /// The open c l.
+        /// </summary>
         public const string OpenCL = "OpenCL";
     }
 
@@ -330,9 +357,21 @@ public static class ConsolidatedTestUtilities
     /// </summary>
     public static class TestTimeouts
     {
+        /// <summary>
+        /// The short.
+        /// </summary>
         public const int Short = 5000;      // 5 seconds
+        /// <summary>
+        /// The medium.
+        /// </summary>
         public const int Medium = 30000;    // 30 seconds
+        /// <summary>
+        /// The long.
+        /// </summary>
         public const int Long = 120000;     // 2 minutes
+        /// <summary>
+        /// The very long.
+        /// </summary>
         public const int VeryLong = 300000; // 5 minutes
     }
 
@@ -341,9 +380,21 @@ public static class ConsolidatedTestUtilities
     /// </summary>
     public static class Tolerances
     {
+        /// <summary>
+        /// The float.
+        /// </summary>
         public const float Float = 0.0001f;
+        /// <summary>
+        /// The double.
+        /// </summary>
         public const double Double = 0.000000001;
+        /// <summary>
+        /// The single precision.
+        /// </summary>
         public const float SinglePrecision = 1e-6f;
+        /// <summary>
+        /// The double precision.
+        /// </summary>
         public const double DoublePrecision = 1e-12;
     }
 

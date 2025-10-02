@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 
@@ -27,11 +28,30 @@ internal sealed class CudaCompilationPipeline
     // Internal types for kernel compilation
     internal sealed class KernelSource
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public required string Name { get; set; }
+        /// <summary>
+        /// Gets or sets the entry point.
+        /// </summary>
+        /// <value>The entry point.</value>
         public required string EntryPoint { get; set; }
+        /// <summary>
+        /// Gets or sets the code.
+        /// </summary>
+        /// <value>The code.</value>
         public required string Code { get; set; }
+        /// <summary>
+        /// Gets or sets the language.
+        /// </summary>
+        /// <value>The language.</value>
         public KernelLanguage Language { get; set; }
     }
+    /// <summary>
+    /// An kernel language enumeration.
+    /// </summary>
 
     public enum KernelLanguage
     {
@@ -39,6 +59,11 @@ internal sealed class CudaCompilationPipeline
         OpenCL,
         Ptx
     }
+    /// <summary>
+    /// Initializes a new instance of the CudaCompilationPipeline class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaCompilationPipeline(CudaContext context, ILogger logger)
     {
@@ -344,7 +369,7 @@ internal sealed class CudaCompilationPipeline
         {
             case KernelLanguage.Cuda:
                 // Check if the code already has extern "C"
-                if (!source.Code.Contains("extern \"C\""))
+                if (!source.Code.Contains("extern \"C\"", StringComparison.OrdinalIgnoreCase))
                 {
                     // Add extern "C" to __global__ functions
                     var modifiedCode = System.Text.RegularExpressions.Regex.Replace(
@@ -428,6 +453,9 @@ internal sealed class CudaCompilationPipeline
     /// Clears the compilation cache and cleans up temporary resources.
     /// </summary>
     public void ClearCache() => _cache.ClearCache();
+    /// <summary>
+    /// An compilation target enumeration.
+    /// </summary>
 
     /// <summary>
     /// Compilation target enumeration for pipeline decision making.

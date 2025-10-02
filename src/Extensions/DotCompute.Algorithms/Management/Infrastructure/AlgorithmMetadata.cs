@@ -7,6 +7,7 @@ using System.Runtime.Versioning;
 using System.Text.Json;
 using DotCompute.Algorithms.Management.Metadata;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Algorithms.Management.Infrastructure;
 
@@ -301,6 +302,9 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
             return null;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -352,10 +356,10 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
         try
         {
             // Handle formats like ".NETCoreApp,Version=v9.0"
-            if (frameworkName.Contains("Version="))
+            if (frameworkName.Contains("Version=", StringComparison.OrdinalIgnoreCase))
             {
-                var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=") + 8);
-                if (versionPart.StartsWith("v"))
+                var versionPart = frameworkName.Substring(frameworkName.IndexOf("Version=", StringComparison.OrdinalIgnoreCase) + 8);
+                if (versionPart.StartsWith("v", StringComparison.CurrentCulture))
                 {
                     versionPart = versionPart.Substring(1);
                 }
@@ -389,8 +393,16 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
 /// </summary>
 public sealed class MetadataValidationResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
 
 /// <summary>
@@ -398,10 +410,34 @@ public sealed class MetadataValidationResult
 /// </summary>
 public sealed class RuntimeInfo
 {
+    /// <summary>
+    /// Gets or sets the runtime version.
+    /// </summary>
+    /// <value>The runtime version.</value>
     public required string RuntimeVersion { get; set; }
+    /// <summary>
+    /// Gets or sets the load time.
+    /// </summary>
+    /// <value>The load time.</value>
     public DateTime LoadTime { get; set; }
+    /// <summary>
+    /// Gets or sets the initialization time.
+    /// </summary>
+    /// <value>The initialization time.</value>
     public TimeSpan InitializationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the initial memory usage.
+    /// </summary>
+    /// <value>The initial memory usage.</value>
     public long InitialMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the processor architecture.
+    /// </summary>
+    /// <value>The processor architecture.</value>
     public required string ProcessorArchitecture { get; set; }
+    /// <summary>
+    /// Gets or sets the operating system.
+    /// </summary>
+    /// <value>The operating system.</value>
     public required string OperatingSystem { get; set; }
 }

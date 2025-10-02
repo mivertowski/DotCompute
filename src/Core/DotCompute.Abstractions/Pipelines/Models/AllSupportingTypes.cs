@@ -67,9 +67,9 @@ public enum AdaptationPolicy
 public sealed class ParallelKernelConfig
 {
     public required string KernelName { get; init; }
-    public object[]? Parameters { get; init; }
-    public object[]? Arguments { get; init; }
-    public int[]? GlobalWorkSize { get; init; }
+    public IReadOnlyList<object>? Parameters { get; init; }
+    public IReadOnlyList<object>? Arguments { get; init; }
+    public IReadOnlyList<int>? GlobalWorkSize { get; init; }
     public ExecutionPriority Priority { get; init; } = DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority.Normal;
 }
 
@@ -91,7 +91,7 @@ public sealed class FusionCriteria
 public sealed class MemoryConstraints
 {
     public long MaxMemoryUsage { get; set; } = long.MaxValue;
-    public bool PreferMemoryEfficiency { get; set; } = false;
+    public bool PreferMemoryEfficiency { get; set; }
     public int MemoryAlignment { get; set; } = 64;
 
     public MemoryConstraints Clone()
@@ -122,8 +122,8 @@ public sealed class LoopOptimizations
 
 public sealed class DataLayoutPreferences
 {
-    public bool PreferStructureOfArrays { get; set; } = false;
-    public bool PreferArrayOfStructures { get; set; } = false;
+    public bool PreferStructureOfArrays { get; set; }
+    public bool PreferArrayOfStructures { get; set; }
     public bool AllowReordering { get; set; } = true;
     public int PreferredAlignment { get; set; } = 64;
 }
@@ -133,13 +133,13 @@ public sealed class OptimizationValidationResult
     public bool IsValid { get; set; }
     public string? Message { get; set; }
     public double AccuracyScore { get; set; } = 1.0;
-    public IList<string> Warnings { get; set; } = [];
+    public IList<string> Warnings { get; } = [];
 }
 
 public sealed class OptimizationImpactEstimate
 {
     public double EstimatedSpeedup { get; set; } = 1.0;
-    public double EstimatedMemoryReduction { get; set; } = 0.0;
+    public double EstimatedMemoryReduction { get; set; }
     public double ConfidenceLevel { get; set; } = 0.5;
     public TimeSpan EstimatedOptimizationTime { get; set; }
 }
@@ -147,9 +147,9 @@ public sealed class OptimizationImpactEstimate
 public sealed class PipelineAnalysisResult
 {
     public bool Success { get; set; }
-    public IList<string> Issues { get; set; } = [];
-    public IList<string> Recommendations { get; set; } = [];
-    public IDictionary<string, object> Metrics { get; set; } = new Dictionary<string, object>();
+    public IList<string> Issues { get; } = [];
+    public IList<string> Recommendations { get; } = [];
+    public IDictionary<string, object> Metrics { get; } = new Dictionary<string, object>();
 }
 
 // Interface placeholders for types referenced in the pipeline interfaces

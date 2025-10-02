@@ -23,7 +23,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
     private readonly Dictionary<string, string> _variableMapping = [];
     private readonly HashSet<string> _sharedMemoryVariables = [];
     private readonly HashSet<string> _constantMemoryVariables = [];
-    private int _indentLevel = 0;
+    private int _indentLevel;
 
     /// <summary>
     /// Translates the C# method body to CUDA C code.

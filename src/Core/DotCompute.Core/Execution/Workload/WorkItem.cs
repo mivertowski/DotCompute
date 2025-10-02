@@ -39,6 +39,6 @@ namespace DotCompute.Core.Execution.Workload
         /// Gets or sets the list of work item IDs that this work item depends on.
         /// This work item cannot be executed until all dependencies are completed.
         /// </summary>
-        public List<int> Dependencies { get; set; } = [];
+        public IList<int> Dependencies { get; } = [];
     }
 }

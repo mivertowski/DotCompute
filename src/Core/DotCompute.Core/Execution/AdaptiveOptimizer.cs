@@ -17,10 +17,23 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class AdaptiveOptimizer
 {
+    /// <summary>
+    /// Initializes a new instance of the AdaptiveOptimizer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public AdaptiveOptimizer(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+    /// <summary>
+    /// Gets recommend strategy.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="inputSizes">The input sizes.</param>
+    /// <param name="availableAcceleratorTypes">The available accelerator types.</param>
+    /// <param name="recentExecutions">The recent executions.</param>
+    /// <param name="kernelProfile">The kernel profile.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ExecutionStrategyRecommendation RecommendStrategy(
         string kernelName,
@@ -157,7 +170,7 @@ public class AdaptiveOptimizer
     /// <summary>
     /// Estimates execution time for pipeline execution.
     /// </summary>
-    public static double EstimatePipelineExecutionTime(List<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
+    public static double EstimatePipelineExecutionTime(IReadOnlyList<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
     {
         // Estimate based on stage count and microbatch configuration
         const double baseStageTimeMs = 8.0;
@@ -183,22 +196,76 @@ public class AdaptiveOptimizer
 // Supporting data structures
 public class ExecutionRecord
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public required Guid Id { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public required ExecutionStrategyType Strategy { get; set; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the total execution time ms.
+    /// </summary>
+    /// <value>The total execution time ms.</value>
     public required double TotalExecutionTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput g f l o p s.
+    /// </summary>
+    /// <value>The throughput g f l o p s.</value>
     public required double ThroughputGFLOPS { get; set; }
+    /// <summary>
+    /// Gets or sets the memory bandwidth g bps.
+    /// </summary>
+    /// <value>The memory bandwidth g bps.</value>
     public required double MemoryBandwidthGBps { get; set; }
+    /// <summary>
+    /// Gets or sets the efficiency percentage.
+    /// </summary>
+    /// <value>The efficiency percentage.</value>
     public required double EfficiencyPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the device results.
+    /// </summary>
+    /// <value>The device results.</value>
     public required DeviceExecutionResult[] DeviceResults { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
 
 public class KernelPerformanceProfile
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the device executions.
+    /// </summary>
+    /// <value>The device executions.</value>
     public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; set; } = [];
+    /// <summary>
+    /// Performs add execution.
+    /// </summary>
+    /// <param name="deviceId">The device identifier.</param>
+    /// <param name="executionTimeMs">The execution time ms.</param>
+    /// <param name="throughputGFLOPS">The throughput G F L O P S.</param>
 
     public void AddExecution(string deviceId, double executionTimeMs, double throughputGFLOPS)
     {
@@ -225,16 +292,48 @@ public class KernelPerformanceProfile
 
 public class KernelExecution
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the execution time ms.
+    /// </summary>
+    /// <value>The execution time ms.</value>
     public double ExecutionTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput g f l o p s.
+    /// </summary>
+    /// <value>The throughput g f l o p s.</value>
     public double ThroughputGFLOPS { get; set; }
+    /// <summary>
+    /// Gets or sets the memory bandwidth g bps.
+    /// </summary>
+    /// <value>The memory bandwidth g bps.</value>
     public double MemoryBandwidthGBps { get; set; }
 }
 
 public class KernelCharacteristics
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether memory bound.
+    /// </summary>
+    /// <value>The is memory bound.</value>
     public bool IsMemoryBound { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether compute bound.
+    /// </summary>
+    /// <value>The is compute bound.</value>
     public bool IsComputeBound { get; set; }
+    /// <summary>
+    /// Gets or sets the average throughput.
+    /// </summary>
+    /// <value>The average throughput.</value>
     public double AverageThroughput { get; set; }
+    /// <summary>
+    /// Gets or sets the average memory bandwidth.
+    /// </summary>
+    /// <value>The average memory bandwidth.</value>
     public double AverageMemoryBandwidth { get; set; }
 }

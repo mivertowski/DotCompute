@@ -26,6 +26,11 @@ public sealed class CudaErrorHandler : IDisposable
     private readonly ConcurrentQueue<CudaErrorRecord> _recentErrors;
     private readonly Timer _diagnosticsTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaErrorHandler class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaErrorHandler(CudaContext context, ILogger<CudaErrorHandler> logger)
     {
@@ -599,6 +604,9 @@ public sealed class CudaErrorHandler : IDisposable
             throw new ObjectDisposedException(nameof(CudaErrorHandler));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

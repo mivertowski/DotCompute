@@ -81,12 +81,12 @@ public class ValidationResult
     /// <summary>
     /// Gets or sets validation errors if any.
     /// </summary>
-    public IList<string> Errors { get; set; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets or sets validation warnings if any.
     /// </summary>
-    public IList<string> Warnings { get; set; } = [];
+    public IList<string> Warnings { get; } = [];
 }
 
 /// <summary>
@@ -122,5 +122,5 @@ public class AlgorithmMetadata
     /// <summary>
     /// Gets or sets additional properties.
     /// </summary>
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; } = [];
 }

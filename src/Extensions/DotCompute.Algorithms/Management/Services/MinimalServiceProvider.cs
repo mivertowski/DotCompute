@@ -11,6 +11,11 @@ namespace DotCompute.Algorithms.Management.Services
     /// </summary>
     internal sealed class MinimalServiceProvider : IServiceProvider
     {
+        /// <summary>
+        /// Gets the service.
+        /// </summary>
+        /// <param name="serviceType">The service type.</param>
+        /// <returns>The service.</returns>
         public object? GetService(Type serviceType)
         {
             if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(ILogger<>))

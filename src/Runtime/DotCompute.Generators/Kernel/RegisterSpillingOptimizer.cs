@@ -295,7 +295,7 @@ internal sealed class RegisterSpillingOptimizer
             public bool IsLoop { get; set; }
         }
 
-        public SpillCodeTransformer(List<string> spillableVariables)
+        public SpillCodeTransformer(IReadOnlyList<string> spillableVariables)
         {
             _spillVars = [.. spillableVariables];
             _spillInfoMap = [];

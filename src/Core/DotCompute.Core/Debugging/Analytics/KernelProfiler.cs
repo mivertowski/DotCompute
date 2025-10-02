@@ -21,6 +21,11 @@ public sealed partial class KernelProfiler : IDisposable
     private readonly Timer _performanceMonitor;
     private DebugServiceOptions _options;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the KernelProfiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public KernelProfiler(ILogger<KernelProfiler> logger, DebugServiceOptions? options = null)
     {
@@ -509,7 +514,7 @@ public sealed partial class KernelProfiler : IDisposable
         };
     }
 
-    private static PerformanceAnalysis AnalyzePerformanceData(List<ProfilingData> data)
+    private static PerformanceAnalysis AnalyzePerformanceData(IReadOnlyList<ProfilingData> data)
     {
         var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
         var memoryUsages = data.Select(d => (double)d.MemoryUsage.AllocatedMemory).ToList();
@@ -561,7 +566,7 @@ public sealed partial class KernelProfiler : IDisposable
         return Math.Sqrt(sumOfSquaredDifferences / valueList.Count);
     }
 
-    private static double CalculateThroughputScore(List<ProfilingData> data)
+    private static double CalculateThroughputScore(IReadOnlyList<ProfilingData> data)
     {
         if (!data.Any())
         {
@@ -605,7 +610,7 @@ public sealed partial class KernelProfiler : IDisposable
         return recommendations;
     }
 
-    private static PerformanceTrend AnalyzeTrend(List<ProfilingData> data)
+    private static PerformanceTrend AnalyzeTrend(IReadOnlyList<ProfilingData> data)
     {
         if (data.Count < 3)
         {
@@ -640,7 +645,7 @@ public sealed partial class KernelProfiler : IDisposable
         };
     }
 
-    private static double CalculateSlope(List<double> x, List<double> y)
+    private static double CalculateSlope(List<double> x, IReadOnlyList<double> y)
     {
         if (x.Count != y.Count || x.Count < 2)
         {
@@ -656,6 +661,9 @@ public sealed partial class KernelProfiler : IDisposable
         var denominator = n * sumX2 - sumX * sumX;
         return denominator != 0 ? (n * sumXY - sumX * sumY) / denominator : 0;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

@@ -14,11 +14,29 @@ namespace DotCompute.Backends.CUDA.Native.Types
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaKernelNodeParams
     {
+        /// <summary>
+        /// The function.
+        /// </summary>
         public IntPtr Function;
+        /// <summary>
+        /// The grid dim x.
+        /// </summary>
         public uint GridDimX, GridDimY, GridDimZ;
+        /// <summary>
+        /// The block dim x.
+        /// </summary>
         public uint BlockDimX, BlockDimY, BlockDimZ;
+        /// <summary>
+        /// The shared mem bytes.
+        /// </summary>
         public uint SharedMemBytes;
+        /// <summary>
+        /// The kernel params.
+        /// </summary>
         public IntPtr KernelParams;
+        /// <summary>
+        /// The extra.
+        /// </summary>
         public IntPtr Extra;
     }
 }

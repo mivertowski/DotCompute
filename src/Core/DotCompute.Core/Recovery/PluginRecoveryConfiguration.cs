@@ -166,6 +166,10 @@ public class PluginRecoveryConfiguration
             throw new ArgumentException("Max restarts must be positive", nameof(MaxRestarts));
         }
     }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
 
@@ -225,17 +229,24 @@ public class PluginHealthReport
     /// <summary>
     /// Additional metrics
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = [];
+    public Dictionary<string, object> Metrics { get; } = [];
 
     /// <summary>
     /// Overall health score (0.0 to 1.0)
     /// </summary>
     public double OverallHealth { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
 
         => $"Plugin={PluginId}, Status={Status}, Memory={MemoryUsageBytes / 1024.0 / 1024.0:F1}MB, CPU={CpuUsagePercent:F1}%";
 }
+/// <summary>
+/// An plugin health status enumeration.
+/// </summary>
 
 /// <summary>
 /// Plugin health status enumeration
@@ -284,6 +295,10 @@ public class PluginRecoveryStats
     /// Recovery success rate (0.0 to 1.0)
     /// </summary>
     public double SuccessRate => TotalRecoveryAttempts > 0 ? (double)SuccessfulRecoveries / TotalRecoveryAttempts : 0.0;
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
 

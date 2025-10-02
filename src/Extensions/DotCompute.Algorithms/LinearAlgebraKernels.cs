@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms
 /// </summary>
 public static class LinearAlgebraKernels
 {
+    /// <summary>
+    /// The open c l matrix multiply tiled kernel.
+    /// </summary>
     #region Matrix Multiplication Kernels
 
     /// <summary>
@@ -80,6 +83,9 @@ __kernel void matrix_multiply_tiled(
         C[row * N + col] = sum;
     }
 }";
+    /// <summary>
+    /// The c u d a matrix multiply tiled kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for tiled matrix multiplication with shared memory.
@@ -148,6 +154,9 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
+    /// <summary>
+    /// The open c l householder vector kernel.
+    /// </summary>
 
     #endregion
 
@@ -231,6 +240,9 @@ __kernel void compute_householder_vector_parallel(
         }
     }
 }";
+    /// <summary>
+    /// The open c l householder transform kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for applying Householder transformation with optimized memory access.
@@ -281,6 +293,9 @@ __kernel void apply_householder_transform_optimized(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a jacobi s v d kernel.
+    /// </summary>
 
     #endregion
 
@@ -358,6 +373,9 @@ extern ""C"" __global__ void jacobi_svd_rotation_cuda(
         V[j * n + tid] = s * v_it + c * v_jt;
     }
 }";
+    /// <summary>
+    /// The open c l singular values kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for computing singular values extraction.
@@ -386,6 +404,9 @@ __kernel void extract_singular_values(
         }
     }
 }";
+    /// <summary>
+    /// The open c l matrix vector kernel.
+    /// </summary>
 
     #endregion
 
@@ -434,6 +455,9 @@ __kernel void matrix_vector_multiply_optimized(
     
     y[row] = sum;
 }";
+    /// <summary>
+    /// The c u d a vector operations kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for parallel vector operations with coalesced memory access.
@@ -470,6 +494,9 @@ extern ""C"" __global__ void vector_operations_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l parallel reduction kernel.
+    /// </summary>
 
     #endregion
 
@@ -541,6 +568,9 @@ __kernel void parallel_reduction_optimized(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a warp reduction kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for warp-optimized reduction.
@@ -591,6 +621,9 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l q r shift kernel.
+    /// </summary>
 
     #endregion
 
@@ -665,6 +698,9 @@ __kernel void qr_algorithm_shift(
         eigenvalues[tid] = A[tid * n + tid];
     }
 }";
+    /// <summary>
+    /// The c u d a givens rotation kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for Givens rotation application in QR algorithm.
@@ -708,6 +744,9 @@ extern ""C"" __global__ void apply_givens_rotation_cuda(
         Q[tid * n + j] = s * q_i + c * q_j;
     }
 }";
+    /// <summary>
+    /// The c u d a cholesky kernel.
+    /// </summary>
 
     #endregion
 
@@ -772,6 +811,9 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l l u decomposition kernel.
+    /// </summary>
 
     #endregion
 
@@ -1040,6 +1082,9 @@ __kernel void lu_decomposition_step(
     }
 
         private static int GetPreviousPowerOfTwo(int value) => GetNextPowerOfTwo(value + 1) / 2;
+        /// <summary>
+        /// An linear algebra operation enumeration.
+        /// </summary>
 
         #endregion
 
@@ -1067,10 +1112,30 @@ __kernel void lu_decomposition_step(
 /// </summary>
 public class KernelExecutionParameters
 {
+    /// <summary>
+    /// Gets or sets the global work size.
+    /// </summary>
+    /// <value>The global work size.</value>
     public int[] GlobalWorkSize { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the local work size.
+    /// </summary>
+    /// <value>The local work size.</value>
     public int[] LocalWorkSize { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the shared memory size.
+    /// </summary>
+    /// <value>The shared memory size.</value>
     public int SharedMemorySize { get; set; }
+    /// <summary>
+    /// Gets or sets the use shared memory.
+    /// </summary>
+    /// <value>The use shared memory.</value>
     public bool UseSharedMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the tile size.
+    /// </summary>
+    /// <value>The tile size.</value>
     public int TileSize { get; set; } = 16;
 }
 
@@ -1079,10 +1144,30 @@ public class KernelExecutionParameters
 /// </summary>
 public class MatrixProperties
 {
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public long Size { get; set; }
+    /// <summary>
+    /// Gets or sets the sparsity ratio.
+    /// </summary>
+    /// <value>The sparsity ratio.</value>
     public float SparsityRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the condition number.
+    /// </summary>
+    /// <value>The condition number.</value>
     public float ConditionNumber { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether symmetric.
+    /// </summary>
+    /// <value>The is symmetric.</value>
     public bool IsSymmetric { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether positive definite.
+    /// </summary>
+    /// <value>The is positive definite.</value>
     public bool IsPositiveDefinite { get; set; }
 }
 
@@ -1091,10 +1176,30 @@ public class MatrixProperties
 /// </summary>
 public class HardwareInfo
 {
+    /// <summary>
+    /// Gets or sets the global memory size.
+    /// </summary>
+    /// <value>The global memory size.</value>
     public long GlobalMemorySize { get; set; }
+    /// <summary>
+    /// Gets or sets the shared memory size.
+    /// </summary>
+    /// <value>The shared memory size.</value>
     public int SharedMemorySize { get; set; }
+    /// <summary>
+    /// Gets or sets the max work group size.
+    /// </summary>
+    /// <value>The max work group size.</value>
     public int MaxWorkGroupSize { get; set; }
+    /// <summary>
+    /// Gets or sets the preferred work group size multiple.
+    /// </summary>
+    /// <value>The preferred work group size multiple.</value>
     public int PreferredWorkGroupSizeMultiple { get; set; }
+    /// <summary>
+    /// Gets or sets the compute units.
+    /// </summary>
+    /// <value>The compute units.</value>
     public int ComputeUnits { get; set; }
 }
 
@@ -1103,12 +1208,40 @@ public class HardwareInfo
 /// </summary>
 public class AdaptiveKernelConfig
 {
+    /// <summary>
+    /// Gets or sets the use sparse optimizations.
+    /// </summary>
+    /// <value>The use sparse optimizations.</value>
     public bool UseSparseOptimizations { get; set; }
+    /// <summary>
+    /// Gets or sets the sparsity threshold.
+    /// </summary>
+    /// <value>The sparsity threshold.</value>
     public float SparsityThreshold { get; set; }
+    /// <summary>
+    /// Gets or sets the use out of core algorithm.
+    /// </summary>
+    /// <value>The use out of core algorithm.</value>
     public bool UseOutOfCoreAlgorithm { get; set; }
+    /// <summary>
+    /// Gets or sets the block size.
+    /// </summary>
+    /// <value>The block size.</value>
     public int BlockSize { get; set; } = 64;
+    /// <summary>
+    /// Gets or sets the requires high precision.
+    /// </summary>
+    /// <value>The requires high precision.</value>
     public bool RequiresHighPrecision { get; set; }
+    /// <summary>
+    /// Gets or sets the use mixed precision.
+    /// </summary>
+    /// <value>The use mixed precision.</value>
     public bool UseMixedPrecision { get; set; }
+    /// <summary>
+    /// Gets or sets the optimal work group size.
+    /// </summary>
+    /// <value>The optimal work group size.</value>
     public int OptimalWorkGroupSize { get; set; } = 256;
 }
 

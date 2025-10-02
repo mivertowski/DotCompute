@@ -14,10 +14,20 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class PerformanceAnalyzer
 {
+    /// <summary>
+    /// Initializes a new instance of the PerformanceAnalyzer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public PerformanceAnalyzer(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+    /// <summary>
+    /// Gets analyze performance.
+    /// </summary>
+    /// <param name="executions">The executions.</param>
+    /// <param name="deviceProfiles">The device profiles.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ParallelExecutionAnalysis AnalyzePerformance(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
     {
@@ -58,6 +68,11 @@ public class PerformanceAnalyzer
 
         return analysis;
     }
+    /// <summary>
+    /// Gets analyze trends.
+    /// </summary>
+    /// <param name="executions">The executions.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ExecutionPerformanceTrend AnalyzeTrends(ExecutionRecord[] executions)
     {
@@ -140,7 +155,7 @@ public class PerformanceAnalyzer
         return bottlenecks.OrderByDescending(b => b.Severity);
     }
 
-    private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, List<Analysis.BottleneckAnalysis> bottlenecks)
+    private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, IReadOnlyList<Analysis.BottleneckAnalysis> bottlenecks)
     {
         var recommendations = new List<string>();
 
@@ -244,13 +259,41 @@ public class PerformanceAnalyzer
 
 public class DevicePerformanceProfile
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public required string DeviceId { get; set; }
-    public List<DeviceExecutionResult> Executions { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the executions.
+    /// </summary>
+    /// <value>The executions.</value>
+    public IList<DeviceExecutionResult> Executions { get; } = [];
+    /// <summary>
+    /// Gets or sets the average utilization percentage.
+    /// </summary>
+    /// <value>The average utilization percentage.</value>
 
     public double AverageUtilizationPercentage { get; private set; }
+    /// <summary>
+    /// Gets or sets the peak utilization percentage.
+    /// </summary>
+    /// <value>The peak utilization percentage.</value>
     public double PeakUtilizationPercentage { get; private set; }
+    /// <summary>
+    /// Gets or sets the idle time percentage.
+    /// </summary>
+    /// <value>The idle time percentage.</value>
     public double IdleTimePercentage { get; private set; }
+    /// <summary>
+    /// Gets or sets the primary bottleneck.
+    /// </summary>
+    /// <value>The primary bottleneck.</value>
     public Analysis.BottleneckAnalysis? PrimaryBottleneck { get; private set; }
+    /// <summary>
+    /// Performs add execution.
+    /// </summary>
+    /// <param name="result">The result.</param>
 
     public void AddExecution(DeviceExecutionResult result)
     {
@@ -265,6 +308,10 @@ public class DevicePerformanceProfile
             Executions.RemoveAt(0);
         }
     }
+    /// <summary>
+    /// Gets the optimization recommendations.
+    /// </summary>
+    /// <returns>The optimization recommendations.</returns>
 
     public List<string> GetOptimizationRecommendations()
     {
@@ -305,10 +352,34 @@ public class DevicePerformanceProfile
 
 public class DeviceUtilizationAnalysis
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public required string DeviceId { get; set; }
+    /// <summary>
+    /// Gets or sets the average utilization percentage.
+    /// </summary>
+    /// <value>The average utilization percentage.</value>
     public double AverageUtilizationPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the peak utilization percentage.
+    /// </summary>
+    /// <value>The peak utilization percentage.</value>
     public double PeakUtilizationPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the idle time percentage.
+    /// </summary>
+    /// <value>The idle time percentage.</value>
     public double IdleTimePercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the bottleneck severity.
+    /// </summary>
+    /// <value>The bottleneck severity.</value>
     public double BottleneckSeverity { get; set; }
-    public List<string> RecommendedOptimizations { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the recommended optimizations.
+    /// </summary>
+    /// <value>The recommended optimizations.</value>
+    public IList<string> RecommendedOptimizations { get; } = [];
 }

@@ -240,6 +240,9 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
             return true; // If we can't compare, assume compatible
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

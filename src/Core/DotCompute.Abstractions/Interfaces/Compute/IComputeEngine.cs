@@ -66,7 +66,7 @@ namespace DotCompute.Abstractions.Interfaces.Compute
         /// and hardware capabilities. For example, CUDA backend requires NVIDIA drivers,
         /// while Metal backend is only available on Apple platforms.
         /// </remarks>
-        public ComputeBackendType[] AvailableBackends { get; }
+        public IReadOnlyList<ComputeBackendType> AvailableBackends { get; }
 
         /// <summary>
         /// Gets the default backend for the current system.

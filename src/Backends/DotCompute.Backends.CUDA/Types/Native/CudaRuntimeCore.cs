@@ -4,6 +4,7 @@
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
+using System;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -31,7 +32,7 @@ namespace DotCompute.Backends.CUDA.Native
                     var currentPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH") ?? "";
                     var cudaLib64 = Path.Combine(cudaPath, "lib64");
 
-                    if (!currentPath.Contains(cudaLib64))
+                    if (!currentPath.Contains(cudaLib64, StringComparison.OrdinalIgnoreCase))
                     {
                         // Security: Validate path before modifying environment
                         if (Directory.Exists(cudaLib64) && Path.IsPathFullyQualified(cudaLib64))

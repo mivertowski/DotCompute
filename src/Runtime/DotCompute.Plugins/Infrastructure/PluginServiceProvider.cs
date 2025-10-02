@@ -481,7 +481,7 @@ namespace DotCompute.Plugins.Infrastructure
         /// <summary>
         /// Gets or sets the list of registered assemblies.
         /// </summary>
-        public List<string> RegisteredAssemblies { get; set; } = [];
+        public IList<string> RegisteredAssemblies { get; } = [];
 
         /// <summary>
         /// Gets or sets the error message if unhealthy.
@@ -497,6 +497,11 @@ namespace DotCompute.Plugins.Infrastructure
         private readonly IServiceScope _scope = scope ?? throw new ArgumentNullException(nameof(scope));
         private readonly Assembly _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        /// <summary>
+        /// Gets the service.
+        /// </summary>
+        /// <param name="serviceType">The service type.</param>
+        /// <returns>The service.</returns>
 
         public object? GetService(Type serviceType)
         {
@@ -525,8 +530,15 @@ namespace DotCompute.Plugins.Infrastructure
     {
         private readonly IServiceScope _innerScope = innerScope ?? throw new ArgumentNullException(nameof(innerScope));
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the service provider.
+        /// </summary>
+        /// <value>The service provider.</value>
 
         public IServiceProvider ServiceProvider { get; } = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -608,8 +620,18 @@ namespace DotCompute.Plugins.Infrastructure
     internal sealed class PluginActivator(IServiceProvider serviceProvider) : IPluginActivator
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>The created instance.</returns>
 
         public object CreateInstance(Type type) => ActivatorUtilities.CreateInstance(_serviceProvider, type);
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <returns>The created instance.</returns>
 
         public T CreateInstance<T>() where T : class => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
     }
@@ -632,6 +654,11 @@ namespace DotCompute.Plugins.Infrastructure
     /// </summary>
     internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
     {
+        /// <summary>
+        /// Validates the async.
+        /// </summary>
+        /// <param name="plugin">The plugin.</param>
+        /// <returns>The result of the operation.</returns>
         public async Task<PluginValidationResult> ValidateAsync(object plugin)
         {
             await Task.CompletedTask;
@@ -693,6 +720,10 @@ namespace DotCompute.Plugins.Infrastructure
     internal sealed class PluginMetrics : IPluginMetrics
     {
         private readonly ConcurrentDictionary<string, PluginMetric> _metrics = new();
+        /// <summary>
+        /// Performs record activation.
+        /// </summary>
+        /// <param name="pluginType">The plugin type.</param>
 
         public void RecordActivation(Type pluginType)
         {
@@ -701,6 +732,11 @@ namespace DotCompute.Plugins.Infrastructure
                 new PluginMetric { ActivationCount = 1 },
                 (_, existing) => existing with { ActivationCount = existing.ActivationCount + 1 });
         }
+        /// <summary>
+        /// Performs record execution time.
+        /// </summary>
+        /// <param name="pluginType">The plugin type.</param>
+        /// <param name="executionTime">The execution time.</param>
 
         public void RecordExecutionTime(Type pluginType, TimeSpan executionTime)
         {
@@ -713,6 +749,10 @@ namespace DotCompute.Plugins.Infrastructure
                     ExecutionCount = existing.ExecutionCount + 1
                 });
         }
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
 
         public PluginMetricsData GetMetrics()
         {
@@ -732,7 +772,7 @@ namespace DotCompute.Plugins.Infrastructure
         /// <summary>
         /// Gets or sets the plugin metrics by type name.
         /// </summary>
-        public Dictionary<string, PluginMetric> PluginMetrics { get; set; } = [];
+        public Dictionary<string, PluginMetric> PluginMetrics { get; } = [];
 
         /// <summary>
         /// Gets or sets the metrics collection time.

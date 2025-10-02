@@ -22,6 +22,11 @@ namespace DotCompute.Algorithms.Management
         private readonly NuGetPluginLoaderOptions _options;
         private readonly SourceRepositoryProvider _sourceRepositoryProvider;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the NuGetPackageResolver class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="options">The options.</param>
 
         public NuGetPackageResolver(MSLogger logger, NuGetPluginLoaderOptions options)
         {
@@ -247,6 +252,9 @@ namespace DotCompute.Algorithms.Management
 
             return $"{identity.Id}_{identity.Version}_{targetFramework}".ToLowerInvariant();
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

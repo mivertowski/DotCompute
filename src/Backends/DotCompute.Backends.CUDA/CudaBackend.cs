@@ -17,6 +17,10 @@ namespace DotCompute.Backends.CUDA
         private readonly ILogger<CudaBackend> _logger;
         private readonly List<CudaAccelerator> _accelerators = [];
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaBackend class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaBackend(ILogger<CudaBackend> logger)
         {
@@ -229,6 +233,9 @@ namespace DotCompute.Backends.CUDA
                 LogUnifiedAddressingSupported(_logger);
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

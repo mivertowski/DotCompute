@@ -403,12 +403,19 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
             _disposed = true;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public virtual async ValueTask DisposeAsync()
     {

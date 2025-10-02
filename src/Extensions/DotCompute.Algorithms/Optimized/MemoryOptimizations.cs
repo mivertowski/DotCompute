@@ -126,6 +126,9 @@ public static class MemoryOptimizations
             => false;
 
         private static int AlignUp(int value, int alignment) => (value + alignment - 1) & ~(alignment - 1);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()
@@ -160,11 +163,20 @@ public static class MemoryOptimizations
         private readonly int _maxBuffers = maxBuffers;
         private readonly NumaAllocator _allocator = new();
         private bool _disposed;
+        /// <summary>
+        /// A pooled buffer structure.
+        /// </summary>
 
 
         private readonly struct PooledBuffer(Memory<T> buffer, int size)
         {
+            /// <summary>
+            /// The buffer.
+            /// </summary>
             public readonly Memory<T> Buffer = buffer;
+            /// <summary>
+            /// The size.
+            /// </summary>
             public readonly int Size = size;
         }
 
@@ -256,6 +268,9 @@ public static class MemoryOptimizations
             size |= size >> 16;
             return size + 1;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()

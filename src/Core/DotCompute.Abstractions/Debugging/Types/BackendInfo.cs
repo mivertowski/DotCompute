@@ -11,7 +11,7 @@ public class BackendInfo
     public string Name { get; init; } = string.Empty;
     public string Version { get; init; } = string.Empty;
     public bool IsAvailable { get; init; }
-    public string[] Capabilities { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Capabilities { get; init; } = Array.Empty<string>();
     public Dictionary<string, object> Properties { get; init; } = [];
     public string? UnavailabilityReason { get; init; }
     public int Priority { get; init; }

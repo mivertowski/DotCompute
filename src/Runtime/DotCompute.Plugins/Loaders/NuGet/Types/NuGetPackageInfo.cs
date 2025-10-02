@@ -33,13 +33,13 @@ public class NuGetPackageInfo
     /// Gets or sets the package dependencies.
     /// List of other packages required by this package.
     /// </summary>
-    public List<NuGetPackageDependency> Dependencies { get; set; } = [];
+    public IList<NuGetPackageDependency> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets or sets the package metadata.
     /// Additional package information and properties.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; set; } = [];
+    public Dictionary<string, string> Metadata { get; } = [];
 
     /// <summary>
     /// Gets or sets when the package was cached.

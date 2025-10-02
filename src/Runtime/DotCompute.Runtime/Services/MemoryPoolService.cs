@@ -128,6 +128,10 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
         await PerformMaintenanceAsync();
         return totalReleased;
     }
+    /// <summary>
+    /// Initializes a new instance of the MemoryPoolService class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public MemoryPoolService(ILogger<MemoryPoolService> logger)
     {
@@ -370,6 +374,9 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
         }
         return result;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -430,15 +437,42 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
 /// </summary>
 internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public Guid Id { get; }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; private set; }
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed { get; private set; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State { get; private set; } = BufferState.Allocated;
 
     private readonly ILogger _logger;
     private IntPtr _nativeHandle;
     private GCHandle _pinnedHandle;
+    /// <summary>
+    /// Initializes a new instance of the PooledBuffer class.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="logger">The logger.</param>
 
     public PooledBuffer(Guid id, long sizeInBytes, MemoryOptions options, ILogger logger)
     {
@@ -449,6 +483,12 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 
         AllocateMemory(sizeInBytes);
     }
+    /// <summary>
+    /// Gets reset asynchronously.
+    /// </summary>
+    /// <param name="newSize">The new size.</param>
+    /// <param name="newOptions">The new options.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask ResetAsync(long newSize, MemoryOptions newOptions)
     {
@@ -479,6 +519,14 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
         }
         _nativeHandle = IntPtr.Zero;
     }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -490,6 +538,14 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
         // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="destination">The destination.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -501,6 +557,9 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
         // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -521,6 +580,10 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
@@ -534,10 +597,30 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 /// </summary>
 internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger, long initialSize = 1024 * 1024, long maxSize = 512 * 1024 * 1024) : IMemoryPool, IDisposable
 {
+    /// <summary>
+    /// Gets or sets the accelerator identifier.
+    /// </summary>
+    /// <value>The accelerator id.</value>
     public string AcceleratorId { get; } = acceleratorId;
+    /// <summary>
+    /// Gets or sets the total size.
+    /// </summary>
+    /// <value>The total size.</value>
     public long TotalSize { get; private set; } = initialSize;
+    /// <summary>
+    /// Gets or sets the available size.
+    /// </summary>
+    /// <value>The available size.</value>
     public long AvailableSize => TotalSize - UsedSize;
+    /// <summary>
+    /// Gets or sets the used size.
+    /// </summary>
+    /// <value>The used size.</value>
     public long UsedSize { get; private set; }
+    /// <summary>
+    /// Gets or sets the active allocations.
+    /// </summary>
+    /// <value>The active allocations.</value>
     public int ActiveAllocations { get; private set; }
 
     private readonly ILogger _logger = logger;
@@ -545,6 +628,11 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
     private readonly ConcurrentDictionary<Guid, IUnifiedMemoryBuffer> _activeBuffers = new();
     private readonly long _maxSize = maxSize;
     private bool _disposed;
+    /// <summary>
+    /// Gets allocate asynchronously.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes)
     {
@@ -579,6 +667,11 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
 
         throw new OutOfMemoryException($"Memory pool for accelerator {AcceleratorId} is full");
     }
+    /// <summary>
+    /// Gets return asynchronously.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task ReturnAsync(IUnifiedMemoryBuffer buffer)
     {
@@ -599,6 +692,10 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
             }
         }
     }
+    /// <summary>
+    /// Gets defragment asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async Task DefragmentAsync()
     {
@@ -623,6 +720,10 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
 
         _logger.LogDebugMessage($"Defragmented memory pool for accelerator {AcceleratorId}, disposed {toDispose.Count} unused buffers");
     }
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <returns>The statistics.</returns>
 
     public MemoryPoolStatistics GetStatistics()
     {
@@ -637,6 +738,9 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
             DefragmentationCount = 0 // Simplified
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

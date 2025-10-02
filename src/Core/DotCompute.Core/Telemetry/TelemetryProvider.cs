@@ -35,6 +35,13 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     private readonly ConcurrentDictionary<string, object> _correlationContext;
     private readonly Timer _samplingTimer = null!;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the ProductionTelemetryProvider class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="metricsCollector">The metrics collector.</param>
+    /// <param name="performanceProfiler">The performance profiler.</param>
 
     public ProductionTelemetryProvider(
         ILogger<ProductionTelemetryProvider> logger,
@@ -411,6 +418,9 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
             throw new ObjectDisposedException(nameof(ProductionTelemetryProvider));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public override void Dispose()
     {
@@ -434,14 +444,45 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 /// </summary>
 public sealed class TelemetryOptions
 {
+    /// <summary>
+    /// Gets or sets the enable sampling.
+    /// </summary>
+    /// <value>The enable sampling.</value>
     public bool EnableSampling { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the sampling interval seconds.
+    /// </summary>
+    /// <value>The sampling interval seconds.</value>
     public int SamplingIntervalSeconds { get; set; } = 30;
+    /// <summary>
+    /// Gets or sets the memory alert threshold.
+    /// </summary>
+    /// <value>The memory alert threshold.</value>
     public long MemoryAlertThreshold { get; set; } = 1024L * 1024 * 1024; // 1GB
+    /// <summary>
+    /// Gets or sets the error rate threshold.
+    /// </summary>
+    /// <value>The error rate threshold.</value>
     public double ErrorRateThreshold { get; set; } = 0.05; // 5%
+    /// <summary>
+    /// Gets or sets the enable distributed tracing.
+    /// </summary>
+    /// <value>The enable distributed tracing.</value>
     public bool EnableDistributedTracing { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable performance profiling.
+    /// </summary>
+    /// <value>The enable performance profiling.</value>
     public bool EnablePerformanceProfiling { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the default export format.
+    /// </summary>
+    /// <value>The default export format.</value>
     public TelemetryExportFormat DefaultExportFormat { get; set; } = TelemetryExportFormat.Prometheus;
 }
+/// <summary>
+/// An telemetry export format enumeration.
+/// </summary>
 
 /// <summary>
 /// Available telemetry export formats.
@@ -460,8 +501,20 @@ public enum TelemetryExportFormat
 /// </summary>
 internal sealed class CorrelationContext
 {
+    /// <summary>
+    /// Gets or sets the activity identifier.
+    /// </summary>
+    /// <value>The activity id.</value>
     public string ActivityId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTimeOffset StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public string OperationName { get; set; } = string.Empty;
 }
 
@@ -470,10 +523,30 @@ internal sealed class CorrelationContext
 /// </summary>
 public sealed class SystemHealthMetrics
 {
+    /// <summary>
+    /// Gets or sets the memory usage bytes.
+    /// </summary>
+    /// <value>The memory usage bytes.</value>
     public long MemoryUsageBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the device utilization.
+    /// </summary>
+    /// <value>The device utilization.</value>
     public double DeviceUtilization { get; set; }
+    /// <summary>
+    /// Gets or sets the active operations.
+    /// </summary>
+    /// <value>The active operations.</value>
     public int ActiveOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the error rate.
+    /// </summary>
+    /// <value>The error rate.</value>
     public double ErrorRate { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
 
@@ -482,8 +555,24 @@ public sealed class SystemHealthMetrics
 /// </summary>
 public sealed class CollectedMetrics
 {
-    public Dictionary<string, long> Counters { get; set; } = [];
-    public Dictionary<string, double[]> Histograms { get; set; } = [];
-    public Dictionary<string, double> Gauges { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the counters.
+    /// </summary>
+    /// <value>The counters.</value>
+    public Dictionary<string, long> Counters { get; } = [];
+    /// <summary>
+    /// Gets or sets the histograms.
+    /// </summary>
+    /// <value>The histograms.</value>
+    public Dictionary<string, double[]> Histograms { get; } = [];
+    /// <summary>
+    /// Gets or sets the gauges.
+    /// </summary>
+    /// <value>The gauges.</value>
+    public Dictionary<string, double> Gauges { get; } = [];
+    /// <summary>
+    /// Gets or sets the collected at.
+    /// </summary>
+    /// <value>The collected at.</value>
     public DateTimeOffset CollectedAt { get; set; } = DateTimeOffset.UtcNow;
 }

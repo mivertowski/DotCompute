@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda driver entry point query result enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA driver entry point query result enumeration
     /// </summary>
     public enum CudaDriverEntryPointQueryResult : uint
@@ -12,6 +15,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         SymbolNotFound = 1,
         VersionNotSufficent = 2
     }
+    /// <summary>
+    /// An cuda array format kind enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA array format kind enumeration

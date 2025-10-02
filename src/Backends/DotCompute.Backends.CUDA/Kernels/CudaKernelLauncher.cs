@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
+using System;
 
 namespace DotCompute.Backends.CUDA.Compilation
 {
@@ -20,19 +21,61 @@ namespace DotCompute.Backends.CUDA.Compilation
         uint blockX, uint blockY, uint blockZ,
         uint sharedMemoryBytes = 0)
     {
+        /// <summary>
+        /// Gets or sets the grid x.
+        /// </summary>
+        /// <value>The grid x.</value>
         public uint GridX { get; } = gridX;
+        /// <summary>
+        /// Gets or sets the grid y.
+        /// </summary>
+        /// <value>The grid y.</value>
         public uint GridY { get; } = gridY;
+        /// <summary>
+        /// Gets or sets the grid z.
+        /// </summary>
+        /// <value>The grid z.</value>
         public uint GridZ { get; } = gridZ;
+        /// <summary>
+        /// Gets or sets the block x.
+        /// </summary>
+        /// <value>The block x.</value>
         public uint BlockX { get; } = blockX;
+        /// <summary>
+        /// Gets or sets the block y.
+        /// </summary>
+        /// <value>The block y.</value>
         public uint BlockY { get; } = blockY;
+        /// <summary>
+        /// Gets or sets the block z.
+        /// </summary>
+        /// <value>The block z.</value>
         public uint BlockZ { get; } = blockZ;
+        /// <summary>
+        /// Gets or sets the shared memory bytes.
+        /// </summary>
+        /// <value>The shared memory bytes.</value>
         public uint SharedMemoryBytes { get; } = sharedMemoryBytes;
+        /// <summary>
+        /// Creates a new 1 d.
+        /// </summary>
+        /// <param name="totalThreads">The total threads.</param>
+        /// <param name="blockSize">The block size.</param>
+        /// <returns>The created 1 d.</returns>
 
         public static CudaLaunchConfig Create1D(int totalThreads, int blockSize = 256)
         {
             var gridSize = (uint)((totalThreads + blockSize - 1) / blockSize);
             return new CudaLaunchConfig(gridSize, 1, 1, (uint)blockSize, 1, 1);
         }
+        /// <summary>
+        /// Creates a new 2 d.
+        /// </summary>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="blockSizeX">The block size X.</param>
+        /// <param name="blockSizeY">The block size Y.</param>
+        /// <returns>The created 2 d.</returns>
 
         public static CudaLaunchConfig Create2D(int width, int height, int blockSizeX = 16, int blockSizeY = 16)
         {
@@ -40,6 +83,16 @@ namespace DotCompute.Backends.CUDA.Compilation
             var gridY = (uint)((height + blockSizeY - 1) / blockSizeY);
             return new CudaLaunchConfig(gridX, gridY, 1, (uint)blockSizeX, (uint)blockSizeY, 1);
         }
+        /// <summary>
+        /// Creates a new 3 d.
+        /// </summary>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="depth">The depth.</param>
+        /// <param name="blockSizeX">The block size X.</param>
+        /// <param name="blockSizeY">The block size Y.</param>
+        /// <param name="blockSizeZ">The block size Z.</param>
+        /// <returns>The created 3 d.</returns>
 
         public static CudaLaunchConfig Create3D(
             int width, int height, int depth,
@@ -61,6 +114,11 @@ namespace DotCompute.Backends.CUDA.Compilation
         private readonly ILogger _logger;
         private readonly int _deviceId;
         private readonly CudaDeviceProperties _deviceProps;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelLauncher class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaKernelLauncher(CudaContext context, ILogger logger)
         {
@@ -348,7 +406,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <summary>
         /// Prepares a single kernel argument for launch following ILGPU/NVIDIA best practices
         /// </summary>
-        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, List<IntPtr> unmanagedAllocations, ILogger logger)
+        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, IReadOnlyList<IntPtr> unmanagedAllocations, ILogger logger)
         {
             // Validate input
             if (argValue == null)
@@ -371,7 +429,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 argType.FullName != null &&
 
-                argType.FullName.Contains("SimpleCudaUnifiedMemoryBuffer"))
+                argType.FullName.Contains("SimpleCudaUnifiedMemoryBuffer", StringComparison.OrdinalIgnoreCase))
             {
                 // Use reflection to get DevicePointer property
                 var devicePtrProperty = argType.GetProperty("DevicePointer");
@@ -399,7 +457,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 argType.FullName != null &&
 
-                argType.FullName.Contains("CudaMemoryBuffer"))
+                argType.FullName.Contains("CudaMemoryBuffer", StringComparison.OrdinalIgnoreCase))
             {
                 // Try to get the DevicePointer property (internal)
                 var devicePtrProp = argType.GetProperty("DevicePointer",
@@ -483,7 +541,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 // Handle SimpleCudaUnifiedMemoryBuffer<T> specifically
 
-                if (argValue.GetType().Name.StartsWith("SimpleCudaUnifiedMemoryBuffer"))
+                if (argValue.GetType().Name.StartsWith("SimpleCudaUnifiedMemoryBuffer", StringComparison.CurrentCulture))
                 {
                     // Use reflection to get DevicePointer property
                     var devicePtrProperty = argValue.GetType().GetProperty("DevicePointer");

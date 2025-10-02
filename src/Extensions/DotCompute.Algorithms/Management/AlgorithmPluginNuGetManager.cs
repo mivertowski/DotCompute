@@ -8,6 +8,7 @@ using NuGet.Packaging;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using System;
 
 namespace DotCompute.Algorithms.Management;
 
@@ -21,6 +22,11 @@ public class AlgorithmPluginNuGetManager
     private readonly AlgorithmPluginManagerOptions _options;
     private readonly string _packageCacheDirectory;
     private readonly HttpClient _httpClient;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginNuGetManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public AlgorithmPluginNuGetManager(
         ILogger<AlgorithmPluginNuGetManager> logger,
@@ -252,7 +258,7 @@ public class AlgorithmPluginNuGetManager
 
             // Check for required DLLs
             var libItems = await packageReader.GetLibItemsAsync(cancellationToken);
-            result.HasPluginAssemblies = libItems.Any(group => group.Items.Any(item => item.EndsWith(".dll")));
+            result.HasPluginAssemblies = libItems.Any(group => group.Items.Any(item => item.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)));
 
             if (!result.HasPluginAssemblies)
             {
@@ -298,6 +304,9 @@ public class AlgorithmPluginNuGetManager
 
         return targetFile;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _httpClient?.Dispose();
 }
@@ -307,10 +316,30 @@ public class AlgorithmPluginNuGetManager
 /// </summary>
 public class CachedPackageInfo
 {
+    /// <summary>
+    /// Gets or sets the package identifier.
+    /// </summary>
+    /// <value>The package id.</value>
     public required string PackageId { get; init; }
+    /// <summary>
+    /// Gets or sets the version.
+    /// </summary>
+    /// <value>The version.</value>
     public required string Version { get; init; }
+    /// <summary>
+    /// Gets or sets the file path.
+    /// </summary>
+    /// <value>The file path.</value>
     public required string FilePath { get; init; }
+    /// <summary>
+    /// Gets or sets the file size.
+    /// </summary>
+    /// <value>The file size.</value>
     public long FileSize { get; init; }
+    /// <summary>
+    /// Gets or sets the cached date.
+    /// </summary>
+    /// <value>The cached date.</value>
     public DateTime CachedDate { get; init; }
 }
 
@@ -319,10 +348,34 @@ public class CachedPackageInfo
 /// </summary>
 public class InternalNuGetValidationResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
+    /// <summary>
+    /// Gets or sets the package identifier.
+    /// </summary>
+    /// <value>The package id.</value>
     public string? PackageId { get; set; }
+    /// <summary>
+    /// Gets or sets the version.
+    /// </summary>
+    /// <value>The version.</value>
     public string? Version { get; set; }
+    /// <summary>
+    /// Gets or sets the package path.
+    /// </summary>
+    /// <value>The package path.</value>
     public required string PackagePath { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether plugin assemblies.
+    /// </summary>
+    /// <value>The has plugin assemblies.</value>
     public bool HasPluginAssemblies { get; set; }
-    public List<string> ValidationErrors { get; } = [];
+    /// <summary>
+    /// Gets or sets the validation errors.
+    /// </summary>
+    /// <value>The validation errors.</value>
+    public IList<string> ValidationErrors { get; } = [];
 }

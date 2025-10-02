@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Algorithms.LinearAlgebra;
+using System;
 
 namespace DotCompute.Algorithms.Optimized;
 
@@ -26,17 +27,59 @@ public static class PerformanceBenchmarks
     /// </summary>
     public readonly struct BenchmarkResult
     {
+        /// <summary>
+        /// The name.
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// The min time.
+        /// </summary>
         public readonly TimeSpan MinTime;
+        /// <summary>
+        /// The max time.
+        /// </summary>
         public readonly TimeSpan MaxTime;
+        /// <summary>
+        /// The mean time.
+        /// </summary>
         public readonly TimeSpan MeanTime;
+        /// <summary>
+        /// The median time.
+        /// </summary>
         public readonly TimeSpan MedianTime;
+        /// <summary>
+        /// The standard deviation.
+        /// </summary>
         public readonly double StandardDeviation;
+        /// <summary>
+        /// The throughput m f l o p s.
+        /// </summary>
         public readonly double ThroughputMFLOPS;
+        /// <summary>
+        /// The throughput g bps.
+        /// </summary>
         public readonly double ThroughputGBps;
+        /// <summary>
+        /// The speedup factor.
+        /// </summary>
         public readonly double SpeedupFactor;
+        /// <summary>
+        /// The memory allocated.
+        /// </summary>
         public readonly long MemoryAllocated;
+        /// <summary>
+        /// The is valid.
+        /// </summary>
         public readonly bool IsValid;
+        /// <summary>
+        /// Initializes a new instance of the BenchmarkResult class.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="measurements">The measurements.</param>
+        /// <param name="flopCount">The flop count.</param>
+        /// <param name="bytesProcessed">The bytes processed.</param>
+        /// <param name="baselineTime">The baseline time.</param>
+        /// <param name="memoryAllocated">The memory allocated.</param>
 
 
         public BenchmarkResult(string name, TimeSpan[] measurements, double flopCount,
@@ -71,9 +114,17 @@ public static class PerformanceBenchmarks
                 StandardDeviation = ThroughputMFLOPS = ThroughputGBps = SpeedupFactor = 0;
             }
         }
+        /// <summary>
+        /// Gets or sets the coefficient of variation.
+        /// </summary>
+        /// <value>The coefficient of variation.</value>
 
 
         public double CoefficientOfVariation => MeanTime.TotalSeconds > 0 ? StandardDeviation / MeanTime.TotalSeconds : 0;
+        /// <summary>
+        /// Gets or sets a value indicating whether stable.
+        /// </summary>
+        /// <value>The is stable.</value>
         public bool IsStable => CoefficientOfVariation <= MAX_COEFFICIENT_OF_VARIATION;
     }
 
@@ -83,18 +134,41 @@ public static class PerformanceBenchmarks
     /// </summary>
     public sealed class BenchmarkReport
     {
-        public List<BenchmarkResult> Results { get; } = [];
+        /// <summary>
+        /// Gets or sets the results.
+        /// </summary>
+        /// <value>The results.</value>
+        public IList<BenchmarkResult> Results { get; } = [];
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTime Timestamp { get; } = DateTime.UtcNow;
+        /// <summary>
+        /// Gets or sets the system info.
+        /// </summary>
+        /// <value>The system info.</value>
         public string SystemInfo { get; }
+        /// <summary>
+        /// Initializes a new instance of the BenchmarkReport class.
+        /// </summary>
 
 
         public BenchmarkReport()
         {
             SystemInfo = GetSystemInfo();
         }
+        /// <summary>
+        /// Performs add.
+        /// </summary>
+        /// <param name="result">The result.</param>
 
 
         public void Add(BenchmarkResult result) => Results.Add(result);
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public override string ToString()
@@ -212,7 +286,7 @@ public static class PerformanceBenchmarks
             }
 
 
-            Console.WriteLine($"Done. Best speedup: {report.Results.Where(r => r.Name.Contains("Matrix")).Max(r => r.SpeedupFactor):F2}x");
+            Console.WriteLine($"Done. Best speedup: {report.Results.Where(r => r.Name.Contains("Matrix", StringComparison.OrdinalIgnoreCase)).Max(r => r.SpeedupFactor):F2}x");
         }
 
 
@@ -275,7 +349,7 @@ public static class PerformanceBenchmarks
             }
 
 
-            Console.WriteLine($"Done. Best speedup: {report.Results.Where(r => r.Name.Contains("FFT") || r.Name.Contains("DFT")).Max(r => r.SpeedupFactor):F2}x");
+            Console.WriteLine($"Done. Best speedup: {report.Results.Where(r => r.Name.Contains("FFT", StringComparison.OrdinalIgnoreCase) || r.Name.Contains("DFT", StringComparison.CurrentCulture)).Max(r => r.SpeedupFactor):F2}x");
         }
 
 

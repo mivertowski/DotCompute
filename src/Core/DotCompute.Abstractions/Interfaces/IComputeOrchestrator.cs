@@ -102,7 +102,7 @@ public interface IComputeOrchestrator
 public interface IKernelExecutionParameters
 {
     /// <summary>Gets the kernel arguments.</summary>
-    public object[] Arguments { get; }
+    public IReadOnlyList<object> Arguments { get; }
 
 
     /// <summary>Gets the preferred backend.</summary>

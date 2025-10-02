@@ -15,6 +15,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         private readonly ConcurrentDictionary<string, KernelChainProfilingResult> _profiles = new();
         private volatile string? _currentProfile;
         private DateTime _startTime;
+        /// <summary>
+        /// Gets start profiling asynchronously.
+        /// </summary>
+        /// <param name="profileName">The profile name.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task StartProfilingAsync(string profileName, CancellationToken cancellationToken = default)
         {
@@ -23,6 +29,11 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             _logger?.LogDebug("Started profiling session '{ProfileName}'", profileName);
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop profiling asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task StopProfilingAsync(CancellationToken cancellationToken = default)
         {
@@ -47,6 +58,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             }
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets the profiling result async.
+        /// </summary>
+        /// <param name="profileName">The profile name.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The profiling result async.</returns>
 
         public async Task<KernelChainProfilingResult?> GetProfilingResultAsync(string profileName, CancellationToken cancellationToken = default)
         {
@@ -54,6 +71,15 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             await Task.CompletedTask;
             return result;
         }
+        /// <summary>
+        /// Gets record kernel execution asynchronously.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="executionTime">The execution time.</param>
+        /// <param name="memoryUsed">The memory used.</param>
+        /// <param name="backend">The backend.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task RecordKernelExecutionAsync(string kernelName, TimeSpan executionTime, long memoryUsed, string backend, CancellationToken cancellationToken = default)
         {

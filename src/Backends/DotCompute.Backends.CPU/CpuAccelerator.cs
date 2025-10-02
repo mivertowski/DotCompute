@@ -299,15 +299,36 @@ public sealed class CpuAccelerator(
 internal sealed class CompiledKernelAdapter(ICompiledKernel coreKernel) : ICompiledKernel
 {
     private readonly ICompiledKernel _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
 
     public Guid Id => _coreKernel.Id;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => _coreKernel.Name;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
 
         => await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose() => _coreKernel.Dispose();

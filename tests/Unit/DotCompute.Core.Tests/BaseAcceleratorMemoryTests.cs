@@ -24,6 +24,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
     private readonly TestAccelerator _accelerator;
     private readonly List<TestAccelerator> _accelerators = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseAcceleratorMemoryTests class.
+    /// </summary>
 
     public BaseAcceleratorMemoryTests()
     {
@@ -45,6 +48,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _accelerator = new TestAccelerator(info, _mockMemory.Object, _mockLogger.Object);
         _accelerators.Add(_accelerator);
     }
+    /// <summary>
+    /// Performs memory_ property_ returns injected memory manager.
+    /// </summary>
 
     #region Memory Integration Tests
 
@@ -52,6 +58,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
     [Trait("TestType", "MemoryIntegration")]
     public void Memory_Property_ReturnsInjectedMemoryManager()
         => _accelerator.Memory.Should().Be(_mockMemory.Object);
+    /// <summary>
+    /// Performs memory_ integration_ enforces memory limits.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "MemoryIntegration")]
@@ -70,6 +79,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _ = accelerator.Info.AvailableMemory.Should().BeGreaterThan(0);
         _ = accelerator.Info.AvailableMemory.Should().BeLessThanOrEqualTo(accelerator.Info.TotalMemory);
     }
+    /// <summary>
+    /// Gets dispose async_ disposes memory manager_ when configured.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryIntegration")]
@@ -86,6 +99,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeTrue();
         // Memory manager disposal is handled by AcceleratorUtilities
     }
+    /// <summary>
+    /// Performs memory manager_ allocation tracking_ reports accurate usage.
+    /// </summary>
 
     #endregion
 
@@ -119,6 +135,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _ = accelerator.Memory.Statistics.TotalMemoryBytes.Should().Be(1024 * 1024 * 1024);
         _ = accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
     }
+    /// <summary>
+    /// Gets memory pressure_ during compilation_ triggers garbage collection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AdvancedMemoryIntegration")]
@@ -152,6 +172,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _ = gcCollected.Should().BeTrue("garbage collection should have been triggered");
         memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets large kernel compilation_ memory allocation_ tracks correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AdvancedMemoryIntegration")]
@@ -187,6 +211,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         memoryManager.Verify(m => m.GetUsedMemory(), Times.AtLeastOnce);
         memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets memory fragmentation_ handles degraded performance.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AdvancedMemoryIntegration")]
@@ -224,6 +252,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         // but should still complete successfully
         _ = compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(30)));
     }
+    /// <summary>
+    /// Gets initialization_ under memory pressure_ retries and succeeds.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AdvancedMemoryIntegration")]
@@ -248,6 +280,10 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition);
         _ = await act.Should().NotThrowAsync();
     }
+    /// <summary>
+    /// Gets resource exhaustion_ gradual degradation_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "AdvancedMemoryIntegration")]
@@ -323,6 +359,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         _accelerators.Add(accelerator);
         return accelerator;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -357,7 +396,15 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
               new AcceleratorContext(IntPtr.Zero, 0),
               logger ?? throw new ArgumentNullException(nameof(logger)))
     {
+        /// <summary>
+        /// Gets or sets the enable metrics tracking.
+        /// </summary>
+        /// <value>The enable metrics tracking.</value>
         public bool EnableMetricsTracking { get; set; }
+        /// <summary>
+        /// Gets or sets the enable resource tracking.
+        /// </summary>
+        /// <value>The enable resource tracking.</value>
         public bool EnableResourceTracking { get; set; }
 
         protected override object? InitializeCore() => base.InitializeCore();

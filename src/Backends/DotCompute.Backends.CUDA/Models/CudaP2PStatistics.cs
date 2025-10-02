@@ -42,6 +42,6 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         /// Gets or sets per-connection utilization statistics.
         /// Key is "source-destination" string.
         /// </summary>
-        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; set; } = [];
+        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; } = [];
     }
 }

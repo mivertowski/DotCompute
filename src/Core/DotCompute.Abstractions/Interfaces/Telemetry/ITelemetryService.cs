@@ -82,7 +82,7 @@ public sealed class TelemetryServiceOptions
 
 
     public PrometheusOptions Prometheus { get; set; } = new();
-    public List<string> ExportEndpoints { get; set; } = [];
+    public IList<string> ExportEndpoints { get; } = [];
 }
 
 /// <summary>
@@ -93,7 +93,7 @@ public sealed class PrometheusOptions
     public bool Enabled { get; set; } = true;
     public string MetricsPath { get; set; } = "/metrics";
     public int Port { get; set; } = 9090;
-    public Dictionary<string, string> Labels { get; set; } = [];
+    public Dictionary<string, string> Labels { get; } = [];
 }
 
 /// <summary>

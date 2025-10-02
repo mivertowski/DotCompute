@@ -5,6 +5,7 @@ using System.Diagnostics;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
+using System;
 // TODO: Add Polly package reference to DotCompute.Algorithms.csproj for resilience patterns
 
 namespace DotCompute.Algorithms.Management;
@@ -180,7 +181,7 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
         // Check for specific error messages or types that indicate transient errors
 
         var message = ex.Message?.ToLowerInvariant() ?? string.Empty;
-        if (message.Contains("timeout") || message.Contains("temporary") || message.Contains("transient"))
+        if (message.Contains("timeout", StringComparison.CurrentCulture) || message.Contains("temporary", StringComparison.CurrentCulture) || message.Contains("transient"))
         {
             return true;
         }
@@ -225,11 +226,35 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
 /// </summary>
 public class PluginExecutionResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the result.
+    /// </summary>
+    /// <value>The result.</value>
     public object? Result { get; init; }
+    /// <summary>
+    /// Gets or sets the execution time ms.
+    /// </summary>
+    /// <value>The execution time ms.</value>
     public long ExecutionTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the attempts.
+    /// </summary>
+    /// <value>The attempts.</value>
     public int Attempts { get; init; }
+    /// <summary>
+    /// Gets or sets the execution identifier.
+    /// </summary>
+    /// <value>The execution id.</value>
     public Guid ExecutionId { get; init; }
+    /// <summary>
+    /// Gets or sets the error.
+    /// </summary>
+    /// <value>The error.</value>
     public Exception? Error { get; init; }
 }
 
@@ -238,9 +263,24 @@ public class PluginExecutionResult
 /// </summary>
 public static class AlgorithmPluginExecutionOptions
 {
+    /// <summary>
+    /// The default enable retry policies.
+    /// </summary>
     public const bool DefaultEnableRetryPolicies = true;
+    /// <summary>
+    /// The default max retry attempts.
+    /// </summary>
     public const int DefaultMaxRetryAttempts = 3;
+    /// <summary>
+    /// The default retry delay milliseconds.
+    /// </summary>
     public const int DefaultRetryDelayMilliseconds = 100;
+    /// <summary>
+    /// The default circuit breaker threshold.
+    /// </summary>
     public const int DefaultCircuitBreakerThreshold = 5;
+    /// <summary>
+    /// The default circuit breaker duration seconds.
+    /// </summary>
     public const int DefaultCircuitBreakerDurationSeconds = 30;
 }

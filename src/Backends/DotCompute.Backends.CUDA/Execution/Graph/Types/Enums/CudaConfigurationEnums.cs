@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
 {
     /// <summary>
+    /// An cuda cache config enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA cache configuration
     /// </summary>
     public enum CudaCacheConfig : uint
@@ -13,6 +16,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
         PreferCache = 2,
         PreferEqual = 3
     }
+    /// <summary>
+    /// An cuda shared mem config enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA shared memory configuration
@@ -23,6 +29,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
         BankSizeFourByte = 1,
         BankSizeEightByte = 2
     }
+    /// <summary>
+    /// An cuda limit enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA limit types

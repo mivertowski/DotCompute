@@ -21,13 +21,13 @@ public class NuGetPluginValidationResult
     /// Gets or sets the validation errors.
     /// List of issues that prevent plugin usage.
     /// </summary>
-    public List<string> Errors { get; set; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets or sets the validation warnings.
     /// Non-critical issues that should be addressed.
     /// </summary>
-    public List<string> Warnings { get; set; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the security validation result.

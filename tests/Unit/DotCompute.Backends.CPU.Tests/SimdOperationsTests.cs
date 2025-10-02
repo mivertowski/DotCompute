@@ -16,6 +16,9 @@ namespace DotCompute.Backends.CPU.Tests;
 [Trait("Category", TestCategories.HardwareIndependent)]
 public class SimdOperationsTests
 {
+    /// <summary>
+    /// Performs simd capabilities_ is supported_ returns valid value.
+    /// </summary>
     [Fact]
     public void SimdCapabilities_IsSupported_ReturnsValidValue()
     {
@@ -25,6 +28,9 @@ public class SimdOperationsTests
         // Assert
         _ = isSupported.Should().Be(Vector.IsHardwareAccelerated);
     }
+    /// <summary>
+    /// Performs simd capabilities_ preferred vector width_ returns valid width.
+    /// </summary>
 
 
     [Fact]
@@ -37,6 +43,9 @@ public class SimdOperationsTests
         _ = vectorWidth.Should().BeGreaterThan(0);
         _ = vectorWidth.Should().BeOneOf(64, 128, 256, 512);
     }
+    /// <summary>
+    /// Performs simd capabilities_ get summary_ returns complete information.
+    /// </summary>
 
 
     [Fact]
@@ -57,6 +66,9 @@ public class SimdOperationsTests
             _ = summary.SupportedInstructionSets.Should().NotBeEmpty();
         }
     }
+    /// <summary>
+    /// Performs x86 simd info_ s s e_ detection_ returns correct values.
+    /// </summary>
 
 
     [SkippableFact]
@@ -73,6 +85,9 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasSse41.Should().Be(Sse41.IsSupported);
         _ = X86SimdInfo.HasSse42.Should().Be(Sse42.IsSupported);
     }
+    /// <summary>
+    /// Performs x86 simd info_ a v x_ detection_ returns correct values.
+    /// </summary>
 
 
     [SkippableFact]
@@ -87,6 +102,9 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasAvx512F.Should().Be(Avx512F.IsSupported);
         _ = X86SimdInfo.HasAvx512BW.Should().Be(Avx512BW.IsSupported);
     }
+    /// <summary>
+    /// Performs x86 simd info_ additional instructions_ detection_ returns correct values.
+    /// </summary>
 
 
     [SkippableFact]
@@ -102,6 +120,9 @@ public class SimdOperationsTests
         _ = X86SimdInfo.HasPopcnt.Should().Be(Popcnt.IsSupported);
         _ = X86SimdInfo.HasLzcnt.Should().Be(Lzcnt.IsSupported);
     }
+    /// <summary>
+    /// Performs x86 simd info_ max vector width_ returns correct width.
+    /// </summary>
 
 
     [Fact]
@@ -129,6 +150,9 @@ public class SimdOperationsTests
             _ = maxWidth.Should().Be(0);
         }
     }
+    /// <summary>
+    /// Performs arm simd info_ n e o n_ detection_ returns correct values.
+    /// </summary>
 
 
     [SkippableFact]
@@ -141,6 +165,9 @@ public class SimdOperationsTests
         _ = ArmSimdInfo.HasNeon.Should().Be(AdvSimd.IsSupported);
         _ = ArmSimdInfo.HasNeonArm64.Should().Be(AdvSimd.Arm64.IsSupported);
     }
+    /// <summary>
+    /// Performs arm simd info_ additional instructions_ detection_ returns correct values.
+    /// </summary>
 
 
     [SkippableFact]
@@ -157,6 +184,9 @@ public class SimdOperationsTests
         _ = ArmSimdInfo.HasDp.Should().Be(Dp.IsSupported);
         _ = ArmSimdInfo.HasRdm.Should().Be(Rdm.IsSupported);
     }
+    /// <summary>
+    /// Performs arm simd info_ max vector width_ returns correct width.
+    /// </summary>
 
 
     [Fact]
@@ -176,6 +206,9 @@ public class SimdOperationsTests
             _ = maxWidth.Should().Be(0);
         }
     }
+    /// <summary>
+    /// Performs simd summary_ boolean properties_ return correct values.
+    /// </summary>
 
 
     [Fact]
@@ -190,6 +223,9 @@ public class SimdOperationsTests
         _ = summary.SupportsAvx512.Should().Be(summary.SupportedInstructionSets.Contains("AVX512F"));
         _ = summary.SupportsAdvSimd.Should().Be(summary.SupportedInstructionSets.Contains("NEON"));
     }
+    /// <summary>
+    /// Performs simd summary_ to string_ returns readable string.
+    /// </summary>
 
 
     [Fact]
@@ -216,6 +252,10 @@ public class SimdOperationsTests
             _ = stringRepresentation.Should().Contain("No SIMD support");
         }
     }
+    /// <summary>
+    /// Performs vector operations_ addition_ produces correct results.
+    /// </summary>
+    /// <param name="vectorSize">The vector size.</param>
 
 
     [Theory]
@@ -245,6 +285,10 @@ public class SimdOperationsTests
         // Assert
         _ = result.Should().Equal(expected);
     }
+    /// <summary>
+    /// Performs vector operations_ multiplication_ produces correct results.
+    /// </summary>
+    /// <param name="vectorSize">The vector size.</param>
 
 
     [Theory]
@@ -274,6 +318,9 @@ public class SimdOperationsTests
         // Assert
         _ = result.Should().Equal(expected);
     }
+    /// <summary>
+    /// Performs vector operations_ performance_ simd faster than scalar.
+    /// </summary>
 
 
     [Fact]
@@ -319,6 +366,9 @@ public class SimdOperationsTests
             _ = vectorStopwatch.ElapsedMilliseconds.Should().BeLessThanOrEqualTo(scalarStopwatch.ElapsedMilliseconds);
         }
     }
+    /// <summary>
+    /// Performs fallback to scalar_ when simd unavailable_ produces correct results.
+    /// </summary>
 
 
     [Fact]
@@ -337,6 +387,11 @@ public class SimdOperationsTests
         // Assert
         _ = result.Should().Equal(expected);
     }
+    /// <summary>
+    /// Performs vector operations_ absolute value_ produces correct results.
+    /// </summary>
+    /// <param name="input">The input.</param>
+    /// <param name="expected">The expected.</param>
 
 
     [Theory]
@@ -356,6 +411,11 @@ public class SimdOperationsTests
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
+    /// <summary>
+    /// Performs vector operations_ square root_ produces correct results.
+    /// </summary>
+    /// <param name="input">The input.</param>
+    /// <param name="expected">The expected.</param>
 
 
     [Theory]
@@ -375,6 +435,9 @@ public class SimdOperationsTests
             .Using<float>(ctx => ctx.Subject.Should().BeApproximately(ctx.Expectation, 0.001f))
             .WhenTypeIs<float>());
     }
+    /// <summary>
+    /// Performs vector operations_ with null inputs_ handles gracefully.
+    /// </summary>
 
 
     [Fact]
@@ -396,6 +459,9 @@ public class SimdOperationsTests
         _ = FluentActions.Invoking(() => PerformVectorAddition(validArray, validArray, nullArray!))
             .Should().Throw<ArgumentNullException>();
     }
+    /// <summary>
+    /// Performs vector operations_ with mismatched sizes_ handles gracefully.
+    /// </summary>
 
 
     [Fact]
@@ -411,6 +477,10 @@ public class SimdOperationsTests
         _ = FluentActions.Invoking(() => PerformVectorAddition(shortArray, longArray, result))
             .Should().Throw<ArgumentException>();
     }
+    /// <summary>
+    /// Gets vector operations_ concurrent execution_ produces consistent results.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]

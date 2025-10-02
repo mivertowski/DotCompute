@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
 {
     /// <summary>
+    /// An memcpy kind enumeration.
+    /// </summary>
+    /// <summary>
     /// Memory copy kind
     /// </summary>
     public enum MemcpyKind

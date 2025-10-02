@@ -3,6 +3,7 @@
 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Algorithms.Types.Security;
 
@@ -138,10 +139,10 @@ public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null
         await Task.Delay(50); // Simulate validation work
 
         var fileName = Path.GetFileName(assemblyPath);
-        var isSystemFile = fileName.StartsWith("System.") ||
-                          fileName.StartsWith("Microsoft.") ||
-                          fileName.StartsWith("netstandard") ||
-                          fileName.StartsWith("mscorlib");
+        var isSystemFile = fileName.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+                          fileName.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+                          fileName.StartsWith("netstandard", StringComparison.CurrentCulture) ||
+                          fileName.StartsWith("mscorlib", StringComparison.CurrentCulture);
 
         return new AuthenticodeValidationResult
         {
@@ -208,7 +209,7 @@ public class AuthenticodeValidationResult
     /// <summary>
     /// Gets or sets additional validation details.
     /// </summary>
-    public Dictionary<string, object> AdditionalDetails { get; set; } = [];
+    public Dictionary<string, object> AdditionalDetails { get; } = [];
 }
 
 /// <summary>

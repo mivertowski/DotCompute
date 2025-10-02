@@ -532,14 +532,36 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// </summary>
     public class LinearAlgebraPerformanceMetrics
     {
+        /// <summary>
+        /// Gets or sets the average execution time.
+        /// </summary>
+        /// <value>The average execution time.</value>
         public double AverageExecutionTime { get; private set; }
+        /// <summary>
+        /// Gets or sets the average memory usage.
+        /// </summary>
+        /// <value>The average memory usage.</value>
         public long AverageMemoryUsage { get; private set; }
+        /// <summary>
+        /// Gets or sets the success rate.
+        /// </summary>
+        /// <value>The success rate.</value>
         public float SuccessRate { get; private set; }
+        /// <summary>
+        /// Gets or sets the sample count.
+        /// </summary>
+        /// <value>The sample count.</value>
         public int SampleCount { get; private set; }
 
         private double _totalExecutionTime;
         private long _totalMemoryUsage;
         private int _successCount;
+        /// <summary>
+        /// Initializes a new instance of the LinearAlgebraPerformanceMetrics class.
+        /// </summary>
+        /// <param name="executionTime">The execution time.</param>
+        /// <param name="memoryUsage">The memory usage.</param>
+        /// <param name="success">The success.</param>
 
         public LinearAlgebraPerformanceMetrics(double executionTime, long memoryUsage, bool success)
         {
@@ -549,6 +571,12 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             SampleCount = 1;
             UpdateAverages();
         }
+        /// <summary>
+        /// Updates the metrics.
+        /// </summary>
+        /// <param name="executionTime">The execution time.</param>
+        /// <param name="memoryUsage">The memory usage.</param>
+        /// <param name="success">The success.</param>
 
         public void UpdateMetrics(double executionTime, long memoryUsage, bool success)
         {
@@ -576,11 +604,30 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// </summary>
     public class OptimizationRecommendation
     {
+        /// <summary>
+        /// Gets or sets the use g p u.
+        /// </summary>
+        /// <value>The use g p u.</value>
         public bool UseGPU { get; set; }
+        /// <summary>
+        /// Gets or sets the recommended solver.
+        /// </summary>
+        /// <value>The recommended solver.</value>
         public LinearSystemSolver RecommendedSolver { get; set; }
+        /// <summary>
+        /// Gets or sets the confidence.
+        /// </summary>
+        /// <value>The confidence.</value>
         public float Confidence { get; set; }
+        /// <summary>
+        /// Gets or sets the reason.
+        /// </summary>
+        /// <value>The reason.</value>
         public string Reason { get; set; } = string.Empty;
     }
+    /// <summary>
+    /// An linear system solver enumeration.
+    /// </summary>
 
     /// <summary>
     /// Available linear system solvers.

@@ -19,12 +19,19 @@ namespace DotCompute.Core.Tests.Pipelines;
 public class PipelineErrorTests : PipelineTestBase
 {
     private readonly MockComputeOrchestrator _mockOrchestrator;
+    /// <summary>
+    /// Initializes a new instance of the PipelineErrorTests class.
+    /// </summary>
 
     public PipelineErrorTests()
     {
         _mockOrchestrator = (MockComputeOrchestrator)Services.GetRequiredService<IComputeOrchestrator>();
         SetupErrorTestKernels();
     }
+    /// <summary>
+    /// Gets pipeline_ stage failure_ recovers gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_StageFailure_RecoversGracefully()
@@ -55,6 +62,10 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.True(result.StepMetrics[0].ExecutionTime > TimeSpan.Zero); // VectorAdd succeeded
         Assert.True(result.StepMetrics[2].ExecutionTime > TimeSpan.Zero); // VectorMultiply succeeded
     }
+    /// <summary>
+    /// Gets pipeline_ memory exhaustion_ falls back to c p u.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_MemoryExhaustion_FallsBackToCPU()
@@ -83,6 +94,10 @@ public class PipelineErrorTests : PipelineTestBase
 
         Assert.Equal("CPU", result.Backend);
     }
+    /// <summary>
+    /// Gets pipeline_ invalid expression_ provides helpful error.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_InvalidExpression_ProvidesHelpfulError()
@@ -106,6 +121,10 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.NotNull(exception.Errors);
         Assert.NotEmpty(exception.Errors);
     }
+    /// <summary>
+    /// Gets pipeline_ backend failure_ switches backend.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_BackendFailure_SwitchesBackend()
@@ -133,6 +152,10 @@ public class PipelineErrorTests : PipelineTestBase
 
         Assert.NotEqual("CUDA", result.Backend);
     }
+    /// <summary>
+    /// Gets pipeline_ cancellation_ cleans up resources.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_Cancellation_CleansUpResources()
@@ -160,6 +183,13 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.True(history.Any()); // Some execution should have started
         Assert.True(history[^1].EndTime > history[^1].StartTime); // Execution was terminated
     }
+    /// <summary>
+    /// Gets pipeline_ error strategy_ handles correctly.
+    /// </summary>
+    /// <param name="strategy">The strategy.</param>
+    /// <param name="shouldSucceed">The should succeed.</param>
+    /// <param name="expectedSteps">The expected steps.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue, true, 3)]
@@ -212,6 +242,10 @@ public class PipelineErrorTests : PipelineTestBase
             _ = Assert.IsType<InvalidOperationException>(caughtException);
         }
     }
+    /// <summary>
+    /// Gets pipeline_ circuit breaker_ prevents cascading failures.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_CircuitBreaker_PreventsCascadingFailures()
@@ -243,6 +277,10 @@ public class PipelineErrorTests : PipelineTestBase
         var failures = history.Where(h => h.Name == "AlwaysFailingKernel" && !h.Success).Count();
         Assert.Equal(3, failures);
     }
+    /// <summary>
+    /// Gets pipeline_ timeout error_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_TimeoutError_HandlesGracefully()
@@ -266,6 +304,10 @@ public class PipelineErrorTests : PipelineTestBase
         _ = Assert.Single(result.Errors);
         _ = Assert.IsType<TimeoutException>(result.Errors[0]);
     }
+    /// <summary>
+    /// Gets pipeline_ validation error_ stops execution.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_ValidationError_StopsExecution()
@@ -286,6 +328,10 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.Empty(_mockOrchestrator.ExecutionHistory); // No kernels should have executed
         Assert.NotEmpty(exception.Errors);
     }
+    /// <summary>
+    /// Gets pipeline_ partial failure_ returns partial results.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_PartialFailure_ReturnsPartialResults()
@@ -315,6 +361,10 @@ public class PipelineErrorTests : PipelineTestBase
 
         Assert.Equal(3, result.StepMetrics.Count);
     }
+    /// <summary>
+    /// Gets pipeline_ error aggregation_ collects all errors.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_ErrorAggregation_CollectsAllErrors()
@@ -345,6 +395,10 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.Contains(result.Errors, e => e.Message.Contains("Error 2", StringComparison.Ordinal));
         Assert.Contains(result.Errors, e => e.Message.Contains("Error 3", StringComparison.Ordinal));
     }
+    /// <summary>
+    /// Gets pipeline_ retry with backoff_ retries correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_RetryWithBackoff_RetriesCorrectly()
@@ -376,6 +430,10 @@ public class PipelineErrorTests : PipelineTestBase
         var attempts = history.Where(h => h.Name == "SometimesFailingKernel").Count();
         Assert.Equal(3, attempts);
     }
+    /// <summary>
+    /// Gets pipeline_ dependency failure_ handles properly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task Pipeline_DependencyFailure_HandlesProperly()

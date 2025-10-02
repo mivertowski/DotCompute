@@ -41,7 +41,7 @@ public class WorkloadProfile
     /// <summary>
     /// Gets or sets the preferred backend names.
     /// </summary>
-    public List<string> PreferredBackends { get; set; } = [];
+    public IList<string> PreferredBackends { get; } = [];
 
 
     /// <summary>

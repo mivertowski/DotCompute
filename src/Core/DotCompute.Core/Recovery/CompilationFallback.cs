@@ -16,6 +16,7 @@ using DotCompute.Core.Recovery.Configuration;
 using DotCompute.Core.Recovery.Compilation;
 using CompilationStatistics = DotCompute.Core.Recovery.Statistics.CompilationStatistics;
 using CompilationAttempt = DotCompute.Core.Recovery.Compilation.CompilationAttempt;
+using System;
 
 namespace DotCompute.Core.Recovery;
 
@@ -30,9 +31,22 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     private readonly CompilationFallbackConfiguration _config;
     private readonly Timer _cacheCleanupTimer;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
 
     public override RecoveryCapability Capability => RecoveryCapability.MemoryErrors;
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public override int Priority => 90;
+    /// <summary>
+    /// Initializes a new instance of the CompilationFallback class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public CompilationFallback(ILogger<CompilationFallback> logger, CompilationFallbackConfiguration? config = null)
         : base(logger)
@@ -49,6 +63,12 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         Logger.LogInformation("Compilation Fallback system initialized with {Strategies} fallback strategies",
             _config.FallbackStrategies.Count);
     }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public override bool CanHandle(Exception error, CompilationRecoveryContext context)
     {
@@ -61,6 +81,14 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             _ => false
         };
     }
+    /// <summary>
+    /// Gets recover asynchronously.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
         Exception error,
@@ -277,8 +305,8 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         // Strategy based on error type
         return error switch
         {
-            CompilationException compEx when compEx.Message.Contains("optimization") => CompilationFallbackStrategy.ReduceOptimizations,
-            CompilationException compEx when compEx.Message.Contains("memory") => CompilationFallbackStrategy.SimplifyKernel,
+            CompilationException compEx when compEx.Message.Contains("optimization", StringComparison.CurrentCulture) => CompilationFallbackStrategy.ReduceOptimizations,
+            CompilationException compEx when compEx.Message.Contains("memory", StringComparison.CurrentCulture) => CompilationFallbackStrategy.SimplifyKernel,
             TimeoutException => CompilationFallbackStrategy.DisableFastMath,
             _ => history.FailureCount > 2 ? CompilationFallbackStrategy.InterpreterMode : CompilationFallbackStrategy.ReduceOptimizations
         };
@@ -630,6 +658,9 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             Logger.LogWarning(ex, "Error during compilation cache cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public override void Dispose()
     {

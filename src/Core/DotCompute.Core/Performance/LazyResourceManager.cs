@@ -451,6 +451,9 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             throw new ObjectDisposedException(nameof(LazyResourceManager<>));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -491,13 +494,41 @@ internal sealed class LazyResource<T> where T : class
     private T? _value;
     private volatile bool _isInitialized;
     private long _accessCount;
+    /// <summary>
+    /// Gets or sets the key.
+    /// </summary>
+    /// <value>The key.</value>
     
     public string Key { get; }
+    /// <summary>
+    /// Gets or sets the created at.
+    /// </summary>
+    /// <value>The created at.</value>
     public DateTimeOffset CreatedAt { get; }
+    /// <summary>
+    /// Gets or sets the last access time.
+    /// </summary>
+    /// <value>The last access time.</value>
     public DateTimeOffset LastAccessTime { get; private set; }
+    /// <summary>
+    /// Gets or sets the initialization time.
+    /// </summary>
+    /// <value>The initialization time.</value>
     public TimeSpan InitializationTime { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether initialized.
+    /// </summary>
+    /// <value>The is initialized.</value>
     public bool IsInitialized => _isInitialized;
+    /// <summary>
+    /// Gets or sets the access count.
+    /// </summary>
+    /// <value>The access count.</value>
     public long AccessCount => Interlocked.Read(ref _accessCount);
+    /// <summary>
+    /// Gets or sets the value.
+    /// </summary>
+    /// <value>The value.</value>
     
     public T? Value
     {
@@ -507,6 +538,10 @@ internal sealed class LazyResource<T> where T : class
             return _value;
         }
     }
+    /// <summary>
+    /// Initializes a new instance of the LazyResource class.
+    /// </summary>
+    /// <param name="key">The key.</param>
 
     public LazyResource(string key)
     {
@@ -514,6 +549,11 @@ internal sealed class LazyResource<T> where T : class
         CreatedAt = DateTimeOffset.UtcNow;
         LastAccessTime = CreatedAt;
     }
+    /// <summary>
+    /// Sets the value.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="initializationTime">The initialization time.</param>
 
     public void SetValue(T value, TimeSpan initializationTime)
     {
@@ -528,6 +568,9 @@ internal sealed class LazyResource<T> where T : class
             }
         }
     }
+    /// <summary>
+    /// Updates the last access.
+    /// </summary>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void UpdateLastAccess()
@@ -588,6 +631,10 @@ public sealed class LazyResourceConfiguration
         MaintenanceInterval = TimeSpan.FromMinutes(2),
         PreloadTimeout = TimeSpan.FromMinutes(1)
     };
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     
     public override string ToString()
     {
@@ -601,16 +648,56 @@ public sealed class LazyResourceConfiguration
 /// </summary>
 public readonly record struct LazyResourceStatistics
 {
+    /// <summary>
+    /// Gets or sets the total requests.
+    /// </summary>
+    /// <value>The total requests.</value>
     public long TotalRequests { get; init; }
+    /// <summary>
+    /// Gets or sets the cache hits.
+    /// </summary>
+    /// <value>The cache hits.</value>
     public long CacheHits { get; init; }
+    /// <summary>
+    /// Gets or sets the cache misses.
+    /// </summary>
+    /// <value>The cache misses.</value>
     public long CacheMisses { get; init; }
+    /// <summary>
+    /// Gets or sets the total initializations.
+    /// </summary>
+    /// <value>The total initializations.</value>
     public long TotalInitializations { get; init; }
+    /// <summary>
+    /// Gets or sets the total disposals.
+    /// </summary>
+    /// <value>The total disposals.</value>
     public long TotalDisposals { get; init; }
+    /// <summary>
+    /// Gets or sets the average initialization time.
+    /// </summary>
+    /// <value>The average initialization time.</value>
     public TimeSpan AverageInitializationTime { get; init; }
+    /// <summary>
+    /// Gets or sets the active resources.
+    /// </summary>
+    /// <value>The active resources.</value>
     public int ActiveResources { get; init; }
+    /// <summary>
+    /// Gets or sets the hit rate.
+    /// </summary>
+    /// <value>The hit rate.</value>
     public double HitRate { get; init; }
+    /// <summary>
+    /// Gets or sets the live resources.
+    /// </summary>
+    /// <value>The live resources.</value>
     
     public long LiveResources => TotalInitializations - TotalDisposals;
+    /// <summary>
+    /// Gets or sets the initialization ratio.
+    /// </summary>
+    /// <value>The initialization ratio.</value>
     public double InitializationRatio => TotalRequests > 0 ? (double)TotalInitializations / TotalRequests : 0.0;
 }
 
@@ -619,16 +706,51 @@ public readonly record struct LazyResourceStatistics
 /// </summary>
 public readonly record struct ResourceInfo
 {
+    /// <summary>
+    /// Gets or sets the key.
+    /// </summary>
+    /// <value>The key.</value>
     public string Key { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether initialized.
+    /// </summary>
+    /// <value>The is initialized.</value>
     public bool IsInitialized { get; init; }
+    /// <summary>
+    /// Gets or sets the created at.
+    /// </summary>
+    /// <value>The created at.</value>
     public DateTimeOffset CreatedAt { get; init; }
+    /// <summary>
+    /// Gets or sets the last access time.
+    /// </summary>
+    /// <value>The last access time.</value>
     public DateTimeOffset LastAccessTime { get; init; }
+    /// <summary>
+    /// Gets or sets the access count.
+    /// </summary>
+    /// <value>The access count.</value>
     public long AccessCount { get; init; }
+    /// <summary>
+    /// Gets or sets the initialization time.
+    /// </summary>
+    /// <value>The initialization time.</value>
     public TimeSpan InitializationTime { get; init; }
+    /// <summary>
+    /// Gets or sets the age.
+    /// </summary>
+    /// <value>The age.</value>
     
     public TimeSpan Age => DateTimeOffset.UtcNow - CreatedAt;
+    /// <summary>
+    /// Gets or sets the time since last access.
+    /// </summary>
+    /// <value>The time since last access.</value>
     public TimeSpan TimeSinceLastAccess => DateTimeOffset.UtcNow - LastAccessTime;
 }
+/// <summary>
+/// An preload priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Priority levels for resource preloading.

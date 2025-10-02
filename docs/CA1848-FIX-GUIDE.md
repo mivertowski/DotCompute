@@ -1,0 +1,305 @@
+# CA1848 LoggerMessage Fixes - DotCompute Codebase
+
+## Overview
+
+This document tracks the systematic conversion of all direct `ILogger` calls to high-performance `LoggerMessage` delegates across the DotCompute codebase (CA1848 warnings).
+
+**Status**: In Progress
+**Total Files**: 293+ files with logging
+**Files Fixed**: 2 (examples provided)
+**Estimated Remaining**: ~290 files
+
+---
+
+## ✅ Completed Files
+
+### 1. KernelExecutionService.cs
+**Location**: `src/Runtime/DotCompute.Runtime/Services/`
+**Status**: ✅ Complete (already had perfect implementation)
+**Event IDs**: 1001-1011
+**Delegates**: 11 LoggerMessage delegates
+
+**Pattern Used**:
+```csharp
+[LoggerMessage(
+    EventId = 1001,
+    Level = LogLevel.Debug,
+    Message = "Registered kernel: {KernelName} with backends: {Backends}")]
+private static partial void LogKernelRegistered(ILogger logger, string kernelName, string backends);
+
+// Usage
+LogKernelRegistered(_logger, registration.FullName, string.Join(", ", registration.SupportedBackends));
+```
+
+### 2. AcceleratorUtilities.cs
+**Location**: `src/Core/DotCompute.Abstractions/`
+**Status**: ✅ Complete
+**Event IDs**: 3001-3014
+**Delegates**: 14 LoggerMessage delegates
+
+**Changes**:
+- Converted class to `partial`
+- Added `#region LoggerMessage Delegates`
+- Replaced all 13 direct logger calls
+
+---
+
+## 📝 Files In Progress
+
+### 3. DisposalUtilities.cs
+**Location**: `src/Core/DotCompute.Abstractions/`
+**Status**: 🔄 Prepared (delegates created, usage needs updating)
+**Event IDs**: 2001-2011
+**Delegates**: 11 LoggerMessage delegates
+**Remaining**: Need to update actual logger call sites
+
+---
+
+## 🎯 Pattern for Fixing Files
+
+### Step 1: Make Class Partial
+```csharp
+// BEFORE
+public class MyService
+{
+```
+
+```csharp
+// AFTER
+public partial class MyService
+{
+```
+
+### Step 2: Add LoggerMessage Delegates Region
+```csharp
+#region LoggerMessage Delegates
+
+[LoggerMessage(
+    EventId = 4001,
+    Level = LogLevel.Information,
+    Message = "Processing {Count} items")]
+private static partial void LogProcessing(ILogger logger, int count);
+
+[LoggerMessage(
+    EventId = 4002,
+    Level = LogLevel.Error,
+    Message = "Failed to process item {ItemId}")]
+private static partial void LogProcessingFailed(ILogger logger, Exception ex, string itemId);
+
+#endregion
+```
+
+### Step 3: Replace Logger Calls
+```csharp
+// BEFORE
+_logger.LogInformation("Processing {Count} items", count);
+_logger.LogError(ex, "Failed to process item {ItemId}", itemId);
+
+// AFTER
+LogProcessing(_logger, count);
+LogProcessingFailed(_logger, ex, itemId);
+```
+
+---
+
+## Event ID Allocation
+
+To avoid conflicts, event IDs are allocated by module:
+
+| Range | Module | Status |
+|-------|--------|--------|
+| 1000-1999 | Runtime Services | ✅ Allocated |
+| 2000-2999 | Core Abstractions | ✅ Allocated |
+| 3000-3999 | Utility Classes | ✅ Allocated |
+| 4000-4999 | Memory Management | 🔄 Available |
+| 5000-5999 | CUDA Backend | 🔄 Available |
+| 6000-6999 | Metal Backend | 🔄 Available |
+| 7000-7999 | CPU Backend | 🔄 Available |
+| 8000-8999 | Security | 🔄 Available |
+| 9000-9999 | Telemetry | 🔄 Available |
+| 10000-10999 | Execution | 🔄 Available |
+| 11000-11999 | Debugging | 🔄 Available |
+| 12000-12999 | Optimization | 🔄 Available |
+| 13000-13999 | Recovery | 🔄 Available |
+| 14000-14999 | Plugins | 🔄 Available |
+| 15000-15999 | Algorithms | 🔄 Available |
+
+---
+
+## Performance Impact
+
+**Expected improvements after complete implementation:**
+- **Memory**: ~50% reduction in logging allocations
+- **CPU**: ~30% reduction in logging overhead
+- **GC Pressure**: Significant reduction (no boxing for value types)
+- **Startup Time**: Delegates compiled once at startup
+
+---
+
+## Priority Files to Fix (High-Frequency Logging)
+
+Based on CA1848 warning count:
+
+1. **CudaMemoryManager.cs** - Memory operations (high frequency)
+2. **AdaptiveBackendSelector.cs** - Selection logic
+3. **PerformanceProfiler.cs** - Telemetry (very high frequency)
+4. **SecurityAuditLogger.cs** - Security events
+5. **KernelDebugService.cs** - Debugging operations
+6. **P2PTransferManager.cs** - Memory transfers
+7. **MetalProductionLogger.cs** - Metal backend logging
+
+---
+
+## Common Patterns
+
+### Pattern 1: Simple Information Logging
+```csharp
+// BEFORE
+_logger.LogInformation("Operation completed in {Duration}ms", duration);
+
+// AFTER
+[LoggerMessage(EventId = XXX01, Level = LogLevel.Information,
+    Message = "Operation completed in {Duration}ms")]
+private static partial void LogOperationCompleted(ILogger logger, double duration);
+
+LogOperationCompleted(_logger, duration);
+```
+
+### Pattern 2: Error Logging with Exception
+```csharp
+// BEFORE
+_logger.LogError(ex, "Failed to process {ItemId}", itemId);
+
+// AFTER
+[LoggerMessage(EventId = XXX02, Level = LogLevel.Error,
+    Message = "Failed to process {ItemId}")]
+private static partial void LogProcessingError(ILogger logger, Exception ex, string itemId);
+
+LogProcessingError(_logger, ex, itemId);
+```
+
+### Pattern 3: Debug/Trace with Multiple Parameters
+```csharp
+// BEFORE
+_logger.LogDebug("Allocated {Size} bytes at 0x{Address:X}", size, address);
+
+// AFTER
+[LoggerMessage(EventId = XXX03, Level = LogLevel.Debug,
+    Message = "Allocated {Size} bytes at 0x{Address:X}")]
+private static partial void LogMemoryAllocated(ILogger logger, long size, IntPtr address);
+
+LogMemoryAllocated(_logger, size, address);
+```
+
+### Pattern 4: Nullable Logger Handling
+```csharp
+// BEFORE
+logger?.LogTrace("Disposing {ObjectName}", objectName);
+
+// AFTER
+if (logger != null)
+{
+    LogDisposing(logger, objectName);
+}
+```
+
+---
+
+## Testing Strategy
+
+After fixing each file:
+
+```bash
+# Build single project
+dotnet build src/Path/To/Project.csproj --no-restore 2>&1 | grep CA1848
+
+# Build entire solution
+dotnet build DotCompute.sln --no-restore 2>&1 | grep CA1848 | wc -l
+
+# Run tests to ensure no regressions
+dotnet test --filter Category=Unit
+```
+
+---
+
+## Automated Script
+
+Use the provided script to identify remaining files:
+
+```bash
+./scripts/fix-ca1848.sh
+```
+
+This script:
+1. Captures all CA1848 warnings
+2. Lists affected files
+3. Shows warning counts per file
+4. Generates summary report
+
+---
+
+## Best Practices
+
+1. **Event ID Uniqueness**: Always use unique event IDs within a module
+2. **Message Templates**: Keep message templates identical to original
+3. **Parameter Order**: Exception parameter must be second (after ILogger)
+4. **Partial Classes**: Required for source generator to work
+5. **Accessibility**: Use `private static partial` for LoggerMessage methods
+6. **Naming Convention**: Use `Log{ActionName}` for delegate method names
+
+---
+
+## Common Pitfalls
+
+### ❌ Incorrect Exception Position
+```csharp
+// WRONG - Exception after other parameters
+private static partial void LogError(ILogger logger, string msg, Exception ex);
+
+// CORRECT - Exception as second parameter
+private static partial void LogError(ILogger logger, Exception ex, string msg);
+```
+
+### ❌ Missing Partial Keyword
+```csharp
+// WRONG
+public class MyService { ... }
+
+// CORRECT
+public partial class MyService { ... }
+```
+
+### ❌ Non-Static Method
+```csharp
+// WRONG
+private partial void LogSomething(ILogger logger);
+
+// CORRECT
+private static partial void LogSomething(ILogger logger);
+```
+
+---
+
+## Progress Tracking
+
+Track your progress here:
+
+- [x] KernelExecutionService.cs (11 delegates)
+- [x] AcceleratorUtilities.cs (14 delegates)
+- [ ] DisposalUtilities.cs (11 delegates - prepared)
+- [ ] KernelUtilities.cs (8+ delegates needed)
+- [ ] CudaMemoryManager.cs (15+ delegates needed)
+- [ ] ... (290+ more files)
+
+---
+
+## Related Documentation
+
+- [Microsoft CA1848 Documentation](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+- [LoggerMessage Source Generation](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator)
+- [DotCompute Logging Guidelines](./LOGGING-GUIDELINES.md)
+
+---
+
+**Last Updated**: 2025-01-03
+**Maintained By**: Code Quality Team

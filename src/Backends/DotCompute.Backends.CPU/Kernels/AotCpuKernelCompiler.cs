@@ -26,6 +26,9 @@ internal sealed class AotCpuKernelCompiler
 {
     private readonly Dictionary<string, Func<KernelExecutionContext, Task>> _precompiledKernels;
     private readonly Dictionary<string, KernelMetadata> _kernelMetadata;
+    /// <summary>
+    /// Initializes a new instance of the AotCpuKernelCompiler class.
+    /// </summary>
 
     public AotCpuKernelCompiler()
     {
@@ -351,10 +354,30 @@ internal sealed class AotCpuKernelCompiler
 /// </summary>
 internal sealed class KernelMetadata
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the parameter count.
+    /// </summary>
+    /// <value>The parameter count.</value>
     public required int ParameterCount { get; init; }
+    /// <summary>
+    /// Gets or sets the supports vectorization.
+    /// </summary>
+    /// <value>The supports vectorization.</value>
     public required bool SupportsVectorization { get; init; }
+    /// <summary>
+    /// Gets or sets the preferred vector width.
+    /// </summary>
+    /// <value>The preferred vector width.</value>
     public required int PreferredVectorWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the memory pattern.
+    /// </summary>
+    /// <value>The memory pattern.</value>
     public required MemoryAccessPattern MemoryPattern { get; init; }
 
 
@@ -383,10 +406,28 @@ ILogger logger) : ICompiledKernel
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
 #pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
 
     public Guid Id { get; } = Guid.NewGuid();
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => _definition.Name;
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
     public KernelDefinition Definition => _definition;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -411,12 +452,19 @@ ILogger logger) : ICompiledKernel
             throw;
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
         Dispose();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
         // Thread pool disposal is handled by the accelerator
@@ -431,6 +479,13 @@ ILogger logger) : ICompiledKernel
 /// </summary>
 internal static class VectorizedMath
 {
+    /// <summary>
+    /// Performs add.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="result">The result.</param>
+    /// <param name="length">The length.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Add(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
@@ -454,6 +509,13 @@ internal static class VectorizedMath
             result[i] = a[i] + b[i];
         }
     }
+    /// <summary>
+    /// Performs multiply.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="result">The result.</param>
+    /// <param name="length">The length.</param>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
@@ -475,6 +537,11 @@ internal static class VectorizedMath
             result[i] = a[i] * b[i];
         }
     }
+    /// <summary>
+    /// Gets sum.
+    /// </summary>
+    /// <param name="values">The values.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Sum(ReadOnlySpan<float> values)
@@ -499,6 +566,15 @@ internal static class VectorizedMath
 
         return result;
     }
+    /// <summary>
+    /// Performs matrix multiply.
+    /// </summary>
+    /// <param name="a">The a.</param>
+    /// <param name="b">The b.</param>
+    /// <param name="c">The c.</param>
+    /// <param name="rows">The rows.</param>
+    /// <param name="cols">The cols.</param>
+    /// <param name="inner">The inner.</param>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void MatrixMultiply(

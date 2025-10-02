@@ -442,7 +442,7 @@ public sealed class MetalExecutionContext : IDisposable
         return healthCheck;
     }
 
-    private async Task WaitForDependenciesAsync(string operationId, List<string> dependencies, CancellationToken cancellationToken)
+    private async Task WaitForDependenciesAsync(string operationId, IReadOnlyList<string> dependencies, CancellationToken cancellationToken)
     {
         if (dependencies.Count == 0)
         {
@@ -748,7 +748,7 @@ internal sealed class MetalOperationContext
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset? EndTime { get; set; }
     public MetalOperationPriority Priority { get; set; }
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
     public MetalOperationState State { get; set; }
     public StreamId? StreamId { get; set; }
     public Exception? Error { get; set; }
@@ -793,11 +793,11 @@ public sealed class MetalExecutionStatistics
     public bool IsAppleSilicon { get; set; }
     public TimeSpan AverageOperationDuration { get; set; }
     public double SuccessRate { get; set; }
-    public Dictionary<MetalResourceType, int> ResourceBreakdown { get; set; } = [];
+    public Dictionary<MetalResourceType, int> ResourceBreakdown { get; } = [];
     public MetalStreamStatistics? StreamStatistics { get; set; }
     public MetalEventStatistics? EventStatistics { get; set; }
     public IReadOnlyDictionary<MetalError, MetalErrorHandler.ErrorStatistics>? ErrorStatistics { get; set; }
-    public Dictionary<string, object> PerformanceMetrics { get; set; } = [];
+    public Dictionary<string, object> PerformanceMetrics { get; } = [];
 }
 
 /// <summary>
@@ -807,8 +807,8 @@ public sealed class MetalHealthCheckResult
 {
     public DateTimeOffset CheckTime { get; set; }
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; set; } = [];
-    public Dictionary<string, bool> ComponentHealth { get; set; } = [];
+    public IList<string> Issues { get; } = [];
+    public Dictionary<string, bool> ComponentHealth { get; } = [];
 }
 
 /// <summary>

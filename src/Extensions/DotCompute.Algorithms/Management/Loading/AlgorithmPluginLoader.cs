@@ -277,6 +277,9 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
             LoadTime = DateTime.UtcNow
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

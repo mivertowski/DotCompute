@@ -34,21 +34,21 @@ namespace DotCompute.Core.Execution.Pipeline
         /// to optimize parallel execution while maintaining correctness.
         /// Empty list indicates this stage has no dependencies and can execute immediately.
         /// </summary>
-        public List<string> Dependencies { get; set; } = [];
+        public IList<string> Dependencies { get; } = [];
 
         /// <summary>
         /// Gets or sets the input specifications for this stage.
         /// Defines the expected input data types, shapes, and access patterns.
         /// Used for memory optimization and data transfer planning.
         /// </summary>
-        public List<DataSpecification> InputSpecs { get; set; } = [];
+        public IList<DataSpecification> InputSpecs { get; } = [];
 
         /// <summary>
         /// Gets or sets the output specifications for this stage.
         /// Defines the output data types, shapes, and memory requirements.
         /// Used for memory allocation and data flow optimization.
         /// </summary>
-        public List<DataSpecification> OutputSpecs { get; set; } = [];
+        public IList<DataSpecification> OutputSpecs { get; } = [];
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ public class KernelExecutionTrace
 {
     public string KernelName { get; init; } = string.Empty;
     public string BackendType { get; init; } = string.Empty;
-    public List<TracePoint> TracePoints { get; init; } = [];
+    public IReadOnlyList<TracePoint> TracePoints { get; init; } = [];
     public TimeSpan TotalExecutionTime { get; init; }
     public bool Success { get; init; }
     public string? ErrorMessage { get; init; }

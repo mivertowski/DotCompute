@@ -293,5 +293,8 @@ public class CommonTestFixture : IDisposable, IAsyncDisposable
 [CollectionDefinition(Name)]
 public class SharedFixtureCollection : ICollectionFixture<CommonTestFixture>
 {
+    /// <summary>
+    /// The name.
+    /// </summary>
     public const string Name = "SharedFixture";
 }

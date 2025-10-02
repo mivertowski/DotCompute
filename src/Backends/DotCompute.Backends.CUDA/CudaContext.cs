@@ -18,16 +18,37 @@ namespace DotCompute.Backends.CUDA
         private IntPtr _stream;
         private readonly int _deviceId;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
 
         public IntPtr Handle => _context;
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream => _stream;
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId => _deviceId;
+        /// <summary>
+        /// Initializes a new instance of the CudaContext class.
+        /// </summary>
+        /// <param name="deviceId">The device identifier.</param>
 
         public CudaContext(int deviceId)
         {
             _deviceId = deviceId;
             Initialize();
         }
+        /// <summary>
+        /// Initializes a new instance of the CudaContext class.
+        /// </summary>
+        /// <param name="contextPtr">The context ptr.</param>
+        /// <param name="deviceId">The device identifier.</param>
 
         public CudaContext(IntPtr contextPtr, int deviceId)
         {
@@ -88,12 +109,18 @@ namespace DotCompute.Backends.CUDA
                 throw new AcceleratorException($"Failed to create CUDA stream: {result}");
             }
         }
+        /// <summary>
+        /// Performs reinitialize.
+        /// </summary>
 
         public void Reinitialize()
         {
             Cleanup();
             Initialize();
         }
+        /// <summary>
+        /// Performs make current.
+        /// </summary>
 
         public void MakeCurrent()
         {
@@ -105,6 +132,9 @@ namespace DotCompute.Backends.CUDA
                 throw new AcceleratorException($"Failed to make CUDA context current: {result}");
             }
         }
+        /// <summary>
+        /// Performs synchronize.
+        /// </summary>
 
         public void Synchronize()
         {
@@ -133,6 +163,9 @@ namespace DotCompute.Backends.CUDA
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

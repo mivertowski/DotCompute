@@ -30,6 +30,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         {
 
         }
+        /// <summary>
+        /// Initializes a new instance of the OccupancyException class.
+        /// </summary>
         public OccupancyException()
         {
         }

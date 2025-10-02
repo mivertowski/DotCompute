@@ -17,6 +17,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<CudaRealWorldAlgorithmTests>? _logger;
+        /// <summary>
+        /// Initializes a new instance of the CudaRealWorldAlgorithmTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public CudaRealWorldAlgorithmTests(ITestOutputHelper output) : base(output)
         {
@@ -42,6 +46,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets matrix multiplication_ tiled_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -86,6 +94,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, result, 0.001f, "Tiled matrix multiplication");
         }
+        /// <summary>
+        /// Gets parallel reduction_ should_ compute sum correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -120,6 +132,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"GPU sum: {gpuSum:F6}");
             Output.WriteLine($"Relative error: {Math.Abs(gpuSum - expectedSum) / expectedSum:E3}");
         }
+        /// <summary>
+        /// Gets prefix sum_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -148,6 +164,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, result, 0.001f, "Prefix sum (inclusive scan)");
         }
+        /// <summary>
+        /// Gets bitonic sort_ should_ sort correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -173,6 +193,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, gpuData, 0.0f, "Bitonic sort");
         }
+        /// <summary>
+        /// Gets fast fourier transform_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -229,6 +253,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine($"FFT peak found at frequency bin {maxIndex} with magnitude {maxMagnitude:F2}");
         }
+        /// <summary>
+        /// Gets heat diffusion2 d_ should_ simulate correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -305,6 +333,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Max temperature: {maxTemp:F2}");
             Output.WriteLine($"Std deviation: {stdDev:F2}");
         }
+        /// <summary>
+        /// Gets breadth first search_ should_ find shortest paths.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]

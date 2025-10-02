@@ -111,6 +111,13 @@ namespace DotCompute.Core.Execution
         private static readonly Action<ILogger, int, Exception?> LogErrorInPipelineStage =
             LoggerMessage.Define<int>(LogLevel.Error, new EventId(1019, nameof(LogErrorInPipelineStage)),
                 "Error in pipeline stage {StageId}");
+        /// <summary>
+        /// Initializes a new instance of the ParallelExecutionStrategy class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="acceleratorManager">The accelerator manager.</param>
+        /// <param name="kernelManager">The kernel manager.</param>
+        /// <param name="loggerFactory">The logger factory.</param>
 
         public ParallelExecutionStrategy(
             ILogger<ParallelExecutionStrategy> logger,
@@ -374,6 +381,10 @@ namespace DotCompute.Core.Execution
             string kernelName,
             int[] inputSizes,
             AcceleratorType[] availableAcceleratorTypes) => _performanceMonitor.RecommendOptimalStrategy(kernelName, inputSizes, availableAcceleratorTypes);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

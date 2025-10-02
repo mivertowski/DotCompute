@@ -37,7 +37,7 @@ public class SystemHealthResult
     /// Gets or sets the list of individual component health results.
     /// </summary>
     /// <value>A collection of health results for each monitored component.</value>
-    public List<ComponentHealthResult> ComponentResults { get; set; } = [];
+    public IList<ComponentHealthResult> ComponentResults { get; } = [];
 
 
     /// <summary>

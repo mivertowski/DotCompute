@@ -358,7 +358,7 @@ public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValida
     /// <summary>
     /// Analyzes result consistency for determinism testing.
     /// </summary>
-    private static bool AnalyzeResultConsistency(List<object?> results, DeterminismTestResult testResult)
+    private static bool AnalyzeResultConsistency(IReadOnlyList<object?> results, DeterminismTestResult testResult)
     {
         if (results.Count < 2)
         {
@@ -523,6 +523,9 @@ public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValida
             _ => IntPtr.Size
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

@@ -54,6 +54,10 @@ namespace DotCompute.Backends.CUDA.Optimization
 
         // Delegate for variable shared memory calculation
         private delegate nuint BlockSizeToSMemFunc(int blockSize);
+        /// <summary>
+        /// Initializes a new instance of the CudaOccupancyCalculator class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaOccupancyCalculator(ILogger<CudaOccupancyCalculator> logger)
         {
@@ -719,97 +723,329 @@ namespace DotCompute.Backends.CUDA.Optimization
             value++;
             return value;
         }
+        /// <summary>
+        /// A class that represents launch constraints.
+        /// </summary>
 
 
         public class LaunchConstraints
         {
+            /// <summary>
+            /// Gets or sets the min block size.
+            /// </summary>
+            /// <value>The min block size.</value>
             public int? MinBlockSize { get; set; }
+            /// <summary>
+            /// Gets or sets the max block size.
+            /// </summary>
+            /// <value>The max block size.</value>
             public int? MaxBlockSize { get; set; }
+            /// <summary>
+            /// Gets or sets the problem size.
+            /// </summary>
+            /// <value>The problem size.</value>
             public int? ProblemSize { get; set; }
+            /// <summary>
+            /// Gets or sets the require warp multiple.
+            /// </summary>
+            /// <value>The require warp multiple.</value>
             public bool RequireWarpMultiple { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the require power of two.
+            /// </summary>
+            /// <value>The require power of two.</value>
             public bool RequirePowerOfTwo { get; set; }
+            /// <summary>
+            /// Gets or sets the optimization hint.
+            /// </summary>
+            /// <value>The optimization hint.</value>
 
             public OptimizationHint OptimizationHint { get; set; } = OptimizationHint.Balanced;
+            /// <summary>
+            /// Gets or sets the default.
+            /// </summary>
+            /// <value>The default.</value>
 
 
             public static LaunchConstraints Default => new();
         }
+        /// <summary>
+        /// A class that represents occupancy result.
+        /// </summary>
 
         public class OccupancyResult
         {
+            /// <summary>
+            /// Gets or sets the percentage.
+            /// </summary>
+            /// <value>The percentage.</value>
             public double Percentage { get; set; }
+            /// <summary>
+            /// Gets or sets the active warps.
+            /// </summary>
+            /// <value>The active warps.</value>
             public int ActiveWarps { get; set; }
+            /// <summary>
+            /// Gets or sets the active blocks.
+            /// </summary>
+            /// <value>The active blocks.</value>
             public int ActiveBlocks { get; set; }
+            /// <summary>
+            /// Gets or sets the limiting factor.
+            /// </summary>
+            /// <value>The limiting factor.</value>
             public string LimitingFactor { get; set; } = "";
         }
+        /// <summary>
+        /// A class that represents occupancy curve.
+        /// </summary>
 
         public class OccupancyCurve
         {
+            /// <summary>
+            /// Gets or sets the kernel name.
+            /// </summary>
+            /// <value>The kernel name.</value>
             public string KernelName { get; set; } = "";
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
             public int DeviceId { get; set; }
-            public List<OccupancyDataPoint> DataPoints { get; } = [];
+            /// <summary>
+            /// Gets or sets the data points.
+            /// </summary>
+            /// <value>The data points.</value>
+            public IList<OccupancyDataPoint> DataPoints { get; } = [];
+            /// <summary>
+            /// Gets or sets the optimal block size.
+            /// </summary>
+            /// <value>The optimal block size.</value>
             public int OptimalBlockSize { get; set; }
+            /// <summary>
+            /// Gets or sets the max occupancy.
+            /// </summary>
+            /// <value>The max occupancy.</value>
             public double MaxOccupancy { get; set; }
         }
+        /// <summary>
+        /// A class that represents occupancy data point.
+        /// </summary>
 
         public class OccupancyDataPoint
         {
+            /// <summary>
+            /// Gets or sets the block size.
+            /// </summary>
+            /// <value>The block size.</value>
             public int BlockSize { get; set; }
+            /// <summary>
+            /// Gets or sets the occupancy.
+            /// </summary>
+            /// <value>The occupancy.</value>
             public double Occupancy { get; set; }
+            /// <summary>
+            /// Gets or sets the active warps.
+            /// </summary>
+            /// <value>The active warps.</value>
             public int ActiveWarps { get; set; }
+            /// <summary>
+            /// Gets or sets the active blocks.
+            /// </summary>
+            /// <value>The active blocks.</value>
             public int ActiveBlocks { get; set; }
+            /// <summary>
+            /// Gets or sets the limiting factor.
+            /// </summary>
+            /// <value>The limiting factor.</value>
             public string LimitingFactor { get; set; } = "";
         }
+        /// <summary>
+        /// A class that represents register analysis.
+        /// </summary>
 
         public class RegisterAnalysis
         {
+            /// <summary>
+            /// Gets or sets the registers per thread.
+            /// </summary>
+            /// <value>The registers per thread.</value>
             public int RegistersPerThread { get; set; }
+            /// <summary>
+            /// Gets or sets the registers used per block.
+            /// </summary>
+            /// <value>The registers used per block.</value>
             public int RegistersUsedPerBlock { get; set; }
+            /// <summary>
+            /// Gets or sets the max registers per block.
+            /// </summary>
+            /// <value>The max registers per block.</value>
             public int MaxRegistersPerBlock { get; set; }
+            /// <summary>
+            /// Gets or sets the max registers per s m.
+            /// </summary>
+            /// <value>The max registers per s m.</value>
             public int MaxRegistersPerSM { get; set; }
+            /// <summary>
+            /// Gets or sets the max blocks per sm registers.
+            /// </summary>
+            /// <value>The max blocks per sm registers.</value>
             public int MaxBlocksPerSmRegisters { get; set; }
+            /// <summary>
+            /// Gets or sets the warp occupancy.
+            /// </summary>
+            /// <value>The warp occupancy.</value>
             public double WarpOccupancy { get; set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether register limited.
+            /// </summary>
+            /// <value>The is register limited.</value>
             public bool IsRegisterLimited { get; set; }
-            public List<string> Suggestions { get; } = [];
+            /// <summary>
+            /// Gets or sets the suggestions.
+            /// </summary>
+            /// <value>The suggestions.</value>
+            public IList<string> Suggestions { get; } = [];
         }
 
 
         private class DeviceProperties
         {
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
             public int DeviceId { get; set; }
+            /// <summary>
+            /// Gets or sets the max threads per block.
+            /// </summary>
+            /// <value>The max threads per block.</value>
             public int MaxThreadsPerBlock { get; set; }
+            /// <summary>
+            /// Gets or sets the max block dim x.
+            /// </summary>
+            /// <value>The max block dim x.</value>
             public int MaxBlockDimX { get; set; }
+            /// <summary>
+            /// Gets or sets the max block dim y.
+            /// </summary>
+            /// <value>The max block dim y.</value>
             public int MaxBlockDimY { get; set; }
+            /// <summary>
+            /// Gets or sets the max block dim z.
+            /// </summary>
+            /// <value>The max block dim z.</value>
             public int MaxBlockDimZ { get; set; }
+            /// <summary>
+            /// Gets or sets the max grid size.
+            /// </summary>
+            /// <value>The max grid size.</value>
             public int MaxGridSize { get; set; }
+            /// <summary>
+            /// Gets or sets the warp size.
+            /// </summary>
+            /// <value>The warp size.</value>
             public int WarpSize { get; set; }
+            /// <summary>
+            /// Gets or sets the registers per block.
+            /// </summary>
+            /// <value>The registers per block.</value>
             public int RegistersPerBlock { get; set; }
+            /// <summary>
+            /// Gets or sets the registers per multiprocessor.
+            /// </summary>
+            /// <value>The registers per multiprocessor.</value>
             public int RegistersPerMultiprocessor { get; set; }
+            /// <summary>
+            /// Gets or sets the shared memory per block.
+            /// </summary>
+            /// <value>The shared memory per block.</value>
             public nuint SharedMemoryPerBlock { get; set; }
+            /// <summary>
+            /// Gets or sets the shared memory per multiprocessor.
+            /// </summary>
+            /// <value>The shared memory per multiprocessor.</value>
             public nuint SharedMemoryPerMultiprocessor { get; set; }
+            /// <summary>
+            /// Gets or sets the multiprocessor count.
+            /// </summary>
+            /// <value>The multiprocessor count.</value>
             public int MultiprocessorCount { get; set; }
+            /// <summary>
+            /// Gets or sets the max blocks per multiprocessor.
+            /// </summary>
+            /// <value>The max blocks per multiprocessor.</value>
             public int MaxBlocksPerMultiprocessor { get; set; }
+            /// <summary>
+            /// Gets or sets the max warps per multiprocessor.
+            /// </summary>
+            /// <value>The max warps per multiprocessor.</value>
             public int MaxWarpsPerMultiprocessor { get; set; }
+            /// <summary>
+            /// Gets or sets the compute capability.
+            /// </summary>
+            /// <value>The compute capability.</value>
             public int ComputeCapability { get; set; }
+            /// <summary>
+            /// Gets or sets the max device depth.
+            /// </summary>
+            /// <value>The max device depth.</value>
             public int MaxDeviceDepth { get; set; }
         }
+        /// <summary>
+        /// A dim3 structure.
+        /// </summary>
 
         public struct Dim3(int x, int y, int z)
         {
+            /// <summary>
+            /// Gets or sets the x.
+            /// </summary>
+            /// <value>The x.</value>
             public int X { get; } = x;
+            /// <summary>
+            /// Gets or sets the y.
+            /// </summary>
+            /// <value>The y.</value>
             public int Y { get; } = y;
+            /// <summary>
+            /// Gets or sets the z.
+            /// </summary>
+            /// <value>The z.</value>
             public int Z { get; } = z;
+            /// <summary>
+            /// Gets to string.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public override string ToString() => $"({X},{Y},{Z})";
         }
+        /// <summary>
+        /// A dim2 structure.
+        /// </summary>
 
         public struct Dim2(int x, int y)
         {
+            /// <summary>
+            /// Gets or sets the x.
+            /// </summary>
+            /// <value>The x.</value>
             public int X { get; } = x;
+            /// <summary>
+            /// Gets or sets the y.
+            /// </summary>
+            /// <value>The y.</value>
             public int Y { get; } = y;
+            /// <summary>
+            /// Gets to string.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public override string ToString() => $"({X},{Y})";
         }
+        /// <summary>
+        /// An optimization hint enumeration.
+        /// </summary>
 
         public enum OptimizationHint
         {
@@ -819,6 +1055,9 @@ namespace DotCompute.Backends.CUDA.Optimization
             ComputeBound,
             Latency
         }
+        /// <summary>
+        /// An cuda device attribute enumeration.
+        /// </summary>
 
 
         private enum CudaDeviceAttribute
@@ -850,16 +1089,49 @@ namespace DotCompute.Backends.CUDA.Optimization
         [StructLayout(LayoutKind.Sequential)]
         private struct CudaFuncAttributes
         {
+            /// <summary>
+            /// The shared size bytes.
+            /// </summary>
             public nuint SharedSizeBytes;
+            /// <summary>
+            /// The const size bytes.
+            /// </summary>
             public nuint ConstSizeBytes;
+            /// <summary>
+            /// The local size bytes.
+            /// </summary>
             public nuint LocalSizeBytes;
+            /// <summary>
+            /// The max threads per block.
+            /// </summary>
             public int MaxThreadsPerBlock;
+            /// <summary>
+            /// The num regs.
+            /// </summary>
             public int NumRegs;
+            /// <summary>
+            /// The ptx version.
+            /// </summary>
             public int PtxVersion;
+            /// <summary>
+            /// The binary version.
+            /// </summary>
             public int BinaryVersion;
+            /// <summary>
+            /// The cache mode c a.
+            /// </summary>
             public IntPtr CacheModeCA;
+            /// <summary>
+            /// The max dynamic shared size bytes.
+            /// </summary>
             public int MaxDynamicSharedSizeBytes;
+            /// <summary>
+            /// The preferred shmem carveout.
+            /// </summary>
             public int PreferredShmemCarveout;
+            /// <summary>
+            /// The name.
+            /// </summary>
             public IntPtr Name;
 
             /// <summary>
@@ -883,10 +1155,22 @@ namespace DotCompute.Backends.CUDA.Optimization
 
         private class OccupancyException : Exception
         {
+            /// <summary>
+            /// Initializes a new instance of the OccupancyException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
             public OccupancyException(string message) : base(message) { }
+            /// <summary>
+            /// Initializes a new instance of the OccupancyException class.
+            /// </summary>
             public OccupancyException()
             {
             }
+            /// <summary>
+            /// Initializes a new instance of the OccupancyException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
+            /// <param name="innerException">The inner exception.</param>
             public OccupancyException(string message, Exception innerException) : base(message, innerException)
             {
             }

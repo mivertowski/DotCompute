@@ -13,6 +13,9 @@ namespace DotCompute.Plugins.Security;
 public static class SafeMemoryOperations
 {
     /// <summary>
+    /// The max allocation size.
+    /// </summary>
+    /// <summary>
     /// Maximum allowed memory allocation size to prevent DoS attacks.
     /// </summary>
     public const int MaxAllocationSize = 1024 * 1024 * 1024; // 1GB

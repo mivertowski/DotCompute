@@ -144,7 +144,7 @@ public class AcceleratorConfiguration
     /// <summary>
     /// Gets or sets custom properties for backend-specific configuration.
     /// </summary>
-    public Dictionary<string, object> CustomProperties { get; set; } = [];
+    public Dictionary<string, object> CustomProperties { get; } = [];
 }
 
 /// <summary>

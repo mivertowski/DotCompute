@@ -18,6 +18,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<CudaMachineLearningKernelTests>? _logger;
         private readonly ILoggerFactory? _loggerFactory;
+        /// <summary>
+        /// Initializes a new instance of the CudaMachineLearningKernelTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public CudaMachineLearningKernelTests(ITestOutputHelper output) : base(output)
         {
@@ -44,6 +48,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets convolution2 d_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -109,6 +117,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Output statistics - Mean: {outputMean:F4}, Std: {outputStd:F4}");
             _ = outputStd.Should().BeGreaterThan(0.01f, "Convolution should produce varied output");
         }
+        /// <summary>
+        /// Gets max pooling2 d_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -172,6 +184,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets batch normalization_ should_ normalize correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -220,6 +236,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     $"Normalized feature {f} should have std ≈ 1");
             }
         }
+        /// <summary>
+        /// Gets re l u_ should_ apply activation correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -240,6 +260,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             UnifiedTestHelpers.VerifyFloatArraysMatch(expected, output, 0.0f, 1000, "ReLU activation");
         }
+        /// <summary>
+        /// Gets softmax_ should_ compute probabilities correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -280,6 +304,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     "At least one probability should be non-zero");
             }
         }
+        /// <summary>
+        /// Gets cross entropy loss_ should_ compute correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -345,6 +373,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     $"Cross-entropy loss for batch {b}");
             }
         }
+        /// <summary>
+        /// Gets dropout_ should_ mask correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -381,6 +413,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     "Non-dropped outputs should be scaled correctly");
             }
         }
+        /// <summary>
+        /// Gets l s t m_ should_ process sequence correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]

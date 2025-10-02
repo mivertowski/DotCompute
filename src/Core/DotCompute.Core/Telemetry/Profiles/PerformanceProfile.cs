@@ -84,19 +84,19 @@ public sealed class PerformanceProfile
     /// Each profile contains comprehensive performance data for a single kernel execution.
     /// </summary>
     /// <value>A list of kernel execution profiles.</value>
-    public List<KernelExecutionProfile> KernelExecutions { get; set; } = [];
+    public IList<KernelExecutionProfile> KernelExecutions { get; } = [];
 
     /// <summary>
     /// Gets or sets the detailed memory operation profiles collected during this session.
     /// Each profile contains comprehensive performance data for a memory operation.
     /// </summary>
     /// <value>A list of memory operation profiles.</value>
-    public List<MemoryOperationProfile> MemoryOperations { get; set; } = [];
+    public IList<MemoryOperationProfile> MemoryOperations { get; } = [];
 
     /// <summary>
     /// Gets or sets the device-specific metrics collected during this session.
     /// Maps device IDs to their corresponding performance metrics summary.
     /// </summary>
     /// <value>A dictionary mapping device IDs to device profile metrics.</value>
-    public Dictionary<string, DeviceProfileMetrics> DeviceMetrics { get; set; } = [];
+    public Dictionary<string, DeviceProfileMetrics> DeviceMetrics { get; } = [];
 }

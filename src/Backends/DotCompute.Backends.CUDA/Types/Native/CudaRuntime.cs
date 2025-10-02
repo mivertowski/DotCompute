@@ -7,6 +7,7 @@ using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native.Enums;
 using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
+using System;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -37,7 +38,7 @@ namespace DotCompute.Backends.CUDA.Native
                     var cudaLib64 = Path.Combine(cudaPath, "lib64");
 
 
-                    if (!currentPath.Contains(cudaLib64))
+                    if (!currentPath.Contains(cudaLib64, StringComparison.OrdinalIgnoreCase))
                     {
                         Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
 
@@ -522,6 +523,15 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
+        /// <summary>
+        /// Gets cuda graph instantiate.
+        /// </summary>
+        /// <param name="phGraphExec">The ph graph exec.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="phErrorNode">The ph error node.</param>
+        /// <param name="logBuffer">The log buffer.</param>
+        /// <param name="bufferSize">The buffer size.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize) => cuGraphInstantiate(ref phGraphExec, hGraph, phErrorNode, logBuffer, bufferSize);
 
@@ -532,15 +542,37 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphDestroy(IntPtr hGraph);
+        /// <summary>
+        /// Gets cuda graph destroy.
+        /// </summary>
+        /// <param name="hGraph">The h graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add alias for cudaGraphDestroy used in other parts of the codebase
         public static CudaError cudaGraphDestroy(IntPtr hGraph) => cuGraphDestroy(hGraph);
+        /// <summary>
+        /// Gets cuda graph exec destroy.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <returns>The result of the operation.</returns>
         public static CudaError cudaGraphExecDestroy(IntPtr hGraphExec) => cuGraphExecDestroy(hGraphExec);
+        /// <summary>
+        /// Gets cuda graph create.
+        /// </summary>
+        /// <param name="phGraph">The ph graph.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
         public static CudaError cudaGraphCreate(ref IntPtr phGraph, uint flags) => cuGraphCreate(ref phGraph, flags);
 
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+        /// <summary>
+        /// Gets cuda graph launch.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <param name="hStream">The h stream.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphLaunch(IntPtr hGraphExec, IntPtr hStream) => cuGraphLaunch(hGraphExec, hStream);
 
@@ -549,6 +581,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddKernelNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaKernelNodeParams nodeParams);
+        /// <summary>
+        /// Gets cuda graph add kernel node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="nodeParams">The node params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddKernelNode(
@@ -570,6 +611,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddMemcpyNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemcpy3DParms copyParams);
+        /// <summary>
+        /// Gets cuda graph add memcpy node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="copyParams">The copy params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddMemcpyNode(
@@ -584,6 +634,15 @@ namespace DotCompute.Backends.CUDA.Native
             }
             return cuGraphAddMemcpyNode(ref phGraphNode, hGraph, deps ?? [], (ulong)numDependencies, ref copyParams);
         }
+        /// <summary>
+        /// Gets cu graph add memset node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="pMemsetParams">The p memset params.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add missing CUDA Graph API methods
         public static CudaError cuGraphAddMemsetNode(
@@ -595,6 +654,15 @@ namespace DotCompute.Backends.CUDA.Native
 
             nuint numDependencies,
             ref CudaMemsetParams pMemsetParams) => CudaRuntimeExtended.cuGraphAddMemsetNode(out pGraphNode, graph, pDependencies, numDependencies, ref pMemsetParams);
+        /// <summary>
+        /// Gets cuda graph add host node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="pNodeParams">The p node params.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaGraphAddHostNode(
             out IntPtr pGraphNode,
@@ -602,6 +670,15 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr pDependencies,
             nuint numDependencies,
             ref CudaHostNodeParams pNodeParams) => CudaRuntimeExtended.cudaGraphAddHostNode(out pGraphNode, graph, pDependencies, numDependencies, ref pNodeParams);
+        /// <summary>
+        /// Gets cu graph add event record node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="event_">The event_.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddEventRecordNode(
             out IntPtr pGraphNode,
@@ -609,6 +686,15 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr pDependencies,
             nuint numDependencies,
             IntPtr event_) => CudaRuntimeExtended.cuGraphAddEventRecordNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        /// <summary>
+        /// Gets cu graph add event wait node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="event_">The event_.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddEventWaitNode(
             out IntPtr pGraphNode,
@@ -616,6 +702,15 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr pDependencies,
             nuint numDependencies,
             IntPtr event_) => CudaRuntimeExtended.cuGraphAddEventWaitNode(out pGraphNode, graph, pDependencies, numDependencies, event_);
+        /// <summary>
+        /// Gets cu graph add child graph node.
+        /// </summary>
+        /// <param name="pGraphNode">The p graph node.</param>
+        /// <param name="graph">The graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="childGraph">The child graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphAddChildGraphNode(
             out IntPtr pGraphNode,
@@ -623,6 +718,12 @@ namespace DotCompute.Backends.CUDA.Native
             IntPtr pDependencies,
             nuint numDependencies,
             IntPtr childGraph) => CudaRuntimeExtended.cuGraphAddChildGraphNode(out pGraphNode, graph, pDependencies, numDependencies, childGraph);
+        /// <summary>
+        /// Gets cu graph clone.
+        /// </summary>
+        /// <param name="pGraphClone">The p graph clone.</param>
+        /// <param name="originalGraph">The original graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cuGraphClone(
             out IntPtr pGraphClone,
@@ -634,6 +735,15 @@ namespace DotCompute.Backends.CUDA.Native
         internal static extern CudaError cuGraphAddMemsetNode(
             ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
             ref CudaMemsetParams memsetParams);
+        /// <summary>
+        /// Gets cuda graph add memset node.
+        /// </summary>
+        /// <param name="phGraphNode">The ph graph node.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="pDependencies">The p dependencies.</param>
+        /// <param name="numDependencies">The num dependencies.</param>
+        /// <param name="memsetParams">The memset params.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphAddMemsetNode(
@@ -653,6 +763,14 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
+        /// <summary>
+        /// Gets cuda graph exec update.
+        /// </summary>
+        /// <param name="hGraphExec">The h graph exec.</param>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="hErrorNode">The h error node.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphExecUpdate(IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, uint flags) => cuGraphExecUpdate(hGraphExec, hGraph, ref hErrorNode);
@@ -661,6 +779,13 @@ namespace DotCompute.Backends.CUDA.Native
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuGraphGetNodes(
             IntPtr hGraph, IntPtr nodes, ref nuint numNodes);
+        /// <summary>
+        /// Gets cuda graph get nodes.
+        /// </summary>
+        /// <param name="hGraph">The h graph.</param>
+        /// <param name="nodes">The nodes.</param>
+        /// <param name="numNodes">The num nodes.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public static CudaError cudaGraphGetNodes(IntPtr hGraph, IntPtr nodes, ref nuint numNodes) => cuGraphGetNodes(hGraph, nodes, ref numNodes);
@@ -672,6 +797,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamBeginCapture(IntPtr hStream, uint mode);
+        /// <summary>
+        /// Gets cuda stream begin capture.
+        /// </summary>
+        /// <param name="hStream">The h stream.</param>
+        /// <param name="mode">The mode.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Add missing aliases for stream capture methods
         public static CudaError cudaStreamBeginCapture(IntPtr hStream, uint mode) => cuStreamBeginCapture(hStream, mode);
@@ -679,6 +810,12 @@ namespace DotCompute.Backends.CUDA.Native
         [DllImport(CUDA_DRIVER_LIBRARY)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern CudaError cuStreamEndCapture(IntPtr hStream, ref IntPtr phGraph);
+        /// <summary>
+        /// Gets cuda stream end capture.
+        /// </summary>
+        /// <param name="hStream">The h stream.</param>
+        /// <param name="phGraph">The ph graph.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError cudaStreamEndCapture(IntPtr hStream, ref IntPtr phGraph) => cuStreamEndCapture(hStream, ref phGraph);
 
@@ -707,6 +844,11 @@ namespace DotCompute.Backends.CUDA.Native
             int blockSize,
             ulong dynamicSMemSize,
             uint flags);
+        /// <summary>
+        /// Creates a new stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The created stream.</returns>
 
         // Public Stream Management Wrappers
         public static CudaError CreateStream(out IntPtr stream)
@@ -714,10 +856,27 @@ namespace DotCompute.Backends.CUDA.Native
             stream = IntPtr.Zero;
             return cudaStreamCreate(ref stream);
         }
+        /// <summary>
+        /// Gets destroy stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError DestroyStream(IntPtr stream) => cudaStreamDestroy(stream);
+        /// <summary>
+        /// Gets synchronize stream.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static CudaError SynchronizeStream(IntPtr stream) => cudaStreamSynchronize(stream);
+        /// <summary>
+        /// Gets allocate managed.
+        /// </summary>
+        /// <param name="devPtr">The dev ptr.</param>
+        /// <param name="size">The size.</param>
+        /// <param name="flags">The flags.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Public Memory Management Wrappers
         public static CudaError AllocateManaged(out IntPtr devPtr, ulong size, uint flags = 1)
@@ -725,6 +884,11 @@ namespace DotCompute.Backends.CUDA.Native
             devPtr = IntPtr.Zero;
             return cudaMallocManaged(ref devPtr, size, flags);
         }
+        /// <summary>
+        /// Gets the error string.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <returns>The error string.</returns>
 
         // Helper Methods
         public static string GetErrorString(CudaError error)
@@ -761,6 +925,11 @@ namespace DotCompute.Backends.CUDA.Native
             devicePtr = IntPtr.Zero;
             return cudaMalloc(ref devicePtr, sizeInBytes, stream);
         }
+        /// <summary>
+        /// Performs check error.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="operation">The operation.</param>
 
         public static void CheckError(CudaError error, string operation = "")
         {

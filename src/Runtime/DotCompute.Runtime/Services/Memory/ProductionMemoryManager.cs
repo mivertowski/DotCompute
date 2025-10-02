@@ -30,10 +30,18 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     private long _nextId = 1;
     private bool _disposed;
     private readonly IAccelerator? _accelerator;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
 
     // Interface Properties
 
     public override IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("No accelerator associated with this memory manager");
+    /// <summary>
+    /// Gets or sets the statistics.
+    /// </summary>
+    /// <value>The statistics.</value>
     public override MemoryStatistics Statistics => new()
     {
         TotalAllocated = _statistics.TotalBytesAllocated,
@@ -51,9 +59,26 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         TotalDeallocationCount = _statistics.TotalDeallocations,
         PoolHitRate = _statistics.PoolHitRate
     };
+    /// <summary>
+    /// Gets or sets the max allocation size.
+    /// </summary>
+    /// <value>The max allocation size.</value>
     public override long MaxAllocationSize => 16L * 1024 * 1024 * 1024; // 16GB
+    /// <summary>
+    /// Gets or sets the total available memory.
+    /// </summary>
+    /// <value>The total available memory.</value>
     public override long TotalAvailableMemory => 32L * 1024 * 1024 * 1024; // 32GB simulated
+    /// <summary>
+    /// Gets or sets the current allocated memory.
+    /// </summary>
+    /// <value>The current allocated memory.</value>
     public override long CurrentAllocatedMemory => _statistics.CurrentlyAllocatedBytes;
+    /// <summary>
+    /// Initializes a new instance of the ProductionMemoryManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="accelerator">The accelerator.</param>
 
     public ProductionMemoryManager(ILogger<ProductionMemoryManager> logger, IAccelerator? accelerator = null) : base(logger)
     {
@@ -66,6 +91,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         _logger.LogInfoMessage("Production memory manager initialized with advanced memory pooling");
     }
+    /// <summary>
+    /// Gets allocate asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="count">The count.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Generic allocation for typed buffers
     public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
@@ -77,11 +110,26 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         var buffer = await AllocateRawAsync(sizeInBytes, options, cancellationToken);
         return new TypedMemoryBufferWrapper<T>(buffer, count);
     }
+    /// <summary>
+    /// Gets allocate raw asynchronously.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
         // Delegate to the internal implementation
         => await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
+    /// <summary>
+    /// Gets allocate and copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
@@ -103,6 +151,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
             throw;
         }
     }
+    /// <summary>
+    /// Creates a new view.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The created view.</returns>
 
     public override IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
@@ -131,6 +187,13 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         return view;
     }
+    /// <summary>
+    /// Creates a new view.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The created view.</returns>
 
 
     public override IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
@@ -157,8 +220,20 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         return view;
     }
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <returns>The statistics.</returns>
 
     public new Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Copy operations
 
@@ -179,6 +254,17 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         await source.CopyToAsync(destination, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask CopyAsync<T>(
@@ -195,6 +281,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         await source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask CopyToDeviceAsync<T>(
@@ -205,6 +299,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         ArgumentNullException.ThrowIfNull(destination);
         await destination.CopyFromAsync(source, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy from device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask CopyFromDeviceAsync<T>(
@@ -215,6 +317,12 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         ArgumentNullException.ThrowIfNull(source);
         await source.CopyToAsync(destination, cancellationToken);
     }
+    /// <summary>
+    /// Gets free asynchronously.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Free operations
 
@@ -230,6 +338,11 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
             await (buffer?.DisposeAsync() ?? ValueTask.CompletedTask);
         }
     }
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
@@ -250,6 +363,9 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         _logger.LogInfoMessage("Memory optimization completed");
     }
+    /// <summary>
+    /// Performs clear.
+    /// </summary>
 
 
     public override void Clear()
@@ -439,12 +555,19 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         base.Dispose(disposing);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public new void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public override async ValueTask DisposeAsync()

@@ -637,6 +637,9 @@ public sealed class KernelDebugLogger(
         var formattedPairs = data.Select(kvp => $"{kvp.Key}={kvp.Value}");
         return string.Join(", ", formattedPairs);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -657,8 +660,24 @@ public sealed class KernelDebugLogger(
 /// </summary>
 public record DebugLogEntry
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the operation.
+    /// </summary>
+    /// <value>The operation.</value>
     public string Operation { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the data.
+    /// </summary>
+    /// <value>The data.</value>
     public Dictionary<string, object> Data { get; init; } = [];
 }

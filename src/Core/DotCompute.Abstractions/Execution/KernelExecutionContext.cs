@@ -40,7 +40,7 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets additional execution parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = [];
+    public Dictionary<string, object> Parameters { get; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable profiling for this execution.
@@ -90,12 +90,12 @@ public class KernelExecutionContext
     /// <summary>
     /// Gets or sets the memory buffers for this execution context.
     /// </summary>
-    public Dictionary<int, IUnifiedMemoryBuffer<byte>> Buffers { get; set; } = [];
+    public Dictionary<int, IUnifiedMemoryBuffer<byte>> Buffers { get; } = [];
 
     /// <summary>
     /// Gets or sets the scalar parameters for this execution context.
     /// </summary>
-    public Dictionary<int, object> Scalars { get; set; } = [];
+    public Dictionary<int, object> Scalars { get; } = [];
 
     /// <summary>
     /// Sets a parameter value for the kernel execution.

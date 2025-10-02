@@ -68,5 +68,5 @@ public sealed class KernelMetadata
     /// <summary>
     /// Gets or sets additional metadata as key-value pairs.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetadata { get; set; } = [];
+    public Dictionary<string, object> AdditionalMetadata { get; } = [];
 }

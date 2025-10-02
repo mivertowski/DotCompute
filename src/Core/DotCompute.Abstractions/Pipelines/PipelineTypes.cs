@@ -63,10 +63,10 @@ public class PipelineStageOptions
     public MemoryAllocationHints? MemoryHints { get; set; }
     
     /// <summary>Custom metadata for stage configuration.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
-    
+    public Dictionary<string, object> Metadata { get; } = [];
+
     /// <summary>Whether to enable detailed profiling for this stage.</summary>
-    public bool EnableProfiling { get; set; } = false;
+    public bool EnableProfiling { get; set; }
     
     /// <summary>Retry configuration for stage execution.</summary>
     public RetryConfiguration? RetryConfig { get; set; }
@@ -100,7 +100,7 @@ public class MemoryAllocationHints
     public MemoryAccessPattern AccessPattern { get; set; } = MemoryAccessPattern.Sequential; */
     
     /// <summary>Whether the stage can work with pinned memory.</summary>
-    public bool SupportsPinnedMemory { get; set; } = false;
+    public bool SupportsPinnedMemory { get; set; }
 }
 
 /// <summary>
@@ -215,7 +215,7 @@ public enum ErrorHandlingStrategy
 public class ResourceAllocationPreferences
 {
     /// <summary>Preferred compute backends in order of preference.</summary>
-    public List<string> PreferredBackends { get; set; } = [];
+    public IList<string> PreferredBackends { get; } = [];
     
     /// <summary>Maximum memory usage for the pipeline.</summary>
     public long? MaxMemoryUsage { get; set; }
@@ -447,13 +447,13 @@ public class PipelineEvent
     public string Message { get; set; } = string.Empty;
 
     /// <summary>Additional event data.</summary>
-    public Dictionary<string, object> Data { get; set; } = [];
+    public Dictionary<string, object> Data { get; } = [];
 
     /// <summary>Stage identifier associated with the event (if applicable).</summary>
     public string? StageId { get; set; }
 
     /// <summary>Additional event metadata.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -483,7 +483,7 @@ public class PipelineExecutionCompletedEvent : PipelineEvent
     public string? ResultSummary { get; set; }
     
     /// <summary>Any exceptions that occurred.</summary>
-    public List<Exception> Exceptions { get; set; } = [];
+    public IList<Exception> Exceptions { get; } = [];
 }
 
 /// <summary>
@@ -692,10 +692,10 @@ public class OptimizationConstraints
     public int? MaxCpuCores { get; set; }
     
     /// <summary>Backends that are not allowed for execution.</summary>
-    public HashSet<string> DisallowedBackends { get; set; } = [];
+    public HashSet<string> DisallowedBackends { get; } = [];
     
     /// <summary>Backends that must be used if available.</summary>
-    public HashSet<string> RequiredBackends { get; set; } = [];
+    public HashSet<string> RequiredBackends { get; } = [];
     
     /// <summary>Whether optimization can modify pipeline structure.</summary>
     public bool AllowStructuralChanges { get; set; } = true;

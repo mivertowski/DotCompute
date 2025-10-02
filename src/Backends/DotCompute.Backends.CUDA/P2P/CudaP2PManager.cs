@@ -24,6 +24,10 @@ namespace DotCompute.Backends.CUDA.P2P
         private readonly SemaphoreSlim _connectionSemaphore;
         private readonly Timer _monitoringTimer;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaP2PManager class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaP2PManager(ILogger<CudaP2PManager> logger)
         {
@@ -587,6 +591,9 @@ namespace DotCompute.Backends.CUDA.P2P
                 throw new ObjectDisposedException(nameof(CudaP2PManager));
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -619,86 +626,306 @@ namespace DotCompute.Backends.CUDA.P2P
             }
         }
     }
+    /// <summary>
+    /// A class that represents cuda p2 p connection.
+    /// </summary>
 
     // Supporting types
     public sealed class CudaP2PConnection
     {
+        /// <summary>
+        /// Gets or sets the source device.
+        /// </summary>
+        /// <value>The source device.</value>
         public int SourceDevice { get; set; }
+        /// <summary>
+        /// Gets or sets the destination device.
+        /// </summary>
+        /// <value>The destination device.</value>
         public int DestinationDevice { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether enabled.
+        /// </summary>
+        /// <value>The is enabled.</value>
         public bool IsEnabled { get; set; }
+        /// <summary>
+        /// Gets or sets the bandwidth g bps.
+        /// </summary>
+        /// <value>The bandwidth g bps.</value>
         public double BandwidthGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the discovered at.
+        /// </summary>
+        /// <value>The discovered at.</value>
         public DateTimeOffset DiscoveredAt { get; set; }
+        /// <summary>
+        /// Gets or sets the enabled at.
+        /// </summary>
+        /// <value>The enabled at.</value>
         public DateTimeOffset? EnabledAt { get; set; }
+        /// <summary>
+        /// Gets or sets the disabled at.
+        /// </summary>
+        /// <value>The disabled at.</value>
         public DateTimeOffset? DisabledAt { get; set; }
+        /// <summary>
+        /// Gets or sets the last transfer at.
+        /// </summary>
+        /// <value>The last transfer at.</value>
         public DateTimeOffset? LastTransferAt { get; set; }
+        /// <summary>
+        /// Gets or sets the transfer count.
+        /// </summary>
+        /// <value>The transfer count.</value>
         public long TransferCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public ulong TotalBytesTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the average bandwidth g bps.
+        /// </summary>
+        /// <value>The average bandwidth g bps.</value>
         public double AverageBandwidthGBps { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda p2 p topology.
+    /// </summary>
 
     public sealed class CudaP2PTopology
     {
+        /// <summary>
+        /// Gets or sets the device count.
+        /// </summary>
+        /// <value>The device count.</value>
         public int DeviceCount { get; set; }
-        public List<CudaDeviceInfo> Devices { get; set; } = [];
-        public List<CudaP2PConnection> Connections { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the devices.
+        /// </summary>
+        /// <value>The devices.</value>
+        public IList<CudaDeviceInfo> Devices { get; } = [];
+        /// <summary>
+        /// Gets or sets the connections.
+        /// </summary>
+        /// <value>The connections.</value>
+        public IList<CudaP2PConnection> Connections { get; } = [];
+        /// <summary>
+        /// Gets or sets a value indicating whether fully connected.
+        /// </summary>
+        /// <value>The is fully connected.</value>
         public bool IsFullyConnected { get; set; }
+        /// <summary>
+        /// Gets or sets the optimal transfer paths.
+        /// </summary>
+        /// <value>The optimal transfer paths.</value>
         public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; set; } = [];
     }
+    /// <summary>
+    /// A class that represents cuda p2 p transfer result.
+    /// </summary>
 
     public sealed class CudaP2PTransferResult
     {
+        /// <summary>
+        /// Gets or sets the transfer identifier.
+        /// </summary>
+        /// <value>The transfer id.</value>
         public Guid TransferId { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the source device.
+        /// </summary>
+        /// <value>The source device.</value>
         public int SourceDevice { get; set; }
+        /// <summary>
+        /// Gets or sets the destination device.
+        /// </summary>
+        /// <value>The destination device.</value>
         public int DestinationDevice { get; set; }
+        /// <summary>
+        /// Gets or sets the bytes transferred.
+        /// </summary>
+        /// <value>The bytes transferred.</value>
         public ulong BytesTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the duration.
+        /// </summary>
+        /// <value>The duration.</value>
         public TimeSpan Duration { get; set; }
+        /// <summary>
+        /// Gets or sets the bandwidth g bps.
+        /// </summary>
+        /// <value>The bandwidth g bps.</value>
         public double BandwidthGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTimeOffset StartTime { get; set; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda data chunk.
+    /// </summary>
 
     public sealed class CudaDataChunk
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public Guid Id { get; set; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public ulong Size { get; set; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public int Priority { get; set; }
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; } = string.Empty;
     }
+    /// <summary>
+    /// A class that represents cuda data placement.
+    /// </summary>
 
     public sealed class CudaDataPlacement
     {
+        /// <summary>
+        /// Gets or sets the chunk identifier.
+        /// </summary>
+        /// <value>The chunk id.</value>
         public Guid ChunkId { get; set; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public ulong Size { get; set; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public int Priority { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda p2 p placement strategy.
+    /// </summary>
 
     public sealed class CudaP2PPlacementStrategy
     {
-        public List<CudaDataPlacement> Placements { get; set; } = [];
-        public List<Guid> TransferOrder { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the placements.
+        /// </summary>
+        /// <value>The placements.</value>
+        public IList<CudaDataPlacement> Placements { get; } = [];
+        /// <summary>
+        /// Gets or sets the transfer order.
+        /// </summary>
+        /// <value>The transfer order.</value>
+        public IList<Guid> TransferOrder { get; } = [];
+        /// <summary>
+        /// Gets or sets the estimated total time.
+        /// </summary>
+        /// <value>The estimated total time.</value>
         public double EstimatedTotalTime { get; set; }
-        public Dictionary<int, double> DeviceUtilization { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the device utilization.
+        /// </summary>
+        /// <value>The device utilization.</value>
+        public Dictionary<int, double> DeviceUtilization { get; } = [];
     }
+    /// <summary>
+    /// A class that represents cuda p2 p statistics.
+    /// </summary>
 
     public sealed class CudaP2PStatistics
     {
+        /// <summary>
+        /// Gets or sets the total devices.
+        /// </summary>
+        /// <value>The total devices.</value>
         public int TotalDevices { get; set; }
+        /// <summary>
+        /// Gets or sets the total connections.
+        /// </summary>
+        /// <value>The total connections.</value>
         public int TotalConnections { get; set; }
+        /// <summary>
+        /// Gets or sets the enabled connections.
+        /// </summary>
+        /// <value>The enabled connections.</value>
         public int EnabledConnections { get; set; }
+        /// <summary>
+        /// Gets or sets the total transfers.
+        /// </summary>
+        /// <value>The total transfers.</value>
         public long TotalTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public ulong TotalBytesTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the average bandwidth g bps.
+        /// </summary>
+        /// <value>The average bandwidth g bps.</value>
         public double AverageBandwidthGBps { get; set; }
-        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the connection utilization.
+        /// </summary>
+        /// <value>The connection utilization.</value>
+        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; } = [];
     }
+    /// <summary>
+    /// A class that represents cuda p2 p connection stats.
+    /// </summary>
 
     public sealed class CudaP2PConnectionStats
     {
+        /// <summary>
+        /// Gets or sets the transfer count.
+        /// </summary>
+        /// <value>The transfer count.</value>
         public long TransferCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes.
+        /// </summary>
+        /// <value>The total bytes.</value>
         public ulong TotalBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the average bandwidth.
+        /// </summary>
+        /// <value>The average bandwidth.</value>
         public double AverageBandwidth { get; set; }
+        /// <summary>
+        /// Gets or sets the last transfer.
+        /// </summary>
+        /// <value>The last transfer.</value>
         public DateTimeOffset? LastTransfer { get; set; }
     }
 }

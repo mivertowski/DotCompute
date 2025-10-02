@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda graph exec update result enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA graph execution update result enumeration
     /// </summary>
     public enum CudaGraphExecUpdateResult : uint

@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Memory
 {
@@ -763,22 +764,22 @@ namespace DotCompute.Core.Memory
             var name = device.Info.Name.ToLowerInvariant();
 
             // Check accelerator type first for mock devices
-            if (device.Type == AcceleratorType.CUDA || name.Contains("cuda") ||
-                name.Contains("rtx") || name.Contains("gtx") ||
-                name.Contains("nvidia") || name.Contains("geforce") ||
-                name.Contains("quadro") || name.Contains("tesla"))
+            if (device.Type == AcceleratorType.CUDA || name.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("rtx", StringComparison.OrdinalIgnoreCase) || name.Contains("gtx", StringComparison.CurrentCulture) ||
+                name.Contains("nvidia", StringComparison.CurrentCulture) || name.Contains("geforce", StringComparison.CurrentCulture) ||
+                name.Contains("quadro", StringComparison.CurrentCulture) || name.Contains("tesla"))
             {
                 return DeviceVendor.NVIDIA;
             }
 
-            if (name.Contains("rocm") || name.Contains("mi210") || name.Contains("mi250") ||
-            name.Contains("amd") || name.Contains("radeon") || name.Contains("instinct"))
+            if (name.Contains("rocm", StringComparison.CurrentCulture) || name.Contains("mi210", StringComparison.CurrentCulture) || name.Contains("mi250", StringComparison.CurrentCulture) ||
+            name.Contains("amd", StringComparison.CurrentCulture) || name.Contains("radeon", StringComparison.CurrentCulture) || name.Contains("instinct", StringComparison.CurrentCulture))
             {
                 return DeviceVendor.AMD;
             }
 
-            if (device.Type == AcceleratorType.CPU || name.Contains("cpu") ||
-            name.Contains("intel") || name.Contains("iris") || name.Contains("arc"))
+            if (device.Type == AcceleratorType.CPU || name.Contains("cpu", StringComparison.CurrentCulture) ||
+            name.Contains("intel", StringComparison.CurrentCulture) || name.Contains("iris", StringComparison.CurrentCulture) || name.Contains("arc", StringComparison.CurrentCulture))
             {
                 return DeviceVendor.Intel;
             }
@@ -792,7 +793,7 @@ namespace DotCompute.Core.Memory
         private static bool IsOpenCLDevice(IAccelerator device)
         {
             var name = device.Info.Name.ToLowerInvariant();
-            return name.Contains("opencl");
+            return name.Contains("opencl", StringComparison.CurrentCulture);
         }
 
         /// <summary>
@@ -801,7 +802,7 @@ namespace DotCompute.Core.Memory
         private static bool IsCudaDevice(IAccelerator device)
         {
             return device.Type == AcceleratorType.CUDA ||
-                   device.Info.Name.ToLowerInvariant().Contains("cuda");
+                   device.Info.Name.ToLowerInvariant().Contains("cuda", StringComparison.CurrentCulture);
         }
 
         /// <summary>
@@ -810,8 +811,12 @@ namespace DotCompute.Core.Memory
         private static bool IsAmdDevice(IAccelerator device)
         {
             var name = device.Info.Name.ToLowerInvariant();
-            return name.Contains("rocm") || name.Contains("amd") || name.Contains("radeon");
+            return name.Contains("rocm", StringComparison.CurrentCulture) || name.Contains("amd", StringComparison.CurrentCulture) || name.Contains("radeon", StringComparison.CurrentCulture);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -830,11 +835,30 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class P2PConnectionCapability
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether supported.
+        /// </summary>
+        /// <value>The is supported.</value>
         public required bool IsSupported { get; init; }
+        /// <summary>
+        /// Gets or sets the connection type.
+        /// </summary>
+        /// <value>The connection type.</value>
         public P2PConnectionType ConnectionType { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated bandwidth g bps.
+        /// </summary>
+        /// <value>The estimated bandwidth g bps.</value>
         public double EstimatedBandwidthGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the limitation reason.
+        /// </summary>
+        /// <value>The limitation reason.</value>
         public string? LimitationReason { get; init; }
     }
+    /// <summary>
+    /// An p2 p connection type enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P connection types.
@@ -853,8 +877,20 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class P2PEnableResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public required bool Success { get; init; }
+        /// <summary>
+        /// Gets or sets the capability.
+        /// </summary>
+        /// <value>The capability.</value>
         public P2PConnectionCapability? Capability { get; init; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; init; }
     }
 
@@ -863,10 +899,25 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class TransferStrategy
     {
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
         public required TransferType Type { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated bandwidth g bps.
+        /// </summary>
+        /// <value>The estimated bandwidth g bps.</value>
         public double EstimatedBandwidthGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the chunk size.
+        /// </summary>
+        /// <value>The chunk size.</value>
         public int ChunkSize { get; init; }
     }
+    /// <summary>
+    /// An transfer type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Transfer types.
@@ -884,11 +935,30 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class DeviceCapabilities
     {
+        /// <summary>
+        /// Gets or sets the supports p2 p.
+        /// </summary>
+        /// <value>The supports p2 p.</value>
         public bool SupportsP2P { get; init; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth g bps.
+        /// </summary>
+        /// <value>The memory bandwidth g bps.</value>
         public double MemoryBandwidthGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the p2 p bandwidth g bps.
+        /// </summary>
+        /// <value>The p2 p bandwidth g bps.</value>
         public double P2PBandwidthGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the max memory bytes.
+        /// </summary>
+        /// <value>The max memory bytes.</value>
         public long MaxMemoryBytes { get; init; }
     }
+    /// <summary>
+    /// An device vendor enumeration.
+    /// </summary>
 
     /// <summary>
     /// Device vendor enumeration for P2P capability detection.

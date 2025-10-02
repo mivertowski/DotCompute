@@ -15,6 +15,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", "RequiresCUDA")]
     public class CudaAcceleratorTests(ITestOutputHelper output) : CudaTestBase(output)
     {
+        /// <summary>
+        /// Gets device_ initialization_ should_ succeed_ with_ r t x_2000.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         [SkippableFact]
         public async Task Device_Initialization_Should_Succeed_With_RTX_2000()
         {
@@ -37,6 +41,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Multiprocessors: {accelerator.Info.MultiprocessorCount()}");
             Output.WriteLine($"CUDA Cores (est.): {accelerator.Info.EstimatedCudaCores()}");
         }
+        /// <summary>
+        /// Calculates the _ capability_ should_ be_8_9_ for_ r t x_2000.
+        /// </summary>
+        /// <returns>The calculated _ capability_ should_ be_8_9_ for_ r t x_2000.</returns>
 
         [SkippableFact]
         public async Task Compute_Capability_Should_Be_8_9_For_RTX_2000()
@@ -56,6 +64,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = computeCapability.Minor.Should().Be(9);
             _ = accelerator.Info.ArchitectureGeneration().Should().Be("Ada Lovelace");
         }
+        /// <summary>
+        /// Gets memory_ allocation_ should_ work_ on_ device.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Allocation_Should_Work_On_Device()
@@ -78,6 +90,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Allocated {bufferSize} bytes on device");
             Output.WriteLine($"Buffer element count: {buffer.ElementCount()}");
         }
+        /// <summary>
+        /// Gets memory_ transfer_ host_ to_ device_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Transfer_Host_To_Device_Should_Work()
@@ -116,6 +132,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             _ = stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1));
         }
+        /// <summary>
+        /// Gets memory_ transfer_ device_ to_ host_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Transfer_Device_To_Host_Should_Work()
@@ -165,6 +185,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 _ = resultData[i].Should().BeApproximately(originalData[i], 0.0001f);
             }
         }
+        /// <summary>
+        /// Gets stream_ management_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Stream_Management_Should_Work()
@@ -192,6 +216,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine("Created and synchronized multiple CUDA streams");
         }
+        /// <summary>
+        /// Gets error_ handling_ should_ work_ for_ invalid_ operations.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Error_Handling_Should_Work_For_Invalid_Operations()
@@ -213,6 +241,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine("Error handling test completed - excessive allocation properly rejected");
         }
+        /// <summary>
+        /// Gets device_ properties_ should_ be_ valid.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Properties_Should_Be_Valid()
@@ -243,6 +275,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  SMs: {deviceInfo.MultiprocessorCount()}");
             Output.WriteLine($"  Max Threads/Block: {deviceInfo.MaxThreadsPerBlock}");
         }
+        /// <summary>
+        /// Gets unified_ memory_ should_ work_ if_ supported.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Unified_Memory_Should_Work_If_Supported()
@@ -289,6 +325,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine("Unified memory test completed successfully");
         }
+        /// <summary>
+        /// Gets performance_ metrics_ should_ be_ available.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Performance_Metrics_Should_Be_Available()

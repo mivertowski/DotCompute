@@ -63,12 +63,12 @@ public sealed class PerformanceBottleneck
     /// Provides specific suggestions for resolving or mitigating the issue.
     /// </summary>
     /// <value>A list of recommendation strings.</value>
-    public List<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 
     /// <summary>
     /// Gets or sets additional metadata about the bottleneck.
     /// Contains context-specific information that may be useful for analysis.
     /// </summary>
     /// <value>A dictionary of metadata key-value pairs.</value>
-    public Dictionary<string, object?> Metadata { get; set; } = [];
+    public Dictionary<string, object?> Metadata { get; } = [];
 }

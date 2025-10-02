@@ -11,6 +11,9 @@ namespace DotCompute.Memory.Tests;
 /// </summary>
 public class BasePooledBufferTests(ITestOutputHelper output)
 {
+    /// <summary>
+    /// Performs pooled buffer_ initializes correctly.
+    /// </summary>
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_InitializesCorrectly()
@@ -28,6 +31,9 @@ public class BasePooledBufferTests(ITestOutputHelper output)
         _ = buffer.SizeInBytes.Should().Be(1024);
         _ = buffer.Length.Should().Be(256); // 1024 bytes / 4 bytes per float
     }
+    /// <summary>
+    /// Performs pooled buffer_ calls return action on dispose.
+    /// </summary>
 
 
     [Fact]
@@ -49,6 +55,9 @@ public class BasePooledBufferTests(ITestOutputHelper output)
         _ = returnCalled.Should().BeTrue("return action should be called on dispose");
         _ = buffer.IsDisposed.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs pooled buffer_ resets clears state.
+    /// </summary>
 
 
     [Fact]
@@ -89,6 +98,9 @@ public class BasePooledBufferTests(ITestOutputHelper output)
         _ = returnCount.Should().Be(2, "buffer should be returned twice");
         _ = pool.Count.Should().Be(1, "one buffer should be in the pool");
     }
+    /// <summary>
+    /// Performs pooled buffer_ provides functional memory access.
+    /// </summary>
 
 
     [Fact]
@@ -123,6 +135,9 @@ public class BasePooledBufferTests(ITestOutputHelper output)
             _ = span[i].Should().Be(i * 1.5f);
         }
     }
+    /// <summary>
+    /// Performs pooled buffer_ supports multiple instances.
+    /// </summary>
 
 
     [Fact]

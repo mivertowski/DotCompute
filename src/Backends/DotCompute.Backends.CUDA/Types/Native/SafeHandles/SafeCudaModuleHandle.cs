@@ -11,9 +11,16 @@ namespace DotCompute.Backends.CUDA.Native
     /// </summary>
     public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
+        /// <summary>
+        /// Initializes a new instance of the SafeCudaModuleHandle class.
+        /// </summary>
         public SafeCudaModuleHandle() : base(true)
         {
         }
+        /// <summary>
+        /// Initializes a new instance of the SafeCudaModuleHandle class.
+        /// </summary>
+        /// <param name="handle">The handle.</param>
 
         public SafeCudaModuleHandle(IntPtr handle) : base(true)
         {

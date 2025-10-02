@@ -651,12 +651,36 @@ public sealed class RecoveryAttemptHistory(string contextKey)
     private readonly object _lock = new();
     private readonly Queue<RecoveryAttempt> _attempts = new();
     private const int MaxHistorySize = 100;
+    /// <summary>
+    /// Gets or sets the context key.
+    /// </summary>
+    /// <value>The context key.</value>
 
     public string ContextKey { get; } = contextKey;
+    /// <summary>
+    /// Gets or sets the last attempt.
+    /// </summary>
+    /// <value>The last attempt.</value>
     public DateTimeOffset LastAttempt { get; private set; }
+    /// <summary>
+    /// Gets or sets the consecutive failures.
+    /// </summary>
+    /// <value>The consecutive failures.</value>
     public int ConsecutiveFailures { get; private set; }
+    /// <summary>
+    /// Gets or sets the total attempts.
+    /// </summary>
+    /// <value>The total attempts.</value>
     public int TotalAttempts { get; private set; }
+    /// <summary>
+    /// Gets or sets the total successes.
+    /// </summary>
+    /// <value>The total successes.</value>
     public int TotalSuccesses { get; private set; }
+    /// <summary>
+    /// Gets or sets the recent attempts.
+    /// </summary>
+    /// <value>The recent attempts.</value>
 
     public IEnumerable<RecoveryAttempt> RecentAttempts
     {
@@ -668,6 +692,10 @@ public sealed class RecoveryAttemptHistory(string contextKey)
             }
         }
     }
+    /// <summary>
+    /// Performs add attempt.
+    /// </summary>
+    /// <param name="attempt">The attempt.</param>
 
     public void AddAttempt(RecoveryAttempt attempt)
     {
@@ -694,6 +722,10 @@ public sealed class RecoveryAttemptHistory(string contextKey)
             }
         }
     }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
 
     public double SuccessRate => TotalAttempts > 0 ? (double)TotalSuccesses / TotalAttempts : 0.0;
 }
@@ -703,10 +735,30 @@ public sealed class RecoveryAttemptHistory(string contextKey)
 /// </summary>
 public sealed class RecoveryAttempt
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public required TimeSpan Duration { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public required string Message { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public required string Strategy { get; init; }
 }
 
@@ -715,10 +767,30 @@ public sealed class RecoveryAttempt
 /// </summary>
 internal sealed class RecoveryMetric
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy type.
+    /// </summary>
+    /// <value>The strategy type.</value>
     public required string StrategyType { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public required TimeSpan Duration { get; init; }
+    /// <summary>
+    /// Gets or sets the context key.
+    /// </summary>
+    /// <value>The context key.</value>
     public required string ContextKey { get; init; }
 }
 
@@ -727,13 +799,45 @@ internal sealed class RecoveryMetric
 /// </summary>
 public sealed class RecoveryStatistics
 {
+    /// <summary>
+    /// Gets or sets the strategy type.
+    /// </summary>
+    /// <value>The strategy type.</value>
     public required string StrategyType { get; init; }
+    /// <summary>
+    /// Gets or sets the total attempts.
+    /// </summary>
+    /// <value>The total attempts.</value>
     public required long TotalAttempts { get; init; }
+    /// <summary>
+    /// Gets or sets the successful recoveries.
+    /// </summary>
+    /// <value>The successful recoveries.</value>
     public required long SuccessfulRecoveries { get; init; }
+    /// <summary>
+    /// Gets or sets the failed recoveries.
+    /// </summary>
+    /// <value>The failed recoveries.</value>
     public required long FailedRecoveries { get; init; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public required double SuccessRate { get; init; }
+    /// <summary>
+    /// Gets or sets the average recovery time.
+    /// </summary>
+    /// <value>The average recovery time.</value>
     public required TimeSpan AverageRecoveryTime { get; init; }
+    /// <summary>
+    /// Gets or sets the active contexts.
+    /// </summary>
+    /// <value>The active contexts.</value>
     public required int ActiveContexts { get; init; }
+    /// <summary>
+    /// Gets or sets the recent metrics count.
+    /// </summary>
+    /// <value>The recent metrics count.</value>
     public required int RecentMetricsCount { get; init; }
 }
 
@@ -743,14 +847,46 @@ public sealed class RecoveryStatistics
 public sealed class RecoveryOptions
 {
     public static readonly RecoveryOptions Default = new();
+    /// <summary>
+    /// Gets or sets the max retry attempts.
+    /// </summary>
+    /// <value>The max retry attempts.</value>
 
     public int MaxRetryAttempts { get; init; } = 3;
+    /// <summary>
+    /// Gets or sets the retry delay.
+    /// </summary>
+    /// <value>The retry delay.</value>
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromMilliseconds(100);
+    /// <summary>
+    /// Gets or sets the use exponential backoff.
+    /// </summary>
+    /// <value>The use exponential backoff.</value>
     public bool UseExponentialBackoff { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the max consecutive failures.
+    /// </summary>
+    /// <value>The max consecutive failures.</value>
     public int MaxConsecutiveFailures { get; init; } = 5;
+    /// <summary>
+    /// Gets or sets the rate limit window.
+    /// </summary>
+    /// <value>The rate limit window.</value>
     public TimeSpan RateLimitWindow { get; init; } = TimeSpan.FromMinutes(1);
+    /// <summary>
+    /// Gets or sets the max attempts per window.
+    /// </summary>
+    /// <value>The max attempts per window.</value>
     public int MaxAttemptsPerWindow { get; init; } = 10;
+    /// <summary>
+    /// Gets or sets the allow concurrent recovery.
+    /// </summary>
+    /// <value>The allow concurrent recovery.</value>
     public bool AllowConcurrentRecovery { get; init; } = false;
+    /// <summary>
+    /// Gets or sets the recovery timeout.
+    /// </summary>
+    /// <value>The recovery timeout.</value>
     public TimeSpan RecoveryTimeout { get; init; } = TimeSpan.FromMinutes(5);
 }
 
@@ -759,14 +895,45 @@ public sealed class RecoveryOptions
 /// </summary>
 public sealed class RecoveryResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public required string Message { get; init; }
+    /// <summary>
+    /// Gets or sets the exception.
+    /// </summary>
+    /// <value>The exception.</value>
     public Exception? Exception { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public required string Strategy { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan Duration { get; set; }
+    /// <summary>
+    /// Gets or sets the requires manual intervention.
+    /// </summary>
+    /// <value>The requires manual intervention.</value>
     public bool RequiresManualIntervention { get; init; }
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public Dictionary<string, object> Metadata { get; init; } = [];
 }
+/// <summary>
+/// An recovery capability enumeration.
+/// </summary>
 
 /// <summary>
 /// Recovery capability enumeration.
@@ -789,14 +956,40 @@ public enum RecoveryCapability
 /// </summary>
 public interface IRecoveryStrategy<in TContext> where TContext : class
 {
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
     public RecoveryCapability Capability { get; }
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public int Priority { get; }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanHandle(Exception error, TContext context);
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public Task<RecoveryResult> AttemptRecoveryAsync(
         Exception error,
         TContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <returns>The statistics.</returns>
     public RecoveryStatistics GetStatistics();
 }
 

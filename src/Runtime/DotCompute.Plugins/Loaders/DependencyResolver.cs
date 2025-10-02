@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
+using System;
 
 namespace DotCompute.Plugins.Loaders;
 
@@ -216,7 +217,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
     /// <summary>
     /// Selects the best version from available versions based on version range.
     /// </summary>
-    private static string? SelectBestVersion(string versionRange, List<string> availableVersions)
+    private static string? SelectBestVersion(string versionRange, IReadOnlyList<string> availableVersions)
     {
         if (availableVersions.Count == 0)
         {
@@ -248,7 +249,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
         }
 
         // Handle simple patterns
-        if (versionRange.StartsWith('[') && versionRange.EndsWith(']'))
+        if (versionRange.StartsWith('[', StringComparison.OrdinalIgnoreCase) && versionRange.EndsWith(']', StringComparison.OrdinalIgnoreCase))
         {
             // Exact version: [1.0.0]
             var version = versionRange.Trim('[', ']');
@@ -266,7 +267,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
             };
         }
 
-        if (versionRange.Contains(','))
+        if (versionRange.Contains(',', StringComparison.CurrentCulture))
         {
             // Range: [1.0.0,2.0.0) or (1.0.0,2.0.0]
             var parts = versionRange.Trim('[', '(', ']', ')').Split(',');
@@ -274,8 +275,8 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
             {
                 MinVersion = parts[0].Trim(),
                 MaxVersion = parts.Length > 1 ? parts[1].Trim() : null,
-                IncludeMinVersion = versionRange.StartsWith('['),
-                IncludeMaxVersion = versionRange.EndsWith(']')
+                IncludeMinVersion = versionRange.StartsWith('[', StringComparison.CurrentCulture),
+                IncludeMaxVersion = versionRange.EndsWith(']', StringComparison.CurrentCulture)
             };
         }
 
@@ -420,7 +421,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
     /// <summary>
     /// Resolves conflicts by keeping the highest version.
     /// </summary>
-    private void ResolveConflictUsingHighestVersion(List<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
+    private void ResolveConflictUsingHighestVersion(IReadOnlyList<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
     {
         var highestVersion = conflictingDependencies
             .OrderByDescending(d => Version.Parse(d.Version))
@@ -438,7 +439,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
     /// <summary>
     /// Resolves conflicts by keeping the lowest version.
     /// </summary>
-    private void ResolveConflictUsingLowestVersion(List<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
+    private void ResolveConflictUsingLowestVersion(IReadOnlyList<ResolvedDependency> conflictingDependencies, DependencyGraph graph)
     {
         var lowestVersion = conflictingDependencies
             .OrderBy(d => Version.Parse(d.Version))
@@ -645,17 +646,17 @@ public class DependencyGraph
     /// <summary>
     /// Gets the resolved dependencies.
     /// </summary>
-    public List<ResolvedDependency> Dependencies { get; } = [];
+    public IList<ResolvedDependency> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets the resolution errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the resolution warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the total resolution time.

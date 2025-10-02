@@ -18,6 +18,10 @@ public sealed class CertificateValidator : IDisposable
     private readonly Timer _cacheCleanupTimer;
     private readonly object _cacheLock = new();
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CertificateValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public CertificateValidator(ILogger logger)
     {
@@ -428,6 +432,9 @@ public sealed class CertificateValidator : IDisposable
             _logger.LogWarning(ex, "Error during certificate validation cache cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -445,6 +452,9 @@ public sealed class CertificateValidator : IDisposable
         }
     }
 }
+/// <summary>
+/// An certificate usage enumeration.
+/// </summary>
 
 #region Supporting Types
 
@@ -467,11 +477,35 @@ public enum CertificateUsage
 /// </summary>
 public sealed class CertificateValidationResult
 {
+    /// <summary>
+    /// Gets or sets the certificate.
+    /// </summary>
+    /// <value>The certificate.</value>
     public required X509Certificate2 Certificate { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
-    public List<string> Errors { get; } = [];
-    public List<string> Warnings { get; } = [];
+    /// <summary>
+    /// Gets or sets the errors.
+    /// </summary>
+    /// <value>The errors.</value>
+    public IList<string> Errors { get; } = [];
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
+    public IList<string> Warnings { get; } = [];
+    /// <summary>
+    /// Gets or sets the chain info.
+    /// </summary>
+    /// <value>The chain info.</value>
     public CertificateChainValidationResult? ChainInfo { get; set; }
 }
 
@@ -480,11 +514,31 @@ public sealed class CertificateValidationResult
 /// </summary>
 public sealed class CertificateUsageValidationResult
 {
+    /// <summary>
+    /// Gets or sets the certificate.
+    /// </summary>
+    /// <value>The certificate.</value>
     public required X509Certificate2 Certificate { get; init; }
+    /// <summary>
+    /// Gets or sets the intended usage.
+    /// </summary>
+    /// <value>The intended usage.</value>
     public required CertificateUsage IntendedUsage { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid for usage.
+    /// </summary>
+    /// <value>The is valid for usage.</value>
     public bool IsValidForUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
-    public List<string> Issues { get; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IList<string> Issues { get; } = [];
 }
 
 /// <summary>
@@ -492,11 +546,31 @@ public sealed class CertificateUsageValidationResult
 /// </summary>
 public sealed class CertificateChainValidationResult
 {
+    /// <summary>
+    /// Gets or sets the certificate.
+    /// </summary>
+    /// <value>The certificate.</value>
     public required X509Certificate2 Certificate { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
-    public List<string> ChainStatus { get; } = [];
-    public List<ChainElementInfo> ChainElements { get; } = [];
+    /// <summary>
+    /// Gets or sets the chain status.
+    /// </summary>
+    /// <value>The chain status.</value>
+    public IList<string> ChainStatus { get; } = [];
+    /// <summary>
+    /// Gets or sets the chain elements.
+    /// </summary>
+    /// <value>The chain elements.</value>
+    public IList<ChainElementInfo> ChainElements { get; } = [];
 }
 
 /// <summary>
@@ -504,7 +578,15 @@ public sealed class CertificateChainValidationResult
 /// </summary>
 public sealed class ChainElementInfo
 {
+    /// <summary>
+    /// Gets or sets the certificate.
+    /// </summary>
+    /// <value>The certificate.</value>
     public required X509Certificate2 Certificate { get; init; }
+    /// <summary>
+    /// Gets or sets the status.
+    /// </summary>
+    /// <value>The status.</value>
     public required X509ChainStatus[] Status { get; init; }
 }
 
@@ -513,7 +595,15 @@ public sealed class ChainElementInfo
 /// </summary>
 internal sealed class CachedCertificateValidation
 {
+    /// <summary>
+    /// Gets or sets the result.
+    /// </summary>
+    /// <value>The result.</value>
     public required CertificateValidationResult Result { get; init; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
 }
 

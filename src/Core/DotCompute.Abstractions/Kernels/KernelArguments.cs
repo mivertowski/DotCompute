@@ -23,7 +23,7 @@ public class KernelLaunchConfiguration
     /// <summary>
     /// Gets or sets the shared memory size in bytes.
     /// </summary>
-    public uint SharedMemoryBytes { get; set; } = 0;
+    public uint SharedMemoryBytes { get; set; }
 
     /// <summary>
     /// Gets or sets the CUDA stream to use (0 for default stream).

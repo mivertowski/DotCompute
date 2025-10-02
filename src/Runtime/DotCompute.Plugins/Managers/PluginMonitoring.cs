@@ -18,6 +18,10 @@ internal class PluginHealthMonitor : IDisposable
     private readonly ConcurrentDictionary<string, PluginHealthState> _healthStates = new();
     private readonly Timer _healthCheckTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginHealthMonitor class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public PluginHealthMonitor(ILogger logger)
     {
@@ -344,6 +348,9 @@ internal class PluginHealthMonitor : IDisposable
             _logger.LogErrorMessage(ex, "Error during periodic health check");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -365,6 +372,10 @@ internal class PluginMetricsCollector : IDisposable
     private readonly ConcurrentDictionary<string, PluginMetricsState> _metricsStates = new();
     private readonly Timer _metricsTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginMetricsCollector class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public PluginMetricsCollector(ILogger logger)
     {
@@ -529,6 +540,9 @@ internal class PluginMetricsCollector : IDisposable
             _logger.LogErrorMessage(ex, "Error during periodic metrics collection");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -546,11 +560,35 @@ internal class PluginMetricsCollector : IDisposable
 /// </summary>
 internal class PluginHealthState
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; set; }
+    /// <summary>
+    /// Gets or sets the plugin.
+    /// </summary>
+    /// <value>The plugin.</value>
     public ManagedPlugin? Plugin { get; set; }
+    /// <summary>
+    /// Gets or sets the last check.
+    /// </summary>
+    /// <value>The last check.</value>
     public DateTimeOffset LastCheck { get; set; }
+    /// <summary>
+    /// Gets or sets the health.
+    /// </summary>
+    /// <value>The health.</value>
     public PluginHealth Health { get; set; }
+    /// <summary>
+    /// Gets or sets the check count.
+    /// </summary>
+    /// <value>The check count.</value>
     public long CheckCount { get; set; }
+    /// <summary>
+    /// Gets or sets the consecutive failures.
+    /// </summary>
+    /// <value>The consecutive failures.</value>
     public int ConsecutiveFailures { get; set; }
 }
 
@@ -559,10 +597,26 @@ internal class PluginHealthState
 /// </summary>
 internal class PluginMetricsState
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; set; }
+    /// <summary>
+    /// Gets or sets the plugin.
+    /// </summary>
+    /// <value>The plugin.</value>
     public ManagedPlugin? Plugin { get; set; }
+    /// <summary>
+    /// Gets or sets the last collection.
+    /// </summary>
+    /// <value>The last collection.</value>
     public DateTimeOffset LastCollection { get; set; }
-    public List<PluginMetrics> MetricsHistory { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the metrics history.
+    /// </summary>
+    /// <value>The metrics history.</value>
+    public IList<PluginMetrics> MetricsHistory { get; } = [];
 }
 
 /// <summary>
@@ -588,7 +642,7 @@ public class PluginHealthCheckResult
     /// <summary>
     /// Gets the health issues found.
     /// </summary>
-    public List<string> Issues { get; } = [];
+    public IList<string> Issues { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory usage in bytes.
@@ -664,7 +718,7 @@ public class PluginHealthReport
     /// <summary>
     /// Gets the individual plugin health checks.
     /// </summary>
-    public List<PluginHealthCheckResult> PluginHealthChecks { get; } = [];
+    public IList<PluginHealthCheckResult> PluginHealthChecks { get; } = [];
 }
 
 /// <summary>
@@ -710,5 +764,5 @@ public class PluginMetricsReport
     /// <summary>
     /// Gets the individual plugin metrics.
     /// </summary>
-    public List<PluginMetrics> PluginMetrics { get; } = [];
+    public IList<PluginMetrics> PluginMetrics { get; } = [];
 }

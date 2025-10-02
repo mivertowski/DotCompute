@@ -36,22 +36,22 @@ public sealed class StageValidationResult
     /// <summary>
     /// Gets or sets validation errors that prevent execution.
     /// </summary>
-    public IList<ValidationIssue> Errors { get; set; } = [];
+    public IList<ValidationIssue> Errors { get; } = [];
 
     /// <summary>
     /// Gets or sets validation warnings that may affect performance or correctness.
     /// </summary>
-    public IList<ValidationIssue> Warnings { get; set; } = [];
+    public IList<ValidationIssue> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets informational messages about the validation.
     /// </summary>
-    public IList<ValidationIssue> Information { get; set; } = [];
+    public IList<ValidationIssue> Information { get; } = [];
 
     /// <summary>
     /// Gets or sets validation suggestions for improvements.
     /// </summary>
-    public IList<ValidationSuggestion> Suggestions { get; set; } = [];
+    public IList<ValidationSuggestion> Suggestions { get; } = [];
 
     /// <summary>
     /// Gets or sets the time when validation was performed.
@@ -81,13 +81,13 @@ public sealed class StageValidationResult
     /// <summary>
     /// Gets or sets compatibility information with different backends.
     /// </summary>
-    public IDictionary<string, BackendCompatibility> BackendCompatibility { get; set; } =
+    public IDictionary<string, BackendCompatibility> BackendCompatibility { get; } =
         new Dictionary<string, BackendCompatibility>();
 
     /// <summary>
     /// Gets or sets additional metadata associated with the validation.
     /// </summary>
-    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Adds a validation error.
@@ -465,7 +465,7 @@ public sealed class BackendCompatibility
     /// <summary>
     /// Gets or sets compatibility limitations or issues.
     /// </summary>
-    public IList<string> Limitations { get; set; } = [];
+    public IList<string> Limitations { get; } = [];
 
     /// <summary>
     /// Gets or sets the estimated performance on this backend.

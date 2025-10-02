@@ -28,6 +28,10 @@ public sealed class MetricsCollector : IDisposable
     private long _totalErrors;
     private double _averageKernelDuration;
     private double _peakMemoryUsage;
+    /// <summary>
+    /// Initializes a new instance of the MetricsCollector class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public MetricsCollector(ILogger<MetricsCollector> logger)
     {
@@ -530,6 +534,9 @@ public sealed class MetricsCollector : IDisposable
             throw new ObjectDisposedException(nameof(MetricsCollector));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -543,124 +550,470 @@ public sealed class MetricsCollector : IDisposable
         _collectionTimer?.Dispose();
     }
 }
+/// <summary>
+/// A class that represents device metrics.
+/// </summary>
 
 // Supporting data structures and enums follow...
 public sealed class DeviceMetrics
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the utilization percentage.
+    /// </summary>
+    /// <value>The utilization percentage.</value>
     public double UtilizationPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the temperature celsius.
+    /// </summary>
+    /// <value>The temperature celsius.</value>
     public double TemperatureCelsius { get; set; }
+    /// <summary>
+    /// Gets or sets the current memory usage.
+    /// </summary>
+    /// <value>The current memory usage.</value>
     public long CurrentMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the max memory capacity.
+    /// </summary>
+    /// <value>The max memory capacity.</value>
     public long MaxMemoryCapacity { get; set; } = long.MaxValue;
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public long TotalOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the error count.
+    /// </summary>
+    /// <value>The error count.</value>
     public long ErrorCount { get; set; }
+    /// <summary>
+    /// Gets or sets the average response time.
+    /// </summary>
+    /// <value>The average response time.</value>
     public double AverageResponseTime { get; set; }
+    /// <summary>
+    /// Gets or sets the power consumption watts.
+    /// </summary>
+    /// <value>The power consumption watts.</value>
     public double PowerConsumptionWatts { get; set; }
+    /// <summary>
+    /// Gets or sets the last update time.
+    /// </summary>
+    /// <value>The last update time.</value>
     public DateTimeOffset LastUpdateTime { get; set; }
 }
+/// <summary>
+/// A class that represents kernel metrics.
+/// </summary>
 
 public sealed class KernelMetrics
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
     public long ExecutionCount { get; set; }
+    /// <summary>
+    /// Gets or sets the total execution time.
+    /// </summary>
+    /// <value>The total execution time.</value>
     public TimeSpan TotalExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the min execution time.
+    /// </summary>
+    /// <value>The min execution time.</value>
     public TimeSpan MinExecutionTime { get; set; } = TimeSpan.MaxValue;
+    /// <summary>
+    /// Gets or sets the max execution time.
+    /// </summary>
+    /// <value>The max execution time.</value>
     public TimeSpan MaxExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the total memory used.
+    /// </summary>
+    /// <value>The total memory used.</value>
     public long TotalMemoryUsed { get; set; }
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    /// <value>The success count.</value>
     public long SuccessCount { get; set; }
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput.
+    /// </summary>
+    /// <value>The throughput.</value>
     public double Throughput { get; set; }
+    /// <summary>
+    /// Gets or sets the occupancy.
+    /// </summary>
+    /// <value>The occupancy.</value>
     public double Occupancy { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit rate.
+    /// </summary>
+    /// <value>The cache hit rate.</value>
     public double CacheHitRate { get; set; }
 }
+/// <summary>
+/// A class that represents memory operation.
+/// </summary>
 
 public sealed class MemoryOperation
 {
+    /// <summary>
+    /// Gets or sets the operation type.
+    /// </summary>
+    /// <value>The operation type.</value>
     public string OperationType { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the bytes.
+    /// </summary>
+    /// <value>The bytes.</value>
     public long Bytes { get; set; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan Duration { get; set; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the bandwidth.
+    /// </summary>
+    /// <value>The bandwidth.</value>
     public double Bandwidth { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the access pattern.
+    /// </summary>
+    /// <value>The access pattern.</value>
     public string AccessPattern { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the coalescing efficiency.
+    /// </summary>
+    /// <value>The coalescing efficiency.</value>
     public double CoalescingEfficiency { get; set; }
 }
+/// <summary>
+/// A class that represents performance snapshot.
+/// </summary>
 
 public sealed class PerformanceSnapshot
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the total memory usage.
+    /// </summary>
+    /// <value>The total memory usage.</value>
     public long TotalMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the average device utilization.
+    /// </summary>
+    /// <value>The average device utilization.</value>
     public double AverageDeviceUtilization { get; set; }
+    /// <summary>
+    /// Gets or sets the active kernels.
+    /// </summary>
+    /// <value>The active kernels.</value>
     public int ActiveKernels { get; set; }
+    /// <summary>
+    /// Gets or sets the processor time.
+    /// </summary>
+    /// <value>The processor time.</value>
     public double ProcessorTime { get; set; }
+    /// <summary>
+    /// Gets or sets the gc memory usage.
+    /// </summary>
+    /// <value>The gc memory usage.</value>
     public long GcMemoryUsage { get; set; }
 }
+/// <summary>
+/// A class that represents kernel execution details.
+/// </summary>
 
 public sealed class KernelExecutionDetails
 {
+    /// <summary>
+    /// Gets or sets the execution time.
+    /// </summary>
+    /// <value>The execution time.</value>
     public TimeSpan ExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the operations performed.
+    /// </summary>
+    /// <value>The operations performed.</value>
     public long OperationsPerformed { get; set; }
+    /// <summary>
+    /// Gets or sets the occupancy.
+    /// </summary>
+    /// <value>The occupancy.</value>
     public double Occupancy { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit rate.
+    /// </summary>
+    /// <value>The cache hit rate.</value>
     public double CacheHitRate { get; set; }
 }
+/// <summary>
+/// A class that represents memory operation details.
+/// </summary>
 
 public sealed class MemoryOperationDetails
 {
+    /// <summary>
+    /// Gets or sets the current memory usage.
+    /// </summary>
+    /// <value>The current memory usage.</value>
     public long CurrentMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the access pattern.
+    /// </summary>
+    /// <value>The access pattern.</value>
     public string AccessPattern { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the coalescing efficiency.
+    /// </summary>
+    /// <value>The coalescing efficiency.</value>
     public double CoalescingEfficiency { get; set; }
 }
+/// <summary>
+/// A class that represents kernel performance metrics.
+/// </summary>
 
 public sealed class KernelPerformanceMetrics
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
     public long ExecutionCount { get; set; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public double AverageExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the min execution time.
+    /// </summary>
+    /// <value>The min execution time.</value>
     public double MinExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the max execution time.
+    /// </summary>
+    /// <value>The max execution time.</value>
     public double MaxExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate { get; set; }
+    /// <summary>
+    /// Gets or sets the average throughput.
+    /// </summary>
+    /// <value>The average throughput.</value>
     public double AverageThroughput { get; set; }
+    /// <summary>
+    /// Gets or sets the average occupancy.
+    /// </summary>
+    /// <value>The average occupancy.</value>
     public double AverageOccupancy { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit rate.
+    /// </summary>
+    /// <value>The cache hit rate.</value>
     public double CacheHitRate { get; set; }
+    /// <summary>
+    /// Gets or sets the memory efficiency.
+    /// </summary>
+    /// <value>The memory efficiency.</value>
     public double MemoryEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
 }
+/// <summary>
+/// A class that represents device performance metrics.
+/// </summary>
 
 public sealed class DevicePerformanceMetrics
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the utilization percentage.
+    /// </summary>
+    /// <value>The utilization percentage.</value>
     public double UtilizationPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the temperature celsius.
+    /// </summary>
+    /// <value>The temperature celsius.</value>
     public double TemperatureCelsius { get; set; }
+    /// <summary>
+    /// Gets or sets the current memory usage.
+    /// </summary>
+    /// <value>The current memory usage.</value>
     public long CurrentMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the max memory capacity.
+    /// </summary>
+    /// <value>The max memory capacity.</value>
     public long MaxMemoryCapacity { get; set; }
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public long TotalOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the error count.
+    /// </summary>
+    /// <value>The error count.</value>
     public long ErrorCount { get; set; }
+    /// <summary>
+    /// Gets or sets the average response time.
+    /// </summary>
+    /// <value>The average response time.</value>
     public double AverageResponseTime { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput ops per second.
+    /// </summary>
+    /// <value>The throughput ops per second.</value>
     public double ThroughputOpsPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the power consumption watts.
+    /// </summary>
+    /// <value>The power consumption watts.</value>
     public double PowerConsumptionWatts { get; set; }
+    /// <summary>
+    /// Gets or sets the last update time.
+    /// </summary>
+    /// <value>The last update time.</value>
     public DateTimeOffset LastUpdateTime { get; set; }
 }
+/// <summary>
+/// A class that represents memory access analysis.
+/// </summary>
 
 public sealed class MemoryAccessAnalysis
 {
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public int TotalOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the average bandwidth.
+    /// </summary>
+    /// <value>The average bandwidth.</value>
     public double AverageBandwidth { get; set; }
+    /// <summary>
+    /// Gets or sets the peak bandwidth.
+    /// </summary>
+    /// <value>The peak bandwidth.</value>
     public double PeakBandwidth { get; set; }
-    public Dictionary<string, int> AccessPatterns { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the access patterns.
+    /// </summary>
+    /// <value>The access patterns.</value>
+    public Dictionary<string, int> AccessPatterns { get; } = [];
+    /// <summary>
+    /// Gets or sets the average coalescing efficiency.
+    /// </summary>
+    /// <value>The average coalescing efficiency.</value>
     public double AverageCoalescingEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the time window.
+    /// </summary>
+    /// <value>The time window.</value>
     public TimeSpan TimeWindow { get; set; }
+    /// <summary>
+    /// Gets or sets the analysis timestamp.
+    /// </summary>
+    /// <value>The analysis timestamp.</value>
     public DateTimeOffset AnalysisTimestamp { get; set; }
 }
+/// <summary>
+/// A class that represents performance bottleneck.
+/// </summary>
 
 public sealed class PerformanceBottleneck
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public BottleneckType Type { get; set; }
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string? DeviceId { get; set; }
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string? KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public BottleneckSeverity Severity { get; set; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public string Description { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the recommendation.
+    /// </summary>
+    /// <value>The recommendation.</value>
     public string Recommendation { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the metric value.
+    /// </summary>
+    /// <value>The metric value.</value>
     public double MetricValue { get; set; }
 }
 

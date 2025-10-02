@@ -27,6 +27,10 @@ namespace DotCompute.Core.Memory
         // Coherence configuration
         private const int CoherenceMonitorIntervalMs = 5000; // 5 seconds
         private const double IncoherentThresholdRatio = 0.1; // 10%
+        /// <summary>
+        /// Initializes a new instance of the P2PMemoryCoherenceManager class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public P2PMemoryCoherenceManager(ILogger logger)
         {
@@ -662,6 +666,10 @@ namespace DotCompute.Core.Memory
                 }
             }
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -692,17 +700,65 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class P2PBufferCoherenceInfo
     {
+        /// <summary>
+        /// Gets or sets the buffer identifier.
+        /// </summary>
+        /// <value>The buffer id.</value>
         public required Guid BufferId { get; init; }
+        /// <summary>
+        /// Gets or sets the source buffer.
+        /// </summary>
+        /// <value>The source buffer.</value>
         public required object SourceBuffer { get; init; }
+        /// <summary>
+        /// Gets or sets the source device.
+        /// </summary>
+        /// <value>The source device.</value>
         public required IAccelerator SourceDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the target device.
+        /// </summary>
+        /// <value>The target device.</value>
         public required IAccelerator TargetDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the offset.
+        /// </summary>
+        /// <value>The offset.</value>
         public required int Offset { get; init; }
+        /// <summary>
+        /// Gets or sets the element count.
+        /// </summary>
+        /// <value>The element count.</value>
         public required int ElementCount { get; init; }
+        /// <summary>
+        /// Gets or sets the last modified.
+        /// </summary>
+        /// <value>The last modified.</value>
         public required DateTimeOffset LastModified { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether coherent.
+        /// </summary>
+        /// <value>The is coherent.</value>
         public required bool IsCoherent { get; set; }
+        /// <summary>
+        /// Gets or sets the coherence level.
+        /// </summary>
+        /// <value>The coherence level.</value>
         public required CoherenceLevel CoherenceLevel { get; set; }
+        /// <summary>
+        /// Gets or sets the p2 p capability.
+        /// </summary>
+        /// <value>The p2 p capability.</value>
         public P2PConnectionCapability? P2PCapability { get; init; }
+        /// <summary>
+        /// Gets or sets the access pattern.
+        /// </summary>
+        /// <value>The access pattern.</value>
         public required AccessPattern AccessPattern { get; set; }
+        /// <summary>
+        /// Gets or sets the copies.
+        /// </summary>
+        /// <value>The copies.</value>
         public required List<BufferCopy> Copies { get; init; }
     }
 
@@ -711,10 +767,30 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class BufferCopy
     {
+        /// <summary>
+        /// Gets or sets the device.
+        /// </summary>
+        /// <value>The device.</value>
         public required IAccelerator Device { get; init; }
+        /// <summary>
+        /// Gets or sets the buffer.
+        /// </summary>
+        /// <value>The buffer.</value>
         public required object Buffer { get; init; }
+        /// <summary>
+        /// Gets or sets the last accessed.
+        /// </summary>
+        /// <value>The last accessed.</value>
         public required DateTimeOffset LastAccessed { get; set; }
+        /// <summary>
+        /// Gets or sets the access count.
+        /// </summary>
+        /// <value>The access count.</value>
         public required long AccessCount { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether written.
+        /// </summary>
+        /// <value>The is written.</value>
         public required bool IsWritten { get; set; }
     }
 
@@ -723,9 +799,25 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class DeviceCoherenceState
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the coherent buffers.
+        /// </summary>
+        /// <value>The coherent buffers.</value>
         public required int CoherentBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the incoherent buffers.
+        /// </summary>
+        /// <value>The incoherent buffers.</value>
         public required int IncoherentBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the last updated.
+        /// </summary>
+        /// <value>The last updated.</value>
         public required DateTimeOffset LastUpdated { get; init; }
     }
 
@@ -734,8 +826,20 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class BufferPlacementAnalysis
     {
+        /// <summary>
+        /// Gets or sets the device distribution.
+        /// </summary>
+        /// <value>The device distribution.</value>
         public required Dictionary<string, int> DeviceDistribution { get; init; }
+        /// <summary>
+        /// Gets or sets the hotspot devices.
+        /// </summary>
+        /// <value>The hotspot devices.</value>
         public required List<string> HotspotDevices { get; init; }
+        /// <summary>
+        /// Gets or sets the underutilized devices.
+        /// </summary>
+        /// <value>The underutilized devices.</value>
         public required List<string> UnderutilizedDevices { get; init; }
     }
 
@@ -744,10 +848,30 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal sealed class PlacementOptimization
     {
+        /// <summary>
+        /// Gets or sets the source device identifier.
+        /// </summary>
+        /// <value>The source device id.</value>
         public required string SourceDeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the target device identifier.
+        /// </summary>
+        /// <value>The target device id.</value>
         public required string TargetDeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the p2 p capability.
+        /// </summary>
+        /// <value>The p2 p capability.</value>
         public required P2PConnectionCapability P2PCapability { get; init; }
+        /// <summary>
+        /// Gets or sets the optimization type.
+        /// </summary>
+        /// <value>The optimization type.</value>
         public required OptimizationType OptimizationType { get; init; }
+        /// <summary>
+        /// Gets or sets the expected benefit.
+        /// </summary>
+        /// <value>The expected benefit.</value>
         public required double ExpectedBenefit { get; init; }
     }
 
@@ -756,16 +880,55 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class CoherenceStatistics
     {
+        /// <summary>
+        /// Gets or sets the total tracked buffers.
+        /// </summary>
+        /// <value>The total tracked buffers.</value>
         public long TotalTrackedBuffers { get; set; }
+        /// <summary>
+        /// Gets or sets the coherent buffers.
+        /// </summary>
+        /// <value>The coherent buffers.</value>
         public long CoherentBuffers { get; set; }
+        /// <summary>
+        /// Gets or sets the incoherent buffers.
+        /// </summary>
+        /// <value>The incoherent buffers.</value>
         public long IncoherentBuffers { get; set; }
+        /// <summary>
+        /// Gets or sets the synchronization operations.
+        /// </summary>
+        /// <value>The synchronization operations.</value>
         public long SynchronizationOperations { get; set; }
+        /// <summary>
+        /// Gets or sets the read operations.
+        /// </summary>
+        /// <value>The read operations.</value>
         public long ReadOperations { get; set; }
+        /// <summary>
+        /// Gets or sets the write operations.
+        /// </summary>
+        /// <value>The write operations.</value>
         public long WriteOperations { get; set; }
+        /// <summary>
+        /// Gets or sets the total sync time.
+        /// </summary>
+        /// <value>The total sync time.</value>
         public TimeSpan TotalSyncTime { get; set; }
+        /// <summary>
+        /// Gets or sets the average sync time.
+        /// </summary>
+        /// <value>The average sync time.</value>
         public TimeSpan AverageSyncTime { get; set; }
+        /// <summary>
+        /// Gets or sets the coherence efficiency.
+        /// </summary>
+        /// <value>The coherence efficiency.</value>
         public double CoherenceEfficiency { get; set; }
     }
+    /// <summary>
+    /// An coherence level enumeration.
+    /// </summary>
 
     /// <summary>
     /// Coherence levels.
@@ -776,6 +939,9 @@ namespace DotCompute.Core.Memory
         Weak = 1,      // Single writer, multiple readers
         Strong = 2     // All copies identical, no recent writes
     }
+    /// <summary>
+    /// An access pattern enumeration.
+    /// </summary>
 
     /// <summary>
     /// Access patterns for optimization.
@@ -787,6 +953,9 @@ namespace DotCompute.Core.Memory
         Broadcast = 2,   // One-to-many pattern
         Gather = 3       // Many-to-one pattern
     }
+    /// <summary>
+    /// An access type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Access types for coherence tracking.
@@ -796,6 +965,9 @@ namespace DotCompute.Core.Memory
         Read = 0,
         Write = 1
     }
+    /// <summary>
+    /// An sync strategy enumeration.
+    /// </summary>
 
     /// <summary>
     /// Synchronization strategies.
@@ -806,6 +978,9 @@ namespace DotCompute.Core.Memory
         HostMediated = 1,  // Via host memory
         Streamed = 2       // Chunked streaming
     }
+    /// <summary>
+    /// An optimization type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Optimization types.

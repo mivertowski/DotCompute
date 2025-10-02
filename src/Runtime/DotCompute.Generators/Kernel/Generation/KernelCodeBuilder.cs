@@ -525,12 +525,12 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets the list of validation errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the list of validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets a value indicating whether the validation result contains errors.

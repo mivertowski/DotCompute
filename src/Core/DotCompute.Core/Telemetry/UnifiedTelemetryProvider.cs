@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Core.Telemetry.Implementation;
 using TelemetryConfiguration = DotCompute.Abstractions.Interfaces.Telemetry.TelemetryConfiguration;
+using System;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -25,6 +26,10 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     private readonly ConcurrentDictionary<string, Gauge<double>> _gauges = new();
     private readonly ConcurrentDictionary<string, ObservableGauge<double>> _observableGauges = new();
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the UnifiedTelemetryProvider class.
+    /// </summary>
+    /// <param name="configuration">The configuration.</param>
 
 
     public UnifiedTelemetryProvider(TelemetryConfiguration configuration)
@@ -36,6 +41,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
         // Initialize core metrics
         InitializeStandardMetrics();
     }
+    /// <summary>
+    /// Performs record metric.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="tags">The tags.</param>
 
 
     public void RecordMetric(string name, double value, IDictionary<string, object?>? tags = null)
@@ -70,6 +81,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record metric {name}: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs increment counter.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="increment">The increment.</param>
+    /// <param name="tags">The tags.</param>
 
 
     public void IncrementCounter(string name, long increment = 1, IDictionary<string, object?>? tags = null)
@@ -103,6 +120,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to increment counter {name}: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs record histogram.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="tags">The tags.</param>
 
 
     public void RecordHistogram(string name, double value, IDictionary<string, object?>? tags = null)
@@ -136,6 +159,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record histogram {name}: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Gets start activity.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="kind">The kind.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
@@ -163,6 +192,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             return null;
         }
     }
+    /// <summary>
+    /// Performs record event.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="attributes">The attributes.</param>
 
 
     public void RecordEvent(string name, IDictionary<string, object?>? attributes = null)
@@ -200,6 +234,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record event {name}: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Gets start timer.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="tags">The tags.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
@@ -224,6 +264,11 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             return new OperationTimer(operationName, tags);
         }
     }
+    /// <summary>
+    /// Performs record memory allocation.
+    /// </summary>
+    /// <param name="bytes">The bytes.</param>
+    /// <param name="allocationType">The allocation type.</param>
 
 
     public void RecordMemoryAllocation(long bytes, string? allocationType = null)
@@ -256,6 +301,13 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record memory allocation: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs record garbage collection.
+    /// </summary>
+    /// <param name="generation">The generation.</param>
+    /// <param name="duration">The duration.</param>
+    /// <param name="memoryBefore">The memory before.</param>
+    /// <param name="memoryAfter">The memory after.</param>
 
 
     public void RecordGarbageCollection(int generation, TimeSpan duration, long memoryBefore, long memoryAfter)
@@ -296,6 +348,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record garbage collection: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs record accelerator utilization.
+    /// </summary>
+    /// <param name="acceleratorType">The accelerator type.</param>
+    /// <param name="utilization">The utilization.</param>
+    /// <param name="memoryUsed">The memory used.</param>
 
 
     public void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed)
@@ -348,6 +406,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record accelerator utilization: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs record kernel execution.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="duration">The duration.</param>
+    /// <param name="operationCount">The operation count.</param>
 
 
     public void RecordKernelExecution(string kernelName, TimeSpan duration, long operationCount)
@@ -404,6 +468,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record kernel execution: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Performs record memory transfer.
+    /// </summary>
+    /// <param name="direction">The direction.</param>
+    /// <param name="bytes">The bytes.</param>
+    /// <param name="duration">The duration.</param>
 
 
     public void RecordMemoryTransfer(string direction, long bytes, TimeSpan duration)
@@ -466,6 +536,12 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             Debug.WriteLine($"Failed to record memory transfer: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Gets the meter.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="version">The version.</param>
+    /// <returns>The meter.</returns>
 
 
     public Meter GetMeter(string name, string? version = null) => new(name, version);
@@ -491,17 +567,20 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
         var name = kernelName.ToLowerInvariant();
         return name switch
         {
-            var n when n.Contains("add") || n.Contains("sum") => "arithmetic",
-            var n when n.Contains("mul") || n.Contains("multiply") => "arithmetic",
-            var n when n.Contains("matrix") || n.Contains("gemm") => "linear_algebra",
-            var n when n.Contains("reduce") || n.Contains("scan") => "reduction",
-            var n when n.Contains("sort") => "sorting",
-            var n when n.Contains("fft") => "transform",
-            var n when n.Contains("conv") || n.Contains("filter") => "convolution",
-            var n when n.Contains("copy") || n.Contains("memcpy") => "memory",
+            var n when n.Contains("add", StringComparison.OrdinalIgnoreCase) || n.Contains("sum", StringComparison.OrdinalIgnoreCase) => "arithmetic",
+            var n when n.Contains("mul", StringComparison.CurrentCulture) || n.Contains("multiply", StringComparison.CurrentCulture) => "arithmetic",
+            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => "linear_algebra",
+            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("scan", StringComparison.CurrentCulture) => "reduction",
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => "sorting",
+            var n when n.Contains("fft", StringComparison.CurrentCulture) => "transform",
+            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => "convolution",
+            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => "memory",
             _ => "general"
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -534,6 +613,12 @@ internal sealed class ProductionOperationTimer : IOperationTimer
     private readonly UnifiedTelemetryProvider _telemetryProvider;
     private readonly Stopwatch _stopwatch;
     private readonly Activity? _activity;
+    /// <summary>
+    /// Initializes a new instance of the ProductionOperationTimer class.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="tags">The tags.</param>
+    /// <param name="telemetryProvider">The telemetry provider.</param>
 
     public ProductionOperationTimer(string operationName, IDictionary<string, object?>? tags, UnifiedTelemetryProvider telemetryProvider)
     {
@@ -552,14 +637,44 @@ internal sealed class ProductionOperationTimer : IOperationTimer
             }
         }
     }
+    /// <summary>
+    /// Gets or sets a value indicating whether enabled.
+    /// </summary>
+    /// <value>The is enabled.</value>
 
     public bool IsEnabled => true;
+    /// <summary>
+    /// Gets or sets the minimum duration threshold.
+    /// </summary>
+    /// <value>The minimum duration threshold.</value>
     public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;
+    /// <summary>
+    /// Occurs when operation completed.
+    /// </summary>
 
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
+    /// <summary>
+    /// Gets start operation.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
+    /// <summary>
+    /// Gets start operation scope.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <returns>The result of the operation.</returns>
     public IDisposable StartOperationScope(string operationName, string? operationId = null) => new TimerHandle(operationName, operationId ?? Guid.NewGuid().ToString());
+    /// <summary>
+    /// Gets time operation.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
     {
@@ -569,6 +684,13 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         RecordTiming(operationName, sw.Elapsed);
         return (result, sw.Elapsed);
     }
+    /// <summary>
+    /// Gets time operation asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
     {
@@ -578,6 +700,12 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         RecordTiming(operationName, sw.Elapsed);
         return (result, sw.Elapsed);
     }
+    /// <summary>
+    /// Gets time operation.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public TimeSpan TimeOperation(string operationName, Action operation)
     {
@@ -587,6 +715,12 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         RecordTiming(operationName, sw.Elapsed);
         return sw.Elapsed;
     }
+    /// <summary>
+    /// Gets time operation asynchronously.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
     {
@@ -596,6 +730,13 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         RecordTiming(operationName, sw.Elapsed);
         return sw.Elapsed;
     }
+    /// <summary>
+    /// Performs record timing.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="duration">The duration.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <param name="metadata">The metadata.</param>
 
     public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null)
     {
@@ -624,14 +765,47 @@ internal sealed class ProductionOperationTimer : IOperationTimer
 
         _telemetryProvider.RecordHistogram("operation.duration.ms", duration.TotalMilliseconds, tags);
     }
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <returns>The statistics.</returns>
 
     public OperationStatistics? GetStatistics(string operationName) => null;
+    /// <summary>
+    /// Gets the all statistics.
+    /// </summary>
+    /// <returns>The all statistics.</returns>
     public IDictionary<string, OperationStatistics> GetAllStatistics() => new Dictionary<string, OperationStatistics>();
+    /// <summary>
+    /// Performs clear statistics.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
     public void ClearStatistics(string operationName) { }
+    /// <summary>
+    /// Performs clear all statistics.
+    /// </summary>
     public void ClearAllStatistics() { }
+    /// <summary>
+    /// Gets export data.
+    /// </summary>
+    /// <param name="format">The format.</param>
+    /// <param name="operationFilter">The operation filter.</param>
+    /// <returns>The result of the operation.</returns>
     public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null) => string.Empty;
+    /// <summary>
+    /// Sets the enabled.
+    /// </summary>
+    /// <param name="enabled">The enabled.</param>
     public void SetEnabled(bool enabled) { }
+    /// <summary>
+    /// Sets the minimum duration threshold.
+    /// </summary>
+    /// <param name="threshold">The threshold.</param>
     public void SetMinimumDurationThreshold(TimeSpan threshold) { }
+    /// <summary>
+    /// Performs stop.
+    /// </summary>
 
     public void Stop()
     {
@@ -658,6 +832,9 @@ internal sealed class ProductionOperationTimer : IOperationTimer
             });
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -668,23 +845,52 @@ internal sealed class ProductionOperationTimer : IOperationTimer
 
         _activity?.Dispose();
     }
+    /// <summary>
+    /// A class that represents timer handle.
+    /// </summary>
 
     // Simple timer handle implementation
     private sealed class TimerHandle(string operationName, string operationId) : ITimerHandle, IDisposable
     {
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private readonly Dictionary<string, TimeSpan> _checkpoints = [];
+        /// <summary>
+        /// Gets or sets the operation name.
+        /// </summary>
+        /// <value>The operation name.</value>
 
         public string OperationName { get; } = operationName ?? throw new ArgumentNullException(nameof(operationName));
+        /// <summary>
+        /// Gets or sets the operation identifier.
+        /// </summary>
+        /// <value>The operation id.</value>
         public string OperationId { get; } = operationId ?? Guid.NewGuid().ToString();
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; } = DateTime.UtcNow;
+        /// <summary>
+        /// Gets or sets the elapsed.
+        /// </summary>
+        /// <value>The elapsed.</value>
         public TimeSpan Elapsed => _stopwatch.Elapsed;
+        /// <summary>
+        /// Gets stop.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <returns>The result of the operation.</returns>
 
         public TimeSpan Stop(IDictionary<string, object>? metadata = null)
         {
             _stopwatch.Stop();
             return _stopwatch.Elapsed;
         }
+        /// <summary>
+        /// Gets add checkpoint.
+        /// </summary>
+        /// <param name="checkpointName">The checkpoint name.</param>
+        /// <returns>The result of the operation.</returns>
 
         public TimeSpan AddCheckpoint(string checkpointName)
         {
@@ -692,8 +898,15 @@ internal sealed class ProductionOperationTimer : IOperationTimer
             _checkpoints[checkpointName] = elapsed;
             return elapsed;
         }
+        /// <summary>
+        /// Gets the checkpoints.
+        /// </summary>
+        /// <returns>The checkpoints.</returns>
 
         public IDictionary<string, TimeSpan> GetCheckpoints() => new Dictionary<string, TimeSpan>(_checkpoints);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

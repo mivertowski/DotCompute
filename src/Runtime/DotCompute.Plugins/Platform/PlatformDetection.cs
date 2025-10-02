@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System;
 
 namespace DotCompute.Plugins.Platform
 {
@@ -687,7 +688,7 @@ namespace DotCompute.Plugins.Platform
                     var lines = meminfo.Split('\n');
                     foreach (var line in lines)
                     {
-                        if (line.StartsWith("MemTotal:"))
+                        if (line.StartsWith("MemTotal:", StringComparison.OrdinalIgnoreCase))
                         {
                             var parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                             if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
@@ -717,7 +718,7 @@ namespace DotCompute.Plugins.Platform
                     var lines = meminfo.Split('\n');
                     foreach (var line in lines)
                     {
-                        if (line.StartsWith("MemAvailable:"))
+                        if (line.StartsWith("MemAvailable:", StringComparison.OrdinalIgnoreCase))
                         {
                             var parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                             if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
@@ -745,18 +746,70 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class PlatformInfo
     {
+        /// <summary>
+        /// Gets or sets the operating system.
+        /// </summary>
+        /// <value>The operating system.</value>
         public required string OperatingSystem { get; init; }
+        /// <summary>
+        /// Gets or sets the architecture.
+        /// </summary>
+        /// <value>The architecture.</value>
         public required string Architecture { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether windows.
+        /// </summary>
+        /// <value>The is windows.</value>
         public required bool IsWindows { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether linux.
+        /// </summary>
+        /// <value>The is linux.</value>
         public required bool IsLinux { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether mac o s.
+        /// </summary>
+        /// <value>The is mac o s.</value>
         public required bool IsMacOS { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether free b s d.
+        /// </summary>
+        /// <value>The is free b s d.</value>
         public required bool IsFreeBSD { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether 64 bit.
+        /// </summary>
+        /// <value>The is64 bit.</value>
         public required bool Is64Bit { get; init; }
+        /// <summary>
+        /// Gets or sets the processor count.
+        /// </summary>
+        /// <value>The processor count.</value>
         public required int ProcessorCount { get; init; }
+        /// <summary>
+        /// Gets or sets the framework description.
+        /// </summary>
+        /// <value>The framework description.</value>
         public required string FrameworkDescription { get; init; }
+        /// <summary>
+        /// Gets or sets the runtime identifier.
+        /// </summary>
+        /// <value>The runtime identifier.</value>
         public required string RuntimeIdentifier { get; init; }
+        /// <summary>
+        /// Gets or sets the o s description.
+        /// </summary>
+        /// <value>The o s description.</value>
         public required string OSDescription { get; init; }
+        /// <summary>
+        /// Gets or sets the o s architecture.
+        /// </summary>
+        /// <value>The o s architecture.</value>
         public required Architecture OSArchitecture { get; init; }
+        /// <summary>
+        /// Gets or sets the process architecture.
+        /// </summary>
+        /// <value>The process architecture.</value>
         public required Architecture ProcessArchitecture { get; init; }
     }
 
@@ -765,55 +818,206 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class HardwareCapabilities
     {
+        /// <summary>
+        /// Gets or sets the supports avx.
+        /// </summary>
+        /// <value>The supports avx.</value>
         // x86/x64 SIMD Capabilities
         public required bool SupportsAvx { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx2.
+        /// </summary>
+        /// <value>The supports avx2.</value>
         public required bool SupportsAvx2 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx512 f.
+        /// </summary>
+        /// <value>The supports avx512 f.</value>
         public required bool SupportsAvx512F { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx512 bw.
+        /// </summary>
+        /// <value>The supports avx512 bw.</value>
         public required bool SupportsAvx512Bw { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx512 cd.
+        /// </summary>
+        /// <value>The supports avx512 cd.</value>
         public required bool SupportsAvx512Cd { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx512 dq.
+        /// </summary>
+        /// <value>The supports avx512 dq.</value>
         public required bool SupportsAvx512Dq { get; init; }
+        /// <summary>
+        /// Gets or sets the supports avx512 vl.
+        /// </summary>
+        /// <value>The supports avx512 vl.</value>
         public required bool SupportsAvx512Vl { get; init; }
+        /// <summary>
+        /// Gets or sets the supports sse.
+        /// </summary>
+        /// <value>The supports sse.</value>
         public required bool SupportsSse { get; init; }
+        /// <summary>
+        /// Gets or sets the supports sse2.
+        /// </summary>
+        /// <value>The supports sse2.</value>
         public required bool SupportsSse2 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports sse3.
+        /// </summary>
+        /// <value>The supports sse3.</value>
         public required bool SupportsSse3 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports ssse3.
+        /// </summary>
+        /// <value>The supports ssse3.</value>
         public required bool SupportsSsse3 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports sse41.
+        /// </summary>
+        /// <value>The supports sse41.</value>
         public required bool SupportsSse41 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports sse42.
+        /// </summary>
+        /// <value>The supports sse42.</value>
         public required bool SupportsSse42 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports aes.
+        /// </summary>
+        /// <value>The supports aes.</value>
         public required bool SupportsAes { get; init; }
+        /// <summary>
+        /// Gets or sets the supports fma.
+        /// </summary>
+        /// <value>The supports fma.</value>
         public required bool SupportsFma { get; init; }
+        /// <summary>
+        /// Gets or sets the supports popcnt.
+        /// </summary>
+        /// <value>The supports popcnt.</value>
         public required bool SupportsPopcnt { get; init; }
+        /// <summary>
+        /// Gets or sets the supports lzcnt.
+        /// </summary>
+        /// <value>The supports lzcnt.</value>
         public required bool SupportsLzcnt { get; init; }
+        /// <summary>
+        /// Gets or sets the supports bmi1.
+        /// </summary>
+        /// <value>The supports bmi1.</value>
         public required bool SupportsBmi1 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports bmi2.
+        /// </summary>
+        /// <value>The supports bmi2.</value>
         public required bool SupportsBmi2 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm base.
+        /// </summary>
+        /// <value>The supports arm base.</value>
 
         // ARM SIMD Capabilities
         public required bool SupportsArmBase { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm aes.
+        /// </summary>
+        /// <value>The supports arm aes.</value>
         public required bool SupportsArmAes { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm sha1.
+        /// </summary>
+        /// <value>The supports arm sha1.</value>
         public required bool SupportsArmSha1 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm sha256.
+        /// </summary>
+        /// <value>The supports arm sha256.</value>
         public required bool SupportsArmSha256 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm crc32.
+        /// </summary>
+        /// <value>The supports arm crc32.</value>
         public required bool SupportsArmCrc32 { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm dp.
+        /// </summary>
+        /// <value>The supports arm dp.</value>
         public required bool SupportsArmDp { get; init; }
+        /// <summary>
+        /// Gets or sets the supports arm rdm.
+        /// </summary>
+        /// <value>The supports arm rdm.</value>
         public required bool SupportsArmRdm { get; init; }
+        /// <summary>
+        /// Gets or sets the vector size bytes.
+        /// </summary>
+        /// <value>The vector size bytes.</value>
 
         // Vector Capabilities
         public required int VectorSizeBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the vector128 is supported.
+        /// </summary>
+        /// <value>The vector128 is supported.</value>
         public required bool Vector128IsSupported { get; init; }
+        /// <summary>
+        /// Gets or sets the vector256 is supported.
+        /// </summary>
+        /// <value>The vector256 is supported.</value>
         public required bool Vector256IsSupported { get; init; }
+        /// <summary>
+        /// Gets or sets the vector512 is supported.
+        /// </summary>
+        /// <value>The vector512 is supported.</value>
         public required bool Vector512IsSupported { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether gpu.
+        /// </summary>
+        /// <value>The has gpu.</value>
 
         // GPU Capabilities
         public required bool HasGpu { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether nvidia gpu.
+        /// </summary>
+        /// <value>The has nvidia gpu.</value>
         public required bool HasNvidiaGpu { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether amd gpu.
+        /// </summary>
+        /// <value>The has amd gpu.</value>
         public required bool HasAmdGpu { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether intel gpu.
+        /// </summary>
+        /// <value>The has intel gpu.</value>
         public required bool HasIntelGpu { get; init; }
+        /// <summary>
+        /// Gets or sets the total physical memory.
+        /// </summary>
+        /// <value>The total physical memory.</value>
 
         // Memory
         public required long TotalPhysicalMemory { get; init; }
+        /// <summary>
+        /// Gets or sets the available physical memory.
+        /// </summary>
+        /// <value>The available physical memory.</value>
         public required long AvailablePhysicalMemory { get; init; }
+        /// <summary>
+        /// Gets or sets the processor count.
+        /// </summary>
+        /// <value>The processor count.</value>
 
         // CPU Info
         public required int ProcessorCount { get; init; }
     }
+    /// <summary>
+    /// An compute backend type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Supported compute backend types.

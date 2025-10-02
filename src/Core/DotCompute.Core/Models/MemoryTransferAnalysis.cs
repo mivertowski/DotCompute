@@ -31,11 +31,11 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets statistics grouped by transfer type.
         /// </summary>
-        public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; set; } = [];
+        public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; } = [];
 
         /// <summary>
         /// Gets or sets identified bottlenecks in memory transfers.
         /// </summary>
-        public List<string> Bottlenecks { get; set; } = [];
+        public IList<string> Bottlenecks { get; } = [];
     }
 }

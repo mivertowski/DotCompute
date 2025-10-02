@@ -313,12 +313,23 @@ namespace DotCompute.Core.Extensions
     /// </summary>
     internal class StubComputeStream : IComputeStream
     {
+        /// <summary>
+        /// Performs synchronize.
+        /// </summary>
         public void Synchronize()
         {
             // No-op for stub implementation
         }
+        /// <summary>
+        /// Gets synchronize asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -331,10 +342,30 @@ namespace DotCompute.Core.Extensions
     /// </summary>
     internal class StubPerformanceMetrics : IPerformanceMetrics
     {
+        /// <summary>
+        /// Gets or sets the kernel executions.
+        /// </summary>
+        /// <value>The kernel executions.</value>
         public long KernelExecutions => 0;
+        /// <summary>
+        /// Gets or sets the memory transfers.
+        /// </summary>
+        /// <value>The memory transfers.</value>
         public long MemoryTransfers => 0;
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime => TimeSpan.Zero;
+        /// <summary>
+        /// Gets or sets the average kernel time.
+        /// </summary>
+        /// <value>The average kernel time.</value>
         public TimeSpan AverageKernelTime => TimeSpan.Zero;
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public long TotalBytesTransferred => 0;
     }
 }

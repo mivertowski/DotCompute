@@ -23,7 +23,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Profiling.Models
         /// <summary>
         /// Gets or sets the collected timing measurements in milliseconds.
         /// </summary>
-        public List<double> Timings { get; set; } = [];
+        public IList<double> Timings { get; } = [];
 
         /// <summary>
         /// Gets or sets the calculated statistics from the timing data.

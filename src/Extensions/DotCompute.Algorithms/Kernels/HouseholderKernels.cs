@@ -11,6 +11,9 @@ namespace DotCompute.Algorithms.Kernels;
 public static class HouseholderKernels
 {
     /// <summary>
+    /// The compute householder vector kernel.
+    /// </summary>
+    /// <summary>
     /// OpenCL kernel for computing Householder vector.
     /// </summary>
     public const string ComputeHouseholderVectorKernel = @"
@@ -63,6 +66,9 @@ __kernel void compute_householder_vector(
         householder[gid] /= vnorm;
     }
 }";
+    /// <summary>
+    /// The apply householder transformation kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for applying Householder transformation to matrix.
@@ -113,6 +119,9 @@ __kernel void apply_householder_left(
         }
     }
 }";
+    /// <summary>
+    /// The cuda compute householder vector kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for computing Householder vector.
@@ -176,6 +185,9 @@ extern ""C"" __global__ void compute_householder_vector_cuda(
         householder[tid] /= vnorm;
     }
 }";
+    /// <summary>
+    /// The cuda apply householder transformation kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for applying Householder transformation.
@@ -221,6 +233,9 @@ extern ""C"" __global__ void apply_householder_left_cuda(
         matrix[(start_row + row) * n + col] -= total_dot * v[row];
     }
 }";
+    /// <summary>
+    /// The h l s l householder kernel.
+    /// </summary>
 
     /// <summary>
     /// DirectCompute/HLSL kernel for Householder transformations.
@@ -267,6 +282,9 @@ void CSHouseholderTransform(
             InputMatrix[StartRow + row][col] - total_dot * HouseholderVector[row];
     }
 }";
+    /// <summary>
+    /// The metal householder kernel.
+    /// </summary>
 
     /// <summary>
     /// Metal kernel for Householder transformations (Apple Silicon).

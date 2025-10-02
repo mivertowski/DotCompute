@@ -41,6 +41,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     a[idx] = a[idx] * scale;
                 }
             }";
+        /// <summary>
+        /// Gets graph_ creation_ should_ succeed.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_Creation_Should_Succeed()
@@ -134,6 +138,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Elements processed: {elementCount}");
             Output.WriteLine($"  Grid size: {gridSize}, Block size: {blockSize}");
         }
+        /// <summary>
+        /// Gets graph_ capture_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_Capture_Should_Work()
@@ -209,6 +217,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Operations captured: 2 kernel launches");
             Output.WriteLine($"  Final scaling factor: 3.0x");
         }
+        /// <summary>
+        /// Gets multi_ kernel_ graph_ should_ execute_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Multi_Kernel_Graph_Should_Execute_Correctly()
@@ -309,6 +321,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Operations: multiply + copy + scale");
             Output.WriteLine($"  Execution time: {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
         }
+        /// <summary>
+        /// Gets graph_ performance_ should_ be_ better_ than_ individual_ launches.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_Performance_Should_Be_Better_Than_Individual_Launches()
@@ -409,6 +425,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 "Graph execution should not be significantly slower than individual launches");
         }
+        /// <summary>
+        /// Gets graph_ with_ dependencies_ should_ execute_ in_ order.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_With_Dependencies_Should_Execute_In_Order()
@@ -503,6 +523,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Graph with dependencies executed correctly");
             Output.WriteLine($"  Result verification: input * 3.0 = {result[0]:F1} (expected: {hostInput[0] * 3:F1})");
         }
+        /// <summary>
+        /// Gets graph_ memory_ operations_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_Memory_Operations_Should_Work()
@@ -569,6 +593,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Memory copies: src->dst1->dst2");
             Output.WriteLine($"  Data integrity verified");
         }
+        /// <summary>
+        /// Gets graph_ update_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Graph_Update_Should_Work()

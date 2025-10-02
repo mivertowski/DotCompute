@@ -289,13 +289,19 @@ public static class MethodBodyExtractor
             var methodName = ExtractMethodName(call.Expression);
             var arguments = call.ArgumentList.Arguments.Select(a => a.ToString()).ToList();
 
-
-            invocations.Add(new MethodInvocationInfo
+            var invocation = new MethodInvocationInfo
             {
                 MethodName = methodName,
-                Arguments = arguments,
                 FullExpression = call.ToString()
-            });
+            };
+
+            // Populate read-only collection
+            foreach (var arg in arguments)
+            {
+                invocation.Arguments.Add(arg);
+            }
+
+            invocations.Add(invocation);
         }
 
 
@@ -436,7 +442,7 @@ public static class MethodBodyExtractor
     public class MethodInvocationInfo
     {
         public string MethodName { get; set; } = string.Empty;
-        public List<string> Arguments { get; set; } = [];
+        public List<string> Arguments { get; } = [];
         public string FullExpression { get; set; } = string.Empty;
     }
 

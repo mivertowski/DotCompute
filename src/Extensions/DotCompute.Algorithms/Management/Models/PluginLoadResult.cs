@@ -20,7 +20,7 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the loaded plugins.
         /// </summary>
-        public List<IAlgorithmPlugin> Plugins { get; } = [];
+        public IList<IAlgorithmPlugin> Plugins { get; } = [];
 
         /// <summary>
         /// Gets or sets the security validation result.

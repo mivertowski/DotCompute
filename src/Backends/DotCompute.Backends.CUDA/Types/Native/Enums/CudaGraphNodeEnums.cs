@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda memory advise enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA memory advise flags for unified memory
     /// </summary>
     public enum CudaMemoryAdvise
@@ -15,6 +18,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         SetAccessedBy = 5,
         UnsetAccessedBy = 6
     }
+    /// <summary>
+    /// An cuda stream capture mode enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA stream capture modes
@@ -25,6 +31,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         ThreadLocal = 1,
         Relaxed = 2
     }
+    /// <summary>
+    /// An cuda graph instantiate flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA graph instantiate flags
@@ -38,6 +47,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         DeviceLaunch = 0x04,
         UseNodePriority = 0x08
     }
+    /// <summary>
+    /// An cuda graph node type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA graph node type
@@ -59,6 +71,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         BatchMemOp = 0x0c,
         Conditional = 0x0d
     }
+    /// <summary>
+    /// An cuda graph dependency type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA graph dependency type

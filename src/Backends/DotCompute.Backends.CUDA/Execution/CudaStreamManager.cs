@@ -36,6 +36,11 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly CudaStreamDependencyTracker _dependencyTracker;
 
         private volatile bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaStreamManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaStreamManager(CudaContext context, ILogger<CudaStreamManager> logger)
         {
@@ -602,6 +607,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 throw new ObjectDisposedException(nameof(CudaStreamManager));
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -659,15 +667,43 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly Guid _id;
 
         private StreamId(Guid id) => _id = id;
+        /// <summary>
+        /// Gets new.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public static StreamId New() => new(Guid.NewGuid());
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="other">The other.</param>
+        /// <returns>The result of the operation.</returns>
 
         public bool Equals(StreamId other) => _id.Equals(other._id);
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns>The result of the operation.</returns>
         public override bool Equals(object? obj) => obj is StreamId other && Equals(other);
+        /// <summary>
+        /// Gets the hash code.
+        /// </summary>
+        /// <returns>The hash code.</returns>
         public override int GetHashCode() => _id.GetHashCode();
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         public override string ToString() => _id.ToString("N")[..8];
+        /// <summary>
+        /// Implements the equality operator to determine whether two values are equal.
+        /// </summary>
 
         public static bool operator ==(StreamId left, StreamId right) => left.Equals(right);
+        /// <summary>
+        /// Implements the inequality operator to determine whether two values are not equal.
+        /// </summary>
         public static bool operator !=(StreamId left, StreamId right) => !left.Equals(right);
     }
 
@@ -676,14 +712,45 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class CudaStreamInfo
     {
+        /// <summary>
+        /// Gets or sets the stream identifier.
+        /// </summary>
+        /// <value>The stream id.</value>
         public StreamId StreamId { get; set; }
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
         public IntPtr Handle { get; set; }
+        /// <summary>
+        /// Gets or sets the flags.
+        /// </summary>
+        /// <value>The flags.</value>
         public CudaStreamFlags Flags { get; set; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public CudaStreamPriority Priority { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the last used.
+        /// </summary>
+        /// <value>The last used.</value>
         public DateTimeOffset LastUsed { get; set; }
+        /// <summary>
+        /// Gets or sets the operation count.
+        /// </summary>
+        /// <value>The operation count.</value>
         public long OperationCount { get; set; }
     }
+    /// <summary>
+    /// An cuda stream flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA stream flags
@@ -693,6 +760,9 @@ namespace DotCompute.Backends.CUDA.Execution
         Default,
         NonBlocking
     }
+    /// <summary>
+    /// An cuda stream priority enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA stream priority levels
@@ -718,8 +788,16 @@ namespace DotCompute.Backends.CUDA.Execution
             Stream = stream;
             _manager = manager;
         }
+        /// <summary>
+        /// Gets or sets the stream identifier.
+        /// </summary>
+        /// <value>The stream id.</value>
 
         public StreamId StreamId { get; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; }
 
         /// <summary>
@@ -751,6 +829,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 Native.CudaRuntime.CheckError(result, "synchronizing CUDA stream");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -781,11 +862,22 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name { get; } = name;
+        /// <summary>
+        /// Gets or sets the streams.
+        /// </summary>
+        /// <value>The streams.</value>
         public IReadOnlyDictionary<StreamId, IntPtr> Streams => _streams;
 
         internal void AddStream(StreamId streamId, IntPtr stream) => _streams[streamId] = stream;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -804,11 +896,19 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         private readonly ConcurrentDictionary<StreamId, HashSet<StreamId>> _dependencies;
         private readonly object _lockObject = new();
+        /// <summary>
+        /// Initializes a new instance of the CudaStreamDependencyTracker class.
+        /// </summary>
 
         public CudaStreamDependencyTracker()
         {
             _dependencies = new ConcurrentDictionary<StreamId, HashSet<StreamId>>();
         }
+        /// <summary>
+        /// Performs add dependency.
+        /// </summary>
+        /// <param name="dependent">The dependent.</param>
+        /// <param name="dependency">The dependency.</param>
 
         public void AddDependency(StreamId dependent, StreamId dependency)
         {
@@ -817,6 +917,10 @@ namespace DotCompute.Backends.CUDA.Execution
                 _ = _dependencies.GetOrAdd(dependent, _ => []).Add(dependency);
             }
         }
+        /// <summary>
+        /// Gets the dependency count.
+        /// </summary>
+        /// <returns>The dependency count.</returns>
 
         public int GetDependencyCount()
         {
@@ -825,6 +929,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 return _dependencies.Values.Sum(deps => deps.Count);
             }
         }
+        /// <summary>
+        /// Performs cleanup.
+        /// </summary>
 
         public void Cleanup()
         {
@@ -842,6 +949,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -857,14 +967,50 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaStreamStatistics
     {
+        /// <summary>
+        /// Gets or sets the active streams.
+        /// </summary>
+        /// <value>The active streams.</value>
         public int ActiveStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the busy streams.
+        /// </summary>
+        /// <value>The busy streams.</value>
         public int BusyStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the idle streams.
+        /// </summary>
+        /// <value>The idle streams.</value>
         public int IdleStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the stream groups.
+        /// </summary>
+        /// <value>The stream groups.</value>
         public int StreamGroups { get; set; }
+        /// <summary>
+        /// Gets or sets the average stream age.
+        /// </summary>
+        /// <value>The average stream age.</value>
         public double AverageStreamAge { get; set; }
+        /// <summary>
+        /// Gets or sets the pool statistics.
+        /// </summary>
+        /// <value>The pool statistics.</value>
         public CudaStreamPoolStatistics? PoolStatistics { get; set; }
+        /// <summary>
+        /// Gets or sets the dependency count.
+        /// </summary>
+        /// <value>The dependency count.</value>
         public int DependencyCount { get; set; }
+        /// <summary>
+        /// Gets or sets the optimal concurrent streams.
+        /// </summary>
+        /// <value>The optimal concurrent streams.</value>
         public int OptimalConcurrentStreams { get; set; }
+        /// <summary>
+        /// Gets or sets the max concurrent streams.
+        /// </summary>
+        /// <value>The max concurrent streams.</value>
         public int MaxConcurrentStreams { get; set; }
     }
 
@@ -874,6 +1020,13 @@ namespace DotCompute.Backends.CUDA.Execution
     public sealed class CudaExecutionGraph
     {
         private readonly List<CudaExecutionNode> _nodes = [];
+        /// <summary>
+        /// Performs add node.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="operation">The operation.</param>
+        /// <param name="priority">The priority.</param>
+        /// <param name="dependencies">The dependencies.</param>
 
         public void AddNode(string id, Func<IntPtr, Task> operation,
                            CudaStreamPriority priority = CudaStreamPriority.Normal,
@@ -928,10 +1081,26 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionNode
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public string Id { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the operation.
+        /// </summary>
+        /// <value>The operation.</value>
         public Func<IntPtr, Task> Operation { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public CudaStreamPriority Priority { get; set; }
-        public List<string> Dependencies { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the dependencies.
+        /// </summary>
+        /// <value>The dependencies.</value>
+        public IList<string> Dependencies { get; } = [];
     }
 
     /// <summary>
@@ -939,7 +1108,11 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionLevel
     {
-        public List<CudaExecutionNode> Nodes { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the nodes.
+        /// </summary>
+        /// <value>The nodes.</value>
+        public IList<CudaExecutionNode> Nodes { get; } = [];
     }
 
     /// <summary>
@@ -947,13 +1120,25 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaExecutionPlan
     {
-        public List<CudaExecutionLevel> Levels { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the levels.
+        /// </summary>
+        /// <value>The levels.</value>
+        public IList<CudaExecutionLevel> Levels { get; } = [];
+        /// <summary>
+        /// Gets or sets the total nodes.
+        /// </summary>
+        /// <value>The total nodes.</value>
         public int TotalNodes { get; set; }
     }
 
     // Extension to add missing GetStreamHealth method
     public partial class CudaStreamManager
     {
+        /// <summary>
+        /// Gets the stream health.
+        /// </summary>
+        /// <returns>The stream health.</returns>
         public double GetStreamHealth()
         {
             if (_disposed) return 0.0;

@@ -9,6 +9,9 @@ namespace DotCompute.Core.Pipelines.Configuration
     public sealed class KernelChainingOptions
     {
         /// <summary>
+        /// The section name.
+        /// </summary>
+        /// <summary>
         /// Gets or sets the section name for configuration.
         /// </summary>
         public const string SectionName = "DotCompute:KernelChaining";

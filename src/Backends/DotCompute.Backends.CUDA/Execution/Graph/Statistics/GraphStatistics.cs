@@ -89,12 +89,12 @@ public sealed class GraphPerformanceAnalysis
     /// <summary>
     /// Gets or sets the bottleneck nodes in the graph.
     /// </summary>
-    public List<string> BottleneckNodes { get; set; } = [];
+    public IList<string> BottleneckNodes { get; } = [];
 
     /// <summary>
     /// Gets or sets the optimization opportunities.
     /// </summary>
-    public List<string> OptimizationOpportunities { get; set; } = [];
+    public IList<string> OptimizationOpportunities { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory efficiency percentage.

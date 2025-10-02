@@ -256,6 +256,9 @@ public sealed partial class AlgorithmRegistry(ILogger<AlgorithmRegistry> logger)
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _plugins.Values.Count(lp => lp.Health == health);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

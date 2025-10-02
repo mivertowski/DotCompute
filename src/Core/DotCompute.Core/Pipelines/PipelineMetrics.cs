@@ -467,6 +467,10 @@ namespace DotCompute.Core.Pipelines
         private TimeSpan _minExecutionTime = TimeSpan.MaxValue;
         private TimeSpan _maxExecutionTime = TimeSpan.MinValue;
         private long _totalMemoryUsage;
+        /// <summary>
+        /// Gets or sets the stage identifier.
+        /// </summary>
+        /// <value>The stage id.</value>
 
         public string StageId { get; } = stageId;
 
@@ -508,6 +512,11 @@ namespace DotCompute.Core.Pipelines
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
+        /// <summary>
+        /// Performs record execution.
+        /// </summary>
+        /// <param name="duration">The duration.</param>
+        /// <param name="success">The success.</param>
 
         public void RecordExecution(TimeSpan duration, bool success)
         {
@@ -532,6 +541,10 @@ namespace DotCompute.Core.Pipelines
                 }
             }
         }
+        /// <summary>
+        /// Performs record memory usage.
+        /// </summary>
+        /// <param name="bytes">The bytes.</param>
 
         public void RecordMemoryUsage(long bytes)
         {
@@ -540,6 +553,11 @@ namespace DotCompute.Core.Pipelines
                 _totalMemoryUsage += bytes;
             }
         }
+        /// <summary>
+        /// Performs record custom metric.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="value">The value.</param>
 
         public void RecordCustomMetric(string name, double value) => _customMetrics.AddOrUpdate(name, value, (_, _) => value);
     }

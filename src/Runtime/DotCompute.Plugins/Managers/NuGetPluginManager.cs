@@ -76,16 +76,25 @@ public class NuGetPluginManager : IDisposable
     /// Gets the count of running plugins.
     /// </summary>
     public int RunningPluginCount => _managedPlugins.Values.Count(p => p.Plugin?.State == PluginState.Running);
+    /// <summary>
+    /// Occurs when plugin state changed.
+    /// </summary>
 
     /// <summary>
     /// Raised when a plugin state changes.
     /// </summary>
     public event EventHandler<PluginStateChangedEventArgs>? PluginStateChanged;
+    /// <summary>
+    /// Occurs when plugin error.
+    /// </summary>
 
     /// <summary>
     /// Raised when a plugin error occurs.
     /// </summary>
     public event EventHandler<PluginErrorEventArgs>? PluginError;
+    /// <summary>
+    /// Occurs when plugin health changed.
+    /// </summary>
 
     /// <summary>
     /// Raised when a plugin health status changes.
@@ -677,7 +686,7 @@ public class NuGetPluginManagerOptions
     /// <summary>
     /// Gets or sets the plugin directories to monitor.
     /// </summary>
-    public List<string> PluginDirectories { get; set; } = [];
+    public IList<string> PluginDirectories { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to auto-discover plugins on startup.
@@ -791,7 +800,7 @@ public class ManagedPlugin
     /// <summary>
     /// Gets or sets custom metadata for the plugin.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -827,12 +836,12 @@ public class ManagerSecurityReport
     /// <summary>
     /// Gets the plugin scan results.
     /// </summary>
-    public List<SecurityScanResult> PluginScans { get; } = [];
+    public IList<SecurityScanResult> PluginScans { get; } = [];
 
     /// <summary>
     /// Gets the scan errors.
     /// </summary>
-    public List<string> ScanErrors { get; } = [];
+    public IList<string> ScanErrors { get; } = [];
 
     /// <summary>
     /// Gets whether any critical vulnerabilities were found.

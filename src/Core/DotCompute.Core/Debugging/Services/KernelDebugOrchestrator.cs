@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve type conflicts
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
+using System;
 
 namespace DotCompute.Core.Debugging.Services;
 
@@ -34,6 +35,12 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     // State tracking
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the KernelDebugOrchestrator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="primaryAccelerator">The primary accelerator.</param>
+    /// <param name="options">The options.</param>
 
     public KernelDebugOrchestrator(
         ILogger<KernelDebugOrchestrator> logger,
@@ -513,11 +520,11 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         var capabilities = new List<string> { "Kernel Execution" };
 
         // Add more capabilities based on accelerator type
-        if (accelerator.GetType().Name.Contains("Cuda"))
+        if (accelerator.GetType().Name.Contains("Cuda", StringComparison.OrdinalIgnoreCase))
         {
             capabilities.AddRange(["GPU Compute", "CUDA Kernels", "Unified Memory"]);
         }
-        else if (accelerator.GetType().Name.Contains("Cpu"))
+        else if (accelerator.GetType().Name.Contains("Cpu", StringComparison.OrdinalIgnoreCase))
         {
             capabilities.AddRange(["Multi-threading", "SIMD", "Vector Operations"]);
         }
@@ -649,6 +656,9 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             StatisticalAnalysis = []
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -680,11 +690,39 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
 /// </summary>
 public record PerformanceAnalysisResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the performance report.
+    /// </summary>
+    /// <value>The performance report.</value>
     public KernelPerformanceReport PerformanceReport { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the memory analysis.
+    /// </summary>
+    /// <value>The memory analysis.</value>
     public MemoryUsageAnalysis MemoryAnalysis { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the bottleneck analysis.
+    /// </summary>
+    /// <value>The bottleneck analysis.</value>
     public Core.BottleneckAnalysis BottleneckAnalysis { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the execution statistics.
+    /// </summary>
+    /// <value>The execution statistics.</value>
     public Core.ExecutionStatistics ExecutionStatistics { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the advanced analysis.
+    /// </summary>
+    /// <value>The advanced analysis.</value>
     public AdvancedPerformanceAnalysis AdvancedAnalysis { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the generated at.
+    /// </summary>
+    /// <value>The generated at.</value>
     public DateTime GeneratedAt { get; init; }
 }

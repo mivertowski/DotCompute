@@ -36,6 +36,12 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _poolMisses;
         private long _totalBytesAllocated;
         private long _totalBytesInPools;
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryPoolManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryPoolManager(CudaContext context, CudaDevice device, ILogger logger)
         {
@@ -375,6 +381,9 @@ namespace DotCompute.Backends.CUDA.Memory
             _totalBytesInPools = 0;
             _logger.LogInfoMessage("Cleared all memory pools");
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -412,12 +421,37 @@ namespace DotCompute.Backends.CUDA.Memory
             private readonly ConcurrentBag<MemoryBlock> _availableBlocks = [];
             private readonly HashSet<IntPtr> _allBlocks = [];
             private readonly SemaphoreSlim _lock = new(1, 1);
+            /// <summary>
+            /// Gets or sets the block size.
+            /// </summary>
+            /// <value>The block size.</value>
 
             public int BlockSize { get; } = blockSize;
+            /// <summary>
+            /// Gets or sets the max blocks.
+            /// </summary>
+            /// <value>The max blocks.</value>
             public int MaxBlocks { get; } = maxBlocks;
+            /// <summary>
+            /// Gets or sets the available count.
+            /// </summary>
+            /// <value>The available count.</value>
             public int AvailableCount => _availableBlocks.Count;
+            /// <summary>
+            /// Gets or sets the total count.
+            /// </summary>
+            /// <value>The total count.</value>
             public int TotalCount => _allBlocks.Count;
+            /// <summary>
+            /// Gets or sets the total bytes.
+            /// </summary>
+            /// <value>The total bytes.</value>
             public long TotalBytes => (long)TotalCount * BlockSize;
+            /// <summary>
+            /// Attempts to get async.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
             public Task<MemoryBlock?> TryGetAsync(CancellationToken cancellationToken)
             {
@@ -429,6 +463,11 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 return Task.FromResult<MemoryBlock?>(null);
             }
+            /// <summary>
+            /// Returns true if able to return, otherwise false.
+            /// </summary>
+            /// <param name="block">The block.</param>
+            /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
             public bool TryReturn(MemoryBlock block)
             {
@@ -441,6 +480,10 @@ namespace DotCompute.Backends.CUDA.Memory
                 _availableBlocks.Add(block);
                 return true;
             }
+            /// <summary>
+            /// Gets trim excess.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public (int blocks, long bytes) TrimExcess()
             {
@@ -476,6 +519,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 return (freed, freedBytes);
             }
+            /// <summary>
+            /// Performs clear.
+            /// </summary>
 
             public void Clear()
             {
@@ -487,6 +533,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 _allBlocks.Clear();
             }
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -501,7 +550,15 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     internal sealed class MemoryBlock(IntPtr devicePointer, long size)
     {
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
         public IntPtr DevicePointer { get; } = devicePointer;
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; } = size;
     }
 
@@ -510,8 +567,20 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPooledMemoryBuffer : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
         public IntPtr DevicePointer { get; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; }
+        /// <summary>
+        /// Gets or sets the actual size.
+        /// </summary>
+        /// <value>The actual size.</value>
         public long ActualSize { get; }
     }
 
@@ -528,10 +597,25 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly MemoryBlock _block = block;
         private readonly int _poolSize = poolSize;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
 
         public IntPtr DevicePointer => _block.DevicePointer;
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; } = requestedSize;
+        /// <summary>
+        /// Gets or sets the actual size.
+        /// </summary>
+        /// <value>The actual size.</value>
         public long ActualSize => _block.Size;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -560,13 +644,41 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class MemoryPoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the total allocations.
+        /// </summary>
+        /// <value>The total allocations.</value>
         public long TotalAllocations { get; init; }
+        /// <summary>
+        /// Gets or sets the pool hits.
+        /// </summary>
+        /// <value>The pool hits.</value>
         public long PoolHits { get; init; }
+        /// <summary>
+        /// Gets or sets the pool misses.
+        /// </summary>
+        /// <value>The pool misses.</value>
         public long PoolMisses { get; init; }
+        /// <summary>
+        /// Gets or sets the hit rate.
+        /// </summary>
+        /// <value>The hit rate.</value>
         public double HitRate { get; init; }
+        /// <summary>
+        /// Gets or sets the total bytes allocated.
+        /// </summary>
+        /// <value>The total bytes allocated.</value>
         public long TotalBytesAllocated { get; init; }
+        /// <summary>
+        /// Gets or sets the total bytes in pools.
+        /// </summary>
+        /// <value>The total bytes in pools.</value>
         public long TotalBytesInPools { get; init; }
-        public List<PoolSizeStatistics> PoolStatistics { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the pool statistics.
+        /// </summary>
+        /// <value>The pool statistics.</value>
+        public IReadOnlyList<PoolSizeStatistics> PoolStatistics { get; init; } = [];
     }
 
     /// <summary>
@@ -574,9 +686,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PoolSizeStatistics
     {
+        /// <summary>
+        /// Gets or sets the pool size.
+        /// </summary>
+        /// <value>The pool size.</value>
         public int PoolSize { get; init; }
+        /// <summary>
+        /// Gets or sets the available blocks.
+        /// </summary>
+        /// <value>The available blocks.</value>
         public int AvailableBlocks { get; init; }
+        /// <summary>
+        /// Gets or sets the total blocks.
+        /// </summary>
+        /// <value>The total blocks.</value>
         public int TotalBlocks { get; init; }
+        /// <summary>
+        /// Gets or sets the bytes in pool.
+        /// </summary>
+        /// <value>The bytes in pool.</value>
         public long BytesInPool { get; init; }
     }
 }

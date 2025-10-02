@@ -50,6 +50,12 @@ public sealed class CudaBackendIntegration : IDisposable
     // Health monitoring
     private readonly Timer _healthCheckTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaBackendIntegration class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaBackendIntegration(
         IServiceProvider serviceProvider,
@@ -652,6 +658,9 @@ public sealed class CudaBackendIntegration : IDisposable
             throw new ObjectDisposedException(nameof(CudaBackendIntegration));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -686,8 +695,20 @@ public sealed class CudaBackendIntegration : IDisposable
 /// </summary>
 public sealed class CudaExecutionOptions
 {
+    /// <summary>
+    /// Gets or sets the enable advanced optimizations.
+    /// </summary>
+    /// <value>The enable advanced optimizations.</value>
     public bool EnableAdvancedOptimizations { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the preferred stream.
+    /// </summary>
+    /// <value>The preferred stream.</value>
     public object? PreferredStream { get; set; }
+    /// <summary>
+    /// Gets or sets the capture timings.
+    /// </summary>
+    /// <value>The capture timings.</value>
     public bool CaptureTimings { get; set; } = true;
 }
 
@@ -696,8 +717,20 @@ public sealed class CudaExecutionOptions
 /// </summary>
 public sealed class CudaWorkflowOptions
 {
+    /// <summary>
+    /// Gets or sets the graph options.
+    /// </summary>
+    /// <value>The graph options.</value>
     public CudaGraphOptimizationOptions? GraphOptions { get; set; }
+    /// <summary>
+    /// Gets or sets the use high priority stream.
+    /// </summary>
+    /// <value>The use high priority stream.</value>
     public bool UseHighPriorityStream { get; set; }
+    /// <summary>
+    /// Gets or sets the enable kernel fusion.
+    /// </summary>
+    /// <value>The enable kernel fusion.</value>
     public bool EnableKernelFusion { get; set; } = true;
 }
 
@@ -706,10 +739,25 @@ public sealed class CudaWorkflowOptions
 /// </summary>
 public sealed class CudaTransferOptions
 {
+    /// <summary>
+    /// Gets or sets the size bytes.
+    /// </summary>
+    /// <value>The size bytes.</value>
     public ulong SizeBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public CudaTransferPriority Priority { get; set; } = CudaTransferPriority.Normal;
+    /// <summary>
+    /// Gets or sets the use optimal path.
+    /// </summary>
+    /// <value>The use optimal path.</value>
     public bool UseOptimalPath { get; set; } = true;
 }
+/// <summary>
+/// An cuda transfer priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Transfer priority levels.
@@ -726,11 +774,35 @@ public enum CudaTransferPriority
 /// </summary>
 public sealed class CudaExecutionResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the execution time.
+    /// </summary>
+    /// <value>The execution time.</value>
     public TimeSpan ExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the kernel execution result.
+    /// </summary>
+    /// <value>The kernel execution result.</value>
     public object? KernelExecutionResult { get; set; }
+    /// <summary>
+    /// Gets or sets the optimizations applied.
+    /// </summary>
+    /// <value>The optimizations applied.</value>
     public bool OptimizationsApplied { get; set; }
+    /// <summary>
+    /// Gets or sets the performance metrics.
+    /// </summary>
+    /// <value>The performance metrics.</value>
     public CudaPerformanceMetrics? PerformanceMetrics { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
 
@@ -739,17 +811,65 @@ public sealed class CudaExecutionResult
 /// </summary>
 public sealed class CudaSystemHealth
 {
+    /// <summary>
+    /// Gets or sets the overall health.
+    /// </summary>
+    /// <value>The overall health.</value>
     public double OverallHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the device health.
+    /// </summary>
+    /// <value>The device health.</value>
     public double DeviceHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the context health.
+    /// </summary>
+    /// <value>The context health.</value>
     public double ContextHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the memory health.
+    /// </summary>
+    /// <value>The memory health.</value>
     public double MemoryHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the kernel health.
+    /// </summary>
+    /// <value>The kernel health.</value>
     public double KernelHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the stream health.
+    /// </summary>
+    /// <value>The stream health.</value>
     public double StreamHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the event health.
+    /// </summary>
+    /// <value>The event health.</value>
     public double EventHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the p2 p health.
+    /// </summary>
+    /// <value>The p2 p health.</value>
     public double P2PHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the advanced features health.
+    /// </summary>
+    /// <value>The advanced features health.</value>
     public double AdvancedFeaturesHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the performance health.
+    /// </summary>
+    /// <value>The performance health.</value>
     public double PerformanceHealth { get; set; }
+    /// <summary>
+    /// Gets or sets the last checked.
+    /// </summary>
+    /// <value>The last checked.</value>
     public DateTimeOffset LastChecked { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
 
@@ -758,11 +878,35 @@ public sealed class CudaSystemHealth
 /// </summary>
 public sealed class CudaWorkloadProfile
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether matrix operations.
+    /// </summary>
+    /// <value>The has matrix operations.</value>
     public bool HasMatrixOperations { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether cooperative workloads.
+    /// </summary>
+    /// <value>The has cooperative workloads.</value>
     public bool HasCooperativeWorkloads { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether memory intensive.
+    /// </summary>
+    /// <value>The is memory intensive.</value>
     public bool IsMemoryIntensive { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether compute intensive.
+    /// </summary>
+    /// <value>The is compute intensive.</value>
     public bool IsComputeIntensive { get; set; }
+    /// <summary>
+    /// Gets or sets the requires high precision.
+    /// </summary>
+    /// <value>The requires high precision.</value>
     public bool RequiresHighPrecision { get; set; }
+    /// <summary>
+    /// Gets or sets the estimated parallelism.
+    /// </summary>
+    /// <value>The estimated parallelism.</value>
     public int EstimatedParallelism { get; set; }
 }
 
@@ -771,11 +915,35 @@ public sealed class CudaWorkloadProfile
 /// </summary>
 public sealed class CudaOptimizationSummary
 {
+    /// <summary>
+    /// Gets or sets the profile.
+    /// </summary>
+    /// <value>The profile.</value>
     public CudaWorkloadProfile Profile { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTimeOffset StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the end time.
+    /// </summary>
+    /// <value>The end time.</value>
     public DateTimeOffset EndTime { get; set; }
-    public List<string> OptimizationsApplied { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the optimizations applied.
+    /// </summary>
+    /// <value>The optimizations applied.</value>
+    public IList<string> OptimizationsApplied { get; } = [];
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
 
@@ -784,10 +952,30 @@ public sealed class CudaOptimizationSummary
 /// </summary>
 public sealed class CudaPerformanceMetrics
 {
+    /// <summary>
+    /// Gets or sets the memory utilization.
+    /// </summary>
+    /// <value>The memory utilization.</value>
     public double MemoryUtilization { get; set; }
+    /// <summary>
+    /// Gets or sets the compute utilization.
+    /// </summary>
+    /// <value>The compute utilization.</value>
     public double ComputeUtilization { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput g f l o p s.
+    /// </summary>
+    /// <value>The throughput g f l o p s.</value>
     public double ThroughputGFLOPS { get; set; }
+    /// <summary>
+    /// Gets or sets the memory bandwidth g bps.
+    /// </summary>
+    /// <value>The memory bandwidth g bps.</value>
     public double MemoryBandwidthGBps { get; set; }
+    /// <summary>
+    /// Gets or sets the measurement window.
+    /// </summary>
+    /// <value>The measurement window.</value>
     public TimeSpan MeasurementWindow { get; set; }
 }
 
@@ -801,6 +989,11 @@ public sealed class CudaPerformanceMonitor : IDisposable
     private readonly Timer _metricsTimer;
     private CudaPerformanceMetrics _currentMetrics;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaPerformanceMonitor class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaPerformanceMonitor(CudaContext context, ILogger logger)
     {
@@ -811,6 +1004,10 @@ public sealed class CudaPerformanceMonitor : IDisposable
         _metricsTimer = new Timer(UpdateMetrics, null,
             TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5));
     }
+    /// <summary>
+    /// Gets the current metrics.
+    /// </summary>
+    /// <returns>The current metrics.</returns>
 
     public CudaPerformanceMetrics GetCurrentMetrics() => _currentMetrics;
 
@@ -838,6 +1035,9 @@ public sealed class CudaPerformanceMonitor : IDisposable
             _logger.LogWarning(ex, "Error updating performance metrics");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

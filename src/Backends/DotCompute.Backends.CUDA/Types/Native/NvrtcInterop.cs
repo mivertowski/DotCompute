@@ -562,9 +562,16 @@ namespace DotCompute.Backends.CUDA.Native
     /// </summary>
     public sealed class SafeNvrtcProgramHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
+        /// <summary>
+        /// Initializes a new instance of the SafeNvrtcProgramHandle class.
+        /// </summary>
         public SafeNvrtcProgramHandle() : base(true)
         {
         }
+        /// <summary>
+        /// Initializes a new instance of the SafeNvrtcProgramHandle class.
+        /// </summary>
+        /// <param name="handle">The handle.</param>
 
         public SafeNvrtcProgramHandle(IntPtr handle) : base(true)
         {
@@ -583,6 +590,9 @@ namespace DotCompute.Backends.CUDA.Native
             return true;
         }
     }
+    /// <summary>
+    /// An nvrtc result enumeration.
+    /// </summary>
 
     /// <summary>
     /// Extended NVRTC result codes including newer additions.
@@ -623,29 +633,58 @@ namespace DotCompute.Backends.CUDA.Native
         /// Gets the compilation log if available.
         /// </summary>
         public string? CompilationLog { get; }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
 
         public NvrtcException() : base() { }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
 
         public NvrtcException(string message) : base(message)
         {
             ResultCode = NvrtcResult.InternalError;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, Exception innerException) : base(message, innerException)
         {
             ResultCode = NvrtcResult.InternalError;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode) : base(message)
         {
             ResultCode = resultCode;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, Exception innerException)
             : base(message, innerException)
         {
             ResultCode = resultCode;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="compilationLog">The compilation log.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, string? compilationLog)
             : base(message)
@@ -653,6 +692,13 @@ namespace DotCompute.Backends.CUDA.Native
             ResultCode = resultCode;
             CompilationLog = compilationLog;
         }
+        /// <summary>
+        /// Initializes a new instance of the NvrtcException class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="resultCode">The result code.</param>
+        /// <param name="compilationLog">The compilation log.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public NvrtcException(string message, NvrtcResult resultCode, string? compilationLog, Exception innerException)
             : base(message, innerException)
@@ -759,6 +805,9 @@ namespace DotCompute.Backends.CUDA.Native
             };
         }
     }
+    /// <summary>
+    /// An compute feature enumeration.
+    /// </summary>
 
     /// <summary>
     /// Compute capability features for feature detection.

@@ -26,6 +26,12 @@ namespace DotCompute.Backends.CUDA.Memory
         // Constants for pinned memory management
         private const long DEFAULT_MAX_PINNED_MEMORY = 4L * 1024 * 1024 * 1024; // 4GB default
         private const int ALLOCATION_ALIGNMENT = 256; // Align to 256 bytes for optimal performance
+        /// <summary>
+        /// Initializes a new instance of the CudaPinnedMemoryAllocator class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="maxPinnedMemory">The max pinned memory.</param>
 
         public CudaPinnedMemoryAllocator(CudaContext context, ILogger logger, long maxPinnedMemory = DEFAULT_MAX_PINNED_MEMORY)
         {
@@ -195,6 +201,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 AverageAllocationSize = _allocations.Count > 0 ? _totalAllocated / _allocations.Count : 0
             };
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -216,12 +225,31 @@ namespace DotCompute.Backends.CUDA.Memory
 
             _logger.LogInfoMessage("Disposed pinned memory allocator");
         }
+        /// <summary>
+        /// A class that represents pinned allocation.
+        /// </summary>
 
         private sealed class PinnedAllocation(IntPtr hostPointer, IntPtr devicePointer, long size, CudaHostAllocFlags flags)
         {
+            /// <summary>
+            /// Gets or sets the host pointer.
+            /// </summary>
+            /// <value>The host pointer.</value>
             public IntPtr HostPointer { get; } = hostPointer;
+            /// <summary>
+            /// Gets or sets the device pointer.
+            /// </summary>
+            /// <value>The device pointer.</value>
             public IntPtr DevicePointer { get; } = devicePointer;
+            /// <summary>
+            /// Gets or sets the size.
+            /// </summary>
+            /// <value>The size.</value>
             public long Size { get; } = size;
+            /// <summary>
+            /// Gets or sets the flags.
+            /// </summary>
+            /// <value>The flags.</value>
             public CudaHostAllocFlags Flags { get; } = flags;
         }
     }
@@ -280,12 +308,44 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPinnedMemoryBuffer<T> : IDisposable where T : unmanaged
     {
+        /// <summary>
+        /// Gets or sets the host pointer.
+        /// </summary>
+        /// <value>The host pointer.</value>
         public IntPtr HostPointer { get; }
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
         public IntPtr DevicePointer { get; }
+        /// <summary>
+        /// Gets or sets the count.
+        /// </summary>
+        /// <value>The count.</value>
         public long Count { get; }
+        /// <summary>
+        /// Gets as span.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         public Span<T> AsSpan();
+        /// <summary>
+        /// Gets as memory.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         public Memory<T> AsMemory();
+        /// <summary>
+        /// Gets copy to device asynchronously.
+        /// </summary>
+        /// <param name="devicePtr">The device ptr.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Gets copy from device asynchronously.
+        /// </summary>
+        /// <param name="devicePtr">The device ptr.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task CopyFromDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default);
     }
 
@@ -294,7 +354,15 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public interface IPinnedMemoryRegistration : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the host pointer.
+        /// </summary>
+        /// <value>The host pointer.</value>
         public IntPtr HostPointer { get; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; }
     }
 
@@ -311,16 +379,36 @@ namespace DotCompute.Backends.CUDA.Memory
     {
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the host pointer.
+        /// </summary>
+        /// <value>The host pointer.</value>
 
         public IntPtr HostPointer { get; } = hostPointer;
+        /// <summary>
+        /// Gets or sets the device pointer.
+        /// </summary>
+        /// <value>The device pointer.</value>
         public IntPtr DevicePointer { get; } = devicePointer;
+        /// <summary>
+        /// Gets or sets the count.
+        /// </summary>
+        /// <value>The count.</value>
         public long Count { get; } = count;
+        /// <summary>
+        /// Gets as span.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public unsafe Span<T> AsSpan()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             return new Span<T>(HostPointer.ToPointer(), (int)Count);
         }
+        /// <summary>
+        /// Gets as memory.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public unsafe Memory<T> AsMemory()
         {
@@ -330,6 +418,12 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return new PinnedMemoryManager<T>(HostPointer, (int)Count, this).Memory;
         }
+        /// <summary>
+        /// Gets copy to device asynchronously.
+        /// </summary>
+        /// <param name="devicePtr">The device ptr.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task CopyToDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)
         {
@@ -346,6 +440,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "copying pinned memory to device");
             }, cancellationToken);
         }
+        /// <summary>
+        /// Gets copy from device asynchronously.
+        /// </summary>
+        /// <param name="devicePtr">The device ptr.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task CopyFromDeviceAsync(IntPtr devicePtr, CancellationToken cancellationToken = default)
         {
@@ -362,6 +462,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 CudaRuntime.CheckError(result, "copying device memory to pinned");
             }, cancellationToken);
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -383,9 +486,20 @@ namespace DotCompute.Backends.CUDA.Memory
     {
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the host pointer.
+        /// </summary>
+        /// <value>The host pointer.</value>
 
         public IntPtr HostPointer { get; } = hostPointer;
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; } = size;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -405,10 +519,30 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PinnedMemoryStatistics
     {
+        /// <summary>
+        /// Gets or sets the total allocated.
+        /// </summary>
+        /// <value>The total allocated.</value>
         public long TotalAllocated { get; init; }
+        /// <summary>
+        /// Gets or sets the max allowed.
+        /// </summary>
+        /// <value>The max allowed.</value>
         public long MaxAllowed { get; init; }
+        /// <summary>
+        /// Gets or sets the available.
+        /// </summary>
+        /// <value>The available.</value>
         public long Available { get; init; }
+        /// <summary>
+        /// Gets or sets the allocation count.
+        /// </summary>
+        /// <value>The allocation count.</value>
         public int AllocationCount { get; init; }
+        /// <summary>
+        /// Gets or sets the average allocation size.
+        /// </summary>
+        /// <value>The average allocation size.</value>
         public long AverageAllocationSize { get; init; }
     }
 }

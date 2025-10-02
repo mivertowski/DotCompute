@@ -140,7 +140,7 @@ public record MemoryHotspot
     public double Intensity { get; init; }
 
     /// <summary>Gets optimization recommendations.</summary>
-    public List<string> OptimizationRecommendations { get; init; } = [];
+    public IReadOnlyList<string> OptimizationRecommendations { get; init; } = [];
 }
 
 /// <summary>
@@ -149,7 +149,7 @@ public record MemoryHotspot
 public record MemoryConflict
 {
     /// <summary>Gets the conflicting access locations.</summary>
-    public List<string> ConflictingLocations { get; init; } = [];
+    public IReadOnlyList<string> ConflictingLocations { get; init; } = [];
 
     /// <summary>Gets the conflict type.</summary>
     public ConflictType Type { get; init; }
@@ -161,7 +161,7 @@ public record MemoryConflict
     public double PerformanceImpact { get; init; }
 
     /// <summary>Gets suggested resolutions.</summary>
-    public List<string> Resolutions { get; init; } = [];
+    public IReadOnlyList<string> Resolutions { get; init; } = [];
 }
 
 /// <summary>

@@ -221,6 +221,9 @@ namespace DotCompute.Algorithms.Management
                    fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
                    fileName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase);
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

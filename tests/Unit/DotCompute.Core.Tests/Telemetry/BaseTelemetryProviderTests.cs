@@ -11,6 +11,7 @@ using Moq;
 
 // Alias for timer interface
 using ITelemetryTimer = DotCompute.Abstractions.Interfaces.Telemetry.IOperationTimer;
+using System;
 
 namespace DotCompute.Core.Tests.Telemetry;
 
@@ -36,6 +37,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     private readonly TestTelemetryProvider _telemetryProvider;
     private readonly List<IDisposable> _disposables = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseTelemetryProviderTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public BaseTelemetryProviderTests(ITestOutputHelper output)
     {
@@ -44,6 +49,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _telemetryProvider = new TestTelemetryProvider(_mockLogger.Object);
         _disposables.Add(_telemetryProvider);
     }
+    /// <summary>
+    /// Performs record metric_ valid metrics_ stores correctly.
+    /// </summary>
+    /// <param name="metricName">The metric name.</param>
+    /// <param name="value">The value.</param>
 
     #region Metric Collection Tests
 
@@ -65,6 +75,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = metrics[metricName].Last().Value.Should().Be(value);
         _ = metrics[metricName].Last().Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
+    /// <summary>
+    /// Performs record metric_ invalid metric names_ throws argument exception.
+    /// </summary>
+    /// <param name="invalidName">The invalid name.</param>
 
     [Theory]
     [InlineData("")]
@@ -77,6 +91,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var act = () => _telemetryProvider.RecordMetric(invalidName, 100.0);
         _ = act.Should().Throw<ArgumentException>().WithParameterName("metricName");
     }
+    /// <summary>
+    /// Performs record metric_ invalid values_ throws argument exception.
+    /// </summary>
+    /// <param name="invalidValue">The invalid value.</param>
 
     [Theory]
     [InlineData(double.NaN)]
@@ -89,6 +107,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var act = () => _telemetryProvider.RecordMetric("test_metric", invalidValue);
         _ = act.Should().Throw<ArgumentException>().WithParameterName("value");
     }
+    /// <summary>
+    /// Performs record metric_ with tags_ stores tags correctly.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "MetricCollection")]
@@ -112,6 +133,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = metric.Tags["device"].Should().Be("gpu");
         _ = metric.Tags["kernel"].Should().Be("matrix_multiply");
     }
+    /// <summary>
+    /// Performs record metric_ high frequency_ handles volume correctly.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "MetricCollection")]
@@ -137,6 +161,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _output.WriteLine($"Average metric recording time: {avgRecordTime:F3}ms");
         _ = avgRecordTime.Should().BeLessThan(0.1, "metric recording should be very fast");
     }
+    /// <summary>
+    /// Performs record counter metric_ increments_ accumulates correctly.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "MetricCollection")]
@@ -154,6 +181,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var counters = _telemetryProvider.GetCounters();
         _ = counters[counterName].Should().Be(9); // 1 + 5 + 3
     }
+    /// <summary>
+    /// Performs track event_ basic event_ records correctly.
+    /// </summary>
 
     #endregion
 
@@ -184,6 +214,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = trackedEvent.Properties.Should().BeEquivalentTo(properties);
         _ = trackedEvent.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
+    /// <summary>
+    /// Performs track event_ with correlation id_ maintains correlation.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "EventTracking")]
@@ -207,6 +240,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var correlatedEvents = events.Where(e => e.CorrelationId == correlationId).ToList();
         _ = correlatedEvents.Should().HaveCount(2);
     }
+    /// <summary>
+    /// Performs track exception_ with stack trace_ captures details.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "EventTracking")]
@@ -232,6 +268,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = trackedException.AdditionalData.Should().BeEquivalentTo(additionalData);
         _ = trackedException.StackTrace.Should().NotBeNullOrEmpty();
     }
+    /// <summary>
+    /// Performs track dependency_ external call_ records timing and success.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "EventTracking")]
@@ -255,6 +294,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = dependency.Duration.Should().Be(duration);
         _ = dependency.Success.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs start stop timer_ basic timing_ measures accurately.
+    /// </summary>
 
     #endregion
 
@@ -282,6 +324,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = measurements.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
         _ = measurements.First().Should().BeLessThan(TimeSpan.FromMilliseconds(200));
     }
+    /// <summary>
+    /// Performs measure operation_ using delegate_ captures execution time.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -304,6 +349,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = timers["test_function"].Should().HaveCount(1);
         _ = timers["test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
     }
+    /// <summary>
+    /// Gets measure operation async_ using async delegate_ captures execution time.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -323,6 +372,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = timers["async_test_function"].Should().HaveCount(1);
         _ = timers["async_test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
     }
+    /// <summary>
+    /// Performs performance counters_ system metrics_ captures resource usage.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -342,6 +394,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _output.WriteLine($"CPU Usage: {metrics["system.cpu_usage"].Last().Value:F1}%");
         _output.WriteLine($"Memory Usage: {metrics["system.memory_usage"].Last().Value:F1}%");
     }
+    /// <summary>
+    /// Gets concurrent metric recording_ thread safe_ handles correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -381,6 +437,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var totalMetrics = metrics.Values.Sum(m => m.Count);
         _ = totalMetrics.Should().Be(threadCount * metricsPerThread);
     }
+    /// <summary>
+    /// Gets concurrent event tracking_ thread safe_ maintains consistency.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ThreadSafety")]
@@ -405,6 +465,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = events.Should().HaveCount(concurrentEvents);
         _ = events.Should().AllSatisfy(e => e.CorrelationId.Should().Be(correlationId));
     }
+    /// <summary>
+    /// Gets concurrent timer operations_ thread safe_ returns accurate results.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ThreadSafety")]
@@ -434,6 +498,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
             _ = timer.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(5));
         }
     }
+    /// <summary>
+    /// Sets the sampling rate_ reduces data collection_ based on rate.
+    /// </summary>
 
     #endregion
 
@@ -463,13 +530,16 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = sampledCount.Should().BeLessThan(eventCount / 2, "sampling should significantly reduce event count");
         _ = sampledCount.Should().BeGreaterThan(0, "some events should still be recorded");
     }
+    /// <summary>
+    /// Performs filter metrics_ by name_ excludes filtered metrics.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Configuration")]
     public void FilterMetrics_ByName_ExcludesFilteredMetrics()
     {
         // Arrange
-        _telemetryProvider.AddMetricFilter(name => !name.Contains("debug"));
+        _telemetryProvider.AddMetricFilter(name => !name.Contains("debug", StringComparison.OrdinalIgnoreCase));
 
         // Act
         _telemetryProvider.RecordMetric("production_metric", 100);
@@ -482,6 +552,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = metrics.Should().ContainKey("performance_metric");
         _ = metrics.Should().NotContainKey("debug_metric");
     }
+    /// <summary>
+    /// Sets the retention policy_ limits data retention_ by time and count.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Configuration")]
@@ -502,6 +575,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = metrics["retention_test"].Should().HaveCountLessThan(10, "old metrics should be pruned");
         _ = metrics["retention_test"].Should().HaveCountLessThanOrEqualTo(5, "count limit should be enforced");
     }
+    /// <summary>
+    /// Gets the metric statistics_ calculates correct aggregates.
+    /// </summary>
 
     #endregion
 
@@ -529,6 +605,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = stats.Max.Should().Be(50.0);
         _ = stats.StandardDeviation.Should().BeGreaterThan(0);
     }
+    /// <summary>
+    /// Gets the metric percentiles_ calculates correct percentiles.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Aggregation")]
@@ -551,6 +630,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = p95.Should().BeApproximately(95.0, 1.0);
         _ = p99.Should().BeApproximately(99.0, 1.0);
     }
+    /// <summary>
+    /// Gets the event frequency_ by time window_ calculates correct rate.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Aggregation")]
@@ -571,6 +653,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = frequency.Should().BeGreaterThan(50, "should capture significant event rate");
         _output.WriteLine($"Event frequency: {frequency:F1} events/second");
     }
+    /// <summary>
+    /// Performs large data volume_ memory usage_ remains reasonable.
+    /// </summary>
 
     #endregion
 
@@ -606,6 +691,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         _ = memoryPerMetric.Should().BeLessThan(500, "memory usage per metric should be reasonable");
     }
+    /// <summary>
+    /// Performs auto cleanup_ triggered by memory pressure_ frees resources.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "MemoryManagement")]
@@ -629,6 +717,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         _output.WriteLine($"Cleanup triggered {cleanupCount} times");
     }
+    /// <summary>
+    /// Performs record metric_ after dispose_ throws object disposed exception.
+    /// </summary>
 
     #endregion
 
@@ -646,6 +737,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var act = () => provider.RecordMetric("test", 100);
         _ = act.Should().Throw<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Performs track event_ with null properties_ handles gracefully.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
@@ -659,6 +753,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = events.Last().Properties.Should().NotBeNull();
         _ = events.Last().Properties.Should().BeEmpty();
     }
+    /// <summary>
+    /// Gets the metric statistics_ non existent metric_ returns null.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
@@ -670,6 +767,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         // Assert
         _ = stats.Should().BeNull();
     }
+    /// <summary>
+    /// Performs start timer_ duplicate timer name_ allows multiple instances.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "ErrorHandling")]
@@ -693,6 +793,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         timer1.Dispose();
         timer2.Dispose();
     }
+    /// <summary>
+    /// Sets the sampling rate_ invalid rates_ throws argument exception.
+    /// </summary>
+    /// <param name="invalidRate">The invalid rate.</param>
 
     [Theory]
     [InlineData(-0.1)]  // Negative sampling rate
@@ -705,6 +809,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var act = () => _telemetryProvider.SetSamplingRate(invalidRate);
         _ = act.Should().Throw<ArgumentException>();
     }
+    /// <summary>
+    /// Performs export metrics_ to json_ formats correctly.
+    /// </summary>
 
     #endregion
 
@@ -730,6 +837,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         _output.WriteLine($"Exported JSON: {jsonData}");
     }
+    /// <summary>
+    /// Performs export events_ to json_ includes all properties.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Export")]
@@ -757,6 +867,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _ = jsonData.Should().Contain("3.14");
         _ = jsonData.Should().Contain("true");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -808,6 +921,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
     private TimeSpan _retentionPeriod = TimeSpan.MaxValue;
     private int _maxRetentionCount = int.MaxValue;
     private long _memoryPressureThreshold = long.MaxValue;
+    /// <summary>
+    /// Gets or sets the cleanup count.
+    /// </summary>
+    /// <value>The cleanup count.</value>
 
     // Test tracking
     public int CleanupCount { get; private set; }
@@ -821,6 +938,12 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
         if (_disposed)
             throw new ObjectDisposedException(nameof(TestTelemetryProvider));
     }
+    /// <summary>
+    /// Performs record metric.
+    /// </summary>
+    /// <param name="metricName">The metric name.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="tags">The tags.</param>
 
     public void RecordMetric(string metricName, double value, IDictionary<string, string>? tags = null)
     {
@@ -848,6 +971,12 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             ApplyRetentionPolicy(metricList);
         }
     }
+    /// <summary>
+    /// Performs track event.
+    /// </summary>
+    /// <param name="eventName">The event name.</param>
+    /// <param name="properties">The properties.</param>
+    /// <param name="correlationId">The correlation identifier.</param>
 
     public void TrackEvent(string eventName, IDictionary<string, object>? properties = null, string? correlationId = null)
     {
@@ -868,6 +997,11 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             });
         }
     }
+    /// <summary>
+    /// Performs track exception.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
+    /// <param name="additionalData">The additional data.</param>
 
     public void TrackException(Exception exception, IDictionary<string, object>? additionalData = null)
     {
@@ -885,6 +1019,13 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             });
         }
     }
+    /// <summary>
+    /// Performs track dependency.
+    /// </summary>
+    /// <param name="dependencyName">The dependency name.</param>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="duration">The duration.</param>
+    /// <param name="success">The success.</param>
 
     public void TrackDependency(string dependencyName, string operationName, TimeSpan duration, bool success)
     {
@@ -906,6 +1047,11 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             });
         }
     }
+    /// <summary>
+    /// Gets start timer.
+    /// </summary>
+    /// <param name="timerName">The timer name.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ITelemetryTimer StartTimer(string timerName)
     {
@@ -915,6 +1061,11 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
 
         return new TestTelemetryTimer(timerName, this);
     }
+    /// <summary>
+    /// Performs increment counter.
+    /// </summary>
+    /// <param name="counterName">The counter name.</param>
+    /// <param name="increment">The increment.</param>
 
     public void IncrementCounter(string counterName, long increment = 1)
     {
@@ -928,6 +1079,9 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             _counters[counterName] = currentValue + increment;
         }
     }
+    /// <summary>
+    /// Performs capture system metrics.
+    /// </summary>
 
     public void CaptureSystemMetrics()
     {
@@ -939,6 +1093,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
         RecordMetric("system.memory_usage", (process.WorkingSet64 / (1024.0 * 1024)));
         RecordMetric("system.available_memory", GC.GetTotalMemory(false) / (1024.0 * 1024));
     }
+    /// <summary>
+    /// Gets the metrics.
+    /// </summary>
+    /// <returns>The metrics.</returns>
 
     // Test-specific methods
     public Dictionary<string, List<MetricDataPoint>> GetMetrics()
@@ -948,6 +1106,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
         }
     }
+    /// <summary>
+    /// Gets the events.
+    /// </summary>
+    /// <returns>The events.</returns>
 
     public List<TelemetryEvent> GetEvents()
     {
@@ -956,6 +1118,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return [.. _events];
         }
     }
+    /// <summary>
+    /// Gets the exceptions.
+    /// </summary>
+    /// <returns>The exceptions.</returns>
 
     public List<TelemetryException> GetExceptions()
     {
@@ -964,6 +1130,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return [.. _exceptions];
         }
     }
+    /// <summary>
+    /// Gets the dependencies.
+    /// </summary>
+    /// <returns>The dependencies.</returns>
 
     public List<TelemetryDependency> GetDependencies()
     {
@@ -972,6 +1142,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return [.. _dependencies];
         }
     }
+    /// <summary>
+    /// Gets the timers.
+    /// </summary>
+    /// <returns>The timers.</returns>
 
     public Dictionary<string, List<TimeSpan>> GetTimers()
     {
@@ -980,6 +1154,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return _timers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
         }
     }
+    /// <summary>
+    /// Gets the counters.
+    /// </summary>
+    /// <returns>The counters.</returns>
 
     public Dictionary<string, long> GetCounters()
     {
@@ -988,6 +1166,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return _counters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
     }
+    /// <summary>
+    /// Sets the sampling rate.
+    /// </summary>
+    /// <param name="rate">The rate.</param>
 
     public void SetSamplingRate(double rate)
     {
@@ -995,16 +1177,32 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             throw new ArgumentException("Sampling rate must be between 0 and 1", nameof(rate));
         _samplingRate = rate;
     }
+    /// <summary>
+    /// Performs add metric filter.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
 
     public void AddMetricFilter(Func<string, bool> filter) => _metricFilter = filter;
+    /// <summary>
+    /// Sets the retention policy.
+    /// </summary>
+    /// <param name="period">The period.</param>
+    /// <param name="maxCount">The max count.</param>
 
     public void SetRetentionPolicy(TimeSpan period, int maxCount = int.MaxValue)
     {
         _retentionPeriod = period;
         _maxRetentionCount = maxCount;
     }
+    /// <summary>
+    /// Sets the memory pressure threshold.
+    /// </summary>
+    /// <param name="bytes">The bytes.</param>
 
     public void SetMemoryPressureThreshold(long bytes) => _memoryPressureThreshold = bytes;
+    /// <summary>
+    /// Performs check memory pressure.
+    /// </summary>
 
     public void CheckMemoryPressure()
     {
@@ -1014,6 +1212,11 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             PerformCleanup();
         }
     }
+    /// <summary>
+    /// Gets the metric statistics.
+    /// </summary>
+    /// <param name="metricName">The metric name.</param>
+    /// <returns>The metric statistics.</returns>
 
     public MetricStatistics? GetMetricStatistics(string metricName)
     {
@@ -1036,6 +1239,12 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             };
         }
     }
+    /// <summary>
+    /// Gets the metric percentile.
+    /// </summary>
+    /// <param name="metricName">The metric name.</param>
+    /// <param name="percentile">The percentile.</param>
+    /// <returns>The metric percentile.</returns>
 
     public double GetMetricPercentile(string metricName, int percentile)
     {
@@ -1049,6 +1258,12 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return values[Math.Max(0, Math.Min(index, values.Length - 1))];
         }
     }
+    /// <summary>
+    /// Gets the event frequency.
+    /// </summary>
+    /// <param name="eventName">The event name.</param>
+    /// <param name="timeWindow">The time window.</param>
+    /// <returns>The event frequency.</returns>
 
     public double GetEventFrequency(string eventName, TimeSpan timeWindow)
     {
@@ -1059,6 +1274,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return recentEvents.Count / timeWindow.TotalSeconds;
         }
     }
+    /// <summary>
+    /// Gets export metrics as json.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public string ExportMetricsAsJson()
     {
@@ -1067,6 +1286,10 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             return global::System.Text.Json.JsonSerializer.Serialize(_metrics, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
     }
+    /// <summary>
+    /// Gets export events as json.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public string ExportEventsAsJson()
     {
@@ -1144,6 +1367,13 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             _counters.Clear();
         }
     }
+    /// <summary>
+    /// Gets measure operation.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Helper methods for operation measurement
     public T MeasureOperation<T>(string operationName, Func<T> operation)
@@ -1158,6 +1388,13 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
             timer.Dispose();
         }
     }
+    /// <summary>
+    /// Gets measure operation asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> MeasureOperationAsync<T>(string operationName, Func<Task<T>> operation)
     {
@@ -1172,62 +1409,194 @@ internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logge
         }
     }
 }
+/// <summary>
+/// A class that represents metric data point.
+/// </summary>
 
 // Helper classes for test telemetry data
 public class MetricDataPoint
 {
+    /// <summary>
+    /// Gets or sets the value.
+    /// </summary>
+    /// <value>The value.</value>
     public double Value { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the tags.
+    /// </summary>
+    /// <value>The tags.</value>
     public Dictionary<string, string> Tags { get; set; } = [];
 }
+/// <summary>
+/// A class that represents telemetry event.
+/// </summary>
 
 public class TelemetryEvent
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the properties.
+    /// </summary>
+    /// <value>The properties.</value>
     public Dictionary<string, object> Properties { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string CorrelationId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents telemetry exception.
+/// </summary>
 
 public class TelemetryException
 {
+    /// <summary>
+    /// Gets or sets the exception.
+    /// </summary>
+    /// <value>The exception.</value>
     public Exception Exception { get; set; } = null!;
+    /// <summary>
+    /// Gets or sets the additional data.
+    /// </summary>
+    /// <value>The additional data.</value>
     public Dictionary<string, object> AdditionalData { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the stack trace.
+    /// </summary>
+    /// <value>The stack trace.</value>
     public string StackTrace { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents telemetry dependency.
+/// </summary>
 
 public class TelemetryDependency
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the operation.
+    /// </summary>
+    /// <value>The operation.</value>
     public string Operation { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan Duration { get; set; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents metric statistics.
+/// </summary>
 
 public class MetricStatistics
 {
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
+    /// <value>The count.</value>
     public int Count { get; set; }
+    /// <summary>
+    /// Gets or sets the mean.
+    /// </summary>
+    /// <value>The mean.</value>
     public double Mean { get; set; }
+    /// <summary>
+    /// Gets or sets the min.
+    /// </summary>
+    /// <value>The min.</value>
     public double Min { get; set; }
+    /// <summary>
+    /// Gets or sets the max.
+    /// </summary>
+    /// <value>The max.</value>
     public double Max { get; set; }
+    /// <summary>
+    /// Gets or sets the standard deviation.
+    /// </summary>
+    /// <value>The standard deviation.</value>
     public double StandardDeviation { get; set; }
 }
+/// <summary>
+/// A class that represents test telemetry timer.
+/// </summary>
 
 internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
     private readonly TestTelemetryProvider _provider = provider;
     private readonly Dictionary<string, OperationStatistics> _statistics = [];
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets a value indicating whether enabled.
+    /// </summary>
+    /// <value>The is enabled.</value>
 
     public bool IsEnabled { get; private set; } = true;
+    /// <summary>
+    /// Gets or sets the minimum duration threshold.
+    /// </summary>
+    /// <value>The minimum duration threshold.</value>
     public TimeSpan MinimumDurationThreshold { get; private set; } = TimeSpan.Zero;
+    /// <summary>
+    /// Occurs when operation completed.
+    /// </summary>
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
+    /// <summary>
+    /// Gets start operation.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TestTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString(), this);
+    /// <summary>
+    /// Gets start operation scope.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <returns>The result of the operation.</returns>
 
     public IDisposable StartOperationScope(string operationName, string? operationId = null) => StartOperation(operationName, operationId);
+    /// <summary>
+    /// Gets time operation.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
     {
@@ -1237,6 +1606,13 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         RecordTiming(operationName, stopwatch.Elapsed);
         return (result, stopwatch.Elapsed);
     }
+    /// <summary>
+    /// Gets time operation asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation)
     {
@@ -1246,6 +1622,12 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         RecordTiming(operationName, stopwatch.Elapsed);
         return (result, stopwatch.Elapsed);
     }
+    /// <summary>
+    /// Gets time operation.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public TimeSpan TimeOperation(string operationName, Action operation)
     {
@@ -1255,6 +1637,12 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         RecordTiming(operationName, stopwatch.Elapsed);
         return stopwatch.Elapsed;
     }
+    /// <summary>
+    /// Gets time operation asynchronously.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
     {
@@ -1264,6 +1652,13 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         RecordTiming(operationName, stopwatch.Elapsed);
         return stopwatch.Elapsed;
     }
+    /// <summary>
+    /// Performs record timing.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="duration">The duration.</param>
+    /// <param name="operationId">The operation identifier.</param>
+    /// <param name="metadata">The metadata.</param>
 
     public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null)
     {
@@ -1321,14 +1716,36 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
             Metadata = metadata
         });
     }
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <returns>The statistics.</returns>
 
     public OperationStatistics? GetStatistics(string operationName) => _statistics.TryGetValue(operationName, out var stats) ? stats : null;
+    /// <summary>
+    /// Gets the all statistics.
+    /// </summary>
+    /// <returns>The all statistics.</returns>
 
     public IDictionary<string, OperationStatistics> GetAllStatistics() => new Dictionary<string, OperationStatistics>(_statistics);
+    /// <summary>
+    /// Performs clear statistics.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
 
     public void ClearStatistics(string operationName) => _ = _statistics.Remove(operationName);
+    /// <summary>
+    /// Performs clear all statistics.
+    /// </summary>
 
     public void ClearAllStatistics() => _statistics.Clear();
+    /// <summary>
+    /// Gets export data.
+    /// </summary>
+    /// <param name="format">The format.</param>
+    /// <param name="operationFilter">The operation filter.</param>
+    /// <returns>The result of the operation.</returns>
 
     public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null)
     {
@@ -1340,10 +1757,21 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
             _ => string.Join("\n", filteredStats.Select(kvp => $"{kvp.Key}: {kvp.Value.ExecutionCount} executions, avg {kvp.Value.AverageDuration.TotalMilliseconds}ms"))
         };
     }
+    /// <summary>
+    /// Sets the enabled.
+    /// </summary>
+    /// <param name="enabled">The enabled.</param>
 
     public void SetEnabled(bool enabled) => IsEnabled = enabled;
+    /// <summary>
+    /// Sets the minimum duration threshold.
+    /// </summary>
+    /// <param name="threshold">The threshold.</param>
 
     public void SetMinimumDurationThreshold(TimeSpan threshold) => MinimumDurationThreshold = threshold;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -1353,6 +1781,9 @@ internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provid
         }
     }
 }
+/// <summary>
+/// A class that represents test timer handle.
+/// </summary>
 
 internal class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
 {
@@ -1360,11 +1791,32 @@ internal class TestTimerHandle(string operationName, string operationId, TestTel
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly Dictionary<string, TimeSpan> _checkpoints = [];
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
 
     public string OperationName { get; } = operationName;
+    /// <summary>
+    /// Gets or sets the operation identifier.
+    /// </summary>
+    /// <value>The operation id.</value>
     public string OperationId { get; } = operationId;
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTime StartTime { get; } = DateTime.UtcNow;
+    /// <summary>
+    /// Gets or sets the elapsed.
+    /// </summary>
+    /// <value>The elapsed.</value>
     public TimeSpan Elapsed => _stopwatch.Elapsed;
+    /// <summary>
+    /// Gets stop.
+    /// </summary>
+    /// <param name="metadata">The metadata.</param>
+    /// <returns>The result of the operation.</returns>
 
     public TimeSpan Stop(IDictionary<string, object>? metadata = null)
     {
@@ -1374,6 +1826,11 @@ internal class TestTimerHandle(string operationName, string operationId, TestTel
         _timer.RecordTiming(OperationName, _stopwatch.Elapsed, OperationId, metadata);
         return _stopwatch.Elapsed;
     }
+    /// <summary>
+    /// Gets add checkpoint.
+    /// </summary>
+    /// <param name="checkpointName">The checkpoint name.</param>
+    /// <returns>The result of the operation.</returns>
 
     public TimeSpan AddCheckpoint(string checkpointName)
     {
@@ -1381,8 +1838,15 @@ internal class TestTimerHandle(string operationName, string operationId, TestTel
         _checkpoints[checkpointName] = elapsed;
         return elapsed;
     }
+    /// <summary>
+    /// Gets the checkpoints.
+    /// </summary>
+    /// <returns>The checkpoints.</returns>
 
     public IDictionary<string, TimeSpan> GetCheckpoints() => new Dictionary<string, TimeSpan>(_checkpoints);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

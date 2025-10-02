@@ -69,31 +69,31 @@ public class NuGetPluginManifest
     /// Gets or sets the list of dependencies.
     /// Other packages required by this plugin.
     /// </summary>
-    public List<NuGetPackageDependency> Dependencies { get; set; } = [];
+    public IList<NuGetPackageDependency> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets or sets the supported platforms.
     /// List of operating systems and architectures supported.
     /// </summary>
-    public List<string> SupportedPlatforms { get; set; } = [];
+    public IList<string> SupportedPlatforms { get; } = [];
 
     /// <summary>
     /// Gets or sets the supported accelerators.
     /// List of compute device types the plugin can utilize.
     /// </summary>
-    public List<string> SupportedAccelerators { get; set; } = [];
+    public IList<string> SupportedAccelerators { get; } = [];
 
     /// <summary>
     /// Gets or sets the configuration settings.
     /// Default configuration for the plugin.
     /// </summary>
-    public Dictionary<string, object> Configuration { get; set; } = [];
+    public Dictionary<string, object> Configuration { get; } = [];
 
     /// <summary>
     /// Gets or sets the tags for categorization.
     /// Keywords for plugin discovery and filtering.
     /// </summary>
-    public List<string> Tags { get; set; } = [];
+    public IList<string> Tags { get; } = [];
 
     /// <summary>
     /// Gets or sets the license information.

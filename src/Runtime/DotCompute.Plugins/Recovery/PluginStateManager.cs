@@ -17,6 +17,11 @@ public sealed class PluginStateManager : IDisposable
     private readonly ConcurrentDictionary<string, PluginStateSnapshot> _stateSnapshots;
     private readonly Timer _stateBackupTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginStateManager class.
+    /// </summary>
+    /// <param name="config">The config.</param>
+    /// <param name="logger">The logger.</param>
 
     public PluginStateManager(PluginRecoveryConfiguration config, ILogger logger)
     {
@@ -187,6 +192,9 @@ public sealed class PluginStateManager : IDisposable
             _logger.LogError(ex, "Error during state backup cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -212,9 +220,29 @@ public sealed class PluginStateManager : IDisposable
 /// </summary>
 public sealed class PluginStateSnapshot
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public object? State { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public Dictionary<string, object> Metadata { get; init; } = [];
 }

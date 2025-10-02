@@ -527,6 +527,9 @@ public sealed class PipelineTelemetryCollector : IDisposable
         }
 
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -592,10 +595,29 @@ public sealed class PipelineTelemetryOptions
 /// </summary>
 public sealed class PipelineExecutionContext : IDisposable
 {
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
     public string PipelineId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string CorrelationId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTime StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the activity.
+    /// </summary>
+    /// <value>The activity.</value>
     public Activity? Activity { get; set; }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => Activity?.Dispose();
 }
@@ -619,9 +641,21 @@ public sealed class PipelineMetricsSnapshot(
     private long _minDurationTicks = minDuration.Ticks;
     private long _maxDurationTicks = maxDuration.Ticks;
     private long _itemsProcessed = itemsProcessed;
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
 
     public string PipelineId { get; } = pipelineId;
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
     public DateTime LastExecution { get; set; } = lastExecution;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
 
     public long ExecutionCount
     {
@@ -629,6 +663,10 @@ public sealed class PipelineMetricsSnapshot(
         get => Interlocked.Read(ref _executionCount);
         private set => Interlocked.Exchange(ref _executionCount, value);
     }
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    /// <value>The success count.</value>
 
     public long SuccessCount
     {
@@ -636,20 +674,36 @@ public sealed class PipelineMetricsSnapshot(
         get => Interlocked.Read(ref _successCount);
         private set => Interlocked.Exchange(ref _successCount, value);
     }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
 
     public double SuccessRate => ExecutionCount > 0 ? (double)SuccessCount / ExecutionCount : 0.0;
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
 
     public TimeSpan TotalDuration
     {
         get => TimeSpan.FromTicks(Interlocked.Read(ref _totalDurationTicks));
         private set => Interlocked.Exchange(ref _totalDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
+    /// <value>The average duration.</value>
 
     public TimeSpan AverageDuration => ExecutionCount > 0
 
         ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
 
         : TimeSpan.Zero;
+    /// <summary>
+    /// Gets or sets the min duration.
+    /// </summary>
+    /// <value>The min duration.</value>
 
     public TimeSpan MinDuration
     {
@@ -657,6 +711,10 @@ public sealed class PipelineMetricsSnapshot(
         get => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
         private set => Interlocked.Exchange(ref _minDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the max duration.
+    /// </summary>
+    /// <value>The max duration.</value>
 
 
     public TimeSpan MaxDuration
@@ -665,6 +723,10 @@ public sealed class PipelineMetricsSnapshot(
         get => TimeSpan.FromTicks(Interlocked.Read(ref _maxDurationTicks));
         private set => Interlocked.Exchange(ref _maxDurationTicks, value.Ticks);
     }
+    /// <summary>
+    /// Gets or sets the items processed.
+    /// </summary>
+    /// <value>The items processed.</value>
 
     public long ItemsProcessed
     {
@@ -672,12 +734,23 @@ public sealed class PipelineMetricsSnapshot(
         get => Interlocked.Read(ref _itemsProcessed);
         private set => Interlocked.Exchange(ref _itemsProcessed, value);
     }
+    /// <summary>
+    /// Gets or sets the item throughput per second.
+    /// </summary>
+    /// <value>The item throughput per second.</value>
 
     public double ItemThroughputPerSecond => TotalDuration.TotalSeconds > 0
 
         ? ItemsProcessed / TotalDuration.TotalSeconds
 
         : 0.0;
+    /// <summary>
+    /// Updates the with.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
+    /// <param name="success">The success.</param>
+    /// <param name="items">The items.</param>
+    /// <returns>The result of the operation.</returns>
 
     public PipelineMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long items)
     {
@@ -745,24 +818,71 @@ public sealed class StageMetricsSnapshot(
     private long _memoryUsed = memoryUsed;
     private long _minDurationTicks = minDuration.Ticks;
     private long _maxDurationTicks = maxDuration.Ticks;
+    /// <summary>
+    /// Gets or sets the pipeline identifier.
+    /// </summary>
+    /// <value>The pipeline id.</value>
 
     public string PipelineId { get; } = pipelineId;
+    /// <summary>
+    /// Gets or sets the stage identifier.
+    /// </summary>
+    /// <value>The stage id.</value>
     public string StageId { get; } = stageId;
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
 
     public long ExecutionCount => Interlocked.Read(ref _executionCount);
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    /// <value>The success count.</value>
     public long SuccessCount => Interlocked.Read(ref _successCount);
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate => ExecutionCount > 0 ? (double)SuccessCount / ExecutionCount : 0.0;
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
 
     public TimeSpan TotalDuration => TimeSpan.FromTicks(Interlocked.Read(ref _totalDurationTicks));
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
+    /// <value>The average duration.</value>
     public TimeSpan AverageDuration => ExecutionCount > 0
 
         ? TimeSpan.FromTicks(TotalDuration.Ticks / ExecutionCount)
 
         : TimeSpan.Zero;
+    /// <summary>
+    /// Gets or sets the min duration.
+    /// </summary>
+    /// <value>The min duration.</value>
 
     public TimeSpan MinDuration => TimeSpan.FromTicks(Interlocked.Read(ref _minDurationTicks));
+    /// <summary>
+    /// Gets or sets the max duration.
+    /// </summary>
+    /// <value>The max duration.</value>
     public TimeSpan MaxDuration => TimeSpan.FromTicks(Interlocked.Read(ref _maxDurationTicks));
+    /// <summary>
+    /// Gets or sets the memory used.
+    /// </summary>
+    /// <value>The memory used.</value>
     public long MemoryUsed => Interlocked.Read(ref _memoryUsed);
+    /// <summary>
+    /// Updates the with.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
+    /// <param name="success">The success.</param>
+    /// <param name="memory">The memory.</param>
+    /// <returns>The result of the operation.</returns>
 
     public StageMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long memory)
     {

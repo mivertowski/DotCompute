@@ -71,6 +71,9 @@ internal abstract class OptimizedKernelBase(string name, CompilationOptions opti
         Dispose();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => Disposed = true;
 

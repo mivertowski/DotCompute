@@ -124,17 +124,17 @@ public sealed class StageExecutionMetrics
     /// <summary>
     /// Gets or sets custom user-defined metrics for this stage.
     /// </summary>
-    public IDictionary<string, object> CustomMetrics { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> CustomMetrics { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets warnings generated during stage execution.
     /// </summary>
-    public IList<string> Warnings { get; set; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets debug information collected during execution.
     /// </summary>
-    public IDictionary<string, object> DebugInfo { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> DebugInfo { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets the input data size processed by this stage in bytes.
@@ -338,7 +338,7 @@ public sealed class StageDataTransferMetrics
     /// <summary>
     /// Gets or sets transfer statistics by direction.
     /// </summary>
-    public IDictionary<DataTransferType, long> TransfersByType { get; set; } =
+    public IDictionary<DataTransferType, long> TransfersByType { get; } =
         new Dictionary<DataTransferType, long>();
 }
 
@@ -473,7 +473,7 @@ public sealed class StageQualityMetrics
     /// <summary>
     /// Gets or sets quality issues detected in this stage.
     /// </summary>
-    public IList<string> QualityIssues { get; set; } = [];
+    public IList<string> QualityIssues { get; } = [];
 
     /// <summary>
     /// Gets or sets the confidence level in the stage results (0-1).

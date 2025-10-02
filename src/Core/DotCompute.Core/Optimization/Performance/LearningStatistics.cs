@@ -8,8 +8,24 @@ namespace DotCompute.Core.Optimization.Performance;
 /// </summary>
 public class LearningStatistics
 {
+    /// <summary>
+    /// Gets or sets the total performance samples.
+    /// </summary>
+    /// <value>The total performance samples.</value>
     public int TotalPerformanceSamples { get; set; }
+    /// <summary>
+    /// Gets or sets the average samples per workload.
+    /// </summary>
+    /// <value>The average samples per workload.</value>
     public int AverageSamplesPerWorkload { get; set; }
+    /// <summary>
+    /// Gets or sets the workloads with sufficient history.
+    /// </summary>
+    /// <value>The workloads with sufficient history.</value>
     public int WorkloadsWithSufficientHistory { get; set; }
+    /// <summary>
+    /// Gets or sets the learning effectiveness.
+    /// </summary>
+    /// <value>The learning effectiveness.</value>
     public float LearningEffectiveness { get; set; }
 }

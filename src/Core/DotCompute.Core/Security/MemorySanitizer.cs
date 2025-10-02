@@ -39,6 +39,11 @@ public sealed class MemorySanitizer : IDisposable
 
     // Statistics
     private readonly SanitizerStatistics _statistics = new();
+    /// <summary>
+    /// Initializes a new instance of the MemorySanitizer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public MemorySanitizer(ILogger<MemorySanitizer> logger, MemorySanitizerConfiguration? configuration = null)
     {
@@ -872,6 +877,9 @@ public sealed class MemorySanitizer : IDisposable
             }
         });
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

@@ -297,8 +297,24 @@ public sealed class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
 /// </summary>
 public sealed class SecurityHealthStatus
 {
+    /// <summary>
+    /// Gets or sets the check time.
+    /// </summary>
+    /// <value>The check time.</value>
     public DateTimeOffset CheckTime { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; init; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IReadOnlyList<string> Issues { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the details.
+    /// </summary>
+    /// <value>The details.</value>
     public Dictionary<string, object> Details { get; init; } = [];
 }

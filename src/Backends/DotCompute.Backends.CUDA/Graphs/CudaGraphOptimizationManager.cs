@@ -68,6 +68,10 @@ namespace DotCompute.Backends.CUDA.Graphs
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphExecGetFlags(
             IntPtr graphExec, out ulong flags);
+        /// <summary>
+        /// Initializes a new instance of the CudaGraphOptimizationManager class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaGraphOptimizationManager(ILogger<CudaGraphOptimizationManager> logger)
         {
@@ -604,6 +608,9 @@ namespace DotCompute.Backends.CUDA.Graphs
 
             return false;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -638,34 +645,137 @@ namespace DotCompute.Backends.CUDA.Graphs
         // Supporting classes
         private class GraphInstance
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public required string Name { get; init; }
+            /// <summary>
+            /// Gets or sets the graph.
+            /// </summary>
+            /// <value>The graph.</value>
             public required IntPtr Graph { get; set; }
+            /// <summary>
+            /// Gets or sets the graph exec.
+            /// </summary>
+            /// <value>The graph exec.</value>
             public required IntPtr GraphExec { get; set; }
+            /// <summary>
+            /// Gets or sets the created at.
+            /// </summary>
+            /// <value>The created at.</value>
             public required DateTimeOffset CreatedAt { get; init; }
+            /// <summary>
+            /// Gets or sets the last updated at.
+            /// </summary>
+            /// <value>The last updated at.</value>
             public DateTimeOffset? LastUpdatedAt { get; set; }
+            /// <summary>
+            /// Gets or sets the last used at.
+            /// </summary>
+            /// <value>The last used at.</value>
             public DateTimeOffset? LastUsedAt { get; set; }
+            /// <summary>
+            /// Gets or sets the node count.
+            /// </summary>
+            /// <value>The node count.</value>
             public required int NodeCount { get; init; }
+            /// <summary>
+            /// Gets or sets the edge count.
+            /// </summary>
+            /// <value>The edge count.</value>
             public required int EdgeCount { get; init; }
+            /// <summary>
+            /// Gets or sets the options.
+            /// </summary>
+            /// <value>The options.</value>
             public required GraphCaptureOptions Options { get; init; }
+            /// <summary>
+            /// Gets or sets the capture time.
+            /// </summary>
+            /// <value>The capture time.</value>
             public TimeSpan CaptureTime { get; init; }
+            /// <summary>
+            /// Gets or sets the cloned from.
+            /// </summary>
+            /// <value>The cloned from.</value>
             public string? ClonedFrom { get; init; }
         }
+        /// <summary>
+        /// A class that represents graph statistics.
+        /// </summary>
 
         public class GraphStatistics
         {
+            /// <summary>
+            /// Gets or sets the graph name.
+            /// </summary>
+            /// <value>The graph name.</value>
             public required string GraphName { get; init; }
+            /// <summary>
+            /// Gets or sets the created at.
+            /// </summary>
+            /// <value>The created at.</value>
             public required DateTimeOffset CreatedAt { get; init; }
+            /// <summary>
+            /// Gets or sets the last used at.
+            /// </summary>
+            /// <value>The last used at.</value>
             public DateTimeOffset? LastUsedAt { get; set; }
+            /// <summary>
+            /// Gets or sets the launch count.
+            /// </summary>
+            /// <value>The launch count.</value>
             public int LaunchCount { get; set; }
+            /// <summary>
+            /// Gets or sets the failure count.
+            /// </summary>
+            /// <value>The failure count.</value>
             public int FailureCount { get; set; }
+            /// <summary>
+            /// Gets or sets the update count.
+            /// </summary>
+            /// <value>The update count.</value>
             public int UpdateCount { get; set; }
+            /// <summary>
+            /// Gets or sets the recreate count.
+            /// </summary>
+            /// <value>The recreate count.</value>
             public int RecreateCount { get; set; }
+            /// <summary>
+            /// Gets or sets the total launch time.
+            /// </summary>
+            /// <value>The total launch time.</value>
             public TimeSpan TotalLaunchTime { get; set; }
+            /// <summary>
+            /// Gets or sets the last launch time.
+            /// </summary>
+            /// <value>The last launch time.</value>
             public TimeSpan LastLaunchTime { get; set; }
+            /// <summary>
+            /// Gets or sets the min launch time.
+            /// </summary>
+            /// <value>The min launch time.</value>
             public TimeSpan MinLaunchTime { get; set; }
+            /// <summary>
+            /// Gets or sets the max launch time.
+            /// </summary>
+            /// <value>The max launch time.</value>
             public TimeSpan MaxLaunchTime { get; set; }
+            /// <summary>
+            /// Gets or sets the node count.
+            /// </summary>
+            /// <value>The node count.</value>
             public required int NodeCount { get; init; }
+            /// <summary>
+            /// Gets or sets the edge count.
+            /// </summary>
+            /// <value>The edge count.</value>
             public required int EdgeCount { get; init; }
+            /// <summary>
+            /// Gets or sets the average launch time.
+            /// </summary>
+            /// <value>The average launch time.</value>
 
 
             public TimeSpan AverageLaunchTime
@@ -674,21 +784,55 @@ namespace DotCompute.Backends.CUDA.Graphs
 
         private class GraphAnalysis
         {
+            /// <summary>
+            /// Gets or sets the node count.
+            /// </summary>
+            /// <value>The node count.</value>
             public int NodeCount { get; set; }
+            /// <summary>
+            /// Gets or sets the edge count.
+            /// </summary>
+            /// <value>The edge count.</value>
             public int EdgeCount { get; set; }
+            /// <summary>
+            /// Gets or sets the node types.
+            /// </summary>
+            /// <value>The node types.</value>
             public Dictionary<CudaGraphNodeType, int> NodeTypes { get; } = [];
         }
+        /// <summary>
+        /// A class that represents graph capture options.
+        /// </summary>
 
         public class GraphCaptureOptions
         {
+            /// <summary>
+            /// Gets or sets the allow invalidation.
+            /// </summary>
+            /// <value>The allow invalidation.</value>
             public bool AllowInvalidation { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the export debug visualization.
+            /// </summary>
+            /// <value>The export debug visualization.</value>
             public bool ExportDebugVisualization { get; set; }
+            /// <summary>
+            /// Gets or sets the max node count.
+            /// </summary>
+            /// <value>The max node count.</value>
 
             public int MaxNodeCount { get; set; } = 10000;
+            /// <summary>
+            /// Gets or sets the default.
+            /// </summary>
+            /// <value>The default.</value>
 
 
             public static GraphCaptureOptions Default => new();
         }
+        /// <summary>
+        /// An cuda error enumeration.
+        /// </summary>
 
         // CUDA enums
         private enum CudaError
@@ -697,6 +841,9 @@ namespace DotCompute.Backends.CUDA.Graphs
             InvalidValue = 1,
             // Add other error codes as needed
         }
+        /// <summary>
+        /// An cuda graph capture mode enumeration.
+        /// </summary>
 
         private enum CudaGraphCaptureMode
         {
@@ -704,6 +851,9 @@ namespace DotCompute.Backends.CUDA.Graphs
             ThreadLocal = 1,
             Relaxed = 2
         }
+        /// <summary>
+        /// An cuda graph node type enumeration.
+        /// </summary>
 
         private enum CudaGraphNodeType
         {
@@ -715,6 +865,9 @@ namespace DotCompute.Backends.CUDA.Graphs
             Empty = 5,
             // Add other node types as needed
         }
+        /// <summary>
+        /// An cuda graph exec update result enumeration.
+        /// </summary>
 
         private enum CudaGraphExecUpdateResult
         {
@@ -726,10 +879,22 @@ namespace DotCompute.Backends.CUDA.Graphs
 
         private class CudaException : Exception
         {
+            /// <summary>
+            /// Initializes a new instance of the CudaException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
             public CudaException(string message) : base(message) { }
+            /// <summary>
+            /// Initializes a new instance of the CudaException class.
+            /// </summary>
             public CudaException()
             {
             }
+            /// <summary>
+            /// Initializes a new instance of the CudaException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
+            /// <param name="innerException">The inner exception.</param>
             public CudaException(string message, Exception innerException) : base(message, innerException)
             {
             }

@@ -22,6 +22,11 @@ namespace DotCompute.Algorithms.Management
         private readonly SemaphoreSlim _lifecycleSemaphore = new(1, 1);
         private readonly Timer? _healthCheckTimer;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the AlgorithmPluginLifecycle class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="options">The options.</param>
 
         public AlgorithmPluginLifecycle(ILogger<AlgorithmPluginLifecycle> logger, AlgorithmPluginManagerOptions options)
         {
@@ -311,6 +316,11 @@ namespace DotCompute.Algorithms.Management
         }
 
         private PluginLifecycleState GetOrCreatePluginState(IAlgorithmPlugin plugin) => _pluginStates.GetOrAdd(plugin.Id, _ => new PluginLifecycleState(plugin.Id));
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         #region IHostedService Implementation
 
@@ -319,6 +329,11 @@ namespace DotCompute.Algorithms.Management
             LogLifecycleManagerStarting();
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
@@ -345,6 +360,9 @@ namespace DotCompute.Algorithms.Management
             await Task.WhenAll(stopTasks);
             LogLifecycleManagerStopped();
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         #endregion
 
@@ -438,8 +456,16 @@ namespace DotCompute.Algorithms.Management
     {
         private readonly object _stateLock = new();
         private PluginState _state = PluginState.Loading;
+        /// <summary>
+        /// Gets or sets the plugin identifier.
+        /// </summary>
+        /// <value>The plugin id.</value>
 
         public string PluginId { get; } = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
 
         public PluginState State
         {
@@ -451,10 +477,22 @@ namespace DotCompute.Algorithms.Management
                 }
             }
         }
+        /// <summary>
+        /// Gets or sets the last activity time.
+        /// </summary>
+        /// <value>The last activity time.</value>
 
         public DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
 
         public Exception? LastError { get; set; }
+        /// <summary>
+        /// Sets the state.
+        /// </summary>
+        /// <param name="newState">The new state.</param>
 
         public void SetState(PluginState newState)
         {

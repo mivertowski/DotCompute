@@ -16,6 +16,10 @@ public sealed class SimdPerformanceProfiler : IDisposable
     private readonly ConcurrentDictionary<SimdExecutionStrategy, StrategyMetrics> _strategyMetrics;
     private readonly Timer _metricsReportTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the SimdPerformanceProfiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public SimdPerformanceProfiler(ILogger logger)
     {
@@ -345,6 +349,9 @@ public sealed class SimdPerformanceProfiler : IDisposable
             _logger.LogError(ex, "Error reporting SIMD performance metrics");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -364,14 +371,42 @@ public sealed class SimdPerformanceProfiler : IDisposable
 /// </summary>
 internal sealed class StrategyMetrics
 {
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the total elements.
+    /// </summary>
+    /// <value>The total elements.</value>
     public long TotalElements { get; set; }
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
     public TimeSpan TotalDuration { get; set; }
+    /// <summary>
+    /// Gets or sets the vectorized elements.
+    /// </summary>
+    /// <value>The vectorized elements.</value>
     public long VectorizedElements { get; set; }
+    /// <summary>
+    /// Gets or sets the scalar elements.
+    /// </summary>
+    /// <value>The scalar elements.</value>
     public long ScalarElements { get; set; }
+    /// <summary>
+    /// Gets or sets the peak throughput.
+    /// </summary>
+    /// <value>The peak throughput.</value>
     public double PeakThroughput { get; private set; }
     private readonly List<double> _throughputHistory = [];
     private readonly List<double> _vectorizationHistory = [];
+    /// <summary>
+    /// Updates the throughput.
+    /// </summary>
+    /// <param name="throughput">The throughput.</param>
 
     public void UpdateThroughput(double throughput)
     {
@@ -384,6 +419,10 @@ internal sealed class StrategyMetrics
             _throughputHistory.RemoveAt(0);
         }
     }
+    /// <summary>
+    /// Updates the vectorization ratio.
+    /// </summary>
+    /// <param name="ratio">The ratio.</param>
 
     public void UpdateVectorizationRatio(double ratio)
     {
@@ -395,6 +434,10 @@ internal sealed class StrategyMetrics
             _vectorizationHistory.RemoveAt(0);
         }
     }
+    /// <summary>
+    /// Calculates the throughput trend.
+    /// </summary>
+    /// <returns>The calculated throughput trend.</returns>
 
     public double CalculateThroughputTrend()
     {
@@ -402,6 +445,10 @@ internal sealed class StrategyMetrics
             ? _throughputHistory.TakeLast(10).Average() / _throughputHistory.Take(10).Average() - 1.0
             : 0.0;
     }
+    /// <summary>
+    /// Calculates the vectorization trend.
+    /// </summary>
+    /// <returns>The calculated vectorization trend.</returns>
 
     public double CalculateVectorizationTrend()
     {
@@ -409,10 +456,18 @@ internal sealed class StrategyMetrics
             ? _vectorizationHistory.Average()
             : 0.0;
     }
+    /// <summary>
+    /// Calculates the efficiency trend.
+    /// </summary>
+    /// <returns>The calculated efficiency trend.</returns>
 
     public double CalculateEfficiencyTrend()
         // Simplified efficiency calculation
         => CalculateThroughputTrend() * CalculateVectorizationTrend();
+    /// <summary>
+    /// Calculates the consistency score.
+    /// </summary>
+    /// <returns>The calculated consistency score.</returns>
 
     public double CalculateConsistencyScore()
     {
@@ -436,8 +491,20 @@ internal sealed class StrategyMetrics
 /// </summary>
 public sealed class PerformanceReport
 {
+    /// <summary>
+    /// Gets or sets the generated at.
+    /// </summary>
+    /// <value>The generated at.</value>
     public DateTimeOffset GeneratedAt { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy performance.
+    /// </summary>
+    /// <value>The strategy performance.</value>
     public Dictionary<SimdExecutionStrategy, StrategyPerformance> StrategyPerformance { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the overall statistics.
+    /// </summary>
+    /// <value>The overall statistics.</value>
     public OverallStatistics OverallStatistics { get; set; } = new();
 }
 
@@ -446,13 +513,45 @@ public sealed class PerformanceReport
 /// </summary>
 public sealed class StrategyPerformance
 {
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public SimdExecutionStrategy Strategy { get; init; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the total elements.
+    /// </summary>
+    /// <value>The total elements.</value>
     public long TotalElements { get; init; }
+    /// <summary>
+    /// Gets or sets the average duration.
+    /// </summary>
+    /// <value>The average duration.</value>
     public TimeSpan AverageDuration { get; init; }
+    /// <summary>
+    /// Gets or sets the average throughput.
+    /// </summary>
+    /// <value>The average throughput.</value>
     public double AverageThroughput { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization ratio.
+    /// </summary>
+    /// <value>The vectorization ratio.</value>
     public double VectorizationRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the peak throughput.
+    /// </summary>
+    /// <value>The peak throughput.</value>
     public double PeakThroughput { get; init; }
+    /// <summary>
+    /// Gets or sets the efficiency score.
+    /// </summary>
+    /// <value>The efficiency score.</value>
     public double EfficiencyScore { get; init; }
 }
 
@@ -461,11 +560,35 @@ public sealed class StrategyPerformance
 /// </summary>
 public sealed class OverallStatistics
 {
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the total elements.
+    /// </summary>
+    /// <value>The total elements.</value>
     public long TotalElements { get; init; }
+    /// <summary>
+    /// Gets or sets the average vectorization ratio.
+    /// </summary>
+    /// <value>The average vectorization ratio.</value>
     public double AverageVectorizationRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the best strategy.
+    /// </summary>
+    /// <value>The best strategy.</value>
     public SimdExecutionStrategy BestStrategy { get; init; }
+    /// <summary>
+    /// Gets or sets the worst strategy.
+    /// </summary>
+    /// <value>The worst strategy.</value>
     public SimdExecutionStrategy WorstStrategy { get; init; }
+    /// <summary>
+    /// Gets or sets the performance spread.
+    /// </summary>
+    /// <value>The performance spread.</value>
     public double PerformanceSpread { get; init; }
 }
 
@@ -474,13 +597,45 @@ public sealed class OverallStatistics
 /// </summary>
 public sealed class StrategyComparison
 {
+    /// <summary>
+    /// Gets or sets the strategy1.
+    /// </summary>
+    /// <value>The strategy1.</value>
     public SimdExecutionStrategy Strategy1 { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy2.
+    /// </summary>
+    /// <value>The strategy2.</value>
     public SimdExecutionStrategy Strategy2 { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; init; }
+    /// <summary>
+    /// Gets or sets the reason.
+    /// </summary>
+    /// <value>The reason.</value>
     public string? Reason { get; init; }
+    /// <summary>
+    /// Gets or sets the throughput ratio.
+    /// </summary>
+    /// <value>The throughput ratio.</value>
     public double ThroughputRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization difference.
+    /// </summary>
+    /// <value>The vectorization difference.</value>
     public double VectorizationDifference { get; init; }
+    /// <summary>
+    /// Gets or sets the performance gain.
+    /// </summary>
+    /// <value>The performance gain.</value>
     public double PerformanceGain { get; init; }
+    /// <summary>
+    /// Gets or sets the recommendation.
+    /// </summary>
+    /// <value>The recommendation.</value>
     public string? Recommendation { get; init; }
 }
 
@@ -489,13 +644,41 @@ public sealed class StrategyComparison
 /// </summary>
 public sealed class SimdPerformanceTrend
 {
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public SimdExecutionStrategy Strategy { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; init; }
+    /// <summary>
+    /// Gets or sets the reason.
+    /// </summary>
+    /// <value>The reason.</value>
     public string? Reason { get; init; }
+    /// <summary>
+    /// Gets or sets the throughput trend.
+    /// </summary>
+    /// <value>The throughput trend.</value>
     public double ThroughputTrend { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization trend.
+    /// </summary>
+    /// <value>The vectorization trend.</value>
     public double VectorizationTrend { get; init; }
+    /// <summary>
+    /// Gets or sets the efficiency trend.
+    /// </summary>
+    /// <value>The efficiency trend.</value>
     public double EfficiencyTrend { get; init; }
-    public List<string> Recommendations { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 }
 
 /// <summary>
@@ -503,10 +686,26 @@ public sealed class SimdPerformanceTrend
 /// </summary>
 public sealed class StrategyRecommendation
 {
+    /// <summary>
+    /// Gets or sets the recommended strategy.
+    /// </summary>
+    /// <value>The recommended strategy.</value>
     public SimdExecutionStrategy RecommendedStrategy { get; init; }
+    /// <summary>
+    /// Gets or sets the confidence.
+    /// </summary>
+    /// <value>The confidence.</value>
     public double Confidence { get; init; }
+    /// <summary>
+    /// Gets or sets the reason.
+    /// </summary>
+    /// <value>The reason.</value>
     public string? Reason { get; init; }
-    public List<SimdExecutionStrategy> AlternativeStrategies { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the alternative strategies.
+    /// </summary>
+    /// <value>The alternative strategies.</value>
+    public IReadOnlyList<SimdExecutionStrategy> AlternativeStrategies { get; init; } = [];
 }
 
 

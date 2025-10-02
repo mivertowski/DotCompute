@@ -352,6 +352,9 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
             throw new ObjectDisposedException(nameof(MemoryMappedSpan<T>));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -413,6 +416,9 @@ public readonly struct PinnedMemoryHandle<T> : IDisposable where T : unmanaged
     /// Gets the pinned pointer as IntPtr.
     /// </summary>
     public unsafe IntPtr IntPtr => new(_handle.Pointer);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _handle.Dispose();
 }

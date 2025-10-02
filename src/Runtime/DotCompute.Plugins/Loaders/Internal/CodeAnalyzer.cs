@@ -12,6 +12,12 @@ namespace DotCompute.Plugins.Loaders.Internal;
 internal class CodeAnalyzer(ILogger logger)
 {
     private readonly ILogger _logger = logger;
+    /// <summary>
+    /// Gets analyze assembly asynchronously.
+    /// </summary>
+    /// <param name="assemblyPath">The assembly path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<CodeAnalysisResult> AnalyzeAssemblyAsync(string assemblyPath, CancellationToken cancellationToken)
     {

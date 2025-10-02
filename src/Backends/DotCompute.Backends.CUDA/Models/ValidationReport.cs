@@ -30,7 +30,7 @@ namespace DotCompute.Backends.CUDA.Models
         /// <summary>
         /// Gets or sets the list of validation results.
         /// </summary>
-        public List<UnifiedValidationResult> Results { get; set; } = [];
+        public IList<UnifiedValidationResult> Results { get; } = [];
 
         /// <summary>
         /// Gets or sets the total number of tests.

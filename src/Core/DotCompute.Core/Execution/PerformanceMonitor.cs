@@ -199,6 +199,9 @@ namespace DotCompute.Core.Execution
 
             _logger.LogInfoMessage("Performance monitor reset");
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -349,10 +352,20 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public class PerformanceAnalyzer
     {
+        /// <summary>
+        /// Initializes a new instance of the PerformanceAnalyzer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
         public PerformanceAnalyzer(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+        /// <summary>
+        /// Gets analyze performance.
+        /// </summary>
+        /// <param name="executions">The executions.</param>
+        /// <param name="deviceProfiles">The device profiles.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static ParallelExecutionAnalysis AnalyzePerformance(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
         {
@@ -395,6 +408,11 @@ namespace DotCompute.Core.Execution
 
             return analysis;
         }
+        /// <summary>
+        /// Gets analyze trends.
+        /// </summary>
+        /// <param name="executions">The executions.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static PerformanceTrends AnalyzeTrends(ExecutionRecord[] executions)
         {
@@ -474,7 +492,7 @@ namespace DotCompute.Core.Execution
             return bottlenecks.OrderByDescending(b => b.Severity);
         }
 
-        private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, List<Analysis.BottleneckAnalysis> bottlenecks)
+        private static IEnumerable<string> GenerateOptimizationRecommendations(ExecutionRecord[] executions, IReadOnlyList<Analysis.BottleneckAnalysis> bottlenecks)
         {
             var recommendations = new List<string>();
 
@@ -581,10 +599,23 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public class AdaptiveOptimizer
     {
+        /// <summary>
+        /// Initializes a new instance of the AdaptiveOptimizer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
         public AdaptiveOptimizer(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+        /// <summary>
+        /// Gets recommend strategy.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="inputSizes">The input sizes.</param>
+        /// <param name="availableAcceleratorTypes">The available accelerator types.</param>
+        /// <param name="recentExecutions">The recent executions.</param>
+        /// <param name="kernelProfile">The kernel profile.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static ExecutionStrategyRecommendation RecommendStrategy(
             string kernelName,
@@ -723,7 +754,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Estimates execution time for pipeline execution.
         /// </summary>
-        public static double EstimatePipelineExecutionTime(List<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
+        public static double EstimatePipelineExecutionTime(IReadOnlyList<PipelineStageDefinition> pipelineStages, MicrobatchConfiguration microbatchConfig)
         {
             // Estimate based on stage count and microbatch configuration
             const double baseStageTimeMs = 8.0;
@@ -747,26 +778,86 @@ namespace DotCompute.Core.Execution
             return baseProcessingTimeMs + microbatchMultiplier;
         }
     }
+    /// <summary>
+    /// A class that represents execution record.
+    /// </summary>
 
     // Supporting data structures
     public class ExecutionRecord
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public required Guid Id { get; set; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public required DateTimeOffset Timestamp { get; set; }
+        /// <summary>
+        /// Gets or sets the strategy.
+        /// </summary>
+        /// <value>The strategy.</value>
         public required ExecutionStrategyType Strategy { get; set; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public required bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time ms.
+        /// </summary>
+        /// <value>The total execution time ms.</value>
         public required double TotalExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput g f l o p s.
+        /// </summary>
+        /// <value>The throughput g f l o p s.</value>
         public required double ThroughputGFLOPS { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth g bps.
+        /// </summary>
+        /// <value>The memory bandwidth g bps.</value>
         public required double MemoryBandwidthGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the efficiency percentage.
+        /// </summary>
+        /// <value>The efficiency percentage.</value>
         public required double EfficiencyPercentage { get; set; }
+        /// <summary>
+        /// Gets or sets the device results.
+        /// </summary>
+        /// <value>The device results.</value>
         public required DeviceExecutionResult[] DeviceResults { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
+    /// <summary>
+    /// A class that represents kernel performance profile.
+    /// </summary>
 
     public class KernelPerformanceProfile
     {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public required string KernelName { get; set; }
+        /// <summary>
+        /// Gets or sets the device executions.
+        /// </summary>
+        /// <value>The device executions.</value>
         public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; set; } = [];
+        /// <summary>
+        /// Performs add execution.
+        /// </summary>
+        /// <param name="deviceId">The device identifier.</param>
+        /// <param name="executionTimeMs">The execution time ms.</param>
+        /// <param name="throughputGFLOPS">The throughput G F L O P S.</param>
 
         public void AddExecution(string deviceId, double executionTimeMs, double throughputGFLOPS)
         {
@@ -790,24 +881,74 @@ namespace DotCompute.Core.Execution
             }
         }
     }
+    /// <summary>
+    /// A class that represents kernel execution.
+    /// </summary>
 
     public class KernelExecution
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time ms.
+        /// </summary>
+        /// <value>The execution time ms.</value>
         public double ExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput g f l o p s.
+        /// </summary>
+        /// <value>The throughput g f l o p s.</value>
         public double ThroughputGFLOPS { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth g bps.
+        /// </summary>
+        /// <value>The memory bandwidth g bps.</value>
         public double MemoryBandwidthGBps { get; set; }
     }
+    /// <summary>
+    /// A class that represents device performance profile.
+    /// </summary>
 
     public class DevicePerformanceProfile
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
-        public List<DeviceExecutionResult> Executions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the executions.
+        /// </summary>
+        /// <value>The executions.</value>
+        public IList<DeviceExecutionResult> Executions { get; } = [];
+        /// <summary>
+        /// Gets or sets the average utilization percentage.
+        /// </summary>
+        /// <value>The average utilization percentage.</value>
 
         public double AverageUtilizationPercentage { get; private set; }
+        /// <summary>
+        /// Gets or sets the peak utilization percentage.
+        /// </summary>
+        /// <value>The peak utilization percentage.</value>
         public double PeakUtilizationPercentage { get; private set; }
+        /// <summary>
+        /// Gets or sets the idle time percentage.
+        /// </summary>
+        /// <value>The idle time percentage.</value>
         public double IdleTimePercentage { get; private set; }
+        /// <summary>
+        /// Gets or sets the primary bottleneck.
+        /// </summary>
+        /// <value>The primary bottleneck.</value>
         public Analysis.BottleneckAnalysis? PrimaryBottleneck { get; private set; }
+        /// <summary>
+        /// Performs add execution.
+        /// </summary>
+        /// <param name="result">The result.</param>
 
         public void AddExecution(DeviceExecutionResult result)
         {
@@ -822,6 +963,10 @@ namespace DotCompute.Core.Execution
                 Executions.RemoveAt(0);
             }
         }
+        /// <summary>
+        /// Gets the optimization recommendations.
+        /// </summary>
+        /// <returns>The optimization recommendations.</returns>
 
         public List<string> GetOptimizationRecommendations()
         {
@@ -859,20 +1004,53 @@ namespace DotCompute.Core.Execution
             IdleTimePercentage = 100 - AverageUtilizationPercentage;
         }
     }
+    /// <summary>
+    /// A class that represents performance trends.
+    /// </summary>
 
     public class PerformanceTrends
     {
+        /// <summary>
+        /// Gets or sets the time range.
+        /// </summary>
+        /// <value>The time range.</value>
         public TimeRange TimeRange { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the throughput trend.
+        /// </summary>
+        /// <value>The throughput trend.</value>
         public TrendDirection ThroughputTrend { get; set; }
+        /// <summary>
+        /// Gets or sets the efficiency trend.
+        /// </summary>
+        /// <value>The efficiency trend.</value>
         public TrendDirection EfficiencyTrend { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time trend.
+        /// </summary>
+        /// <value>The execution time trend.</value>
         public TrendDirection ExecutionTimeTrend { get; set; }
     }
+    /// <summary>
+    /// A class that represents time range.
+    /// </summary>
 
     public class TimeRange
     {
+        /// <summary>
+        /// Gets or sets the start.
+        /// </summary>
+        /// <value>The start.</value>
         public DateTimeOffset Start { get; set; }
+        /// <summary>
+        /// Gets or sets the end.
+        /// </summary>
+        /// <value>The end.</value>
         public DateTimeOffset End { get; set; }
     }
+    /// <summary>
+    /// An trend direction enumeration.
+    /// </summary>
 
     public enum TrendDirection
     {
@@ -880,22 +1058,68 @@ namespace DotCompute.Core.Execution
         Stable,
         Degrading
     }
+    /// <summary>
+    /// A class that represents device utilization analysis.
+    /// </summary>
 
     public class DeviceUtilizationAnalysis
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; set; }
+        /// <summary>
+        /// Gets or sets the average utilization percentage.
+        /// </summary>
+        /// <value>The average utilization percentage.</value>
         public double AverageUtilizationPercentage { get; set; }
+        /// <summary>
+        /// Gets or sets the peak utilization percentage.
+        /// </summary>
+        /// <value>The peak utilization percentage.</value>
         public double PeakUtilizationPercentage { get; set; }
+        /// <summary>
+        /// Gets or sets the idle time percentage.
+        /// </summary>
+        /// <value>The idle time percentage.</value>
         public double IdleTimePercentage { get; set; }
+        /// <summary>
+        /// Gets or sets the bottleneck severity.
+        /// </summary>
+        /// <value>The bottleneck severity.</value>
         public double BottleneckSeverity { get; set; }
-        public List<string> RecommendedOptimizations { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the recommended optimizations.
+        /// </summary>
+        /// <value>The recommended optimizations.</value>
+        public IList<string> RecommendedOptimizations { get; } = [];
     }
+    /// <summary>
+    /// A class that represents kernel characteristics.
+    /// </summary>
 
     public class KernelCharacteristics
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether memory bound.
+        /// </summary>
+        /// <value>The is memory bound.</value>
         public bool IsMemoryBound { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether compute bound.
+        /// </summary>
+        /// <value>The is compute bound.</value>
         public bool IsComputeBound { get; set; }
+        /// <summary>
+        /// Gets or sets the average throughput.
+        /// </summary>
+        /// <value>The average throughput.</value>
         public double AverageThroughput { get; set; }
+        /// <summary>
+        /// Gets or sets the average memory bandwidth.
+        /// </summary>
+        /// <value>The average memory bandwidth.</value>
         public double AverageMemoryBandwidth { get; set; }
     }
 }

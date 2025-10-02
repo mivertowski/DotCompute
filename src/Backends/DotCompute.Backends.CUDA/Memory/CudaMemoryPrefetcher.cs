@@ -30,6 +30,12 @@ namespace DotCompute.Backends.CUDA.Memory
         private long _prefetchCount;
         private long _prefetchHits;
         private long _prefetchMisses;
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryPrefetcher class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryPrefetcher(CudaContext context, CudaDevice device, ILogger logger)
         {
@@ -386,6 +392,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 ActivePrefetches = _activePrefetches.Count
             };
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -410,13 +419,36 @@ namespace DotCompute.Backends.CUDA.Memory
 
             _logger.LogInfoMessage($"Disposed memory prefetcher. Total prefetched: {_totalPrefetchedBytes} bytes in {_prefetchCount} operations");
         }
+        /// <summary>
+        /// A class that represents prefetch info.
+        /// </summary>
 
         private sealed class PrefetchInfo(IntPtr pointer, long size, int deviceId, PrefetchTarget target)
         {
+            /// <summary>
+            /// Gets or sets the pointer.
+            /// </summary>
+            /// <value>The pointer.</value>
             public IntPtr Pointer { get; } = pointer;
+            /// <summary>
+            /// Gets or sets the size.
+            /// </summary>
+            /// <value>The size.</value>
             public long Size { get; } = size;
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
             public int DeviceId { get; } = deviceId;
+            /// <summary>
+            /// Gets or sets the target.
+            /// </summary>
+            /// <value>The target.</value>
             public PrefetchTarget Target { get; } = target;
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTime Timestamp { get; } = DateTime.UtcNow;
         }
     }
@@ -443,9 +475,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PrefetchRequest
     {
+        /// <summary>
+        /// Gets or sets the pointer.
+        /// </summary>
+        /// <value>The pointer.</value>
         public IntPtr Pointer { get; init; }
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
         public long Size { get; init; }
+        /// <summary>
+        /// Gets or sets the target.
+        /// </summary>
+        /// <value>The target.</value>
         public PrefetchTarget Target { get; init; }
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public int DeviceId { get; init; } = -1;
     }
 
@@ -454,11 +502,35 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed class PrefetchStatistics
     {
+        /// <summary>
+        /// Gets or sets the total prefetched bytes.
+        /// </summary>
+        /// <value>The total prefetched bytes.</value>
         public long TotalPrefetchedBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch count.
+        /// </summary>
+        /// <value>The prefetch count.</value>
         public long PrefetchCount { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch hits.
+        /// </summary>
+        /// <value>The prefetch hits.</value>
         public long PrefetchHits { get; init; }
+        /// <summary>
+        /// Gets or sets the prefetch misses.
+        /// </summary>
+        /// <value>The prefetch misses.</value>
         public long PrefetchMisses { get; init; }
+        /// <summary>
+        /// Gets or sets the hit rate.
+        /// </summary>
+        /// <value>The hit rate.</value>
         public double HitRate { get; init; }
+        /// <summary>
+        /// Gets or sets the active prefetches.
+        /// </summary>
+        /// <value>The active prefetches.</value>
         public int ActivePrefetches { get; init; }
     }
 }

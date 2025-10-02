@@ -45,7 +45,7 @@ namespace DotCompute.Backends.CUDA.Graphs.Models
         /// <summary>
         /// Gets the list of optimization opportunities identified.
         /// </summary>
-        public List<string> OptimizationOpportunities { get; } = [];
+        public IList<string> OptimizationOpportunities { get; } = [];
 
         /// <summary>
         /// Gets or sets the number of parallelization opportunities.

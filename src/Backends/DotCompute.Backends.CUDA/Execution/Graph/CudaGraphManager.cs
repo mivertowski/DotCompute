@@ -911,6 +911,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     return existing;
                 });
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -948,8 +951,16 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private readonly string _graphName = graphName;
         private readonly Func<IntPtr, string, CudaGraph> _endCapture = endCapture;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the mode.
+        /// </summary>
+        /// <value>The mode.</value>
 
         public CudaGraphCaptureMode Mode { get; } = mode;
+        /// <summary>
+        /// Gets end capture.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public CudaGraph EndCapture()
         {
@@ -958,6 +969,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _disposed = true;
             return graph;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -974,10 +988,30 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// </summary>
     public class GraphOptimizationOptions
     {
+        /// <summary>
+        /// Gets or sets the enable kernel fusion.
+        /// </summary>
+        /// <value>The enable kernel fusion.</value>
         public bool EnableKernelFusion { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the enable memory optimization.
+        /// </summary>
+        /// <value>The enable memory optimization.</value>
         public bool EnableMemoryOptimization { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the enable parallelization.
+        /// </summary>
+        /// <value>The enable parallelization.</value>
         public bool EnableParallelization { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the max fusion depth.
+        /// </summary>
+        /// <value>The max fusion depth.</value>
         public int MaxFusionDepth { get; set; } = 3;
+        /// <summary>
+        /// Gets or sets the max memory budget.
+        /// </summary>
+        /// <value>The max memory budget.</value>
         public long MaxMemoryBudget { get; set; } = 1024L * 1024 * 1024; // 1GB
     }
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
+using System;
 
 namespace DotCompute.Plugins.Security;
 
@@ -209,8 +210,8 @@ public static class SecurityExtensions
             var fileName = Path.GetFileName(fullPath);
 
             // Check for directory traversal
-            if (path.Contains("..") || path.Contains("~") ||
-                fileName.StartsWith(".") || fileName.Contains(":"))
+            if (path.Contains("..", StringComparison.OrdinalIgnoreCase) || path.Contains("~", StringComparison.OrdinalIgnoreCase) ||
+                fileName.StartsWith(".") || fileName.Contains(":", StringComparison.CurrentCulture))
             {
                 return false;
             }

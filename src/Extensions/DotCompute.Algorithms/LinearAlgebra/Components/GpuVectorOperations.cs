@@ -295,6 +295,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
             return maxVal;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

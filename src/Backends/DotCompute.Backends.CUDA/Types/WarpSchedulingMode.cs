@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An warp scheduling mode enumeration.
+    /// </summary>
+    /// <summary>
     /// Warp scheduling mode for CUDA execution.
     /// </summary>
     public enum WarpSchedulingMode

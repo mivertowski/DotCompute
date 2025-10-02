@@ -64,18 +64,31 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
             return null;
         }
 
-        return new KernelMethodInfo
+        var methodInfo = new KernelMethodInfo
         {
             Name = methodSymbol.Name,
             ContainingType = methodSymbol.ContainingType.ToDisplayString(),
             Namespace = methodSymbol.ContainingNamespace.ToDisplayString(),
-            Parameters = GetParameterInfo(methodSymbol),
             ReturnType = methodSymbol.ReturnType.ToDisplayString(),
-            Backends = KernelAttributeParser.GetBackendsFromAttribute(kernelAttribute),
             VectorSize = KernelAttributeParser.GetVectorSizeFromAttribute(kernelAttribute),
             IsParallel = KernelAttributeParser.GetIsParallelFromAttribute(kernelAttribute),
             MethodDeclaration = methodDeclaration
         };
+
+        // Populate read-only collections
+        var parameters = GetParameterInfo(methodSymbol);
+        foreach (var param in parameters)
+        {
+            methodInfo.Parameters.Add(param);
+        }
+
+        var backends = KernelAttributeParser.GetBackendsFromAttribute(kernelAttribute);
+        foreach (var backend in backends)
+        {
+            methodInfo.Backends.Add(backend);
+        }
+
+        return methodInfo;
     }
 
     public KernelClassInfo? AnalyzeClass(GeneratorSyntaxContext context)
@@ -99,12 +112,19 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
             return null;
         }
 
-        return new KernelClassInfo
+        var classInfo = new KernelClassInfo
         {
             Name = classSymbol.Name,
-            Namespace = classSymbol.ContainingNamespace.ToDisplayString(),
-            KernelMethodNames = [.. kernelMethods.Select(m => m.Name)]
+            Namespace = classSymbol.ContainingNamespace.ToDisplayString()
         };
+
+        // Populate read-only collection
+        foreach (var method in kernelMethods)
+        {
+            classInfo.KernelMethodNames.Add(method.Name);
+        }
+
+        return classInfo;
     }
 
     private static List<ParameterInfo> GetParameterInfo(IMethodSymbol method)

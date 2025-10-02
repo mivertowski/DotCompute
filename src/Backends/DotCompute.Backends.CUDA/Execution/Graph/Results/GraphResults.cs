@@ -30,7 +30,7 @@ public sealed class GraphExecutionResult
     /// <summary>
     /// Gets or sets additional execution metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 
     /// <summary>
     /// Gets a value indicating whether the execution was successful.

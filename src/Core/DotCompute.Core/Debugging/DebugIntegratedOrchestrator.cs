@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
+using System;
 
 namespace DotCompute.Core.Debugging;
 
@@ -26,6 +27,13 @@ public class DebugIntegratedOrchestrator(
     private readonly ILogger<DebugIntegratedOrchestrator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly DebugExecutionOptions _options = options ?? new DebugExecutionOptions();
     private bool _disposed;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
@@ -40,6 +48,14 @@ public class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
@@ -56,12 +72,25 @@ public class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<T>(kernelName, allArgs);
         return result!;
     }
+    /// <summary>
+    /// Gets the optimal accelerator async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The optimal accelerator async.</returns>
 
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.GetOptimalAcceleratorAsync(kernelName);
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="preferredBackend">The preferred backend.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
     {
@@ -75,6 +104,14 @@ public class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
     {
@@ -88,12 +125,23 @@ public class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets precompile kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await _baseOrchestrator.PrecompileKernelAsync(kernelName, accelerator);
     }
+    /// <summary>
+    /// Gets the supported accelerators async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The supported accelerators async.</returns>
 
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
@@ -245,7 +293,7 @@ public class DebugIntegratedOrchestrator(
             return new ValidationResult
             {
                 Issues = issues,
-                HasCriticalIssues = issues.Any(i => i.Contains("No backends") || i.Contains("Null arguments"))
+                HasCriticalIssues = issues.Any(i => i.Contains("No backends", StringComparison.OrdinalIgnoreCase) || i.Contains("Null arguments", StringComparison.OrdinalIgnoreCase))
             };
         }
         catch (Exception ex)
@@ -451,6 +499,9 @@ public class DebugIntegratedOrchestrator(
         var result = await ExecuteWithDebugHooksAsync<object>(kernelName, args);
         return result;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -470,7 +521,15 @@ public class DebugIntegratedOrchestrator(
 
     private class ValidationResult
     {
-        public List<string> Issues { get; set; } = [];
+        /// <summary>
+        /// Gets or sets a value indicating whether sues.
+        /// </summary>
+        /// <value>The issues.</value>
+        public IList<string> Issues { get; } = [];
+        /// <summary>
+        /// Gets or sets a value indicating whether critical issues.
+        /// </summary>
+        /// <value>The has critical issues.</value>
         public bool HasCriticalIssues { get; set; }
     }
 }

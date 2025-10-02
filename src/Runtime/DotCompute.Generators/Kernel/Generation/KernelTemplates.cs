@@ -347,7 +347,7 @@ __kernel void {kernelName}_opencl_kernel(
     /// </summary>
     /// <param name="parameters">The parameters to validate.</param>
     /// <returns>The formatted validation template.</returns>
-    public static string GetParameterValidationTemplate(List<ParameterInfo> parameters)
+    public static string GetParameterValidationTemplate(IReadOnlyList<ParameterInfo> parameters)
     {
         var validation = new StringBuilder();
         _ = validation.AppendLine("            // Validate parameters");
@@ -408,7 +408,7 @@ __kernel void {kernelName}_opencl_kernel(
     /// </summary>
     /// <param name="kernelMethods">The kernel methods to register.</param>
     /// <returns>The formatted service registration template.</returns>
-    public static string GetServiceRegistrationTemplate(List<KernelMethodInfo> kernelMethods)
+    public static string GetServiceRegistrationTemplate(IReadOnlyList<KernelMethodInfo> kernelMethods)
     {
         var registration = new StringBuilder();
         _ = registration.AppendLine("        public static IServiceCollection AddGeneratedKernels(this IServiceCollection services)");

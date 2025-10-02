@@ -293,7 +293,7 @@ public static class NumaDiagnostics
         return sb.ToString();
     }
 
-    private static void AnalyzeTopology(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
+    private static void AnalyzeTopology(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
     {
         // Check for balanced topology
         if (topology.IsNumaSystem)
@@ -325,7 +325,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzePlatformCapabilities(NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
+    private static void AnalyzePlatformCapabilities(NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
     {
         if (!capabilities.HasNativeNumaSupport)
         {
@@ -359,7 +359,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzePerformanceCharacteristics(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations)
+    private static void AnalyzePerformanceCharacteristics(NumaTopology topology, List<DiagnosticIssue> issues, IReadOnlyList<string> recommendations)
     {
         if (topology.IsNumaSystem && topology.DistanceMatrix != null)
         {
@@ -396,7 +396,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzeConfiguration(NumaTopology topology, NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
+    private static void AnalyzeConfiguration(NumaTopology topology, NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
     {
         // Check for optimal configuration
         if (topology.IsNumaSystem && capabilities.IsNumaCapable)
@@ -416,7 +416,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static SystemHealth CalculateOverallHealth(List<DiagnosticIssue> issues)
+    private static SystemHealth CalculateOverallHealth(IReadOnlyList<DiagnosticIssue> issues)
     {
         if (issues.Any(i => i.Severity == IssueSeverity.Critical))
         {
@@ -457,7 +457,7 @@ public static class NumaDiagnostics
         };
     }
 
-    private static void ValidateTopologyConsistency(NumaTopology topology, List<ValidationIssue> issues)
+    private static void ValidateTopologyConsistency(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
     {
         // Validate node count consistency
         if (topology.Nodes.Count != topology.NodeCount)
@@ -485,7 +485,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidatePlatformSupport(NumaPlatformCapabilities capabilities, List<ValidationIssue> issues)
+    private static void ValidatePlatformSupport(NumaPlatformCapabilities capabilities, IReadOnlyList<ValidationIssue> issues)
     {
         if (capabilities.MaxNodes <= 0)
         {
@@ -499,7 +499,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidateMemoryConfiguration(NumaTopology topology, List<ValidationIssue> issues)
+    private static void ValidateMemoryConfiguration(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
     {
         foreach (var node in topology.Nodes)
         {
@@ -516,7 +516,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidateCpuConfiguration(NumaTopology topology, List<ValidationIssue> issues)
+    private static void ValidateCpuConfiguration(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
     {
         foreach (var node in topology.Nodes)
         {
@@ -653,76 +653,266 @@ public static class NumaDiagnostics
         };
     }
 }
+/// <summary>
+/// A class that represents numa diagnostic report.
+/// </summary>
 
 // Supporting data structures for diagnostics
 public sealed record NumaDiagnosticReport
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTime Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the topology.
+    /// </summary>
+    /// <value>The topology.</value>
     public required NumaTopology? Topology { get; init; }
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
     public required NumaPlatformCapabilities? Capabilities { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
     public required IReadOnlyList<DiagnosticIssue> Issues { get; init; }
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
     public required IReadOnlyList<string> Recommendations { get; init; }
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
     public required IReadOnlyList<string> Warnings { get; init; }
+    /// <summary>
+    /// Gets or sets the overall health.
+    /// </summary>
+    /// <value>The overall health.</value>
     public required SystemHealth OverallHealth { get; init; }
+    /// <summary>
+    /// Gets or sets the analysis time.
+    /// </summary>
+    /// <value>The analysis time.</value>
     public required TimeSpan AnalysisTime { get; init; }
+    /// <summary>
+    /// Gets or sets the system info.
+    /// </summary>
+    /// <value>The system info.</value>
     public required SystemInformation? SystemInfo { get; init; }
 }
+/// <summary>
+/// A class that represents diagnostic issue.
+/// </summary>
 
 public sealed record DiagnosticIssue
 {
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public required IssueSeverity Severity { get; init; }
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    /// <value>The category.</value>
     public required IssueCategory Category { get; init; }
+    /// <summary>
+    /// Gets or sets the title.
+    /// </summary>
+    /// <value>The title.</value>
     public required string Title { get; init; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; init; }
+    /// <summary>
+    /// Gets or sets the impact.
+    /// </summary>
+    /// <value>The impact.</value>
     public required string Impact { get; init; }
+    /// <summary>
+    /// Gets or sets the recommendation.
+    /// </summary>
+    /// <value>The recommendation.</value>
     public required string Recommendation { get; init; }
 }
+/// <summary>
+/// A class that represents validation result.
+/// </summary>
 
 public sealed record ValidationResult
 {
+    /// <summary>
+    /// Gets or sets the overall result.
+    /// </summary>
+    /// <value>The overall result.</value>
     public required ValidationSeverity OverallResult { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
     public required IReadOnlyList<ValidationIssue> Issues { get; init; }
+    /// <summary>
+    /// Gets or sets the tested components.
+    /// </summary>
+    /// <value>The tested components.</value>
     public required IReadOnlyList<string> TestedComponents { get; init; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public required DateTime ValidationTime { get; init; }
 }
+/// <summary>
+/// A class that represents validation issue.
+/// </summary>
 
 public sealed record ValidationIssue
 {
+    /// <summary>
+    /// Gets or sets the component.
+    /// </summary>
+    /// <value>The component.</value>
     public required string Component { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public required ValidationSeverity Severity { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public required string Message { get; init; }
+    /// <summary>
+    /// Gets or sets the details.
+    /// </summary>
+    /// <value>The details.</value>
     public required string Details { get; init; }
 }
+/// <summary>
+/// A class that represents benchmark result.
+/// </summary>
 
 public sealed record BenchmarkResult
 {
+    /// <summary>
+    /// Gets or sets the overall score.
+    /// </summary>
+    /// <value>The overall score.</value>
     public required double OverallScore { get; init; }
+    /// <summary>
+    /// Gets or sets the metrics.
+    /// </summary>
+    /// <value>The metrics.</value>
     public required Dictionary<string, BenchmarkMetric> Metrics { get; init; }
+    /// <summary>
+    /// Gets or sets the topology.
+    /// </summary>
+    /// <value>The topology.</value>
     public required NumaTopology Topology { get; init; }
+    /// <summary>
+    /// Gets or sets the benchmark time.
+    /// </summary>
+    /// <value>The benchmark time.</value>
     public required TimeSpan BenchmarkTime { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
 }
+/// <summary>
+/// A class that represents benchmark metric.
+/// </summary>
 
 public sealed record BenchmarkMetric
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the score.
+    /// </summary>
+    /// <value>The score.</value>
     public required double Score { get; init; }
+    /// <summary>
+    /// Gets or sets the latency microseconds.
+    /// </summary>
+    /// <value>The latency microseconds.</value>
     public required double LatencyMicroseconds { get; init; }
+    /// <summary>
+    /// Gets or sets the throughput ops per second.
+    /// </summary>
+    /// <value>The throughput ops per second.</value>
     public required double ThroughputOpsPerSecond { get; init; }
+    /// <summary>
+    /// Gets or sets the details.
+    /// </summary>
+    /// <value>The details.</value>
     public required string Details { get; init; }
 }
+/// <summary>
+/// A class that represents system information.
+/// </summary>
 
 public sealed record SystemInformation
 {
+    /// <summary>
+    /// Gets or sets the platform.
+    /// </summary>
+    /// <value>The platform.</value>
     public required string Platform { get; init; }
+    /// <summary>
+    /// Gets or sets the os version.
+    /// </summary>
+    /// <value>The os version.</value>
     public required string OsVersion { get; init; }
+    /// <summary>
+    /// Gets or sets the total memory g b.
+    /// </summary>
+    /// <value>The total memory g b.</value>
     public required double TotalMemoryGB { get; init; }
+    /// <summary>
+    /// Gets or sets the processor count.
+    /// </summary>
+    /// <value>The processor count.</value>
     public required int ProcessorCount { get; init; }
+    /// <summary>
+    /// Gets or sets the clr version.
+    /// </summary>
+    /// <value>The clr version.</value>
     public required string ClrVersion { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether 64 bit.
+    /// </summary>
+    /// <value>The is64 bit.</value>
     public required bool Is64Bit { get; init; }
 }
+/// <summary>
+/// An issue severity enumeration.
+/// </summary>
 
 public enum IssueSeverity { Info, Warning, Error, Critical }
+/// <summary>
+/// An issue category enumeration.
+/// </summary>
 public enum IssueCategory { System, Topology, Platform, Performance, Configuration, Memory, CPU }
+/// <summary>
+/// An system health enumeration.
+/// </summary>
 public enum SystemHealth { Critical, Poor, Fair, Good, Excellent }

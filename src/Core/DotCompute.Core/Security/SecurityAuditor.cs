@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Security;
 
@@ -31,6 +32,11 @@ public sealed class SecurityAuditor : IDisposable
     {
         "DES", "3DES", "RC4", "MD5", "SHA-1", "RSA-1024", "AES-ECB"
     };
+    /// <summary>
+    /// Initializes a new instance of the SecurityAuditor class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public SecurityAuditor(ILogger logger, CryptographicConfiguration configuration)
     {
@@ -205,8 +211,8 @@ public sealed class SecurityAuditor : IDisposable
         // Validate specific algorithm requirements
         result.IsApproved = algorithm switch
         {
-            var alg when alg.StartsWith("AES") => ValidateAESConfiguration(alg, keySize, result),
-            var alg when alg.StartsWith("RSA") => ValidateRSAConfiguration(keySize, result),
+            var alg when alg.StartsWith("AES", StringComparison.OrdinalIgnoreCase) => ValidateAESConfiguration(alg, keySize, result),
+            var alg when alg.StartsWith("RSA", StringComparison.OrdinalIgnoreCase) => ValidateRSAConfiguration(keySize, result),
             var alg when alg.StartsWith("ECDSA") => ValidateECDSAConfiguration(keySize, result),
             var alg when alg.Contains("SHA") => ValidateSHAConfiguration(alg, result),
             var alg when alg.Contains("ChaCha20") => ValidateChaCha20Configuration(keySize, result),
@@ -317,20 +323,20 @@ public sealed class SecurityAuditor : IDisposable
         switch (context.ToLowerInvariant())
         {
             case "storage":
-                if (!algorithm.Contains("GCM") && !algorithm.Contains("Poly1305"))
+                if (!algorithm.Contains("GCM", StringComparison.CurrentCulture) && !algorithm.Contains("Poly1305", StringComparison.CurrentCulture))
                 {
                     result.Recommendations.Add("Consider using authenticated encryption for data storage");
                 }
                 break;
             case "transmission":
-                if (!algorithm.Contains("GCM") && !algorithm.Contains("Poly1305"))
+                if (!algorithm.Contains("GCM", StringComparison.CurrentCulture) && !algorithm.Contains("Poly1305", StringComparison.CurrentCulture))
                 {
                     result.Issues.Add("Non-authenticated encryption may be vulnerable to tampering during transmission");
                     result.Recommendations.Add("Use authenticated encryption modes like AES-GCM or ChaCha20-Poly1305");
                 }
                 break;
             case "signing":
-                if (!algorithm.StartsWith("RSA") && !algorithm.StartsWith("ECDSA"))
+                if (!algorithm.StartsWith("RSA", StringComparison.CurrentCulture) && !algorithm.StartsWith("ECDSA", StringComparison.CurrentCulture))
                 {
                     result.Issues.Add("Algorithm not suitable for digital signatures");
                     result.Recommendations.Add("Use RSA or ECDSA for digital signatures");
@@ -363,6 +369,9 @@ public sealed class SecurityAuditor : IDisposable
 
         return constantTimeAlgorithms.Contains(algorithm);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

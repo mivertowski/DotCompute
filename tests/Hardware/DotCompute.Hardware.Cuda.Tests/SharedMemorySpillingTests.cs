@@ -20,6 +20,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly ILogger<SharedMemorySpillingTests> _logger;
         private readonly ILoggerFactory _loggerFactory;
+        /// <summary>
+        /// Initializes a new instance of the SharedMemorySpillingTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
 
         public SharedMemorySpillingTests(ITestOutputHelper output) : base(output)
@@ -27,6 +31,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = _loggerFactory.CreateLogger<SharedMemorySpillingTests>();
         }
+        /// <summary>
+        /// Gets register_ spilling_ should_ be_ configurable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Register_Spilling_Should_Be_Configurable()
@@ -76,6 +84,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             await kernelNoSpilling.DisposeAsync();
             await kernelWithSpilling.DisposeAsync();
         }
+        /// <summary>
+        /// Gets register_ spilling_ should_ improve_ occupancy_ for_ register_ heavy_ kernels.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Register_Spilling_Should_Improve_Occupancy_For_Register_Heavy_Kernels()
@@ -139,6 +151,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             await kernelNoSpilling.DisposeAsync();
             await kernelWithSpilling.DisposeAsync();
         }
+        /// <summary>
+        /// Gets benchmark_ register_ spilling_ performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Benchmark_Register_Spilling_Performance()
@@ -226,6 +242,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             await kernelNoSpilling.DisposeAsync();
             await kernelWithSpilling.DisposeAsync();
         }
+        /// <summary>
+        /// Gets occupancy_ analysis_ with_ and_ without_ spilling.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Occupancy_Analysis_With_And_Without_Spilling()

@@ -313,7 +313,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes performance variations across execution results.
     /// </summary>
-    private PerformanceVariationAnalysis AnalyzePerformanceVariations(List<KernelExecutionResult> results)
+    private PerformanceVariationAnalysis AnalyzePerformanceVariations(IReadOnlyList<KernelExecutionResult> results)
     {
         var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
         var memoryUsages = results.Where(r => r.MemoryUsed > 0).Select(r => r.MemoryUsed).ToArray();
@@ -341,7 +341,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes trace point patterns to identify execution characteristics.
     /// </summary>
-    private TracePointPatternAnalysis AnalyzeTracePointPatterns(List<TracePoint> tracePoints)
+    private TracePointPatternAnalysis AnalyzeTracePointPatterns(IReadOnlyList<TracePoint> tracePoints)
     {
         if (tracePoints.Count == 0)
         {
@@ -374,7 +374,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes memory usage patterns from trace points.
     /// </summary>
-    private MemoryPatternAnalysis AnalyzeMemoryPatterns(List<TracePoint> tracePoints)
+    private MemoryPatternAnalysis AnalyzeMemoryPatterns(IReadOnlyList<TracePoint> tracePoints)
     {
         var memoryReadings = tracePoints.Select(tp => tp.MemoryUsage).ToArray();
 
@@ -403,7 +403,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Detects performance anomalies in trace points.
     /// </summary>
-    private List<PerformanceAnomaly> DetectPerformanceAnomalies(List<TracePoint> tracePoints)
+    private List<PerformanceAnomaly> DetectPerformanceAnomalies(IReadOnlyList<TracePoint> tracePoints)
     {
         var anomalies = new List<PerformanceAnomaly>();
 
@@ -636,7 +636,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Generates determinism recommendations.
     /// </summary>
-    private static List<string> GenerateDeterminismRecommendations(bool isDeterministic, List<string> nonDeterministicComponents)
+    private static List<string> GenerateDeterminismRecommendations(bool isDeterministic, IReadOnlyList<string> nonDeterministicComponents)
     {
         var recommendations = new List<string>();
 
@@ -791,7 +791,7 @@ public sealed class KernelDebugAnalyzer(
         return mean != 0 ? CalculateStandardDeviation(values) / mean : 0;
     }
 
-    private ExecutionPattern DetermineExecutionPattern(List<double> timingIntervals)
+    private ExecutionPattern DetermineExecutionPattern(IReadOnlyList<double> timingIntervals)
     {
         if (timingIntervals.Count < 2)
         {
@@ -803,7 +803,7 @@ public sealed class KernelDebugAnalyzer(
         return coefficient < 0.1 ? ExecutionPattern.Regular : ExecutionPattern.Irregular;
     }
 
-    private static List<string> IdentifyExecutionCharacteristics(List<TracePoint> tracePoints, List<double> timingIntervals)
+    private static List<string> IdentifyExecutionCharacteristics(List<TracePoint> tracePoints, IReadOnlyList<double> timingIntervals)
     {
         var characteristics = new List<string>();
 
@@ -935,6 +935,9 @@ public sealed class KernelDebugAnalyzer(
 
         return metrics;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -945,126 +948,436 @@ public sealed class KernelDebugAnalyzer(
         }
     }
 }
+/// <summary>
+/// A class that represents advanced performance analysis.
+/// </summary>
 
 // Supporting data structures for analytics
 
 public record AdvancedPerformanceAnalysis
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the trend analysis.
+    /// </summary>
+    /// <value>The trend analysis.</value>
     public TrendAnalysis TrendAnalysis { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the regression analysis.
+    /// </summary>
+    /// <value>The regression analysis.</value>
     public RegressionAnalysis RegressionAnalysis { get; init; } = new();
-    public List<OptimizationOpportunity> OptimizationOpportunities { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the optimization opportunities.
+    /// </summary>
+    /// <value>The optimization opportunities.</value>
+    public IReadOnlyList<OptimizationOpportunity> OptimizationOpportunities { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the scaling predictions.
+    /// </summary>
+    /// <value>The scaling predictions.</value>
     public ScalingPredictions ScalingPredictions { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the efficiency scores.
+    /// </summary>
+    /// <value>The efficiency scores.</value>
     public Dictionary<string, double> EfficiencyScores { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the analysis quality.
+    /// </summary>
+    /// <value>The analysis quality.</value>
     public AnalysisQuality AnalysisQuality { get; init; }
+    /// <summary>
+    /// Gets or sets the generated at.
+    /// </summary>
+    /// <value>The generated at.</value>
     public DateTime GeneratedAt { get; init; }
 }
+/// <summary>
+/// A class that represents determinism analysis result.
+/// </summary>
 
 public record DeterminismAnalysisResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the run count.
+    /// </summary>
+    /// <value>The run count.</value>
     public int RunCount { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether deterministic.
+    /// </summary>
+    /// <value>The is deterministic.</value>
     public bool IsDeterministic { get; init; }
+    /// <summary>
+    /// Gets or sets the variability score.
+    /// </summary>
+    /// <value>The variability score.</value>
     public double VariabilityScore { get; init; }
-    public List<string> NonDeterministicComponents { get; init; } = [];
-    public List<string> Recommendations { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the non deterministic components.
+    /// </summary>
+    /// <value>The non deterministic components.</value>
+    public IReadOnlyList<string> NonDeterministicComponents { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the analysis timestamp.
+    /// </summary>
+    /// <value>The analysis timestamp.</value>
     public DateTime AnalysisTimestamp { get; init; }
 }
+/// <summary>
+/// A class that represents validation performance insights.
+/// </summary>
 
 public record ValidationPerformanceInsights
 {
+    /// <summary>
+    /// Gets or sets the backend performance distribution.
+    /// </summary>
+    /// <value>The backend performance distribution.</value>
     public Dictionary<string, double> BackendPerformanceDistribution { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the optimal backend.
+    /// </summary>
+    /// <value>The optimal backend.</value>
     public string OptimalBackend { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the confidence scores.
+    /// </summary>
+    /// <value>The confidence scores.</value>
     public Dictionary<string, double> ConfidenceScores { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the input characteristics.
+    /// </summary>
+    /// <value>The input characteristics.</value>
     public Dictionary<string, object> InputCharacteristics { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the recommended validation strategy.
+    /// </summary>
+    /// <value>The recommended validation strategy.</value>
     public ValidationStrategy RecommendedValidationStrategy { get; init; }
 }
+/// <summary>
+/// A class that represents performance variation analysis.
+/// </summary>
 
 public record PerformanceVariationAnalysis
 {
+    /// <summary>
+    /// Gets or sets the execution time variance.
+    /// </summary>
+    /// <value>The execution time variance.</value>
     public double ExecutionTimeVariance { get; init; }
+    /// <summary>
+    /// Gets or sets the execution time standard deviation.
+    /// </summary>
+    /// <value>The execution time standard deviation.</value>
     public double ExecutionTimeStandardDeviation { get; init; }
+    /// <summary>
+    /// Gets or sets the memory usage variance.
+    /// </summary>
+    /// <value>The memory usage variance.</value>
     public double MemoryUsageVariance { get; init; }
+    /// <summary>
+    /// Gets or sets the coefficient of variation.
+    /// </summary>
+    /// <value>The coefficient of variation.</value>
     public double CoefficientOfVariation { get; init; }
 }
+/// <summary>
+/// A class that represents trace point pattern analysis.
+/// </summary>
 
 public record TracePointPatternAnalysis
 {
+    /// <summary>
+    /// Gets or sets the pattern type.
+    /// </summary>
+    /// <value>The pattern type.</value>
     public ExecutionPattern PatternType { get; init; }
+    /// <summary>
+    /// Gets or sets the regularity.
+    /// </summary>
+    /// <value>The regularity.</value>
     public double Regularity { get; init; }
-    public List<string> Characteristics { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the characteristics.
+    /// </summary>
+    /// <value>The characteristics.</value>
+    public IReadOnlyList<string> Characteristics { get; init; } = [];
 }
+/// <summary>
+/// A class that represents memory pattern analysis.
+/// </summary>
 
 public record MemoryPatternAnalysis
 {
+    /// <summary>
+    /// Gets or sets the growth pattern.
+    /// </summary>
+    /// <value>The growth pattern.</value>
     public MemoryGrowthPattern GrowthPattern { get; init; }
+    /// <summary>
+    /// Gets or sets the leak probability.
+    /// </summary>
+    /// <value>The leak probability.</value>
     public double LeakProbability { get; init; }
+    /// <summary>
+    /// Gets or sets the allocation efficiency.
+    /// </summary>
+    /// <value>The allocation efficiency.</value>
     public double AllocationEfficiency { get; init; }
 }
+/// <summary>
+/// A class that represents performance anomaly.
+/// </summary>
 
 public record PerformanceAnomaly
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public AnomalyType Type { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public AnomalySeverity Severity { get; init; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public string Description { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the trace point index.
+    /// </summary>
+    /// <value>The trace point index.</value>
     public int TracePointIndex { get; init; }
+    /// <summary>
+    /// Gets or sets the value.
+    /// </summary>
+    /// <value>The value.</value>
     public double Value { get; init; }
 }
+/// <summary>
+/// A class that represents kernel analysis profile.
+/// </summary>
 
 public record KernelAnalysisProfile
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the first analyzed.
+    /// </summary>
+    /// <value>The first analyzed.</value>
     public DateTime FirstAnalyzed { get; init; }
+    /// <summary>
+    /// Gets or sets the last analyzed.
+    /// </summary>
+    /// <value>The last analyzed.</value>
     public DateTime LastAnalyzed { get; set; }
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
     public int ExecutionCount { get; set; }
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>The successful executions.</value>
     public int SuccessfulExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the last execution pattern.
+    /// </summary>
+    /// <value>The last execution pattern.</value>
     public ExecutionPattern LastExecutionPattern { get; set; }
+    /// <summary>
+    /// Gets or sets the average regularity.
+    /// </summary>
+    /// <value>The average regularity.</value>
     public double AverageRegularity { get; set; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public double AverageExecutionTime { get; set; }
 }
+/// <summary>
+/// A class that represents trend analysis.
+/// </summary>
 
 public record TrendAnalysis
 {
+    /// <summary>
+    /// Gets or sets the trend.
+    /// </summary>
+    /// <value>The trend.</value>
     public PerformanceTrend Trend { get; init; }
+    /// <summary>
+    /// Gets or sets the confidence.
+    /// </summary>
+    /// <value>The confidence.</value>
     public double Confidence { get; init; }
+    /// <summary>
+    /// Gets or sets the trend strength.
+    /// </summary>
+    /// <value>The trend strength.</value>
     public double TrendStrength { get; init; }
+    /// <summary>
+    /// Gets or sets the predicted direction.
+    /// </summary>
+    /// <value>The predicted direction.</value>
     public TrendDirection PredictedDirection { get; init; }
 }
+/// <summary>
+/// A class that represents regression analysis.
+/// </summary>
 
 public record RegressionAnalysis
 {
+    /// <summary>
+    /// Gets or sets the correlation coefficient.
+    /// </summary>
+    /// <value>The correlation coefficient.</value>
     public double CorrelationCoefficient { get; init; }
+    /// <summary>
+    /// Gets or sets the r squared.
+    /// </summary>
+    /// <value>The r squared.</value>
     public double RSquared { get; init; }
+    /// <summary>
+    /// Gets or sets the slope.
+    /// </summary>
+    /// <value>The slope.</value>
     public double Slope { get; init; }
+    /// <summary>
+    /// Gets or sets the intercept.
+    /// </summary>
+    /// <value>The intercept.</value>
     public double Intercept { get; init; }
+    /// <summary>
+    /// Gets or sets the predictive accuracy.
+    /// </summary>
+    /// <value>The predictive accuracy.</value>
     public double PredictiveAccuracy { get; init; }
 }
+/// <summary>
+/// A class that represents optimization opportunity.
+/// </summary>
 
 public record OptimizationOpportunity
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type { get; init; }
+    /// <summary>
+    /// Gets or sets the impact.
+    /// </summary>
+    /// <value>The impact.</value>
     public OptimizationImpact Impact { get; init; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public string Description { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the recommendation.
+    /// </summary>
+    /// <value>The recommendation.</value>
     public string Recommendation { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the estimated improvement.
+    /// </summary>
+    /// <value>The estimated improvement.</value>
     public double EstimatedImprovement { get; init; }
 }
+/// <summary>
+/// A class that represents scaling predictions.
+/// </summary>
 
 public record ScalingPredictions
 {
+    /// <summary>
+    /// Gets or sets the linear scaling factor.
+    /// </summary>
+    /// <value>The linear scaling factor.</value>
     public double LinearScalingFactor { get; init; }
+    /// <summary>
+    /// Gets or sets the optimal workload size.
+    /// </summary>
+    /// <value>The optimal workload size.</value>
     public int OptimalWorkloadSize { get; init; }
+    /// <summary>
+    /// Gets or sets the scaling efficiency.
+    /// </summary>
+    /// <value>The scaling efficiency.</value>
     public double ScalingEfficiency { get; init; }
+    /// <summary>
+    /// Gets or sets the recommended backend.
+    /// </summary>
+    /// <value>The recommended backend.</value>
     public string RecommendedBackend { get; init; } = string.Empty;
 }
+/// <summary>
+/// An execution pattern enumeration.
+/// </summary>
 
 // Enums for analytics
 public enum ExecutionPattern { Unknown, Regular, Irregular, Burst, Adaptive }
+/// <summary>
+/// An memory growth pattern enumeration.
+/// </summary>
 public enum MemoryGrowthPattern { Unknown, Stable, Increasing, Decreasing, Oscillating }
+/// <summary>
+/// An anomaly type enumeration.
+/// </summary>
 public enum AnomalyType { Timing, Memory, Throughput, Resource }
+/// <summary>
+/// An anomaly severity enumeration.
+/// </summary>
 public enum AnomalySeverity { Low, Medium, High, Critical }
+/// <summary>
+/// An performance trend enumeration.
+/// </summary>
 public enum PerformanceTrend { Unknown, Improving, Degrading, Stable, Volatile }
+/// <summary>
+/// An trend direction enumeration.
+/// </summary>
 public enum TrendDirection { Up, Down, Neutral }
+/// <summary>
+/// An optimization type enumeration.
+/// </summary>
 public enum OptimizationType { Memory, Performance, Resource, Algorithm }
+/// <summary>
+/// An optimization impact enumeration.
+/// </summary>
 public enum OptimizationImpact { Low, Medium, High, Critical }
+/// <summary>
+/// An analysis quality enumeration.
+/// </summary>
 public enum AnalysisQuality { Insufficient, Poor, Fair, Good, Excellent }
+/// <summary>
+/// An validation strategy enumeration.
+/// </summary>
 public enum ValidationStrategy { Standard, Comprehensive, Sampling, Adaptive }

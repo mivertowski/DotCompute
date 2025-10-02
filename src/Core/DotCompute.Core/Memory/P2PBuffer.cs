@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
+using System;
 namespace DotCompute.Core.Memory
 {
 
@@ -717,22 +718,22 @@ namespace DotCompute.Core.Memory
 
         private static bool IsCUDADevice(string deviceName)
         {
-            return deviceName.Contains("nvidia") || deviceName.Contains("geforce") ||
-                   deviceName.Contains("quadro") || deviceName.Contains("tesla") ||
-                   deviceName.Contains("titan") || deviceName.Contains("rtx");
+            return deviceName.Contains("nvidia", StringComparison.OrdinalIgnoreCase) || deviceName.Contains("geforce", StringComparison.OrdinalIgnoreCase) ||
+                   deviceName.Contains("quadro", StringComparison.CurrentCulture) || deviceName.Contains("tesla", StringComparison.CurrentCulture) ||
+                   deviceName.Contains("titan", StringComparison.CurrentCulture) || deviceName.Contains("rtx", StringComparison.CurrentCulture);
         }
 
         private static bool IsROCmDevice(string deviceName)
         {
-            return deviceName.Contains("amd") || deviceName.Contains("radeon") ||
-                   deviceName.Contains("instinct") || deviceName.Contains("vega") ||
-                   deviceName.Contains("navi") || deviceName.Contains("rdna");
+            return deviceName.Contains("amd", StringComparison.CurrentCulture) || deviceName.Contains("radeon", StringComparison.CurrentCulture) ||
+                   deviceName.Contains("instinct", StringComparison.CurrentCulture) || deviceName.Contains("vega", StringComparison.CurrentCulture) ||
+                   deviceName.Contains("navi", StringComparison.CurrentCulture) || deviceName.Contains("rdna", StringComparison.CurrentCulture);
         }
 
         private static bool IsOpenCLDevice(string deviceName)
         {
-            return deviceName.Contains("intel") || deviceName.Contains("iris") ||
-                   deviceName.Contains("arc") || deviceName.Contains("opencl");
+            return deviceName.Contains("intel", StringComparison.CurrentCulture) || deviceName.Contains("iris", StringComparison.CurrentCulture) ||
+                   deviceName.Contains("arc", StringComparison.CurrentCulture) || deviceName.Contains("opencl", StringComparison.CurrentCulture);
         }
 
         /// <summary>
@@ -929,6 +930,9 @@ namespace DotCompute.Core.Memory
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -990,6 +994,10 @@ namespace DotCompute.Core.Memory
 
             return CopyToHostAsync(destination, sourceOffset, cancellationToken);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -1002,6 +1010,9 @@ namespace DotCompute.Core.Memory
             _disposed = true;
         }
     }
+    /// <summary>
+    /// An p2 p copy strategy enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P copy strategy enumeration for different device types.

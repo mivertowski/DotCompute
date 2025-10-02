@@ -32,8 +32,8 @@ namespace DotCompute.Abstractions.Interfaces.Device
         /// <summary>
         /// Gets the maximum work item sizes for each dimension.
         /// </summary>
-        /// <value>An array containing the maximum work item size for each dimension.</value>
-        public long[] MaxWorkItemSizes { get; }
+        /// <value>A read-only list containing the maximum work item size for each dimension.</value>
+        public IReadOnlyList<long> MaxWorkItemSizes { get; }
 
         /// <summary>
         /// Gets the number of compute units (cores/processors) available on the device.

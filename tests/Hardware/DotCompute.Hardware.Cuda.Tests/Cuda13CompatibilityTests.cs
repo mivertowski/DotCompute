@@ -5,6 +5,7 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging.Abstractions;
+using System;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -18,6 +19,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", "CUDA13")]
     public class Cuda13CompatibilityTests(ITestOutputHelper output) : CudaTestBase(output)
     {
+        /// <summary>
+        /// Gets c u d a_13_ should_ require_ minimum_ compute_ capability_7_5.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         [SkippableFact]
         public async Task CUDA_13_Should_Require_Minimum_Compute_Capability_7_5()
         {
@@ -51,11 +56,11 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 var architecture = GetArchitectureName(accelerator.Info);
                 var supportedArchitectures = new[] { "Turing", "Ampere", "Ada Lovelace", "Hopper" };
-                _ = supportedArchitectures.Should().Contain(arch => architecture.Contains(arch),
+                _ = supportedArchitectures.Should().Contain(arch => architecture.Contains(arch, StringComparison.OrdinalIgnoreCase),
 
                     $"Architecture {architecture} should be a supported CUDA 13.0 architecture");
             }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("not compatible with CUDA 13.0"))
+            catch (InvalidOperationException ex) when (ex.Message.Contains("not compatible with CUDA 13.0", StringComparison.CurrentCulture))
             {
                 // This is expected for pre-Turing GPUs
                 Output.WriteLine($"Device properly rejected: {ex.Message}");
@@ -71,6 +76,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets pre_ turing_ g p us_ should_ be_ rejected.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Pre_Turing_GPUs_Should_Be_Rejected()
@@ -112,6 +121,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("Turing or newer GPU properly accepted");
             }
         }
+        /// <summary>
+        /// Gets deprecated_ architectures_ should_ not_ be_ supported.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Deprecated_Architectures_Should_Not_Be_Supported()
@@ -160,6 +173,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Output.WriteLine($"Current device CC {cc.Major}.{cc.Minor} is not a deprecated architecture");
         }
+        /// <summary>
+        /// Gets supported_ architectures_ should_ be_ accepted.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Supported_Architectures_Should_Be_Accepted()
@@ -219,6 +236,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("Device accepted as it meets minimum requirements");
             }
         }
+        /// <summary>
+        /// Gets c u d a_13_ a p i_ features_ should_ be_ available.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task CUDA_13_API_Features_Should_Be_Available()
@@ -290,6 +311,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("✓ RT cores available (Turing+)");
             }
         }
+        /// <summary>
+        /// Gets driver_ version_ should_ support_ c u d a_13.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Driver_Version_Should_Support_CUDA_13()
@@ -332,14 +357,30 @@ namespace DotCompute.Hardware.Cuda.Tests
 
         private class DeviceInfo
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public string Name { get; set; } = "";
+            /// <summary>
+            /// Gets or sets the compute capability.
+            /// </summary>
+            /// <value>The compute capability.</value>
             public ComputeCapability ComputeCapability { get; set; } = new();
         }
 
 
         private class ComputeCapability
         {
+            /// <summary>
+            /// Gets or sets the major.
+            /// </summary>
+            /// <value>The major.</value>
             public int Major { get; set; }
+            /// <summary>
+            /// Gets or sets the minor.
+            /// </summary>
+            /// <value>The minor.</value>
             public int Minor { get; set; }
         }
 

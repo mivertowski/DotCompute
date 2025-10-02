@@ -3,6 +3,7 @@
 
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Abstractions.Pipelines.Enums;
+using System;
 
 namespace DotCompute.Core.Pipelines.Optimization.Calculators;
 
@@ -509,37 +510,37 @@ internal sealed class IntelligentBufferSizeCalculator
 
         // Try to infer from stage name
         var name = stage.Name.ToLowerInvariant();
-        if (name.Contains("add"))
+        if (name.Contains("add", StringComparison.OrdinalIgnoreCase))
         {
             return OperationType.VectorAdd;
         }
 
-        if (name.Contains("multiply") || name.Contains("mul"))
+        if (name.Contains("multiply", StringComparison.OrdinalIgnoreCase) || name.Contains("mul", StringComparison.CurrentCulture))
         {
             return OperationType.VectorMultiply;
         }
 
-        if (name.Contains("matrix"))
+        if (name.Contains("matrix", StringComparison.CurrentCulture))
         {
             return OperationType.MatrixMultiply;
         }
 
-        if (name.Contains("conv"))
+        if (name.Contains("conv", StringComparison.CurrentCulture))
         {
             return OperationType.Convolution;
         }
 
-        if (name.Contains("fft"))
+        if (name.Contains("fft", StringComparison.CurrentCulture))
         {
             return OperationType.FFT;
         }
 
-        if (name.Contains("reduce"))
+        if (name.Contains("reduce", StringComparison.CurrentCulture))
         {
             return OperationType.Reduction;
         }
 
-        if (name.Contains("map"))
+        if (name.Contains("map", StringComparison.CurrentCulture))
         {
             return OperationType.Map;
         }
@@ -605,17 +606,52 @@ internal sealed class IntelligentBufferSizeCalculator
 /// </summary>
 internal sealed class KernelMemoryAnalysis
 {
+    /// <summary>
+    /// Gets or sets the stage1 input size.
+    /// </summary>
+    /// <value>The stage1 input size.</value>
     public long Stage1InputSize { get; set; }
+    /// <summary>
+    /// Gets or sets the stage1 output size.
+    /// </summary>
+    /// <value>The stage1 output size.</value>
     public long Stage1OutputSize { get; set; }
+    /// <summary>
+    /// Gets or sets the stage1 working set.
+    /// </summary>
+    /// <value>The stage1 working set.</value>
     public long Stage1WorkingSet { get; set; }
+    /// <summary>
+    /// Gets or sets the stage2 input size.
+    /// </summary>
+    /// <value>The stage2 input size.</value>
 
     public long Stage2InputSize { get; set; }
+    /// <summary>
+    /// Gets or sets the stage2 output size.
+    /// </summary>
+    /// <value>The stage2 output size.</value>
     public long Stage2OutputSize { get; set; }
+    /// <summary>
+    /// Gets or sets the stage2 working set.
+    /// </summary>
+    /// <value>The stage2 working set.</value>
     public long Stage2WorkingSet { get; set; }
+    /// <summary>
+    /// Gets or sets the intermediate buffer size.
+    /// </summary>
+    /// <value>The intermediate buffer size.</value>
 
     public long IntermediateBufferSize { get; set; }
+    /// <summary>
+    /// Gets or sets the total memory footprint.
+    /// </summary>
+    /// <value>The total memory footprint.</value>
     public long TotalMemoryFootprint { get; set; }
 }
+/// <summary>
+/// An operation complexity enumeration.
+/// </summary>
 
 /// <summary>
 /// Operation complexity levels for memory estimation.
@@ -627,6 +663,9 @@ internal enum OperationComplexity
     Complex,
     VeryComplex
 }
+/// <summary>
+/// An operation type enumeration.
+/// </summary>
 
 /// <summary>
 /// Operation types for heuristic-based optimization.

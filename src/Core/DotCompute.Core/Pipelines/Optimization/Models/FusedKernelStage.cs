@@ -18,12 +18,38 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
 {
     private readonly KernelStage _stage1 = stage1;
     private readonly KernelStage _stage2 = stage2;
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
 
     public string Id { get; } = $"Fused_{stage1.Id}_{stage2.Id}";
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; } = $"Fused({stage1.Name}, {stage2.Name})";
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public PipelineStageType Type => PipelineStageType.Computation;
+    /// <summary>
+    /// Gets or sets the dependencies.
+    /// </summary>
+    /// <value>The dependencies.</value>
     public IReadOnlyList<string> Dependencies => _stage1.Dependencies;
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public IReadOnlyDictionary<string, object> Metadata => _stage1.Metadata;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<AbstractionsMemory.Models.Pipelines.StageExecutionResult> ExecuteAsync(
         AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
@@ -61,6 +87,10 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             OutputData = result2.OutputData ?? []
         };
     }
+    /// <summary>
+    /// Validates the .
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public AbstractionsMemory.Models.Pipelines.StageValidationResult Validate()
     {
@@ -97,6 +127,10 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             Warnings = warnings.Count > 0 ? warnings : null
         };
     }
+    /// <summary>
+    /// Gets the metrics.
+    /// </summary>
+    /// <returns>The metrics.</returns>
 
     public IStageMetrics GetMetrics()
         // Combine metrics from both stages

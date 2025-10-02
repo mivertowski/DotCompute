@@ -10,11 +10,11 @@ public class MemoryAnalysisReport
 {
     public string KernelName { get; init; } = string.Empty;
     public string BackendType { get; init; } = string.Empty;
-    public List<MemoryAccessPattern> AccessPatterns { get; init; } = [];
-    public List<PerformanceOptimization> Optimizations { get; init; } = [];
+    public IReadOnlyList<MemoryAccessPattern> AccessPatterns { get; init; } = [];
+    public IReadOnlyList<PerformanceOptimization> Optimizations { get; init; } = [];
     public long TotalMemoryAccessed { get; init; }
     public float MemoryEfficiency { get; init; }
-    public List<string> Warnings { get; init; } = [];
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Allocation efficiency score (0-1).
@@ -40,7 +40,7 @@ public class MemoryAccessPattern
     public string PatternType { get; init; } = string.Empty;
     public long AccessCount { get; init; }
     public float CoalescingEfficiency { get; init; }
-    public List<string> Issues { get; init; } = [];
+    public IReadOnlyList<string> Issues { get; init; } = [];
 }
 
 /// <summary>

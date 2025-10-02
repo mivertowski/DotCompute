@@ -136,8 +136,16 @@ namespace DotCompute.Core.Pipelines.Stages
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, object> Metadata { get; } = metadata;
+        /// <summary>
+        /// Gets or sets the memory hint.
+        /// </summary>
+        /// <value>The memory hint.</value>
 
         public MemoryHint MemoryHint { get; } = memoryHint;
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public int Priority { get; } = priority;
 
         /// <inheritdoc/>
@@ -286,7 +294,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
             => BuildKernelParameters(context);
 
-        private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
+        private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, IReadOnlyList<object> arguments)
         {
             var outputs = new Dictionary<string, object>();
 

@@ -34,7 +34,7 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets the target backends to optimize for.
     /// </summary>
-    public IList<string> TargetBackends { get; set; } = [];
+    public IList<string> TargetBackends { get; } = [];
 
     /// <summary>
     /// Gets or sets memory constraints for optimization.
@@ -49,12 +49,12 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets whether to preserve debugging information after optimization.
     /// </summary>
-    public bool PreserveDebugInfo { get; set; } = false;
+    public bool PreserveDebugInfo { get; set; }
 
     /// <summary>
     /// Gets or sets whether to enable aggressive optimizations that may affect numerical precision.
     /// </summary>
-    public bool AllowPrecisionLoss { get; set; } = false;
+    public bool AllowPrecisionLoss { get; set; }
 
     /// <summary>
     /// Gets or sets the parallel degree for optimization operations.
@@ -64,7 +64,7 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets custom optimization parameters.
     /// </summary>
-    public IDictionary<string, object> CustomParameters { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> CustomParameters { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets the strategy for handling optimization failures.

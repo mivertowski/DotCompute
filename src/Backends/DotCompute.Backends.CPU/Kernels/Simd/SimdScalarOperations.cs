@@ -145,6 +145,12 @@ public static class SimdScalarOperations
         }
         return (T)product;
     }
+    /// <summary>
+    /// Gets sum float32.
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Type-specific optimized implementations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -157,6 +163,12 @@ public static class SimdScalarOperations
         }
         return sum;
     }
+    /// <summary>
+    /// Gets sum float64.
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe double SumFloat64(double* data, int count)
@@ -168,6 +180,12 @@ public static class SimdScalarOperations
         }
         return sum;
     }
+    /// <summary>
+    /// Gets sum int32.
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe int SumInt32(int* data, int count)
@@ -179,6 +197,12 @@ public static class SimdScalarOperations
         }
         return sum;
     }
+    /// <summary>
+    /// Gets min float32.
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe float MinFloat32(float* data, int count)
@@ -193,6 +217,12 @@ public static class SimdScalarOperations
         }
         return min;
     }
+    /// <summary>
+    /// Gets max float32.
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe float MaxFloat32(float* data, int count)

@@ -26,7 +26,7 @@ public class PluginSecurityContext
     /// <summary>
     /// Gets or sets the allowed permissions for this plugin.
     /// </summary>
-    public HashSet<string> AllowedPermissions { get; set; } = [];
+    public HashSet<string> AllowedPermissions { get; } = [];
 
     /// <summary>
     /// Gets or sets whether the plugin is running in a restricted environment.
@@ -51,7 +51,7 @@ public class PluginSecurityContext
     /// <summary>
     /// Gets or sets the security violations detected for this plugin.
     /// </summary>
-    public List<SecurityViolation> Violations { get; set; } = [];
+    public IList<SecurityViolation> Violations { get; } = [];
 
     /// <summary>
     /// Gets whether this plugin has any security violations.
@@ -175,7 +175,7 @@ public class SecurityViolation
     /// <summary>
     /// Gets or sets additional metadata about the violation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>

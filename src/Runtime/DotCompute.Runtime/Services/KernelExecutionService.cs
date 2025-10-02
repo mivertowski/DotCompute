@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Runtime.Services;
 
@@ -355,7 +356,7 @@ public class KernelExecutionService(
                 // Look for generated kernel implementations
                 var generatedTypes = assembly.GetTypes()
                     .Where(t => t.Namespace?.StartsWith(generatedNamespace) == true)
-                    .Where(t => t.Name.Contains(registration.Name))
+                    .Where(t => t.Name.Contains(registration.Name, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
 
@@ -565,6 +566,9 @@ public class KernelExecutionService(
         // Placeholder - would integrate with performance monitoring
         // to get actual load metrics
         => 0.0;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -704,9 +708,25 @@ public class KernelExecutionService(
     /// </summary>
     private class KernelExecutionParameters : IKernelExecutionParameters
     {
+        /// <summary>
+        /// Gets or sets the arguments.
+        /// </summary>
+        /// <value>The arguments.</value>
         public object[] Arguments { get; set; } = Array.Empty<object>();
+        /// <summary>
+        /// Gets or sets the preferred backend.
+        /// </summary>
+        /// <value>The preferred backend.</value>
         public string? PreferredBackend { get; set; }
-        public IDictionary<string, object> Options { get; set; } = new Dictionary<string, object>();
+        /// <summary>
+        /// Gets or sets the options.
+        /// </summary>
+        /// <value>The options.</value>
+        public IDictionary<string, object> Options { get; } = new Dictionary<string, object>();
+        /// <summary>
+        /// Gets or sets a value indicating whether cellation token.
+        /// </summary>
+        /// <value>The cancellation token.</value>
         public CancellationToken CancellationToken { get; set; }
     }
 }
@@ -718,15 +738,51 @@ public class KernelExecutionService(
 internal class MockUnifiedBuffer<T>(T[] data) : IUnifiedMemoryBuffer where T : unmanaged
 {
     private readonly T[] _data = data ?? throw new ArgumentNullException(nameof(data));
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
 
     public int Length { get; } = data.Length;
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; } = data.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public static IAccelerator Accelerator => null!;
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public Abstractions.Memory.MemoryOptions Options => Abstractions.Memory.MemoryOptions.None;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => false;
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public Abstractions.Memory.BufferState State => Abstractions.Memory.BufferState.Synchronized;
+    /// <summary>
+    /// Gets the data.
+    /// </summary>
+    /// <returns>The data.</returns>
 
     public T[] GetData() => _data;
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <typeparam name="U">The U type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromAsync<U>(ReadOnlyMemory<U> source, long offset = 0, CancellationToken cancellationToken = default) where U : unmanaged
     {
@@ -739,6 +795,14 @@ internal class MockUnifiedBuffer<T>(T[] data) : IUnifiedMemoryBuffer where T : u
         }
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <typeparam name="U">The U type parameter.</typeparam>
+    /// <param name="destination">The destination.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync<U>(Memory<U> destination, long offset = 0, CancellationToken cancellationToken = default) where U : unmanaged
     {
@@ -751,12 +815,35 @@ internal class MockUnifiedBuffer<T>(T[] data) : IUnifiedMemoryBuffer where T : u
         }
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets copy from host asynchronously.
+    /// </summary>
+    /// <typeparam name="TSource">The TSource type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged => CopyFromAsync(source, offset, cancellationToken);
+    /// <summary>
+    /// Gets copy to host asynchronously.
+    /// </summary>
+    /// <typeparam name="TDestination">The TDestination type parameter.</typeparam>
+    /// <param name="destination">The destination.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged => CopyToAsync(destination, offset, cancellationToken);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() { }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 

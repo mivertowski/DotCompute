@@ -23,6 +23,9 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
     private readonly Mock<IUnifiedMemoryManager> _mockMemory;
     private readonly TestAccelerator _accelerator;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseAcceleratorKernelCompilationTests class.
+    /// </summary>
 
     public BaseAcceleratorKernelCompilationTests()
     {
@@ -43,6 +46,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         _accelerator = new TestAccelerator(info, _mockMemory.Object, _mockLogger.Object);
     }
+    /// <summary>
+    /// Gets compile kernel async_ valid kernel_ compiles successfully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_ValidKernel_CompilesSuccessfully()
@@ -60,6 +67,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = result.Id.Should().NotBeEmpty();
         _ = _accelerator.CompileKernelAsyncCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets compile kernel async_ null kernel_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_NullKernel_ThrowsArgumentNullException()
@@ -75,6 +86,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("kernelDefinition");
     }
+    /// <summary>
+    /// Gets compile kernel async_ null options_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_NullOptions_ThrowsArgumentNullException()
@@ -90,6 +105,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("options");
     }
+    /// <summary>
+    /// Gets compile kernel async_ when disposed_ throws object disposed exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_WhenDisposed_ThrowsObjectDisposedException()
@@ -105,6 +124,12 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Assert
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ with different optimization levels_ applies correctly.
+    /// </summary>
+    /// <param name="level">The level.</param>
+    /// <param name="generateDebugInfo">The generate debug info.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(OptimizationLevel.O0, false)]
@@ -131,6 +156,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = _accelerator.LastCompilationOptions!.OptimizationLevel.Should().Be(level);
         _ = _accelerator.LastCompilationOptions.GenerateDebugInfo.Should().Be(generateDebugInfo);
     }
+    /// <summary>
+    /// Gets compile kernel async_ invalid kernel code_ throws compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_InvalidKernelCode_ThrowsCompilationException()
@@ -147,6 +176,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Simulated compilation error*");
     }
+    /// <summary>
+    /// Gets compile kernel async_ with cancellation_ throws operation canceled exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_WithCancellation_ThrowsOperationCanceledException()
@@ -163,6 +196,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Assert
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ multiple concurrent compilations_ handled correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_MultipleConcurrentCompilations_HandledCorrectly()
@@ -186,6 +223,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
         _ = _accelerator.CompilationCount.Should().Be(3);
     }
+    /// <summary>
+    /// Gets compile kernel async_ track compilation metrics_ logged correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_TrackCompilationMetrics_LoggedCorrectly()
@@ -203,6 +244,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = _accelerator.LastLoggedCompilationTime.Should().BePositive();
         _ = _accelerator.LastLoggedByteCodeSize.Should().BePositive();
     }
+    /// <summary>
+    /// Gets compile kernel async_ cache hit_ returns existing kernel.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task CompileKernelAsync_CacheHit_ReturnsExistingKernel()
@@ -222,6 +267,9 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         _ = _accelerator.CompilationCount.Should().Be(1); // Should only compile once due to caching
         _ = _accelerator.CacheHits.Should().Be(1);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

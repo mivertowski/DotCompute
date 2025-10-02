@@ -59,16 +59,25 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     /// Gets the current health status of the plugin.
     /// </summary>
     public PluginHealth Health => _health;
+    /// <summary>
+    /// Occurs when state changed.
+    /// </summary>
 
     /// <summary>
     /// Event raised when the plugin's state changes.
     /// </summary>
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    /// <summary>
+    /// Occurs when error occurred.
+    /// </summary>
 
     /// <summary>
     /// Event raised when the plugin encounters an error.
     /// </summary>
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    /// <summary>
+    /// Occurs when health changed.
+    /// </summary>
 
     /// <summary>
     /// Event raised when the plugin's health status changes.

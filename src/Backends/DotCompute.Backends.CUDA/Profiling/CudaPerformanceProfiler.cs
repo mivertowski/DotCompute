@@ -93,6 +93,10 @@ namespace DotCompute.Backends.CUDA.Profiling
             IntPtr cbdata);
 
         private readonly CuptiCallbackFunc _cuptiCallback;
+        /// <summary>
+        /// Initializes a new instance of the CudaPerformanceProfiler class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaPerformanceProfiler(ILogger<CudaPerformanceProfiler> logger)
         {
@@ -633,7 +637,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Calculates average bandwidth for transfers.
         /// </summary>
-        private static double CalculateAverageBandwidth(List<MemoryProfile> transfers)
+        private static double CalculateAverageBandwidth(IReadOnlyList<MemoryProfile> transfers)
         {
             if (!transfers.Any())
             {
@@ -651,7 +655,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Identifies memory transfer bottlenecks.
         /// </summary>
-        private static List<string> IdentifyMemoryBottlenecks(List<MemoryProfile> profiles)
+        private static List<string> IdentifyMemoryBottlenecks(IReadOnlyList<MemoryProfile> profiles)
         {
             var bottlenecks = new List<string>();
 
@@ -702,6 +706,9 @@ namespace DotCompute.Backends.CUDA.Profiling
                 _logger.LogWarning(ex, "NVML not available, GPU metrics will be limited");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -732,99 +739,351 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             _disposed = true;
         }
+        /// <summary>
+        /// A class that represents profiling configuration.
+        /// </summary>
 
         // Supporting classes and enums
         public class ProfilingConfiguration
         {
+            /// <summary>
+            /// Gets or sets the profile kernels.
+            /// </summary>
+            /// <value>The profile kernels.</value>
             public bool ProfileKernels { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the profile memory.
+            /// </summary>
+            /// <value>The profile memory.</value>
             public bool ProfileMemory { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the profile api.
+            /// </summary>
+            /// <value>The profile api.</value>
             public bool ProfileApi { get; set; }
+            /// <summary>
+            /// Gets or sets the collect metrics.
+            /// </summary>
+            /// <value>The collect metrics.</value>
 
             public bool CollectMetrics { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the default.
+            /// </summary>
+            /// <value>The default.</value>
 
 
             public static ProfilingConfiguration Default => new();
         }
+        /// <summary>
+        /// A class that represents kernel profile.
+        /// </summary>
 
         public class KernelProfile
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public required string Name { get; init; }
+            /// <summary>
+            /// Gets or sets the start time.
+            /// </summary>
+            /// <value>The start time.</value>
             public DateTimeOffset StartTime { get; init; }
+            /// <summary>
+            /// Gets or sets the execution count.
+            /// </summary>
+            /// <value>The execution count.</value>
             public int ExecutionCount { get; set; }
+            /// <summary>
+            /// Gets or sets the total time.
+            /// </summary>
+            /// <value>The total time.</value>
             public TimeSpan TotalTime { get; set; }
+            /// <summary>
+            /// Gets or sets the average time.
+            /// </summary>
+            /// <value>The average time.</value>
             public TimeSpan AverageTime { get; set; }
+            /// <summary>
+            /// Gets or sets the min time.
+            /// </summary>
+            /// <value>The min time.</value>
             public TimeSpan MinTime { get; set; }
+            /// <summary>
+            /// Gets or sets the max time.
+            /// </summary>
+            /// <value>The max time.</value>
             public TimeSpan MaxTime { get; set; }
+            /// <summary>
+            /// Gets or sets the standard deviation.
+            /// </summary>
+            /// <value>The standard deviation.</value>
             public TimeSpan StandardDeviation { get; set; }
+            /// <summary>
+            /// Gets or sets the shared memory used.
+            /// </summary>
+            /// <value>The shared memory used.</value>
             public long SharedMemoryUsed { get; set; }
+            /// <summary>
+            /// Gets or sets the registers per thread.
+            /// </summary>
+            /// <value>The registers per thread.</value>
             public long RegistersPerThread { get; set; }
+            /// <summary>
+            /// Gets or sets the block size.
+            /// </summary>
+            /// <value>The block size.</value>
             public int BlockSize { get; set; }
+            /// <summary>
+            /// Gets or sets the grid size.
+            /// </summary>
+            /// <value>The grid size.</value>
             public int GridSize { get; set; }
         }
+        /// <summary>
+        /// A class that represents memory profile.
+        /// </summary>
 
         public class MemoryProfile
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public required string Name { get; init; }
+            /// <summary>
+            /// Gets or sets the transfer type.
+            /// </summary>
+            /// <value>The transfer type.</value>
             public MemoryTransferType TransferType { get; set; }
+            /// <summary>
+            /// Gets or sets the bytes transferred.
+            /// </summary>
+            /// <value>The bytes transferred.</value>
             public long BytesTransferred { get; set; }
+            /// <summary>
+            /// Gets or sets the transfer time.
+            /// </summary>
+            /// <value>The transfer time.</value>
             public TimeSpan TransferTime { get; set; }
+            /// <summary>
+            /// Gets or sets the bandwidth.
+            /// </summary>
+            /// <value>The bandwidth.</value>
             public double Bandwidth => BytesTransferred / TransferTime.TotalSeconds;
+            /// <summary>
+            /// Gets or sets a value indicating whether async.
+            /// </summary>
+            /// <value>The is async.</value>
             public bool IsAsync { get; set; }
+            /// <summary>
+            /// Gets or sets the stream identifier.
+            /// </summary>
+            /// <value>The stream id.</value>
             public int StreamId { get; set; }
         }
+        /// <summary>
+        /// A class that represents gpu metrics.
+        /// </summary>
 
         public class GpuMetrics
         {
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; init; }
+            /// <summary>
+            /// Gets or sets the device index.
+            /// </summary>
+            /// <value>The device index.</value>
             public int DeviceIndex { get; init; }
+            /// <summary>
+            /// Gets or sets the gpu utilization.
+            /// </summary>
+            /// <value>The gpu utilization.</value>
             public uint GpuUtilization { get; set; }
+            /// <summary>
+            /// Gets or sets the memory utilization.
+            /// </summary>
+            /// <value>The memory utilization.</value>
             public uint MemoryUtilization { get; set; }
+            /// <summary>
+            /// Gets or sets the memory used.
+            /// </summary>
+            /// <value>The memory used.</value>
             public ulong MemoryUsed { get; set; }
+            /// <summary>
+            /// Gets or sets the memory total.
+            /// </summary>
+            /// <value>The memory total.</value>
             public ulong MemoryTotal { get; set; }
+            /// <summary>
+            /// Gets or sets the memory free.
+            /// </summary>
+            /// <value>The memory free.</value>
             public ulong MemoryFree { get; set; }
+            /// <summary>
+            /// Gets or sets the temperature.
+            /// </summary>
+            /// <value>The temperature.</value>
             public uint Temperature { get; set; }
+            /// <summary>
+            /// Gets or sets the power usage.
+            /// </summary>
+            /// <value>The power usage.</value>
             public double PowerUsage { get; set; }
         }
+        /// <summary>
+        /// A class that represents profiling report.
+        /// </summary>
 
         public class ProfilingReport
         {
+            /// <summary>
+            /// Gets or sets the generated at.
+            /// </summary>
+            /// <value>The generated at.</value>
             public DateTimeOffset GeneratedAt { get; init; }
-            public List<KernelProfile> KernelProfiles { get; init; } = [];
-            public List<MemoryProfile> MemoryProfiles { get; init; } = [];
+            /// <summary>
+            /// Gets or sets the kernel profiles.
+            /// </summary>
+            /// <value>The kernel profiles.</value>
+            public IReadOnlyList<KernelProfile> KernelProfiles { get; init; } = [];
+            /// <summary>
+            /// Gets or sets the memory profiles.
+            /// </summary>
+            /// <value>The memory profiles.</value>
+            public IReadOnlyList<MemoryProfile> MemoryProfiles { get; init; } = [];
+            /// <summary>
+            /// Gets or sets the total kernel time.
+            /// </summary>
+            /// <value>The total kernel time.</value>
             public TimeSpan TotalKernelTime { get; set; }
+            /// <summary>
+            /// Gets or sets the average kernel time.
+            /// </summary>
+            /// <value>The average kernel time.</value>
             public TimeSpan AverageKernelTime { get; set; }
+            /// <summary>
+            /// Gets or sets the total memory transferred.
+            /// </summary>
+            /// <value>The total memory transferred.</value>
             public long TotalMemoryTransferred { get; set; }
+            /// <summary>
+            /// Gets or sets the total memory time.
+            /// </summary>
+            /// <value>The total memory time.</value>
             public TimeSpan TotalMemoryTime { get; set; }
-            public List<KernelProfile> TopKernelsByTime { get; set; } = [];
-            public List<MemoryProfile> TopMemoryTransfers { get; set; } = [];
+            /// <summary>
+            /// Gets or sets the top kernels by time.
+            /// </summary>
+            /// <value>The top kernels by time.</value>
+            public IList<KernelProfile> TopKernelsByTime { get; } = [];
+            /// <summary>
+            /// Gets or sets the top memory transfers.
+            /// </summary>
+            /// <value>The top memory transfers.</value>
+            public IList<MemoryProfile> TopMemoryTransfers { get; } = [];
         }
+        /// <summary>
+        /// A class that represents memory transfer analysis.
+        /// </summary>
 
         public class MemoryTransferAnalysis
         {
+            /// <summary>
+            /// Gets or sets the total transfers.
+            /// </summary>
+            /// <value>The total transfers.</value>
             public int TotalTransfers { get; set; }
+            /// <summary>
+            /// Gets or sets the total bytes transferred.
+            /// </summary>
+            /// <value>The total bytes transferred.</value>
             public long TotalBytesTransferred { get; set; }
+            /// <summary>
+            /// Gets or sets the total transfer time.
+            /// </summary>
+            /// <value>The total transfer time.</value>
             public TimeSpan TotalTransferTime { get; set; }
+            /// <summary>
+            /// Gets or sets the overall bandwidth.
+            /// </summary>
+            /// <value>The overall bandwidth.</value>
             public double OverallBandwidth { get; set; }
-            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; set; } = [];
-            public List<string> Bottlenecks { get; set; } = [];
+            /// <summary>
+            /// Gets or sets the transfers by type.
+            /// </summary>
+            /// <value>The transfers by type.</value>
+            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; } = [];
+            /// <summary>
+            /// Gets or sets the bottlenecks.
+            /// </summary>
+            /// <value>The bottlenecks.</value>
+            public IList<string> Bottlenecks { get; } = [];
         }
+        /// <summary>
+        /// A class that represents transfer type stats.
+        /// </summary>
 
         public class TransferTypeStats
         {
+            /// <summary>
+            /// Gets or sets the count.
+            /// </summary>
+            /// <value>The count.</value>
             public int Count { get; set; }
+            /// <summary>
+            /// Gets or sets the total bytes.
+            /// </summary>
+            /// <value>The total bytes.</value>
             public long TotalBytes { get; set; }
+            /// <summary>
+            /// Gets or sets the average bytes.
+            /// </summary>
+            /// <value>The average bytes.</value>
             public double AverageBytes { get; set; }
+            /// <summary>
+            /// Gets or sets the total time.
+            /// </summary>
+            /// <value>The total time.</value>
             public TimeSpan TotalTime { get; set; }
+            /// <summary>
+            /// Gets or sets the average bandwidth.
+            /// </summary>
+            /// <value>The average bandwidth.</value>
             public double AverageBandwidth { get; set; }
         }
 
         private class ProfilingEvent
         {
+            /// <summary>
+            /// Gets or sets the domain.
+            /// </summary>
+            /// <value>The domain.</value>
             public CuptiCallbackDomain Domain { get; set; }
+            /// <summary>
+            /// Gets or sets the callback identifier.
+            /// </summary>
+            /// <value>The callback id.</value>
             public uint CallbackId { get; set; }
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; set; }
+            /// <summary>
+            /// Gets or sets the data.
+            /// </summary>
+            /// <value>The data.</value>
             public IntPtr Data { get; set; }
         }
+        /// <summary>
+        /// An memory transfer type enumeration.
+        /// </summary>
 
         public enum MemoryTransferType
         {
@@ -834,6 +1093,9 @@ namespace DotCompute.Backends.CUDA.Profiling
             HostToHost,
             UnifiedMemory
         }
+        /// <summary>
+        /// An cupti result enumeration.
+        /// </summary>
 
         // CUPTI enums
         private enum CuptiResult
@@ -842,6 +1104,9 @@ namespace DotCompute.Backends.CUDA.Profiling
             ErrorInvalidParameter = 1,
             // Add other results as needed
         }
+        /// <summary>
+        /// An cupti callback domain enumeration.
+        /// </summary>
 
         private enum CuptiCallbackDomain
         {
@@ -851,6 +1116,9 @@ namespace DotCompute.Backends.CUDA.Profiling
             Resource = 3,
             Synchronize = 4
         }
+        /// <summary>
+        /// An cupti activity kind enumeration.
+        /// </summary>
 
         private enum CuptiActivityKind
         {
@@ -872,6 +1140,9 @@ namespace DotCompute.Backends.CUDA.Profiling
             Metric = 15,
             MetricInstance = 16
         }
+        /// <summary>
+        /// An cupti runtime callback id enumeration.
+        /// </summary>
 
         private enum CuptiRuntimeCallbackId
         {
@@ -884,16 +1155,34 @@ namespace DotCompute.Backends.CUDA.Profiling
         // NVML structures and enums
         private struct NvmlUtilization
         {
+            /// <summary>
+            /// The gpu.
+            /// </summary>
             public uint gpu;
+            /// <summary>
+            /// The memory.
+            /// </summary>
             public uint memory;
         }
 
         private struct NvmlMemory
         {
+            /// <summary>
+            /// The total.
+            /// </summary>
             public ulong total;
+            /// <summary>
+            /// The free.
+            /// </summary>
             public ulong free;
+            /// <summary>
+            /// The used.
+            /// </summary>
             public ulong used;
         }
+        /// <summary>
+        /// An nvml return enumeration.
+        /// </summary>
 
         private enum NvmlReturn
         {
@@ -901,6 +1190,9 @@ namespace DotCompute.Backends.CUDA.Profiling
             Uninitialized = 1,
             // Add other returns as needed
         }
+        /// <summary>
+        /// An nvml temperature sensor enumeration.
+        /// </summary>
 
         private enum NvmlTemperatureSensor
         {
@@ -910,10 +1202,22 @@ namespace DotCompute.Backends.CUDA.Profiling
 
         private class ProfilingException : Exception
         {
+            /// <summary>
+            /// Initializes a new instance of the ProfilingException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
             public ProfilingException(string message) : base(message) { }
+            /// <summary>
+            /// Initializes a new instance of the ProfilingException class.
+            /// </summary>
             public ProfilingException()
             {
             }
+            /// <summary>
+            /// Initializes a new instance of the ProfilingException class.
+            /// </summary>
+            /// <param name="message">The message.</param>
+            /// <param name="innerException">The inner exception.</param>
             public ProfilingException(string message, Exception innerException) : base(message, innerException)
             {
             }

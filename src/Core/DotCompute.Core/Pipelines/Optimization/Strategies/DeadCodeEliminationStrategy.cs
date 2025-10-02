@@ -14,14 +14,48 @@ namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 /// </summary>
 internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => "DeadCodeElimination";
+    /// <summary>
+    /// Gets or sets the supported optimizations.
+    /// </summary>
+    /// <value>The supported optimizations.</value>
     public OptimizationType SupportedOptimizations => OptimizationType.DeadCodeElimination;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type => OptimizationType.DeadCodeElimination;
+    /// <summary>
+    /// Determines whether optimize.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanOptimize(IKernelPipeline pipeline) => pipeline?.Stages?.Any() == true;
+    /// <summary>
+    /// Determines whether apply.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
+    /// <summary>
+    /// Gets apply asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -38,6 +72,13 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         }
         return pipeline;
     }
+    /// <summary>
+    /// Gets apply internal asynchronously.
+    /// </summary>
+    /// <param name="stages">The stages.</param>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
@@ -76,7 +117,7 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         });
     }
 
-    private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
+    private static HashSet<string> FindUsedOutputs(IReadOnlyList<IPipelineStage> stages)
         // Simplified - in practice would analyze data flow
 
         => [.. stages.SelectMany(s => s.Dependencies)];

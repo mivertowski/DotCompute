@@ -21,6 +21,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
     private readonly TestAccelerator _accelerator;
     private readonly List<TestAccelerator> _accelerators = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseAcceleratorLifecycleTests class.
+    /// </summary>
 
     public BaseAcceleratorLifecycleTests()
     {
@@ -42,6 +45,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _accelerator = new TestAccelerator(info, _mockMemory.Object, _mockLogger.Object);
         _accelerators.Add(_accelerator);
     }
+    /// <summary>
+    /// Performs constructor_ initializes properties_ correctly.
+    /// </summary>
 
     [Fact]
     public void Constructor_InitializesProperties_Correctly()
@@ -53,6 +59,13 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.IsDisposed.Should().BeFalse();
         _ = _accelerator.Context.Should().NotBeNull();
     }
+    /// <summary>
+    /// Performs constructor_ with various configurations_ initializes correctly.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="driverVersion">The driver version.</param>
+    /// <param name="memorySize">The memory size.</param>
 
     [Theory]
     [InlineData(AcceleratorType.GPU, "GPU Device", "2.0", 2048L * 1024 * 1024)]
@@ -79,6 +92,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeFalse();
         _ = accelerator.InitializeCoreCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs dispose_ when called_ disposes resources correctly.
+    /// </summary>
 
     [Fact]
     public void Dispose_WhenCalled_DisposesResourcesCorrectly()
@@ -91,6 +107,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
+    /// <summary>
+    /// Performs dispose_ when called multiple times_ disposes only once.
+    /// </summary>
 
     [Fact]
     public void Dispose_WhenCalledMultipleTimes_DisposesOnlyOnce()
@@ -105,6 +124,10 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
+    /// <summary>
+    /// Gets dispose async_ when called_ disposes resources correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task DisposeAsync_WhenCalled_DisposesResourcesCorrectly()
@@ -117,6 +140,10 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
+    /// <summary>
+    /// Gets dispose async_ when called multiple times_ disposes only once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task DisposeAsync_WhenCalledMultipleTimes_DisposesOnlyOnce()
@@ -131,6 +158,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
+    /// <summary>
+    /// Performs context_ returns non null context.
+    /// </summary>
 
     [Fact]
     public void Context_ReturnsNonNullContext()
@@ -139,6 +169,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.Context.Should().NotBeNull();
         _ = _accelerator.Context.Should().BeOfType<AcceleratorContext>();
     }
+    /// <summary>
+    /// Performs synchronize_ when not disposed_ completes successfully.
+    /// </summary>
 
     [Fact]
     public void Synchronize_WhenNotDisposed_CompletesSuccessfully()
@@ -150,6 +183,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = act.Should().NotThrow();
         _ = _accelerator.SynchronizeCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs synchronize_ when disposed_ throws object disposed exception.
+    /// </summary>
 
     [Fact]
     public void Synchronize_WhenDisposed_ThrowsObjectDisposedException()
@@ -163,6 +199,10 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         // Assert
         _ = act.Should().Throw<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets concurrent disposal_ handled correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task ConcurrentDisposal_HandledCorrectly()
@@ -188,6 +228,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
+    /// <summary>
+    /// Performs disposal state_ tracked correctly.
+    /// </summary>
 
     [Fact]
     public void DisposalState_TrackedCorrectly()
@@ -208,6 +251,9 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _ = act.Should().Throw<ObjectDisposedException>()
             .WithMessage($"*{nameof(TestAccelerator)}*");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

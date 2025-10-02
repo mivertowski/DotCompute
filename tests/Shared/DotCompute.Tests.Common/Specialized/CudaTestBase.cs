@@ -195,10 +195,25 @@ public abstract class CudaTestBase : ConsolidatedTestBase
         private readonly Stopwatch _stopwatch = new();
         private readonly string _operationName = operationName;
         private readonly ITestOutputHelper _output = output;
+        /// <summary>
+        /// Performs start.
+        /// </summary>
 
         public void Start() => _stopwatch.Restart();
+        /// <summary>
+        /// Performs stop.
+        /// </summary>
         public void Stop() => _stopwatch.Stop();
+        /// <summary>
+        /// Gets or sets the elapsed time.
+        /// </summary>
+        /// <value>The elapsed time.</value>
         public TimeSpan ElapsedTime => _stopwatch.Elapsed;
+        /// <summary>
+        /// Performs log results.
+        /// </summary>
+        /// <param name="dataSize">The data size.</param>
+        /// <param name="operationCount">The operation count.</param>
 
         public void LogResults(long dataSize = 0, int operationCount = 1)
         {

@@ -30,6 +30,11 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     private long _missCount;
     private long _totalCompilationTimeSaved;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the MemoryKernelCache class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public MemoryKernelCache(
         ILogger<MemoryKernelCache> logger,
@@ -300,6 +305,9 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             _statisticsLock.ExitWriteLock();
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -319,13 +327,40 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
     private class CacheEntry
     {
+        /// <summary>
+        /// Gets or sets the compiled kernel.
+        /// </summary>
+        /// <value>The compiled kernel.</value>
         public required ICompiledKernel CompiledKernel { get; init; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTime CreatedAt { get; init; }
+        /// <summary>
+        /// Gets or sets the last accessed at.
+        /// </summary>
+        /// <value>The last accessed at.</value>
         public DateTime LastAccessedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the compilation time.
+        /// </summary>
+        /// <value>The compilation time.</value>
         public required TimeSpan CompilationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the expires at.
+        /// </summary>
+        /// <value>The expires at.</value>
         public required DateTime ExpiresAt { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether expired.
+        /// </summary>
+        /// <value>The is expired.</value>
 
         public bool IsExpired => DateTime.UtcNow > ExpiresAt;
+        /// <summary>
+        /// Updates the last access.
+        /// </summary>
 
         public void UpdateLastAccess() => LastAccessedAt = DateTime.UtcNow;
     }

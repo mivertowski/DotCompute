@@ -469,6 +469,9 @@ namespace DotCompute.Algorithms.Management
         [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package load failed for {PackageSource}: {Reason}")]
         private partial void LogNuGetPackageLoadFailed(string packageSource, string reason);
     }
+    /// <summary>
+    /// A class that represents loaded plugin result.
+    /// </summary>
 
     /// <summary>
     /// Represents the result of loading a plugin from an assembly.

@@ -10,6 +10,11 @@ namespace DotCompute.Runtime.DependencyInjection.Validation;
 /// </summary>
 internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
 {
+    /// <summary>
+    /// Validates the async.
+    /// </summary>
+    /// <param name="plugin">The plugin.</param>
+    /// <returns>The result of the operation.</returns>
     public async Task<PluginValidationResult> ValidateAsync(object plugin)
     {
         await Task.CompletedTask;

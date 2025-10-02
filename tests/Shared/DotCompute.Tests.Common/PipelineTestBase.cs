@@ -258,6 +258,9 @@ public abstract class PipelineTestBase : IDisposable
         var diff = Math.Abs(expected - actual);
         Assert.True(diff <= tolerance, $"Double values not equal within tolerance. Expected: {expected}, Actual: {actual}, Tolerance: {tolerance}, Diff: {diff}");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

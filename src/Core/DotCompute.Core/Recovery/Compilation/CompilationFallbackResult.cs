@@ -64,7 +64,7 @@ public class CompilationFallbackResult
     /// This includes both successful and failed attempts.
     /// </summary>
     /// <value>A chronological list of all compilation attempts.</value>
-    public List<CompilationAttempt> Attempts { get; set; } = [];
+    public IList<CompilationAttempt> Attempts { get; } = [];
 
 
     /// <summary>

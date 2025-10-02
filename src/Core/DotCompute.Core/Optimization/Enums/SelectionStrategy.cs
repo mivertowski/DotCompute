@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Core.Optimization.Enums;
+/// <summary>
+/// An selection strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Strategies used for backend selection.

@@ -10,6 +10,7 @@ using NuGet.Configuration;
 using NuGet.Protocol.Core.Types;
 using NuGet.Packaging.Core;
 using DotCompute.Algorithms.Management.Models;
+using System;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -25,6 +26,12 @@ namespace DotCompute.Algorithms.Management
         private readonly SemaphoreSlim _downloadSemaphore;
         private readonly ConcurrentDictionary<string, string> _downloadCache;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the NuGetDownloader class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="maxConcurrentDownloads">The max concurrent downloads.</param>
 
         public NuGetDownloader(MSLogger logger, NuGetPluginLoaderOptions options, int maxConcurrentDownloads = 4)
         {
@@ -305,8 +312,8 @@ namespace DotCompute.Algorithms.Management
                         cancellationToken.ThrowIfCancellationRequested();
 
                         // Check for suspicious entry names
-                        if (entry.FullName.Contains("..") ||
-                            entry.FullName.StartsWith("/") ||
+                        if (entry.FullName.Contains("..", StringComparison.OrdinalIgnoreCase) ||
+                            entry.FullName.StartsWith("/", StringComparison.OrdinalIgnoreCase) ||
                             entry.FullName.Contains(":"))
                         {
                             _logger.LogWarning("Suspicious entry found in package: {EntryName}", entry.FullName);
@@ -375,6 +382,9 @@ namespace DotCompute.Algorithms.Management
                 _logger.LogInformation("Cache cleanup completed. Removed {Count} entries.", cachesToRemove.Count);
             });
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -394,22 +404,59 @@ namespace DotCompute.Algorithms.Management
     internal sealed class NuGetLoggerAdapter(MSLogger logger) : NuGet.Common.ILogger
     {
         private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        /// <summary>
+        /// Performs log debug.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
+        /// <summary>
+        /// Performs log verbose.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
+        /// <summary>
+        /// Performs log information.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log minimal.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log warning.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
+        /// <summary>
+        /// Performs log error.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogError(string data) => _logger.LogError("{Data}", data);
+        /// <summary>
+        /// Performs log information summary.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log error summary.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <param name="data">The data.</param>
 
         public void Log(NuGet.Common.LogLevel level, string data)
         {
@@ -426,14 +473,29 @@ namespace DotCompute.Algorithms.Management
 
             _logger.Log(msLogLevel, "{Data}", data);
         }
+        /// <summary>
+        /// Gets log asynchronously.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task LogAsync(NuGet.Common.LogLevel level, string data)
         {
             Log(level, data);
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <param name="message">The message.</param>
 
         public void Log(NuGet.Common.ILogMessage message) => Log(message.Level, message.Message);
+        /// <summary>
+        /// Gets log asynchronously.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task LogAsync(NuGet.Common.ILogMessage message)
         {

@@ -75,18 +75,29 @@ public sealed class KernelMethodAnalyzer
             return null;
         }
 
-        return new KernelMethodInfo
+        var methodInfo = new KernelMethodInfo
         {
             Name = methodSymbol.Name,
             ContainingType = methodSymbol.ContainingType.ToDisplayString(),
             Namespace = methodSymbol.ContainingNamespace.ToDisplayString(),
-            Parameters = parameters,
             ReturnType = methodSymbol.ReturnType.ToDisplayString(),
-            Backends = configuration.SupportedBackends,
             VectorSize = configuration.VectorSize,
             IsParallel = configuration.IsParallel,
             MethodDeclaration = methodDeclaration
         };
+
+        // Populate read-only collections
+        foreach (var param in parameters)
+        {
+            methodInfo.Parameters.Add(param);
+        }
+
+        foreach (var backend in configuration.SupportedBackends)
+        {
+            methodInfo.Backends.Add(backend);
+        }
+
+        return methodInfo;
     }
 
     /// <summary>
@@ -111,12 +122,19 @@ public sealed class KernelMethodAnalyzer
             return null;
         }
 
-        return new KernelClassInfo
+        var classInfo = new KernelClassInfo
         {
             Name = classSymbol.Name,
-            Namespace = classSymbol.ContainingNamespace.ToDisplayString(),
-            KernelMethodNames = [.. kernelMethods.Select(m => m.Name)]
+            Namespace = classSymbol.ContainingNamespace.ToDisplayString()
         };
+
+        // Populate read-only collection
+        foreach (var method in kernelMethods)
+        {
+            classInfo.KernelMethodNames.Add(method.Name);
+        }
+
+        return classInfo;
     }
 
     /// <summary>
@@ -167,7 +185,7 @@ public sealed class KernelMethodAnalyzer
     /// - Parameter types are supported
     /// - Method accessibility is appropriate
     /// </remarks>
-    private static bool ValidateMethodCompatibility(IMethodSymbol methodSymbol, List<ParameterInfo> parameters)
+    private static bool ValidateMethodCompatibility(IMethodSymbol methodSymbol, IReadOnlyList<ParameterInfo> parameters)
     {
         // Must be static
         if (!methodSymbol.IsStatic)

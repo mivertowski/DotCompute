@@ -63,7 +63,7 @@ public sealed class PluginMetadata
     /// Gets the list of plugin dependencies.
     /// Other plugins or libraries required for this plugin to function.
     /// </summary>
-    public List<string> Dependencies { get; } = [];
+    public IList<string> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets or sets the assembly name containing the plugin.
@@ -99,5 +99,5 @@ public sealed class PluginMetadata
     /// Gets additional metadata as key-value pairs.
     /// Custom metadata that doesn't fit into predefined fields.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetadata { get; set; } = [];
+    public Dictionary<string, object> AdditionalMetadata { get; } = [];
 }

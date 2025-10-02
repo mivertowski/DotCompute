@@ -14,6 +14,11 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal static class SimdOperationHelpers
 {
+    /// <summary>
+    /// Gets the vector operation float32_512.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float32_512.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector512<float>, Vector512<float>, Vector512<float>> GetVectorOperationFloat32_512(KernelOperation operation)
     {
@@ -30,6 +35,11 @@ internal static class SimdOperationHelpers
             _ => &Avx512F.Add
         };
     }
+    /// <summary>
+    /// Gets the vector operation float32_256.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float32_256.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector256<float>, Vector256<float>, Vector256<float>> GetVectorOperationFloat32_256(KernelOperation operation)
@@ -45,6 +55,11 @@ internal static class SimdOperationHelpers
             _ => &Avx.Add
         };
     }
+    /// <summary>
+    /// Gets the vector operation float32_128.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float32_128.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector128<float>, Vector128<float>, Vector128<float>> GetVectorOperationFloat32_128(KernelOperation operation)
@@ -60,6 +75,11 @@ internal static class SimdOperationHelpers
             _ => &Sse.Add
         };
     }
+    /// <summary>
+    /// Gets the vector operation float64_512.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float64_512.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector512<double>, Vector512<double>, Vector512<double>> GetVectorOperationFloat64_512(KernelOperation operation)
@@ -77,6 +97,11 @@ internal static class SimdOperationHelpers
             _ => &Avx512F.Add
         };
     }
+    /// <summary>
+    /// Gets the vector operation float64_256.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float64_256.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector256<double>, Vector256<double>, Vector256<double>> GetVectorOperationFloat64_256(KernelOperation operation)
@@ -92,6 +117,11 @@ internal static class SimdOperationHelpers
             _ => &Avx.Add
         };
     }
+    /// <summary>
+    /// Gets the vector operation float64_128.
+    /// </summary>
+    /// <param name="operation">The operation.</param>
+    /// <returns>The vector operation float64_128.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe delegate*<Vector128<double>, Vector128<double>, Vector128<double>> GetVectorOperationFloat64_128(KernelOperation operation)

@@ -26,6 +26,12 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     private readonly PerformanceProfiler _profiler;
     private bool _tensorCoresAvailable;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaTensorCoreManagerProduction class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="deviceManager">The device manager.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaTensorCoreManagerProduction(
         CudaContext context,
@@ -625,6 +631,9 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -640,14 +649,50 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
     /// </summary>
     private sealed class TensorCoreKernel
     {
+        /// <summary>
+        /// Gets or sets the key.
+        /// </summary>
+        /// <value>The key.</value>
         public string Key { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the ptx.
+        /// </summary>
+        /// <value>The ptx.</value>
         public string Ptx { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the cubin.
+        /// </summary>
+        /// <value>The cubin.</value>
         public byte[] Cubin { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the m.
+        /// </summary>
+        /// <value>The m.</value>
         public int M { get; init; }
+        /// <summary>
+        /// Gets or sets the n.
+        /// </summary>
+        /// <value>The n.</value>
         public int N { get; init; }
+        /// <summary>
+        /// Gets or sets the k.
+        /// </summary>
+        /// <value>The k.</value>
         public int K { get; init; }
+        /// <summary>
+        /// Gets or sets the input type.
+        /// </summary>
+        /// <value>The input type.</value>
         public DataType InputType { get; init; }
+        /// <summary>
+        /// Gets or sets the output type.
+        /// </summary>
+        /// <value>The output type.</value>
         public DataType OutputType { get; init; }
+        /// <summary>
+        /// Gets or sets the compiled at.
+        /// </summary>
+        /// <value>The compiled at.</value>
         public DateTimeOffset CompiledAt { get; init; }
     }
 
@@ -659,11 +704,29 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         private long _totalOperations;
         private double _totalGFlops;
         private double _peakGFlops;
+        /// <summary>
+        /// Gets or sets the total operations.
+        /// </summary>
+        /// <value>The total operations.</value>
 
 
         public long TotalOperations => _totalOperations;
+        /// <summary>
+        /// Gets or sets the average g flops.
+        /// </summary>
+        /// <value>The average g flops.</value>
         public double AverageGFlops => _totalOperations > 0 ? _totalGFlops / _totalOperations : 0;
+        /// <summary>
+        /// Gets or sets the peak g flops.
+        /// </summary>
+        /// <value>The peak g flops.</value>
         public double PeakGFlops => _peakGFlops;
+        /// <summary>
+        /// Performs record operation.
+        /// </summary>
+        /// <param name="kernel">The kernel.</param>
+        /// <param name="elapsedMs">The elapsed ms.</param>
+        /// <param name="gflops">The gflops.</param>
 
 
         public void RecordOperation(string kernel, double elapsedMs, double gflops)
@@ -688,21 +751,80 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
 /// </summary>
 public sealed class TensorCoreCapabilities
 {
+    /// <summary>
+    /// Gets or sets the wmma supported.
+    /// </summary>
+    /// <value>The wmma supported.</value>
     public bool WmmaSupported { get; set; }
+    /// <summary>
+    /// Gets or sets the fp16 supported.
+    /// </summary>
+    /// <value>The fp16 supported.</value>
     public bool Fp16Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the bf16 supported.
+    /// </summary>
+    /// <value>The bf16 supported.</value>
     public bool Bf16Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the tf32 supported.
+    /// </summary>
+    /// <value>The tf32 supported.</value>
     public bool Tf32Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the fp8 supported.
+    /// </summary>
+    /// <value>The fp8 supported.</value>
     public bool Fp8Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the int8 supported.
+    /// </summary>
+    /// <value>The int8 supported.</value>
     public bool Int8Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the int4 supported.
+    /// </summary>
+    /// <value>The int4 supported.</value>
     public bool Int4Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the fp64 supported.
+    /// </summary>
+    /// <value>The fp64 supported.</value>
     public bool Fp64Supported { get; set; }
+    /// <summary>
+    /// Gets or sets the sparsity supported.
+    /// </summary>
+    /// <value>The sparsity supported.</value>
     public bool SparsitySupported { get; set; }
+    /// <summary>
+    /// Gets or sets the transformer engine supported.
+    /// </summary>
+    /// <value>The transformer engine supported.</value>
     public bool TransformerEngineSupported { get; set; }
+    /// <summary>
+    /// Gets or sets the max wmma m.
+    /// </summary>
+    /// <value>The max wmma m.</value>
     public int MaxWmmaM { get; set; }
+    /// <summary>
+    /// Gets or sets the max wmma n.
+    /// </summary>
+    /// <value>The max wmma n.</value>
     public int MaxWmmaN { get; set; }
+    /// <summary>
+    /// Gets or sets the max wmma k.
+    /// </summary>
+    /// <value>The max wmma k.</value>
     public int MaxWmmaK { get; set; }
+    /// <summary>
+    /// Gets or sets the peak tflops.
+    /// </summary>
+    /// <value>The peak tflops.</value>
     public double PeakTflops { get; set; }
 }
+/// <summary>
+/// An data type enumeration.
+/// </summary>
 
 /// <summary>
 /// Supported data types for tensor operations.
@@ -719,6 +841,9 @@ public enum DataType
     Float32,
     Float64
 }
+/// <summary>
+/// An matrix layout enumeration.
+/// </summary>
 
 /// <summary>
 /// Matrix layout for tensor operations.
@@ -734,8 +859,20 @@ public enum MatrixLayout
 /// </summary>
 public struct WmmaShape
 {
+    /// <summary>
+    /// Gets or sets the m.
+    /// </summary>
+    /// <value>The m.</value>
     public int M { get; set; }
+    /// <summary>
+    /// Gets or sets the n.
+    /// </summary>
+    /// <value>The n.</value>
     public int N { get; set; }
+    /// <summary>
+    /// Gets or sets the k.
+    /// </summary>
+    /// <value>The k.</value>
     public int K { get; set; }
 }
 
@@ -744,21 +881,73 @@ public struct WmmaShape
 /// </summary>
 public sealed class ConvolutionParams
 {
+    /// <summary>
+    /// Gets or sets the batch size.
+    /// </summary>
+    /// <value>The batch size.</value>
     public int BatchSize { get; init; }
+    /// <summary>
+    /// Gets or sets the input channels.
+    /// </summary>
+    /// <value>The input channels.</value>
     public int InputChannels { get; init; }
+    /// <summary>
+    /// Gets or sets the output channels.
+    /// </summary>
+    /// <value>The output channels.</value>
     public int OutputChannels { get; init; }
+    /// <summary>
+    /// Gets or sets the input height.
+    /// </summary>
+    /// <value>The input height.</value>
     public int InputHeight { get; init; }
+    /// <summary>
+    /// Gets or sets the input width.
+    /// </summary>
+    /// <value>The input width.</value>
     public int InputWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the filter height.
+    /// </summary>
+    /// <value>The filter height.</value>
     public int FilterHeight { get; init; }
+    /// <summary>
+    /// Gets or sets the filter width.
+    /// </summary>
+    /// <value>The filter width.</value>
     public int FilterWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the stride h.
+    /// </summary>
+    /// <value>The stride h.</value>
     public int StrideH { get; init; } = 1;
+    /// <summary>
+    /// Gets or sets the stride w.
+    /// </summary>
+    /// <value>The stride w.</value>
     public int StrideW { get; init; } = 1;
+    /// <summary>
+    /// Gets or sets the pad h.
+    /// </summary>
+    /// <value>The pad h.</value>
     public int PadH { get; init; }
+    /// <summary>
+    /// Gets or sets the pad w.
+    /// </summary>
+    /// <value>The pad w.</value>
 
     public int PadW { get; init; }
+    /// <summary>
+    /// Gets or sets the output height.
+    /// </summary>
+    /// <value>The output height.</value>
 
 
     public int OutputHeight => (InputHeight + 2 * PadH - FilterHeight) / StrideH + 1;
+    /// <summary>
+    /// Gets or sets the output width.
+    /// </summary>
+    /// <value>The output width.</value>
     public int OutputWidth => (InputWidth + 2 * PadW - FilterWidth) / StrideW + 1;
 }
 
@@ -767,11 +956,35 @@ public sealed class ConvolutionParams
 /// </summary>
 public sealed class TensorCoreResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the elapsed milliseconds.
+    /// </summary>
+    /// <value>The elapsed milliseconds.</value>
     public double ElapsedMilliseconds { get; init; }
+    /// <summary>
+    /// Gets or sets the g flops.
+    /// </summary>
+    /// <value>The g flops.</value>
     public double GFlops { get; init; }
+    /// <summary>
+    /// Gets or sets the efficiency.
+    /// </summary>
+    /// <value>The efficiency.</value>
     public double Efficiency { get; init; }
+    /// <summary>
+    /// Gets or sets the kernel used.
+    /// </summary>
+    /// <value>The kernel used.</value>
     public string KernelUsed { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the operation type.
+    /// </summary>
+    /// <value>The operation type.</value>
     public string OperationType { get; set; } = "GEMM";
 }
 
@@ -780,11 +993,35 @@ public sealed class TensorCoreResult
 /// </summary>
 public sealed class TensorCoreStatistics
 {
+    /// <summary>
+    /// Gets or sets the tensor cores available.
+    /// </summary>
+    /// <value>The tensor cores available.</value>
     public bool TensorCoresAvailable { get; init; }
+    /// <summary>
+    /// Gets or sets the cached kernels.
+    /// </summary>
+    /// <value>The cached kernels.</value>
     public int CachedKernels { get; init; }
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public long TotalOperations { get; init; }
+    /// <summary>
+    /// Gets or sets the average g flops.
+    /// </summary>
+    /// <value>The average g flops.</value>
     public double AverageGFlops { get; init; }
+    /// <summary>
+    /// Gets or sets the peak g flops.
+    /// </summary>
+    /// <value>The peak g flops.</value>
     public double PeakGFlops { get; init; }
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
     public TensorCoreCapabilities Capabilities { get; init; } = new();
 }
 
@@ -793,8 +1030,20 @@ public sealed class TensorCoreStatistics
 /// </summary>
 public sealed class TensorCoreException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the TensorCoreException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public TensorCoreException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the TensorCoreException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="inner">The inner.</param>
     public TensorCoreException(string message, Exception inner) : base(message, inner) { }
+    /// <summary>
+    /// Initializes a new instance of the TensorCoreException class.
+    /// </summary>
     public TensorCoreException()
     {
     }
@@ -805,5 +1054,8 @@ public sealed class TensorCoreException : Exception
 /// </summary>
 public struct dim3(uint x, uint y, uint z)
 {
+    /// <summary>
+    /// The x.
+    /// </summary>
     public uint x = x, y = y, z = z;
 }

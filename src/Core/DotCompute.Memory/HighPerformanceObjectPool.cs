@@ -393,6 +393,9 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             throw new ObjectDisposedException(nameof(HighPerformanceObjectPool<T>));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -422,8 +425,17 @@ internal sealed class LocalPool<T>(int capacity) where T : class
     private readonly T?[] _items = new T[capacity];
     private int _count;
     private readonly int _capacity = capacity;
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
+    /// <value>The count.</value>
 
     public int Count => _count;
+    /// <summary>
+    /// Returns true if able to pop, otherwise false.
+    /// </summary>
+    /// <param name="item">The item.</param>
+    /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryPop(out T? item)
@@ -438,6 +450,11 @@ internal sealed class LocalPool<T>(int capacity) where T : class
         item = null;
         return false;
     }
+    /// <summary>
+    /// Returns true if able to push, otherwise false.
+    /// </summary>
+    /// <param name="item">The item.</param>
+    /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryPush(T item)
@@ -450,6 +467,10 @@ internal sealed class LocalPool<T>(int capacity) where T : class
         return false;
     }
 }
+/// <summary>
+/// A pooled object structure.
+/// </summary>
+/// <typeparam name="T">The T type parameter.</typeparam>
 
 /// <summary>
 /// Wrapper for pooled objects with metadata.
@@ -536,16 +557,60 @@ public sealed class PoolConfiguration
 /// </summary>
 public readonly record struct PoolStatistics
 {
+    /// <summary>
+    /// Gets or sets the total gets.
+    /// </summary>
+    /// <value>The total gets.</value>
     public long TotalGets { get; init; }
+    /// <summary>
+    /// Gets or sets the total returns.
+    /// </summary>
+    /// <value>The total returns.</value>
     public long TotalReturns { get; init; }
+    /// <summary>
+    /// Gets or sets the pool hits.
+    /// </summary>
+    /// <value>The pool hits.</value>
     public long PoolHits { get; init; }
+    /// <summary>
+    /// Gets or sets the pool misses.
+    /// </summary>
+    /// <value>The pool misses.</value>
     public long PoolMisses { get; init; }
+    /// <summary>
+    /// Gets or sets the total created.
+    /// </summary>
+    /// <value>The total created.</value>
     public long TotalCreated { get; init; }
+    /// <summary>
+    /// Gets or sets the total destroyed.
+    /// </summary>
+    /// <value>The total destroyed.</value>
     public long TotalDestroyed { get; init; }
+    /// <summary>
+    /// Gets or sets the current pool size.
+    /// </summary>
+    /// <value>The current pool size.</value>
     public int CurrentPoolSize { get; init; }
+    /// <summary>
+    /// Gets or sets the thread local count.
+    /// </summary>
+    /// <value>The thread local count.</value>
     public int ThreadLocalCount { get; init; }
+    /// <summary>
+    /// Gets or sets the hit rate.
+    /// </summary>
+    /// <value>The hit rate.</value>
     public double HitRate { get; init; }
+    /// <summary>
+    /// Gets or sets the live objects.
+    /// </summary>
+    /// <value>The live objects.</value>
 
     public long LiveObjects => TotalCreated - TotalDestroyed;
+    /// <summary>
+    /// Gets or sets the efficiency ratio.
+    /// </summary>
+    /// <value>The efficiency ratio.</value>
     public double EfficiencyRatio => TotalReturns > 0 ? (double)PoolHits / TotalReturns : 0.0;
 }

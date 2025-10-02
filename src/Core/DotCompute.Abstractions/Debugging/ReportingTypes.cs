@@ -79,7 +79,7 @@ public sealed class DebugData
     /// <summary>
     /// Gets the execution history for this kernel.
     /// </summary>
-    public List<KernelExecutionResult> ExecutionHistory { get; init; } = [];
+    public IReadOnlyList<KernelExecutionResult> ExecutionHistory { get; init; } = [];
 
     /// <summary>
     /// Gets the metrics data collected.
@@ -125,7 +125,7 @@ public sealed class DebugReport
     /// <summary>
     /// Gets recommendations based on the analysis.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets the severity level of issues found.
@@ -140,7 +140,7 @@ public sealed class DebugReport
     /// <summary>
     /// Gets attachments or additional files.
     /// </summary>
-    public List<ReportAttachment> Attachments { get; init; } = [];
+    public IReadOnlyList<ReportAttachment> Attachments { get; init; } = [];
 }
 
 /// <summary>
@@ -161,7 +161,7 @@ public sealed class ReportAttachment
     /// <summary>
     /// Gets the attachment content.
     /// </summary>
-    public byte[] Content { get; init; } = [];
+    public ReadOnlyMemory<byte> Content { get; init; } = ReadOnlyMemory<byte>.Empty;
 
     /// <summary>
     /// Gets the description of the attachment.

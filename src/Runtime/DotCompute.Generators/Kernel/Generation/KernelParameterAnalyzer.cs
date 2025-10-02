@@ -32,7 +32,7 @@ public sealed class KernelParameterAnalyzer
     /// - Backend compatibility assessment
     /// - Buffer vs scalar classification
     /// </remarks>
-    public static List<ParameterInfo> AnalyzeParameters(IMethodSymbol methodSymbol) => [.. methodSymbol.Parameters.Select(AnalyzeParameter)];
+    public static IReadOnlyList<ParameterInfo> AnalyzeParameters(IMethodSymbol methodSymbol) => [.. methodSymbol.Parameters.Select(AnalyzeParameter)];
 
     /// <summary>
     /// Analyzes a single parameter and extracts detailed information.

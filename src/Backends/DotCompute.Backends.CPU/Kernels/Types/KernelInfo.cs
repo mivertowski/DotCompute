@@ -49,5 +49,5 @@ internal class KernelInfo
     /// Parameter information is used for argument validation and type checking
     /// during kernel execution. Each parameter includes name, type, and scope information.
     /// </remarks>
-    public List<KernelParameter> Parameters { get; set; } = [];
+    public IList<KernelParameter> Parameters { get; } = [];
 }

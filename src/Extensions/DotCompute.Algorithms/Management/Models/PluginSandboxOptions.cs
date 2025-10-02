@@ -31,11 +31,11 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the allowed file system paths.
         /// </summary>
-        public List<string> AllowedFilePaths { get; } = [];
+        public IList<string> AllowedFilePaths { get; } = [];
 
         /// <summary>
         /// Gets the allowed network endpoints.
         /// </summary>
-        public List<string> AllowedNetworkEndpoints { get; } = [];
+        public IList<string> AllowedNetworkEndpoints { get; } = [];
     }
 }

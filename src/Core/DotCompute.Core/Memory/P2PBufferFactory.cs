@@ -474,6 +474,10 @@ namespace DotCompute.Core.Memory
             var ids = new[] { device1Id, device2Id }.OrderBy(id => id).ToArray();
             return $"{ids[0]}<->{ids[1]}";
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -502,11 +506,31 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class P2PBufferOptions
     {
+        /// <summary>
+        /// Gets or sets the default.
+        /// </summary>
+        /// <value>The default.</value>
         public static P2PBufferOptions Default => new();
+        /// <summary>
+        /// Gets or sets the enable p2 p optimizations.
+        /// </summary>
+        /// <value>The enable p2 p optimizations.</value>
 
         public bool EnableP2POptimizations { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the enable memory pooling.
+        /// </summary>
+        /// <value>The enable memory pooling.</value>
         public bool EnableMemoryPooling { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the enable async transfers.
+        /// </summary>
+        /// <value>The enable async transfers.</value>
         public bool EnableAsyncTransfers { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the preferred chunk size bytes.
+        /// </summary>
+        /// <value>The preferred chunk size bytes.</value>
         public int PreferredChunkSizeBytes { get; init; } = 4 * 1024 * 1024; // 4MB
     }
 
@@ -515,12 +539,40 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class P2PConnectionState
     {
+        /// <summary>
+        /// Gets or sets the device1 identifier.
+        /// </summary>
+        /// <value>The device1 id.</value>
         public required string Device1Id { get; init; }
+        /// <summary>
+        /// Gets or sets the device2 identifier.
+        /// </summary>
+        /// <value>The device2 id.</value>
         public required string Device2Id { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether active.
+        /// </summary>
+        /// <value>The is active.</value>
         public required bool IsActive { get; init; }
+        /// <summary>
+        /// Gets or sets the capability.
+        /// </summary>
+        /// <value>The capability.</value>
         public P2PConnectionCapability? Capability { get; init; }
+        /// <summary>
+        /// Gets or sets the established at.
+        /// </summary>
+        /// <value>The established at.</value>
         public DateTime EstablishedAt { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer count.
+        /// </summary>
+        /// <value>The transfer count.</value>
         public long TransferCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public long TotalBytesTransferred { get; set; }
     }
 
@@ -529,11 +581,35 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class P2PConnectionStatistics
     {
+        /// <summary>
+        /// Gets or sets the total connections.
+        /// </summary>
+        /// <value>The total connections.</value>
         public int TotalConnections { get; init; }
+        /// <summary>
+        /// Gets or sets the active connections.
+        /// </summary>
+        /// <value>The active connections.</value>
         public int ActiveConnections { get; init; }
+        /// <summary>
+        /// Gets or sets the total transfers.
+        /// </summary>
+        /// <value>The total transfers.</value>
         public long TotalTransfers { get; init; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public long TotalBytesTransferred { get; init; }
+        /// <summary>
+        /// Gets or sets the average transfer size.
+        /// </summary>
+        /// <value>The average transfer size.</value>
         public long AverageTransferSize { get; init; }
+        /// <summary>
+        /// Gets or sets the connection details.
+        /// </summary>
+        /// <value>The connection details.</value>
         public IReadOnlyList<P2PConnectionState> ConnectionDetails { get; init; } = [];
     }
 
@@ -542,13 +618,45 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public sealed class DeviceBufferPoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the device name.
+        /// </summary>
+        /// <value>The device name.</value>
         public required string DeviceName { get; init; }
+        /// <summary>
+        /// Gets or sets the total allocated bytes.
+        /// </summary>
+        /// <value>The total allocated bytes.</value>
         public long TotalAllocatedBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the available bytes.
+        /// </summary>
+        /// <value>The available bytes.</value>
         public long AvailableBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the active buffers.
+        /// </summary>
+        /// <value>The active buffers.</value>
         public int ActiveBuffers { get; init; }
+        /// <summary>
+        /// Gets or sets the allocation count.
+        /// </summary>
+        /// <value>The allocation count.</value>
         public long AllocationCount { get; init; }
+        /// <summary>
+        /// Gets or sets the deallocation count.
+        /// </summary>
+        /// <value>The deallocation count.</value>
         public long DeallocationCount { get; init; }
+        /// <summary>
+        /// Gets or sets the pool efficiency.
+        /// </summary>
+        /// <value>The pool efficiency.</value>
         public double PoolEfficiency { get; init; }
     }
 }

@@ -10,6 +10,7 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using DotCompute.Tests.Common.Mocks;
+using System;
 
 namespace DotCompute.Core.Tests.Memory;
 
@@ -33,6 +34,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
     private readonly TestMemoryManager _memoryManager;
     private readonly List<TestMemoryManager> _managers = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseMemoryManagerTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public BaseMemoryManagerTests(ITestOutputHelper output)
     {
@@ -41,6 +46,11 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _memoryManager = new TestMemoryManager(_mockLogger.Object);
         _managers.Add(_memoryManager);
     }
+    /// <summary>
+    /// Gets allocate async_ valid sizes_ returns valid buffer.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <returns>The result of the operation.</returns>
 
     #region Memory Allocation Tests
 
@@ -65,6 +75,11 @@ public sealed class BaseMemoryManagerTests : IDisposable
             _ = _memoryManager.CurrentAllocatedMemory.Should().BeGreaterThan(0);
         }
     }
+    /// <summary>
+    /// Gets allocate async_ invalid sizes_ throws argument exception.
+    /// </summary>
+    /// <param name="invalidSize">The invalid size.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(0)]      // Zero size
@@ -78,6 +93,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithParameterName("sizeInBytes");
     }
+    /// <summary>
+    /// Gets allocate async_ extremely large size_ throws out of memory exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Allocation")]
@@ -95,11 +114,15 @@ public sealed class BaseMemoryManagerTests : IDisposable
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to allocate")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to allocate", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets allocate async_ multiple allocations_ tracks memory correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Allocation")]
@@ -140,6 +163,12 @@ public sealed class BaseMemoryManagerTests : IDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets allocate async_ different types_ handles alignment correctly.
+    /// </summary>
+    /// <param name="elementType">The element type.</param>
+    /// <param name="elementSize">The element size.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(typeof(byte), 1)]
@@ -181,6 +210,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             _ = buffer.Length.Should().Be(elementCount);
         }
     }
+    /// <summary>
+    /// Gets memory pooling_ enabled and disabled_ shows different behavior.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -219,6 +252,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = nonPooledManager.PoolHitCount.Should().Be(0);
         buffer4.Dispose();
     }
+    /// <summary>
+    /// Gets memory pool_ high volume operations_ maintains efficiency.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Pooling")]
@@ -249,6 +286,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = pooledManager.PoolHitCount.Should().BeGreaterThan(operationCount / 2, "pool should provide significant reuse");
         _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(operationCount, "operations should be fast with pooling");
     }
+    /// <summary>
+    /// Gets memory pool_ different sizes_ handles variability.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Pooling")]
@@ -285,6 +326,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             buffer.Dispose();
         }
     }
+    /// <summary>
+    /// Gets concurrent allocations_ thread safety_ handles correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -331,6 +376,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             buffer.Dispose();
         }
     }
+    /// <summary>
+    /// Gets concurrent allocation and deallocation_ thread safety_ maintains consistency.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ThreadSafety")]
@@ -373,6 +422,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = activeTasks.Should().Be(0, "all tasks should complete");
         _ = _memoryManager.CurrentAllocatedMemory.Should().Be(0, "all memory should be released");
     }
+    /// <summary>
+    /// Gets memory statistics_ concurrent access_ returns consistent data.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "ThreadSafety")]
@@ -413,6 +466,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             _ = stats.AvailableMemoryBytes.Should().BeGreaterThanOrEqualTo(0);
         });
     }
+    /// <summary>
+    /// Gets memory pressure_ low memory_ triggers cleanup.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -439,6 +496,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
 
         buffer.Dispose();
     }
+    /// <summary>
+    /// Gets memory pressure_ gradual increase_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryPressure")]
@@ -482,6 +543,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets memory recovery_ after pressure_ restores normal operation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryPressure")]
@@ -511,6 +576,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
 
         normalBuffer.Dispose();
     }
+    /// <summary>
+    /// Gets allocation performance_ high throughput_ meets targets.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -546,6 +615,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = allocationsPerSecond.Should().BeGreaterThan(1000, "should achieve reasonable allocation throughput");
         _ = avgAllocationTime.Should().BeLessThan(1.0, "individual allocations should be fast");
     }
+    /// <summary>
+    /// Gets memory utilization_ efficiency_ minimizes waste.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -584,6 +657,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets memory fragmentation_ long running_ remains stable.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -647,6 +724,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _output.WriteLine($"Fragmentation CV: {coefficientOfVariation:P}");
         _ = coefficientOfVariation.Should().BeLessThan(0.5, "fragmentation should remain relatively stable");
     }
+    /// <summary>
+    /// Gets dispose async_ with active allocations_ cleans up correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -667,6 +748,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = disposableManager.IsDisposed.Should().BeTrue();
         _ = buffer.Invoking(b => b.AsSpan()).Should().Throw<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets allocate async_ after dispose_ throws object disposed exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -680,6 +765,9 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var act = async () => await disposableManager.AllocateAsync<byte>(1024);
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Performs statistics_ when disposed_ throws object disposed exception.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -693,6 +781,11 @@ public sealed class BaseMemoryManagerTests : IDisposable
         var act = () => disposableManager.Statistics;
         _ = act.Should().Throw<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets allocate async_ unusual sizes_ handles correctly.
+    /// </summary>
+    /// <param name="unusualSize">The unusual size.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(1)]      // Boundary case
@@ -707,6 +800,10 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _ = buffer.SizeInBytes.Should().Be(unusualSize);
         buffer.Length.Should().Be((int)unusualSize);
     }
+    /// <summary>
+    /// Gets allocate async_ with cancellation_ responds correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -731,6 +828,9 @@ public sealed class BaseMemoryManagerTests : IDisposable
         _managers.Add(manager);
         return manager;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -769,22 +869,66 @@ internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool 
     private readonly int _allocationCount;
     private readonly int _poolHitCount;
     private int _cleanupCallCount;
+    /// <summary>
+    /// Gets or sets the simulate memory pressure.
+    /// </summary>
+    /// <value>The simulate memory pressure.</value>
 
     // Test state
     public bool SimulateMemoryPressure { get; set; }
+    /// <summary>
+    /// Gets or sets the available memory.
+    /// </summary>
+    /// <value>The available memory.</value>
     public long AvailableMemory { get; set; } = long.MaxValue;
+    /// <summary>
+    /// Gets or sets the current allocated memory.
+    /// </summary>
+    /// <value>The current allocated memory.</value>
 
     // Metrics
     public override long CurrentAllocatedMemory => _currentAllocatedMemory;
+    /// <summary>
+    /// Gets or sets the allocation count.
+    /// </summary>
+    /// <value>The allocation count.</value>
     public new int AllocationCount => _allocationCount;
+    /// <summary>
+    /// Gets or sets the pool hit count.
+    /// </summary>
+    /// <value>The pool hit count.</value>
     public int PoolHitCount => _poolHitCount;
+    /// <summary>
+    /// Gets or sets the cleanup call count.
+    /// </summary>
+    /// <value>The cleanup call count.</value>
     public int CleanupCallCount => _cleanupCallCount;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
 
     public override IAccelerator Accelerator => ConsolidatedMockAccelerator.CreateCpuMock();
+    /// <summary>
+    /// Gets or sets the max allocation size.
+    /// </summary>
+    /// <value>The max allocation size.</value>
 
     public override long MaxAllocationSize => long.MaxValue;
+    /// <summary>
+    /// Gets or sets the total available memory.
+    /// </summary>
+    /// <value>The total available memory.</value>
 
     public override long TotalAvailableMemory => AvailableMemory;
+    /// <summary>
+    /// Creates a new view.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The created view.</returns>
 
     // CurrentAllocatedMemory is already inherited from base class
 
@@ -792,11 +936,30 @@ internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool 
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
         int length) => buffer; // Simplified for testing
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -805,20 +968,50 @@ internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool 
         int destinationOffset,
         int count,
         CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets copy to device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="deviceBuffer">The device buffer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> deviceBuffer,
         CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets copy from device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="deviceBuffer">The device buffer.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> deviceBuffer,
         Memory<T> destination,
         CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets free asynchronously.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Performs clear.
+    /// </summary>
 
     public override void Clear()
     {
@@ -839,6 +1032,10 @@ internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool 
     }
 
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length) => buffer; // Simplified for testing
+    /// <summary>
+    /// Gets or sets the statistics.
+    /// </summary>
+    /// <value>The statistics.</value>
 
     public override MemoryStatistics Statistics
     {
@@ -854,6 +1051,12 @@ internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool 
             };
         }
     }
+    /// <summary>
+    /// Performs return to pool.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="array">The array.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
 
     // Removed incorrect method override - simplified test implementation
 
@@ -901,24 +1104,76 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
     private readonly byte[] _array = array;
     private readonly TestMemoryManager _manager = manager;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
 
     public long SizeInBytes { get; } = sizeInBytes;
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
     public int Length { get; } = (int)(sizeInBytes / Unsafe.SizeOf<T>());
+    /// <summary>
+    /// Gets or sets the memory type.
+    /// </summary>
+    /// <value>The memory type.</value>
     public MemoryType MemoryType => MemoryType.Host;
+    /// <summary>
+    /// Gets or sets the device pointer.
+    /// </summary>
+    /// <value>The device pointer.</value>
     public IntPtr DevicePointer => IntPtr.Zero;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => _disposed;
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options => MemoryOptions.None;
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State => _disposed ? BufferState.Disposed : BufferState.Allocated;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public IAccelerator Accelerator => _manager.Accelerator;
+    /// <summary>
+    /// Gets or sets a value indicating whether on host.
+    /// </summary>
+    /// <value>The is on host.</value>
     public bool IsOnHost => true;
+    /// <summary>
+    /// Gets or sets a value indicating whether on device.
+    /// </summary>
+    /// <value>The is on device.</value>
     public bool IsOnDevice => false;
+    /// <summary>
+    /// Gets or sets a value indicating whether dirty.
+    /// </summary>
+    /// <value>The is dirty.</value>
     public bool IsDirty => false;
+    /// <summary>
+    /// Gets as span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Span<T> AsSpan()
     {
         ThrowIfDisposed();
         return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
     }
+    /// <summary>
+    /// Gets as memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public Memory<T> AsMemory()
     {
@@ -926,12 +1181,20 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         var span = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
         return new Memory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets as read only span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlySpan<T> AsReadOnlySpan()
     {
         ThrowIfDisposed();
         return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
     }
+    /// <summary>
+    /// Gets as read only memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
@@ -939,18 +1202,34 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         var span = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
         return new ReadOnlyMemory<T>(span.ToArray());
     }
+    /// <summary>
+    /// Gets the device memory.
+    /// </summary>
+    /// <returns>The device memory.</returns>
 
     public DeviceMemory GetDeviceMemory()
     {
         ThrowIfDisposed();
         return DeviceMemory.Invalid; // Test implementation returns invalid device memory
     }
+    /// <summary>
+    /// Gets map.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
     {
         ThrowIfDisposed();
         return new MappedMemory<T>(AsMemory(), null);
     }
+    /// <summary>
+    /// Gets map range.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
@@ -959,17 +1238,62 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
             throw new ArgumentOutOfRangeException();
         return new MappedMemory<T>(AsMemory().Slice(offset, length), null);
     }
+    /// <summary>
+    /// Gets map asynchronously.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+    /// <summary>
+    /// Performs ensure on host.
+    /// </summary>
 
     public void EnsureOnHost() { /* Already on host */ }
+    /// <summary>
+    /// Performs ensure on device.
+    /// </summary>
     public void EnsureOnDevice() { /* Test implementation - no-op */ }
+    /// <summary>
+    /// Gets ensure on host asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets ensure on device asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Performs synchronize.
+    /// </summary>
     public void Synchronize() { /* Test implementation - no-op */ }
+    /// <summary>
+    /// Gets synchronize asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <summary>
+    /// Performs mark host dirty.
+    /// </summary>
     public void MarkHostDirty() { /* Test implementation - no-op */ }
+    /// <summary>
+    /// Performs mark device dirty.
+    /// </summary>
     public void MarkDeviceDirty() { /* Test implementation - no-op */ }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
@@ -979,6 +1303,12 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
 
         await Task.Run(() => source.Span.CopyTo(AsSpan()), cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
@@ -988,12 +1318,27 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
 
         await Task.Run(() => AsSpan().CopyTo(destination.Span), cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         return destination.CopyFromAsync(AsReadOnlyMemory(), cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
@@ -1003,6 +1348,12 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         var sourceSlice = AsReadOnlyMemory().Slice(sourceOffset, count);
         return destination.CopyFromAsync(sourceSlice, cancellationToken);
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
@@ -1010,6 +1361,14 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         AsSpan().Fill(value);
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
@@ -1019,6 +1378,12 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         AsSpan().Slice(offset, count).Fill(value);
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets slice.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
@@ -1031,6 +1396,11 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         Array.Copy(_array, offset * elementSize, slicedArray, 0, length * elementSize);
         return new TestMemoryBuffer<T>(slicedArray, length * elementSize, _manager);
     }
+    /// <summary>
+    /// Gets as type.
+    /// </summary>
+    /// <typeparam name="TNew">The TNew type parameter.</typeparam>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
@@ -1038,6 +1408,14 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         var newSizeInBytes = SizeInBytes;
         return new TestMemoryBuffer<TNew>(_array, newSizeInBytes, _manager);
     }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <typeparam name="TElement">The TElement type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     // Implement base interface methods
     public ValueTask CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
@@ -1050,6 +1428,14 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         }
         throw new ArgumentException($"Type mismatch: {typeof(TElement)} vs {typeof(T)}");
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <typeparam name="TElement">The TElement type parameter.</typeparam>
+    /// <param name="destination">The destination.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToAsync<TElement>(Memory<TElement> destination, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
     {
@@ -1067,6 +1453,9 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
         if (_disposed)
             throw new ObjectDisposedException(nameof(TestMemoryBuffer<T>));
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -1076,6 +1465,10 @@ internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMe
             _disposed = true;
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {

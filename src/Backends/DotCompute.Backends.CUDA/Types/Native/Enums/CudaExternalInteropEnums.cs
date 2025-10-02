@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda external memory handle type enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA external memory handle type enumeration
     /// </summary>
     public enum CudaExternalMemoryHandleType : uint
@@ -17,6 +20,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         D3D11ResourceKmt = 7,
         NvSciBuf = 8
     }
+    /// <summary>
+    /// An cuda external semaphore handle type enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA external semaphore handle type enumeration
@@ -34,6 +40,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         TimelineSemaphoreFd = 9,
         TimelineSemaphoreWin32 = 10
     }
+    /// <summary>
+    /// An cuda external semaphore signal flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA external semaphore signal flags enumeration
@@ -44,6 +53,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         SignalSkipNvSciBufMemSync = 1,
         SignalSkipNvSciSyncFence = 2
     }
+    /// <summary>
+    /// An cuda external semaphore wait flags enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA external semaphore wait flags enumeration

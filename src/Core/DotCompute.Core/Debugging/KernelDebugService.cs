@@ -24,6 +24,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     private readonly CoreKernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the KernelDebugService class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="primaryAccelerator">The primary accelerator.</param>
 
     public KernelDebugService(
         ILogger<KernelDebugService> logger,
@@ -207,6 +212,9 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _orchestrator.GetStatistics();
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

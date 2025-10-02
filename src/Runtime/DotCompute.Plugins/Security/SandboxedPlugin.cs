@@ -183,12 +183,12 @@ public class SandboxPermissions
     /// <summary>
     /// Gets or sets the list of allowed permissions.
     /// </summary>
-    public List<string> AllowedPermissions { get; set; } = [];
+    public IList<string> AllowedPermissions { get; } = [];
 
     /// <summary>
     /// Gets or sets the list of explicitly denied permissions.
     /// </summary>
-    public List<string> DeniedPermissions { get; set; } = [];
+    public IList<string> DeniedPermissions { get; } = [];
 
     /// <summary>
     /// Gets or sets resource limits for the plugin.
@@ -243,6 +243,9 @@ public class SandboxPermissions
         };
     }
 }
+/// <summary>
+/// An network access permissions enumeration.
+/// </summary>
 
 /// <summary>
 /// Network access permission levels.
@@ -253,6 +256,9 @@ public enum NetworkAccessPermissions
     HttpClient = 1,
     FullNetwork = 2
 }
+/// <summary>
+/// An file system access permissions enumeration.
+/// </summary>
 
 /// <summary>
 /// File system access permission levels.
@@ -310,12 +316,12 @@ public class SecurityContext
     /// <summary>
     /// Gets or sets the allowed permissions.
     /// </summary>
-    public HashSet<string> AllowedPermissions { get; set; } = [];
+    public HashSet<string> AllowedPermissions { get; } = [];
 
     /// <summary>
     /// Gets or sets the denied permissions.
     /// </summary>
-    public HashSet<string> DeniedPermissions { get; set; } = [];
+    public HashSet<string> DeniedPermissions { get; } = [];
 
     /// <summary>
     /// Gets or sets the resource limits.
@@ -376,5 +382,5 @@ public class ResourceUsage
     /// <summary>
     /// Gets the list of violated resource limits.
     /// </summary>
-    public List<string> ViolatedLimits { get; set; } = [];
+    public IList<string> ViolatedLimits { get; } = [];
 }

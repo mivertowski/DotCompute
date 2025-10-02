@@ -262,7 +262,7 @@ public sealed class NumaOptimizer : IDisposable
         };
     }
 
-    private void ApplyBasicOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
+    private void ApplyBasicOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
     {
         // Basic NUMA awareness
         if (_topology.IsNumaSystem)
@@ -282,7 +282,7 @@ public sealed class NumaOptimizer : IDisposable
         }
     }
 
-    private void ApplyAggressiveOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
+    private void ApplyAggressiveOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
     {
         ApplyBasicOptimizations(workloadType, optimizations, warnings);
 
@@ -309,7 +309,7 @@ public sealed class NumaOptimizer : IDisposable
         }
     }
 
-    private void ApplyAdaptiveOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
+    private void ApplyAdaptiveOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
     {
         // Start with basic optimizations
         ApplyBasicOptimizations(workloadType, optimizations, warnings);
@@ -483,11 +483,35 @@ public sealed class NumaOptimizer : IDisposable
 /// </summary>
 public sealed record OptimizationProfile
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the workload type.
+    /// </summary>
+    /// <value>The workload type.</value>
     public required WorkloadType WorkloadType { get; init; }
+    /// <summary>
+    /// Gets or sets the preferences.
+    /// </summary>
+    /// <value>The preferences.</value>
     public required OptimizationPreferences Preferences { get; init; }
+    /// <summary>
+    /// Gets or sets the created time.
+    /// </summary>
+    /// <value>The created time.</value>
     public required DateTime CreatedTime { get; init; }
+    /// <summary>
+    /// Gets or sets the last used.
+    /// </summary>
+    /// <value>The last used.</value>
     public required DateTime LastUsed { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether active.
+    /// </summary>
+    /// <value>The is active.</value>
     public required bool IsActive { get; init; }
 }
 
@@ -496,10 +520,30 @@ public sealed record OptimizationProfile
 /// </summary>
 public sealed record OptimizationPreferences
 {
+    /// <summary>
+    /// Gets or sets the preferred strategy.
+    /// </summary>
+    /// <value>The preferred strategy.</value>
     public required NumaOptimizationStrategy PreferredStrategy { get; init; }
+    /// <summary>
+    /// Gets or sets the prioritize latency.
+    /// </summary>
+    /// <value>The prioritize latency.</value>
     public required bool PrioritizeLatency { get; init; }
+    /// <summary>
+    /// Gets or sets the prioritize throughput.
+    /// </summary>
+    /// <value>The prioritize throughput.</value>
     public required bool PrioritizeThroughput { get; init; }
+    /// <summary>
+    /// Gets or sets the allow aggressive affinity.
+    /// </summary>
+    /// <value>The allow aggressive affinity.</value>
     public required bool AllowAggressiveAffinity { get; init; }
+    /// <summary>
+    /// Gets or sets the enable memory interleaving.
+    /// </summary>
+    /// <value>The enable memory interleaving.</value>
     public required bool EnableMemoryInterleaving { get; init; }
 }
 
@@ -508,12 +552,40 @@ public sealed record OptimizationPreferences
 /// </summary>
 public sealed record OptimizationResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public required bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public required NumaOptimizationStrategy Strategy { get; init; }
+    /// <summary>
+    /// Gets or sets the workload type.
+    /// </summary>
+    /// <value>The workload type.</value>
     public required WorkloadType WorkloadType { get; init; }
+    /// <summary>
+    /// Gets or sets the optimizations applied.
+    /// </summary>
+    /// <value>The optimizations applied.</value>
     public required IReadOnlyList<string> OptimizationsApplied { get; init; }
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
     public required IReadOnlyList<string> Warnings { get; init; }
+    /// <summary>
+    /// Gets or sets the optimization time.
+    /// </summary>
+    /// <value>The optimization time.</value>
     public required TimeSpan OptimizationTime { get; init; }
+    /// <summary>
+    /// Gets or sets the performance gain.
+    /// </summary>
+    /// <value>The performance gain.</value>
     public required double PerformanceGain { get; init; }
 }
 
@@ -522,12 +594,35 @@ public sealed record OptimizationResult
 /// </summary>
 public sealed record PerformanceRecommendations
 {
+    /// <summary>
+    /// Gets or sets the workload type.
+    /// </summary>
+    /// <value>The workload type.</value>
     public required WorkloadType WorkloadType { get; init; }
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
     public required IReadOnlyList<string> Recommendations { get; init; }
+    /// <summary>
+    /// Gets or sets the priorities.
+    /// </summary>
+    /// <value>The priorities.</value>
     public required IReadOnlyList<RecommendationPriority> Priorities { get; init; }
+    /// <summary>
+    /// Gets or sets the overall score.
+    /// </summary>
+    /// <value>The overall score.</value>
     public required double OverallScore { get; init; }
+    /// <summary>
+    /// Gets or sets the generated time.
+    /// </summary>
+    /// <value>The generated time.</value>
     public required DateTime GeneratedTime { get; init; }
 }
+/// <summary>
+/// An recommendation priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Priority levels for optimization recommendations.

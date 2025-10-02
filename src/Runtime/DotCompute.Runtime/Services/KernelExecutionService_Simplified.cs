@@ -222,6 +222,9 @@ public class KernelExecutionServiceSimplified(
         var result = await ExecuteAsync<object>(kernelName, accelerator, args);
         return result;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

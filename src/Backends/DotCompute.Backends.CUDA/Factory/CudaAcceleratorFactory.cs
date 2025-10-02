@@ -35,10 +35,27 @@ namespace DotCompute.Backends.CUDA.Factory
         private readonly CudaDeviceManager _deviceManager;
         private readonly SystemInfoManager _systemInfoManager;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name => "CUDA Production";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Production-Grade NVIDIA CUDA GPU Backend with Advanced Features";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(2, 0, 0);
+        /// <summary>
+        /// Initializes a new instance of the CudaAcceleratorFactory class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="serviceProvider">The service provider.</param>
 
         public CudaAcceleratorFactory(
             ILogger<CudaAcceleratorFactory>? logger = null,
@@ -558,6 +575,9 @@ namespace DotCompute.Backends.CUDA.Factory
             var minor = (version % 1000) / 10;
             return $"{major}.{minor}";
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -600,26 +620,86 @@ namespace DotCompute.Backends.CUDA.Factory
         /// </summary>
         public class ProductionConfiguration
         {
+            /// <summary>
+            /// Gets or sets the enable stream management.
+            /// </summary>
+            /// <value>The enable stream management.</value>
             public bool EnableStreamManagement { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable async memory.
+            /// </summary>
+            /// <value>The enable async memory.</value>
             public bool EnableAsyncMemory { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable unified memory.
+            /// </summary>
+            /// <value>The enable unified memory.</value>
             public bool EnableUnifiedMemory { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable tensor cores.
+            /// </summary>
+            /// <value>The enable tensor cores.</value>
             public bool EnableTensorCores { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable graph optimization.
+            /// </summary>
+            /// <value>The enable graph optimization.</value>
             public bool EnableGraphOptimization { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable kernel caching.
+            /// </summary>
+            /// <value>The enable kernel caching.</value>
             public bool EnableKernelCaching { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the enable p2 p.
+            /// </summary>
+            /// <value>The enable p2 p.</value>
             public bool EnableP2P { get; set; }
+            /// <summary>
+            /// Gets or sets the enable profiling.
+            /// </summary>
+            /// <value>The enable profiling.</value>
 
             public bool EnableProfiling { get; set; }
+            /// <summary>
+            /// Gets or sets the enable error recovery.
+            /// </summary>
+            /// <value>The enable error recovery.</value>
 
             public bool EnableErrorRecovery { get; set; } = true;
+            /// <summary>
+            /// Gets or sets the stream pool size.
+            /// </summary>
+            /// <value>The stream pool size.</value>
 
 
             public int StreamPoolSize { get; set; } = 4;
+            /// <summary>
+            /// Gets or sets the max streams.
+            /// </summary>
+            /// <value>The max streams.</value>
             public int MaxStreams { get; set; } = 32;
+            /// <summary>
+            /// Gets or sets the kernel cache directory.
+            /// </summary>
+            /// <value>The kernel cache directory.</value>
             public string KernelCacheDirectory { get; set; } = ".cuda_cache";
+            /// <summary>
+            /// Gets or sets the kernel cache size.
+            /// </summary>
+            /// <value>The kernel cache size.</value>
             public long KernelCacheSize { get; set; } = 256 * 1024 * 1024; // 256MB
+            /// <summary>
+            /// Gets or sets the default.
+            /// </summary>
+            /// <value>The default.</value>
 
 
             public static ProductionConfiguration Default => new();
+            /// <summary>
+            /// Gets or sets the high performance.
+            /// </summary>
+            /// <value>The high performance.</value>
 
 
             public static ProductionConfiguration HighPerformance => new()
@@ -634,6 +714,10 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 8,
                 MaxStreams = 64
             };
+            /// <summary>
+            /// Gets or sets the balanced.
+            /// </summary>
+            /// <value>The balanced.</value>
 
 
             public static ProductionConfiguration Balanced => new()
@@ -647,6 +731,10 @@ namespace DotCompute.Backends.CUDA.Factory
                 StreamPoolSize = 4,
                 MaxStreams = 32
             };
+            /// <summary>
+            /// Gets or sets the compatible.
+            /// </summary>
+            /// <value>The compatible.</value>
 
 
             public static ProductionConfiguration Compatible => new()
@@ -670,21 +758,95 @@ namespace DotCompute.Backends.CUDA.Factory
             private readonly CudaAccelerator _baseAccelerator;
             private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;
             private bool _disposed;
+            /// <summary>
+            /// Gets or sets the stream manager.
+            /// </summary>
+            /// <value>The stream manager.</value>
 
             public CudaStreamManagerProduction StreamManager { get; }
+            /// <summary>
+            /// Gets or sets the async memory manager.
+            /// </summary>
+            /// <value>The async memory manager.</value>
             public CudaMemoryManager AsyncMemoryManager { get; }
+            /// <summary>
+            /// Gets or sets the error handler.
+            /// </summary>
+            /// <value>The error handler.</value>
             public CudaErrorHandler ErrorHandler { get; }
+            /// <summary>
+            /// Gets or sets the unified memory manager.
+            /// </summary>
+            /// <value>The unified memory manager.</value>
             public CudaMemoryManager UnifiedMemoryManager { get; }
+            /// <summary>
+            /// Gets or sets the tensor core manager.
+            /// </summary>
+            /// <value>The tensor core manager.</value>
             public CudaTensorCoreManagerProduction TensorCoreManager { get; }
+            /// <summary>
+            /// Gets or sets the kernel cache.
+            /// </summary>
+            /// <value>The kernel cache.</value>
             public CudaKernelCache KernelCache { get; }
+            /// <summary>
+            /// Gets or sets the graph optimizer.
+            /// </summary>
+            /// <value>The graph optimizer.</value>
             public CudaGraphOptimizationManager GraphOptimizer { get; }
+            /// <summary>
+            /// Gets or sets the profiler.
+            /// </summary>
+            /// <value>The profiler.</value>
             public CudaPerformanceProfiler Profiler { get; }
+            /// <summary>
+            /// Gets or sets the occupancy calculator.
+            /// </summary>
+            /// <value>The occupancy calculator.</value>
             public CudaOccupancyCalculator OccupancyCalculator { get; }
+            /// <summary>
+            /// Gets or sets the coalescing analyzer.
+            /// </summary>
+            /// <value>The coalescing analyzer.</value>
             public CudaMemoryCoalescingAnalyzer CoalescingAnalyzer { get; }
+            /// <summary>
+            /// Gets or sets the device manager.
+            /// </summary>
+            /// <value>The device manager.</value>
             public CudaDeviceManager DeviceManager { get; }
+            /// <summary>
+            /// Gets or sets the system info manager.
+            /// </summary>
+            /// <value>The system info manager.</value>
             public SystemInfoManager SystemInfoManager { get; }
+            /// <summary>
+            /// Gets or sets the configuration.
+            /// </summary>
+            /// <value>The configuration.</value>
             public ProductionConfiguration Configuration { get; }
-            public List<string> EnabledFeatures { get; set; } = [];
+            /// <summary>
+            /// Gets or sets the enabled features.
+            /// </summary>
+            /// <value>The enabled features.</value>
+            public IList<string> EnabledFeatures { get; } = [];
+            /// <summary>
+            /// Initializes a new instance of the ProductionCudaAccelerator class.
+            /// </summary>
+            /// <param name="deviceId">The device identifier.</param>
+            /// <param name="config">The config.</param>
+            /// <param name="logger">The logger.</param>
+            /// <param name="streamManager">The stream manager.</param>
+            /// <param name="asyncMemoryManager">The async memory manager.</param>
+            /// <param name="errorHandler">The error handler.</param>
+            /// <param name="unifiedMemoryManager">The unified memory manager.</param>
+            /// <param name="tensorCoreManager">The tensor core manager.</param>
+            /// <param name="kernelCache">The kernel cache.</param>
+            /// <param name="graphOptimizer">The graph optimizer.</param>
+            /// <param name="profiler">The profiler.</param>
+            /// <param name="occupancyCalculator">The occupancy calculator.</param>
+            /// <param name="coalescingAnalyzer">The coalescing analyzer.</param>
+            /// <param name="deviceManager">The device manager.</param>
+            /// <param name="systemInfoManager">The system info manager.</param>
 
             public ProductionCudaAccelerator(
                 int deviceId,
@@ -727,11 +889,27 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
             }
+            /// <summary>
+            /// Gets or sets the type.
+            /// </summary>
+            /// <value>The type.</value>
 
             // IAccelerator interface implementation
             public AcceleratorType Type => AcceleratorType.CUDA;
+            /// <summary>
+            /// Gets or sets the device type.
+            /// </summary>
+            /// <value>The device type.</value>
             public string DeviceType => AcceleratorType.CUDA.ToString();
+            /// <summary>
+            /// Gets or sets the memory manager.
+            /// </summary>
+            /// <value>The memory manager.</value>
             public IUnifiedMemoryManager MemoryManager => _memoryAdapter.Value;
+            /// <summary>
+            /// Gets or sets the info.
+            /// </summary>
+            /// <value>The info.</value>
             public AcceleratorInfo Info => new()
 
             {
@@ -747,16 +925,47 @@ namespace DotCompute.Backends.CUDA.Factory
                 SupportsFloat64 = true,
                 SupportsInt64 = true
             };
+            /// <summary>
+            /// Gets or sets the memory.
+            /// </summary>
+            /// <value>The memory.</value>
             public IUnifiedMemoryManager Memory => _memoryAdapter.Value;
+            /// <summary>
+            /// Gets or sets the context.
+            /// </summary>
+            /// <value>The context.</value>
             public AcceleratorContext Context { get; private set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether available.
+            /// </summary>
+            /// <value>The is available.</value>
             public bool IsAvailable => !_disposed;
+            /// <summary>
+            /// Gets compile kernel asynchronously.
+            /// </summary>
+            /// <param name="definition">The definition.</param>
+            /// <param name="options">The options.</param>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
                 => await _baseAccelerator.CompileKernelAsync(definition, options, cancellationToken);
+            /// <summary>
+            /// Gets synchronize asynchronously.
+            /// </summary>
+            /// <param name="cancellationToken">The cancellation token.</param>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await StreamManager.SynchronizeAsync(cancellationToken);
+            /// <summary>
+            /// Gets or sets the device identifier.
+            /// </summary>
+            /// <value>The device id.</value>
 
             public int DeviceId { get; private set; }
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -785,6 +994,10 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 _disposed = true;
             }
+            /// <summary>
+            /// Gets dispose asynchronously.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public async ValueTask DisposeAsync()
             {

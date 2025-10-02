@@ -75,11 +75,39 @@ public class TestGraph
 /// </summary>
 public class LaunchConfiguration
 {
+    /// <summary>
+    /// Gets or sets the grid size x.
+    /// </summary>
+    /// <value>The grid size x.</value>
     public int GridSizeX { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the grid size y.
+    /// </summary>
+    /// <value>The grid size y.</value>
     public int GridSizeY { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the grid size z.
+    /// </summary>
+    /// <value>The grid size z.</value>
     public int GridSizeZ { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the block size x.
+    /// </summary>
+    /// <value>The block size x.</value>
     public int BlockSizeX { get; set; } = 256;
+    /// <summary>
+    /// Gets or sets the block size y.
+    /// </summary>
+    /// <value>The block size y.</value>
     public int BlockSizeY { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the block size z.
+    /// </summary>
+    /// <value>The block size z.</value>
     public int BlockSizeZ { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the shared memory bytes.
+    /// </summary>
+    /// <value>The shared memory bytes.</value>
     public int SharedMemoryBytes { get; set; }
 }

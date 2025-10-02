@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Security;
 using DotCompute.Algorithms.Abstractions;
+using System;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -526,12 +527,12 @@ namespace DotCompute.Algorithms.Management
         private static bool IsCompatibleFramework(string frameworkName)
         {
             // Simplified compatibility check
-            return frameworkName.Contains(".NETCoreApp") ||
-                   frameworkName.Contains(".NET ") ||
-                   frameworkName.Contains("net9.0") ||
-                   frameworkName.Contains("net8.0") ||
-                   frameworkName.Contains("net7.0") ||
-                   frameworkName.Contains("net6.0");
+            return frameworkName.Contains(".NETCoreApp", StringComparison.OrdinalIgnoreCase) ||
+                   frameworkName.Contains(".NET ", StringComparison.OrdinalIgnoreCase) ||
+                   frameworkName.Contains("net9.0", StringComparison.CurrentCulture) ||
+                   frameworkName.Contains("net8.0", StringComparison.CurrentCulture) ||
+                   frameworkName.Contains("net7.0", StringComparison.CurrentCulture) ||
+                   frameworkName.Contains("net6.0", StringComparison.CurrentCulture);
         }
 
         /// <summary>
@@ -539,7 +540,7 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         private static bool IsCompatibleRuntimeVersion(string runtimeVersion)
             // Simplified compatibility check
-            => runtimeVersion.StartsWith("v4.") || runtimeVersion.StartsWith("v5.") || runtimeVersion.StartsWith("v6.") || runtimeVersion.StartsWith("v7.") || runtimeVersion.StartsWith("v8.") || runtimeVersion.StartsWith("v9.");
+            => runtimeVersion.StartsWith("v4.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v5.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v6.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v7.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v8.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v9.", StringComparison.CurrentCulture);
 
         /// <summary>
         /// Checks if a string is a valid identifier.
@@ -625,14 +626,47 @@ namespace DotCompute.Algorithms.Management
             Severity = severity;
             HasWarnings = hasWarnings;
         }
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
 
         public bool IsValid { get; }
+        /// <summary>
+        /// Gets or sets the message.
+        /// </summary>
+        /// <value>The message.</value>
         public string Message { get; }
+        /// <summary>
+        /// Gets or sets the severity.
+        /// </summary>
+        /// <value>The severity.</value>
         public ValidationSeverity Severity { get; }
+        /// <summary>
+        /// Gets or sets a value indicating whether warnings.
+        /// </summary>
+        /// <value>The has warnings.</value>
         public bool HasWarnings { get; }
+        /// <summary>
+        /// Gets success.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static ValidationResult Success(string message) => new(true, message, ValidationSeverity.Info);
+        /// <summary>
+        /// Gets warning.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="severity">The severity.</param>
+        /// <returns>The result of the operation.</returns>
         public static ValidationResult Warning(string message, ValidationSeverity severity) => new(true, message, severity, true);
+        /// <summary>
+        /// Gets failure.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="severity">The severity.</param>
+        /// <returns>The result of the operation.</returns>
         public static ValidationResult Failure(string message, ValidationSeverity severity) => new(false, message, severity);
     }
 
@@ -672,8 +706,20 @@ namespace DotCompute.Algorithms.Management
     /// </summary>
     public interface IResourceAwarePlugin
     {
+        /// <summary>
+        /// Gets or sets the required memory m b.
+        /// </summary>
+        /// <value>The required memory m b.</value>
         public int RequiredMemoryMB { get; }
+        /// <summary>
+        /// Gets or sets the required cpu cores.
+        /// </summary>
+        /// <value>The required cpu cores.</value>
         public int RequiredCpuCores { get; }
+        /// <summary>
+        /// Gets or sets the requires gpu.
+        /// </summary>
+        /// <value>The requires gpu.</value>
         public bool RequiresGpu { get; }
     }
 }

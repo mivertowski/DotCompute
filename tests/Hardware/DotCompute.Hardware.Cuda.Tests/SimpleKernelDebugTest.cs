@@ -6,9 +6,16 @@ using DotCompute.Tests.Common.Specialized;
 using DotCompute.Core.Extensions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
+/// <summary>
+/// A class that represents simple kernel debug test.
+/// </summary>
 
 public class SimpleKernelDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
+    /// <summary>
+    /// Gets simplest_ kernel_ should_ set_ values.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     [SkippableFact]
     public async Task Simplest_Kernel_Should_Set_Values()
     {
@@ -78,6 +85,10 @@ public class SimpleKernelDebugTest(ITestOutputHelper output) : CudaTestBase(outp
 
         _ = results.Should().AllSatisfy(x => x.Should().BeApproximately(42.0f, 0.001f));
     }
+    /// <summary>
+    /// Gets kernel_ with_ input_ should_ double_ values.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [SkippableFact]

@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
 {
     /// <summary>
+    /// An cuda graph capture mode enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA graph capture mode
     /// </summary>
     public enum CudaGraphCaptureMode : uint

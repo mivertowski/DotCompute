@@ -29,6 +29,11 @@ namespace DotCompute.Backends.CUDA.Advanced
         private readonly NvmlWrapper _nvml;
         private readonly CuptiWrapper _cupti;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelProfiler class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaKernelProfiler(CudaContext context, ILogger logger)
         {
@@ -245,7 +250,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Calculates comprehensive statistics from timing data
         /// </summary>
-        private static ProfilingStatistics CalculateStatistics(List<double> timings)
+        private static ProfilingStatistics CalculateStatistics(IReadOnlyList<double> timings)
         {
             timings.Sort();
 
@@ -331,7 +336,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// Analyzes potential bottlenecks and generates optimization suggestions using real metrics
         /// </summary>
-        private (BottleneckAnalysis bottleneck, List<string> suggestions) AnalyzeBottlenecks(
+        private (BottleneckAnalysis bottleneck, IReadOnlyList<string> suggestions) AnalyzeBottlenecks(
             ProfilingStatistics stats,
 
             OccupancyMetrics occupancy,
@@ -472,6 +477,9 @@ namespace DotCompute.Backends.CUDA.Advanced
             // This is a simplified implementation - in production, maintain a list of
             // allocated pointers and free them all here
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -490,12 +498,36 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class ProfilingStatistics
     {
+        /// <summary>
+        /// Gets or sets the average time.
+        /// </summary>
+        /// <value>The average time.</value>
         public double AverageTime { get; set; }
+        /// <summary>
+        /// Gets or sets the min time.
+        /// </summary>
+        /// <value>The min time.</value>
         public double MinTime { get; set; }
+        /// <summary>
+        /// Gets or sets the max time.
+        /// </summary>
+        /// <value>The max time.</value>
         public double MaxTime { get; set; }
+        /// <summary>
+        /// Gets or sets the median time.
+        /// </summary>
+        /// <value>The median time.</value>
         public double MedianTime { get; set; }
+        /// <summary>
+        /// Gets or sets the standard deviation.
+        /// </summary>
+        /// <value>The standard deviation.</value>
         public double StandardDeviation { get; set; }
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the percentiles.
+        /// </summary>
+        /// <value>The percentiles.</value>
+        public Dictionary<int, double> Percentiles { get; } = [];
     }
 
     /// <summary>
@@ -503,10 +535,30 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class OccupancyMetrics
     {
+        /// <summary>
+        /// Gets or sets the theoretical occupancy.
+        /// </summary>
+        /// <value>The theoretical occupancy.</value>
         public double TheoreticalOccupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the warp occupancy.
+        /// </summary>
+        /// <value>The warp occupancy.</value>
         public double WarpOccupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the blocks per s m.
+        /// </summary>
+        /// <value>The blocks per s m.</value>
         public int BlocksPerSM { get; set; }
+        /// <summary>
+        /// Gets or sets the active warps.
+        /// </summary>
+        /// <value>The active warps.</value>
         public int ActiveWarps { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether optimal for ada.
+        /// </summary>
+        /// <value>The is optimal for ada.</value>
         public bool IsOptimalForAda { get; set; }
     }
 
@@ -515,7 +567,15 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class CudaThroughputMetrics
     {
+        /// <summary>
+        /// Gets or sets the memory bandwidth.
+        /// </summary>
+        /// <value>The memory bandwidth.</value>
         public double MemoryBandwidth { get; set; } // GB/s
+        /// <summary>
+        /// Gets or sets the compute performance.
+        /// </summary>
+        /// <value>The compute performance.</value>
         public double ComputePerformance { get; set; } // GFLOPS
     }
 
@@ -524,9 +584,25 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class BottleneckAnalysis
     {
+        /// <summary>
+        /// Gets or sets the primary bottleneck.
+        /// </summary>
+        /// <value>The primary bottleneck.</value>
         public BottleneckType PrimaryBottleneck { get; set; }
-        public List<string> Suggestions { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the suggestions.
+        /// </summary>
+        /// <value>The suggestions.</value>
+        public IList<string> Suggestions { get; } = [];
+        /// <summary>
+        /// Gets or sets the severity.
+        /// </summary>
+        /// <value>The severity.</value>
         public double Severity { get; set; }
+        /// <summary>
+        /// Gets or sets the details.
+        /// </summary>
+        /// <value>The details.</value>
         public string Details { get; set; } = string.Empty;
     }
 
@@ -536,11 +612,35 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     internal sealed class KernelProfileData
     {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the launch config.
+        /// </summary>
+        /// <value>The launch config.</value>
         public Compilation.CudaLaunchConfig LaunchConfig { get; set; }
-        public List<double> Timings { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the timings.
+        /// </summary>
+        /// <value>The timings.</value>
+        public IList<double> Timings { get; } = [];
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
         public ProfilingStatistics Statistics { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public OccupancyMetrics Occupancy { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the last profiled.
+        /// </summary>
+        /// <value>The last profiled.</value>
         public DateTime LastProfiled { get; set; }
     }
 }

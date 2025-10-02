@@ -25,6 +25,11 @@ public sealed class CudaMemoryIntegration : IDisposable
     private readonly Timer _memoryMonitorTimer;
     private readonly object _registryLock = new();
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaMemoryIntegration class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaMemoryIntegration(CudaContext context, ILogger logger)
     {
@@ -418,6 +423,9 @@ public sealed class CudaMemoryIntegration : IDisposable
             _logger.LogWarning(ex, "Error during memory monitoring");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -450,9 +458,25 @@ public sealed class CudaMemoryIntegration : IDisposable
 /// </summary>
 internal sealed class CudaBufferInfo
 {
+    /// <summary>
+    /// Gets or sets the element type.
+    /// </summary>
+    /// <value>The element type.</value>
     public Type ElementType { get; init; } = typeof(object);
+    /// <summary>
+    /// Gets or sets the element count.
+    /// </summary>
+    /// <value>The element count.</value>
     public int ElementCount { get; init; }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the allocation time.
+    /// </summary>
+    /// <value>The allocation time.</value>
     public DateTimeOffset AllocationTime { get; init; }
 }
 
@@ -461,13 +485,49 @@ internal sealed class CudaBufferInfo
 /// </summary>
 public sealed class CudaMemoryStatistics
 {
+    /// <summary>
+    /// Gets or sets the total device memory.
+    /// </summary>
+    /// <value>The total device memory.</value>
     public long TotalDeviceMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the free device memory.
+    /// </summary>
+    /// <value>The free device memory.</value>
     public long FreeDeviceMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the allocated memory.
+    /// </summary>
+    /// <value>The allocated memory.</value>
     public long AllocatedMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the total allocations.
+    /// </summary>
+    /// <value>The total allocations.</value>
     public long TotalAllocations { get; init; }
+    /// <summary>
+    /// Gets or sets the total deallocations.
+    /// </summary>
+    /// <value>The total deallocations.</value>
     public long TotalDeallocations { get; init; }
+    /// <summary>
+    /// Gets or sets the active buffers.
+    /// </summary>
+    /// <value>The active buffers.</value>
     public int ActiveBuffers { get; init; }
+    /// <summary>
+    /// Gets or sets the peak memory usage.
+    /// </summary>
+    /// <value>The peak memory usage.</value>
     public long PeakMemoryUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the fragmentation ratio.
+    /// </summary>
+    /// <value>The fragmentation ratio.</value>
     public double FragmentationRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the last updated.
+    /// </summary>
+    /// <value>The last updated.</value>
     public DateTimeOffset LastUpdated { get; init; }
 }

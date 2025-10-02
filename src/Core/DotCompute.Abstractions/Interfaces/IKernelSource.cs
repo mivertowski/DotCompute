@@ -38,9 +38,9 @@ namespace DotCompute.Abstractions
         public string EntryPoint { get; }
 
         /// <summary>
-        /// Gets the array of dependency identifiers required by this kernel.
+        /// Gets the read-only list of dependency identifiers required by this kernel.
         /// Dependencies may include libraries, headers, or other kernel modules.
         /// </summary>
-        public string[] Dependencies { get; }
+        public IReadOnlyList<string> Dependencies { get; }
     }
 }

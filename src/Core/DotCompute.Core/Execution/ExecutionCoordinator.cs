@@ -140,6 +140,10 @@ namespace DotCompute.Core.Execution
                 ActiveBarriers = _barriers.Count(kvp => !kvp.Value.IsComplete)
             };
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -256,6 +260,10 @@ namespace DotCompute.Core.Execution
             _logger.LogTrace("Reset execution event: {EventName}", Name);
             await ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -356,6 +364,10 @@ namespace DotCompute.Core.Execution
             _logger.LogTrace("Reset execution barrier: {BarrierName}", Name);
             await ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

@@ -8,7 +8,19 @@ namespace DotCompute.Backends.CUDA.Integration.Components.ErrorHandling;
 /// </summary>
 public sealed class ErrorRecoveryResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public string Message { get; init; } = string.Empty;
-    public List<string> ActionsPerformed { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the actions performed.
+    /// </summary>
+    /// <value>The actions performed.</value>
+    public IReadOnlyList<string> ActionsPerformed { get; init; } = [];
 }

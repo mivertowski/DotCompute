@@ -31,7 +31,7 @@ public class CompiledKernel : IDisposable
     /// The compiled kernel binary as a byte array, or null if the kernel uses a native handle
     /// or if compilation is deferred until execution time.
     /// </value>
-    public byte[]? CompiledBinary { get; init; }
+    public ReadOnlyMemory<byte>? CompiledBinary { get; init; }
 
     /// <summary>
     /// Gets the compilation metadata associated with this kernel.
@@ -62,22 +62,22 @@ public class CompiledKernel : IDisposable
     /// <summary>
     /// Gets or sets the CUBIN binary data.
     /// </summary>
-    public byte[] Cubin
+    public ReadOnlyMemory<byte> Cubin
     {
 
-        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? value as byte[] ?? [] : [];
-        set => Metadata[nameof(Cubin)] = value;
+        get => Metadata.TryGetValue(nameof(Cubin), out var value) ? new ReadOnlyMemory<byte>(value as byte[] ?? []) : ReadOnlyMemory<byte>.Empty;
+        set => Metadata[nameof(Cubin)] = value.ToArray();
 
     }
 
     /// <summary>
     /// Gets or sets the compiled binary data.
     /// </summary>
-    public byte[] Binary
+    public ReadOnlyMemory<byte> Binary
     {
 
-        get => Metadata.TryGetValue(nameof(Binary), out var value) ? value as byte[] ?? [] : [];
-        set => Metadata[nameof(Binary)] = value;
+        get => Metadata.TryGetValue(nameof(Binary), out var value) ? new ReadOnlyMemory<byte>(value as byte[] ?? []) : ReadOnlyMemory<byte>.Empty;
+        set => Metadata[nameof(Binary)] = value.ToArray();
 
     }
 

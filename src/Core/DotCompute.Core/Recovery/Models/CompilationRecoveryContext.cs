@@ -48,7 +48,7 @@ public class CompilationRecoveryContext
     /// <summary>
     /// Gets or sets additional context data
     /// </summary>
-    public Dictionary<string, object> AdditionalData { get; set; } = [];
+    public Dictionary<string, object> AdditionalData { get; } = [];
 
     /// <summary>
     /// Gets or sets the target backend for compilation
@@ -69,7 +69,7 @@ public class CompilationHistory
     /// <summary>
     /// Gets or sets the list of compilation attempts
     /// </summary>
-    public List<CompilationAttempt> Attempts { get; set; } = [];
+    public IList<CompilationAttempt> Attempts { get; } = [];
 
     /// <summary>
     /// Gets or sets the timestamp of the first compilation attempt

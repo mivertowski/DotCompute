@@ -76,8 +76,8 @@ namespace DotCompute.Abstractions.Kernels
 
         /// <inheritdoc/>
         /// <summary>
-        /// Gets the array of dependency identifiers required by this kernel.
+        /// Gets the read-only list of dependency identifiers required by this kernel.
         /// </summary>
-        public string[] Dependencies { get; }
+        public IReadOnlyList<string> Dependencies { get; }
     }
 }

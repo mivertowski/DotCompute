@@ -17,6 +17,10 @@ public sealed class PluginRecoveryLogger : IDisposable
     private readonly Timer _auditCleanupTimer;
     private volatile bool _disposed;
     private const int MaxAuditEntries = 1000;
+    /// <summary>
+    /// Initializes a new instance of the PluginRecoveryLogger class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public PluginRecoveryLogger(ILogger logger)
     {
@@ -235,6 +239,9 @@ public sealed class PluginRecoveryLogger : IDisposable
             _logger.LogError(ex, "Error during audit trail cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -252,16 +259,60 @@ public sealed class PluginRecoveryLogger : IDisposable
 /// </summary>
 public sealed class RecoveryLogEntry
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public PluginRecoveryStrategy? Strategy { get; init; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool? Success { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan? Duration { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public required string Message { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the original error.
+    /// </summary>
+    /// <value>The original error.</value>
     public string? OriginalError { get; init; }
+    /// <summary>
+    /// Gets or sets the circuit state.
+    /// </summary>
+    /// <value>The circuit state.</value>
     public CircuitState? CircuitState { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool? IsHealthy { get; init; }
+    /// <summary>
+    /// Gets or sets the uptime percent.
+    /// </summary>
+    /// <value>The uptime percent.</value>
     public double? UptimePercent { get; init; }
 }
 
@@ -270,12 +321,44 @@ public sealed class RecoveryLogEntry
 /// </summary>
 public sealed class RecoveryStatistics
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the total attempts.
+    /// </summary>
+    /// <value>The total attempts.</value>
     public int TotalAttempts { get; init; }
+    /// <summary>
+    /// Gets or sets the successful recoveries.
+    /// </summary>
+    /// <value>The successful recoveries.</value>
     public int SuccessfulRecoveries { get; init; }
+    /// <summary>
+    /// Gets or sets the failed recoveries.
+    /// </summary>
+    /// <value>The failed recoveries.</value>
     public int FailedRecoveries { get; init; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate { get; init; }
+    /// <summary>
+    /// Gets or sets the average recovery time.
+    /// </summary>
+    /// <value>The average recovery time.</value>
     public double AverageRecoveryTime { get; init; }
+    /// <summary>
+    /// Gets or sets the time window.
+    /// </summary>
+    /// <value>The time window.</value>
     public TimeSpan TimeWindow { get; init; }
+    /// <summary>
+    /// Gets or sets the last recovery time.
+    /// </summary>
+    /// <value>The last recovery time.</value>
     public DateTimeOffset? LastRecoveryTime { get; init; }
 }

@@ -16,10 +16,30 @@ namespace DotCompute.Runtime.Services.Memory;
 /// </summary>
 public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public long Id { get; }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; }
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options { get; }
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed { get; private set; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State { get; private set; } = BufferState.Allocated;
 
     private readonly ILogger _logger;
@@ -28,6 +48,15 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
     private readonly GCHandle _pinnedHandle;
     private readonly bool _fromPool;
     private readonly object _disposeLock = new();
+    /// <summary>
+    /// Initializes a new instance of the ProductionMemoryBuffer class.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="pooledHandle">The pooled handle.</param>
+    /// <param name="statistics">The statistics.</param>
 
     public ProductionMemoryBuffer(long id, long sizeInBytes, MemoryOptions options, ILogger logger,
         IntPtr? pooledHandle, Statistics.MemoryStatistics statistics)
@@ -62,6 +91,14 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
             throw;
         }
     }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -103,6 +140,14 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
             throw;
         }
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="destination">The destination.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -144,6 +189,9 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
             throw;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -171,6 +219,10 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
             }
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {

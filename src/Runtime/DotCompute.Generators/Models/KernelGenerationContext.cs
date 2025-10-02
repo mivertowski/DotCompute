@@ -31,7 +31,7 @@ public sealed class KernelGenerationContext
     /// <summary>
     /// Gets or sets the work group dimensions.
     /// </summary>
-    public int[]? WorkGroupDimensions { get; set; }
+    public IReadOnlyList<int>? WorkGroupDimensions { get; set; }
 
     /// <summary>
     /// Gets or sets whether to use shared memory.
@@ -44,7 +44,7 @@ public sealed class KernelGenerationContext
     public bool UseVectorTypes { get; set; }
 
     /// <summary>
-    /// Gets or sets additional metadata.
+    /// Gets additional metadata.
     /// </summary>
-    public Dictionary<string, object>? Metadata { get; set; }
+    public Dictionary<string, object>? Metadata { get; }
 }

@@ -21,6 +21,10 @@ public class CudaMemoryManagementTests : CudaTestBase
     private readonly CudaMemoryManager _memoryManager;
     private readonly CudaAccelerator _accelerator;
     private readonly CudaContext? _context;
+    /// <summary>
+    /// Initializes a new instance of the CudaMemoryManagementTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public CudaMemoryManagementTests(ITestOutputHelper output) : base(output)
     {
@@ -42,6 +46,10 @@ public class CudaMemoryManagementTests : CudaTestBase
             _context = null;
         }
     }
+    /// <summary>
+    /// Gets allocate async_ basic allocation_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #region Basic Allocation Tests
 
@@ -64,6 +72,11 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = buffer.SizeInBytes.Should().Be(elementCount * sizeof(float));
         _ = buffer.IsOnDevice.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets allocate async_ various sizes_ success.
+    /// </summary>
+    /// <param name="elementCount">The element count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableTheory]
     [InlineData(1)]
@@ -84,6 +97,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = buffer.Length.Should().Be(elementCount);
         _ = buffer.SizeInBytes.Should().Be(elementCount * sizeof(double));
     }
+    /// <summary>
+    /// Gets allocate async_ zero size_ throws exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -96,6 +113,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         var act = async () => await _memoryManager.AllocateAsync<float>(0);
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets allocate async_ negative size_ throws exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -108,6 +129,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         var act = async () => await _memoryManager.AllocateAsync<float>(-1);
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets copy from host to device_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -139,6 +164,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         await deviceBuffer.CopyToAsync(resultData);
         _ = resultData.Should().BeEquivalentTo(hostData);
     }
+    /// <summary>
+    /// Gets copy from device to host_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -161,6 +190,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         // Assert
         _ = resultData.Should().BeEquivalentTo(initialData);
     }
+    /// <summary>
+    /// Gets copy device to device_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -192,6 +225,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         await destBuffer.CopyToAsync(resultData);
         _ = resultData.Should().BeEquivalentTo(sourceData);
     }
+    /// <summary>
+    /// Gets allocate pinned memory_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -217,6 +254,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = buffer.Length.Should().Be(elementCount);
         // Pinned memory should provide high bandwidth transfers (up to 20GB/s)
     }
+    /// <summary>
+    /// Gets pinned memory_ faster transfers.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -251,6 +292,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _output.WriteLine($"Normal transfer: {normalTime.TotalMilliseconds}ms");
         _ = pinnedTime.Should().BeLessThanOrEqualTo(normalTime.Add(TimeSpan.FromMilliseconds(10)));
     }
+    /// <summary>
+    /// Gets memory pool_ reuses deallocated memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -282,6 +327,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         var finalAllocated = _memoryManager.TotalAllocated;
         _ = finalAllocated.Should().BeGreaterThanOrEqualTo(initialAllocated);
     }
+    /// <summary>
+    /// Gets memory pool_ handles multiple sizes.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -318,6 +367,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = newBuffers.Should().HaveCount(sizes.Length);
         _ = newBuffers.Should().AllSatisfy(b => b.Should().NotBeNull());
     }
+    /// <summary>
+    /// Gets unified memory_ accessible from host and device.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -355,6 +408,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = resultData.Should().BeEquivalentTo(
             Enumerable.Range(0, elementCount).Select(i => i * 2.0f));
     }
+    /// <summary>
+    /// Gets memory statistics_ tracks allocations.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -397,6 +454,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = afterAllocated.Should().BeGreaterThan(initialAllocated);
         _ = finalAllocated.Should().BeLessThan(afterAllocated); // Some memory deallocated
     }
+    /// <summary>
+    /// Gets memory statistics_ tracks peak usage.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -425,6 +486,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         // _ = peak2.Should().BeGreaterThan(peak1);
         // _ = peak3.Should().Be(peak2, "peak should not decrease after deallocation");
     }
+    /// <summary>
+    /// Gets concurrent allocations_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -468,6 +533,10 @@ public class CudaMemoryManagementTests : CudaTestBase
             await buffer.DisposeAsync();
         }
     }
+    /// <summary>
+    /// Gets concurrent transfers_ no data corruption.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -521,6 +590,10 @@ public class CudaMemoryManagementTests : CudaTestBase
             await buffer.DisposeAsync();
         }
     }
+    /// <summary>
+    /// Gets allocate async_ exceeds available memory_ throws exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -542,6 +615,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         var act = async () => await _memoryManager.AllocateAsync<float>(elementCount);
         _ = await act.Should().ThrowAsync<OutOfMemoryException>();
     }
+    /// <summary>
+    /// Gets max allocation size_ enforced.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -560,6 +637,10 @@ public class CudaMemoryManagementTests : CudaTestBase
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>()
             .WithMessage("*exceeds maximum*");
     }
+    /// <summary>
+    /// Gets allocated memory_ properly aligned.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 

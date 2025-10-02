@@ -47,6 +47,12 @@ public sealed class PrometheusExporter : IDisposable
     private IGauge _powerConsumption = null!;
     private ICounter _compilationEvents = null!;
     private IHistogram _compilationDuration = null!;
+    /// <summary>
+    /// Initializes a new instance of the PrometheusExporter class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="metricsCollector">The metrics collector.</param>
 
     public PrometheusExporter(ILogger<PrometheusExporter> logger, IOptions<PrometheusExporterOptions> options,
         MetricsCollector metricsCollector)
@@ -475,6 +481,9 @@ public sealed class PrometheusExporter : IDisposable
             throw new ObjectDisposedException(nameof(PrometheusExporter));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -505,12 +514,36 @@ public sealed class PrometheusExporter : IDisposable
 /// </summary>
 public sealed class PrometheusExporterOptions
 {
+    /// <summary>
+    /// Gets or sets the start metric server.
+    /// </summary>
+    /// <value>The start metric server.</value>
     public bool StartMetricServer { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the hostname.
+    /// </summary>
+    /// <value>The hostname.</value>
     public string Hostname { get; set; } = "*";
+    /// <summary>
+    /// Gets or sets the port.
+    /// </summary>
+    /// <value>The port.</value>
     public int Port { get; set; } = 9464;
+    /// <summary>
+    /// Gets or sets the endpoint.
+    /// </summary>
+    /// <value>The endpoint.</value>
     public string Endpoint { get; set; } = "/metrics";
+    /// <summary>
+    /// Gets or sets the collection interval seconds.
+    /// </summary>
+    /// <value>The collection interval seconds.</value>
     public int CollectionIntervalSeconds { get; set; } = 15;
-    public List<string> CommonLabels { get; set; } = ["application", "version", "environment"];
+    /// <summary>
+    /// Gets or sets the common labels.
+    /// </summary>
+    /// <value>The common labels.</value>
+    public IList<string> CommonLabels { get; set; } = ["application", "version", "environment"];
 }
 
 /// <summary>
@@ -518,8 +551,24 @@ public sealed class PrometheusExporterOptions
 /// </summary>
 public sealed class PrometheusMetricsStatistics
 {
+    /// <summary>
+    /// Gets or sets the total metric families.
+    /// </summary>
+    /// <value>The total metric families.</value>
     public int TotalMetricFamilies { get; set; }
+    /// <summary>
+    /// Gets or sets the last collection time.
+    /// </summary>
+    /// <value>The last collection time.</value>
     public DateTimeOffset LastCollectionTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether server running.
+    /// </summary>
+    /// <value>The is server running.</value>
     public bool IsServerRunning { get; set; }
+    /// <summary>
+    /// Gets or sets the server endpoint.
+    /// </summary>
+    /// <value>The server endpoint.</value>
     public string? ServerEndpoint { get; set; }
 }

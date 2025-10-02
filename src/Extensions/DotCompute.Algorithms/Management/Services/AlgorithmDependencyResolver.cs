@@ -387,7 +387,7 @@ public sealed partial class AlgorithmDependencyResolver(
     /// <summary>
     /// Builds dependency chain recursively.
     /// </summary>
-    private void BuildDependencyChain(string pluginId, HashSet<string> visited, List<string> dependencyChain)
+    private void BuildDependencyChain(string pluginId, HashSet<string> visited, IReadOnlyList<string> dependencyChain)
     {
         if (visited.Contains(pluginId))
         {
@@ -414,7 +414,7 @@ public sealed partial class AlgorithmDependencyResolver(
     /// <summary>
     /// Checks for circular dependencies using DFS.
     /// </summary>
-    private bool HasCircularDependency(string pluginId, HashSet<string> visited, HashSet<string> recursionStack, List<string> path)
+    private bool HasCircularDependency(string pluginId, HashSet<string> visited, HashSet<string> recursionStack, IReadOnlyList<string> path)
     {
         _ = visited.Add(pluginId);
         _ = recursionStack.Add(pluginId);
@@ -446,6 +446,9 @@ public sealed partial class AlgorithmDependencyResolver(
         path.RemoveAt(path.Count - 1);
         return false;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -474,12 +477,40 @@ public sealed partial class AlgorithmDependencyResolver(
 /// </summary>
 public sealed partial class AlgorithmRequirements
 {
+    /// <summary>
+    /// Gets or sets the preferred accelerator type.
+    /// </summary>
+    /// <value>The preferred accelerator type.</value>
     public AcceleratorType? PreferredAcceleratorType { get; set; }
+    /// <summary>
+    /// Gets or sets the input type.
+    /// </summary>
+    /// <value>The input type.</value>
     public Type? InputType { get; set; }
+    /// <summary>
+    /// Gets or sets the expected output type.
+    /// </summary>
+    /// <value>The expected output type.</value>
     public Type? ExpectedOutputType { get; set; }
+    /// <summary>
+    /// Gets or sets the minimum version.
+    /// </summary>
+    /// <value>The minimum version.</value>
     public string? MinimumVersion { get; set; }
+    /// <summary>
+    /// Gets or sets the max execution time.
+    /// </summary>
+    /// <value>The max execution time.</value>
     public TimeSpan? MaxExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the require high reliability.
+    /// </summary>
+    /// <value>The require high reliability.</value>
     public bool RequireHighReliability { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public override string ToString()

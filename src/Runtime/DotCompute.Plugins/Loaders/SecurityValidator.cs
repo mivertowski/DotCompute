@@ -9,6 +9,7 @@ using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
 using DotCompute.Plugins.Loaders.Internal;
 using DotCompute.Plugins.Security;
+using System;
 
 namespace DotCompute.Plugins.Loaders;
 
@@ -22,6 +23,11 @@ public class SecurityValidator
     private readonly ConcurrentDictionary<string, SecurityScanCache> _scanCache = new();
     private readonly VulnerabilityDatabase _vulnerabilityDatabase;
     private readonly CodeAnalyzer _codeAnalyzer;
+    /// <summary>
+    /// Initializes a new instance of the SecurityValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="securityPolicy">The security policy.</param>
 
     public SecurityValidator(ILogger logger, SecurityPolicy? securityPolicy = null)
     {
@@ -336,9 +342,9 @@ public class SecurityValidator
 
             // Check for directory traversal patterns
 
-            if (filePath.Contains("..") || filePath.Contains("~") ||
+            if (filePath.Contains("..", StringComparison.OrdinalIgnoreCase) || filePath.Contains("~", StringComparison.OrdinalIgnoreCase) ||
 
-                fileName.StartsWith(".") || fileName.Contains(":"))
+                fileName.StartsWith(".") || fileName.Contains(":", StringComparison.CurrentCulture))
             {
                 return false;
             }

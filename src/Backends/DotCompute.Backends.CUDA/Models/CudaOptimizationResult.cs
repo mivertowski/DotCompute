@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
         /// <summary>
         /// Gets or sets the list of optimizations that were applied.
         /// </summary>
-        public List<string> OptimizationsApplied { get; set; } = [];
+        public IList<string> OptimizationsApplied { get; } = [];
 
         /// <summary>
         /// Gets or sets the time taken to perform optimizations.
@@ -31,7 +31,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
         /// <summary>
         /// Gets or sets recommendations for further optimization.
         /// </summary>
-        public List<string> Recommendations { get; set; } = [];
+        public IList<string> Recommendations { get; } = [];
 
         /// <summary>
         /// Gets or sets an error message if optimization failed.

@@ -22,7 +22,7 @@ public sealed class MemoryLeakReport
     /// <summary>
     /// Gets or sets the list of suspicious allocations that may be leaks.
     /// </summary>
-    public List<LeakSuspect> SuspiciousAllocations { get; set; } = [];
+    public IList<LeakSuspect> SuspiciousAllocations { get; } = [];
 
     /// <summary>
     /// Gets or sets the total bytes in suspicious allocations.

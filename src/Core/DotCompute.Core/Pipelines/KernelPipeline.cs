@@ -593,7 +593,7 @@ namespace DotCompute.Core.Pipelines
 
         private bool CanMergeParallelStages() => _stages.Any(s => s.Type == PipelineStageType.ParallelExecution);
 
-        private static double CalculateComputeUtilization(List<StageExecutionResult> results)
+        private static double CalculateComputeUtilization(IReadOnlyList<StageExecutionResult> results)
         {
             if (results.Count == 0)
             {
@@ -609,7 +609,7 @@ namespace DotCompute.Core.Pipelines
             return count > 0 ? utilizationSum / count : 0;
         }
 
-        private static double CalculateMemoryBandwidthUtilization(List<StageExecutionResult> results)
+        private static double CalculateMemoryBandwidthUtilization(IReadOnlyList<StageExecutionResult> results)
         {
             if (results.Count == 0)
             {
@@ -625,7 +625,7 @@ namespace DotCompute.Core.Pipelines
             return count > 0 ? utilizationSum / count : 0;
         }
 
-        private static Dictionary<string, TimeSpan> ExtractDataTransferTimes(List<StageExecutionResult> results)
+        private static Dictionary<string, TimeSpan> ExtractDataTransferTimes(IReadOnlyList<StageExecutionResult> results)
         {
             var transferTimes = new Dictionary<string, TimeSpan>();
 
@@ -680,7 +680,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts ValidationIssue from Abstractions to Validation namespace
         /// </summary>
-        private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyList<ValidationIssue> issues)
+        private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyIReadOnlyList<ValidationIssue> issues)
         {
             return issues.Select(issue => new ValidationIssue(
                 (ValidationSeverity)(int)issue.Severity,

@@ -10,12 +10,32 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public class KernelNodeParams
     {
+        /// <summary>
+        /// Gets or sets the function.
+        /// </summary>
+        /// <value>The function.</value>
         public nint Function { get; set; }
+        /// <summary>
+        /// Gets or sets the grid dim.
+        /// </summary>
+        /// <value>The grid dim.</value>
         public GridDimensions GridDim { get; set; }
+        /// <summary>
+        /// Gets or sets the block dim.
+        /// </summary>
+        /// <value>The block dim.</value>
 
         public BlockDimensions BlockDim { get; set; }
+        /// <summary>
+        /// Gets or sets the shared memory bytes.
+        /// </summary>
+        /// <value>The shared memory bytes.</value>
 
         public uint SharedMemoryBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the kernel params.
+        /// </summary>
+        /// <value>The kernel params.</value>
         public nint KernelParams { get; set; }
     }
 
@@ -24,8 +44,20 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public struct GridDimensions(uint x, uint y = 1, uint z = 1)
     {
+        /// <summary>
+        /// Gets or sets the x.
+        /// </summary>
+        /// <value>The x.</value>
         public uint X { get; set; } = x;
+        /// <summary>
+        /// Gets or sets the y.
+        /// </summary>
+        /// <value>The y.</value>
         public uint Y { get; set; } = y;
+        /// <summary>
+        /// Gets or sets the z.
+        /// </summary>
+        /// <value>The z.</value>
         public uint Z { get; set; } = z;
     }
 
@@ -34,23 +66,55 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public struct BlockDimensions(uint x, uint y = 1, uint z = 1) : IEquatable<BlockDimensions>
     {
+        /// <summary>
+        /// Gets or sets the x.
+        /// </summary>
+        /// <value>The x.</value>
         public uint X { get; set; } = x;
+        /// <summary>
+        /// Gets or sets the y.
+        /// </summary>
+        /// <value>The y.</value>
         public uint Y { get; set; } = y;
+        /// <summary>
+        /// Gets or sets the z.
+        /// </summary>
+        /// <value>The z.</value>
         public uint Z { get; set; } = z;
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns>The result of the operation.</returns>
 
         public override bool Equals(object? obj) => obj is BlockDimensions other && Equals(other);
+        /// <summary>
+        /// Gets the hash code.
+        /// </summary>
+        /// <returns>The hash code.</returns>
 
         public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+        /// <summary>
+        /// Implements the equality operator to determine whether two values are equal.
+        /// </summary>
 
         public static bool operator ==(BlockDimensions left, BlockDimensions right)
         {
             return left.Equals(right);
         }
+        /// <summary>
+        /// Implements the inequality operator to determine whether two values are not equal.
+        /// </summary>
 
         public static bool operator !=(BlockDimensions left, BlockDimensions right)
         {
             return !(left == right);
         }
+        /// <summary>
+        /// Determines equals.
+        /// </summary>
+        /// <param name="other">The other.</param>
+        /// <returns>The result of the operation.</returns>
 
         public bool Equals(BlockDimensions other) => X == other.X && Y == other.Y && Z == other.Z;
     }
@@ -60,11 +124,30 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public class MemcpyNodeParams
     {
+        /// <summary>
+        /// Gets or sets the source.
+        /// </summary>
+        /// <value>The source.</value>
         public nint Source { get; set; }
+        /// <summary>
+        /// Gets or sets the destination.
+        /// </summary>
+        /// <value>The destination.</value>
         public nint Destination { get; set; }
+        /// <summary>
+        /// Gets or sets the byte count.
+        /// </summary>
+        /// <value>The byte count.</value>
         public nuint ByteCount { get; set; }
+        /// <summary>
+        /// Gets or sets the kind.
+        /// </summary>
+        /// <value>The kind.</value>
         public MemcpyKind Kind { get; set; }
     }
+    /// <summary>
+    /// An memcpy kind enumeration.
+    /// </summary>
 
     /// <summary>
     /// Memory copy kind
@@ -83,11 +166,35 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public class MemsetNodeParams
     {
+        /// <summary>
+        /// Gets or sets the destination.
+        /// </summary>
+        /// <value>The destination.</value>
         public nint Destination { get; set; }
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
+        /// <value>The value.</value>
         public uint Value { get; set; }
+        /// <summary>
+        /// Gets or sets the element size.
+        /// </summary>
+        /// <value>The element size.</value>
         public uint ElementSize { get; set; }
+        /// <summary>
+        /// Gets or sets the width.
+        /// </summary>
+        /// <value>The width.</value>
         public nuint Width { get; set; }
+        /// <summary>
+        /// Gets or sets the height.
+        /// </summary>
+        /// <value>The height.</value>
         public nuint Height { get; set; }
+        /// <summary>
+        /// Gets or sets the pitch.
+        /// </summary>
+        /// <value>The pitch.</value>
         public nuint Pitch { get; set; }
     }
 
@@ -96,9 +203,20 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public class HostNodeParams
     {
+        /// <summary>
+        /// Gets or sets the function.
+        /// </summary>
+        /// <value>The function.</value>
         public Action<nint> Function { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the user data.
+        /// </summary>
+        /// <value>The user data.</value>
         public nint UserData { get; set; }
     }
+    /// <summary>
+    /// An cuda graph capture mode enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA graph capture mode
@@ -115,21 +233,80 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// </summary>
     public class GraphStatistics
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTime CreatedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the last executed at.
+        /// </summary>
+        /// <value>The last executed at.</value>
         public DateTime? LastExecutedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the node count.
+        /// </summary>
+        /// <value>The node count.</value>
         public int NodeCount { get; set; }
+        /// <summary>
+        /// Gets or sets the edge count.
+        /// </summary>
+        /// <value>The edge count.</value>
         public int EdgeCount { get; set; }
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public int ExecutionCount { get; set; }
+        /// <summary>
+        /// Gets or sets the instantiation count.
+        /// </summary>
+        /// <value>The instantiation count.</value>
         public int InstantiationCount { get; set; }
+        /// <summary>
+        /// Gets or sets the update count.
+        /// </summary>
+        /// <value>The update count.</value>
         public int UpdateCount { get; set; }
+        /// <summary>
+        /// Gets or sets the optimization count.
+        /// </summary>
+        /// <value>The optimization count.</value>
         public int OptimizationCount { get; set; }
+        /// <summary>
+        /// Gets or sets the error count.
+        /// </summary>
+        /// <value>The error count.</value>
         public int ErrorCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time ms.
+        /// </summary>
+        /// <value>The total execution time ms.</value>
         public float TotalExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the last execution time ms.
+        /// </summary>
+        /// <value>The last execution time ms.</value>
         public float LastExecutionTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the cloned from.
+        /// </summary>
+        /// <value>The cloned from.</value>
         public string? ClonedFrom { get; set; }
+        /// <summary>
+        /// Gets or sets the capture mode.
+        /// </summary>
+        /// <value>The capture mode.</value>
         public CudaGraphCaptureModeCanonical? CaptureMode { get; set; }
     }
+    /// <summary>
+    /// An cuda device attribute enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA device attribute enumeration
@@ -255,6 +432,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         MpsEnabled = 117,
         HostNumaId = 118
     }
+    /// <summary>
+    /// An cuda cache config enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA cache configuration
@@ -266,6 +446,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         PreferCache = 2,
         PreferEqual = 3
     }
+    /// <summary>
+    /// An cuda shared mem config enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA shared memory configuration
@@ -276,6 +459,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         BankSizeFourByte = 1,
         BankSizeEightByte = 2
     }
+    /// <summary>
+    /// An cuda limit enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA limit types

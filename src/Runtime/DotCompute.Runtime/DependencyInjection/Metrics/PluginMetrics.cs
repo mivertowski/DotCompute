@@ -11,6 +11,10 @@ namespace DotCompute.Runtime.DependencyInjection.Metrics;
 internal sealed class PluginMetrics : IPluginMetrics
 {
     private readonly ConcurrentDictionary<string, PluginMetric> _metrics = new();
+    /// <summary>
+    /// Performs record activation.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
 
     public void RecordActivation(Type pluginType)
     {
@@ -19,6 +23,11 @@ internal sealed class PluginMetrics : IPluginMetrics
             new PluginMetric { ActivationCount = 1 },
             (_, existing) => existing with { ActivationCount = existing.ActivationCount + 1 });
     }
+    /// <summary>
+    /// Performs record execution time.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <param name="executionTime">The execution time.</param>
 
     public void RecordExecutionTime(Type pluginType, TimeSpan executionTime)
     {
@@ -31,6 +40,10 @@ internal sealed class PluginMetrics : IPluginMetrics
                 ExecutionCount = existing.ExecutionCount + 1
             });
     }
+    /// <summary>
+    /// Gets the metrics.
+    /// </summary>
+    /// <returns>The metrics.</returns>
 
     public PluginMetricsData GetMetrics()
     {

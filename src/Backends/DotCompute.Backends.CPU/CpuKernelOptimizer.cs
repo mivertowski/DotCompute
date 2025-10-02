@@ -13,6 +13,7 @@ using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
 using MemoryAccessPattern = DotCompute.Abstractions.Types.MemoryAccessPattern;
+using System;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -31,6 +32,11 @@ internal sealed class CpuKernelOptimizer : IDisposable
     // Optimization thresholds and constants
     private const int MinWorkItemsForVectorization = 64;
     private const int MinWorkItemsForParallelization = 16;
+    /// <summary>
+    /// Initializes a new instance of the CpuKernelOptimizer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="threadPool">The thread pool.</param>
 
     public CpuKernelOptimizer(ILogger logger, CpuThreadPool threadPool)
     {
@@ -590,7 +596,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
             Description = bestDescription,
             Performance = bestPerformance,
-            UseVectorization = bestDescription.Contains("Vectorized"),
+            UseVectorization = bestDescription.Contains("Vectorized", StringComparison.OrdinalIgnoreCase),
             OptimalThreadCount = DetermineBestThreadCount(results.ParallelizationResults)
         };
     }
@@ -772,6 +778,9 @@ internal sealed class CpuKernelOptimizer : IDisposable
         }
         return sets;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -782,6 +791,9 @@ internal sealed class CpuKernelOptimizer : IDisposable
         }
     }
 }
+/// <summary>
+/// An optimization type enumeration.
+/// </summary>
 
 // Supporting enums and classes for optimization
 
@@ -796,60 +808,197 @@ public enum OptimizationType
     Cache,
     Threading
 }
+/// <summary>
+/// A class that represents optimization profile.
+/// </summary>
 
 public class OptimizationProfile
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the work dimensions.
+    /// </summary>
+    /// <value>The work dimensions.</value>
     public WorkDimensions WorkDimensions { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization level.
+    /// </summary>
+    /// <value>The optimization level.</value>
     public OptimizationLevel OptimizationLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the analysis.
+    /// </summary>
+    /// <value>The analysis.</value>
     public required KernelAnalysis Analysis { get; set; }
+    /// <summary>
+    /// Gets or sets the execution plan.
+    /// </summary>
+    /// <value>The execution plan.</value>
     public required KernelExecutionPlan ExecutionPlan { get; set; }
+    /// <summary>
+    /// Gets or sets the creation time.
+    /// </summary>
+    /// <value>The creation time.</value>
     public DateTimeOffset CreationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the last accessed.
+    /// </summary>
+    /// <value>The last accessed.</value>
     public DateTimeOffset LastAccessed { get; set; }
 }
+/// <summary>
+/// A class that represents optimization recommendations.
+/// </summary>
 
 public class OptimizationRecommendations
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the analysis time.
+    /// </summary>
+    /// <value>The analysis time.</value>
     public DateTimeOffset AnalysisTime { get; set; }
+    /// <summary>
+    /// Gets or sets the current performance.
+    /// </summary>
+    /// <value>The current performance.</value>
     public required ExecutionStatistics CurrentPerformance { get; set; }
-    public List<OptimizationSuggestion> Suggestions { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the suggestions.
+    /// </summary>
+    /// <value>The suggestions.</value>
+    public IList<OptimizationSuggestion> Suggestions { get; } = [];
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// A class that represents optimization suggestion.
+/// </summary>
 
 public class OptimizationSuggestion
 {
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type { get; set; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; set; }
+    /// <summary>
+    /// Gets or sets the expected speedup.
+    /// </summary>
+    /// <value>The expected speedup.</value>
     public double ExpectedSpeedup { get; set; }
+    /// <summary>
+    /// Gets or sets the implementation.
+    /// </summary>
+    /// <value>The implementation.</value>
     public required string Implementation { get; set; }
 }
+/// <summary>
+/// A class that represents benchmark results.
+/// </summary>
 
 public class BenchmarkResults
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; set; }
+    /// <summary>
+    /// Gets or sets the work dimensions.
+    /// </summary>
+    /// <value>The work dimensions.</value>
     public WorkDimensions WorkDimensions { get; set; }
+    /// <summary>
+    /// Gets or sets the iterations.
+    /// </summary>
+    /// <value>The iterations.</value>
     public int Iterations { get; set; }
+    /// <summary>
+    /// Gets or sets the benchmark time.
+    /// </summary>
+    /// <value>The benchmark time.</value>
     public DateTimeOffset BenchmarkTime { get; set; }
+    /// <summary>
+    /// Gets or sets the scalar performance.
+    /// </summary>
+    /// <value>The scalar performance.</value>
     public PerformanceMetrics? ScalarPerformance { get; set; }
+    /// <summary>
+    /// Gets or sets the vectorized performance.
+    /// </summary>
+    /// <value>The vectorized performance.</value>
     public PerformanceMetrics? VectorizedPerformance { get; set; }
-    public Dictionary<int, PerformanceMetrics> ParallelizationResults { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the parallelization results.
+    /// </summary>
+    /// <value>The parallelization results.</value>
+    public Dictionary<int, PerformanceMetrics> ParallelizationResults { get; } = [];
+    /// <summary>
+    /// Gets or sets the optimal configuration.
+    /// </summary>
+    /// <value>The optimal configuration.</value>
     public OptimalConfiguration? OptimalConfiguration { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// A class that represents optimal configuration.
+/// </summary>
 
 // Use the canonical PerformanceMetrics from DotCompute.Abstractions.Performance
 // This local class has been replaced with the unified type
 
 public class OptimalConfiguration
 {
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; set; }
+    /// <summary>
+    /// Gets or sets the performance.
+    /// </summary>
+    /// <value>The performance.</value>
     public required PerformanceMetrics Performance { get; set; }
+    /// <summary>
+    /// Gets or sets the use vectorization.
+    /// </summary>
+    /// <value>The use vectorization.</value>
     public bool UseVectorization { get; set; }
+    /// <summary>
+    /// Gets or sets the optimal thread count.
+    /// </summary>
+    /// <value>The optimal thread count.</value>
     public int OptimalThreadCount { get; set; }
 }
+/// <summary>
+/// A class that represents performance counter.
+/// </summary>
 
 public class PerformanceCounter : IDisposable
 {
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
     public void Dispose() { }
 }

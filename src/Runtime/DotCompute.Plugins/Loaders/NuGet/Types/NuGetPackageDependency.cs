@@ -39,5 +39,5 @@ public class NuGetPackageDependency
     /// Gets or sets the dependency exclusions.
     /// List of transitive dependencies to exclude.
     /// </summary>
-    public List<string> Exclude { get; set; } = [];
+    public IList<string> Exclude { get; } = [];
 }

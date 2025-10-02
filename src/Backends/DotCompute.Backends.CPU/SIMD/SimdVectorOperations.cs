@@ -544,6 +544,9 @@ public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logge
     private static T ScalarMin<T>(ReadOnlySpan<T> input) where T : unmanaged => input.IsEmpty ? default : input[0];
     private static T ScalarMax<T>(ReadOnlySpan<T> input) where T : unmanaged => input.IsEmpty ? default : input[0];
     private static T ScalarProduct<T>(ReadOnlySpan<T> input) where T : unmanaged => input.IsEmpty ? default : input[0];
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

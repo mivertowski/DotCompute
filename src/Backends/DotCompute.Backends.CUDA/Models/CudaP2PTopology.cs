@@ -18,12 +18,12 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         /// <summary>
         /// Gets or sets the list of available devices.
         /// </summary>
-        public List<CudaDeviceInfo> Devices { get; set; } = [];
+        public IList<CudaDeviceInfo> Devices { get; } = [];
 
         /// <summary>
         /// Gets or sets the list of P2P connections between devices.
         /// </summary>
-        public List<CudaP2PConnection> Connections { get; set; } = [];
+        public IList<CudaP2PConnection> Connections { get; } = [];
 
         /// <summary>
         /// Gets or sets whether all devices are fully connected via P2P.

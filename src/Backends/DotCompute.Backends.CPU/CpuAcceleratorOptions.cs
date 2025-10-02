@@ -129,12 +129,12 @@ public sealed class CpuAcceleratorOptions
     /// Gets or sets custom instruction set preferences.
     /// Empty list means use all available instruction sets.
     /// </summary>
-    public IList<string> PreferredInstructionSets { get; set; } = [];
+    public IList<string> PreferredInstructionSets { get; } = [];
 
     /// <summary>
     /// Gets or sets instruction sets to avoid.
     /// </summary>
-    public IList<string> DisabledInstructionSets { get; set; } = [];
+    public IList<string> DisabledInstructionSets { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable hardware performance counters.

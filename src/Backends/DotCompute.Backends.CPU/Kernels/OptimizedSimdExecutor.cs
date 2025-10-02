@@ -203,6 +203,9 @@ public sealed class OptimizedSimdExecutor : IDisposable
             throw new ObjectDisposedException(nameof(OptimizedSimdExecutor));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

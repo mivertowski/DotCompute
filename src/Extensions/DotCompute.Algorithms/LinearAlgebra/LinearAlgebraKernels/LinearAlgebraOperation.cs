@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
+/// <summary>
+/// An linear algebra operation enumeration.
+/// </summary>
 
 
 /// <summary>
@@ -22,8 +25,20 @@ public enum LinearAlgebraOperation
 /// </summary>
 public sealed class HardwareInfo
 {
+    /// <summary>
+    /// Gets or sets the compute units.
+    /// </summary>
+    /// <value>The compute units.</value>
     public int ComputeUnits { get; init; }
+    /// <summary>
+    /// Gets or sets the memory size.
+    /// </summary>
+    /// <value>The memory size.</value>
     public long MemorySize { get; init; }
+    /// <summary>
+    /// Gets or sets the architecture.
+    /// </summary>
+    /// <value>The architecture.</value>
     public string Architecture { get; init; } = "Unknown";
 
     /// <summary>
@@ -47,8 +62,20 @@ public sealed class HardwareInfo
 /// </summary>
 public sealed class KernelExecutionParameters
 {
+    /// <summary>
+    /// Gets or sets the block size.
+    /// </summary>
+    /// <value>The block size.</value>
     public int BlockSize { get; init; } = 256;
+    /// <summary>
+    /// Gets or sets the grid size.
+    /// </summary>
+    /// <value>The grid size.</value>
     public int GridSize { get; init; } = 1;
+    /// <summary>
+    /// Gets or sets the shared memory size.
+    /// </summary>
+    /// <value>The shared memory size.</value>
     public long SharedMemorySize { get; init; }
 
     /// <summary>

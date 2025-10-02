@@ -38,6 +38,12 @@ public sealed class RecoveryCoordinator : IDisposable
 
 
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the RecoveryCoordinator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
+    /// <param name="loggerFactory">The logger factory.</param>
 
     public RecoveryCoordinator(
         ILogger<RecoveryCoordinator> logger,
@@ -463,6 +469,9 @@ public sealed class RecoveryCoordinator : IDisposable
             _logger.LogWarning(ex, "Error reporting recovery metrics");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

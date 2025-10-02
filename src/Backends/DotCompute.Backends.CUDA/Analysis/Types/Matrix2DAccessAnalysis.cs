@@ -68,7 +68,7 @@ public sealed class Matrix2DAccessAnalysis
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public List<string> Optimizations { get; set; } = [];
+    public IList<string> Optimizations { get; } = [];
 
     /// <summary>
     /// Gets or sets the access pattern type (row-major, column-major, tiled).

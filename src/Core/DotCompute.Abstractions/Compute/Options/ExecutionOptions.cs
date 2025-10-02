@@ -29,7 +29,7 @@ namespace DotCompute.Abstractions.Compute.Options
         /// The total number of work items is the product of all dimensions.
         /// Values must be positive and within the limits supported by the target backend.
         /// </remarks>
-        public long[]? GlobalWorkSize { get; set; }
+        public IReadOnlyList<long>? GlobalWorkSize { get; set; }
 
         /// <summary>
         /// Gets or sets the local work size (work group size) for kernel execution.
@@ -46,7 +46,7 @@ namespace DotCompute.Abstractions.Compute.Options
         /// Optimal work group sizes depend on the target hardware and kernel memory access patterns.
         /// Values must be positive and should be powers of 2 for best performance on most hardware.
         /// </remarks>
-        public long[]? LocalWorkSize { get; set; }
+        public IReadOnlyList<long>? LocalWorkSize { get; set; }
 
         /// <summary>
         /// Gets or sets the work group offset for kernel execution.
@@ -62,7 +62,7 @@ namespace DotCompute.Abstractions.Compute.Options
         /// distributed computation scenarios where different kernel invocations process
         /// different regions of the same dataset.
         /// </remarks>
-        public long[]? WorkGroupOffset { get; set; }
+        public IReadOnlyList<long>? WorkGroupOffset { get; set; }
 
         /// <summary>
         /// Gets or sets the execution priority for kernel scheduling.

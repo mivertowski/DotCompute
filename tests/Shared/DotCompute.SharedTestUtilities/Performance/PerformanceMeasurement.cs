@@ -105,18 +105,49 @@ public sealed class PerformanceMeasurement : IDisposable
             LogLevel.Information,
             new EventId(14, "MemoryPeak"),
             "    Peak: {Peak:N0} bytes");
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
 
     public string OperationName => _operationName;
+    /// <summary>
+    /// Gets or sets the elapsed.
+    /// </summary>
+    /// <value>The elapsed.</value>
     public TimeSpan Elapsed => _stopwatch.Elapsed;
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan Duration => _stopwatch.Elapsed;
+    /// <summary>
+    /// Gets or sets the elapsed time.
+    /// </summary>
+    /// <value>The elapsed time.</value>
     public TimeSpan ElapsedTime => _stopwatch.Elapsed;
+    /// <summary>
+    /// Gets or sets a value indicating whether running.
+    /// </summary>
+    /// <value>The is running.</value>
     public bool IsRunning => _isRunning;
+    /// <summary>
+    /// Initializes a new instance of the PerformanceMeasurement class.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="output">The output.</param>
 
     public PerformanceMeasurement(string operationName, ITestOutputHelper output)
         : this(operationName, false, null)
     {
         // Ignore output for now - could create a logger that writes to it if needed
     }
+    /// <summary>
+    /// Initializes a new instance of the PerformanceMeasurement class.
+    /// </summary>
+    /// <param name="operationName">The operation name.</param>
+    /// <param name="trackMemory">The track memory.</param>
+    /// <param name="logger">The logger.</param>
 
     public PerformanceMeasurement(string operationName, bool trackMemory = true, ILogger<PerformanceMeasurement>? logger = null)
     {
@@ -299,6 +330,10 @@ public sealed class PerformanceMeasurement : IDisposable
             Timestamp = DateTime.UtcNow
         };
     }
+    /// <summary>
+    /// Performs log results.
+    /// </summary>
+    /// <param name="dataSize">The data size.</param>
 
     public void LogResults(long dataSize = 0)
     {
@@ -315,6 +350,9 @@ public sealed class PerformanceMeasurement : IDisposable
             s_logDuration(_logger, result.Duration.TotalMilliseconds, null);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -337,8 +375,20 @@ public sealed class PerformanceMeasurement : IDisposable
 /// </summary>
 public sealed class Checkpoint
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTime Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the elapsed time.
+    /// </summary>
+    /// <value>The elapsed time.</value>
     public required TimeSpan ElapsedTime { get; init; }
 }
 
@@ -347,10 +397,30 @@ public sealed class Checkpoint
 /// </summary>
 public sealed class PerformanceResult
 {
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public required string OperationName { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public required TimeSpan Duration { get; init; }
+    /// <summary>
+    /// Gets or sets the checkpoints.
+    /// </summary>
+    /// <value>The checkpoints.</value>
     public required Checkpoint[] Checkpoints { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTime Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the memory report.
+    /// </summary>
+    /// <value>The memory report.</value>
     public MemoryReport? MemoryReport { get; init; }
 
     /// <summary>

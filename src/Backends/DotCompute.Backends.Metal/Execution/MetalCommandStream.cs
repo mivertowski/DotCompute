@@ -1001,7 +1001,7 @@ public sealed class MetalExecutionNode
     public string Id { get; set; } = string.Empty;
     public Func<IntPtr, IntPtr, Task> Operation { get; set; } = null!;
     public MetalStreamPriority Priority { get; set; }
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
 }
 
 /// <summary>
@@ -1009,7 +1009,7 @@ public sealed class MetalExecutionNode
 /// </summary>
 public sealed class MetalExecutionLevel
 {
-    public List<MetalExecutionNode> Nodes { get; set; } = [];
+    public IList<MetalExecutionNode> Nodes { get; } = [];
 }
 
 /// <summary>
@@ -1017,6 +1017,6 @@ public sealed class MetalExecutionLevel
 /// </summary>
 public sealed class MetalExecutionPlan
 {
-    public List<MetalExecutionLevel> Levels { get; set; } = [];
+    public IList<MetalExecutionLevel> Levels { get; } = [];
     public int TotalNodes { get; set; }
 }

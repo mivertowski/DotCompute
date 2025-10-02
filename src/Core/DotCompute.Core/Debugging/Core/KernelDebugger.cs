@@ -339,7 +339,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     /// <summary>
     /// Analyzes result consistency across accelerators.
     /// </summary>
-    private List<DebugValidationIssue> AnalyzeResultConsistency(List<KernelExecutionResult> results)
+    private List<DebugValidationIssue> AnalyzeResultConsistency(IReadOnlyList<KernelExecutionResult> results)
     {
         var issues = new List<DebugValidationIssue>();
 
@@ -563,6 +563,9 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
             _ => ["Check logs for details", "Verify system requirements", "Contact support if issue persists"]
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

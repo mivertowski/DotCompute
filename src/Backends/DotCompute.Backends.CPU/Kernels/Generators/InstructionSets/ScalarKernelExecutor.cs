@@ -15,6 +15,14 @@ namespace DotCompute.Backends.CPU.Kernels.Generators.InstructionSets;
 /// </summary>
 internal sealed class ScalarKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
+    /// <summary>
+    /// Performs execute.
+    /// </summary>
+    /// <param name="input1">The input1.</param>
+    /// <param name="input2">The input2.</param>
+    /// <param name="output">The output.</param>
+    /// <param name="elementCount">The element count.</param>
+    /// <param name="vectorWidth">The vector width.</param>
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,

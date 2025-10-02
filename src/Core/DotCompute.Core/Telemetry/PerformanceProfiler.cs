@@ -29,6 +29,11 @@ public sealed class PerformanceProfiler : IDisposable
     private readonly Dictionary<string, PerformanceCounter> _hwCounters;
 #else
     private readonly Dictionary<string, object> _hwCounters;
+    /// <summary>
+    /// Initializes a new instance of the PerformanceProfiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 #endif
 
 
@@ -674,7 +679,7 @@ public sealed class PerformanceProfiler : IDisposable
         return Math.Sqrt(sumOfSquaresDiff / valuesList.Count);
     }
 
-    private static PerformanceTrend AnalyzePerformanceTrend(List<KernelExecutionProfile> executions)
+    private static PerformanceTrend AnalyzePerformanceTrend(IReadOnlyList<KernelExecutionProfile> executions)
     {
         if (executions.Count < 2)
         {
@@ -772,7 +777,7 @@ public sealed class PerformanceProfiler : IDisposable
         return profile.DeviceMetrics.Values.Average(d => d.UtilizationPercentage) / 100.0;
     }
 
-    private static double CalculateParallelismEfficiency(List<KernelExecutionProfile> executions)
+    private static double CalculateParallelismEfficiency(IReadOnlyList<KernelExecutionProfile> executions)
     {
         if (executions.Count <= 1)
         {
@@ -891,6 +896,9 @@ public sealed class PerformanceProfiler : IDisposable
             throw new ObjectDisposedException(nameof(PerformanceProfiler));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

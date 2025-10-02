@@ -18,6 +18,10 @@ namespace DotCompute.Plugins.Infrastructure
         private readonly ConcurrentDictionary<string, Exception?> _pluginErrors;
         private readonly Timer? _healthCheckTimer;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the PluginHealthMonitor class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public PluginHealthMonitor(ILogger<PluginHealthMonitor> logger)
         {
@@ -146,6 +150,9 @@ namespace DotCompute.Plugins.Infrastructure
                 _logger.LogErrorMessage(ex, "Error during plugin health check");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

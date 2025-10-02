@@ -30,6 +30,13 @@ public sealed class CpuCompiledKernel : ICompiledKernel
     private readonly CpuKernelCache _cache;
 
     private int _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CpuCompiledKernel class.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="executionPlan">The execution plan.</param>
+    /// <param name="threadPool">The thread pool.</param>
+    /// <param name="logger">The logger.</param>
 
     public CpuCompiledKernel(
         KernelDefinition definition,
@@ -50,6 +57,12 @@ public sealed class CpuCompiledKernel : ICompiledKernel
 
         _logger.LogDebug("CpuCompiledKernel initialized with orchestrated components for kernel {kernelName}", definition.Name);
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask ExecuteAsync(KernelExecutionContext context, CancellationToken cancellationToken = default)
     {
@@ -57,16 +70,40 @@ public sealed class CpuCompiledKernel : ICompiledKernel
         var arguments = ConvertContextToArguments(context);
         return ExecuteAsync(arguments, cancellationToken);
     }
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
 
     public KernelDefinition Definition => _definition;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
 
     public string Name => _definition.Name;
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
 
     public Guid Id { get; } = Guid.NewGuid();
+    /// <summary>
+    /// Gets or sets the source.
+    /// </summary>
+    /// <value>The source.</value>
 
     public string Source => _definition.Code != null ? "[Bytecode]" : "[Unknown]";
+    /// <summary>
+    /// Gets or sets the entry point.
+    /// </summary>
+    /// <value>The entry point.</value>
 
     public string EntryPoint => _definition.EntryPoint;
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
 
     public bool IsValid => _disposed == 0;
 
@@ -79,6 +116,12 @@ public sealed class CpuCompiledKernel : ICompiledKernel
         _executor.SetCompiledDelegate(compiledDelegate);
         _logger.LogDebug("Compiled delegate set for kernel {kernelName}", _definition.Name);
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -147,12 +190,19 @@ public sealed class CpuCompiledKernel : ICompiledKernel
     /// Gets performance metrics for this kernel.
     /// </summary>
     public ExecutionStatistics GetPerformanceMetrics() => _executor.GetExecutionStatistics();
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
         Dispose();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

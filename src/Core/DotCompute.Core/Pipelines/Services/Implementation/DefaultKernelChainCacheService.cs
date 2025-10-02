@@ -16,6 +16,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         private long _hits;
         private long _misses;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the DefaultKernelChainCacheService class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public DefaultKernelChainCacheService(ILogger<DefaultKernelChainCacheService>? logger = null)
         {
@@ -25,6 +29,13 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             });
             _logger = logger;
         }
+        /// <summary>
+        /// Gets the async.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="key">The key.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The async.</returns>
 
         public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class
         {
@@ -41,6 +52,15 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             await Task.CompletedTask;
             return null;
         }
+        /// <summary>
+        /// Sets the async.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="ttl">The ttl.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default) where T : class
         {
@@ -60,6 +80,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             _logger?.LogDebug("Cached value for key '{Key}' with TTL {TTL}", key, ttl);
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Deletes the async.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
         {
@@ -67,6 +93,11 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             _logger?.LogDebug("Removed cache entry for key '{Key}'", key);
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets clear asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
@@ -77,6 +108,11 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             _logger?.LogDebug("Cleared all cache entries");
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets the statistics async.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The statistics async.</returns>
 
         public async Task<KernelChainCacheStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
         {
@@ -90,6 +126,9 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                 ExpiredEntriesRemoved = 0 // Not tracked in this implementation
             };
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

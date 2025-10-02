@@ -36,6 +36,6 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the percentile timings (e.g., 50th, 90th, 95th, 99th).
         /// </summary>
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        public Dictionary<int, double> Percentiles { get; } = [];
     }
 }

@@ -26,12 +26,12 @@ public abstract class MetalOperationDescriptor
     /// <summary>
     /// Dependencies on other operations
     /// </summary>
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
 
     /// <summary>
     /// Expected resource usage
     /// </summary>
-    public Dictionary<MetalResourceType, long> ResourceUsage { get; set; } = [];
+    public Dictionary<MetalResourceType, long> ResourceUsage { get; } = [];
 
     /// <summary>
     /// Estimated execution time
@@ -41,7 +41,7 @@ public abstract class MetalOperationDescriptor
     /// <summary>
     /// Custom metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>

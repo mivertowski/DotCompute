@@ -17,16 +17,49 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// </summary>
         public static class RTX2000Specs
         {
+            /// <summary>
+            /// The streaming multiprocessors.
+            /// </summary>
             public const int StreamingMultiprocessors = 24;
+            /// <summary>
+            /// The threads per s m.
+            /// </summary>
             public const int ThreadsPerSM = 1536;
+            /// <summary>
+            /// The warps per s m.
+            /// </summary>
             public const int WarpsPerSM = 48; // 32 threads per warp
+            /// <summary>
+            /// The max threads per block.
+            /// </summary>
             public const int MaxThreadsPerBlock = 1024;
+            /// <summary>
+            /// The shared memory per s m.
+            /// </summary>
             public const int SharedMemoryPerSM = 102400; // 100KB
+            /// <summary>
+            /// The registers per s m.
+            /// </summary>
             public const int RegistersPerSM = 65536;
+            /// <summary>
+            /// The l2 cache size.
+            /// </summary>
             public const int L2CacheSize = 32 * 1024 * 1024; // 32MB
+            /// <summary>
+            /// The base clock m hz.
+            /// </summary>
             public const double BaseClockMHz = 2610.0;
+            /// <summary>
+            /// The boost clock m hz.
+            /// </summary>
             public const double BoostClockMHz = 2850.0;
+            /// <summary>
+            /// The memory bus width.
+            /// </summary>
             public const int MemoryBusWidth = 192; // bits
+            /// <summary>
+            /// The memory bandwidth g bs.
+            /// </summary>
             public const int MemoryBandwidthGBs = 288; // GB/s
         }
 
@@ -188,6 +221,9 @@ namespace DotCompute.Backends.CUDA.Advanced
             };
         }
     }
+    /// <summary>
+    /// An workload type enumeration.
+    /// </summary>
 
     /// <summary>
     /// Workload types for optimization decisions
@@ -206,11 +242,30 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class SharedMemoryConfig
     {
+        /// <summary>
+        /// Gets or sets the bytes per block.
+        /// </summary>
+        /// <value>The bytes per block.</value>
         public int BytesPerBlock { get; set; }
+        /// <summary>
+        /// Gets or sets the bytes per thread.
+        /// </summary>
+        /// <value>The bytes per thread.</value>
         public int BytesPerThread { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether use100 k b.
+        /// </summary>
+        /// <value>The can use100 k b.</value>
         public bool CanUse100KB { get; set; }
+        /// <summary>
+        /// Gets or sets the recommended carveout.
+        /// </summary>
+        /// <value>The recommended carveout.</value>
         public SharedMemoryCarveout RecommendedCarveout { get; set; }
     }
+    /// <summary>
+    /// An shared memory carveout enumeration.
+    /// </summary>
 
     /// <summary>
     /// Shared memory carveout preferences for Ada
@@ -227,11 +282,35 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class GridConfig
     {
+        /// <summary>
+        /// Gets or sets the x.
+        /// </summary>
+        /// <value>The x.</value>
         public int X { get; set; }
+        /// <summary>
+        /// Gets or sets the y.
+        /// </summary>
+        /// <value>The y.</value>
         public int Y { get; set; }
+        /// <summary>
+        /// Gets or sets the z.
+        /// </summary>
+        /// <value>The z.</value>
         public int Z { get; set; }
+        /// <summary>
+        /// Gets or sets the total blocks.
+        /// </summary>
+        /// <value>The total blocks.</value>
         public int TotalBlocks { get; set; }
+        /// <summary>
+        /// Gets or sets the elements per block.
+        /// </summary>
+        /// <value>The elements per block.</value>
         public int ElementsPerBlock { get; set; }
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public double Occupancy { get; set; }
     }
 
@@ -241,10 +320,30 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// </summary>
     public sealed class UnifiedValidationResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = [];
-        public List<string> Warnings { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the errors.
+        /// </summary>
+        /// <value>The errors.</value>
+        public IList<string> Errors { get; } = [];
+        /// <summary>
+        /// Gets or sets the warnings.
+        /// </summary>
+        /// <value>The warnings.</value>
+        public IList<string> Warnings { get; } = [];
+        /// <summary>
+        /// Gets or sets the occupancy.
+        /// </summary>
+        /// <value>The occupancy.</value>
         public double Occupancy { get; set; }
+        /// <summary>
+        /// Gets or sets the blocks per s m.
+        /// </summary>
+        /// <value>The blocks per s m.</value>
         public int BlocksPerSM { get; set; }
     }
 }

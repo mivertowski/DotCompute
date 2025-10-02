@@ -41,7 +41,7 @@ public class DeterminismAnalysisResult
     /// <summary>
     /// List of non-deterministic components identified.
     /// </summary>
-    public List<string> NonDeterministicComponents { get; set; } = [];
+    public IList<string> NonDeterministicComponents { get; } = [];
 
     /// <summary>
     /// Identified source of non-determinism (if any).
@@ -51,15 +51,15 @@ public class DeterminismAnalysisResult
     /// <summary>
     /// Recommendations for achieving deterministic behavior.
     /// </summary>
-    public List<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 
     /// <summary>
     /// All execution results for analysis.
     /// </summary>
-    public List<object> AllResults { get; set; } = [];
+    public IList<object> AllResults { get; } = [];
 
     /// <summary>
     /// Statistical analysis of result variations.
     /// </summary>
-    public Dictionary<string, object> StatisticalAnalysis { get; set; } = [];
+    public Dictionary<string, object> StatisticalAnalysis { get; } = [];
 }

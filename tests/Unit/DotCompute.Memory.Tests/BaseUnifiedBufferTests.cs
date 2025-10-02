@@ -11,6 +11,9 @@ namespace DotCompute.Memory.Tests;
 /// </summary>
 public class BaseUnifiedBufferTests
 {
+    /// <summary>
+    /// Performs unified buffer_ initializes correctly.
+    /// </summary>
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void UnifiedBuffer_InitializesCorrectly()
@@ -24,6 +27,9 @@ public class BaseUnifiedBufferTests
         _ = buffer.SizeInBytes.Should().Be(512);
         _ = buffer.Length.Should().Be(64); // 512 bytes / 8 bytes per double
     }
+    /// <summary>
+    /// Performs unified buffer_ supports wrapping existing memory.
+    /// </summary>
 
 
     [Fact]
@@ -42,6 +48,9 @@ public class BaseUnifiedBufferTests
         _ = buffer.SizeInBytes.Should().Be(256);
         _ = buffer.MemoryType.Should().Be(MemoryType.Unified);
     }
+    /// <summary>
+    /// Performs unified buffer_ handles slicing.
+    /// </summary>
 
 
     [Fact]
@@ -59,6 +68,11 @@ public class BaseUnifiedBufferTests
         _ = slice.Should().NotBeNull();
         _ = slice.Should().BeSameAs(buffer); // Test implementation returns self
     }
+    /// <summary>
+    /// Performs unified buffer_ slice validates parameters.
+    /// </summary>
+    /// <param name="start">The start.</param>
+    /// <param name="length">The length.</param>
 
 
     [Theory]
@@ -77,6 +91,9 @@ public class BaseUnifiedBufferTests
         Action act = () => buffer.Slice(start, length);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Performs unified buffer_ provides host and device access.
+    /// </summary>
 
 
     [Fact]

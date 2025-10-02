@@ -14,6 +14,11 @@ namespace DotCompute.Memory.Tests;
 public class BaseMemoryBufferTests(ITestOutputHelper output)
 {
     private readonly ITestOutputHelper _output = output;
+    /// <summary>
+    /// Performs base memory buffer_ calculates length_ correctly.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="expectedLength">The expected length.</param>
     #region Memory Allocation Tests
 
     [Theory]
@@ -33,6 +38,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = buffer.MemoryType.Should().Be(MemoryType.Host);
         _ = buffer.IsDisposed.Should().BeFalse();
     }
+    /// <summary>
+    /// Performs base memory buffer_ throws for invalid size.
+    /// </summary>
+    /// <param name="invalidSize">The invalid size.</param>
 
     [Theory]
     [InlineData(0)]
@@ -46,6 +55,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*sizeInBytes*");
     }
+    /// <summary>
+    /// Performs base memory buffer_ throws for non aligned size.
+    /// </summary>
+    /// <param name="nonAlignedSize">The non aligned size.</param>
 
     [Theory]
     [InlineData(1023)] // 1 byte short for float
@@ -59,6 +72,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = act.Should().Throw<ArgumentException>()
             .WithMessage("*not evenly divisible*");
     }
+    /// <summary>
+    /// Performs base memory buffer_ handles maximum allocation.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "MemoryAllocation")]
@@ -73,6 +89,11 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = buffer.SizeInBytes.Should().Be(maxReasonableSize);
         _ = buffer.Length.Should().Be(maxReasonableSize);
     }
+    /// <summary>
+    /// Performs base memory buffer_ handles alignment requirements.
+    /// </summary>
+    /// <param name="elementType">The element type.</param>
+    /// <param name="expectedElementSize">The expected element size.</param>
 
     [Theory]
     [InlineData(typeof(byte), 1)]
@@ -107,6 +128,11 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
             _ = buffer.Length.Should().Be(size / expectedElementSize);
         }
     }
+    /// <summary>
+    /// Validates the copy parameters_ throws for invalid offsets.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destOffset">The dest offset.</param>
 
     #endregion
 
@@ -127,6 +153,14 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = () => buffer.TestValidateCopyParameters(100, (int)sourceOffset, 100, (int)destOffset, 10);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Validates the copy parameters_ throws for overflow.
+    /// </summary>
+    /// <param name="sourceLength">The source length.</param>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destLength">The dest length.</param>
+    /// <param name="destOffset">The dest offset.</param>
+    /// <param name="count">The count.</param>
 
     [Theory]
     [InlineData(100, 50, 100, 0, 60)] // Source overflow
@@ -147,6 +181,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = act.Should().Throw<ArgumentOutOfRangeException>()
             .Which.Message.Should().Contain("overflow");
     }
+    /// <summary>
+    /// Gets copy from async_ validates source size.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "CopyOperations")]
@@ -161,6 +199,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = async () => await buffer.CopyFromAsync(oversizedData, CancellationToken.None);
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets copy to async_ validates destination size.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "CopyOperations")]
@@ -175,6 +217,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = async () => await buffer.CopyToAsync(smallDestination, CancellationToken.None);
         _ = await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets copy operations_ work with valid data.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "CopyOperations")]
@@ -193,6 +239,12 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Assert
         _ = destination.Should().Equal(sourceData);
     }
+    /// <summary>
+    /// Gets copy operations_ handles partial copies.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(0, 2)] // Copy first 2 elements
@@ -212,6 +264,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Assert
         _ = await act.Should().NotThrowAsync();
     }
+    /// <summary>
+    /// Gets async copy operations_ support cancellation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "CopyOperations")]
@@ -228,6 +284,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = async () => await buffer.CopyFromAsync(sourceData, cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Performs host buffer_ has correct properties.
+    /// </summary>
 
     #endregion
 
@@ -247,6 +306,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = buffer.IsOnDevice.Should().BeFalse();
         _ = buffer.IsDirty.Should().BeFalse();
     }
+    /// <summary>
+    /// Performs unified buffer_ handles slicing.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "BufferTypes")]
@@ -263,6 +325,11 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = slice.Should().NotBeNull();
         _ = slice.Should().BeSameAs(buffer); // Test implementation returns self
     }
+    /// <summary>
+    /// Performs unified buffer_ slice validates parameters.
+    /// </summary>
+    /// <param name="start">The start.</param>
+    /// <param name="length">The length.</param>
 
     [Theory]
     [InlineData(-1, 4)] // Negative start
@@ -280,6 +347,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         Action act = () => buffer.Slice(start, length);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Performs pooled buffer_ returns to pool on dispose.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "BufferTypes")]
@@ -297,6 +367,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = returnCalled.Should().BeTrue();
         _ = pooledBuffer.IsDisposed.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs pooled buffer_ can be reset.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "BufferTypes")]
@@ -313,6 +386,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Assert
         _ = buffer.IsDisposed.Should().BeFalse();
     }
+    /// <summary>
+    /// Performs throw if disposed_ throws when disposed.
+    /// </summary>
 
     #endregion
 
@@ -332,6 +408,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = act.Should().Throw<ObjectDisposedException>()
             .Which.ObjectName.Should().Contain("TestMemoryBuffer");
     }
+    /// <summary>
+    /// Gets operations on disposed buffer_ throw object disposed.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "ErrorScenarios")]
@@ -353,6 +433,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = await copyFromAsync.Should().ThrowAsync<ObjectDisposedException>();
         _ = await copyToAsync.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets concurrent access_ handled safely.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "ErrorScenarios")]
@@ -376,6 +460,12 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = async () => await Task.WhenAll(tasks);
         _ = await act.Should().NotThrowAsync();
     }
+    /// <summary>
+    /// Performs out of bounds access_ throws exception.
+    /// </summary>
+    /// <param name="bufferSize">The buffer size.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
 
     [Theory]
     [InlineData(1000, 500, 600)] // Copy beyond source bounds
@@ -391,6 +481,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var act = () => buffer.TestValidateCopyParameters(bufferSize, offset, bufferSize, 0, count);
         _ = act.Should().Throw<ArgumentOutOfRangeException>();
     }
+    /// <summary>
+    /// Gets copy bandwidth measurement_ meets minimum threshold.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -434,6 +528,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Should be able to copy at least 100 MB/s (very conservative)
         _ = throughputMBps.Should().BeGreaterThan(100, "copy operations should have reasonable performance");
     }
+    /// <summary>
+    /// Performs allocation overhead_ is minimal.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "Performance")]
@@ -470,6 +567,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
             buffer.Dispose();
         }
     }
+    /// <summary>
+    /// Performs pool efficiency_ shows reuse.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "Performance")]
@@ -513,6 +613,11 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         _ = returnCount.Should().BeGreaterThan(operationCount - 10, "most buffers should be returned to pool");
         _ = pool.Count.Should().BeGreaterThan(0, "pool should contain reusable buffers");
     }
+    /// <summary>
+    /// Gets fill operations_ sets correct pattern.
+    /// </summary>
+    /// <param name="fillValue">The fill value.</param>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -541,6 +646,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
             _ = span[i].Should().Be(fillValue, $"element at index {i} should match fill value");
         }
     }
+    /// <summary>
+    /// Gets partial fill_ works correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "MemoryPatterns")]
@@ -579,6 +688,9 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
             _ = span[i].Should().Be(0, $"element at index {i} should still be zero");
         }
     }
+    /// <summary>
+    /// Performs pattern verification_ detects corruption.
+    /// </summary>
 
     [Fact]
     [Trait("Category", "MemoryPatterns")]
@@ -612,6 +724,10 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         // Assert
         _ = isCorrupted.Should().BeTrue("pattern verification should detect corruption");
     }
+    /// <summary>
+    /// Gets memory zeroing_ clears all data.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("Category", "MemoryPatterns")]
@@ -633,6 +749,11 @@ public class BaseMemoryBufferTests(ITestOutputHelper output)
         var span = buffer.AsSpan();
         _ = span.ToArray().Should().OnlyContain(x => x == 0L, "all elements should be zero");
     }
+    /// <summary>
+    /// Gets pattern copy and verify_ maintains integrity.
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD })]

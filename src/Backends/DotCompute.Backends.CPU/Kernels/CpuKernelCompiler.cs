@@ -121,7 +121,7 @@ internal static partial class CpuKernelCompiler
         // Validate parameters if available in metadata
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
-            if (paramsObj is IList<object> parameters)
+            if (paramsObj is IIReadOnlyList<object> parameters)
             {
                 if (parameters.Count == 0)
                 {
@@ -558,9 +558,25 @@ internal static partial class CpuKernelCompiler
 /// </summary>
 internal sealed class CompiledCode
 {
+    /// <summary>
+    /// Gets or sets the compiled delegate.
+    /// </summary>
+    /// <value>The compiled delegate.</value>
     public Delegate? CompiledDelegate { get; set; }
+    /// <summary>
+    /// Gets or sets the bytecode.
+    /// </summary>
+    /// <value>The bytecode.</value>
     public byte[]? Bytecode { get; set; }
+    /// <summary>
+    /// Gets or sets the code size.
+    /// </summary>
+    /// <value>The code size.</value>
     public long CodeSize { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization notes.
+    /// </summary>
+    /// <value>The optimization notes.</value>
     public string[] OptimizationNotes { get; set; } = [];
 }
 
@@ -571,6 +587,12 @@ internal static partial class KernelSourceParser
 {
     [GeneratedRegex(@"(public|private|protected|internal)?\s*(static)?\s*\w+\s+(\w+)\s*\(", RegexOptions.Compiled)]
     private static partial Regex FunctionNameRegex();
+    /// <summary>
+    /// Gets parse.
+    /// </summary>
+    /// <param name="code">The code.</param>
+    /// <param name="language">The language.</param>
+    /// <returns>The result of the operation.</returns>
     public static KernelAst Parse(string code, string language)
     {
         try
@@ -814,65 +836,133 @@ internal static partial class KernelSourceParser
 /// </summary>
 internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharpSyntaxWalker
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether conditionals.
+    /// </summary>
+    /// <value>The has conditionals.</value>
     public bool HasConditionals { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether loops.
+    /// </summary>
+    /// <value>The has loops.</value>
     public bool HasLoops { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether recursion.
+    /// </summary>
+    /// <value>The has recursion.</value>
     public bool HasRecursion { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether indirect memory access.
+    /// </summary>
+    /// <value>The has indirect memory access.</value>
     public bool HasIndirectMemoryAccess { get; private set; }
-    public List<AstNode> Operations { get; } = [];
-    public List<string> Variables { get; } = [];
-    public List<string> Parameters { get; } = [];
-    public List<string> FunctionCalls { get; } = [];
+    /// <summary>
+    /// Gets or sets the operations.
+    /// </summary>
+    /// <value>The operations.</value>
+    public IList<AstNode> Operations { get; } = [];
+    /// <summary>
+    /// Gets or sets the variables.
+    /// </summary>
+    /// <value>The variables.</value>
+    public IList<string> Variables { get; } = [];
+    /// <summary>
+    /// Gets or sets the parameters.
+    /// </summary>
+    /// <value>The parameters.</value>
+    public IList<string> Parameters { get; } = [];
+    /// <summary>
+    /// Gets or sets the function calls.
+    /// </summary>
+    /// <value>The function calls.</value>
+    public IList<string> FunctionCalls { get; } = [];
 
     private readonly HashSet<string> _declaredMethods = [];
     private readonly HashSet<string> _calledMethods = [];
+    /// <summary>
+    /// Performs visit if statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitIfStatement(Microsoft.CodeAnalysis.CSharp.Syntax.IfStatementSyntax node)
     {
         HasConditionals = true;
         base.VisitIfStatement(node);
     }
+    /// <summary>
+    /// Performs visit switch statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitSwitchStatement(Microsoft.CodeAnalysis.CSharp.Syntax.SwitchStatementSyntax node)
     {
         HasConditionals = true;
         base.VisitSwitchStatement(node);
     }
+    /// <summary>
+    /// Performs visit conditional expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitConditionalExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ConditionalExpressionSyntax node)
     {
         HasConditionals = true;
         base.VisitConditionalExpression(node);
     }
+    /// <summary>
+    /// Performs visit for statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitForStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForStatementSyntax node)
     {
         HasLoops = true;
         base.VisitForStatement(node);
     }
+    /// <summary>
+    /// Performs visit while statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitWhileStatement(Microsoft.CodeAnalysis.CSharp.Syntax.WhileStatementSyntax node)
     {
         HasLoops = true;
         base.VisitWhileStatement(node);
     }
+    /// <summary>
+    /// Performs visit do statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitDoStatement(Microsoft.CodeAnalysis.CSharp.Syntax.DoStatementSyntax node)
     {
         HasLoops = true;
         base.VisitDoStatement(node);
     }
+    /// <summary>
+    /// Performs visit for each statement.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitForEachStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForEachStatementSyntax node)
     {
         HasLoops = true;
         base.VisitForEachStatement(node);
     }
+    /// <summary>
+    /// Performs visit element access expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitElementAccessExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ElementAccessExpressionSyntax node)
     {
         HasIndirectMemoryAccess = true;
         base.VisitElementAccessExpression(node);
     }
+    /// <summary>
+    /// Performs visit binary expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitBinaryExpression(Microsoft.CodeAnalysis.CSharp.Syntax.BinaryExpressionSyntax node)
     {
@@ -911,6 +1001,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
 
         base.VisitBinaryExpression(node);
     }
+    /// <summary>
+    /// Performs visit variable declarator.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitVariableDeclarator(Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax node)
     {
@@ -921,6 +1015,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         }
         base.VisitVariableDeclarator(node);
     }
+    /// <summary>
+    /// Performs visit parameter.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitParameter(Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax node)
     {
@@ -931,6 +1029,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         }
         base.VisitParameter(node);
     }
+    /// <summary>
+    /// Performs visit method declaration.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitMethodDeclaration(Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax node)
     {
@@ -938,6 +1040,10 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         _ = _declaredMethods.Add(methodName);
         base.VisitMethodDeclaration(node);
     }
+    /// <summary>
+    /// Performs visit invocation expression.
+    /// </summary>
+    /// <param name="node">The node.</param>
 
     public override void VisitInvocationExpression(Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax node)
     {
@@ -972,7 +1078,17 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
 /// </summary>
 internal static partial class KernelOptimizer
 {
+    /// <summary>
+    /// Gets apply basic optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
     public static KernelAst ApplyBasicOptimizations(KernelAst ast) => ast; // Constant folding, dead code elimination
+    /// <summary>
+    /// Gets apply standard optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
@@ -980,6 +1096,11 @@ internal static partial class KernelOptimizer
         ast = ApplyBasicOptimizations(ast);
         return ast;
     }
+    /// <summary>
+    /// Gets apply aggressive optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyAggressiveOptimizations(KernelAst ast)
     {
@@ -987,10 +1108,27 @@ internal static partial class KernelOptimizer
         ast = ApplyStandardOptimizations(ast);
         return ast;
     }
+    /// <summary>
+    /// Gets apply vectorization optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <param name="vectorizationFactor">The vectorization factor.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor) => ast; // Transform operations to use SIMD instructions
+    /// <summary>
+    /// Gets apply loop unrolling.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <param name="unrollFactor">The unroll factor.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) => ast; // Unroll loops by the specified factor
+    /// <summary>
+    /// Gets apply fast math optimizations.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static KernelAst ApplyFastMathOptimizations(KernelAst ast) => ast; // Relaxed floating-point operations for performance
 }

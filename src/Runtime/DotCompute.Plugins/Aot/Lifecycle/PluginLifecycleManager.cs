@@ -35,16 +35,25 @@ public sealed class PluginLifecycleManager : IPluginLifecycle
 
         _logger.LogDebugMessage("PluginLifecycleManager initialized");
     }
+    /// <summary>
+    /// Occurs when plugin loaded.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin is successfully loaded and registered.
     /// </summary>
     public event EventHandler<PluginLifecycleEventArgs>? PluginLoaded;
+    /// <summary>
+    /// Occurs when plugin unloaded.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin is unloaded and disposed.
     /// </summary>
     public event EventHandler<PluginLifecycleEventArgs>? PluginUnloaded;
+    /// <summary>
+    /// Occurs when lifecycle error.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin lifecycle operation encounters an error.

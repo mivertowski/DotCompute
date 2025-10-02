@@ -4,6 +4,9 @@
 // </copyright>
 
 namespace DotCompute.Runtime.Services.Performance.Types;
+/// <summary>
+/// A class that represents time range.
+/// </summary>
 
 /// <summary>
 /// Represents a time range specification for performance metrics.

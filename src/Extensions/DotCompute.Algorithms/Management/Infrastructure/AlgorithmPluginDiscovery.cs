@@ -19,11 +19,17 @@ public sealed partial class AlgorithmPluginDiscovery(
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
     private bool _disposed;
+    /// <summary>
+    /// Occurs when plugin file changed.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin file is changed (for hot reload).
     /// </summary>
     public event EventHandler<PluginFileChangedEventArgs>? PluginFileChanged;
+    /// <summary>
+    /// Occurs when watcher error.
+    /// </summary>
 
     /// <summary>
     /// Event raised when file watcher encounters an error.
@@ -397,7 +403,7 @@ public sealed partial class AlgorithmPluginDiscovery(
     /// <summary>
     /// Filters plugin files by security policy.
     /// </summary>
-    private async Task<List<string>> FilterBySecurityPolicyAsync(List<string> pluginFiles, CancellationToken cancellationToken)
+    private async Task<List<string>> FilterBySecurityPolicyAsync(IReadOnlyList<string> pluginFiles, CancellationToken cancellationToken)
     {
         var filteredFiles = new List<string>();
 
@@ -458,6 +464,9 @@ public sealed partial class AlgorithmPluginDiscovery(
                fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
                fileName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -544,8 +553,20 @@ public sealed partial class AlgorithmPluginDiscovery(
 /// </summary>
 public sealed partial class PluginFileChangedEventArgs : EventArgs
 {
+    /// <summary>
+    /// Gets or sets the assembly path.
+    /// </summary>
+    /// <value>The assembly path.</value>
     public required string AssemblyPath { get; init; }
+    /// <summary>
+    /// Gets or sets the changed file path.
+    /// </summary>
+    /// <value>The changed file path.</value>
     public required string ChangedFilePath { get; init; }
+    /// <summary>
+    /// Gets or sets the change type.
+    /// </summary>
+    /// <value>The change type.</value>
     public required WatcherChangeTypes ChangeType { get; init; }
 }
 
@@ -554,6 +575,14 @@ public sealed partial class PluginFileChangedEventArgs : EventArgs
 /// </summary>
 public sealed partial class FileWatcherErrorEventArgs : EventArgs
 {
+    /// <summary>
+    /// Gets or sets the error.
+    /// </summary>
+    /// <value>The error.</value>
     public required Exception Error { get; init; }
+    /// <summary>
+    /// Gets or sets the watcher.
+    /// </summary>
+    /// <value>The watcher.</value>
     public required FileSystemWatcher? Watcher { get; init; }
 }

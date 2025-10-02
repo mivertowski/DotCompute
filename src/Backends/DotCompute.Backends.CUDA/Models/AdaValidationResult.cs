@@ -16,12 +16,12 @@ namespace DotCompute.Backends.CUDA.Advanced.Models
         /// <summary>
         /// Gets or sets the list of validation errors.
         /// </summary>
-        public List<string> Errors { get; set; } = [];
+        public IList<string> Errors { get; } = [];
 
         /// <summary>
         /// Gets or sets the list of validation warnings.
         /// </summary>
-        public List<string> Warnings { get; set; } = [];
+        public IList<string> Warnings { get; } = [];
 
         /// <summary>
         /// Gets or sets the calculated occupancy ratio (0.0 to 1.0).

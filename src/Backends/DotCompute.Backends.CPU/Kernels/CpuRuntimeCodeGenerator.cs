@@ -13,6 +13,14 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal static class CpuRuntimeCodeGenerator
 {
+    /// <summary>
+    /// Gets generate from ast.
+    /// </summary>
+    /// <param name="ast">The ast.</param>
+    /// <param name="definition">The definition.</param>
+    /// <param name="analysis">The analysis.</param>
+    /// <param name="options">The options.</param>
+    /// <returns>The result of the operation.</returns>
     public static CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Use advanced IL code generator
@@ -26,6 +34,14 @@ internal static class CpuRuntimeCodeGenerator
             OptimizationNotes = kernelCode.OptimizationNotes
         };
     }
+    /// <summary>
+    /// Gets generate from bytecode.
+    /// </summary>
+    /// <param name="bytecode">The bytecode.</param>
+    /// <param name="definition">The definition.</param>
+    /// <param name="analysis">The analysis.</param>
+    /// <param name="options">The options.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
@@ -39,6 +55,13 @@ internal static class CpuRuntimeCodeGenerator
 
         return compiledCode;
     }
+    /// <summary>
+    /// Gets generate default kernel.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="analysis">The analysis.</param>
+    /// <param name="options">The options.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {

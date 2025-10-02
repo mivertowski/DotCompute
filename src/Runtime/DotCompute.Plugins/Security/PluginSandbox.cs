@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using System;
 
 namespace DotCompute.Plugins.Security;
 
@@ -292,7 +293,7 @@ public class PluginSandbox : IDisposable
             {
                 // Check for file I/O operations
                 if (method.Name.Contains("File", StringComparison.OrdinalIgnoreCase) ||
-                    method.GetParameters().Any(p => p.ParameterType == typeof(Stream) || p.ParameterType.Name.Contains("Stream")))
+                    method.GetParameters().Any(p => p.ParameterType == typeof(Stream) || p.ParameterType.Name.Contains("Stream", StringComparison.OrdinalIgnoreCase)))
                 {
                     _ = requiredPermissions.Add("FileIO");
                 }
@@ -322,7 +323,7 @@ public class PluginSandbox : IDisposable
             var attributes = pluginType.GetCustomAttributes();
             foreach (var attr in attributes)
             {
-                if (attr.GetType().Name.Contains("Permission"))
+                if (attr.GetType().Name.Contains("Permission", StringComparison.OrdinalIgnoreCase))
                 {
                     _ = requiredPermissions.Add(attr.GetType().Name);
                 }

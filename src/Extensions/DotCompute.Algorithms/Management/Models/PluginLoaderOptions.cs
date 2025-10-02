@@ -42,7 +42,7 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the list of allowed directories for loading plugins.
         /// </summary>
-        public List<string> AllowedDirectories { get; } = [];
+        public IList<string> AllowedDirectories { get; } = [];
 
         /// <summary>
         /// Gets the list of trusted assembly hashes.

@@ -44,6 +44,13 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         _kernelMocks.Clear();
         _executionHistory.Clear();
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     #region IComputeOrchestrator Implementation
 
@@ -92,14 +99,38 @@ public class MockComputeOrchestrator : IComputeOrchestrator
             throw;
         }
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="preferredBackend">The preferred backend.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
         // Mock implementation ignores preferred backend for simplicity
         => await ExecuteAsync<T>(kernelName, args);
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
         // Mock implementation ignores specific accelerator for simplicity
         => await ExecuteAsync<T>(kernelName, args);
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
@@ -107,22 +138,50 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         var allArgs = buffers.Cast<object>().Concat(scalarArgs).ToArray();
         return await ExecuteAsync<T>(kernelName, allArgs);
     }
+    /// <summary>
+    /// Gets the optimal accelerator async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The optimal accelerator async.</returns>
 
     public Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
         // Mock returns null (no specific accelerator preference)
         => Task.FromResult<IAccelerator?>(null);
+    /// <summary>
+    /// Gets precompile kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <returns>The result of the operation.</returns>
 
     public Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
         // Mock pre-compilation does nothing
         => Task.CompletedTask;
+    /// <summary>
+    /// Gets the supported accelerators async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The supported accelerators async.</returns>
 
     public Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
         // Mock returns empty list
         => Task.FromResult<IReadOnlyList<IAccelerator>>(Array.Empty<IAccelerator>());
+    /// <summary>
+    /// Validates the kernel args async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
         // Mock validation always returns true if kernel is registered
         => Task.FromResult(_kernelMocks.ContainsKey(kernelName));
+    /// <summary>
+    /// Gets execute kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="executionParameters">The execution parameters.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<object?> ExecuteKernelAsync(string kernelName, IKernelExecutionParameters executionParameters)
     {
@@ -131,6 +190,13 @@ public class MockComputeOrchestrator : IComputeOrchestrator
         var result = await ExecuteAsync<object>(kernelName, args);
         return result;
     }
+    /// <summary>
+    /// Gets execute kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<object?> ExecuteKernelAsync(string kernelName, object[] args, CancellationToken cancellationToken = default)
     {

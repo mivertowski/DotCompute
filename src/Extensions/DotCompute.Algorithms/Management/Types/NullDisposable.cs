@@ -9,6 +9,9 @@ namespace DotCompute.Algorithms.Management.Types
     internal sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
         public void Dispose() { }
     }
 }

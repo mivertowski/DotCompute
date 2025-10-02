@@ -384,10 +384,10 @@ public class CodeAccessSecurityOptions
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; } = [];
+    public IList<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 }}

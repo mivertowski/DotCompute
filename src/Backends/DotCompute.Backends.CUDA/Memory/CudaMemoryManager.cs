@@ -29,11 +29,22 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly long _deallocationCount;
         private bool _disposed;
         private IAccelerator? _accelerator;
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryManager(CudaContext context, ILogger logger)
             : this(context, null, logger)
         {
         }
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryManager(CudaContext context, CudaDevice? device, ILogger logger)
             : base(logger ?? throw new ArgumentNullException(nameof(logger)))
@@ -637,6 +648,9 @@ namespace DotCompute.Backends.CUDA.Memory
                 return ValueTask.FromException(ex);
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public new void Dispose()
         {

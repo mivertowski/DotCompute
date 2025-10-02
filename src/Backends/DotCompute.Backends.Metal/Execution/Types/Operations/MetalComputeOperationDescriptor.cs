@@ -26,15 +26,15 @@ public sealed class MetalComputeOperationDescriptor : MetalOperationDescriptor
     /// <summary>
     /// Input buffers for the compute operation
     /// </summary>
-    public List<IntPtr> InputBuffers { get; set; } = [];
+    public IList<IntPtr> InputBuffers { get; } = [];
 
     /// <summary>
     /// Output buffers for the compute operation
     /// </summary>
-    public List<IntPtr> OutputBuffers { get; set; } = [];
+    public IList<IntPtr> OutputBuffers { get; } = [];
 
     /// <summary>
     /// Constant parameters
     /// </summary>
-    public Dictionary<int, object> Constants { get; set; } = [];
+    public Dictionary<int, object> Constants { get; } = [];
 }

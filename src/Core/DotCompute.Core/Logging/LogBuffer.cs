@@ -30,6 +30,12 @@ public sealed class LogBuffer : IDisposable
     private long _totalDropped;
     private long _batchesProcessed;
     private DateTimeOffset _lastFlush = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Initializes a new instance of the LogBuffer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="sinks">The sinks.</param>
 
     public LogBuffer(ILogger<LogBuffer> logger, IOptions<LogBufferOptions> options, IEnumerable<ILogSink> sinks)
     {
@@ -291,7 +297,7 @@ public sealed class LogBuffer : IDisposable
         }
     }
 
-    private async Task ProcessBatchAsync(List<StructuredLogEntry> batch, CancellationToken cancellationToken)
+    private async Task ProcessBatchAsync(IReadOnlyList<StructuredLogEntry> batch, CancellationToken cancellationToken)
     {
         if (batch.Count == 0)
         {
@@ -551,6 +557,9 @@ public sealed class LogBuffer : IDisposable
             throw new ObjectDisposedException(nameof(LogBuffer));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -609,64 +618,215 @@ public sealed class LogBuffer : IDisposable
         }
     }
 }
+/// <summary>
+/// An i log sink interface.
+/// </summary>
 
 // Supporting interfaces and data structures
 public interface ILogSink : IDisposable
 {
+    /// <summary>
+    /// Initializes the .
+    /// </summary>
     public void Initialize();
+    /// <summary>
+    /// Gets write asynchronously.
+    /// </summary>
+    /// <param name="entry">The entry.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default);
-    public Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Gets write batch asynchronously.
+    /// </summary>
+    /// <param name="entries">The entries.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
+    public Task WriteBatchAsync(IReadOnlyList<StructuredLogEntry> entries, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Gets flush asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public Task FlushAsync(CancellationToken cancellationToken = default);
 }
+/// <summary>
+/// An i health checkable interface.
+/// </summary>
 
 public interface IHealthCheckable
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool IsHealthy { get; }
+    /// <summary>
+    /// Performs mark unhealthy.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
     public void MarkUnhealthy(Exception? exception = null);
+    /// <summary>
+    /// Performs mark healthy.
+    /// </summary>
     public void MarkHealthy();
 }
+/// <summary>
+/// A class that represents log buffer options.
+/// </summary>
 
 public sealed class LogBufferOptions
 {
+    /// <summary>
+    /// Gets or sets the max buffer size.
+    /// </summary>
+    /// <value>The max buffer size.</value>
     public int MaxBufferSize { get; set; } = 10000;
+    /// <summary>
+    /// Gets or sets the batch size.
+    /// </summary>
+    /// <value>The batch size.</value>
     public int BatchSize { get; set; } = 100;
+    /// <summary>
+    /// Gets or sets the batch interval ms.
+    /// </summary>
+    /// <value>The batch interval ms.</value>
     public int BatchIntervalMs { get; set; } = 1000;
+    /// <summary>
+    /// Gets or sets the max flush batch size.
+    /// </summary>
+    /// <value>The max flush batch size.</value>
     public int MaxFlushBatchSize { get; set; } = 1000;
+    /// <summary>
+    /// Gets or sets the drop on full.
+    /// </summary>
+    /// <value>The drop on full.</value>
     public bool DropOnFull { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the log dropped entries.
+    /// </summary>
+    /// <value>The log dropped entries.</value>
     public bool LogDroppedEntries { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable compression.
+    /// </summary>
+    /// <value>The enable compression.</value>
     public bool EnableCompression { get; set; }
+    /// <summary>
+    /// Gets or sets the compression threshold.
+    /// </summary>
+    /// <value>The compression threshold.</value>
 
     public int CompressionThreshold { get; set; } = 50;
+    /// <summary>
+    /// Gets or sets the minimum log level.
+    /// </summary>
+    /// <value>The minimum log level.</value>
     public LogLevel MinimumLogLevel { get; set; } = LogLevel.Debug;
-    public List<string> ExcludedCategories { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the excluded categories.
+    /// </summary>
+    /// <value>The excluded categories.</value>
+    public IList<string> ExcludedCategories { get; } = [];
+    /// <summary>
+    /// Gets or sets the custom filters.
+    /// </summary>
+    /// <value>The custom filters.</value>
     public List<Func<StructuredLogEntry, bool>> CustomFilters { get; set; } = [];
 }
+/// <summary>
+/// A class that represents log buffer statistics.
+/// </summary>
 
 public sealed class LogBufferStatistics
 {
+    /// <summary>
+    /// Gets or sets the total enqueued.
+    /// </summary>
+    /// <value>The total enqueued.</value>
     public long TotalEnqueued { get; set; }
+    /// <summary>
+    /// Gets or sets the total processed.
+    /// </summary>
+    /// <value>The total processed.</value>
     public long TotalProcessed { get; set; }
+    /// <summary>
+    /// Gets or sets the total dropped.
+    /// </summary>
+    /// <value>The total dropped.</value>
     public long TotalDropped { get; set; }
+    /// <summary>
+    /// Gets or sets the batches processed.
+    /// </summary>
+    /// <value>The batches processed.</value>
     public long BatchesProcessed { get; set; }
+    /// <summary>
+    /// Gets or sets the current buffer size.
+    /// </summary>
+    /// <value>The current buffer size.</value>
     public int CurrentBufferSize { get; set; }
+    /// <summary>
+    /// Gets or sets the max buffer size.
+    /// </summary>
+    /// <value>The max buffer size.</value>
     public int MaxBufferSize { get; set; }
+    /// <summary>
+    /// Gets or sets the last flush time.
+    /// </summary>
+    /// <value>The last flush time.</value>
     public DateTimeOffset LastFlushTime { get; set; }
+    /// <summary>
+    /// Gets or sets the active sinks.
+    /// </summary>
+    /// <value>The active sinks.</value>
     public int ActiveSinks { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool IsHealthy { get; set; }
+    /// <summary>
+    /// Gets or sets the drop rate.
+    /// </summary>
+    /// <value>The drop rate.</value>
 
 
     public double DropRate => TotalEnqueued > 0 ? (double)TotalDropped / TotalEnqueued : 0;
+    /// <summary>
+    /// Gets or sets the processing rate.
+    /// </summary>
+    /// <value>The processing rate.</value>
     public double ProcessingRate => TotalEnqueued > 0 ? (double)TotalProcessed / TotalEnqueued : 0;
+    /// <summary>
+    /// Gets or sets the buffer utilization.
+    /// </summary>
+    /// <value>The buffer utilization.</value>
     public double BufferUtilization => MaxBufferSize > 0 ? (double)CurrentBufferSize / MaxBufferSize : 0;
 }
+/// <summary>
+/// A class that represents console sink.
+/// </summary>
 
 // Built-in sink implementations
 public sealed class ConsoleSink : ILogSink, IHealthCheckable
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool IsHealthy { get; private set; } = true;
+    /// <summary>
+    /// Initializes the .
+    /// </summary>
 
 
     public void Initialize() { }
+    /// <summary>
+    /// Gets write asynchronously.
+    /// </summary>
+    /// <param name="entry">The entry.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default)
@@ -682,15 +842,26 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
             throw;
         }
     }
+    /// <summary>
+    /// Gets write batch asynchronously.
+    /// </summary>
+    /// <param name="entries">The entries.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
-    public async Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
+    public async Task WriteBatchAsync(IReadOnlyList<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
     {
         foreach (var entry in entries)
         {
             await WriteAsync(entry, cancellationToken);
         }
     }
+    /// <summary>
+    /// Gets flush asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public Task FlushAsync(CancellationToken cancellationToken = default)
@@ -698,22 +869,42 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
         Console.Out.Flush();
         return Task.CompletedTask;
     }
+    /// <summary>
+    /// Performs mark unhealthy.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
 
 
     public void MarkUnhealthy(Exception? exception = null) => IsHealthy = false;
+    /// <summary>
+    /// Performs mark healthy.
+    /// </summary>
     public void MarkHealthy() => IsHealthy = true;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose() { }
 }
+/// <summary>
+/// A class that represents file sink.
+/// </summary>
 
 public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
 {
     private readonly string _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
     private readonly SemaphoreSlim _writeSemaphore = new(1, 1);
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
 
 
     public bool IsHealthy { get; private set; } = true;
+    /// <summary>
+    /// Initializes the .
+    /// </summary>
 
     public void Initialize()
     {
@@ -723,12 +914,24 @@ public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
             _ = Directory.CreateDirectory(directory);
         }
     }
+    /// <summary>
+    /// Gets write asynchronously.
+    /// </summary>
+    /// <param name="entry">The entry.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async Task WriteAsync(StructuredLogEntry entry, CancellationToken cancellationToken = default) => await WriteBatchAsync([entry], cancellationToken);
+    /// <summary>
+    /// Gets write batch asynchronously.
+    /// </summary>
+    /// <param name="entries">The entries.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
-    public async Task WriteBatchAsync(List<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
+    public async Task WriteBatchAsync(IReadOnlyList<StructuredLogEntry> entries, CancellationToken cancellationToken = default)
     {
         await _writeSemaphore.WaitAsync(cancellationToken);
         try
@@ -747,6 +950,11 @@ public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
             _ = _writeSemaphore.Release();
         }
     }
+    /// <summary>
+    /// Gets flush asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public Task FlushAsync(CancellationToken cancellationToken = default)
@@ -755,10 +963,20 @@ public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
 
 
         => Task.CompletedTask;
+    /// <summary>
+    /// Performs mark unhealthy.
+    /// </summary>
+    /// <param name="exception">The exception.</param>
 
 
     public void MarkUnhealthy(Exception? exception = null) => IsHealthy = false;
+    /// <summary>
+    /// Performs mark healthy.
+    /// </summary>
     public void MarkHealthy() => IsHealthy = true;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose() => _writeSemaphore?.Dispose();

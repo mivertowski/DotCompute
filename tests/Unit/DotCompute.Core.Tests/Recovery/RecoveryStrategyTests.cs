@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 
 namespace DotCompute.Core.Tests.Recovery;
 
@@ -27,6 +28,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
     private readonly Mock<ILogger> _mockLogger = new();
     private readonly List<IDisposable> _disposables = [];
     private bool _disposed;
+    /// <summary>
+    /// Gets compilation fallback_ kernel compilation fails_ falls back to c p u.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #region CompilationFallback Tests
 
@@ -66,11 +71,15 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("fallback") && v.ToString()!.Contains("CPU")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("fallback", StringComparison.OrdinalIgnoreCase) && v.ToString()!.Contains("CPU", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets compilation fallback_ repeated failures_ adapts strategy.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationFallback")]
@@ -103,6 +112,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var lastResult = results.Last();
         _ = lastResult.RecoveryAction.Should().Contain("Aggressive");
     }
+    /// <summary>
+    /// Gets compilation fallback_ unsupported scenario_ returns failure.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "CompilationFallback")]
@@ -127,6 +140,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = result.Success.Should().BeFalse();
         _ = result.Message.Should().Contain("not supported");
     }
+    /// <summary>
+    /// Gets memory recovery strategy_ out of memory_ triggers cleanup.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -168,11 +185,15 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("cleanup") || v.ToString()!.Contains("memory")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("cleanup", StringComparison.CurrentCulture) || v.ToString()!.Contains("memory", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets memory recovery strategy_ memory fragmentation_ reorganizes memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryRecovery")]
@@ -204,6 +225,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = memoryRecovery.DefragmentationPerformed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets memory recovery strategy_ memory leak detection_ identifies and cleans.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryRecovery")]
@@ -235,6 +260,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = memoryRecovery.LeakMitigationPerformed.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets memory recovery strategy_ high memory pressure_ reduces memory footprint.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "MemoryRecovery")]
@@ -266,6 +295,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = memoryRecovery.MemoryFootprintReduced.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets gpu recovery manager_ device hang detection_ reset device.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -308,11 +341,15 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("device") && v.ToString()!.Contains("reset")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("device", StringComparison.CurrentCulture) && v.ToString()!.Contains("reset", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets gpu recovery manager_ memory corruption_ rebuilds context.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "GpuRecovery")]
@@ -345,6 +382,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = gpuRecovery.ContextRebuilt.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets gpu recovery manager_ thermal throttling_ reduces workload.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "GpuRecovery")]
@@ -377,6 +418,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = gpuRecovery.WorkloadReduced.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets gpu recovery manager_ driver error_ reloads driver.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "GpuRecovery")]
@@ -408,6 +453,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = gpuRecovery.DriverReloaded.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets recovery coordinator_ multiple strategies_ selects appropriate strategy.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -445,6 +494,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
     }
+    /// <summary>
+    /// Gets recovery coordinator_ strategy chaining_ falls through strategies.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "RecoveryCoordination")]
@@ -477,6 +530,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = coordinator.StrategiesAttempted.Should().Contain("TestAlwaysFailingStrategy");
         _ = coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
     }
+    /// <summary>
+    /// Gets recovery coordinator_ all strategies fail_ returns failure.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "RecoveryCoordination")]
@@ -509,6 +566,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = coordinator.StrategiesAttempted.Should().HaveCount(2);
     }
+    /// <summary>
+    /// Gets recovery strategies_ concurrent recovery_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -540,6 +601,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = memoryRecovery.ConcurrentRecoveryCount.Should().Be(concurrentRecoveries);
     }
+    /// <summary>
+    /// Gets recovery coordinator_ concurrent coordination_ handles correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Concurrency")]
@@ -578,6 +643,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = memoryRecoveries.Should().Be(concurrentOperations / 2);
         _ = deviceResets.Should().Be(concurrentOperations / 2);
     }
+    /// <summary>
+    /// Gets recovery strategies_ performance impact_ minimal overhead.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -614,6 +683,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = avgRecoveryTime.Should().BeLessThan(10, "recovery should be fast to minimize impact");
     }
+    /// <summary>
+    /// Gets recovery coordinator_ strategy selection_ efficient routing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "Performance")]
@@ -653,6 +726,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = coordinator.StrategiesAttempted.Should().HaveCount(3); // One strategy per context
         _ = avgCoordinationTime.Should().BeLessThan(5, "coordination should be efficient");
     }
+    /// <summary>
+    /// Gets recovery manager_ repeated failures_ detects pattern.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -689,11 +766,15 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("pattern") || v.ToString()!.Contains("repeated")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("pattern", StringComparison.CurrentCulture) || v.ToString()!.Contains("repeated", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets recovery manager_ failure escalation_ increases severity.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "PatternDetection")]
@@ -727,6 +808,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
         _ = escalatingRecovery.EscalationLevel.Should().Be(4);
     }
+    /// <summary>
+    /// Gets recovery strategy_ null context_ throws argument null exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -745,6 +830,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
+    /// <summary>
+    /// Gets recovery strategy_ after dispose_ throws object disposed exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -765,6 +854,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var act = async () => await strategy.AttemptRecoveryAsync(context);
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets recovery coordinator_ empty strategies_ returns failure.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -789,6 +882,10 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         _ = result.Success.Should().BeFalse();
         _ = result.Message.Should().Contain("No recovery strategies");
     }
+    /// <summary>
+    /// Gets recovery strategy_ with cancellation_ responds to token.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     [Trait("TestType", "EdgeCases")]
@@ -812,6 +909,9 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
         var act = async () => await strategy.AttemptRecoveryAsync(context, cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -838,14 +938,28 @@ public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposabl
 
     #endregion
 }
+/// <summary>
+/// A class that represents test compilation fallback.
+/// </summary>
 
 // Test implementations of recovery strategies
 public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDisposable
 {
     private readonly ILogger _logger = logger;
     private bool _disposed;
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
-    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Compilation");
+    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Compilation", StringComparison.CurrentCulture);
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -865,24 +979,65 @@ public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDispo
 
         return RecoveryResult.CreateSuccess(action, "Successfully fell back to CPU compilation");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _disposed = true;
 }
+/// <summary>
+/// A class that represents test memory recovery strategy.
+/// </summary>
 
 public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAsyncDisposable, IDisposable
 {
     private readonly ILogger _logger = logger;
     private int _concurrentRecoveryCount;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the cleanup performed.
+    /// </summary>
+    /// <value>The cleanup performed.</value>
 
     public bool CleanupPerformed { get; private set; }
+    /// <summary>
+    /// Gets or sets the g c triggered.
+    /// </summary>
+    /// <value>The g c triggered.</value>
     public bool GCTriggered { get; private set; }
+    /// <summary>
+    /// Gets or sets the defragmentation performed.
+    /// </summary>
+    /// <value>The defragmentation performed.</value>
     public bool DefragmentationPerformed { get; private set; }
+    /// <summary>
+    /// Gets or sets the leak mitigation performed.
+    /// </summary>
+    /// <value>The leak mitigation performed.</value>
     public bool LeakMitigationPerformed { get; private set; }
+    /// <summary>
+    /// Gets or sets the memory footprint reduced.
+    /// </summary>
+    /// <value>The memory footprint reduced.</value>
     public bool MemoryFootprintReduced { get; private set; }
+    /// <summary>
+    /// Gets or sets the concurrent recovery count.
+    /// </summary>
+    /// <value>The concurrent recovery count.</value>
     public int ConcurrentRecoveryCount => _concurrentRecoveryCount;
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
-    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Memory") || context.FailureType.Contains("OutOfMemory");
+    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Memory", StringComparison.CurrentCulture) || context.FailureType.Contains("OutOfMemory", StringComparison.CurrentCulture);
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -929,6 +1084,9 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
             _ = Interlocked.Decrement(ref _concurrentRecoveryCount);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -938,6 +1096,10 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
             GC.SuppressFinalize(this);
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
@@ -945,24 +1107,54 @@ public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAs
         return ValueTask.CompletedTask;
     }
 }
+/// <summary>
+/// A class that represents test gpu recovery manager.
+/// </summary>
 
 public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDisposable
 {
     private readonly ILogger _logger = logger;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the device reset performed.
+    /// </summary>
+    /// <value>The device reset performed.</value>
 
     public bool DeviceResetPerformed { get; private set; }
+    /// <summary>
+    /// Gets or sets the context rebuilt.
+    /// </summary>
+    /// <value>The context rebuilt.</value>
     public bool ContextRebuilt { get; private set; }
+    /// <summary>
+    /// Gets or sets the workload reduced.
+    /// </summary>
+    /// <value>The workload reduced.</value>
     public bool WorkloadReduced { get; private set; }
+    /// <summary>
+    /// Gets or sets the driver reloaded.
+    /// </summary>
+    /// <value>The driver reloaded.</value>
     public bool DriverReloaded { get; private set; }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanHandle(RecoveryContext context)
     {
-        return context.FailureType.Contains("Device") ||
-               context.FailureType.Contains("GPU") ||
-               context.FailureType.Contains("Thermal") ||
-               context.FailureType.Contains("Driver");
+        return context.FailureType.Contains("Device", StringComparison.CurrentCulture) ||
+               context.FailureType.Contains("GPU", StringComparison.CurrentCulture) ||
+               context.FailureType.Contains("Thermal", StringComparison.CurrentCulture) ||
+               context.FailureType.Contains("Driver", StringComparison.CurrentCulture);
     }
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -999,18 +1191,39 @@ public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDispos
                 return RecoveryResult.Failure("Unknown GPU error type");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _disposed = true;
 }
+/// <summary>
+/// A class that represents test recovery coordinator.
+/// </summary>
 
 public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> strategies) : IRecoveryStrategy, IDisposable
 {
     private readonly List<IRecoveryStrategy> _strategies = strategies;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the strategies attempted.
+    /// </summary>
+    /// <value>The strategies attempted.</value>
 
     public List<string> StrategiesAttempted { get; } = [];
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanHandle(RecoveryContext context) => true;
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -1037,6 +1250,9 @@ public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> str
 
         return RecoveryResult.Failure("All recovery strategies exhausted");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -1050,10 +1266,24 @@ public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> str
         }
     }
 }
+/// <summary>
+/// A class that represents test always failing strategy.
+/// </summary>
 
 public class TestAlwaysFailingStrategy(ILogger logger) : IRecoveryStrategy
 {
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanHandle(RecoveryContext context) => true;
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -1061,16 +1291,38 @@ public class TestAlwaysFailingStrategy(ILogger logger) : IRecoveryStrategy
         return RecoveryResult.Failure("Always fails for testing");
     }
 }
+/// <summary>
+/// A class that represents test pattern detecting recovery.
+/// </summary>
 
 public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
     private readonly ILogger _logger = logger;
     private readonly Dictionary<string, int> _failurePatterns = [];
+    /// <summary>
+    /// Gets or sets the pattern detected.
+    /// </summary>
+    /// <value>The pattern detected.</value>
 
     public bool PatternDetected { get; private set; }
+    /// <summary>
+    /// Gets or sets the adaptive strategy.
+    /// </summary>
+    /// <value>The adaptive strategy.</value>
     public bool AdaptiveStrategy { get; private set; }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanHandle(RecoveryContext context) => true;
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -1088,15 +1340,36 @@ public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, I
         await Task.Delay(5, cancellationToken);
         return RecoveryResult.CreateSuccess("PatternBasedRecovery", "Recovery adapted to pattern");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _failurePatterns.Clear();
 }
+/// <summary>
+/// A class that represents test escalating recovery.
+/// </summary>
 
 public class TestEscalatingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
+    /// <summary>
+    /// Gets or sets the escalation level.
+    /// </summary>
+    /// <value>The escalation level.</value>
     public int EscalationLevel { get; private set; }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanHandle(RecoveryContext context) => true;
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -1113,46 +1386,118 @@ public class TestEscalatingRecovery(ILogger logger) : IRecoveryStrategy, IDispos
         await Task.Delay(5, cancellationToken);
         return RecoveryResult.CreateSuccess(action, $"Escalated to level {context.FailureCount}");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
         // Cleanup
     }
 }
+/// <summary>
+/// A class that represents test slow recovery strategy.
+/// </summary>
 
 public class TestSlowRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IDisposable
 {
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanHandle(RecoveryContext context) => true;
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
         await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken); // Intentionally slow
         return RecoveryResult.CreateSuccess("SlowRecovery", "Slow recovery completed");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
         // Cleanup
     }
 }
+/// <summary>
+/// A class that represents recovery context.
+/// </summary>
 
 // Helper classes for recovery context and results
 public class RecoveryContext
 {
+    /// <summary>
+    /// Gets or sets the failure type.
+    /// </summary>
+    /// <value>The failure type.</value>
     public string FailureType { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the original exception.
+    /// </summary>
+    /// <value>The original exception.</value>
     public Exception? OriginalException { get; set; }
+    /// <summary>
+    /// Gets or sets the attempted operation.
+    /// </summary>
+    /// <value>The attempted operation.</value>
     public string AttemptedOperation { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the component name.
+    /// </summary>
+    /// <value>The component name.</value>
     public string ComponentName { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the failure count.
+    /// </summary>
+    /// <value>The failure count.</value>
     public int FailureCount { get; set; } = 1;
+    /// <summary>
+    /// Gets or sets the additional data.
+    /// </summary>
+    /// <value>The additional data.</value>
     public Dictionary<string, object> AdditionalData { get; set; } = [];
 }
+/// <summary>
+/// A class that represents recovery result.
+/// </summary>
 
 public class RecoveryResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the recovery action.
+    /// </summary>
+    /// <value>The recovery action.</value>
     public string RecoveryAction { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public string Message { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
     public TimeSpan Duration { get; set; }
+    /// <summary>
+    /// Creates a new success.
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="message">The message.</param>
+    /// <returns>The created success.</returns>
 
     public static RecoveryResult CreateSuccess(string action, string message)
     {
@@ -1163,6 +1508,11 @@ public class RecoveryResult
             Message = message
         };
     }
+    /// <summary>
+    /// Gets failure.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static RecoveryResult Failure(string message)
     {
@@ -1173,9 +1523,23 @@ public class RecoveryResult
         };
     }
 }
+/// <summary>
+/// An i recovery strategy interface.
+/// </summary>
 
 public interface IRecoveryStrategy
 {
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanHandle(RecoveryContext context);
+    /// <summary>
+    /// Gets attempt recovery asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default);
 }

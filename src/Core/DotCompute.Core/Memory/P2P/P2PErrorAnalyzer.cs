@@ -132,11 +132,35 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class ValidationFailureAnalysis
     {
+        /// <summary>
+        /// Gets or sets the no failures.
+        /// </summary>
+        /// <value>The no failures.</value>
         public bool NoFailures { get; set; }
+        /// <summary>
+        /// Gets or sets the total failures.
+        /// </summary>
+        /// <value>The total failures.</value>
         public int TotalFailures { get; set; }
+        /// <summary>
+        /// Gets or sets the distinct failure types.
+        /// </summary>
+        /// <value>The distinct failure types.</value>
         public int DistinctFailureTypes { get; set; }
+        /// <summary>
+        /// Gets or sets the most common failure type.
+        /// </summary>
+        /// <value>The most common failure type.</value>
         public string? MostCommonFailureType { get; set; }
+        /// <summary>
+        /// Gets or sets the recent failure rate.
+        /// </summary>
+        /// <value>The recent failure rate.</value>
         public double RecentFailureRate { get; set; }
-        public Dictionary<string, int> FailuresByType { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the failures by type.
+        /// </summary>
+        /// <value>The failures by type.</value>
+        public Dictionary<string, int> FailuresByType { get; } = [];
     }
 }

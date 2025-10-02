@@ -9,6 +9,7 @@ using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 using ThreatLevel = DotCompute.Abstractions.Security.ThreatLevel;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Algorithms.Management.Validation;
 
@@ -23,6 +24,11 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     private readonly AuthenticodeValidator _authenticodeValidator;
     private readonly MalwareScanner _malwareScanner;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginValidator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public AlgorithmPluginValidator(ILogger<AlgorithmPluginValidator> logger, AlgorithmPluginManagerOptions options)
     {
@@ -284,7 +290,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
 
             // Check for required attributes
             var attributes = assembly.GetCustomAttributes();
-            if (!attributes.Any(a => a.GetType().Name.Contains("Assembly") && a.GetType().Name.Contains("Title")))
+            if (!attributes.Any(a => a.GetType().Name.Contains("Assembly", StringComparison.OrdinalIgnoreCase) && a.GetType().Name.Contains("Title", StringComparison.OrdinalIgnoreCase)))
             {
                 result.Warnings.Add("Assembly missing title attribute");
             }
@@ -647,12 +653,12 @@ public sealed class PluginValidationResult
     /// <summary>
     /// Gets validation errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the validation start time.
@@ -703,12 +709,12 @@ public sealed class PluginInstanceValidationResult
     /// <summary>
     /// Gets validation errors.
     /// </summary>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the validation start time.
@@ -767,59 +773,172 @@ public sealed class PerformanceValidationMetrics
     /// </summary>
     public long AssemblySize { get; set; }
 }
+/// <summary>
+/// A class that represents security policy engine.
+/// </summary>
 
 // Placeholder classes for security components
 internal sealed class SecurityPolicyEngine(ILogger logger) : IDisposable
 {
+    /// <summary>
+    /// Gets or sets the require digital signature.
+    /// </summary>
+    /// <value>The require digital signature.</value>
     public bool RequireDigitalSignature { get; set; }
+    /// <summary>
+    /// Gets or sets the require strong name.
+    /// </summary>
+    /// <value>The require strong name.</value>
     public bool RequireStrongName { get; set; }
+    /// <summary>
+    /// Gets or sets the minimum security level.
+    /// </summary>
+    /// <value>The minimum security level.</value>
     public SecurityLevel MinimumSecurityLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the max assembly size.
+    /// </summary>
+    /// <value>The max assembly size.</value>
     public long MaxAssemblySize { get; set; }
+    /// <summary>
+    /// Performs add trusted publisher.
+    /// </summary>
+    /// <param name="publisher">The publisher.</param>
 
     public static void AddTrustedPublisher(string publisher) { }
+    /// <summary>
+    /// Gets evaluate rules.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <returns>The result of the operation.</returns>
     public static SecurityPolicyResult EvaluateRules(SecurityEvaluationContext context) => new() { IsAllowed = true };
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
     public void Dispose() { }
 }
+/// <summary>
+/// A class that represents authenticode validator.
+/// </summary>
 
 internal sealed class AuthenticodeValidator(ILogger logger) : IDisposable
 {
+    /// <summary>
+    /// Validates the async.
+    /// </summary>
+    /// <param name="assemblyPath">The assembly path.</param>
+    /// <returns>The result of the operation.</returns>
     public static Task<AuthenticodeResult> ValidateAsync(string assemblyPath) => Task.FromResult(new AuthenticodeResult { IsValid = true, TrustLevel = TrustLevel.High });
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
     public void Dispose() { }
 }
+/// <summary>
+/// A class that represents malware scanner.
+/// </summary>
 
 internal sealed class MalwareScanner(ILogger logger) : IDisposable
 {
+    /// <summary>
+    /// Gets scan assembly asynchronously.
+    /// </summary>
+    /// <param name="assemblyPath">The assembly path.</param>
+    /// <returns>The result of the operation.</returns>
     public static Task<MalwareResult> ScanAssemblyAsync(string assemblyPath) => Task.FromResult(new MalwareResult { IsClean = true, ThreatLevel = ThreatLevel.None });
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
     public void Dispose() { }
 }
 
 internal sealed class SecurityEvaluationContext
 {
+    /// <summary>
+    /// Gets or sets the assembly path.
+    /// </summary>
+    /// <value>The assembly path.</value>
     public required string AssemblyPath { get; init; }
+    /// <summary>
+    /// Gets or sets the assembly bytes.
+    /// </summary>
+    /// <value>The assembly bytes.</value>
     public required byte[] AssemblyBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the certificate.
+    /// </summary>
+    /// <value>The certificate.</value>
     public X509Certificate2? Certificate { get; set; }
+    /// <summary>
+    /// Gets or sets the strong name key.
+    /// </summary>
+    /// <value>The strong name key.</value>
     public byte[]? StrongNameKey { get; set; }
 }
 
 internal sealed class SecurityPolicyResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether allowed.
+    /// </summary>
+    /// <value>The is allowed.</value>
     public bool IsAllowed { get; set; }
-    public List<string> Violations { get; } = [];
-    public List<string> Warnings { get; } = [];
+    /// <summary>
+    /// Gets or sets the violations.
+    /// </summary>
+    /// <value>The violations.</value>
+    public IList<string> Violations { get; } = [];
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
+    public IList<string> Warnings { get; } = [];
+    /// <summary>
+    /// Gets or sets the security level.
+    /// </summary>
+    /// <value>The security level.</value>
     public SecurityLevel SecurityLevel { get; set; }
 }
 
 internal sealed class AuthenticodeResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
+    /// <summary>
+    /// Gets or sets the trust level.
+    /// </summary>
+    /// <value>The trust level.</value>
     public TrustLevel TrustLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; set; }
+    /// <summary>
+    /// Gets or sets the signer name.
+    /// </summary>
+    /// <value>The signer name.</value>
     public string? SignerName { get; set; }
 }
 
 internal sealed class MalwareResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether clean.
+    /// </summary>
+    /// <value>The is clean.</value>
     public bool IsClean { get; set; }
+    /// <summary>
+    /// Gets or sets the threat level.
+    /// </summary>
+    /// <value>The threat level.</value>
     public ThreatLevel ThreatLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the threat description.
+    /// </summary>
+    /// <value>The threat description.</value>
     public string? ThreatDescription { get; set; }
 }

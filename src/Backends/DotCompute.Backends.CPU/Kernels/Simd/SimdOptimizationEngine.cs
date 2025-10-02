@@ -282,13 +282,45 @@ public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorCon
 /// </summary>
 public sealed class WorkloadProfile
 {
+    /// <summary>
+    /// Gets or sets the element type.
+    /// </summary>
+    /// <value>The element type.</value>
     public Type ElementType { get; init; } = typeof(object);
+    /// <summary>
+    /// Gets or sets the element count.
+    /// </summary>
+    /// <value>The element count.</value>
     public long ElementCount { get; init; }
+    /// <summary>
+    /// Gets or sets the element size bytes.
+    /// </summary>
+    /// <value>The element size bytes.</value>
     public int ElementSizeBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the total data size bytes.
+    /// </summary>
+    /// <value>The total data size bytes.</value>
     public long TotalDataSizeBytes { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether aligned.
+    /// </summary>
+    /// <value>The is aligned.</value>
     public bool IsAligned { get; init; }
+    /// <summary>
+    /// Gets or sets the cache efficiency.
+    /// </summary>
+    /// <value>The cache efficiency.</value>
     public double CacheEfficiency { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization potential.
+    /// </summary>
+    /// <value>The vectorization potential.</value>
     public double VectorizationPotential { get; init; }
+    /// <summary>
+    /// Gets or sets the historical performance.
+    /// </summary>
+    /// <value>The historical performance.</value>
     public HistoricalPerformanceAnalysis? HistoricalPerformance { get; set; }
 }
 
@@ -297,11 +329,30 @@ public sealed class WorkloadProfile
 /// </summary>
 public sealed class HistoricalPerformanceAnalysis
 {
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
     public long ExecutionCount { get; init; }
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the average performance.
+    /// </summary>
+    /// <value>The average performance.</value>
     public double AveragePerformance { get; init; }
+    /// <summary>
+    /// Gets or sets the trend direction.
+    /// </summary>
+    /// <value>The trend direction.</value>
     public PerformanceTrend TrendDirection { get; init; }
 }
+/// <summary>
+/// An performance trend enumeration.
+/// </summary>
 
 /// <summary>
 /// Performance trend indicators.
@@ -312,6 +363,9 @@ public enum PerformanceTrend
     Stable,
     Declining
 }
+/// <summary>
+/// An simd execution strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// SIMD execution strategies based on available instruction sets.
@@ -330,8 +384,20 @@ public enum SimdExecutionStrategy
 /// </summary>
 public sealed class ExecutionContext(SimdSummary capabilities)
 {
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
     public SimdSummary Capabilities { get; } = capabilities;
+    /// <summary>
+    /// Gets or sets the thread executions.
+    /// </summary>
+    /// <value>The thread executions.</value>
     public long ThreadExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
     public DateTimeOffset LastExecution { get; set; } = DateTimeOffset.UtcNow;
 }
 
@@ -340,14 +406,46 @@ public sealed class ExecutionContext(SimdSummary capabilities)
 /// </summary>
 public sealed class ExecutorConfiguration
 {
+    /// <summary>
+    /// Gets or sets the min elements for vectorization.
+    /// </summary>
+    /// <value>The min elements for vectorization.</value>
     public long MinElementsForVectorization { get; init; } = 32;
+    /// <summary>
+    /// Gets or sets the min elements for avx2.
+    /// </summary>
+    /// <value>The min elements for avx2.</value>
     public long MinElementsForAvx2 { get; init; } = 256;
+    /// <summary>
+    /// Gets or sets the min elements for avx512.
+    /// </summary>
+    /// <value>The min elements for avx512.</value>
     public long MinElementsForAvx512 { get; init; } = 1024;
+    /// <summary>
+    /// Gets or sets the enable prefetching.
+    /// </summary>
+    /// <value>The enable prefetching.</value>
     public bool EnablePrefetching { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the enable unrolling.
+    /// </summary>
+    /// <value>The enable unrolling.</value>
     public bool EnableUnrolling { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the unroll factor.
+    /// </summary>
+    /// <value>The unroll factor.</value>
     public int UnrollFactor { get; init; } = 4;
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
 
     public static ExecutorConfiguration Default => new();
+    /// <summary>
+    /// Gets or sets the high performance.
+    /// </summary>
+    /// <value>The high performance.</value>
 
     public static ExecutorConfiguration HighPerformance => new()
     {

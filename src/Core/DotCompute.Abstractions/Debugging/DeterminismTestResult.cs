@@ -36,12 +36,12 @@ public sealed class DeterminismTestResult
     /// <summary>
     /// Gets the execution results from each iteration.
     /// </summary>
-    public List<object?> ExecutionResults { get; init; } = [];
+    public IReadOnlyList<object?> ExecutionResults { get; init; } = [];
 
     /// <summary>
     /// Gets the list of issues found during determinism testing.
     /// </summary>
-    public List<string> Issues { get; init; } = [];
+    public IReadOnlyList<string> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the total execution time for all iterations.

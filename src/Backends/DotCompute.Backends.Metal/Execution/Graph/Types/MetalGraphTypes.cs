@@ -187,7 +187,7 @@ public class MetalGraphExecutionResult
     public Exception? Exception { get; set; }
 
     /// <summary>Gets or sets performance metrics for the execution.</summary>
-    public Dictionary<string, object> PerformanceMetrics { get; set; } = [];
+    public Dictionary<string, object> PerformanceMetrics { get; } = [];
 }
 
 /// <summary>
@@ -199,7 +199,7 @@ public class MetalCommandBatch
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Gets or sets the nodes included in this batch.</summary>
-    public List<string> NodeIds { get; set; } = [];
+    public IList<string> NodeIds { get; } = [];
 
     /// <summary>Gets or sets the type of command encoder required.</summary>
     public MetalCommandEncoderType EncoderType { get; set; }

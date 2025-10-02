@@ -1198,10 +1198,30 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
 /// </summary>
 public class GpuMemorySnapshot
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the system memory.
+    /// </summary>
+    /// <value>The system memory.</value>
     public long SystemMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the gpu memory used.
+    /// </summary>
+    /// <value>The gpu memory used.</value>
     public long GpuMemoryUsed { get; set; }
+    /// <summary>
+    /// Gets or sets the gpu memory free.
+    /// </summary>
+    /// <value>The gpu memory free.</value>
     public long GpuMemoryFree { get; set; }
 }
 
@@ -1210,10 +1230,30 @@ public class GpuMemorySnapshot
 /// </summary>
 public class NvidiaGpuCapabilities
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether nvidia gpu.
+    /// </summary>
+    /// <value>The has nvidia gpu.</value>
     public bool HasNvidiaGpu { get; set; }
+    /// <summary>
+    /// Gets or sets the compute capability.
+    /// </summary>
+    /// <value>The compute capability.</value>
     public string ComputeCapability { get; set; } = "0.0";
+    /// <summary>
+    /// Gets or sets the total memory m b.
+    /// </summary>
+    /// <value>The total memory m b.</value>
     public int TotalMemoryMB { get; set; }
+    /// <summary>
+    /// Gets or sets the supports unified memory.
+    /// </summary>
+    /// <value>The supports unified memory.</value>
     public bool SupportsUnifiedMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the supports dynamic parallelism.
+    /// </summary>
+    /// <value>The supports dynamic parallelism.</value>
     public bool SupportsDynamicParallelism { get; set; }
 }
 
@@ -1222,8 +1262,20 @@ public class NvidiaGpuCapabilities
 /// </summary>
 public class SkipException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the SkipException class.
+    /// </summary>
     public SkipException() : base() { }
+    /// <summary>
+    /// Initializes a new instance of the SkipException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public SkipException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the SkipException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }
 

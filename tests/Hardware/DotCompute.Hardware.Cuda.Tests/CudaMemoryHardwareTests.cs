@@ -25,6 +25,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", RequiresHardware)]
     public class CudaMemoryHardwareTests(ITestOutputHelper output) : CudaTestBase(output)
     {
+        /// <summary>
+        /// Gets device_ memory_ allocation_ should_ succeed_ for_ various_ sizes.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #region Basic Memory Allocation Tests
 
@@ -76,6 +80,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets large_ memory_ allocation_ should_ handle_ g p u_ memory_ limits.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Large_Memory_Allocation_Should_Handle_GPU_Memory_Limits()
@@ -121,6 +129,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // This is also acceptable for very large GPUs
             }
         }
+        /// <summary>
+        /// Gets multiple_ small_ allocations_ should_ not_ fragment_ memory_ excessively.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Multiple_Small_Allocations_Should_Not_Fragment_Memory_Excessively()
@@ -176,6 +188,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // memoryTracker.LogCurrentUsage("After cleanup");
             }
         }
+        /// <summary>
+        /// Gets host_ to_ device_ transfer_ should_ preserve_ data_ integrity.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -244,6 +260,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                     });
             }
         }
+        /// <summary>
+        /// Gets concurrent_ memory_ transfers_ should_ work_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Concurrent_Memory_Transfers_Should_Work_Correctly()
@@ -317,6 +337,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets memory_ bandwidth_ should_ meet_ hardware_ specifications.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -383,6 +407,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Gets device_ to_ device_ memory_ copy_ should_ be_ efficient.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_To_Device_Memory_Copy_Should_Be_Efficient()
@@ -452,6 +480,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Device-to-device copies should be very fast
             _ = bandwidth.Should().BeGreaterThan(100, "D2D copies should achieve >100 GB/s on modern hardware");
         }
+        /// <summary>
+        /// Gets unified_ memory_ should_ work_ when_ available.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -548,6 +580,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 throw;
             }
         }
+        /// <summary>
+        /// Gets coalesced_ memory_ access_ should_ outperform_ strided_ access.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -668,6 +704,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             _ = speedupRatio.Should().BeGreaterThan(1.5, "Coalesced access should be significantly faster than strided access");
         }
+        /// <summary>
+        /// Gets out_ of_ memory_ should_ be_ handled_ gracefully.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -708,6 +748,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("✓ Allocation size exceeded system limits (expected for very large GPUs)");
             }
         }
+        /// <summary>
+        /// Gets zero_ size_ buffer_ should_ be_ handled_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Zero_Size_Buffer_Should_Be_Handled_Correctly()
@@ -737,6 +781,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("✓ Zero-size buffer rejected appropriately");
             }
         }
+        /// <summary>
+        /// Gets memory_ pool_ should_ improve_ allocation_ performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -787,6 +835,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine("Memory allocation performance measured");
             Output.WriteLine("Note: Memory pool optimizations would be implemented in production CUDA backend");
         }
+        /// <summary>
+        /// Gets memory_ prefetching_ should_ improve_ access_ performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Memory_Prefetching_Should_Improve_Access_Performance()

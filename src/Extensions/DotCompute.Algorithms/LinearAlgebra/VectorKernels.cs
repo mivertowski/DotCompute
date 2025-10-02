@@ -9,6 +9,9 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class VectorKernels
 {
+    /// <summary>
+    /// The c u d a vector operations kernel.
+    /// </summary>
     #region Vector Operations
 
     /// <summary>
@@ -46,6 +49,9 @@ extern ""C"" __global__ void vector_operations_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l vector scale kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for vector scaling and normalization operations.
@@ -79,6 +85,9 @@ __kernel void vector_scale_normalize(
             break;
     }
 }";
+    /// <summary>
+    /// The open c l parallel reduction kernel.
+    /// </summary>
 
     #endregion
 
@@ -150,6 +159,9 @@ __kernel void parallel_reduction_optimized(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a warp reduction kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for warp-optimized reduction.
@@ -200,6 +212,9 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l dot product kernel.
+    /// </summary>
 
     #endregion
 
@@ -245,6 +260,9 @@ __kernel void dot_product_optimized(
         partial_results[get_group_id(0)] = scratch[0];
     }
 }";
+    /// <summary>
+    /// The c u d a vector norm kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for vector norm computations.
@@ -301,6 +319,9 @@ extern ""C"" __global__ void vector_norm_cuda(
         output[blockIdx.x] = shared_data[0];
     }
 }";
+    /// <summary>
+    /// The open c l vector comparison kernel.
+    /// </summary>
 
     #endregion
 
@@ -346,6 +367,9 @@ __kernel void vector_comparison_select(
             break;
     }
 }";
+    /// <summary>
+    /// The c u d a vector transform kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for vector copy and transformation operations.

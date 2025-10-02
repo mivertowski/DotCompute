@@ -31,7 +31,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the maximum work item sizes for each dimension
     /// </summary>
-    public int[] MaxWorkItemSizes { get; set; } = new int[3];
+    public IReadOnlyList<int> MaxWorkItemSizes { get; set; } = new int[3];
 
     /// <summary>
     /// Gets or sets the global memory size in bytes
@@ -71,7 +71,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the supported data types
     /// </summary>
-    public DataTypeSupport SupportedDataTypes { get; set; } = new();
+    public DataTypeSupport SupportedDataTypes { get; set; }
 
     /// <summary>
     /// Gets or sets the clock frequency in MHz
@@ -111,17 +111,17 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the maximum block dimensions
     /// </summary>
-    public Dim3 MaxBlockDimensions { get; set; } = new();
+    public Dim3 MaxBlockDimensions { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum grid dimensions
     /// </summary>
-    public Dim3 MaxGridDimensions { get; set; } = new();
+    public Dim3 MaxGridDimensions { get; set; }
 
     /// <summary>
     /// Gets or sets the available device features
     /// </summary>
-    public DeviceFeatures Features { get; set; } = new();
+    public DeviceFeatures Features { get; set; }
 
     /// <summary>
     /// Gets or sets whether the device supports async operations
@@ -141,7 +141,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets additional vendor-specific properties
     /// </summary>
-    public Dictionary<string, object> VendorProperties { get; set; } = [];
+    public Dictionary<string, object> VendorProperties { get; } = [];
 
     /// <summary>
     /// Creates a new instance of DeviceCapabilities

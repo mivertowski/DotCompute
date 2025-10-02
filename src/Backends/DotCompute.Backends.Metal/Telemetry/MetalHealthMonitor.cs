@@ -581,7 +581,7 @@ public sealed class MetalHealthMonitor : IDisposable
         }
     }
 
-    private void DetectErrorRateAnomalies(List<HealthEvent> recentEvents)
+    private void DetectErrorRateAnomalies(IReadOnlyList<HealthEvent> recentEvents)
     {
         var errorEvents = recentEvents.Where(e => e.EventType == HealthEventType.Error).ToList();
         var timeWindows = GetTimeWindows(recentEvents, TimeSpan.FromMinutes(5));
@@ -624,7 +624,7 @@ public sealed class MetalHealthMonitor : IDisposable
         }
     }
 
-    private void DetectPerformanceAnomalies(List<HealthEvent> recentEvents)
+    private void DetectPerformanceAnomalies(IReadOnlyList<HealthEvent> recentEvents)
     {
         var successEvents = recentEvents.Where(e => e.EventType == HealthEventType.Success).ToList();
 
@@ -679,7 +679,7 @@ public sealed class MetalHealthMonitor : IDisposable
         }
     }
 
-    private void DetectResourceAnomalies(List<HealthEvent> recentEvents)
+    private void DetectResourceAnomalies(IReadOnlyList<HealthEvent> recentEvents)
     {
         var memoryEvents = recentEvents.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
 
@@ -739,7 +739,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private static List<TimeWindow> GetTimeWindows(List<HealthEvent> events, TimeSpan windowSize)
+    private static List<TimeWindow> GetTimeWindows(IReadOnlyList<HealthEvent> events, TimeSpan windowSize)
     {
         if (events.Count == 0)
         {
@@ -789,7 +789,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return metrics;
     }
 
-    private static List<string> GenerateHealthRecommendations(List<HealthEvent> recentEvents)
+    private static List<string> GenerateHealthRecommendations(IReadOnlyList<HealthEvent> recentEvents)
     {
         var recommendations = new List<string>();
 
@@ -820,7 +820,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return recommendations;
     }
 
-    private static Dictionary<string, object> AnalyzeErrorPatterns(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzeErrorPatterns(IReadOnlyList<HealthEvent> events)
     {
         var errorEvents = events.Where(e => e.EventType == HealthEventType.Error).ToList();
 
@@ -834,7 +834,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private static Dictionary<string, object> AnalyzePerformanceDegradation(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzePerformanceDegradation(IReadOnlyList<HealthEvent> events)
     {
         var successEvents = events.Where(e => e.EventType == HealthEventType.Success).ToList();
 
@@ -859,7 +859,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private static Dictionary<string, object> AnalyzeResourcePressure(List<HealthEvent> events)
+    private static Dictionary<string, object> AnalyzeResourcePressure(IReadOnlyList<HealthEvent> events)
     {
         var pressureEvents = events.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
 
@@ -883,7 +883,7 @@ public sealed class MetalHealthMonitor : IDisposable
         };
     }
 
-    private static double CalculateHealthScore(List<HealthEvent> events)
+    private static double CalculateHealthScore(IReadOnlyList<HealthEvent> events)
     {
         if (events.Count == 0)
         {
@@ -916,7 +916,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private static List<string> PredictPotentialIssues(List<HealthEvent> events)
+    private static List<string> PredictPotentialIssues(IReadOnlyList<HealthEvent> events)
     {
         var predictions = new List<string>();
 
@@ -949,7 +949,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return predictions;
     }
 
-    private static string CalculatePerformanceTrend(List<double> durations)
+    private static string CalculatePerformanceTrend(IReadOnlyList<double> durations)
     {
         if (durations.Count < 2)
         {

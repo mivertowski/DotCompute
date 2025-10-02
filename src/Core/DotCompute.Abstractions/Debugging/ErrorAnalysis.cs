@@ -33,7 +33,7 @@ public sealed class ErrorAnalysis
     /// <summary>
     /// Gets suggested actions to resolve the error.
     /// </summary>
-    public List<string> SuggestedActions { get; init; } = [];
+    public IReadOnlyList<string> SuggestedActions { get; init; } = [];
 
     /// <summary>
     /// Gets the stack trace if available.
@@ -53,10 +53,10 @@ public sealed class ErrorAnalysis
     /// <summary>
     /// Gets potential root causes for the error.
     /// </summary>
-    public List<string> PotentialCauses { get; init; } = [];
+    public IReadOnlyList<string> PotentialCauses { get; init; } = [];
 
     /// <summary>
     /// Gets related documentation or help links.
     /// </summary>
-    public List<string> HelpLinks { get; init; } = [];
+    public IReadOnlyList<string> HelpLinks { get; init; } = [];
 }

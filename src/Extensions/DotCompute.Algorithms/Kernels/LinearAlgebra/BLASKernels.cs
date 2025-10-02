@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms.Kernels.LinearAlgebra;
 public static class BLASKernels
 {
     /// <summary>
+    /// The c u d acu b l a s g e m m kernel.
+    /// </summary>
+    /// <summary>
     /// CUDA kernel wrapper for cuBLAS SGEMM integration with custom preprocessing.
     /// </summary>
     public const string CUDAcuBLASGEMMKernel = @"
@@ -58,6 +61,9 @@ extern ""C"" __global__ void cublas_gemm_wrapper_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a tensor core g e m m kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for mixed-precision GEMM with Tensor Core utilization.
@@ -126,6 +132,9 @@ extern ""C"" __global__ void tensor_core_mixed_gemm_cuda(
     // Store result
     wmma::store_matrix_sync(C + globalM * N + globalN, frag_acc, N, wmma::mem_row_major);
 }";
+    /// <summary>
+    /// The c u d a batched g e m m kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for batched GEMM operations with stream parallelism.

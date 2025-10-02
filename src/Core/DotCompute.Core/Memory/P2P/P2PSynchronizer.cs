@@ -26,6 +26,10 @@ namespace DotCompute.Core.Memory.P2P
         private const int SyncMonitorIntervalMs = 5000; // 5 seconds
         private const int MaxConcurrentSyncOperations = 32;
         private const int DefaultBarrierTimeoutMs = 10000; // 10 seconds
+        /// <summary>
+        /// Initializes a new instance of the P2PSynchronizer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public P2PSynchronizer(ILogger logger)
         {
@@ -731,6 +735,10 @@ namespace DotCompute.Core.Memory.P2P
                 _logger.LogWarning(ex, "Error in synchronization health monitoring");
             }
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -786,13 +794,45 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     internal sealed class P2PSyncBarrier
     {
+        /// <summary>
+        /// Gets or sets the barrier identifier.
+        /// </summary>
+        /// <value>The barrier id.</value>
         public required string BarrierId { get; init; }
+        /// <summary>
+        /// Gets or sets the participant devices.
+        /// </summary>
+        /// <value>The participant devices.</value>
         public required List<string> ParticipantDevices { get; init; }
+        /// <summary>
+        /// Gets or sets the expected participants.
+        /// </summary>
+        /// <value>The expected participants.</value>
         public required int ExpectedParticipants { get; init; }
+        /// <summary>
+        /// Gets or sets the arrived participants.
+        /// </summary>
+        /// <value>The arrived participants.</value>
         public int ArrivedParticipants { get; set; }
+        /// <summary>
+        /// Gets or sets the barrier state.
+        /// </summary>
+        /// <value>The barrier state.</value>
         public P2PBarrierState BarrierState { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
+        /// <summary>
+        /// Gets or sets the timeout ms.
+        /// </summary>
+        /// <value>The timeout ms.</value>
         public required int TimeoutMs { get; init; }
+        /// <summary>
+        /// Gets or sets the completion source.
+        /// </summary>
+        /// <value>The completion source.</value>
         public required TaskCompletionSource<bool> CompletionSource { get; init; }
     }
 
@@ -801,9 +841,25 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PMultiDeviceBarrier
     {
+        /// <summary>
+        /// Gets or sets the barrier identifier.
+        /// </summary>
+        /// <value>The barrier id.</value>
         public required string BarrierId { get; init; }
+        /// <summary>
+        /// Gets or sets the devices.
+        /// </summary>
+        /// <value>The devices.</value>
         public required IAccelerator[] Devices { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether active.
+        /// </summary>
+        /// <value>The is active.</value>
         public bool IsActive { get; set; }
+        /// <summary>
+        /// Gets or sets the completion task.
+        /// </summary>
+        /// <value>The completion task.</value>
         public required Task<bool> CompletionTask { get; init; }
     }
 
@@ -812,13 +868,45 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PSyncEvent
     {
+        /// <summary>
+        /// Gets or sets the event identifier.
+        /// </summary>
+        /// <value>The event id.</value>
         public required string EventId { get; init; }
+        /// <summary>
+        /// Gets or sets the participant devices.
+        /// </summary>
+        /// <value>The participant devices.</value>
         public required List<string> ParticipantDevices { get; init; }
+        /// <summary>
+        /// Gets or sets the event type.
+        /// </summary>
+        /// <value>The event type.</value>
         public required P2PSyncEventType EventType { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether signaled.
+        /// </summary>
+        /// <value>The is signaled.</value>
         public bool IsSignaled { get; set; }
+        /// <summary>
+        /// Gets or sets the waiting devices.
+        /// </summary>
+        /// <value>The waiting devices.</value>
         public required ConcurrentDictionary<string, TaskCompletionSource<bool>> WaitingDevices { get; init; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
+        /// <summary>
+        /// Gets or sets the last signaled at.
+        /// </summary>
+        /// <value>The last signaled at.</value>
         public DateTimeOffset? LastSignaledAt { get; set; }
+        /// <summary>
+        /// Gets or sets the signal count.
+        /// </summary>
+        /// <value>The signal count.</value>
         public long SignalCount { get; set; }
     }
 
@@ -827,10 +915,30 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PAtomicCounter
     {
+        /// <summary>
+        /// Gets or sets the counter identifier.
+        /// </summary>
+        /// <value>The counter id.</value>
         public required string CounterId { get; init; }
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
+        /// <value>The value.</value>
         public long Value { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public required DateTimeOffset CreatedAt { get; init; }
+        /// <summary>
+        /// Gets or sets the last modified at.
+        /// </summary>
+        /// <value>The last modified at.</value>
         public DateTimeOffset? LastModifiedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the operation count.
+        /// </summary>
+        /// <value>The operation count.</value>
         public long OperationCount { get; set; }
     }
 
@@ -839,12 +947,40 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PDeviceSyncState
     {
+        /// <summary>
+        /// Gets or sets the device identifier.
+        /// </summary>
+        /// <value>The device id.</value>
         public required string DeviceId { get; init; }
+        /// <summary>
+        /// Gets or sets the device name.
+        /// </summary>
+        /// <value>The device name.</value>
         public required string DeviceName { get; init; }
+        /// <summary>
+        /// Gets or sets the device.
+        /// </summary>
+        /// <value>The device.</value>
         public required IAccelerator Device { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether initialized.
+        /// </summary>
+        /// <value>The is initialized.</value>
         public bool IsInitialized { get; set; }
+        /// <summary>
+        /// Gets or sets the active barriers.
+        /// </summary>
+        /// <value>The active barriers.</value>
         public required List<string> ActiveBarriers { get; init; }
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public required List<string> ActiveEvents { get; init; }
+        /// <summary>
+        /// Gets or sets the last sync operation.
+        /// </summary>
+        /// <value>The last sync operation.</value>
         public DateTimeOffset LastSyncOperation { get; set; }
     }
 
@@ -853,20 +989,75 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PSyncStatistics
     {
+        /// <summary>
+        /// Gets or sets the barriers created.
+        /// </summary>
+        /// <value>The barriers created.</value>
         public long BarriersCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the barriers completed.
+        /// </summary>
+        /// <value>The barriers completed.</value>
         public long BarriersCompleted { get; set; }
+        /// <summary>
+        /// Gets or sets the barriers timed out.
+        /// </summary>
+        /// <value>The barriers timed out.</value>
         public long BarriersTimedOut { get; set; }
+        /// <summary>
+        /// Gets or sets the active barriers.
+        /// </summary>
+        /// <value>The active barriers.</value>
         public int ActiveBarriers { get; set; }
+        /// <summary>
+        /// Gets or sets the events created.
+        /// </summary>
+        /// <value>The events created.</value>
         public long EventsCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the events signaled.
+        /// </summary>
+        /// <value>The events signaled.</value>
         public long EventsSignaled { get; set; }
+        /// <summary>
+        /// Gets or sets the active events.
+        /// </summary>
+        /// <value>The active events.</value>
         public int ActiveEvents { get; set; }
+        /// <summary>
+        /// Gets or sets the atomic counters created.
+        /// </summary>
+        /// <value>The atomic counters created.</value>
         public long AtomicCountersCreated { get; set; }
+        /// <summary>
+        /// Gets or sets the active atomic counters.
+        /// </summary>
+        /// <value>The active atomic counters.</value>
         public int ActiveAtomicCounters { get; set; }
+        /// <summary>
+        /// Gets or sets the atomic operations.
+        /// </summary>
+        /// <value>The atomic operations.</value>
         public long AtomicOperations { get; set; }
+        /// <summary>
+        /// Gets or sets the total barrier time.
+        /// </summary>
+        /// <value>The total barrier time.</value>
         public TimeSpan TotalBarrierTime { get; set; }
+        /// <summary>
+        /// Gets or sets the average barrier time.
+        /// </summary>
+        /// <value>The average barrier time.</value>
         public TimeSpan AverageBarrierTime { get; set; }
+        /// <summary>
+        /// Gets or sets the initialized devices.
+        /// </summary>
+        /// <value>The initialized devices.</value>
         public int InitializedDevices { get; set; }
     }
+    /// <summary>
+    /// An p2 p barrier state enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P barrier states.
@@ -878,6 +1069,9 @@ namespace DotCompute.Core.Memory.P2P
         TimedOut,
         Cancelled
     }
+    /// <summary>
+    /// An p2 p sync event type enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P synchronization event types.

@@ -198,7 +198,7 @@ public sealed class PerformanceTrend
     /// Actionable insights for optimizing performance.
     /// </summary>
     /// <value>A list of recommendation strings.</value>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     #endregion
 

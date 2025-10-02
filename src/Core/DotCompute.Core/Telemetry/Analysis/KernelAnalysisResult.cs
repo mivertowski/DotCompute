@@ -126,7 +126,7 @@ public sealed class KernelAnalysisResult
     /// Maps device IDs to the number of executions on each device.
     /// </summary>
     /// <value>A dictionary mapping device IDs to execution counts.</value>
-    public Dictionary<string, int> DeviceDistribution { get; set; } = [];
+    public Dictionary<string, int> DeviceDistribution { get; } = [];
 
     /// <summary>
     /// Gets or sets the performance trend observed over the analysis period.
@@ -140,5 +140,5 @@ public sealed class KernelAnalysisResult
     /// Provides actionable suggestions for improving kernel performance.
     /// </summary>
     /// <value>A list of optimization recommendation strings.</value>
-    public List<string> OptimizationRecommendations { get; set; } = [];
+    public IList<string> OptimizationRecommendations { get; } = [];
 }

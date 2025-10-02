@@ -560,11 +560,18 @@ public sealed class MemoryStatistics
 internal sealed class MemoryScope : IDisposable
 {
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the MemoryScope class.
+    /// </summary>
+    /// <param name="nodeId">The node identifier.</param>
 
     public MemoryScope(int nodeId)
     {
         NumaInterop.SetPreferredNode(nodeId);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

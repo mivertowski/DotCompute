@@ -342,6 +342,10 @@ namespace DotCompute.Core.Compute
 
             return Task.FromResult(result);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

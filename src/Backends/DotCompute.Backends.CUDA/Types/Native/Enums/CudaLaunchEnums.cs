@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda launch attribute i d enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA launch attribute ID enumeration
     /// </summary>
     public enum CudaLaunchAttributeID : uint
@@ -23,6 +26,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         DeviceUpdatableKernelNode = 13,
         PreferredSharedMemoryCarveout = 14
     }
+    /// <summary>
+    /// An cuda synchronization policy enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA synchronization policy enumeration
@@ -34,6 +40,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Yield = 3,
         BlockingSync = 4
     }
+    /// <summary>
+    /// An cuda cluster scheduling policy enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA cluster scheduling policy enumeration
@@ -44,6 +53,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Spread = 1,
         LoadBalancing = 2
     }
+    /// <summary>
+    /// An cuda launch mem sync domain enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA launch memory sync domain enumeration
@@ -53,6 +65,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Default = 0,
         Remote = 1
     }
+    /// <summary>
+    /// An cuda access property enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA access property enumeration

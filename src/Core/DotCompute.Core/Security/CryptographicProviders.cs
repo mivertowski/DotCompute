@@ -33,6 +33,11 @@ internal sealed class CryptographicProviders : IDisposable
     {
         "DES", "3DES", "RC4", "MD5", "SHA-1", "RSA-1024"
     };
+    /// <summary>
+    /// Initializes a new instance of the CryptographicProviders class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public CryptographicProviders(
         ILogger<CryptographicProviders> logger,
@@ -512,6 +517,9 @@ internal sealed class CryptographicProviders : IDisposable
             _ => 16 // Default
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

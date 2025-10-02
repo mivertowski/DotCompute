@@ -26,7 +26,7 @@ namespace DotCompute.Abstractions.Models.Pipelines
         /// <summary>
         /// Gets or sets the arguments to pass to the kernel.
         /// </summary>
-        public object[] Arguments { get; set; } = Array.Empty<object>();
+        public IReadOnlyList<object> Arguments { get; set; } = Array.Empty<object>();
 
         /// <summary>
         /// Gets or sets the execution order of this step.
@@ -46,7 +46,7 @@ namespace DotCompute.Abstractions.Models.Pipelines
         /// <summary>
         /// Gets or sets the parallel kernels for parallel execution steps.
         /// </summary>
-        public List<KernelChainStep>? ParallelKernels { get; set; }
+        public IList<KernelChainStep>? ParallelKernels { get; set; }
 
         /// <summary>
         /// Gets or sets the branch condition for branching steps.
@@ -93,12 +93,12 @@ namespace DotCompute.Abstractions.Models.Pipelines
         /// <summary>
         /// Gets the true path steps to execute when condition is true.
         /// </summary>
-        public List<KernelChainStep> TruePath { get; }
+        public IList<KernelChainStep> TruePath { get; }
 
         /// <summary>
         /// Gets the false path steps to execute when condition is false.
         /// </summary>
-        public List<KernelChainStep> FalsePath { get; }
+        public IList<KernelChainStep> FalsePath { get; }
 
         /// <summary>
         /// Evaluates the condition based on the previous result.
@@ -120,10 +120,10 @@ namespace DotCompute.Abstractions.Models.Pipelines
         public required Func<T, bool> Condition { get; set; }
 
         /// <inheritdoc/>
-        public List<KernelChainStep> TruePath { get; set; } = [];
+        public IList<KernelChainStep> TruePath { get; } = [];
 
         /// <inheritdoc/>
-        public List<KernelChainStep> FalsePath { get; set; } = [];
+        public IList<KernelChainStep> FalsePath { get; } = [];
 
         /// <inheritdoc/>
         public bool EvaluateCondition(object? previousResult)

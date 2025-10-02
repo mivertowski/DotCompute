@@ -52,7 +52,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets the list of nodes that this node depends on.
     /// </summary>
-    public List<MetalGraphNode> Dependencies { get; set; }
+    public IList<MetalGraphNode> Dependencies { get; set; }
 
     /// <summary>
     /// Gets or sets the estimated memory usage of this node in bytes.
@@ -151,7 +151,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets Metal-specific resources associated with this node.
     /// </summary>
-    public Dictionary<string, object> MetalResources { get; set; } = [];
+    public Dictionary<string, object> MetalResources { get; } = [];
 
     /// <summary>
     /// Gets or sets the Metal command encoder type required for this node.

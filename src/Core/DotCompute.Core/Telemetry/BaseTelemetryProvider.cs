@@ -7,6 +7,7 @@ using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -684,14 +685,14 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
         var name = kernelName.ToLowerInvariant();
         return name switch
         {
-            var n when n.Contains("add") || n.Contains("sum") => "arithmetic",
-            var n when n.Contains("mul") || n.Contains("multiply") => "arithmetic",
-            var n when n.Contains("matrix") || n.Contains("gemm") => "linear_algebra",
-            var n when n.Contains("reduce") || n.Contains("scan") => "reduction",
-            var n when n.Contains("sort") => "sorting",
-            var n when n.Contains("fft") => "transform",
-            var n when n.Contains("conv") || n.Contains("filter") => "convolution",
-            var n when n.Contains("copy") || n.Contains("memcpy") => "memory",
+            var n when n.Contains("add", StringComparison.OrdinalIgnoreCase) || n.Contains("sum", StringComparison.OrdinalIgnoreCase) => "arithmetic",
+            var n when n.Contains("mul", StringComparison.CurrentCulture) || n.Contains("multiply", StringComparison.CurrentCulture) => "arithmetic",
+            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => "linear_algebra",
+            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("scan", StringComparison.CurrentCulture) => "reduction",
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => "sorting",
+            var n when n.Contains("fft", StringComparison.CurrentCulture) => "transform",
+            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => "convolution",
+            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => "memory",
             _ => "general"
         };
     }

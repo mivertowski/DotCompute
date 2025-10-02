@@ -24,6 +24,14 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly ConcurrentDictionary<string, PersistentKernelState> _activeKernels;
         private readonly CudaRingBufferAllocator _ringBufferAllocator;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaPersistentKernelManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="device">The device.</param>
+        /// <param name="memoryManager">The memory manager.</param>
+        /// <param name="launcherLogger">The launcher logger.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaPersistentKernelManager(
             CudaContext context,
@@ -261,6 +269,9 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             return data;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -285,6 +296,9 @@ namespace DotCompute.Backends.CUDA.Persistent
             _ringBufferAllocator?.Dispose();
             _disposed = true;
         }
+        /// <summary>
+        /// A class that represents persistent kernel state.
+        /// </summary>
 
         internal sealed class PersistentKernelState(
             string kernelId,
@@ -295,13 +309,44 @@ namespace DotCompute.Backends.CUDA.Persistent
             Task launchTask,
             PersistentKernelConfig config) : IDisposable
         {
+            /// <summary>
+            /// Gets or sets the kernel identifier.
+            /// </summary>
+            /// <value>The kernel id.</value>
             public string KernelId { get; } = kernelId;
+            /// <summary>
+            /// Gets or sets the kernel.
+            /// </summary>
+            /// <value>The kernel.</value>
             public ICompiledKernel Kernel { get; } = kernel;
+            /// <summary>
+            /// Gets or sets the wave buffer.
+            /// </summary>
+            /// <value>The wave buffer.</value>
             public object WaveBuffer { get; } = waveBuffer;
+            /// <summary>
+            /// Gets or sets the control buffer.
+            /// </summary>
+            /// <value>The control buffer.</value>
             public IUnifiedMemoryBuffer<int> ControlBuffer { get; } = controlBuffer;
+            /// <summary>
+            /// Gets or sets the stream handle.
+            /// </summary>
+            /// <value>The stream handle.</value>
             public IntPtr StreamHandle { get; } = streamHandle;
+            /// <summary>
+            /// Gets or sets the launch task.
+            /// </summary>
+            /// <value>The launch task.</value>
             public Task LaunchTask { get; } = launchTask;
+            /// <summary>
+            /// Gets or sets the config.
+            /// </summary>
+            /// <value>The config.</value>
             public PersistentKernelConfig Config { get; } = config;
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -317,10 +362,37 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public interface IPersistentKernelHandle : IDisposable
     {
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
         public string KernelId { get; }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task StopAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Gets the status async.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The status async.</returns>
         public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Updates the data async.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Gets the data async.
+        /// </summary>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The data async.</returns>
         public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default);
     }
 
@@ -334,20 +406,50 @@ namespace DotCompute.Backends.CUDA.Persistent
     {
         private readonly CudaPersistentKernelManager _manager = manager;
         private readonly string _kernelId = kernelId;
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
 
         public string KernelId => _kernelId;
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
             => _manager.StopKernelAsync(_kernelId, cancellationToken);
+        /// <summary>
+        /// Gets the status async.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The status async.</returns>
 
         public Task<PersistentKernelStatus> GetStatusAsync(CancellationToken cancellationToken = default)
             => _manager.GetKernelStatusAsync(_kernelId, cancellationToken);
+        /// <summary>
+        /// Updates the data async.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task UpdateDataAsync(float[] data, int timeSlice = 0, CancellationToken cancellationToken = default)
             => _manager.UpdateWaveDataAsync(_kernelId, data, timeSlice, cancellationToken);
+        /// <summary>
+        /// Gets the data async.
+        /// </summary>
+        /// <param name="timeSlice">The time slice.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The data async.</returns>
 
         public Task<float[]> GetDataAsync(int timeSlice = 0, CancellationToken cancellationToken = default)
             => _manager.GetWaveDataAsync(_kernelId, timeSlice, cancellationToken);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -367,11 +469,35 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public sealed class PersistentKernelStatus
     {
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
         public string KernelId { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets a value indicating whether running.
+        /// </summary>
+        /// <value>The is running.</value>
         public bool IsRunning { get; init; }
+        /// <summary>
+        /// Gets or sets the current iteration.
+        /// </summary>
+        /// <value>The current iteration.</value>
         public int CurrentIteration { get; init; }
+        /// <summary>
+        /// Gets or sets the error code.
+        /// </summary>
+        /// <value>The error code.</value>
         public int ErrorCode { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether completed.
+        /// </summary>
+        /// <value>The is completed.</value>
         public bool IsCompleted { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether faulted.
+        /// </summary>
+        /// <value>The is faulted.</value>
         public bool IsFaulted { get; init; }
     }
 }

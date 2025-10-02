@@ -15,6 +15,11 @@ public sealed class PluginHealthMonitor : IDisposable
     private readonly ILogger _logger;
     private readonly Timer _healthCheckTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginHealthMonitor class.
+    /// </summary>
+    /// <param name="config">The config.</param>
+    /// <param name="logger">The logger.</param>
 
     public PluginHealthMonitor(PluginRecoveryConfiguration config, ILogger logger)
     {
@@ -161,6 +166,9 @@ public sealed class PluginHealthMonitor : IDisposable
         // This would be called from orchestrator with actual plugin states
         // Implementation moved to orchestrator to avoid circular dependencies
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

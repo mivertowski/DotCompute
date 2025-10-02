@@ -4,6 +4,9 @@
 namespace DotCompute.Core.Pipelines.Types
 {
     /// <summary>
+    /// An synchronization strategy enumeration.
+    /// </summary>
+    /// <summary>
     /// Custom synchronization strategies for parallel execution.
     /// </summary>
     internal enum SynchronizationStrategy

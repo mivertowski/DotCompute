@@ -61,6 +61,9 @@ namespace DotCompute.Plugins.Loaders
             _ = _packageCache.TryGetValue(packageId, out var version);
             return version;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

@@ -54,13 +54,13 @@ public sealed class AlgorithmPluginManagerOptions
     /// Gets the allowed plugin directories.
     /// Only plugins from these directories will be loaded for security.
     /// </summary>
-    public List<string> AllowedPluginDirectories { get; } = [];
+    public IList<string> AllowedPluginDirectories { get; } = [];
 
     /// <summary>
     /// Gets trusted assembly publishers for signature validation.
     /// Only assemblies signed by these publishers will be loaded when signature validation is enabled.
     /// </summary>
-    public List<string> TrustedPublishers { get; } = [];
+    public IList<string> TrustedPublishers { get; } = [];
 
     /// <summary>
     /// Gets or sets whether digital signatures are required.

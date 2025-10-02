@@ -31,6 +31,13 @@ internal sealed class CpuKernelExecutor : IDisposable
     private long _executionCount;
     private double _totalExecutionTimeMs;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CpuKernelExecutor class.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="executionPlan">The execution plan.</param>
+    /// <param name="threadPool">The thread pool.</param>
+    /// <param name="logger">The logger.</param>
 
     public CpuKernelExecutor(
         KernelDefinition definition,
@@ -393,6 +400,10 @@ internal sealed class CpuKernelExecutor : IDisposable
                 _definition.Name, _executionCount, avgTime);
         }
     }
+    /// <summary>
+    /// Gets the execution statistics.
+    /// </summary>
+    /// <returns>The execution statistics.</returns>
 
     public ExecutionStatistics GetExecutionStatistics()
     {
@@ -409,6 +420,9 @@ internal sealed class CpuKernelExecutor : IDisposable
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -425,8 +439,20 @@ internal sealed class CpuKernelExecutor : IDisposable
 /// </summary>
 internal sealed class VectorizedExecutionContext
 {
+    /// <summary>
+    /// Gets or sets the kernel context.
+    /// </summary>
+    /// <value>The kernel context.</value>
     public required KernelExecutionContext KernelContext { get; set; }
+    /// <summary>
+    /// Gets or sets the execution plan.
+    /// </summary>
+    /// <value>The execution plan.</value>
     public required KernelExecutionPlan ExecutionPlan { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether cellation token.
+    /// </summary>
+    /// <value>The cancellation token.</value>
     public CancellationToken CancellationToken { get; set; }
 }
 

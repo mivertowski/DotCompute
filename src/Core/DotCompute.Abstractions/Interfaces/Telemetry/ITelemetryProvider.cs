@@ -131,7 +131,7 @@ public class TelemetryConfiguration
     /// <summary>
     /// Gets or sets custom exporters.
     /// </summary>
-    public List<ITelemetryExporter> CustomExporters { get; set; } = [];
+    public IList<ITelemetryExporter> CustomExporters { get; } = [];
 
 
     /// <summary>

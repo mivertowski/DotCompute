@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda cache config enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA cache configuration enumeration
     /// </summary>
     public enum CudaCacheConfig : uint
@@ -13,6 +16,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         PreferCache = 2,
         PreferEqual = 3
     }
+    /// <summary>
+    /// An cuda shared mem config enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA shared memory configuration enumeration
@@ -23,6 +29,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         BankSizeFourByte = 1,
         BankSizeEightByte = 2
     }
+    /// <summary>
+    /// An cuda limit enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA device limit types enumeration

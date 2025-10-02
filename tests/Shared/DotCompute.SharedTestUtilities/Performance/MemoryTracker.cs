@@ -84,6 +84,10 @@ public sealed class MemoryTracker : IDisposable
             LogLevel.Warning,
             new EventId(11, "MemoryExceededLimit"),
             "Memory usage exceeded limit. Delta: {Delta:N0} bytes, Limit: {Limit:N0} bytes");
+    /// <summary>
+    /// Initializes a new instance of the MemoryTracker class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public MemoryTracker(ILogger<MemoryTracker>? logger = null)
     {
@@ -235,6 +239,9 @@ public sealed class MemoryTracker : IDisposable
 
         return acceptable;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -252,12 +259,40 @@ public sealed class MemoryTracker : IDisposable
 /// </summary>
 public sealed class MemorySnapshot
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTime Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the total memory.
+    /// </summary>
+    /// <value>The total memory.</value>
     public required long TotalMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the working set.
+    /// </summary>
+    /// <value>The working set.</value>
     public required long WorkingSet { get; init; }
+    /// <summary>
+    /// Gets or sets the generation0 collections.
+    /// </summary>
+    /// <value>The generation0 collections.</value>
     public required int Generation0Collections { get; init; }
+    /// <summary>
+    /// Gets or sets the generation1 collections.
+    /// </summary>
+    /// <value>The generation1 collections.</value>
     public required int Generation1Collections { get; init; }
+    /// <summary>
+    /// Gets or sets the generation2 collections.
+    /// </summary>
+    /// <value>The generation2 collections.</value>
     public required int Generation2Collections { get; init; }
 }
 
@@ -266,13 +301,45 @@ public sealed class MemorySnapshot
 /// </summary>
 public sealed class MemoryStatistics
 {
+    /// <summary>
+    /// Gets or sets the total managed memory.
+    /// </summary>
+    /// <value>The total managed memory.</value>
     public required long TotalManagedMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the working set.
+    /// </summary>
+    /// <value>The working set.</value>
     public required long WorkingSet { get; init; }
+    /// <summary>
+    /// Gets or sets the private memory size.
+    /// </summary>
+    /// <value>The private memory size.</value>
     public required long PrivateMemorySize { get; init; }
+    /// <summary>
+    /// Gets or sets the virtual memory size.
+    /// </summary>
+    /// <value>The virtual memory size.</value>
     public required long VirtualMemorySize { get; init; }
+    /// <summary>
+    /// Gets or sets the generation0 collections.
+    /// </summary>
+    /// <value>The generation0 collections.</value>
     public required int Generation0Collections { get; init; }
+    /// <summary>
+    /// Gets or sets the generation1 collections.
+    /// </summary>
+    /// <value>The generation1 collections.</value>
     public required int Generation1Collections { get; init; }
+    /// <summary>
+    /// Gets or sets the generation2 collections.
+    /// </summary>
+    /// <value>The generation2 collections.</value>
     public required int Generation2Collections { get; init; }
+    /// <summary>
+    /// Gets or sets the delta from start.
+    /// </summary>
+    /// <value>The delta from start.</value>
     public required long DeltaFromStart { get; init; }
 }
 
@@ -281,11 +348,39 @@ public sealed class MemoryStatistics
 /// </summary>
 public sealed class MemoryReport
 {
+    /// <summary>
+    /// Gets or sets the initial memory.
+    /// </summary>
+    /// <value>The initial memory.</value>
     public required long InitialMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the current memory.
+    /// </summary>
+    /// <value>The current memory.</value>
     public required long CurrentMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the peak memory.
+    /// </summary>
+    /// <value>The peak memory.</value>
     public required long PeakMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the total delta.
+    /// </summary>
+    /// <value>The total delta.</value>
     public required long TotalDelta { get; init; }
+    /// <summary>
+    /// Gets or sets the checkpoints.
+    /// </summary>
+    /// <value>The checkpoints.</value>
     public required IReadOnlyDictionary<string, long> Checkpoints { get; init; }
+    /// <summary>
+    /// Gets or sets the snapshots.
+    /// </summary>
+    /// <value>The snapshots.</value>
     public required MemorySnapshot[] Snapshots { get; init; }
+    /// <summary>
+    /// Gets or sets the current statistics.
+    /// </summary>
+    /// <value>The current statistics.</value>
     public required MemoryStatistics CurrentStatistics { get; init; }
 }

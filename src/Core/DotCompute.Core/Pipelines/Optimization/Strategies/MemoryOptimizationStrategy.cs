@@ -16,14 +16,48 @@ namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 /// </summary>
 internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => "MemoryOptimization";
+    /// <summary>
+    /// Gets or sets the supported optimizations.
+    /// </summary>
+    /// <value>The supported optimizations.</value>
     public OptimizationType SupportedOptimizations => OptimizationType.MemoryAccess;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type => OptimizationType.MemoryAccess;
+    /// <summary>
+    /// Determines whether optimize.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanOptimize(IKernelPipeline pipeline) => pipeline?.Stages?.Any() == true;
+    /// <summary>
+    /// Determines whether apply.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
+    /// <summary>
+    /// Gets apply asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -35,6 +69,13 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);
         return CreateOptimizedPipeline(pipeline, result.OptimizedStages, settings);
     }
+    /// <summary>
+    /// Gets apply internal asynchronously.
+    /// </summary>
+    /// <param name="stages">The stages.</param>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
@@ -104,12 +145,38 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
 internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : IPipelineStage
 {
     private readonly IPipelineStage _innerStage = innerStage;
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
 
     public string Id => _innerStage.Id;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => _innerStage.Name;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public PipelineStageType Type => _innerStage.Type;
+    /// <summary>
+    /// Gets or sets the dependencies.
+    /// </summary>
+    /// <value>The dependencies.</value>
     public IReadOnlyList<string> Dependencies => _innerStage.Dependencies;
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public IReadOnlyDictionary<string, object> Metadata => _innerStage.Metadata;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<AbstractionsMemory.Models.Pipelines.StageExecutionResult> ExecuteAsync(
         AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
@@ -126,8 +193,16 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
         // Convert Core StageExecutionResult to Abstractions StageExecutionResult if needed
         return result;
     }
+    /// <summary>
+    /// Validates the .
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public AbstractionsMemory.Models.Pipelines.StageValidationResult Validate() => _innerStage.Validate();
+    /// <summary>
+    /// Gets the metrics.
+    /// </summary>
+    /// <returns>The metrics.</returns>
 
     public IStageMetrics GetMetrics() => _innerStage.GetMetrics();
 

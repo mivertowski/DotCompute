@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types
 {
     /// <summary>
+    /// An cuda memory type enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA memory type enumeration
     /// </summary>
     public enum CudaMemoryType

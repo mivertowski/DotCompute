@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Kernels.Types;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Backends.CPU.Kernels.Optimized;
 
@@ -62,12 +63,12 @@ internal class GenericOptimizedKernel(string name, KernelInfo kernelInfo, Compil
         var source = _kernelInfo.Source.ToLowerInvariant();
 
         // Try common patterns based on source analysis
-        if (source.Contains("result[i]") && source.Contains("input[i]") && source.Contains("scale"))
+        if (source.Contains("result[i]", StringComparison.OrdinalIgnoreCase) && source.Contains("input[i]", StringComparison.OrdinalIgnoreCase) && source.Contains("scale", StringComparison.CurrentCulture))
         {
             // Vector scale pattern - handle it manually
             await ExecuteVectorScalePatternAsync(arguments, cancellationToken);
         }
-        else if (source.Contains("result[i]") && arguments.Arguments.Count >= 3)
+        else if (source.Contains("result[i]", StringComparison.CurrentCulture) && arguments.Arguments.Count >= 3)
         {
             // General element-wise operation pattern
             await ExecuteElementWisePatternAsync(arguments, cancellationToken);

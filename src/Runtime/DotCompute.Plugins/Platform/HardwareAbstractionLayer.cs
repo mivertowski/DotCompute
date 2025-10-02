@@ -15,6 +15,10 @@ namespace DotCompute.Plugins.Platform
     {
         private readonly ILogger<HardwareAbstractionLayer> _logger;
         private readonly Dictionary<ComputeBackendType, BackendCapabilityInfo> _backendCapabilities;
+        /// <summary>
+        /// Initializes a new instance of the HardwareAbstractionLayer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public HardwareAbstractionLayer(ILogger<HardwareAbstractionLayer> logger)
         {
@@ -576,11 +580,35 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class ComputeConfiguration
     {
+        /// <summary>
+        /// Gets or sets the primary backend.
+        /// </summary>
+        /// <value>The primary backend.</value>
         public required ComputeBackendType PrimaryBackend { get; init; }
+        /// <summary>
+        /// Gets or sets the fallback backends.
+        /// </summary>
+        /// <value>The fallback backends.</value>
         public required List<ComputeBackendType> FallbackBackends { get; init; }
+        /// <summary>
+        /// Gets or sets the max parallelism.
+        /// </summary>
+        /// <value>The max parallelism.</value>
         public required int MaxParallelism { get; init; }
+        /// <summary>
+        /// Gets or sets the memory configuration.
+        /// </summary>
+        /// <value>The memory configuration.</value>
         public required MemoryConfiguration MemoryConfiguration { get; init; }
+        /// <summary>
+        /// Gets or sets the s i m d configuration.
+        /// </summary>
+        /// <value>The s i m d configuration.</value>
         public required SIMDConfiguration SIMDConfiguration { get; init; }
+        /// <summary>
+        /// Gets or sets the backend specific settings.
+        /// </summary>
+        /// <value>The backend specific settings.</value>
         public required Dictionary<string, object> BackendSpecificSettings { get; init; }
     }
 
@@ -589,11 +617,35 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class MemoryConfiguration
     {
+        /// <summary>
+        /// Gets or sets the total system memory.
+        /// </summary>
+        /// <value>The total system memory.</value>
         public required long TotalSystemMemory { get; init; }
+        /// <summary>
+        /// Gets or sets the available memory.
+        /// </summary>
+        /// <value>The available memory.</value>
         public required long AvailableMemory { get; init; }
+        /// <summary>
+        /// Gets or sets the recommended max allocation.
+        /// </summary>
+        /// <value>The recommended max allocation.</value>
         public required long RecommendedMaxAllocation { get; init; }
+        /// <summary>
+        /// Gets or sets the page size.
+        /// </summary>
+        /// <value>The page size.</value>
         public required int PageSize { get; init; }
+        /// <summary>
+        /// Gets or sets the allocation alignment.
+        /// </summary>
+        /// <value>The allocation alignment.</value>
         public required int AllocationAlignment { get; init; }
+        /// <summary>
+        /// Gets or sets the use memory pools.
+        /// </summary>
+        /// <value>The use memory pools.</value>
         public required bool UseMemoryPools { get; init; }
     }
 
@@ -602,10 +654,30 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class SIMDConfiguration
     {
+        /// <summary>
+        /// Gets or sets the preferred vector width.
+        /// </summary>
+        /// <value>The preferred vector width.</value>
         public required int PreferredVectorWidth { get; init; }
+        /// <summary>
+        /// Gets or sets the supported instructions.
+        /// </summary>
+        /// <value>The supported instructions.</value>
         public required List<string> SupportedInstructions { get; init; }
+        /// <summary>
+        /// Gets or sets the use vectorization.
+        /// </summary>
+        /// <value>The use vectorization.</value>
         public required bool UseVectorization { get; init; }
+        /// <summary>
+        /// Gets or sets the fallback to scalar.
+        /// </summary>
+        /// <value>The fallback to scalar.</value>
         public required bool FallbackToScalar { get; init; }
+        /// <summary>
+        /// Gets or sets the optimize for arch.
+        /// </summary>
+        /// <value>The optimize for arch.</value>
         public required string OptimizeForArch { get; init; }
     }
 
@@ -614,10 +686,30 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class BackendCapabilityInfo
     {
+        /// <summary>
+        /// Gets or sets the relative performance.
+        /// </summary>
+        /// <value>The relative performance.</value>
         public required float RelativePerformance { get; init; }
+        /// <summary>
+        /// Gets or sets the memory requirements.
+        /// </summary>
+        /// <value>The memory requirements.</value>
         public required long MemoryRequirements { get; init; }
+        /// <summary>
+        /// Gets or sets the supported features.
+        /// </summary>
+        /// <value>The supported features.</value>
         public required HashSet<string> SupportedFeatures { get; init; }
+        /// <summary>
+        /// Gets or sets the optimal workgroup size.
+        /// </summary>
+        /// <value>The optimal workgroup size.</value>
         public required int OptimalWorkgroupSize { get; init; }
+        /// <summary>
+        /// Gets or sets the max memory allocation.
+        /// </summary>
+        /// <value>The max memory allocation.</value>
         public required long MaxMemoryAllocation { get; init; }
     }
 
@@ -626,12 +718,36 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class BackendValidationResult
     {
+        /// <summary>
+        /// Gets or sets the backend type.
+        /// </summary>
+        /// <value>The backend type.</value>
         public required ComputeBackendType BackendType { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether supported.
+        /// </summary>
+        /// <value>The is supported.</value>
         public required bool IsSupported { get; init; }
+        /// <summary>
+        /// Gets or sets the estimated performance.
+        /// </summary>
+        /// <value>The estimated performance.</value>
         public float EstimatedPerformance { get; set; }
+        /// <summary>
+        /// Gets or sets the memory requirements.
+        /// </summary>
+        /// <value>The memory requirements.</value>
         public long MemoryRequirements { get; set; }
-        public List<string> SupportedFeatures { get; set; } = [];
-        public List<string> ValidationErrors { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the supported features.
+        /// </summary>
+        /// <value>The supported features.</value>
+        public IList<string> SupportedFeatures { get; } = [];
+        /// <summary>
+        /// Gets or sets the validation errors.
+        /// </summary>
+        /// <value>The validation errors.</value>
+        public IList<string> ValidationErrors { get; } = [];
     }
 
     /// <summary>
@@ -639,11 +755,35 @@ namespace DotCompute.Plugins.Platform
     /// </summary>
     public class BackendBenchmark
     {
+        /// <summary>
+        /// Gets or sets the backend type.
+        /// </summary>
+        /// <value>The backend type.</value>
         public required ComputeBackendType BackendType { get; init; }
+        /// <summary>
+        /// Gets or sets the relative performance.
+        /// </summary>
+        /// <value>The relative performance.</value>
         public required float RelativePerformance { get; init; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth.
+        /// </summary>
+        /// <value>The memory bandwidth.</value>
         public required float MemoryBandwidth { get; init; } // GB/s
+        /// <summary>
+        /// Gets or sets the compute throughput.
+        /// </summary>
+        /// <value>The compute throughput.</value>
         public required float ComputeThroughput { get; init; } // GFLOPS estimate
+        /// <summary>
+        /// Gets or sets the latency.
+        /// </summary>
+        /// <value>The latency.</value>
         public required float Latency { get; init; } // ms
+        /// <summary>
+        /// Gets or sets the power efficiency.
+        /// </summary>
+        /// <value>The power efficiency.</value>
         public required float PowerEfficiency { get; init; } // GFLOPS/W
     }
 }

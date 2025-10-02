@@ -645,7 +645,7 @@ internal sealed class KernelOptimizationAnalyzer
 
 internal sealed class SharedMemoryConfiguration
 {
-    public List<SharedMemoryVariable> Variables { get; } = [];
+    public IList<SharedMemoryVariable> Variables { get; } = [];
     public bool UseTiling { get; set; }
     public int TileSize { get; set; }
     public bool UseForReduction { get; set; }
@@ -667,7 +667,7 @@ internal sealed class SharedMemoryVariable
 internal sealed class ConstantMemoryConfiguration
 {
     public bool Enabled { get; set; }
-    public List<ConstantMemoryVariable> Variables { get; } = [];
+    public IList<ConstantMemoryVariable> Variables { get; } = [];
 
 
     public int TotalSizeInBytes => Variables.Sum(v => v.SizeInBytes);
@@ -686,7 +686,7 @@ internal sealed class TextureMemoryConfiguration
     public bool Use1DTexture { get; set; }
     public bool Use2DTexture { get; set; }
     public bool Use3DTexture { get; set; }
-    public List<string> TextureArrays { get; } = [];
+    public IList<string> TextureArrays { get; } = [];
 }
 
 internal sealed class MemoryCoalescingStrategy

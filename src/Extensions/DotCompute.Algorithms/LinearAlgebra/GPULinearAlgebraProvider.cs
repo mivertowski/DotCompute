@@ -176,6 +176,9 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         }
     }
 }
+/// <summary>
+/// An linear system solver enumeration.
+/// </summary>
 
 #region Supporting Enums
 

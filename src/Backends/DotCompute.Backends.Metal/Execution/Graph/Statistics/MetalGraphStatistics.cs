@@ -271,7 +271,7 @@ public class MetalGraphStatistics
     /// <summary>
     /// Gets or sets error frequency statistics.
     /// </summary>
-    public Dictionary<string, int> ErrorFrequency { get; set; } = [];
+    public Dictionary<string, int> ErrorFrequency { get; } = [];
 
     #endregion
 

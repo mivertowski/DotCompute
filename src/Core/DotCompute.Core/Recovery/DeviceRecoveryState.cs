@@ -16,14 +16,46 @@ public class DeviceRecoveryState(string deviceId)
     private int _consecutiveFailures;
     private int _totalRecoveryAttempts;
     private int _successfulRecoveries;
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
 
     public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
+    /// <summary>
+    /// Gets or sets a value indicating whether healthy.
+    /// </summary>
+    /// <value>The is healthy.</value>
     public bool IsHealthy { get; private set; } = true;
+    /// <summary>
+    /// Gets or sets the last error.
+    /// </summary>
+    /// <value>The last error.</value>
     public Exception? LastError { get; private set; }
+    /// <summary>
+    /// Gets or sets the consecutive failures.
+    /// </summary>
+    /// <value>The consecutive failures.</value>
     public int ConsecutiveFailures => _consecutiveFailures;
+    /// <summary>
+    /// Gets or sets the total recovery attempts.
+    /// </summary>
+    /// <value>The total recovery attempts.</value>
     public int TotalRecoveryAttempts => _totalRecoveryAttempts;
+    /// <summary>
+    /// Gets or sets the successful recoveries.
+    /// </summary>
+    /// <value>The successful recoveries.</value>
     public int SuccessfulRecoveries => _successfulRecoveries;
+    /// <summary>
+    /// Gets or sets the last health check.
+    /// </summary>
+    /// <value>The last health check.</value>
     public DateTimeOffset LastHealthCheck { get; private set; } = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Performs record error.
+    /// </summary>
+    /// <param name="error">The error.</param>
 
     public void RecordError(Exception error)
     {
@@ -43,6 +75,9 @@ public class DeviceRecoveryState(string deviceId)
             IsHealthy = _consecutiveFailures < 3;
         }
     }
+    /// <summary>
+    /// Performs record successful recovery.
+    /// </summary>
 
     public void RecordSuccessfulRecovery()
     {
@@ -54,6 +89,9 @@ public class DeviceRecoveryState(string deviceId)
             IsHealthy = true;
         }
     }
+    /// <summary>
+    /// Performs record failed recovery.
+    /// </summary>
 
     public void RecordFailedRecovery()
     {
@@ -63,6 +101,10 @@ public class DeviceRecoveryState(string deviceId)
             IsHealthy = false;
         }
     }
+    /// <summary>
+    /// Calculates the error rate.
+    /// </summary>
+    /// <returns>The calculated error rate.</returns>
 
     public double CalculateErrorRate()
     {
@@ -72,6 +114,9 @@ public class DeviceRecoveryState(string deviceId)
 
         return recentErrors; // Errors per hour
     }
+    /// <summary>
+    /// Updates the health check.
+    /// </summary>
 
     public void UpdateHealthCheck()
     {
@@ -87,6 +132,10 @@ public class DeviceRecoveryState(string deviceId)
             }
         }
     }
+    /// <summary>
+    /// Gets reset asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async Task ResetAsync()
     {
@@ -106,6 +155,10 @@ public class DeviceRecoveryState(string deviceId)
             }
         });
     }
+    /// <summary>
+    /// Gets reset context asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async Task ResetContextAsync()
     {

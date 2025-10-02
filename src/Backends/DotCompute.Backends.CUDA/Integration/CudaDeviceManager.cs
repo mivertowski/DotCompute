@@ -18,6 +18,10 @@ public sealed class CudaDeviceManager : IDisposable
     private readonly Dictionary<int, CudaDeviceInfo> _availableDevices;
     private readonly Timer _deviceMonitorTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaDeviceManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public CudaDeviceManager(ILogger logger)
     {
@@ -362,6 +366,9 @@ public sealed class CudaDeviceManager : IDisposable
             _logger.LogWarning(ex, "Error during device monitoring");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -384,24 +391,104 @@ public sealed class CudaDeviceManager : IDisposable
 /// </summary>
 public sealed class CudaDeviceInfo
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public int DeviceId { get; init; }
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the compute capability major.
+    /// </summary>
+    /// <value>The compute capability major.</value>
     public int ComputeCapabilityMajor { get; init; }
+    /// <summary>
+    /// Gets or sets the compute capability minor.
+    /// </summary>
+    /// <value>The compute capability minor.</value>
     public int ComputeCapabilityMinor { get; init; }
+    /// <summary>
+    /// Gets or sets the total memory.
+    /// </summary>
+    /// <value>The total memory.</value>
     public long TotalMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the free memory.
+    /// </summary>
+    /// <value>The free memory.</value>
     public long FreeMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the max threads per block.
+    /// </summary>
+    /// <value>The max threads per block.</value>
     public int MaxThreadsPerBlock { get; init; }
+    /// <summary>
+    /// Gets or sets the multi processor count.
+    /// </summary>
+    /// <value>The multi processor count.</value>
     public int MultiProcessorCount { get; init; }
+    /// <summary>
+    /// Gets or sets the warp size.
+    /// </summary>
+    /// <value>The warp size.</value>
     public int WarpSize { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim x.
+    /// </summary>
+    /// <value>The max block dim x.</value>
     public int MaxBlockDimX { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim y.
+    /// </summary>
+    /// <value>The max block dim y.</value>
     public int MaxBlockDimY { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim z.
+    /// </summary>
+    /// <value>The max block dim z.</value>
     public int MaxBlockDimZ { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim x.
+    /// </summary>
+    /// <value>The max grid dim x.</value>
     public int MaxGridDimX { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim y.
+    /// </summary>
+    /// <value>The max grid dim y.</value>
     public int MaxGridDimY { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim z.
+    /// </summary>
+    /// <value>The max grid dim z.</value>
     public int MaxGridDimZ { get; init; }
+    /// <summary>
+    /// Gets or sets the clock rate.
+    /// </summary>
+    /// <value>The clock rate.</value>
     public int ClockRate { get; init; }
+    /// <summary>
+    /// Gets or sets the memory clock rate.
+    /// </summary>
+    /// <value>The memory clock rate.</value>
     public int MemoryClockRate { get; init; }
+    /// <summary>
+    /// Gets or sets the memory bus width.
+    /// </summary>
+    /// <value>The memory bus width.</value>
     public int MemoryBusWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the last health check.
+    /// </summary>
+    /// <value>The last health check.</value>
     public DateTimeOffset LastHealthCheck { get; set; }
+    /// <summary>
+    /// Gets or sets the health score.
+    /// </summary>
+    /// <value>The health score.</value>
     public double HealthScore { get; set; }
 }

@@ -29,6 +29,11 @@ namespace DotCompute.Core.Memory.P2P
         // Transfer configuration
         private const int MaxConcurrentTransfers = 16;
         private const double ValidationThresholdGB = 0.1; // Validate transfers > 100MB
+        /// <summary>
+        /// Initializes a new instance of the P2PTransferManager class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="capabilityDetector">The capability detector.</param>
 
         public P2PTransferManager(
             ILogger logger,
@@ -598,6 +603,10 @@ namespace DotCompute.Core.Memory.P2P
                 }
             }
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -638,12 +647,36 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PInitializationResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the total devices.
+        /// </summary>
+        /// <value>The total devices.</value>
         public int TotalDevices { get; set; }
+        /// <summary>
+        /// Gets or sets the successful connections.
+        /// </summary>
+        /// <value>The successful connections.</value>
         public int SuccessfulConnections { get; set; }
+        /// <summary>
+        /// Gets or sets the failed connections.
+        /// </summary>
+        /// <value>The failed connections.</value>
         public int FailedConnections { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
-        public List<P2PDevicePair> DevicePairs { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the device pairs.
+        /// </summary>
+        /// <value>The device pairs.</value>
+        public IList<P2PDevicePair> DevicePairs { get; } = [];
     }
 
     /// <summary>
@@ -651,9 +684,25 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PDevicePair
     {
+        /// <summary>
+        /// Gets or sets the device1.
+        /// </summary>
+        /// <value>The device1.</value>
         public required IAccelerator Device1 { get; init; }
+        /// <summary>
+        /// Gets or sets the device2.
+        /// </summary>
+        /// <value>The device2.</value>
         public required IAccelerator Device2 { get; init; }
+        /// <summary>
+        /// Gets or sets the capability.
+        /// </summary>
+        /// <value>The capability.</value>
         public required P2PConnectionCapability Capability { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether enabled.
+        /// </summary>
+        /// <value>The is enabled.</value>
         public bool IsEnabled { get; set; }
     }
 
@@ -662,15 +711,55 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferSession
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public required string Id { get; init; }
+        /// <summary>
+        /// Gets or sets the source device.
+        /// </summary>
+        /// <value>The source device.</value>
         public required IAccelerator SourceDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the destination device.
+        /// </summary>
+        /// <value>The destination device.</value>
         public required IAccelerator DestinationDevice { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer size.
+        /// </summary>
+        /// <value>The transfer size.</value>
         public required long TransferSize { get; init; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public required DateTimeOffset StartTime { get; init; }
+        /// <summary>
+        /// Gets or sets the end time.
+        /// </summary>
+        /// <value>The end time.</value>
         public DateTimeOffset? EndTime { get; set; }
+        /// <summary>
+        /// Gets or sets the options.
+        /// </summary>
+        /// <value>The options.</value>
         public required P2PTransferOptions Options { get; init; }
+        /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
+        /// <value>The status.</value>
         public P2PTransferStatus Status { get; set; }
+        /// <summary>
+        /// Gets or sets the transfer plan.
+        /// </summary>
+        /// <value>The transfer plan.</value>
         public P2PTransferPlan? TransferPlan { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
 
@@ -679,14 +768,46 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferOptions
     {
+        /// <summary>
+        /// Gets or sets the default.
+        /// </summary>
+        /// <value>The default.</value>
         public static P2PTransferOptions Default => new();
+        /// <summary>
+        /// Gets or sets the enable validation.
+        /// </summary>
+        /// <value>The enable validation.</value>
 
         public bool EnableValidation { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the enable synchronization.
+        /// </summary>
+        /// <value>The enable synchronization.</value>
         public bool EnableSynchronization { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the enable optimization.
+        /// </summary>
+        /// <value>The enable optimization.</value>
         public bool EnableOptimization { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the allow host fallback.
+        /// </summary>
+        /// <value>The allow host fallback.</value>
         public bool AllowHostFallback { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the preferred chunk size.
+        /// </summary>
+        /// <value>The preferred chunk size.</value>
         public int PreferredChunkSize { get; init; } = 8 * 1024 * 1024; // 8MB
+        /// <summary>
+        /// Gets or sets the pipeline depth.
+        /// </summary>
+        /// <value>The pipeline depth.</value>
         public int PipelineDepth { get; init; } = 2;
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public P2PTransferPriority Priority { get; init; } = P2PTransferPriority.Normal;
     }
 
@@ -695,12 +816,40 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferResult
     {
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
         public required string SessionId { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public required bool IsSuccessful { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer time ms.
+        /// </summary>
+        /// <value>The transfer time ms.</value>
         public required double TransferTimeMs { get; init; }
+        /// <summary>
+        /// Gets or sets the throughput g bps.
+        /// </summary>
+        /// <value>The throughput g bps.</value>
         public required double ThroughputGBps { get; init; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; init; }
+        /// <summary>
+        /// Gets or sets the validation results.
+        /// </summary>
+        /// <value>The validation results.</value>
         public P2PValidationResult? ValidationResults { get; init; }
+        /// <summary>
+        /// Gets or sets the transfer plan.
+        /// </summary>
+        /// <value>The transfer plan.</value>
         public P2PTransferPlan? TransferPlan { get; init; }
     }
 
@@ -709,10 +858,26 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PScatterOptions
     {
+        /// <summary>
+        /// Gets or sets the default.
+        /// </summary>
+        /// <value>The default.</value>
         public static P2PScatterOptions Default => new();
+        /// <summary>
+        /// Gets or sets the transfer options.
+        /// </summary>
+        /// <value>The transfer options.</value>
 
         public P2PTransferOptions TransferOptions { get; init; } = P2PTransferOptions.Default;
+        /// <summary>
+        /// Gets or sets the enable parallel scatter.
+        /// </summary>
+        /// <value>The enable parallel scatter.</value>
         public bool EnableParallelScatter { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the max concurrent scatters.
+        /// </summary>
+        /// <value>The max concurrent scatters.</value>
         public int MaxConcurrentScatters { get; init; } = 8;
     }
 
@@ -721,10 +886,26 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PGatherOptions
     {
+        /// <summary>
+        /// Gets or sets the default.
+        /// </summary>
+        /// <value>The default.</value>
         public static P2PGatherOptions Default => new();
+        /// <summary>
+        /// Gets or sets the transfer options.
+        /// </summary>
+        /// <value>The transfer options.</value>
 
         public P2PTransferOptions TransferOptions { get; init; } = P2PTransferOptions.Default;
+        /// <summary>
+        /// Gets or sets the enable parallel gather.
+        /// </summary>
+        /// <value>The enable parallel gather.</value>
         public bool EnableParallelGather { get; init; } = true;
+        /// <summary>
+        /// Gets or sets the max concurrent gathers.
+        /// </summary>
+        /// <value>The max concurrent gathers.</value>
         public int MaxConcurrentGathers { get; init; } = 8;
     }
 
@@ -733,11 +914,35 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PScatterResult
     {
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
         public required string SessionId { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the total transfer time ms.
+        /// </summary>
+        /// <value>The total transfer time ms.</value>
         public double TotalTransferTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the average throughput g bps.
+        /// </summary>
+        /// <value>The average throughput g bps.</value>
         public double AverageThroughputGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the transfer results.
+        /// </summary>
+        /// <value>The transfer results.</value>
         public P2PTransferResult[] TransferResults { get; set; } = [];
     }
 
@@ -746,11 +951,35 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PGatherResult
     {
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
         public required string SessionId { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether successful.
+        /// </summary>
+        /// <value>The is successful.</value>
         public bool IsSuccessful { get; set; }
+        /// <summary>
+        /// Gets or sets the total transfer time ms.
+        /// </summary>
+        /// <value>The total transfer time ms.</value>
         public double TotalTransferTimeMs { get; set; }
+        /// <summary>
+        /// Gets or sets the average throughput g bps.
+        /// </summary>
+        /// <value>The average throughput g bps.</value>
         public double AverageThroughputGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
+        /// <summary>
+        /// Gets or sets the transfer results.
+        /// </summary>
+        /// <value>The transfer results.</value>
         public P2PTransferResult[] TransferResults { get; set; } = [];
     }
 
@@ -759,17 +988,60 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public sealed class P2PTransferStatistics
     {
+        /// <summary>
+        /// Gets or sets the total transfers.
+        /// </summary>
+        /// <value>The total transfers.</value>
         public long TotalTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the successful transfers.
+        /// </summary>
+        /// <value>The successful transfers.</value>
         public long SuccessfulTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the failed transfers.
+        /// </summary>
+        /// <value>The failed transfers.</value>
         public long FailedTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the total bytes transferred.
+        /// </summary>
+        /// <value>The total bytes transferred.</value>
         public long TotalBytesTransferred { get; set; }
+        /// <summary>
+        /// Gets or sets the average throughput g bps.
+        /// </summary>
+        /// <value>The average throughput g bps.</value>
         public double AverageThroughputGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the peak throughput g bps.
+        /// </summary>
+        /// <value>The peak throughput g bps.</value>
         public double PeakThroughputGBps { get; set; }
+        /// <summary>
+        /// Gets or sets the total transfer time.
+        /// </summary>
+        /// <value>The total transfer time.</value>
         public TimeSpan TotalTransferTime { get; set; }
+        /// <summary>
+        /// Gets or sets the direct p2 p transfers.
+        /// </summary>
+        /// <value>The direct p2 p transfers.</value>
         public long DirectP2PTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the host mediated transfers.
+        /// </summary>
+        /// <value>The host mediated transfers.</value>
         public long HostMediatedTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the active sessions.
+        /// </summary>
+        /// <value>The active sessions.</value>
         public int ActiveSessions { get; set; }
     }
+    /// <summary>
+    /// An p2 p transfer status enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P transfer status enumeration.
@@ -785,6 +1057,9 @@ namespace DotCompute.Core.Memory.P2P
         Failed,
         Cancelled
     }
+    /// <summary>
+    /// An p2 p transfer strategy enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P transfer strategies for optimization.
@@ -796,6 +1071,9 @@ namespace DotCompute.Core.Memory.P2P
         PipelinedP2P,   // Pipelined overlapped transfers
         HostMediated    // Host-mediated fallback
     }
+    /// <summary>
+    /// An p2 p transfer priority enumeration.
+    /// </summary>
 
     /// <summary>
     /// P2P transfer priority levels.

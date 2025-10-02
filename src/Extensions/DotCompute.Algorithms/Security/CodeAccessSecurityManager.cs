@@ -528,12 +528,12 @@ public sealed class CodeAccessSecurityOptions
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; } = [];
+    public IList<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 }
 
 /// <summary>
@@ -637,12 +637,12 @@ public sealed class SecurityPermissionSet
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFilePaths { get; } = [];
+    public IList<string> AllowedFilePaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 
     /// <summary>
     /// Gets the collection of individual permissions.
@@ -736,10 +736,10 @@ public sealed class CodeAccessSecurityConfiguration
     /// <summary>
     /// Gets or sets the allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; set; } = [];
+    public IList<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets or sets the allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; set; } = [];
+    public IList<string> AllowedNetworkEndpoints { get; } = [];
 }

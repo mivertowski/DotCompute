@@ -2,6 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 namespace DotCompute.Core.Recovery;
+/// <summary>
+/// An gpu recovery strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// GPU recovery strategies

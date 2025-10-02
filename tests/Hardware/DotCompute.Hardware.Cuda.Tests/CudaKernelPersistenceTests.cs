@@ -22,6 +22,10 @@ namespace DotCompute.Hardware.Cuda.Tests
         private readonly CudaKernelCompiler? _compiler;
         private readonly string _cacheDirectory;
         private readonly ILogger<CudaKernelPersistenceTests>? _logger;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelPersistenceTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public CudaKernelPersistenceTests(ITestOutputHelper output) : base(output)
         {
@@ -70,6 +74,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets compiled kernel_ should_ be persisted_ to disk.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -110,6 +118,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var fileInfo = new FileInfo(cacheFile);
             _ = fileInfo.Length.Should().BeGreaterThan(0, "Cache file should contain compiled kernel data");
         }
+        /// <summary>
+        /// Gets cached kernel_ should_ be reused_ on second compilation.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -164,6 +176,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 "Cached compilation should be at least 2x faster");
         }
+        /// <summary>
+        /// Gets kernel cache_ should_ handle versioning.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -257,6 +273,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.cubin");
             _ = cacheFiles.Length.Should().BeGreaterThanOrEqualTo(2, "Different versions should have separate cache files");
         }
+        /// <summary>
+        /// Gets kernel cache_ should_ survive across sessions.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -336,6 +356,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             VerifyFloatArraysMatch(expected, result, 0.0001f, "Cross-session kernel execution");
         }
+        /// <summary>
+        /// Gets kernel cache_ should_ handle concurrent access.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -386,6 +410,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*concurrent_kernel*.cubin");
             _ = cacheFiles.Should().HaveCount(1, "Concurrent access should result in single cache file");
         }
+        /// <summary>
+        /// Gets kernel cache_ should_ invalidate on options change.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -436,6 +464,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 "Different compilation options should create separate cache entries");
         }
+        /// <summary>
+        /// Gets large kernel library_ should_ benefit from caching.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -512,6 +544,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.cubin");
             _ = cacheFiles.Length.Should().BeGreaterThanOrEqualTo(librarySize, "All library kernels should be cached");
         }
+        /// <summary>
+        /// Gets kernel cache_ should_ handle corrupted cache gracefully.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]

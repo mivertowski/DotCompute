@@ -38,13 +38,41 @@ public sealed partial class PluginLoader : IAsyncDisposable
     /// </summary>
     private sealed class LoadedAssembly
     {
+        /// <summary>
+        /// Gets or sets the assembly.
+        /// </summary>
+        /// <value>The assembly.</value>
         public required Assembly Assembly { get; init; }
+        /// <summary>
+        /// Gets or sets the load context.
+        /// </summary>
+        /// <value>The load context.</value>
         public required PluginAssemblyLoadContext LoadContext { get; init; }
+        /// <summary>
+        /// Gets or sets the unified validation result.
+        /// </summary>
+        /// <value>The unified validation result.</value>
         public required SecurityValidationResult UnifiedValidationResult { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public required DateTime LoadTime { get; init; }
+        /// <summary>
+        /// Gets or sets the assembly path.
+        /// </summary>
+        /// <value>The assembly path.</value>
         public required string AssemblyPath { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether isolated.
+        /// </summary>
+        /// <value>The is isolated.</value>
         public bool IsIsolated { get; init; }
-        public List<IAlgorithmPlugin> Plugins { get; } = [];
+        /// <summary>
+        /// Gets or sets the plugins.
+        /// </summary>
+        /// <value>The plugins.</value>
+        public IList<IAlgorithmPlugin> Plugins { get; } = [];
     }
 
     /// <summary>

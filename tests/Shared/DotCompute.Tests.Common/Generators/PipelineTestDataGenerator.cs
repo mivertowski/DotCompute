@@ -13,6 +13,9 @@ namespace DotCompute.Tests.Common.Generators;
 public class PipelineTestDataGenerator
 {
     private readonly Random _random;
+    /// <summary>
+    /// Initializes a new instance of the PipelineTestDataGenerator class.
+    /// </summary>
 
     public PipelineTestDataGenerator()
     {
@@ -372,11 +375,35 @@ public class PipelineTestDataGenerator
 /// </summary>
 public struct FinancialTransaction : IEquatable<FinancialTransaction>
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public int Id { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the price.
+    /// </summary>
+    /// <value>The price.</value>
     public float Price { get; set; }
+    /// <summary>
+    /// Gets or sets the volume.
+    /// </summary>
+    /// <value>The volume.</value>
     public int Volume { get; set; }
+    /// <summary>
+    /// Gets or sets the symbol.
+    /// </summary>
+    /// <value>The symbol.</value>
     public string Symbol { get; set; }
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public TransactionType Type { get; set; }
 
     /// <summary>
@@ -410,6 +437,9 @@ public struct FinancialTransaction : IEquatable<FinancialTransaction>
     /// </summary>
     public static bool operator !=(FinancialTransaction left, FinancialTransaction right) => !(left == right);
 }
+/// <summary>
+/// An transaction type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of financial transactions.

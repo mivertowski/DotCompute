@@ -12,6 +12,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
+using System;
 
 namespace DotCompute.Core.Optimization;
 
@@ -32,6 +33,14 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     private readonly Dictionary<string, KernelPerformanceProfile> _kernelProfiles;
     private readonly Dictionary<string, WorkloadCharacteristics> _workloadCache;
     private readonly object _cacheLock = new();
+    /// <summary>
+    /// Initializes a new instance of the PerformanceOptimizedOrchestrator class.
+    /// </summary>
+    /// <param name="baseOrchestrator">The base orchestrator.</param>
+    /// <param name="backendSelector">The backend selector.</param>
+    /// <param name="performanceProfiler">The performance profiler.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public PerformanceOptimizedOrchestrator(
         IComputeOrchestrator baseOrchestrator,
@@ -51,12 +60,27 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         _logger.LogInfoMessage($"Performance-optimized orchestrator initialized with {_options.OptimizationStrategy} optimization strategy");
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
         var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async Task<T?> ExecuteWithBuffersAsync<T>(string kernelName, object[] buffers, params object[] scalarArgs)
@@ -64,6 +88,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var allArgs = buffers.Concat(scalarArgs).ToArray();
         return await ExecuteWithOptimizationAsync<T>(kernelName, allArgs);
     }
+    /// <summary>
+    /// Gets the optimal accelerator async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The optimal accelerator async.</returns>
 
     public async Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
     {
@@ -426,9 +455,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("matrix") => elementsProcessed * elementsProcessed, // O(n²)
-            var name when name.Contains("sort") => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
-            var name when name.Contains("fft") => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("matrix", StringComparison.OrdinalIgnoreCase) => elementsProcessed * elementsProcessed, // O(n²)
+            var name when name.Contains("sort", StringComparison.OrdinalIgnoreCase) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("fft", StringComparison.CurrentCulture) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
             _ => elementsProcessed // O(n)
         };
     }
@@ -457,12 +486,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Heuristic based on kernel name
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("fft") || name.Contains("fwt") => 0.9,
-            var name when name.Contains("matrix") && name.Contains("multiply") => 0.85,
-            var name when name.Contains("convolution") || name.Contains("conv") => 0.8,
-            var name when name.Contains("sort") => 0.6,
-            var name when name.Contains("add") || name.Contains("sub") => 0.2,
-            var name when name.Contains("copy") => 0.1,
+            var name when name.Contains("fft", StringComparison.CurrentCulture) || name.Contains("fwt", StringComparison.CurrentCulture) => 0.9,
+            var name when name.Contains("matrix", StringComparison.CurrentCulture) && name.Contains("multiply", StringComparison.CurrentCulture) => 0.85,
+            var name when name.Contains("convolution", StringComparison.CurrentCulture) || name.Contains("conv", StringComparison.CurrentCulture) => 0.8,
+            var name when name.Contains("sort", StringComparison.CurrentCulture) => 0.6,
+            var name when name.Contains("add", StringComparison.CurrentCulture) || name.Contains("sub", StringComparison.CurrentCulture) => 0.2,
+            var name when name.Contains("copy", StringComparison.CurrentCulture) => 0.1,
             _ => 0.5 // Default moderate compute intensity
         };
     }
@@ -480,9 +509,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("copy") || name.Contains("transpose") => 0.9,
-            var name when name.Contains("reduce") || name.Contains("scan") => 0.7,
-            var name when name.Contains("matrix") => Math.Min(0.8, memoryOperationRatio * 2),
+            var name when name.Contains("copy", StringComparison.CurrentCulture) || name.Contains("transpose", StringComparison.CurrentCulture) => 0.9,
+            var name when name.Contains("reduce", StringComparison.CurrentCulture) || name.Contains("scan", StringComparison.CurrentCulture) => 0.7,
+            var name when name.Contains("matrix", StringComparison.CurrentCulture) => Math.Min(0.8, memoryOperationRatio * 2),
             _ => Math.Min(0.9, memoryOperationRatio)
         };
     }
@@ -500,12 +529,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("element") || name.Contains("map") => 0.95,
-            var name when name.Contains("matrix") && !name.Contains("multiply") => 0.9,
-            var name when name.Contains("convolution") => 0.85,
-            var name when name.Contains("reduce") => Math.Min(0.8, elementCount / 1000.0),
-            var name when name.Contains("sort") => Math.Min(0.7, elementCount / 10000.0),
-            var name when name.Contains("sequential") => 0.1,
+            var name when name.Contains("element", StringComparison.CurrentCulture) || name.Contains("map", StringComparison.CurrentCulture) => 0.95,
+            var name when name.Contains("matrix", StringComparison.CurrentCulture) && !name.Contains("multiply", StringComparison.CurrentCulture) => 0.9,
+            var name when name.Contains("convolution", StringComparison.CurrentCulture) => 0.85,
+            var name when name.Contains("reduce", StringComparison.CurrentCulture) => Math.Min(0.8, elementCount / 1000.0),
+            var name when name.Contains("sort", StringComparison.CurrentCulture) => Math.Min(0.7, elementCount / 10000.0),
+            var name when name.Contains("sequential", StringComparison.CurrentCulture) => 0.1,
             _ => Math.Min(0.8, elementCount / 5000.0)
         };
     }
@@ -515,9 +544,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         return kernelName.ToLowerInvariant() switch
         {
             var name when name.Contains("transpose") => MemoryAccessPattern.Strided,
-            var name when name.Contains("random") => MemoryAccessPattern.Random,
-            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.Scattered,
-            var name when name.Contains("convolution") => MemoryAccessPattern.Coalesced,
+            var name when name.Contains("random", StringComparison.CurrentCulture) => MemoryAccessPattern.Random,
+            var name when name.Contains("gather", StringComparison.CurrentCulture) || name.Contains("scatter", StringComparison.CurrentCulture) => MemoryAccessPattern.Scattered,
+            var name when name.Contains("convolution", StringComparison.CurrentCulture) => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };
     }
@@ -586,6 +615,14 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return !string.IsNullOrEmpty(kernelName) && args != null;
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="preferredBackend">The preferred backend.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
     {
@@ -593,6 +630,14 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var result = await ExecuteWithOptimizationAsync<T>(kernelName, args);
         return result!;
     }
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
     {
@@ -600,18 +645,37 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteAsync<T>(kernelName, accelerator, args);
     }
+    /// <summary>
+    /// Gets execute with buffers asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="buffers">The buffers.</param>
+    /// <param name="scalarArgs">The scalar args.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteWithBuffersAsync<T>(kernelName, buffers, scalarArgs);
     }
+    /// <summary>
+    /// Gets precompile kernel asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await _baseOrchestrator.PrecompileKernelAsync(kernelName, accelerator);
     }
+    /// <summary>
+    /// Gets the supported accelerators async.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <returns>The supported accelerators async.</returns>
 
     public async Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
     {
@@ -632,6 +696,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _baseOrchestrator.ExecuteKernelAsync(kernelName, args, cancellationToken);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -655,12 +722,40 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 /// </summary>
 public class KernelPerformanceProfile
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; set; } = string.Empty;
-    public HashSet<string> ExecutedOnBackends { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the executed on backends.
+    /// </summary>
+    /// <value>The executed on backends.</value>
+    public HashSet<string> ExecutedOnBackends { get; } = [];
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public int TotalExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the historical compute intensity.
+    /// </summary>
+    /// <value>The historical compute intensity.</value>
     public double? HistoricalComputeIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the historical memory intensity.
+    /// </summary>
+    /// <value>The historical memory intensity.</value>
     public double? HistoricalMemoryIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the historical parallelism level.
+    /// </summary>
+    /// <value>The historical parallelism level.</value>
     public double? HistoricalParallelismLevel { get; set; }
 }
 
@@ -669,20 +764,75 @@ public class KernelPerformanceProfile
 /// </summary>
 public class PerformanceOptimizationOptions
 {
+    /// <summary>
+    /// Gets or sets the optimization strategy.
+    /// </summary>
+    /// <value>The optimization strategy.</value>
     public OptimizationStrategy OptimizationStrategy { get; set; } = OptimizationStrategy.Adaptive;
+    /// <summary>
+    /// Gets or sets the enable learning.
+    /// </summary>
+    /// <value>The enable learning.</value>
     public bool EnableLearning { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable constraints.
+    /// </summary>
+    /// <value>The enable constraints.</value>
     public bool EnableConstraints { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable pre execution optimizations.
+    /// </summary>
+    /// <value>The enable pre execution optimizations.</value>
     public bool EnablePreExecutionOptimizations { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable memory optimization.
+    /// </summary>
+    /// <value>The enable memory optimization.</value>
     public bool EnableMemoryOptimization { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable kernel optimization.
+    /// </summary>
+    /// <value>The enable kernel optimization.</value>
     public bool EnableKernelOptimization { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable warmup optimization.
+    /// </summary>
+    /// <value>The enable warmup optimization.</value>
     public bool EnableWarmupOptimization { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable detailed profiling.
+    /// </summary>
+    /// <value>The enable detailed profiling.</value>
     public bool EnableDetailedProfiling { get; set; } = false;
+    /// <summary>
+    /// Gets or sets the profiling sample interval ms.
+    /// </summary>
+    /// <value>The profiling sample interval ms.</value>
     public int ProfilingSampleIntervalMs { get; set; } = 100;
+    /// <summary>
+    /// Gets or sets the max workload cache size.
+    /// </summary>
+    /// <value>The max workload cache size.</value>
     public int MaxWorkloadCacheSize { get; set; } = 1000;
+    /// <summary>
+    /// Gets or sets the max cpu utilization threshold.
+    /// </summary>
+    /// <value>The max cpu utilization threshold.</value>
     public double MaxCpuUtilizationThreshold { get; set; } = 0.9;
+    /// <summary>
+    /// Gets or sets the max memory utilization threshold.
+    /// </summary>
+    /// <value>The max memory utilization threshold.</value>
     public double MaxMemoryUtilizationThreshold { get; set; } = 0.8;
+    /// <summary>
+    /// Gets or sets the preferred backends.
+    /// </summary>
+    /// <value>The preferred backends.</value>
     public List<string>? PreferredBackends { get; set; }
 }
+/// <summary>
+/// An optimization strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Optimization strategies for performance tuning.

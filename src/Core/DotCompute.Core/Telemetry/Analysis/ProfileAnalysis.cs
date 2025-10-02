@@ -84,12 +84,12 @@ public sealed class ProfileAnalysis
     /// Each bottleneck includes location, severity, and impact information.
     /// </summary>
     /// <value>A list of bottleneck description strings.</value>
-    public List<string> IdentifiedBottlenecks { get; set; } = [];
+    public IList<string> IdentifiedBottlenecks { get; } = [];
 
     /// <summary>
     /// Gets or sets the list of optimization recommendations based on the analysis.
     /// Provides actionable suggestions for improving performance.
     /// </summary>
     /// <value>A list of optimization recommendation strings.</value>
-    public List<string> OptimizationRecommendations { get; set; } = [];
+    public IList<string> OptimizationRecommendations { get; } = [];
 }

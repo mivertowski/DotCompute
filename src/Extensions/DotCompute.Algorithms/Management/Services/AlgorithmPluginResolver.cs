@@ -288,7 +288,7 @@ public sealed class AlgorithmPluginResolver(
     /// <summary>
     /// Applies requirement filters to the candidate list.
     /// </summary>
-    private static List<IAlgorithmPlugin> ApplyRequirementFilters(List<IAlgorithmPlugin> candidates, PluginRequirements requirements)
+    private static List<IAlgorithmPlugin> ApplyRequirementFilters(IReadOnlyList<IAlgorithmPlugin> candidates, PluginRequirements requirements)
     {
         var filtered = candidates;
 
@@ -327,7 +327,7 @@ public sealed class AlgorithmPluginResolver(
     /// <summary>
     /// Scores plugins based on how well they match the requirements.
     /// </summary>
-    private IEnumerable<ScoredPlugin> ScorePlugins(List<IAlgorithmPlugin> candidates, PluginRequirements requirements)
+    private IEnumerable<ScoredPlugin> ScorePlugins(IReadOnlyList<IAlgorithmPlugin> candidates, PluginRequirements requirements)
     {
         foreach (var plugin in candidates)
         {
@@ -391,7 +391,7 @@ public sealed class AlgorithmPluginResolver(
     /// <summary>
     /// Recursively resolves plugin dependencies.
     /// </summary>
-    private void ResolveDependenciesRecursive(string pluginId, List<string> resolved, HashSet<string> visited, HashSet<string> visiting)
+    private void ResolveDependenciesRecursive(string pluginId, IReadOnlyList<string> resolved, HashSet<string> visited, HashSet<string> visiting)
     {
         if (visiting.Contains(pluginId))
         {
@@ -428,7 +428,15 @@ public sealed class AlgorithmPluginResolver(
     /// </summary>
     private sealed class ScoredPlugin
     {
+        /// <summary>
+        /// Gets or sets the plugin.
+        /// </summary>
+        /// <value>The plugin.</value>
         public required IAlgorithmPlugin Plugin { get; init; }
+        /// <summary>
+        /// Gets or sets the score.
+        /// </summary>
+        /// <value>The score.</value>
         public int Score { get; init; }
     }
 
@@ -437,8 +445,20 @@ public sealed class AlgorithmPluginResolver(
     /// </summary>
     private sealed class PerformanceCompatibilityResult
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether acceptable.
+        /// </summary>
+        /// <value>The is acceptable.</value>
         public bool IsAcceptable { get; set; }
+        /// <summary>
+        /// Gets or sets the score.
+        /// </summary>
+        /// <value>The score.</value>
         public int Score { get; set; }
+        /// <summary>
+        /// Gets or sets the warning.
+        /// </summary>
+        /// <value>The warning.</value>
         public string Warning { get; set; } = string.Empty;
     }
 }
@@ -567,10 +587,10 @@ public sealed class PluginCompatibilityResult
     /// <summary>
     /// Gets the list of incompatibility reasons.
     /// </summary>
-    public List<string> IncompatibilityReasons { get; } = [];
+    public IList<string> IncompatibilityReasons { get; } = [];
 
     /// <summary>
     /// Gets the list of compatibility warnings.
     /// </summary>
-    public List<string> CompatibilityWarnings { get; } = [];
+    public IList<string> CompatibilityWarnings { get; } = [];
 }

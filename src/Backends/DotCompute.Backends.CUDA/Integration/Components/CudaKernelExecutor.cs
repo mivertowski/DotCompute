@@ -25,6 +25,14 @@ public sealed class CudaKernelExecutor : IDisposable
     private readonly KernelConfigurationOptimizer _configurationOptimizer;
     private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaKernelExecutor class.
+    /// </summary>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="streamManager">The stream manager.</param>
+    /// <param name="eventManager">The event manager.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaKernelExecutor(
         IAccelerator accelerator,
@@ -364,6 +372,9 @@ public sealed class CudaKernelExecutor : IDisposable
             throw new ObjectDisposedException(nameof(CudaKernelExecutor));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -402,8 +413,20 @@ public sealed class CudaKernelExecutor : IDisposable
 /// </summary>
 public readonly record struct KernelBatchExecution
 {
+    /// <summary>
+    /// Gets or sets the kernel.
+    /// </summary>
+    /// <value>The kernel.</value>
     public ICompiledKernel Kernel { get; init; }
+    /// <summary>
+    /// Gets or sets the arguments.
+    /// </summary>
+    /// <value>The arguments.</value>
     public KernelArgument[] Arguments { get; init; }
+    /// <summary>
+    /// Gets or sets the execution config.
+    /// </summary>
+    /// <value>The execution config.</value>
     public KernelExecutionConfig ExecutionConfig { get; init; }
 }
 
@@ -412,11 +435,35 @@ public readonly record struct KernelBatchExecution
 /// </summary>
 public sealed class KernelExecutionResult
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the execution time.
+    /// </summary>
+    /// <value>The execution time.</value>
     public TimeSpan ExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the performance metrics.
+    /// </summary>
+    /// <value>The performance metrics.</value>
     public object? PerformanceMetrics { get; init; }
+    /// <summary>
+    /// Gets or sets the optimizations applied.
+    /// </summary>
+    /// <value>The optimizations applied.</value>
     public bool OptimizationsApplied { get; init; }
+    /// <summary>
+    /// Gets or sets the configuration used.
+    /// </summary>
+    /// <value>The configuration used.</value>
     public KernelExecutionConfig? ConfigurationUsed { get; init; }
 }
 
@@ -425,11 +472,35 @@ public sealed class KernelExecutionResult
 /// </summary>
 public readonly record struct KernelExecutorStatistics
 {
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>The successful executions.</value>
     public long SuccessfulExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the failed executions.
+    /// </summary>
+    /// <value>The failed executions.</value>
     public long FailedExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the cached kernels.
+    /// </summary>
+    /// <value>The cached kernels.</value>
     public int CachedKernels { get; init; }
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; init; }
 }
 
@@ -441,11 +512,33 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
     private readonly ICompiledKernel _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
 
     public string Name => _kernel.Name;
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public Guid Id => _kernel.Id;
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
     public KernelDefinition Definition => _definition;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => _disposed;
+    /// <summary>
+    /// Gets execute asynchronously.
+    /// </summary>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -456,6 +549,9 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
 
         return _kernel.ExecuteAsync(arguments, cancellationToken);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -465,6 +561,10 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
             _kernel?.Dispose();
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
@@ -485,6 +585,12 @@ internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger 
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets optimize configuration.
+    /// </summary>
+    /// <param name="kernel">The kernel.</param>
+    /// <param name="problemSize">The problem size.</param>
+    /// <returns>The result of the operation.</returns>
 
     public KernelExecutionConfig OptimizeConfiguration(ICompiledKernel kernel, int[] problemSize)
     {
@@ -533,6 +639,9 @@ internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger 
     }
 
     private static int CalculateOptimalGridSize(int totalElements, int blockSize) => (totalElements + blockSize - 1) / blockSize;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

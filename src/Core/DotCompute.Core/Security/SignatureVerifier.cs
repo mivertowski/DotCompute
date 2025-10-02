@@ -24,6 +24,10 @@ public sealed class SignatureVerifier : IDisposable
     {
         "SHA-256", "SHA-384", "SHA-512", "SHA3-256", "SHA3-384", "SHA3-512"
     };
+    /// <summary>
+    /// Initializes a new instance of the SignatureVerifier class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public SignatureVerifier(ILogger logger)
     {
@@ -550,6 +554,9 @@ public sealed class SignatureVerifier : IDisposable
             _logger.LogWarning(ex, "Error during signature verification cache cleanup");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -578,13 +585,41 @@ public sealed class SignatureVerifier : IDisposable
 /// </summary>
 public sealed class SignatureAlgorithmValidationResult
 {
+    /// <summary>
+    /// Gets or sets the algorithm.
+    /// </summary>
+    /// <value>The algorithm.</value>
     public required string Algorithm { get; init; }
+    /// <summary>
+    /// Gets or sets the key size.
+    /// </summary>
+    /// <value>The key size.</value>
     public int KeySize { get; init; }
+    /// <summary>
+    /// Gets or sets the context.
+    /// </summary>
+    /// <value>The context.</value>
     public required string Context { get; init; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether approved.
+    /// </summary>
+    /// <value>The is approved.</value>
     public bool IsApproved { get; set; }
-    public List<string> SecurityIssues { get; } = [];
-    public List<string> Recommendations { get; } = [];
+    /// <summary>
+    /// Gets or sets the security issues.
+    /// </summary>
+    /// <value>The security issues.</value>
+    public IList<string> SecurityIssues { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>
@@ -592,7 +627,15 @@ public sealed class SignatureAlgorithmValidationResult
 /// </summary>
 internal sealed class CachedSignatureValidation
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; init; }
+    /// <summary>
+    /// Gets or sets the validation time.
+    /// </summary>
+    /// <value>The validation time.</value>
     public DateTimeOffset ValidationTime { get; init; }
 }
 

@@ -26,22 +26,22 @@ public class SecurityScanResult
     /// <summary>
     /// Gets the critical vulnerabilities found.
     /// </summary>
-    public List<SecurityVulnerability> CriticalVulnerabilities { get; } = [];
+    public IList<SecurityVulnerability> CriticalVulnerabilities { get; } = [];
 
     /// <summary>
     /// Gets the high-risk vulnerabilities found.
     /// </summary>
-    public List<SecurityVulnerability> HighRiskVulnerabilities { get; } = [];
+    public IList<SecurityVulnerability> HighRiskVulnerabilities { get; } = [];
 
     /// <summary>
     /// Gets the medium-risk vulnerabilities found.
     /// </summary>
-    public List<SecurityVulnerability> MediumRiskVulnerabilities { get; } = [];
+    public IList<SecurityVulnerability> MediumRiskVulnerabilities { get; } = [];
 
     /// <summary>
     /// Gets the low-risk vulnerabilities found.
     /// </summary>
-    public List<SecurityVulnerability> LowRiskVulnerabilities { get; } = [];
+    public IList<SecurityVulnerability> LowRiskVulnerabilities { get; } = [];
 
     /// <summary>
     /// Gets all vulnerabilities found.
@@ -64,7 +64,7 @@ public class SecurityScanResult
     /// <summary>
     /// Gets the scan errors.
     /// </summary>
-    public List<string> ScanErrors { get; } = [];
+    public IList<string> ScanErrors { get; } = [];
 
     /// <summary>
     /// Gets or sets the scan duration.
@@ -79,5 +79,5 @@ public class SecurityScanResult
     /// <summary>
     /// Gets or sets the error messages from the scan.
     /// </summary>
-    public List<string> ErrorMessages { get; set; } = [];
+    public IList<string> ErrorMessages { get; } = [];
 }

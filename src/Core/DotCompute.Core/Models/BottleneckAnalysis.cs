@@ -18,6 +18,6 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets optimization suggestions to address the bottleneck.
         /// </summary>
-        public List<string> Suggestions { get; set; } = [];
+        public IList<string> Suggestions { get; } = [];
     }
 }

@@ -40,6 +40,12 @@ internal sealed class CryptographicAuditor : IDisposable
         ["AUTHENTICATION_FAILURE"] = SecurityEventCategory.SecurityIncident,
         ["UNAUTHORIZED_ACCESS"] = SecurityEventCategory.SecurityIncident
     };
+    /// <summary>
+    /// Initializes a new instance of the CryptographicAuditor class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="auditLogPath">The audit log path.</param>
 
     public CryptographicAuditor(
         ILogger<CryptographicAuditor> logger,
@@ -436,7 +442,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return [.. events.OrderBy(e => e.Timestamp)];
     }
 
-    private static List<string> GenerateSecurityRecommendations(List<SecurityEvent> events)
+    private static List<string> GenerateSecurityRecommendations(IReadOnlyList<SecurityEvent> events)
     {
         var recommendations = new List<string>();
 
@@ -461,7 +467,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return recommendations;
     }
 
-    private static SecurityMetrics CalculateSecurityMetrics(List<SecurityEvent> events)
+    private static SecurityMetrics CalculateSecurityMetrics(IReadOnlyList<SecurityEvent> events)
     {
         return new SecurityMetrics
         {
@@ -476,7 +482,7 @@ internal sealed class CryptographicAuditor : IDisposable
         };
     }
 
-    private static double CalculateAverageResponseTime(List<SecurityEvent> events)
+    private static double CalculateAverageResponseTime(IReadOnlyList<SecurityEvent> events)
     {
         var operationsWithTiming = events.Where(e => e.AdditionalData?.Contains("ExecutionTimeMs") == true).ToList();
         if (!operationsWithTiming.Any())
@@ -489,7 +495,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return 100.0; // Placeholder
     }
 
-    private static double CalculateSecurityScore(List<SecurityEvent> events)
+    private static double CalculateSecurityScore(IReadOnlyList<SecurityEvent> events)
     {
         if (events.Count == 0)
         {
@@ -506,7 +512,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private static string ConvertToCsv(List<SecurityEvent> events)
+    private static string ConvertToCsv(IReadOnlyList<SecurityEvent> events)
     {
         var csv = new StringBuilder();
         _ = csv.AppendLine("EventId,Timestamp,EventType,Severity,Category,Description,UserId,SessionId");
@@ -520,7 +526,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return csv.ToString();
     }
 
-    private static string ConvertToXml(List<SecurityEvent> events)
+    private static string ConvertToXml(IReadOnlyList<SecurityEvent> events)
     {
         // Simplified XML conversion - in practice, use XmlDocument or XElement
         var xml = new StringBuilder();
@@ -544,6 +550,9 @@ internal sealed class CryptographicAuditor : IDisposable
     private static string? GetSourceAddress()
         // In a real implementation, this would extract the source IP address
         => "localhost";
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -565,6 +574,9 @@ internal sealed class CryptographicAuditor : IDisposable
         }
     }
 }
+/// <summary>
+/// An security event severity enumeration.
+/// </summary>
 
 // Supporting classes and enums
 public enum SecurityEventSeverity
@@ -574,6 +586,9 @@ public enum SecurityEventSeverity
     High = 3,
     Critical = 4
 }
+/// <summary>
+/// An security event category enumeration.
+/// </summary>
 
 public enum SecurityEventCategory
 {
@@ -584,6 +599,9 @@ public enum SecurityEventCategory
     Configuration,
     SecurityIncident
 }
+/// <summary>
+/// An audit export format enumeration.
+/// </summary>
 
 public enum AuditExportFormat
 {
@@ -591,46 +609,179 @@ public enum AuditExportFormat
     Csv,
     Xml
 }
+/// <summary>
+/// A class that represents security event.
+/// </summary>
 
 public class SecurityEvent
 {
+    /// <summary>
+    /// Gets or sets the event identifier.
+    /// </summary>
+    /// <value>The event id.</value>
     public required string EventId { get; set; }
+    /// <summary>
+    /// Gets or sets the event type.
+    /// </summary>
+    /// <value>The event type.</value>
     public required string EventType { get; set; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public SecurityEventSeverity Severity { get; set; }
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    /// <value>The category.</value>
     public SecurityEventCategory Category { get; set; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the user identifier.
+    /// </summary>
+    /// <value>The user id.</value>
     public string? UserId { get; set; }
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
+    /// <value>The session id.</value>
     public string? SessionId { get; set; }
+    /// <summary>
+    /// Gets or sets the source address.
+    /// </summary>
+    /// <value>The source address.</value>
     public string? SourceAddress { get; set; }
+    /// <summary>
+    /// Gets or sets the process identifier.
+    /// </summary>
+    /// <value>The process id.</value>
     public int ProcessId { get; set; }
+    /// <summary>
+    /// Gets or sets the thread identifier.
+    /// </summary>
+    /// <value>The thread id.</value>
     public int ThreadId { get; set; }
+    /// <summary>
+    /// Gets or sets the additional data.
+    /// </summary>
+    /// <value>The additional data.</value>
     public string? AdditionalData { get; set; }
 }
+/// <summary>
+/// A class that represents security audit report.
+/// </summary>
 
 public class SecurityAuditReport
 {
+    /// <summary>
+    /// Gets or sets the report identifier.
+    /// </summary>
+    /// <value>The report id.</value>
     public required string ReportId { get; set; }
+    /// <summary>
+    /// Gets or sets the generation time.
+    /// </summary>
+    /// <value>The generation time.</value>
     public DateTimeOffset GenerationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTimeOffset StartTime { get; set; }
+    /// <summary>
+    /// Gets or sets the end time.
+    /// </summary>
+    /// <value>The end time.</value>
     public DateTimeOffset EndTime { get; set; }
+    /// <summary>
+    /// Gets or sets the total events.
+    /// </summary>
+    /// <value>The total events.</value>
     public int TotalEvents { get; set; }
-    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; set; } = [];
-    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; set; } = [];
-    public Dictionary<string, int> EventsByType { get; set; } = [];
-    public List<SecurityEvent> SecurityIncidents { get; set; } = [];
-    public List<string> RecommendationsGenerated { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the events by severity.
+    /// </summary>
+    /// <value>The events by severity.</value>
+    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; } = [];
+    /// <summary>
+    /// Gets or sets the events by category.
+    /// </summary>
+    /// <value>The events by category.</value>
+    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; } = [];
+    /// <summary>
+    /// Gets or sets the events by type.
+    /// </summary>
+    /// <value>The events by type.</value>
+    public Dictionary<string, int> EventsByType { get; } = [];
+    /// <summary>
+    /// Gets or sets the security incidents.
+    /// </summary>
+    /// <value>The security incidents.</value>
+    public IList<SecurityEvent> SecurityIncidents { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations generated.
+    /// </summary>
+    /// <value>The recommendations generated.</value>
+    public IList<string> RecommendationsGenerated { get; } = [];
+    /// <summary>
+    /// Gets or sets the security metrics.
+    /// </summary>
+    /// <value>The security metrics.</value>
     public SecurityMetrics? SecurityMetrics { get; set; }
 }
+/// <summary>
+/// A class that represents security metrics.
+/// </summary>
 
 public class SecurityMetrics
 {
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public int TotalOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the successful operations.
+    /// </summary>
+    /// <value>The successful operations.</value>
     public int SuccessfulOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the failed operations.
+    /// </summary>
+    /// <value>The failed operations.</value>
     public int FailedOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the security incidents.
+    /// </summary>
+    /// <value>The security incidents.</value>
     public int SecurityIncidents { get; set; }
+    /// <summary>
+    /// Gets or sets the key management operations.
+    /// </summary>
+    /// <value>The key management operations.</value>
     public int KeyManagementOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the cryptographic operations.
+    /// </summary>
+    /// <value>The cryptographic operations.</value>
     public int CryptographicOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the average response time.
+    /// </summary>
+    /// <value>The average response time.</value>
     public double AverageResponseTime { get; set; }
+    /// <summary>
+    /// Gets or sets the security score.
+    /// </summary>
+    /// <value>The security score.</value>
     public double SecurityScore { get; set; }
 }

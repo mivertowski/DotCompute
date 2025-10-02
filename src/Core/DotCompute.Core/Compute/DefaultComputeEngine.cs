@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Compute.Options;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Diagnostics;
+using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -18,10 +19,30 @@ namespace DotCompute.Core.Compute
     /// </summary>
     internal class KernelSource(string name, string code, KernelLanguage language, string entryPoint, string[]? dependencies = null) : IKernelSource
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+        /// <summary>
+        /// Gets or sets the code.
+        /// </summary>
+        /// <value>The code.</value>
         public string Code { get; } = code ?? throw new ArgumentNullException(nameof(code));
+        /// <summary>
+        /// Gets or sets the language.
+        /// </summary>
+        /// <value>The language.</value>
         public KernelLanguage Language { get; } = language;
+        /// <summary>
+        /// Gets or sets the entry point.
+        /// </summary>
+        /// <value>The entry point.</value>
         public string EntryPoint { get; } = entryPoint ?? "main";
+        /// <summary>
+        /// Gets or sets the dependencies.
+        /// </summary>
+        /// <value>The dependencies.</value>
         public string[] Dependencies { get; } = dependencies ?? [];
     }
 
@@ -276,7 +297,7 @@ namespace DotCompute.Core.Compute
                     try
                     {
                         // Handle wildcard patterns
-                        if (pathPattern.Contains('*'))
+                        if (pathPattern.Contains('*', StringComparison.OrdinalIgnoreCase))
                         {
                             var directory = Path.GetDirectoryName(pathPattern) ?? "";
                             var pattern = Path.GetFileName(pathPattern);
@@ -419,6 +440,10 @@ namespace DotCompute.Core.Compute
                 return false;
             }
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

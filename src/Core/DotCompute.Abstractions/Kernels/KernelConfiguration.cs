@@ -30,7 +30,7 @@ public class KernelConfiguration
     /// A dictionary containing kernel-specific options such as grid dimensions,
     /// block dimensions, shared memory size, and other execution parameters.
     /// </value>
-    public Dictionary<string, object> Options { get; set; } = [];
+    public Dictionary<string, object> Options { get; } = [];
 
 
     /// <summary>

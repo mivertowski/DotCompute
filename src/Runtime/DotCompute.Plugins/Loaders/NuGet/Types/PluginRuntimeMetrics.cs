@@ -51,5 +51,5 @@ public class PluginRuntimeMetrics
     /// Gets or sets custom metrics specific to the plugin.
     /// Plugin-defined performance indicators.
     /// </summary>
-    public Dictionary<string, object> CustomMetrics { get; set; } = [];
+    public Dictionary<string, object> CustomMetrics { get; } = [];
 }

@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
 {
     /// <summary>
+    /// An cuda device attribute enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA device attribute enumeration
     /// </summary>
     public enum CudaDeviceAttribute : uint

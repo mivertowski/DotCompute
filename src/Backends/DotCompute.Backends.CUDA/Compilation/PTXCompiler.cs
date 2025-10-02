@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 
@@ -239,11 +240,11 @@ internal static class PTXCompiler
         foreach (var line in lines)
         {
             var trimmedLine = line.Trim();
-            if (trimmedLine.StartsWith("extern \"C\" __global__") ||
-                trimmedLine.StartsWith("__global__"))
+            if (trimmedLine.StartsWith("extern \"C\" __global__", StringComparison.OrdinalIgnoreCase) ||
+                trimmedLine.StartsWith("__global__", StringComparison.OrdinalIgnoreCase))
             {
                 // Extract function name
-                var parenIndex = trimmedLine.IndexOf('(');
+                var parenIndex = trimmedLine.IndexOf('(', StringComparison.CurrentCulture);
                 if (parenIndex > 0)
                 {
                     var beforeParen = trimmedLine[..parenIndex];

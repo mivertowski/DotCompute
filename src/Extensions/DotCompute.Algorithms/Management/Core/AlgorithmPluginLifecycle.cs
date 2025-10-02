@@ -533,12 +533,12 @@ public sealed class PluginHealthResult
     /// <summary>
     /// Gets the list of health issues (critical problems).
     /// </summary>
-    public List<string> HealthIssues { get; } = [];
+    public IList<string> HealthIssues { get; } = [];
 
     /// <summary>
     /// Gets the list of health warnings (non-critical concerns).
     /// </summary>
-    public List<string> HealthWarnings { get; } = [];
+    public IList<string> HealthWarnings { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory usage in bytes.

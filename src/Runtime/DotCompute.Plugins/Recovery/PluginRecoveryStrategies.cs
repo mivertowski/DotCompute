@@ -7,6 +7,7 @@ using System.Reflection;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using RecoveryResult = DotCompute.Abstractions.Interfaces.Recovery.RecoveryResult;
+using System;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -22,6 +23,12 @@ public sealed class PluginRecoveryStrategies : IDisposable
     private readonly ConcurrentDictionary<string, IsolatedPluginContainer> _isolatedPlugins;
     private readonly SemaphoreSlim _recoveryLock;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginRecoveryStrategies class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="failureAnalyzer">The failure analyzer.</param>
+    /// <param name="config">The config.</param>
 
     public PluginRecoveryStrategies(
         ILogger<PluginRecoveryStrategies> logger,
@@ -316,7 +323,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
     public PluginRecoveryStrategy? GetMostEffectiveStrategy(string pluginId)
     {
         var pluginStrategies = _strategyMetrics
-            .Where(kvp => kvp.Key.StartsWith($"{pluginId}-"))
+            .Where(kvp => kvp.Key.StartsWith($"{pluginId}-", StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(kvp => kvp.Value.SuccessRate)
             .ThenBy(kvp => kvp.Value.AverageExecutionTime)
             .FirstOrDefault();
@@ -539,6 +546,9 @@ public sealed class PluginRecoveryStrategies : IDisposable
         await Task.Delay(10, cancellationToken);
         _logger.LogWarning("Plugin {PluginId} marked as permanently failed: {Reason}", pluginId, reason);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -570,10 +580,30 @@ public sealed class PluginRecoveryStrategies : IDisposable
 /// </summary>
 public sealed record StrategyEffectiveness
 {
+    /// <summary>
+    /// Gets or sets the total attempts.
+    /// </summary>
+    /// <value>The total attempts.</value>
     public int TotalAttempts { get; init; }
+    /// <summary>
+    /// Gets or sets the successful attempts.
+    /// </summary>
+    /// <value>The successful attempts.</value>
     public int SuccessfulAttempts { get; init; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the last used.
+    /// </summary>
+    /// <value>The last used.</value>
     public DateTimeOffset LastUsed { get; init; }
 }
 

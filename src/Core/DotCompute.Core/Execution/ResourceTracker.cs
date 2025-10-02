@@ -11,11 +11,21 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ResourceTracker : IAsyncDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the ResourceTracker class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public ResourceTracker(ILogger logger)
     {
         _logger = logger;
         _deviceUsage = [];
     }
+    /// <summary>
+    /// Gets track execution start asynchronously.
+    /// </summary>
+    /// <param name="devices">The devices.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask TrackExecutionStartAsync(IAccelerator[] devices, CancellationToken cancellationToken)
     {
@@ -32,6 +42,11 @@ public class ResourceTracker : IAsyncDisposable
         _logger.LogTrace("Started resource tracking for {DeviceCount} devices", devices.Length);
         await ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets track execution end asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask TrackExecutionEndAsync(CancellationToken cancellationToken = default)
     {
@@ -48,8 +63,16 @@ public class ResourceTracker : IAsyncDisposable
 
         await ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets the resource usage.
+    /// </summary>
+    /// <returns>The resource usage.</returns>
 
     public Dictionary<string, DeviceResourceUsage> GetResourceUsage() => new(_deviceUsage);
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

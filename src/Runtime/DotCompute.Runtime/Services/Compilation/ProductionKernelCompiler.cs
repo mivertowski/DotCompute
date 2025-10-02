@@ -11,6 +11,7 @@ using DotCompute.Runtime.Services.Statistics.Compilation;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System;
 
 namespace DotCompute.Runtime.Services.Compilation;
 
@@ -23,8 +24,16 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     private readonly ConcurrentDictionary<string, WeakReference<ProductionCompiledKernel>> _kernelCache = new();
     private readonly KernelCompilerStatistics _statistics = new();
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
 
     public string Name => "Production Kernel Compiler";
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
 
 
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
@@ -35,6 +44,10 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         { "SupportsDebugging", false },
         { "Version", "1.0.0" }
     };
+    /// <summary>
+    /// Gets or sets the supported source types.
+    /// </summary>
+    /// <value>The supported source types.</value>
 
     public IReadOnlyList<KernelLanguage> SupportedSourceTypes => new KernelLanguage[]
     {
@@ -44,12 +57,23 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         KernelLanguage.HLSL,
         KernelLanguage.Metal
     };
+    /// <summary>
+    /// Initializes a new instance of the ProductionKernelCompiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public ProductionKernelCompiler(ILogger<ProductionKernelCompiler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInfoMessage($"Production kernel compiler initialized with support for {string.Join(", ", SupportedSourceTypes)}");
     }
+    /// <summary>
+    /// Gets compile asynchronously.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
@@ -95,6 +119,11 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
         }
     }
+    /// <summary>
+    /// Validates the .
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <returns>The result of the operation.</returns>
 
     public UnifiedValidationResult Validate(KernelDefinition definition)
     {
@@ -125,7 +154,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         if (definition.Code != null && definition.Code.Length > 0)
         {
             var sourceCode = definition.Code;
-            if (sourceCode.Contains("while(true)") || sourceCode.Contains("for(;;)"))
+            if (sourceCode.Contains("while(true)", StringComparison.OrdinalIgnoreCase) || sourceCode.Contains("for(;;)", StringComparison.OrdinalIgnoreCase))
             {
                 warnings.Add("Infinite loops detected - ensure proper termination conditions");
             }
@@ -149,6 +178,12 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
         return result;
     }
+    /// <summary>
+    /// Validates the async.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async ValueTask<UnifiedValidationResult> ValidateAsync(KernelDefinition definition, CancellationToken cancellationToken = default)
@@ -465,6 +500,9 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         var kernel = await CompileAsync(kernelDef, accelerator, cancellationToken);
         return (kernelDef.Name, kernel);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

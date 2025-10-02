@@ -13,44 +13,71 @@ namespace DotCompute.Core.Security.Models;
 public sealed class SanitizerStatistics
 {
     /// <summary>
+    /// The total allocations.
+    /// </summary>
+    /// <summary>
     /// Gets or sets the total number of allocations performed.
     /// </summary>
     public long TotalAllocations;
+    /// <summary>
+    /// The total deallocations.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the total number of deallocations performed.
     /// </summary>
     public long TotalDeallocations;
+    /// <summary>
+    /// The total bytes allocated.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the total bytes allocated.
     /// </summary>
     public long TotalBytesAllocated;
+    /// <summary>
+    /// The total bytes freed.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the total bytes freed.
     /// </summary>
     public long TotalBytesFreed;
+    /// <summary>
+    /// The active allocations.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the current number of active allocations.
     /// </summary>
     public int ActiveAllocations;
+    /// <summary>
+    /// The total violations.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the total number of security violations detected.
     /// </summary>
     public long TotalViolations;
+    /// <summary>
+    /// The corruption detections.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the number of memory corruption incidents detected.
     /// </summary>
     public long CorruptionDetections;
+    /// <summary>
+    /// The double free attempts.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the number of double-free attempts blocked.
     /// </summary>
     public long DoubleFreeAttempts;
+    /// <summary>
+    /// The use after free attempts.
+    /// </summary>
 
     /// <summary>
     /// Gets or sets the number of use-after-free attempts blocked.

@@ -5,6 +5,7 @@ using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
 
 namespace DotCompute.Core.Logging;
 
@@ -36,6 +37,11 @@ public sealed class LogEnricher : IDisposable
         new(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)
     ];
+    /// <summary>
+    /// Initializes a new instance of the LogEnricher class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public LogEnricher(ILogger<LogEnricher> logger, IOptions<LogEnricherOptions> options)
     {
@@ -497,7 +503,7 @@ public sealed class LogEnricher : IDisposable
         foreach (var item in _contextualData)
         {
             // Skip internal context items
-            if (item.Key.StartsWith("correlation_") || item.Key.StartsWith("device_"))
+            if (item.Key.StartsWith("correlation_", StringComparison.OrdinalIgnoreCase) || item.Key.StartsWith("device_", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -592,12 +598,12 @@ public sealed class LogEnricher : IDisposable
     private static bool IsSensitivePropertyName(string propertyName)
     {
         var lowerName = propertyName.ToLowerInvariant();
-        return lowerName.Contains("password") ||
-               lowerName.Contains("secret") ||
-               lowerName.Contains("token") ||
-               lowerName.Contains("key") ||
-               lowerName.Contains("credential") ||
-               lowerName.Contains("auth");
+        return lowerName.Contains("password", StringComparison.CurrentCulture) ||
+               lowerName.Contains("secret", StringComparison.CurrentCulture) ||
+               lowerName.Contains("token", StringComparison.CurrentCulture) ||
+               lowerName.Contains("key", StringComparison.CurrentCulture) ||
+               lowerName.Contains("credential", StringComparison.CurrentCulture) ||
+               lowerName.Contains("auth", StringComparison.CurrentCulture);
     }
 
     private static string HashString(string input)
@@ -680,6 +686,9 @@ public sealed class LogEnricher : IDisposable
             throw new ObjectDisposedException(nameof(LogEnricher));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -694,16 +703,42 @@ public sealed class LogEnricher : IDisposable
         _threadLocalContext?.Dispose();
     }
 }
+/// <summary>
+/// A class that represents log enricher options.
+/// </summary>
 
 // Supporting data structures and enums
 public sealed class LogEnricherOptions
 {
+    /// <summary>
+    /// Gets or sets the enable sensitive data redaction.
+    /// </summary>
+    /// <value>The enable sensitive data redaction.</value>
     public bool EnableSensitiveDataRedaction { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the context retention hours.
+    /// </summary>
+    /// <value>The context retention hours.</value>
     public int ContextRetentionHours { get; set; } = 24;
+    /// <summary>
+    /// Gets or sets the enable performance context.
+    /// </summary>
+    /// <value>The enable performance context.</value>
     public bool EnablePerformanceContext { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the enable security context.
+    /// </summary>
+    /// <value>The enable security context.</value>
     public bool EnableSecurityContext { get; set; } = true;
-    public List<string> AdditionalSensitivePatterns { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the additional sensitive patterns.
+    /// </summary>
+    /// <value>The additional sensitive patterns.</value>
+    public IList<string> AdditionalSensitivePatterns { get; } = [];
 }
+/// <summary>
+/// An context scope enumeration.
+/// </summary>
 
 public enum ContextScope
 {
@@ -711,29 +746,86 @@ public enum ContextScope
     Thread,
     Request
 }
+/// <summary>
+/// A class that represents correlation context.
+/// </summary>
 
 public sealed class CorrelationContext
 {
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string CorrelationId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public string? OperationName { get; set; }
+    /// <summary>
+    /// Gets or sets the user identifier.
+    /// </summary>
+    /// <value>The user id.</value>
     public string? UserId { get; set; }
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
+    /// <value>The session id.</value>
     public string? SessionId { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents device context.
+/// </summary>
 
 public sealed class DeviceContext
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the device type.
+    /// </summary>
+    /// <value>The device type.</value>
     public string DeviceType { get; set; } = string.Empty;
-    public Dictionary<string, object> Capabilities { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
+    public Dictionary<string, object> Capabilities { get; } = [];
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
 }
+/// <summary>
+/// A class that represents kernel compilation info.
+/// </summary>
 
 
 
 public sealed class KernelCompilationInfo
 {
+    /// <summary>
+    /// Gets or sets the compilation time.
+    /// </summary>
+    /// <value>The compilation time.</value>
     public TimeSpan CompilationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization level.
+    /// </summary>
+    /// <value>The optimization level.</value>
     public string OptimizationLevel { get; set; } = string.Empty;
-    public Dictionary<string, object> CompilerFlags { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the compiler flags.
+    /// </summary>
+    /// <value>The compiler flags.</value>
+    public Dictionary<string, object> CompilerFlags { get; } = [];
 }

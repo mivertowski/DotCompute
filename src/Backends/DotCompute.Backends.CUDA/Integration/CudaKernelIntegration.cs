@@ -28,6 +28,11 @@ public sealed class CudaKernelIntegration : IDisposable
     private readonly Timer _optimizationTimer;
     private readonly object _statsLock = new();
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaKernelIntegration class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaKernelIntegration(CudaContext context, ILogger logger)
     {
@@ -458,6 +463,9 @@ public sealed class CudaKernelIntegration : IDisposable
             _logger.LogWarning(ex, "Error during periodic optimization");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -491,19 +499,59 @@ public sealed class CudaKernelIntegration : IDisposable
 /// </summary>
 public sealed class KernelExecutionStats
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public int TotalExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>The successful executions.</value>
     public int SuccessfulExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the total execution time.
+    /// </summary>
+    /// <value>The total execution time.</value>
     public TimeSpan TotalExecutionTime { get; set; }
+    /// <summary>
+    /// Gets or sets the fastest execution.
+    /// </summary>
+    /// <value>The fastest execution.</value>
     public TimeSpan FastestExecution { get; set; }
+    /// <summary>
+    /// Gets or sets the slowest execution.
+    /// </summary>
+    /// <value>The slowest execution.</value>
     public TimeSpan SlowestExecution { get; set; }
+    /// <summary>
+    /// Gets or sets the first execution.
+    /// </summary>
+    /// <value>The first execution.</value>
     public DateTimeOffset FirstExecution { get; init; }
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
     public DateTimeOffset LastExecution { get; set; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
 
 
     public TimeSpan AverageExecutionTime
 
         => TotalExecutions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalExecutions) : TimeSpan.Zero;
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
 
 
     public double SuccessRate

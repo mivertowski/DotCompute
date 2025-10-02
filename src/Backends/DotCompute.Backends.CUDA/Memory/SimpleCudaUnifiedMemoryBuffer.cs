@@ -534,6 +534,10 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             private readonly IntPtr _ptr = ptr;
             private readonly int _length = length;
+            /// <summary>
+            /// Gets the span.
+            /// </summary>
+            /// <returns>The span.</returns>
 
             public override Span<TElement> GetSpan()
             {
@@ -542,6 +546,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     return new Span<TElement>(_ptr.ToPointer(), _length);
                 }
             }
+            /// <summary>
+            /// Gets pin.
+            /// </summary>
+            /// <param name="elementIndex">The element index.</param>
+            /// <returns>The result of the operation.</returns>
 
             public override MemoryHandle Pin(int elementIndex = 0)
             {
@@ -558,6 +567,9 @@ namespace DotCompute.Backends.CUDA.Memory
                     return new MemoryHandle(ptr.ToPointer(), pinnable: this);
                 }
             }
+            /// <summary>
+            /// Performs unpin.
+            /// </summary>
 
             public override void Unpin()
             {

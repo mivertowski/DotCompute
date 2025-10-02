@@ -35,5 +35,5 @@ public class PerformanceSummary
     /// Gets performance recommendations.
     /// Suggested optimizations based on the analysis.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 }

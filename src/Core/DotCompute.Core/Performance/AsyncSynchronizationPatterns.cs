@@ -196,6 +196,9 @@ public sealed class AsyncChannel<T> : IDisposable
         }
 
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -331,6 +334,9 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         }
 
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -457,6 +463,9 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         }
 
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -486,14 +495,37 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
             }
         }
     }
+    /// <summary>
+    /// A pool statistics structure.
+    /// </summary>
 
     public readonly record struct PoolStatistics
     {
+        /// <summary>
+        /// Gets or sets the available resources.
+        /// </summary>
+        /// <value>The available resources.</value>
         public int AvailableResources { get; init; }
+        /// <summary>
+        /// Gets or sets the total resources.
+        /// </summary>
+        /// <value>The total resources.</value>
         public int TotalResources { get; init; }
+        /// <summary>
+        /// Gets or sets the waiting requests.
+        /// </summary>
+        /// <value>The waiting requests.</value>
         public int WaitingRequests { get; init; }
+        /// <summary>
+        /// Gets or sets the used resources.
+        /// </summary>
+        /// <value>The used resources.</value>
 
         public int UsedResources => TotalResources - AvailableResources;
+        /// <summary>
+        /// Gets or sets the utilization rate.
+        /// </summary>
+        /// <value>The utilization rate.</value>
         public double UtilizationRate => TotalResources > 0 ? (double)UsedResources / TotalResources : 0.0;
     }
 }
@@ -522,6 +554,9 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// Implicitly converts to the resource type.
     /// </summary>
     public static implicit operator TResource(PooledResource<TResource> pooled) => pooled._resource;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose() => _pool?.Return(_resource);
 }
@@ -617,6 +652,9 @@ public sealed class AsyncBarrier : IDisposable
         }
 
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

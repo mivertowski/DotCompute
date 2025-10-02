@@ -8,6 +8,14 @@ namespace DotCompute.Plugins.Loaders.Internal;
 /// </summary>
 internal class CodeAnalysisResult
 {
-    public List<SuspiciousCodePattern> SuspiciousPatterns { get; } = [];
-    public List<string> AnalysisErrors { get; } = [];
+    /// <summary>
+    /// Gets or sets the suspicious patterns.
+    /// </summary>
+    /// <value>The suspicious patterns.</value>
+    public IList<SuspiciousCodePattern> SuspiciousPatterns { get; } = [];
+    /// <summary>
+    /// Gets or sets the analysis errors.
+    /// </summary>
+    /// <value>The analysis errors.</value>
+    public IList<string> AnalysisErrors { get; } = [];
 }

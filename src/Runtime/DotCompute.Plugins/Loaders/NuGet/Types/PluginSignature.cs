@@ -57,5 +57,5 @@ public class PluginSignature
     /// Gets or sets validation errors.
     /// Any errors encountered during signature validation.
     /// </summary>
-    public List<string> ValidationErrors { get; set; } = [];
+    public IList<string> ValidationErrors { get; } = [];
 }

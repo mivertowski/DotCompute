@@ -23,7 +23,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
     private readonly Dictionary<string, string> _variableMapping = [];
     private readonly HashSet<string> _threadgroupVariables = [];
     private readonly HashSet<string> _constantVariables = [];
-    private int _indentLevel = 0;
+    private int _indentLevel;
 
     /// <summary>
     /// Generates the complete Metal kernel including headers and function signature.
@@ -154,7 +154,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Check if it's read-only
 
-        var isReadOnly = csharpType.Contains("ReadOnlySpan", StringComparison.Ordinal) ||
+        var isReadOnly = csharpType.IndexOf("ReadOnlySpan", StringComparison.Ordinal) >= 0 ||
                          paramName.StartsWith("input", StringComparison.Ordinal) ||
                          paramName.StartsWith("source", StringComparison.Ordinal);
 

@@ -44,10 +44,25 @@ public static class AlgorithmSelector
 
         int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
     {
+        /// <summary>
+        /// The simd threshold.
+        /// </summary>
         public readonly int SimdThreshold = simdThreshold;
+        /// <summary>
+        /// The parallel threshold.
+        /// </summary>
         public readonly int ParallelThreshold = parallelThreshold;
+        /// <summary>
+        /// The cache oblivious threshold.
+        /// </summary>
         public readonly int CacheObliviousThreshold = cacheObliviousThreshold;
+        /// <summary>
+        /// The strassen threshold.
+        /// </summary>
         public readonly int StrassenThreshold = strassenThreshold;
+        /// <summary>
+        /// The blocked threshold.
+        /// </summary>
         public readonly int BlockedThreshold = blockedThreshold;
     }
 
@@ -59,10 +74,25 @@ public static class AlgorithmSelector
 
         double throughputMFLOPS, int inputSize)
     {
+        /// <summary>
+        /// The algorithm.
+        /// </summary>
         public readonly string Algorithm = algorithm;
+        /// <summary>
+        /// The execution time.
+        /// </summary>
         public readonly TimeSpan ExecutionTime = executionTime;
+        /// <summary>
+        /// The throughput m f l o p s.
+        /// </summary>
         public readonly double ThroughputMFLOPS = throughputMFLOPS;
+        /// <summary>
+        /// The input size.
+        /// </summary>
         public readonly int InputSize = inputSize;
+        /// <summary>
+        /// The timestamp.
+        /// </summary>
         public readonly DateTime Timestamp = DateTime.UtcNow;
     }
 
@@ -594,9 +624,9 @@ public static class AlgorithmSelector
 
     // Placeholder methods for threshold updates
 
-    private static void UpdateMatrixMultiplyThresholds(List<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
-    private static void UpdateFFTThresholds(List<(FFTStrategy Strategy, int Size, double Performance)> results) { }
-    private static void UpdateBLASThresholds(BLASOperation operation, List<(BLASStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateMatrixMultiplyThresholds(IReadOnlyList<(MatrixMultiplyStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateFFTThresholds(IReadOnlyList<(FFTStrategy Strategy, int Size, double Performance)> results) { }
+    private static void UpdateBLASThresholds(BLASOperation operation, IReadOnlyList<(BLASStrategy Strategy, int Size, double Performance)> results) { }
 
 
     #endregion

@@ -41,5 +41,5 @@ public class KernelExecutionOptions
     /// <summary>
     /// Gets or sets additional backend-specific options.
     /// </summary>
-    public Dictionary<string, object> CustomOptions { get; set; } = [];
+    public Dictionary<string, object> CustomOptions { get; } = [];
 }

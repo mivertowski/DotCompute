@@ -19,12 +19,32 @@ namespace DotCompute.Algorithms.Plugins
 internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelManager>
 {
     private readonly ILogger _innerLogger = innerLogger;
+        /// <summary>
+        /// Gets begin scope.
+        /// </summary>
+        /// <typeparam name="TState">The TState type parameter.</typeparam>
+        /// <param name="state">The state.</param>
+        /// <returns>The result of the operation.</returns>
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         => _innerLogger.BeginScope(state);
+    /// <summary>
+    /// Determines whether enabled.
+    /// </summary>
+    /// <param name="logLevel">The log level.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool IsEnabled(LogLevel logLevel)
         => _innerLogger.IsEnabled(logLevel);
+    /// <summary>
+    /// Performs log.
+    /// </summary>
+    /// <typeparam name="TState">The TState type parameter.</typeparam>
+    /// <param name="logLevel">The log level.</param>
+    /// <param name="eventId">The event identifier.</param>
+    /// <param name="state">The state.</param>
+    /// <param name="exception">The exception.</param>
+    /// <param name="formatter">The formatter.</param>
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         => _innerLogger.Log(logLevel, eventId, state, exception, formatter);

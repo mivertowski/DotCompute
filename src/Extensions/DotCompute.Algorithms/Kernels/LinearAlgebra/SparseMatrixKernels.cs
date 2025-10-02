@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms.Kernels.LinearAlgebra;
 public static class SparseMatrixKernels
 {
     /// <summary>
+    /// The open c l sparse matrix vector kernel.
+    /// </summary>
+    /// <summary>
     /// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
     /// </summary>
     public const string OpenCLSparseMatrixVectorKernel = @"
@@ -36,6 +39,9 @@ __kernel void csr_matrix_vector_multiply(
 
     y[row] = sum;
 }";
+    /// <summary>
+    /// The c u d a sparse matrix kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for sparse matrix operations with warp-level optimizations.

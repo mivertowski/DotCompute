@@ -11,11 +11,22 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ExecutionProfiler : IAsyncDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the ExecutionProfiler class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public ExecutionProfiler(ILogger logger)
     {
         _logger = logger;
         _profilingData = [];
     }
+    /// <summary>
+    /// Gets start profiling asynchronously.
+    /// </summary>
+    /// <param name="executionId">The execution identifier.</param>
+    /// <param name="strategy">The strategy.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
     {
@@ -30,6 +41,12 @@ public class ExecutionProfiler : IAsyncDisposable
         _logger.LogTrace("Started profiling for execution {ExecutionId} with strategy {Strategy}", executionId, strategy);
         await ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets stop profiling asynchronously.
+    /// </summary>
+    /// <param name="executionId">The execution identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask<ExecutionProfilingData> StopProfilingAsync(Guid executionId, CancellationToken cancellationToken)
     {
@@ -54,6 +71,10 @@ public class ExecutionProfiler : IAsyncDisposable
             Events = []
         };
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

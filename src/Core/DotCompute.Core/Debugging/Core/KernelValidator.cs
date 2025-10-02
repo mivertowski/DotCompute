@@ -438,7 +438,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with tolerance-based comparison.
     /// </summary>
-    private bool CompareWithTolerance(List<KernelExecutionResult> results, List<ResultDifference> differences)
+    private bool CompareWithTolerance(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
     {
         // Simplified comparison logic - would be more sophisticated in practice
         var baseline = results[0];
@@ -467,7 +467,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with exact comparison.
     /// </summary>
-    private bool CompareExact(List<KernelExecutionResult> results, List<ResultDifference> differences)
+    private bool CompareExact(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
     {
         var baseline = results[0];
 
@@ -494,7 +494,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with statistical comparison.
     /// </summary>
-    private bool CompareStatistical(List<KernelExecutionResult> results, List<ResultDifference> differences)
+    private bool CompareStatistical(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
         // Simplified statistical comparison
         => CompareWithTolerance(results, differences);
 
@@ -597,6 +597,9 @@ public sealed class KernelValidator(
         var fastest = results.OrderBy(r => r.ExecutionTime).First();
         return fastest.BackendType;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

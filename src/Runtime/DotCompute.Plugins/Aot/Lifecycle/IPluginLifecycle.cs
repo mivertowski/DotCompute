@@ -46,16 +46,25 @@ public interface IPluginLifecycle : IDisposable
     /// <param name="pluginId">The plugin ID to unregister.</param>
     /// <returns>True if the plugin was unregistered; false if not found.</returns>
     public bool UnregisterPlugin(string pluginId);
+    /// <summary>
+    /// Occurs when plugin loaded.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin is successfully loaded and registered.
     /// </summary>
     public event EventHandler<PluginLifecycleEventArgs>? PluginLoaded;
+    /// <summary>
+    /// Occurs when plugin unloaded.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin is unloaded and disposed.
     /// </summary>
     public event EventHandler<PluginLifecycleEventArgs>? PluginUnloaded;
+    /// <summary>
+    /// Occurs when lifecycle error.
+    /// </summary>
 
     /// <summary>
     /// Event raised when a plugin lifecycle operation encounters an error.

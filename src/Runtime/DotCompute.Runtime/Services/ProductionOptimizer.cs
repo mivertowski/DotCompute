@@ -20,8 +20,16 @@ namespace DotCompute.Runtime.Services
         private readonly Timer _optimizationTimer;
         private readonly OptimizationStatistics _statistics = new();
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
 
         public OptimizationStatistics Statistics => _statistics;
+        /// <summary>
+        /// Initializes a new instance of the ProductionOptimizer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public ProductionOptimizer(ILogger<ProductionOptimizer> logger)
         {
@@ -161,7 +169,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes execution time patterns and suggests optimizations.
         /// </summary>
-        private static void AnalyzeExecutionTimePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
+        private static void AnalyzeExecutionTimePatterns(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
         {
             if (profile.ExecutionCount < 5)
             {
@@ -207,7 +215,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes memory usage patterns and suggests optimizations.
         /// </summary>
-        private static void AnalyzeMemoryUsagePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
+        private static void AnalyzeMemoryUsagePatterns(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
         {
             if (profile.ExecutionCount < 3)
             {
@@ -252,7 +260,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes work group size optimization opportunities.
         /// </summary>
-        private static void AnalyzeWorkGroupSizeOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
+        private static void AnalyzeWorkGroupSizeOptimization(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
         {
             var workGroupSizes = profile.GetWorkGroupSizes();
             if (workGroupSizes.Count < 2)
@@ -291,7 +299,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes compilation optimization opportunities.
         /// </summary>
-        private static void AnalyzeCompilationOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
+        private static void AnalyzeCompilationOptimization(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
         {
             var compilationTimes = profile.GetCompilationTimes();
             if (compilationTimes.Count == 0)
@@ -416,6 +424,9 @@ namespace DotCompute.Runtime.Services
                 _logger.LogErrorMessage(ex, "Error during optimization analysis");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -439,11 +450,31 @@ namespace DotCompute.Runtime.Services
         internal long _totalOptimizationsApplied;
         internal long _totalAnalysisRuns;
         internal long _totalRecommendationsGenerated;
+        /// <summary>
+        /// Gets or sets the total recorded executions.
+        /// </summary>
+        /// <value>The total recorded executions.</value>
 
         public long TotalRecordedExecutions => _totalRecordedExecutions;
+        /// <summary>
+        /// Gets or sets the total optimizations applied.
+        /// </summary>
+        /// <value>The total optimizations applied.</value>
         public long TotalOptimizationsApplied => _totalOptimizationsApplied;
+        /// <summary>
+        /// Gets or sets the total analysis runs.
+        /// </summary>
+        /// <value>The total analysis runs.</value>
         public long TotalAnalysisRuns => _totalAnalysisRuns;
+        /// <summary>
+        /// Gets or sets the total recommendations generated.
+        /// </summary>
+        /// <value>The total recommendations generated.</value>
         public long TotalRecommendationsGenerated => _totalRecommendationsGenerated;
+        /// <summary>
+        /// Gets or sets the average recommendations per analysis.
+        /// </summary>
+        /// <value>The average recommendations per analysis.</value>
         public double AverageRecommendationsPerAnalysis => _totalAnalysisRuns == 0 ? 0.0 : (double)_totalRecommendationsGenerated / _totalAnalysisRuns;
     }
 
@@ -452,20 +483,55 @@ namespace DotCompute.Runtime.Services
     /// </summary>
     public sealed class KernelExecutionMetrics
     {
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public TimeSpan ExecutionTime { get; init; }
+        /// <summary>
+        /// Gets or sets the memory usage m b.
+        /// </summary>
+        /// <value>The memory usage m b.</value>
         public double MemoryUsageMB { get; init; }
+        /// <summary>
+        /// Gets or sets the work group size.
+        /// </summary>
+        /// <value>The work group size.</value>
         public WorkGroupSize WorkGroupSize { get; init; }
+        /// <summary>
+        /// Gets or sets the compilation time.
+        /// </summary>
+        /// <value>The compilation time.</value>
         public TimeSpan CompilationTime { get; init; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     }
+    /// <summary>
+    /// A class that represents kernel performance profile.
+    /// </summary>
 
     public sealed class KernelPerformanceProfile(string kernelName)
     {
         private readonly List<KernelExecutionMetrics> _executions = [];
         private readonly object _lock = new();
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
 
         public string KernelName { get; } = kernelName;
+        /// <summary>
+        /// Gets or sets the execution count.
+        /// </summary>
+        /// <value>The execution count.</value>
         public int ExecutionCount { get; private set; }
+        /// <summary>
+        /// Performs add execution.
+        /// </summary>
+        /// <param name="metrics">The metrics.</param>
 
         public void AddExecution(KernelExecutionMetrics metrics)
         {
@@ -475,6 +541,10 @@ namespace DotCompute.Runtime.Services
                 ExecutionCount++;
             }
         }
+        /// <summary>
+        /// Gets the execution times.
+        /// </summary>
+        /// <returns>The execution times.</returns>
 
         public List<TimeSpan> GetExecutionTimes()
         {
@@ -483,6 +553,10 @@ namespace DotCompute.Runtime.Services
                 return [.. _executions.Select(e => e.ExecutionTime)];
             }
         }
+        /// <summary>
+        /// Gets the memory usages.
+        /// </summary>
+        /// <returns>The memory usages.</returns>
 
         public List<double> GetMemoryUsages()
         {
@@ -491,6 +565,10 @@ namespace DotCompute.Runtime.Services
                 return [.. _executions.Select(e => e.MemoryUsageMB)];
             }
         }
+        /// <summary>
+        /// Gets the work group sizes.
+        /// </summary>
+        /// <returns>The work group sizes.</returns>
 
         public List<WorkGroupSize> GetWorkGroupSizes()
         {
@@ -499,6 +577,10 @@ namespace DotCompute.Runtime.Services
                 return [.. _executions.Select(e => e.WorkGroupSize)];
             }
         }
+        /// <summary>
+        /// Gets the compilation times.
+        /// </summary>
+        /// <returns>The compilation times.</returns>
 
         public List<TimeSpan> GetCompilationTimes()
         {
@@ -508,6 +590,9 @@ namespace DotCompute.Runtime.Services
             }
         }
     }
+    /// <summary>
+    /// An optimization type enumeration.
+    /// </summary>
 
     // Additional supporting types for optimization system...
     public enum OptimizationType
@@ -518,6 +603,9 @@ namespace DotCompute.Runtime.Services
         WorkGroupOptimization,
         CompilationOptimization
     }
+    /// <summary>
+    /// An optimization priority enumeration.
+    /// </summary>
 
     public enum OptimizationPriority
     {
@@ -526,45 +614,99 @@ namespace DotCompute.Runtime.Services
         High,
         Critical
     }
+    /// <summary>
+    /// A class that represents optimization recommendation.
+    /// </summary>
 
     public record OptimizationRecommendation(
         OptimizationType Type,
         OptimizationPriority Priority,
         string Description,
         IReadOnlyDictionary<string, object> Parameters);
+    /// <summary>
+    /// A class that represents optimization recommendations.
+    /// </summary>
 
     public record OptimizationRecommendations(
         string KernelName,
         IReadOnlyList<OptimizationRecommendation> Recommendations)
     {
+        /// <summary>
+        /// Gets no data.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <returns>The result of the operation.</returns>
         public static OptimizationRecommendations NoData(string kernelName)
             => new(kernelName, Array.Empty<OptimizationRecommendation>());
     }
+    /// <summary>
+    /// A class that represents optimization result.
+    /// </summary>
 
     public record OptimizationResult(
         string KernelName,
         IReadOnlyList<AppliedOptimization> AppliedOptimizations);
+    /// <summary>
+    /// A class that represents applied optimization.
+    /// </summary>
 
     public record AppliedOptimization(
         OptimizationType Type,
         bool IsSuccess,
         string Message)
     {
+        /// <summary>
+        /// Gets success.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="message">The message.</param>
+        /// <returns>The result of the operation.</returns>
         public static AppliedOptimization Success(OptimizationType type, string message)
             => new(type, true, message);
+        /// <summary>
+        /// Gets failed.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="message">The message.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static AppliedOptimization Failed(OptimizationType type, string message)
             => new(type, false, message);
+        /// <summary>
+        /// Gets skipped.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="reason">The reason.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static AppliedOptimization Skipped(OptimizationType type, string reason)
             => new(type, false, $"Skipped: {reason}");
     }
+    /// <summary>
+    /// A class that represents optimization strategy.
+    /// </summary>
 
     public sealed class OptimizationStrategy(string kernelName)
     {
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; } = kernelName;
+        /// <summary>
+        /// Gets or sets the enable automatic optimization.
+        /// </summary>
+        /// <value>The enable automatic optimization.</value>
         public bool EnableAutomaticOptimization { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the minimum priority.
+        /// </summary>
+        /// <value>The minimum priority.</value>
         public OptimizationPriority MinimumPriority { get; set; } = OptimizationPriority.Medium;
+        /// <summary>
+        /// Gets or sets the optimization interval.
+        /// </summary>
+        /// <value>The optimization interval.</value>
         public TimeSpan OptimizationInterval { get; set; } = TimeSpan.FromMinutes(10);
     }
 }

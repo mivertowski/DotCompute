@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda resource type enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA resource type enumeration
     /// </summary>
     public enum CudaResourceType : uint
@@ -13,6 +16,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Linear = 2,
         Pitch2D = 3
     }
+    /// <summary>
+    /// An cuda resource view format enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA resource view format enumeration

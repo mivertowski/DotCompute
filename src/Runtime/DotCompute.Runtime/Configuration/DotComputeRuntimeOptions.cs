@@ -14,6 +14,9 @@ namespace DotCompute.Runtime.Configuration;
 public class DotComputeRuntimeOptions
 {
     /// <summary>
+    /// The section name.
+    /// </summary>
+    /// <summary>
     /// The configuration section name
     /// </summary>
     public const string SectionName = "DotCompute";
@@ -87,7 +90,7 @@ public class DotComputeRuntimeOptions
     /// <summary>
     /// Gets or sets custom provider configuration
     /// </summary>
-    public Dictionary<string, object> ProviderSettings { get; set; } = [];
+    public Dictionary<string, object> ProviderSettings { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable graceful degradation when accelerators fail
@@ -106,6 +109,9 @@ public class DotComputeRuntimeOptions
 public class DotComputePluginOptions
 {
     /// <summary>
+    /// The section name.
+    /// </summary>
+    /// <summary>
     /// The configuration section name
     /// </summary>
     public const string SectionName = "DotCompute:Plugins";
@@ -118,7 +124,7 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan
     /// </summary>
-    public List<string> PluginDirectories { get; set; } = ["plugins"];
+    public IList<string> PluginDirectories { get; set; } = ["plugins"];
 
     /// <summary>
     /// Gets or sets whether to enable plugin isolation
@@ -152,12 +158,12 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the trusted plugin publishers
     /// </summary>
-    public List<string> TrustedPublishers { get; set; } = [];
+    public IList<string> TrustedPublishers { get; } = [];
 
     /// <summary>
     /// Gets or sets plugin-specific configuration
     /// </summary>
-    public Dictionary<string, object> PluginSettings { get; set; } = [];
+    public Dictionary<string, object> PluginSettings { get; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable dependency injection for plugins
@@ -262,7 +268,7 @@ public class PerformanceMonitoringOptions
     /// <summary>
     /// Gets or sets custom performance thresholds
     /// </summary>
-    public Dictionary<string, double> PerformanceThresholds { get; set; } = [];
+    public Dictionary<string, double> PerformanceThresholds { get; } = [];
 }
 
 /// <summary>
@@ -317,6 +323,12 @@ public enum ServiceLifetime
 /// </summary>
 public class RuntimeOptionsValidator : IValidateOptions<DotComputeRuntimeOptions>
 {
+    /// <summary>
+    /// Validates the .
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="options">The options.</param>
+    /// <returns>The result of the operation.</returns>
     public ValidateOptionsResult Validate(string? name, DotComputeRuntimeOptions options)
     {
         var failures = new List<string>();

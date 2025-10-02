@@ -527,25 +527,25 @@ public sealed class MetalDiagnosticInfo
     /// <summary>
     /// Current resource usage
     /// </summary>
-    public Dictionary<MetalResourceType, long> ResourceUsage { get; set; } = [];
+    public Dictionary<MetalResourceType, long> ResourceUsage { get; } = [];
 
 
     /// <summary>
     /// Performance metrics
     /// </summary>
-    public Dictionary<string, object> PerformanceMetrics { get; set; } = [];
+    public Dictionary<string, object> PerformanceMetrics { get; } = [];
 
 
     /// <summary>
     /// Recent errors and warnings
     /// </summary>
-    public List<MetalDiagnosticMessage> Messages { get; set; } = [];
+    public IList<MetalDiagnosticMessage> Messages { get; } = [];
 
 
     /// <summary>
     /// System information
     /// </summary>
-    public Dictionary<string, string> SystemInfo { get; set; } = [];
+    public Dictionary<string, string> SystemInfo { get; } = [];
 
 
     /// <summary>
@@ -619,7 +619,7 @@ public sealed class MetalDiagnosticMessage
     /// <summary>
     /// Additional context data
     /// </summary>
-    public Dictionary<string, object> Context { get; set; } = [];
+    public Dictionary<string, object> Context { get; } = [];
 }
 
 #endregion
@@ -652,13 +652,13 @@ public abstract class MetalOperationDescriptor
     /// <summary>
     /// Dependencies on other operations
     /// </summary>
-    public List<string> Dependencies { get; set; } = [];
+    public IList<string> Dependencies { get; } = [];
 
 
     /// <summary>
     /// Expected resource usage
     /// </summary>
-    public Dictionary<MetalResourceType, long> ResourceUsage { get; set; } = [];
+    public Dictionary<MetalResourceType, long> ResourceUsage { get; } = [];
 
 
     /// <summary>
@@ -670,7 +670,7 @@ public abstract class MetalOperationDescriptor
     /// <summary>
     /// Custom metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -699,19 +699,19 @@ public sealed class MetalComputeOperationDescriptor : MetalOperationDescriptor
     /// <summary>
     /// Input buffers for the compute operation
     /// </summary>
-    public List<IntPtr> InputBuffers { get; set; } = [];
+    public IList<IntPtr> InputBuffers { get; } = [];
 
 
     /// <summary>
     /// Output buffers for the compute operation
     /// </summary>
-    public List<IntPtr> OutputBuffers { get; set; } = [];
+    public IList<IntPtr> OutputBuffers { get; } = [];
 
 
     /// <summary>
     /// Constant parameters
     /// </summary>
-    public Dictionary<int, object> Constants { get; set; } = [];
+    public Dictionary<int, object> Constants { get; } = [];
 }
 
 /// <summary>

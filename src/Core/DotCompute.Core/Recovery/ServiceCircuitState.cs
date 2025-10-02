@@ -107,7 +107,7 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
     /// <summary>
     /// Additional metrics and metadata
     /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = [];
+    public Dictionary<string, object> Metrics { get; } = [];
 
     private readonly CircuitBreakerConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -297,6 +297,9 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
             ActiveServices = 1
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose()
@@ -305,6 +308,10 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
 
 
         => Metrics.Clear();
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
         => $"{ServiceName}: {State}, Failures={ConsecutiveFailures}, " +
@@ -398,6 +405,10 @@ public class CircuitStateSummary
     /// Total time circuit has been open
     /// </summary>
     public TimeSpan TotalOpenTime { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
         => $"{ServiceName}: {State}, {FailureRate:P1} failure rate, {TotalRequests} requests";

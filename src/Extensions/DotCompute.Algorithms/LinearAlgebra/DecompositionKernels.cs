@@ -9,6 +9,9 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class DecompositionKernels
 {
+    /// <summary>
+    /// The open c l householder vector kernel.
+    /// </summary>
     #region Householder Transformation Kernels
 
     /// <summary>
@@ -89,6 +92,9 @@ __kernel void compute_householder_vector_parallel(
         }
     }
 }";
+    /// <summary>
+    /// The open c l householder transform kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for applying Householder transformation with optimized memory access.
@@ -139,6 +145,9 @@ __kernel void apply_householder_transform_optimized(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a jacobi s v d kernel.
+    /// </summary>
 
     #endregion
 
@@ -216,6 +225,9 @@ extern ""C"" __global__ void jacobi_svd_rotation_cuda(
         V[j * n + tid] = s * v_it + c * v_jt;
     }
 }";
+    /// <summary>
+    /// The open c l singular values kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for computing singular values extraction.
@@ -244,6 +256,9 @@ __kernel void extract_singular_values(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a cholesky kernel.
+    /// </summary>
 
     #endregion
 
@@ -308,6 +323,9 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The open c l l u decomposition kernel.
+    /// </summary>
 
     #endregion
 
@@ -377,6 +395,9 @@ __kernel void lu_decomposition_step(
         }
     }
 }";
+    /// <summary>
+    /// The open c l q r shift kernel.
+    /// </summary>
 
     #endregion
 
@@ -451,6 +472,9 @@ __kernel void qr_algorithm_shift(
         eigenvalues[tid] = A[tid * n + tid];
     }
 }";
+    /// <summary>
+    /// The c u d a givens rotation kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for Givens rotation application in QR algorithm.

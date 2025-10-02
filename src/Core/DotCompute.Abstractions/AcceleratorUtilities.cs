@@ -10,8 +10,96 @@ namespace DotCompute.Abstractions
     /// <summary>
     /// Utility methods for common accelerator patterns to reduce code duplication.
     /// </summary>
-    public static class AcceleratorUtilities
+    public static partial class AcceleratorUtilities
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 3001,
+            Level = LogLevel.Debug,
+            Message = "Compiling kernel '{KernelName}' for {AcceleratorType}")]
+        private static partial void LogCompilingKernel(ILogger logger, string kernelName, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3002,
+            Level = LogLevel.Debug,
+            Message = "Successfully compiled kernel '{KernelName}'")]
+        private static partial void LogKernelCompiled(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 3003,
+            Level = LogLevel.Error,
+            Message = "Failed to compile kernel '{KernelName}' for {AcceleratorType}")]
+        private static partial void LogKernelCompilationFailed(ILogger logger, Exception ex, string kernelName, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3004,
+            Level = LogLevel.Trace,
+            Message = "Synchronizing {AcceleratorType} accelerator")]
+        private static partial void LogSynchronizingAccelerator(ILogger logger, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3005,
+            Level = LogLevel.Trace,
+            Message = "{AcceleratorType} accelerator synchronized")]
+        private static partial void LogAcceleratorSynchronized(ILogger logger, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3006,
+            Level = LogLevel.Error,
+            Message = "Failed to synchronize {AcceleratorType} accelerator")]
+        private static partial void LogSynchronizationFailed(ILogger logger, Exception ex, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3007,
+            Level = LogLevel.Information,
+            Message = "Initializing {AcceleratorType} accelerator{DeviceInfo}")]
+        private static partial void LogInitializingAccelerator(ILogger logger, string acceleratorType, string deviceInfo);
+
+        [LoggerMessage(
+            EventId = 3008,
+            Level = LogLevel.Information,
+            Message = "{AcceleratorType} accelerator initialized successfully")]
+        private static partial void LogAcceleratorInitialized(ILogger logger, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3009,
+            Level = LogLevel.Error,
+            Message = "Failed to initialize {AcceleratorType} accelerator")]
+        private static partial void LogInitializationFailed(ILogger logger, Exception ex, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3010,
+            Level = LogLevel.Information,
+            Message = "Disposing {AcceleratorType} accelerator")]
+        private static partial void LogDisposingAccelerator(ILogger logger, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3011,
+            Level = LogLevel.Warning,
+            Message = "Error during synchronization before disposal of {AcceleratorType}")]
+        private static partial void LogDisposalSynchronizationError(ILogger logger, Exception ex, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3012,
+            Level = LogLevel.Error,
+            Message = "Error during {AcceleratorType} accelerator disposal")]
+        private static partial void LogDisposalError(ILogger logger, Exception ex, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3013,
+            Level = LogLevel.Information,
+            Message = "Disposing {AcceleratorType} accelerator (synchronous)")]
+        private static partial void LogDisposingAcceleratorSync(ILogger logger, string acceleratorType);
+
+        [LoggerMessage(
+            EventId = 3014,
+            Level = LogLevel.Error,
+            Message = "Error during synchronous {AcceleratorType} accelerator disposal")]
+        private static partial void LogSyncDisposalError(ILogger logger, Exception ex, string acceleratorType);
+
+        #endregion
+
         /// <summary>
         /// Common pattern for compiling kernels with error handling and logging.
         /// </summary>
@@ -36,19 +124,17 @@ namespace DotCompute.Abstractions
 
             options ??= new CompilationOptions();
 
-            logger.LogDebug("Compiling kernel '{KernelName}' for {AcceleratorType}",
-                definition.Name, acceleratorType);
+            LogCompilingKernel(logger, definition.Name, acceleratorType);
 
             try
             {
                 var compiledKernel = await compileFunc(definition, options, cancellationToken).ConfigureAwait(false);
-                logger.LogDebug("Successfully compiled kernel '{KernelName}'", definition.Name);
+                LogKernelCompiled(logger, definition.Name);
                 return compiledKernel;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to compile kernel '{KernelName}' for {AcceleratorType}",
-                    definition.Name, acceleratorType);
+                LogKernelCompilationFailed(logger, ex, definition.Name, acceleratorType);
                 throw;
             }
         }
@@ -71,15 +157,15 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogTrace("Synchronizing {AcceleratorType} accelerator", acceleratorType);
+                LogSynchronizingAccelerator(logger, acceleratorType);
 
                 await syncFunc(cancellationToken).ConfigureAwait(false);
 
-                logger.LogTrace("{AcceleratorType} accelerator synchronized", acceleratorType);
+                LogAcceleratorSynchronized(logger, acceleratorType);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to synchronize {AcceleratorType} accelerator", acceleratorType);
+                LogSynchronizationFailed(logger, ex, acceleratorType);
                 throw;
             }
         }
@@ -103,17 +189,16 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogInformation("Initializing {AcceleratorType} accelerator{DeviceInfo}",
-                    acceleratorType, deviceInfo != null ? $" ({deviceInfo})" : "");
+                LogInitializingAccelerator(logger, acceleratorType, deviceInfo != null ? $" ({deviceInfo})" : "");
 
                 var result = initFunc();
 
-                logger.LogInformation("{AcceleratorType} accelerator initialized successfully", acceleratorType);
+                LogAcceleratorInitialized(logger, acceleratorType);
                 return result;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to initialize {AcceleratorType} accelerator", acceleratorType);
+                LogInitializationFailed(logger, ex, acceleratorType);
                 throw new InvalidOperationException($"Failed to initialize {acceleratorType} accelerator", ex);
             }
         }
@@ -135,7 +220,7 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogInformation("Disposing {AcceleratorType} accelerator", acceleratorType);
+                LogDisposingAccelerator(logger, acceleratorType);
 
                 // Synchronize before disposal if function provided
                 if (syncFunc != null)
@@ -146,8 +231,7 @@ namespace DotCompute.Abstractions
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Error during synchronization before disposal of {AcceleratorType}",
-                            acceleratorType);
+                        LogDisposalSynchronizationError(logger, ex, acceleratorType);
                     }
                 }
 
@@ -156,7 +240,7 @@ namespace DotCompute.Abstractions
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during {AcceleratorType} accelerator disposal", acceleratorType);
+                LogDisposalError(logger, ex, acceleratorType);
             }
         }
 
@@ -177,7 +261,7 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogInformation("Disposing {AcceleratorType} accelerator (synchronous)", acceleratorType);
+                LogDisposingAcceleratorSync(logger, acceleratorType);
 
                 // Synchronize before disposal if action provided
                 if (syncAction != null)
@@ -188,8 +272,7 @@ namespace DotCompute.Abstractions
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Error during synchronization before disposal of {AcceleratorType}",
-                            acceleratorType);
+                        LogDisposalSynchronizationError(logger, ex, acceleratorType);
                     }
                 }
 
@@ -198,7 +281,7 @@ namespace DotCompute.Abstractions
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during synchronous {AcceleratorType} accelerator disposal", acceleratorType);
+                LogSyncDisposalError(logger, ex, acceleratorType);
             }
         }
 

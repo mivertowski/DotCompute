@@ -422,27 +422,79 @@ namespace DotCompute.Plugins.Core
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Healthy;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.CPU";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "CPU Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => GetCpuBackendDescription();
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Minimal implementation for AOT
         }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -454,6 +506,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -465,6 +522,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -476,12 +538,30 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate() => new() { IsValid = true };
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
 
         public PluginMetrics GetMetrics() => new();
 
@@ -528,6 +608,9 @@ namespace DotCompute.Plugins.Core
 
             return string.Join(" | ", capabilities);
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -545,27 +628,79 @@ namespace DotCompute.Plugins.Core
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Unknown;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.CUDA";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "CUDA Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "NVIDIA CUDA GPU compute backend";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Minimal implementation for AOT
         }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -581,6 +716,11 @@ namespace DotCompute.Plugins.Core
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(PluginState.Loaded, _state));
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -597,6 +737,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -608,6 +753,10 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate()
         {
@@ -618,12 +767,29 @@ namespace DotCompute.Plugins.Core
             }
             return result;
         }
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
 
         public PluginMetrics GetMetrics() => new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -715,29 +881,81 @@ namespace DotCompute.Plugins.Core
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Unknown;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.Metal";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "Metal Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Apple Metal GPU compute backend";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         private void OnStateChanged(PluginStateChangedEventArgs e) => StateChanged?.Invoke(this, e);
         private void OnErrorOccurred(PluginErrorEventArgs e) => ErrorOccurred?.Invoke(this, e);
         private void OnHealthChanged(PluginHealthChangedEventArgs e) => HealthChanged?.Invoke(this, e);
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Minimal implementation for AOT
         }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -760,6 +978,11 @@ namespace DotCompute.Plugins.Core
             }
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -776,6 +999,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -787,6 +1015,10 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate()
         {
@@ -797,12 +1029,29 @@ namespace DotCompute.Plugins.Core
             }
             return result;
         }
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
 
         public PluginMetrics GetMetrics() => new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -826,24 +1075,76 @@ namespace DotCompute.Plugins.Core
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Unknown;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.OpenCL";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "OpenCL Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Cross-platform OpenCL compute backend";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -864,6 +1165,11 @@ namespace DotCompute.Plugins.Core
             }
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -880,6 +1186,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -891,6 +1202,10 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate()
         {
@@ -901,10 +1216,27 @@ namespace DotCompute.Plugins.Core
             }
             return result;
         }
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
         public PluginMetrics GetMetrics() => new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -926,24 +1258,76 @@ namespace DotCompute.Plugins.Core
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Unknown;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.DirectCompute";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "DirectCompute Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Windows DirectCompute backend using DirectX compute shaders";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -964,6 +1348,11 @@ namespace DotCompute.Plugins.Core
             }
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -980,6 +1369,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -991,6 +1385,10 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate()
         {
@@ -1001,10 +1399,27 @@ namespace DotCompute.Plugins.Core
             }
             return result;
         }
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
         public PluginMetrics GetMetrics() => new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -1026,24 +1441,76 @@ namespace DotCompute.Plugins.Core
         private PluginState _state = PluginState.Loaded;
         private PluginHealth _health = PluginHealth.Unknown;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 #pragma warning restore IDE0044
 
         public string Id => "DotCompute.Backends.Vulkan";
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name => "Vulkan Compute Backend";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "Cross-platform Vulkan compute backend";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Gets or sets the author.
+        /// </summary>
+        /// <value>The author.</value>
         public string Author => "DotCompute Team";
+        /// <summary>
+        /// Gets or sets the capabilities.
+        /// </summary>
+        /// <value>The capabilities.</value>
         public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public PluginState State => _state;
+        /// <summary>
+        /// Gets or sets the health.
+        /// </summary>
+        /// <value>The health.</value>
         public PluginHealth Health => _health;
+        /// <summary>
+        /// Occurs when state changed.
+        /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        /// <summary>
+        /// Occurs when error occurred.
+        /// </summary>
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        /// <summary>
+        /// Occurs when health changed.
+        /// </summary>
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        /// <summary>
+        /// Performs configure services.
+        /// </summary>
+        /// <param name="services">The services.</param>
+        /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+        /// <summary>
+        /// Initializes the async.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
@@ -1064,6 +1531,11 @@ namespace DotCompute.Plugins.Core
             }
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets start asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
@@ -1080,6 +1552,11 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets stop asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -1091,6 +1568,10 @@ namespace DotCompute.Plugins.Core
             }
             return Task.CompletedTask;
         }
+        /// <summary>
+        /// Validates the .
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public PluginValidationResult Validate()
         {
@@ -1101,10 +1582,27 @@ namespace DotCompute.Plugins.Core
             }
             return result;
         }
+        /// <summary>
+        /// Gets the configuration schema.
+        /// </summary>
+        /// <returns>The configuration schema.</returns>
 
         public string GetConfigurationSchema() => "{}";
+        /// <summary>
+        /// Gets on configuration changed asynchronously.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
         public PluginMetrics GetMetrics() => new();
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

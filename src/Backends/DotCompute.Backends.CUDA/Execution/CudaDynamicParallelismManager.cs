@@ -30,6 +30,12 @@ namespace DotCompute.Backends.CUDA.Advanced
 
 
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaDynamicParallelismManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="deviceProperties">The device properties.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaDynamicParallelismManager(
             CudaContext context,
@@ -163,6 +169,9 @@ namespace DotCompute.Backends.CUDA.Advanced
 
 
             => arguments.Any(arg => arg.Value is int size && size > 100000);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

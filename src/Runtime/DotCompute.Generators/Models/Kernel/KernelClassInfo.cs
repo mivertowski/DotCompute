@@ -21,5 +21,5 @@ public sealed class KernelClassInfo
     /// <summary>
     /// Gets or sets the list of kernel method names in this class.
     /// </summary>
-    public List<string> KernelMethodNames { get; set; } = [];
+    public List<string> KernelMethodNames { get; } = [];
 }

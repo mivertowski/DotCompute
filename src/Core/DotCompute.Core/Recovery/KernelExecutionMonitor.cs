@@ -18,12 +18,37 @@ public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger l
     private readonly TimeSpan _timeout = timeout;
     private volatile bool _completed;
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets or sets the kernel identifier.
+    /// </summary>
+    /// <value>The kernel id.</value>
 
     public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public string DeviceId { get; } = deviceId;
+    /// <summary>
+    /// Gets or sets the execution time.
+    /// </summary>
+    /// <value>The execution time.</value>
     public TimeSpan ExecutionTime => DateTimeOffset.UtcNow - _startTime;
+    /// <summary>
+    /// Gets or sets a value indicating whether hanging.
+    /// </summary>
+    /// <value>The is hanging.</value>
     public bool IsHanging => !_completed && ExecutionTime > _timeout;
+    /// <summary>
+    /// Gets or sets a value indicating whether completed.
+    /// </summary>
+    /// <value>The is completed.</value>
     public bool IsCompleted => _completed;
+    /// <summary>
+    /// Determines whether cel async.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
@@ -39,6 +64,11 @@ public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger l
 
         await Task.Delay(100, cancellationToken); // Allow cleanup time
     }
+    /// <summary>
+    /// Gets wait for completion asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task WaitForCompletionAsync(CancellationToken cancellationToken = default)
     {
@@ -47,12 +77,18 @@ public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger l
             await Task.Delay(100, cancellationToken);
         }
     }
+    /// <summary>
+    /// Performs mark completed.
+    /// </summary>
 
     public void MarkCompleted()
     {
         _completed = true;
         _logger.LogDebugMessage("Kernel {KernelId} execution completed in {KernelId, ExecutionTime.TotalMilliseconds}ms");
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

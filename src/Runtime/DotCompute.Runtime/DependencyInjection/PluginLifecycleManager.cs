@@ -24,6 +24,13 @@ public class PluginLifecycleManager(
     private readonly ConcurrentDictionary<string, PluginLifecycleHandlers> _lifecycleHandlers = new();
     private readonly ConcurrentDictionary<string, IServiceScope> _pluginScopes = new();
     private bool _disposed;
+    /// <summary>
+    /// Creates a new plugin async.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <returns>The created plugin async.</returns>
 
     public async Task<T> CreatePluginAsync<T>(Type pluginType, IServiceProvider serviceProvider)
         where T : class
@@ -87,6 +94,12 @@ public class PluginLifecycleManager(
             throw;
         }
     }
+    /// <summary>
+    /// Initializes the plugin async.
+    /// </summary>
+    /// <param name="plugin">The plugin.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task InitializePluginAsync(object plugin, IServiceProvider serviceProvider)
     {
@@ -144,6 +157,11 @@ public class PluginLifecycleManager(
             throw;
         }
     }
+    /// <summary>
+    /// Gets dispose plugin asynchronously.
+    /// </summary>
+    /// <param name="plugin">The plugin.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposePluginAsync(object plugin)
     {
@@ -189,6 +207,11 @@ public class PluginLifecycleManager(
             throw;
         }
     }
+    /// <summary>
+    /// Gets the plugin state.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <returns>The plugin state.</returns>
 
     public PluginLifecycleState GetPluginState(string pluginId)
     {
@@ -196,6 +219,11 @@ public class PluginLifecycleManager(
 
         return _pluginStates.GetValueOrDefault(pluginId, PluginLifecycleState.NotLoaded);
     }
+    /// <summary>
+    /// Performs register lifecycle handlers.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <param name="eventHandlers">The event handlers.</param>
 
     public void RegisterLifecycleHandlers(string pluginId, PluginLifecycleHandlers eventHandlers)
     {
@@ -310,6 +338,9 @@ public class PluginLifecycleManager(
     }
 
     private static string GetPluginId(Type pluginType) => $"{pluginType.Assembly.GetName().Name}::{pluginType.FullName}";
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -373,6 +404,13 @@ public class DefaultPluginFactory(
 {
     private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
     private readonly ILogger<DefaultPluginFactory> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    /// <summary>
+    /// Creates a new async.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <param name="serviceScope">The service scope.</param>
+    /// <returns>The created async.</returns>
 
     public async Task<T> CreateAsync<T>(Type pluginType, IServiceScope serviceScope) where T : class
     {
@@ -402,6 +440,11 @@ public class DefaultPluginFactory(
             throw;
         }
     }
+    /// <summary>
+    /// Determines whether create.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanCreate(Type pluginType)
     {
@@ -431,6 +474,11 @@ public class DefaultPluginFactory(
             return false;
         }
     }
+    /// <summary>
+    /// Gets the required service descriptors.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <returns>The required service descriptors.</returns>
 
     public IEnumerable<ServiceDescriptor> GetRequiredServiceDescriptors(Type pluginType)
     {

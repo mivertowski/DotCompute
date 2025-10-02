@@ -69,12 +69,12 @@ public sealed class ErrorHandlingResult
     /// <summary>
     /// Gets or sets error recovery suggestions.
     /// </summary>
-    public IList<string> RecoverySuggestions { get; set; } = [];
+    public IList<string> RecoverySuggestions { get; } = [];
 
     /// <summary>
     /// Gets or sets metadata associated with the error handling.
     /// </summary>
-    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets the timestamp when error handling was performed.

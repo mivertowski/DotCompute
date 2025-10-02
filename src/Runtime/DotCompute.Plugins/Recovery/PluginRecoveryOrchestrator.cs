@@ -7,6 +7,7 @@ using System.Reflection;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -26,9 +27,22 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     private readonly PluginRecoveryLogger _recoveryLogger;
     private readonly SemaphoreSlim _recoveryLock;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
 
     public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors;
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public override int Priority => 80;
+    /// <summary>
+    /// Initializes a new instance of the PluginRecoveryOrchestrator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public PluginRecoveryOrchestrator(ILogger<PluginRecoveryOrchestrator> logger, PluginRecoveryConfiguration? config = null)
         : base(logger)
@@ -48,6 +62,12 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         Logger.LogInformation("Plugin Recovery Orchestrator initialized with isolation: {Isolation}, auto-restart: {AutoRestart}",
             _config.EnablePluginIsolation, _config.EnableAutoRestart);
     }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public override bool CanHandle(Exception error, PluginRecoveryContext context)
     {
@@ -63,6 +83,14 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
             _ => false
         };
     }
+    /// <summary>
+    /// Gets recover asynchronously.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
         Exception error,
@@ -322,8 +350,8 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     private static bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
     {
         var message = error.Message.ToLowerInvariant();
-        return message.Contains("plugin") ||
-               message.Contains(context.PluginId.ToLowerInvariant()) ||
+        return message.Contains("plugin", StringComparison.CurrentCulture) ||
+               message.Contains(context.PluginId.ToLowerInvariant(), StringComparison.CurrentCulture) ||
                error.StackTrace?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true;
     }
 
@@ -455,6 +483,9 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
             Logger.LogError(ex, "Failed to force stop plugin {PluginId}", pluginId);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

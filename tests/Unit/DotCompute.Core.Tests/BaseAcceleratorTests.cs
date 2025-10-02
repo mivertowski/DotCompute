@@ -10,6 +10,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 
 namespace DotCompute.Core.Tests;
 
@@ -26,6 +27,9 @@ public sealed class BaseAcceleratorTests : IDisposable
     private readonly TestAccelerator _accelerator;
     private readonly List<TestAccelerator> _accelerators = [];
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the BaseAcceleratorTests class.
+    /// </summary>
 
     public BaseAcceleratorTests()
     {
@@ -49,6 +53,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _accelerator = new TestAccelerator(info, _mockMemory.Object, _mockLogger.Object);
         _accelerators.Add(_accelerator);
     }
+    /// <summary>
+    /// Performs constructor_ initializes properties_ correctly.
+    /// </summary>
 
     #region Lifecycle Management Tests
 
@@ -64,6 +71,13 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = _accelerator.IsDisposed.Should().BeFalse();
         _ = _accelerator.Context.Should().NotBeNull();
     }
+    /// <summary>
+    /// Performs constructor_ with various configurations_ initializes correctly.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="driverVersion">The driver version.</param>
+    /// <param name="memorySize">The memory size.</param>
 
 
     [Theory]
@@ -93,6 +107,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeFalse();
         _ = accelerator.InitializeCoreCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Performs constructor_ with null parameters_ throws argument null exception.
+    /// </summary>
 
     [Fact]
     [Trait("TestType", "Lifecycle")]
@@ -107,6 +124,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = act2.Should().Throw<ArgumentNullException>().WithParameterName("memory");
         _ = act3.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
+    /// <summary>
+    /// Gets dispose async_ proper disposal_ cleans up resources.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -131,11 +152,15 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Disposing")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Disposing", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets dispose async_ multiple disposal attempts_ only disposes once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -155,6 +180,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeTrue();
         _ = accelerator.DisposeCallCount.Should().Be(1, "dispose should only be called once");
     }
+    /// <summary>
+    /// Gets concurrent disposal_ thread safety_ disposes only once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -179,6 +208,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeTrue();
         _ = accelerator.DisposeCallCount.Should().Be(1, "only one thread should successfully dispose");
     }
+    /// <summary>
+    /// Performs kernel definition_ with null parameters_ throws argument null exception.
+    /// </summary>
 
     #endregion
 
@@ -193,6 +225,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         Action act = () => new KernelDefinition("", null!, null!);
         _ = act.Should().Throw<ArgumentNullException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ with valid definition_ calls compile kernel core.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -214,6 +250,11 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = _accelerator.LastCompiledDefinition.Should().Be(definition);
         _ = _accelerator.LastCompilationOptions.Should().Be(options);
     }
+    /// <summary>
+    /// Gets compile kernel async_ with different optimization levels_ passes options correctly.
+    /// </summary>
+    /// <param name="optimizationLevel">The optimization level.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -238,6 +279,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = _accelerator.LastCompilationOptions?.OptimizationLevel.Should().Be(optimizationLevel);
     }
+    /// <summary>
+    /// Gets compile kernel async_ with null options_ uses default options.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -257,6 +302,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = _accelerator.LastCompilationOptions.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         _ = _accelerator.LastCompilationOptions.EnableDebugInfo.Should().BeFalse();
     }
+    /// <summary>
+    /// Gets compile kernel async_ invalid kernel code_ throws compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -274,6 +323,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Compilation failed*");
     }
+    /// <summary>
+    /// Gets compile kernel async_ concurrent compilations_ thread safety.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -301,6 +354,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
         _ = _accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1, "should handle concurrent compilations");
     }
+    /// <summary>
+    /// Gets compile kernel async_ compilation caching_ reuses compiled kernels.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -323,6 +380,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = result1.Id.Should().Be(result2.Id, "cached kernels should have same ID");
         _ = accelerator.CacheHitCount.Should().Be(1, "second compilation should hit cache");
     }
+    /// <summary>
+    /// Gets compile kernel async_ with cancellation_ stops compilation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -342,6 +403,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ out of memory_ throws out of memory exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -368,11 +433,15 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to compile", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets compile kernel async_ timeout_ throws timeout exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -392,6 +461,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Gets synchronize async_ after error_ recovers properly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -416,6 +489,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act2 = async () => await accelerator.SynchronizeAsync();
         _ = await act2.Should().NotThrowAsync();
     }
+    /// <summary>
+    /// Performs throw if disposed_ when disposed_ throws object disposed exception.
+    /// </summary>
 
 
     [Fact]
@@ -430,6 +506,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = _accelerator.TestThrowIfDisposed;
         _ = act.Should().Throw<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ when disposed_ throws object disposed exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -445,6 +525,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(definition);
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Gets synchronize async_ when disposed_ throws object disposed exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -459,6 +543,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await _accelerator.SynchronizeAsync();
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
+    /// <summary>
+    /// Performs memory_ property_ returns injected memory manager.
+    /// </summary>
 
     #endregion
 
@@ -473,6 +560,9 @@ public sealed class BaseAcceleratorTests : IDisposable
 
 
         => _accelerator.Memory.Should().Be(_mockMemory.Object);
+    /// <summary>
+    /// Performs memory_ integration_ enforces memory limits.
+    /// </summary>
 
 
     [Fact]
@@ -493,6 +583,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.Info.AvailableMemory.Should().BeGreaterThan(0);
         _ = accelerator.Info.AvailableMemory.Should().BeLessThanOrEqualTo(accelerator.Info.TotalMemory);
     }
+    /// <summary>
+    /// Gets dispose async_ disposes memory manager_ when configured.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -511,6 +605,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.IsDisposed.Should().BeTrue();
         // Memory manager disposal is handled by AcceleratorUtilities
     }
+    /// <summary>
+    /// Gets synchronize async_ calls synchronize core.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -533,11 +631,15 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Trace,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Synchronizing")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Synchronizing", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets synchronize async_ concurrent calls_ thread safety.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -561,6 +663,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = _accelerator.SynchronizeCoreCalled.Should().BeTrue();
         _ = _accelerator.ConcurrentSyncCount.Should().BeGreaterThan(1);
     }
+    /// <summary>
+    /// Gets synchronize async_ with cancellation_ stops operation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -579,6 +685,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await accelerator.SynchronizeAsync(cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Performs log compilation metrics_ logs debug message_ with correct format.
+    /// </summary>
 
     #endregion
 
@@ -604,14 +713,17 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(kernelName) &&
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(kernelName, StringComparison.CurrentCulture) &&
 
-                                             v.ToString()!.Contains("150") &&
-                                             v.ToString()!.Contains("2048")),
+                                             v.ToString()!.Contains("150", StringComparison.CurrentCulture) &&
+                                             v.ToString()!.Contains("2048", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Performs log compilation metrics_ with null byte code size_ logs n a value.
+    /// </summary>
 
 
     [Fact]
@@ -632,11 +744,15 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("N/A")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("N/A", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+    /// <summary>
+    /// Gets compile kernel async_ tracks compilation metrics_ automatically.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -660,6 +776,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.LastCompilationTime.Should().BeLessThan(stopwatch.Elapsed);
         _ = accelerator.CompilationMetricsLogged.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets multiple operations_ track resource usage_ correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -686,6 +806,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.TotalSynchronizations.Should().Be(5);
         _ = accelerator.AverageCompilationTime.Should().BeGreaterThan(TimeSpan.Zero);
     }
+    /// <summary>
+    /// Gets the effective options_ with null options_ returns defaults.
+    /// </summary>
 
     #endregion
 
@@ -704,6 +827,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         _ = options.EnableDebugInfo.Should().BeFalse();
     }
+    /// <summary>
+    /// Gets the effective options_ with provided options_ returns provided options.
+    /// </summary>
 
 
     [Fact]
@@ -727,6 +853,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         _ = options.EnableDebugInfo.Should().BeTrue();
     }
+    /// <summary>
+    /// Initializes the async_ with resource contention_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -757,6 +887,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
         _ = accelerator.ConcurrentCompilationCount.Should().BeGreaterThan(1);
     }
+    /// <summary>
+    /// Gets dispose async_ with pending operations_ waits for completion.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -790,6 +924,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var result = await compilationTask;
         _ = result.Should().NotBeNull();
     }
+    /// <summary>
+    /// Gets initialization_ under memory pressure_ retries and succeeds.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -817,6 +955,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await accelerator.CompileKernelAsync(definition);
         _ = await act.Should().NotThrowAsync();
     }
+    /// <summary>
+    /// Performs constructor_ with invalid accelerator info_ throws argument exception.
+    /// </summary>
 
 
     [Fact]
@@ -841,6 +982,12 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = () => new TestAccelerator(invalidInfo, _mockMemory.Object, _mockLogger.Object);
         _ = act.Should().Throw<ArgumentException>();
     }
+    /// <summary>
+    /// Gets compile kernel async_ with invalid kernel names_ handles correctly.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="description">The description.</param>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -873,6 +1020,10 @@ public sealed class BaseAcceleratorTests : IDisposable
             _ = result.Should().NotBeNull();
         }
     }
+    /// <summary>
+    /// Gets compile kernel async_ with large kernel source_ handles efficiently.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -899,6 +1050,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         // Should complete in reasonable time even for large sources
         _ = stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
+    /// <summary>
+    /// Gets compile kernel async_ with recursive kernel definitions_ handles dependencies.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -928,6 +1083,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = mainResult.Should().NotBeNull();
         _ = _accelerator.TotalCompilations.Should().Be(2);
     }
+    /// <summary>
+    /// Gets compile kernel async_ with preprocessor directives_ processes correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -966,6 +1125,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = result.Name.Should().Be("preprocessor_test");
     }
+    /// <summary>
+    /// Gets compile kernel async_ with optimization level progression_ shows performance improvement.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1014,6 +1177,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         // Higher optimization levels might take more time but should still be reasonable
         _ = compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(10)));
     }
+    /// <summary>
+    /// Gets compile kernel async_ with cache eviction_ handles memory pressure.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1054,6 +1221,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.TotalCompilations.Should().BeGreaterThanOrEqualTo(50);
         _ = accelerator.CacheHitCount.Should().BeGreaterThanOrEqualTo(0); // Some cache hits expected
     }
+    /// <summary>
+    /// Gets compile kernel async_ with transient errors_ retries successfully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -1103,6 +1274,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = attemptCount.Should().Be(3);
     }
+    /// <summary>
+    /// Gets error recovery_ after critical failure_ restores operational state.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1136,6 +1311,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = accelerator.SynchronizeCoreCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets concurrent operations_ with partial failures_ maintains consistency.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1186,6 +1365,11 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = failedResults.Should().HaveCount(5);     // Even numbered operations
         _ = accelerator.CompileKernelCoreCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets operation timeout_ with varying timeouts_ handles correctly.
+    /// </summary>
+    /// <param name="timeoutMs">The timeout ms.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     [Theory]
@@ -1211,6 +1395,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var exception = await act.Should().ThrowAsync<OperationCanceledException>();
         _ = exception.Which.CancellationToken.Should().Be(cts.Token);
     }
+    /// <summary>
+    /// Gets resource exhaustion_ gradual degradation_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1264,6 +1452,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = exceptions.Should().HaveCountGreaterThan(0, "some operations should fail due to resource exhaustion");
         _ = exceptions.Should().AllBeOfType<OutOfMemoryException>();
     }
+    /// <summary>
+    /// Performs memory manager_ allocation tracking_ reports accurate usage.
+    /// </summary>
 
     #endregion
 
@@ -1299,6 +1490,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.Memory.Statistics.TotalMemoryBytes.Should().Be(1024 * 1024 * 1024);
         _ = accelerator.Info.TotalMemory.Should().Be(1024 * 1024 * 1024);
     }
+    /// <summary>
+    /// Gets memory pressure_ during compilation_ triggers garbage collection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1335,6 +1530,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = gcCollected.Should().BeTrue("garbage collection should have been triggered");
         memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets large kernel compilation_ memory allocation_ tracks correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1377,6 +1576,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         memoryManager.Verify(m => m.GetUsedMemory(), Times.AtLeastOnce);
         memoryManager.Verify(m => m.TotalAvailableMemory, Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Gets memory fragmentation_ handles degraded performance.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1420,6 +1623,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         // but should still complete successfully
         _ = compilationTimes.Should().AllSatisfy(t => t.Should().BeLessThan(TimeSpan.FromSeconds(30)));
     }
+    /// <summary>
+    /// Gets synchronize async_ with multiple pending operations_ waits for all.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -1464,6 +1671,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = syncStopwatch.Elapsed.Should().BeGreaterThan(TimeSpan.FromMilliseconds(50));
         _ = accelerator.SynchronizeCoreCalled.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets concurrent synchronization_ multiple threads_ thread safety.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1502,6 +1713,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var totalSpan = times.Last() - times.First();
         _ = totalSpan.Should().BeLessThan(TimeSpan.FromSeconds(2));
     }
+    /// <summary>
+    /// Gets synchronize async_ with cascading cancellation_ propagates correctly.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1535,6 +1750,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = childCts.Token.IsCancellationRequested.Should().BeTrue();
         _ = parentCts.Token.IsCancellationRequested.Should().BeTrue();
     }
+    /// <summary>
+    /// Gets synchronize async_ deadlock prevention_ completes successfully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1571,6 +1790,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var act = async () => await Task.WhenAll(task1, task2);
         _ = await act.Should().CompleteWithinAsync(TimeSpan.FromSeconds(5));
     }
+    /// <summary>
+    /// Gets performance metrics_ resource utilization_ tracks accurately.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -1628,11 +1851,15 @@ public sealed class BaseAcceleratorTests : IDisposable
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("perf_test_")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("perf_test_", StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeast(10));
     }
+    /// <summary>
+    /// Gets throughput metrics_ high volume operations_ maintains performance.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1695,6 +1922,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         var coefficientOfVariation = standardDeviation / averageThroughput;
         _ = coefficientOfVariation.Should().BeLessThan(0.5, "throughput should be relatively stable");
     }
+    /// <summary>
+    /// Gets memory efficiency_ long running operations_ maintains stability.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1752,6 +1983,10 @@ public sealed class BaseAcceleratorTests : IDisposable
         _ = accelerator.TotalCompilations.Should().Be(200); // 20 cycles * 10 operations
         _ = accelerator.TotalSynchronizations.Should().Be(20);
     }
+    /// <summary>
+    /// Gets latency metrics_ response time distribution_ within expected ranges.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     [Fact]
@@ -1827,6 +2062,9 @@ public sealed class BaseAcceleratorTests : IDisposable
         _accelerators.Add(accelerator);
         return accelerator;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose()
@@ -1868,50 +2106,138 @@ public sealed class BaseAcceleratorTests : IDisposable
 
               logger ?? throw new ArgumentNullException(nameof(logger)))
     {
+        /// <summary>
+        /// Gets or sets the compile kernel core called.
+        /// </summary>
+        /// <value>The compile kernel core called.</value>
         // Basic tracking
         public bool CompileKernelCoreCalled { get; private set; }
+        /// <summary>
+        /// Gets or sets the synchronize core called.
+        /// </summary>
+        /// <value>The synchronize core called.</value>
         public bool SynchronizeCoreCalled { get; private set; }
+        /// <summary>
+        /// Gets or sets the initialize core called.
+        /// </summary>
+        /// <value>The initialize core called.</value>
         public bool InitializeCoreCalled { get; private set; }
+        /// <summary>
+        /// Gets or sets the dispose call count.
+        /// </summary>
+        /// <value>The dispose call count.</value>
         public int DisposeCallCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the last compiled definition.
+        /// </summary>
+        /// <value>The last compiled definition.</value>
 
         // Advanced tracking
 
         public KernelDefinition? LastCompiledDefinition { get; private set; }
+        /// <summary>
+        /// Gets or sets the last compilation options.
+        /// </summary>
+        /// <value>The last compilation options.</value>
         public CompilationOptions? LastCompilationOptions { get; private set; }
+        /// <summary>
+        /// Gets or sets the last compilation time.
+        /// </summary>
+        /// <value>The last compilation time.</value>
         public TimeSpan LastCompilationTime { get; private set; }
+        /// <summary>
+        /// Gets or sets the compilation metrics logged.
+        /// </summary>
+        /// <value>The compilation metrics logged.</value>
         public bool CompilationMetricsLogged { get; private set; }
+        /// <summary>
+        /// Gets or sets the concurrent compilation count.
+        /// </summary>
+        /// <value>The concurrent compilation count.</value>
 
         // Concurrency tracking
 
         public int ConcurrentCompilationCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the concurrent sync count.
+        /// </summary>
+        /// <value>The concurrent sync count.</value>
         public int ConcurrentSyncCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the total compilations.
+        /// </summary>
+        /// <value>The total compilations.</value>
 
         // Performance tracking
 
         public int TotalCompilations { get; private set; }
+        /// <summary>
+        /// Gets or sets the total synchronizations.
+        /// </summary>
+        /// <value>The total synchronizations.</value>
         public int TotalSynchronizations { get; private set; }
+        /// <summary>
+        /// Gets or sets the average compilation time.
+        /// </summary>
+        /// <value>The average compilation time.</value>
         public TimeSpan AverageCompilationTime { get; private set; }
+        /// <summary>
+        /// Gets or sets the enable compilation caching.
+        /// </summary>
+        /// <value>The enable compilation caching.</value>
 
         // Caching
 
         public bool EnableCompilationCaching { get; set; }
+        /// <summary>
+        /// Gets or sets the cache hit count.
+        /// </summary>
+        /// <value>The cache hit count.</value>
         public int CacheHitCount { get; private set; }
         private readonly ConcurrentDictionary<string, ICompiledKernel> _kernelCache = new();
+        /// <summary>
+        /// Gets or sets the should throw on compilation.
+        /// </summary>
+        /// <value>The should throw on compilation.</value>
 
         // Error simulation
 
         public bool ShouldThrowOnCompilation { get; set; }
+        /// <summary>
+        /// Gets or sets the should throw out of memory.
+        /// </summary>
+        /// <value>The should throw out of memory.</value>
         public bool ShouldThrowOutOfMemory { get; set; }
+        /// <summary>
+        /// Gets or sets the should throw on synchronize.
+        /// </summary>
+        /// <value>The should throw on synchronize.</value>
         public bool ShouldThrowOnSynchronize { get; set; }
+        /// <summary>
+        /// Gets or sets the compilation delay.
+        /// </summary>
+        /// <value>The compilation delay.</value>
 
         // Timing simulation
 
         public TimeSpan CompilationDelay { get; set; }
+        /// <summary>
+        /// Gets or sets the sync delay.
+        /// </summary>
+        /// <value>The sync delay.</value>
         public TimeSpan SyncDelay { get; set; }
+        /// <summary>
+        /// Gets or sets the enable metrics tracking.
+        /// </summary>
+        /// <value>The enable metrics tracking.</value>
 
         // Feature flags
 
         public bool EnableMetricsTracking { get; set; }
+        /// <summary>
+        /// Gets or sets the enable resource tracking.
+        /// </summary>
+        /// <value>The enable resource tracking.</value>
         public bool EnableResourceTracking { get; set; }
 
         // Performance counters
@@ -2054,6 +2380,9 @@ public sealed class BaseAcceleratorTests : IDisposable
             DisposeCallCount++;
             await base.DisposeCoreAsync();
         }
+        /// <summary>
+        /// Performs simulate dispose.
+        /// </summary>
 
         public void SimulateDispose()
         {
@@ -2062,12 +2391,26 @@ public sealed class BaseAcceleratorTests : IDisposable
                 BindingFlags.NonPublic | BindingFlags.Instance);
             field?.SetValue(this, 1);
         }
+        /// <summary>
+        /// Performs test throw if disposed.
+        /// </summary>
 
         public void TestThrowIfDisposed() => ThrowIfDisposed();
+        /// <summary>
+        /// Gets test get effective options.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public CompilationOptions TestGetEffectiveOptions(CompilationOptions? options)
             => GetEffectiveOptions(options);
+        /// <summary>
+        /// Performs test log compilation metrics.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="compilationTime">The compilation time.</param>
+        /// <param name="byteCodeSize">The byte code size.</param>
 
 
         public void TestLogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize)

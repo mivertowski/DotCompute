@@ -21,6 +21,11 @@ public class RuntimeInitializationService(
     private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
     private readonly DotComputeRuntimeOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     private readonly ILogger<RuntimeInitializationService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    /// <summary>
+    /// Gets start asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -59,6 +64,11 @@ public class RuntimeInitializationService(
             throw;
         }
     }
+    /// <summary>
+    /// Gets stop asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {

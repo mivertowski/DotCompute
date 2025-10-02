@@ -13,22 +13,59 @@ namespace DotCompute.Algorithms.Management.Types
     internal sealed class NuGetLogger(MSLogger logger) : NuGet.Common.ILogger
     {
         private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        /// <summary>
+        /// Performs log debug.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
+        /// <summary>
+        /// Performs log verbose.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
+        /// <summary>
+        /// Performs log information.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log minimal.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log warning.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
+        /// <summary>
+        /// Performs log error.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogError(string data) => _logger.LogError("{Data}", data);
+        /// <summary>
+        /// Performs log information summary.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
+        /// <summary>
+        /// Performs log error summary.
+        /// </summary>
+        /// <param name="data">The data.</param>
 
         public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <param name="data">The data.</param>
 
         public void Log(NuGet.Common.LogLevel level, string data)
         {
@@ -45,14 +82,29 @@ namespace DotCompute.Algorithms.Management.Types
 
             _logger.Log(msLogLevel, "{Data}", data);
         }
+        /// <summary>
+        /// Gets log asynchronously.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task LogAsync(NuGet.Common.LogLevel level, string data)
         {
             Log(level, data);
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <param name="message">The message.</param>
 
         public void Log(NuGet.Common.ILogMessage message) => Log(message.Level, message.Message);
+        /// <summary>
+        /// Gets log asynchronously.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task LogAsync(NuGet.Common.ILogMessage message)
         {

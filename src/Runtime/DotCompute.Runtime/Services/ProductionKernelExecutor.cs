@@ -23,8 +23,18 @@ namespace DotCompute.Runtime.Services
         private readonly Timer _cleanupTimer;
         private readonly KernelExecutionStatistics _statistics = new();
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
 
         public KernelExecutionStatistics Statistics => _statistics;
+        /// <summary>
+        /// Initializes a new instance of the ProductionKernelExecutor class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="accelerator">The accelerator.</param>
+        /// <param name="maxConcurrentExecutions">The max concurrent executions.</param>
 
         public ProductionKernelExecutor(ILogger<ProductionKernelExecutor> logger, IAccelerator accelerator, int maxConcurrentExecutions = 16)
         {
@@ -250,6 +260,9 @@ namespace DotCompute.Runtime.Services
                 _logger.LogErrorMessage(ex, "Error during periodic cleanup");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -271,21 +284,62 @@ namespace DotCompute.Runtime.Services
     {
         private readonly Stopwatch _stopwatch = stopwatch;
         private volatile KernelExecutionState _state = KernelExecutionState.Running;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
 
         public Guid Id { get; } = id;
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; } = kernelName;
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; } = DateTime.UtcNow;
+        /// <summary>
+        /// Gets or sets the elapsed time.
+        /// </summary>
+        /// <value>The elapsed time.</value>
         public TimeSpan ElapsedTime => _stopwatch.Elapsed;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public KernelExecutionState State => _state;
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public Exception? LastError { get; private set; }
+        /// <summary>
+        /// Gets or sets the completion time.
+        /// </summary>
+        /// <value>The completion time.</value>
         public DateTime? CompletionTime { get; private set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether completed.
+        /// </summary>
+        /// <value>The is completed.</value>
         public bool IsCompleted => _state is KernelExecutionState.Completed or KernelExecutionState.Failed or KernelExecutionState.Cancelled;
+        /// <summary>
+        /// Performs complete.
+        /// </summary>
+        /// <param name="executionTime">The execution time.</param>
 
         public void Complete(TimeSpan executionTime)
         {
             _state = KernelExecutionState.Completed;
             CompletionTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// Performs fail.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="executionTime">The execution time.</param>
 
         public void Fail(Exception error, TimeSpan executionTime)
         {
@@ -293,12 +347,18 @@ namespace DotCompute.Runtime.Services
             LastError = error;
             CompletionTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// Determines whether cel.
+        /// </summary>
 
         public void Cancel()
         {
             _state = KernelExecutionState.Cancelled;
             CompletionTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// Performs mark completed.
+        /// </summary>
 
         public void MarkCompleted()
         {
@@ -318,12 +378,36 @@ namespace DotCompute.Runtime.Services
         internal long _successfulExecutions;
         internal long _failedExecutions;
         internal long _totalExecutionTime; // In ticks
+        /// <summary>
+        /// Gets or sets the successful executions.
+        /// </summary>
+        /// <value>The successful executions.</value>
 
         public long SuccessfulExecutions => _successfulExecutions;
+        /// <summary>
+        /// Gets or sets the failed executions.
+        /// </summary>
+        /// <value>The failed executions.</value>
         public long FailedExecutions => _failedExecutions;
+        /// <summary>
+        /// Gets or sets the total executions.
+        /// </summary>
+        /// <value>The total executions.</value>
         public long TotalExecutions => _successfulExecutions + _failedExecutions;
+        /// <summary>
+        /// Gets or sets the success rate.
+        /// </summary>
+        /// <value>The success rate.</value>
         public double SuccessRate => TotalExecutions == 0 ? 0.0 : (double)_successfulExecutions / TotalExecutions;
+        /// <summary>
+        /// Gets or sets the average execution time.
+        /// </summary>
+        /// <value>The average execution time.</value>
         public TimeSpan AverageExecutionTime => TotalExecutions == 0 ? TimeSpan.Zero : TimeSpan.FromTicks(_totalExecutionTime / TotalExecutions);
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime => TimeSpan.FromTicks(_totalExecutionTime);
     }
 
@@ -339,14 +423,43 @@ namespace DotCompute.Runtime.Services
             Error = error;
             ExecutionTime = executionTime;
         }
+        /// <summary>
+        /// Gets or sets the execution identifier.
+        /// </summary>
+        /// <value>The execution id.</value>
 
         public Guid ExecutionId { get; }
+        /// <summary>
+        /// Gets or sets a value indicating whether success.
+        /// </summary>
+        /// <value>The is success.</value>
         public bool IsSuccess { get; }
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public Exception? Error { get; }
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public TimeSpan ExecutionTime { get; }
+        /// <summary>
+        /// Gets success.
+        /// </summary>
+        /// <param name="executionId">The execution identifier.</param>
+        /// <param name="executionTime">The execution time.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static KernelExecutionResult Success(Guid executionId, TimeSpan executionTime)
             => new(executionId, true, null, executionTime);
+        /// <summary>
+        /// Gets failure.
+        /// </summary>
+        /// <param name="executionId">The execution identifier.</param>
+        /// <param name="error">The error.</param>
+        /// <param name="executionTime">The execution time.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static KernelExecutionResult Failure(Guid executionId, Exception error, TimeSpan executionTime)
             => new(executionId, false, error, executionTime);
@@ -357,11 +470,35 @@ namespace DotCompute.Runtime.Services
     /// </summary>
     public sealed class KernelExecutionStatus(Guid id, string kernelName, KernelExecutionState state, DateTime startTime, TimeSpan elapsedTime, Exception? lastError)
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public Guid Id { get; } = id;
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; } = kernelName;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public KernelExecutionState State { get; } = state;
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; } = startTime;
+        /// <summary>
+        /// Gets or sets the elapsed time.
+        /// </summary>
+        /// <value>The elapsed time.</value>
         public TimeSpan ElapsedTime { get; } = elapsedTime;
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public Exception? LastError { get; } = lastError;
     }
 
@@ -370,10 +507,25 @@ namespace DotCompute.Runtime.Services
     /// </summary>
     public sealed class BatchExecutionOptions
     {
+        /// <summary>
+        /// Gets or sets the max concurrency.
+        /// </summary>
+        /// <value>The max concurrency.</value>
         public int MaxConcurrency { get; set; } = Environment.ProcessorCount;
+        /// <summary>
+        /// Gets or sets the continue on error.
+        /// </summary>
+        /// <value>The continue on error.</value>
         public bool ContinueOnError { get; set; } = true;
+        /// <summary>
+        /// Gets or sets the timeout.
+        /// </summary>
+        /// <value>The timeout.</value>
         public TimeSpan? Timeout { get; set; }
     }
+    /// <summary>
+    /// An kernel execution state enumeration.
+    /// </summary>
 
     /// <summary>
     /// Represents the state of a kernel execution.

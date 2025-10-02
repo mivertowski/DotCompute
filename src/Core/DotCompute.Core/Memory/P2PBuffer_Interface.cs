@@ -33,6 +33,10 @@ namespace DotCompute.Core.Memory
         /// Gets whether the buffer is dirty.
         /// </summary>
         public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
+        /// <summary>
+        /// Gets as span.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         // Memory access methods
 
@@ -41,6 +45,10 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
             throw new NotSupportedException("P2P buffers do not support direct span access");
         }
+        /// <summary>
+        /// Gets as read only span.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public ReadOnlySpan<T> AsReadOnlySpan()
@@ -48,6 +56,10 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
             throw new NotSupportedException("P2P buffers do not support direct span access");
         }
+        /// <summary>
+        /// Gets as memory.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public Memory<T> AsMemory()
@@ -55,6 +67,10 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
             throw new NotSupportedException("P2P buffers do not support direct memory access");
         }
+        /// <summary>
+        /// Gets as read only memory.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public ReadOnlyMemory<T> AsReadOnlyMemory()
@@ -62,6 +78,10 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
             throw new NotSupportedException("P2P buffers do not support direct memory access");
         }
+        /// <summary>
+        /// Gets the device memory.
+        /// </summary>
+        /// <returns>The device memory.</returns>
 
 
         public DeviceMemory GetDeviceMemory()
@@ -73,12 +93,24 @@ namespace DotCompute.Core.Memory
             }
             return DeviceMemory.Invalid;
         }
+        /// <summary>
+        /// Performs ensure on host.
+        /// </summary>
 
         // Synchronization methods
 
         public void EnsureOnHost() => ThrowIfDisposed();// TODO: Implement proper state transition// State = BufferState.HostReady;
+        /// <summary>
+        /// Performs ensure on device.
+        /// </summary>
 
         public void EnsureOnDevice() => ThrowIfDisposed();// TODO: Implement proper state transition// State = BufferState.DeviceReady;
+        /// <summary>
+        /// Gets ensure on host asynchronously.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -86,6 +118,12 @@ namespace DotCompute.Core.Memory
             EnsureOnHost();
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets ensure on device asynchronously.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -93,9 +131,18 @@ namespace DotCompute.Core.Memory
             EnsureOnDevice();
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Performs synchronize.
+        /// </summary>
 
 
         public void Synchronize() => ThrowIfDisposed();// P2P buffers handle synchronization internally
+        /// <summary>
+        /// Gets synchronize asynchronously.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -103,14 +150,32 @@ namespace DotCompute.Core.Memory
             Synchronize();
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Performs mark host dirty.
+        /// </summary>
 
 
         public void MarkHostDirty() { /* TODO: Implement state tracking */ }
+        /// <summary>
+        /// Performs mark device dirty.
+        /// </summary>
         public void MarkDeviceDirty() { /* TODO: Implement state tracking */ }
+        /// <summary>
+        /// Gets copy from asynchronously.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         // Copy methods
 
         public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => await CopyFromHostAsync(source, 0, cancellationToken);
+        /// <summary>
+        /// Gets copy to asynchronously.
+        /// </summary>
+        /// <param name="destination">The destination.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
 
         public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => await CopyToHostAsync(destination, 0, cancellationToken);

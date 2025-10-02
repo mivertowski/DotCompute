@@ -30,19 +30,75 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     /// </summary>
     private sealed class PluginMetricsData
     {
+        /// <summary>
+        /// Gets or sets the plugin identifier.
+        /// </summary>
+        /// <value>The plugin id.</value>
         public string PluginId { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the total executions.
+        /// </summary>
+        /// <value>The total executions.</value>
         public long TotalExecutions { get; set; }
+        /// <summary>
+        /// Gets or sets the successful executions.
+        /// </summary>
+        /// <value>The successful executions.</value>
         public long SuccessfulExecutions { get; set; }
+        /// <summary>
+        /// Gets or sets the failed executions.
+        /// </summary>
+        /// <value>The failed executions.</value>
         public long FailedExecutions { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the min execution time.
+        /// </summary>
+        /// <value>The min execution time.</value>
         public TimeSpan MinExecutionTime { get; set; } = TimeSpan.MaxValue;
+        /// <summary>
+        /// Gets or sets the max execution time.
+        /// </summary>
+        /// <value>The max execution time.</value>
         public TimeSpan MaxExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the recent executions.
+        /// </summary>
+        /// <value>The recent executions.</value>
         public Queue<ExecutionRecord> RecentExecutions { get; } = new();
+        /// <summary>
+        /// Gets or sets the error counts.
+        /// </summary>
+        /// <value>The error counts.</value>
         public Dictionary<string, long> ErrorCounts { get; } = [];
+        /// <summary>
+        /// Gets or sets the total memory allocated.
+        /// </summary>
+        /// <value>The total memory allocated.</value>
         public long TotalMemoryAllocated { get; set; }
+        /// <summary>
+        /// Gets or sets the average cpu usage.
+        /// </summary>
+        /// <value>The average cpu usage.</value>
         public double AverageCpuUsage { get; set; }
+        /// <summary>
+        /// Gets or sets the first execution.
+        /// </summary>
+        /// <value>The first execution.</value>
         public DateTime FirstExecution { get; set; }
+        /// <summary>
+        /// Gets or sets the last execution.
+        /// </summary>
+        /// <value>The last execution.</value>
         public DateTime LastExecution { get; set; }
+        /// <summary>
+        /// Gets or sets the performance history.
+        /// </summary>
+        /// <value>The performance history.</value>
         public Queue<PerformanceSnapshot> PerformanceHistory { get; } = new();
     }
 
@@ -51,11 +107,35 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     /// </summary>
     private sealed class ExecutionRecord
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTime Timestamp { get; init; }
+        /// <summary>
+        /// Gets or sets the duration.
+        /// </summary>
+        /// <value>The duration.</value>
         public TimeSpan Duration { get; init; }
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; init; }
+        /// <summary>
+        /// Gets or sets the error type.
+        /// </summary>
+        /// <value>The error type.</value>
         public string? ErrorType { get; init; }
+        /// <summary>
+        /// Gets or sets the memory used.
+        /// </summary>
+        /// <value>The memory used.</value>
         public long MemoryUsed { get; init; }
+        /// <summary>
+        /// Gets or sets the cpu usage.
+        /// </summary>
+        /// <value>The cpu usage.</value>
         public double CpuUsage { get; init; }
     }
 
@@ -64,11 +144,35 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     /// </summary>
     private sealed class PerformanceSnapshot
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTime Timestamp { get; init; }
+        /// <summary>
+        /// Gets or sets the throughput per second.
+        /// </summary>
+        /// <value>The throughput per second.</value>
         public double ThroughputPerSecond { get; init; }
+        /// <summary>
+        /// Gets or sets the average execution time.
+        /// </summary>
+        /// <value>The average execution time.</value>
         public TimeSpan AverageExecutionTime { get; init; }
+        /// <summary>
+        /// Gets or sets the error rate.
+        /// </summary>
+        /// <value>The error rate.</value>
         public double ErrorRate { get; init; }
+        /// <summary>
+        /// Gets or sets the memory usage.
+        /// </summary>
+        /// <value>The memory usage.</value>
         public long MemoryUsage { get; init; }
+        /// <summary>
+        /// Gets or sets the cpu usage.
+        /// </summary>
+        /// <value>The cpu usage.</value>
         public double CpuUsage { get; init; }
     }
 
@@ -600,22 +704,90 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 /// </summary>
 public sealed class PluginMetrics
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>The successful executions.</value>
     public long SuccessfulExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the failed executions.
+    /// </summary>
+    /// <value>The failed executions.</value>
     public long FailedExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
     public double SuccessRate { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the min execution time.
+    /// </summary>
+    /// <value>The min execution time.</value>
     public TimeSpan MinExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the max execution time.
+    /// </summary>
+    /// <value>The max execution time.</value>
     public TimeSpan MaxExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the total execution time.
+    /// </summary>
+    /// <value>The total execution time.</value>
     public TimeSpan TotalExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the first execution.
+    /// </summary>
+    /// <value>The first execution.</value>
     public DateTime FirstExecution { get; init; }
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
     public DateTime LastExecution { get; init; }
+    /// <summary>
+    /// Gets or sets the error counts.
+    /// </summary>
+    /// <value>The error counts.</value>
     public Dictionary<string, long> ErrorCounts { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the total memory allocated.
+    /// </summary>
+    /// <value>The total memory allocated.</value>
     public long TotalMemoryAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the average cpu usage.
+    /// </summary>
+    /// <value>The average cpu usage.</value>
     public double AverageCpuUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the throughput per second.
+    /// </summary>
+    /// <value>The throughput per second.</value>
     public double ThroughputPerSecond { get; init; }
+    /// <summary>
+    /// Gets or sets the recent error rate.
+    /// </summary>
+    /// <value>The recent error rate.</value>
     public double RecentErrorRate { get; init; }
+    /// <summary>
+    /// Gets or sets the performance trend.
+    /// </summary>
+    /// <value>The performance trend.</value>
     public TrendDirection PerformanceTrend { get; init; }
 }
 
@@ -624,16 +796,60 @@ public sealed class PluginMetrics
 /// </summary>
 public sealed class SystemMetrics
 {
+    /// <summary>
+    /// Gets or sets the total plugins.
+    /// </summary>
+    /// <value>The total plugins.</value>
     public int TotalPlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the active plugins.
+    /// </summary>
+    /// <value>The active plugins.</value>
     public int ActivePlugins { get; init; }
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the total successful executions.
+    /// </summary>
+    /// <value>The total successful executions.</value>
     public long TotalSuccessfulExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the total failed executions.
+    /// </summary>
+    /// <value>The total failed executions.</value>
     public long TotalFailedExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the overall success rate.
+    /// </summary>
+    /// <value>The overall success rate.</value>
     public double OverallSuccessRate { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the total memory allocated.
+    /// </summary>
+    /// <value>The total memory allocated.</value>
     public long TotalMemoryAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the system cpu usage.
+    /// </summary>
+    /// <value>The system cpu usage.</value>
     public double SystemCpuUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the system memory usage.
+    /// </summary>
+    /// <value>The system memory usage.</value>
     public long SystemMemoryUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the uptime hours.
+    /// </summary>
+    /// <value>The uptime hours.</value>
     public double UptimeHours { get; init; }
 }
 
@@ -642,12 +858,35 @@ public sealed class SystemMetrics
 /// </summary>
 public sealed class PluginPerformanceTrend
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the trend direction.
+    /// </summary>
+    /// <value>The trend direction.</value>
     public TrendDirection TrendDirection { get; init; }
+    /// <summary>
+    /// Gets or sets the percent change.
+    /// </summary>
+    /// <value>The percent change.</value>
     public double PercentChange { get; init; }
+    /// <summary>
+    /// Gets or sets the sample size.
+    /// </summary>
+    /// <value>The sample size.</value>
     public int SampleSize { get; init; }
+    /// <summary>
+    /// Gets or sets the time range.
+    /// </summary>
+    /// <value>The time range.</value>
     public TimeSpan TimeRange { get; init; }
 }
+/// <summary>
+/// An trend direction enumeration.
+/// </summary>
 
 /// <summary>
 /// Represents trend direction.
@@ -659,6 +898,9 @@ public enum TrendDirection
     Stable,
     Degrading
 }
+/// <summary>
+/// An metrics export format enumeration.
+/// </summary>
 
 /// <summary>
 /// Represents metrics export formats.

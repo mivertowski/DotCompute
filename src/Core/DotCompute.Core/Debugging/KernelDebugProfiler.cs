@@ -24,8 +24,20 @@ public sealed class KernelDebugProfiler(
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = executionHistory ?? throw new ArgumentNullException(nameof(executionHistory));
     private DebugServiceOptions _options = new();
     private bool _disposed;
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="options">The options.</param>
 
     public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
+    /// <summary>
+    /// Gets execute with profiling asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="backendType">The backend type.</param>
+    /// <param name="inputs">The inputs.</param>
+    /// <param name="accelerator">The accelerator.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<KernelExecutionResult> ExecuteWithProfilingAsync(
         string kernelName,
@@ -100,6 +112,13 @@ public sealed class KernelDebugProfiler(
             return failedResult;
         }
     }
+    /// <summary>
+    /// Gets trace kernel execution asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="backendType">The backend type.</param>
+    /// <param name="inputs">The inputs.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<KernelExecutionTrace> TraceKernelExecutionAsync(
         string kernelName,
@@ -243,6 +262,12 @@ public sealed class KernelDebugProfiler(
             };
         }
     }
+    /// <summary>
+    /// Gets generate performance report asynchronously.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="timeWindow">The time window.</param>
+    /// <returns>The result of the operation.</returns>
 
     public Task<PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
@@ -539,6 +564,9 @@ public sealed class KernelDebugProfiler(
         // Since KernelExecutionResult doesn't have memory usage property,
         // we'll return 0 for now. In a real implementation, this could be tracked separately.
         => 0;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

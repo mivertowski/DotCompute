@@ -23,6 +23,10 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     private readonly ConcurrentDictionary<string, AcceleratorInfo> _deviceCache;
     private readonly SemaphoreSlim _deviceDiscoverySemaphore;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AcceleratorFactory class.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory.</param>
 
 
     public AcceleratorFactory(ILoggerFactory loggerFactory)
@@ -556,6 +560,9 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType());
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

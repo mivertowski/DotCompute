@@ -47,6 +47,10 @@ namespace DotCompute.Backends.CUDA.Analysis
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetPcieThroughput(
             IntPtr device, NvmlPcieUtilCounter counter, out uint value);
+        /// <summary>
+        /// Initializes a new instance of the CudaMemoryCoalescingAnalyzer class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public CudaMemoryCoalescingAnalyzer(ILogger<CudaMemoryCoalescingAnalyzer> logger)
         {
@@ -782,42 +786,94 @@ namespace DotCompute.Backends.CUDA.Analysis
         // Private helper classes
         private class AccessPattern
         {
+            /// <summary>
+            /// Gets or sets the name.
+            /// </summary>
+            /// <value>The name.</value>
             public string Name { get; set; } = "";
+            /// <summary>
+            /// Gets or sets the stride.
+            /// </summary>
+            /// <value>The stride.</value>
             public int Stride { get; set; }
+            /// <summary>
+            /// Gets or sets the element size.
+            /// </summary>
+            /// <value>The element size.</value>
             public int ElementSize { get; set; }
+            /// <summary>
+            /// Gets or sets the efficiency.
+            /// </summary>
+            /// <value>The efficiency.</value>
             public double Efficiency { get; set; }
         }
 
         private class CoalescingMetrics
         {
+            /// <summary>
+            /// Gets or sets the efficiency.
+            /// </summary>
+            /// <value>The efficiency.</value>
             public double Efficiency { get; set; }
+            /// <summary>
+            /// Gets or sets the wasted bandwidth.
+            /// </summary>
+            /// <value>The wasted bandwidth.</value>
             public double WastedBandwidth { get; set; }
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; set; }
         }
 
         private class MemoryMetrics
         {
+            /// <summary>
+            /// Gets or sets the execution time.
+            /// </summary>
+            /// <value>The execution time.</value>
             public TimeSpan ExecutionTime { get; set; }
+            /// <summary>
+            /// Gets or sets the memory used.
+            /// </summary>
+            /// <value>The memory used.</value>
             public long MemoryUsed { get; set; }
+            /// <summary>
+            /// Gets or sets the timestamp.
+            /// </summary>
+            /// <value>The timestamp.</value>
             public DateTimeOffset Timestamp { get; set; }
         }
+        /// <summary>
+        /// An cuda error enumeration.
+        /// </summary>
 
         // Private enums for P/Invoke
         private enum CudaError
         {
             Success = 0
         }
+        /// <summary>
+        /// An cuda device attribute enumeration.
+        /// </summary>
 
         private enum CudaDeviceAttribute
         {
             ComputeCapabilityMajor = 75,
             ComputeCapabilityMinor = 76
         }
+        /// <summary>
+        /// An nvml return enumeration.
+        /// </summary>
 
         private enum NvmlReturn
         {
             Success = 0
         }
+        /// <summary>
+        /// An nvml pcie util counter enumeration.
+        /// </summary>
 
         private enum NvmlPcieUtilCounter
         {

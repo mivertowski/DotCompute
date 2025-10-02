@@ -31,6 +31,11 @@ public sealed class SimdExecutor : IDisposable
     private long _scalarElements;
     private long _totalExecutionTime;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the SimdExecutor class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public SimdExecutor(ILogger<SimdExecutor> logger, ExecutorConfiguration? config = null)
     {
@@ -180,6 +185,9 @@ public sealed class SimdExecutor : IDisposable
             throw new ObjectDisposedException(nameof(SimdExecutor));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -202,10 +210,25 @@ public sealed class SimdExecutor : IDisposable
 /// </summary>
 public sealed class ExecutionContext(SimdSummary capabilities)
 {
+    /// <summary>
+    /// Gets or sets the capabilities.
+    /// </summary>
+    /// <value>The capabilities.</value>
     public SimdSummary Capabilities { get; } = capabilities;
+    /// <summary>
+    /// Gets or sets the thread executions.
+    /// </summary>
+    /// <value>The thread executions.</value>
     public long ThreadExecutions { get; set; }
+    /// <summary>
+    /// Gets or sets the last execution.
+    /// </summary>
+    /// <value>The last execution.</value>
     public DateTimeOffset LastExecution { get; set; } = DateTimeOffset.UtcNow;
 }
+/// <summary>
+/// An matrix operation enumeration.
+/// </summary>
 
 /// <summary>
 /// Matrix operations supported by SIMD executor

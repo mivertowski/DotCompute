@@ -109,7 +109,7 @@ public sealed class PerformanceMetrics
     /// <summary>
     /// Gets or sets additional custom metrics specific to the backend or operation.
     /// </summary>
-    public Dictionary<string, object> CustomMetrics { get; set; } = [];
+    public Dictionary<string, object> CustomMetrics { get; } = [];
 
     /// <summary>
     /// Gets or sets the error information if the operation failed.

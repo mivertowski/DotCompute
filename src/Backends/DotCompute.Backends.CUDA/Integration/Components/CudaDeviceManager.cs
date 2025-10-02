@@ -22,6 +22,10 @@ public sealed class CudaDeviceManager : IDisposable
     private readonly Dictionary<CudaContext, IAccelerator> _contextToAcceleratorMap;
     private readonly object _mapLock = new();
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaDeviceManager class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public CudaDeviceManager(ILogger<CudaDeviceManager> logger)
     {
@@ -279,6 +283,9 @@ public sealed class CudaDeviceManager : IDisposable
             throw new ObjectDisposedException(nameof(CudaDeviceManager));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -316,35 +323,146 @@ public sealed class CudaDeviceManager : IDisposable
 /// </summary>
 public sealed class CudaDeviceInfo
 {
+    /// <summary>
+    /// Gets or sets the device identifier.
+    /// </summary>
+    /// <value>The device id.</value>
     public int DeviceId { get; init; }
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; init; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the compute capability major.
+    /// </summary>
+    /// <value>The compute capability major.</value>
     public int ComputeCapabilityMajor { get; init; }
+    /// <summary>
+    /// Gets or sets the compute capability minor.
+    /// </summary>
+    /// <value>The compute capability minor.</value>
     public int ComputeCapabilityMinor { get; init; }
+    /// <summary>
+    /// Gets or sets the total memory.
+    /// </summary>
+    /// <value>The total memory.</value>
     public long TotalMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the free memory.
+    /// </summary>
+    /// <value>The free memory.</value>
     public long FreeMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the max threads per block.
+    /// </summary>
+    /// <value>The max threads per block.</value>
     public int MaxThreadsPerBlock { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim x.
+    /// </summary>
+    /// <value>The max grid dim x.</value>
     public int MaxGridDimX { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim y.
+    /// </summary>
+    /// <value>The max grid dim y.</value>
     public int MaxGridDimY { get; init; }
+    /// <summary>
+    /// Gets or sets the max grid dim z.
+    /// </summary>
+    /// <value>The max grid dim z.</value>
     public int MaxGridDimZ { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim x.
+    /// </summary>
+    /// <value>The max block dim x.</value>
     public int MaxBlockDimX { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim y.
+    /// </summary>
+    /// <value>The max block dim y.</value>
     public int MaxBlockDimY { get; init; }
+    /// <summary>
+    /// Gets or sets the max block dim z.
+    /// </summary>
+    /// <value>The max block dim z.</value>
     public int MaxBlockDimZ { get; init; }
+    /// <summary>
+    /// Gets or sets the warp size.
+    /// </summary>
+    /// <value>The warp size.</value>
     public int WarpSize { get; init; }
+    /// <summary>
+    /// Gets or sets the multi processor count.
+    /// </summary>
+    /// <value>The multi processor count.</value>
     public int MultiProcessorCount { get; init; }
+    /// <summary>
+    /// Gets or sets the clock rate.
+    /// </summary>
+    /// <value>The clock rate.</value>
     public int ClockRate { get; init; }
+    /// <summary>
+    /// Gets or sets the memory clock rate.
+    /// </summary>
+    /// <value>The memory clock rate.</value>
     public int MemoryClockRate { get; init; }
+    /// <summary>
+    /// Gets or sets the global memory bus width.
+    /// </summary>
+    /// <value>The global memory bus width.</value>
     public int GlobalMemoryBusWidth { get; init; }
+    /// <summary>
+    /// Gets or sets the l2 cache size.
+    /// </summary>
+    /// <value>The l2 cache size.</value>
     public int L2CacheSize { get; init; }
+    /// <summary>
+    /// Gets or sets the max shared memory per block.
+    /// </summary>
+    /// <value>The max shared memory per block.</value>
     public long MaxSharedMemoryPerBlock { get; init; }
+    /// <summary>
+    /// Gets or sets the max registers per block.
+    /// </summary>
+    /// <value>The max registers per block.</value>
     public int MaxRegistersPerBlock { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether integrated device.
+    /// </summary>
+    /// <value>The is integrated device.</value>
     public bool IsIntegratedDevice { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether map host memory.
+    /// </summary>
+    /// <value>The can map host memory.</value>
     public bool CanMapHostMemory { get; init; }
+    /// <summary>
+    /// Gets or sets the compute mode.
+    /// </summary>
+    /// <value>The compute mode.</value>
     public CudaComputeMode ComputeMode { get; init; }
+    /// <summary>
+    /// Gets or sets the compute capability.
+    /// </summary>
+    /// <value>The compute capability.</value>
 
     public string ComputeCapability => $"{ComputeCapabilityMajor}.{ComputeCapabilityMinor}";
+    /// <summary>
+    /// Gets or sets the memory bandwidth g bps.
+    /// </summary>
+    /// <value>The memory bandwidth g bps.</value>
     public double MemoryBandwidthGBps => (MemoryClockRate * 2.0 * GlobalMemoryBusWidth) / (8.0 * 1000);
+    /// <summary>
+    /// Gets or sets the peak performance t f l o p s.
+    /// </summary>
+    /// <value>The peak performance t f l o p s.</value>
     public double PeakPerformanceTFLOPS => (MultiProcessorCount * ClockRate * 128.0) / (1000000000.0);
 }
+/// <summary>
+/// An cuda compute mode enumeration.
+/// </summary>
 
 /// <summary>
 /// CUDA compute modes.
@@ -368,6 +486,11 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
     private readonly AcceleratorContext _acceleratorContext;
     private readonly CudaContextMemoryManager _memoryManager;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaContextAcceleratorWrapper class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaContextAcceleratorWrapper(CudaContext context, ILogger logger)
     {
@@ -395,14 +518,49 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         // Create accelerator context
         _acceleratorContext = new AcceleratorContext(_context.Handle, deviceId);
     }
+    /// <summary>
+    /// Gets or sets the info.
+    /// </summary>
+    /// <value>The info.</value>
 
     public AcceleratorInfo Info => _info;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public AcceleratorType Type => AcceleratorType.CUDA;
+    /// <summary>
+    /// Gets or sets the device type.
+    /// </summary>
+    /// <value>The device type.</value>
     public string DeviceType => "GPU";
+    /// <summary>
+    /// Gets or sets the memory.
+    /// </summary>
+    /// <value>The memory.</value>
     public IUnifiedMemoryManager Memory => _memoryManager.UnderlyingManager;
+    /// <summary>
+    /// Gets or sets the memory manager.
+    /// </summary>
+    /// <value>The memory manager.</value>
     public IUnifiedMemoryManager MemoryManager => _memoryManager.UnderlyingManager;
+    /// <summary>
+    /// Gets or sets the context.
+    /// </summary>
+    /// <value>The context.</value>
     public AcceleratorContext Context => _acceleratorContext;
+    /// <summary>
+    /// Gets or sets a value indicating whether available.
+    /// </summary>
+    /// <value>The is available.</value>
     public bool IsAvailable => !_disposed;
+    /// <summary>
+    /// Gets compile kernel asynchronously.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
@@ -421,6 +579,9 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
             throw new InvalidOperationException($"Failed to compile kernel '{definition.Name}'", ex);
         }
     }
+    /// <summary>
+    /// Performs synchronize.
+    /// </summary>
 
     public void Synchronize()
     {
@@ -434,6 +595,11 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
             throw new InvalidOperationException("Failed to synchronize CUDA context", ex);
         }
     }
+    /// <summary>
+    /// Gets synchronize asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
@@ -515,6 +681,9 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         }
         return 1024; // Safe default
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -536,6 +705,10 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         _disposed = true;
         GC.SuppressFinalize(this);
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

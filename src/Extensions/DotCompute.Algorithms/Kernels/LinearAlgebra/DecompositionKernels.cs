@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms.Kernels.LinearAlgebra;
 public static class DecompositionKernels
 {
     /// <summary>
+    /// The c u d a q r decomposition kernel.
+    /// </summary>
+    /// <summary>
     /// CUDA kernel for QR decomposition with Householder reflections.
     /// Optimized for GPU execution with shared memory usage.
     /// </summary>
@@ -66,6 +69,9 @@ extern ""C"" __global__ void qr_householder_decomposition_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a l u decomposition kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for LU decomposition with partial pivoting.
@@ -129,6 +135,9 @@ extern ""C"" __global__ void lu_decomposition_partial_pivot_cuda(
         }
     }
 }";
+    /// <summary>
+    /// The c u d a cholesky decomposition kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for Cholesky decomposition of positive definite matrices.

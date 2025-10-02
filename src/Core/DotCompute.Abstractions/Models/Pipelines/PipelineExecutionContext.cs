@@ -84,7 +84,7 @@ public abstract class PipelineExecutionContext
     /// <summary>
     /// Gets or sets the execution state dictionary.
     /// </summary>
-    public abstract Dictionary<string, object> State { get; set; }
+    public abstract Dictionary<string, object> State { get; }
 
     /// <summary>
     /// Gets or sets the session identifier.

@@ -19,8 +19,19 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
     private readonly ILogger<KernelDebugReporter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private DebugServiceOptions _options = new();
     private bool _disposed;
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="options">The options.</param>
 
     public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
+    /// <summary>
+    /// Gets compare results asynchronously.
+    /// </summary>
+    /// <param name="result1">The result1.</param>
+    /// <param name="result2">The result2.</param>
+    /// <param name="tolerance">The tolerance.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<ResultComparisonReport> CompareResultsAsync(
         KernelExecutionResult result1,
@@ -143,6 +154,11 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             };
         }
     }
+    /// <summary>
+    /// Gets generate detailed report asynchronously.
+    /// </summary>
+    /// <param name="validationResult">The validation result.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
@@ -233,6 +249,12 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
 
         return report.ToString();
     }
+    /// <summary>
+    /// Gets export report asynchronously.
+    /// </summary>
+    /// <param name="report">The report.</param>
+    /// <param name="format">The format.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<string> ExportReportAsync(object report, ReportFormat format)
     {
@@ -256,6 +278,10 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             throw;
         }
     }
+    /// <summary>
+    /// Gets the available backends async.
+    /// </summary>
+    /// <returns>The available backends async.</returns>
 
     public static async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
     {
@@ -408,6 +434,9 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
 
         return report.ToString() ?? "No data available";
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -417,6 +446,9 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
         }
     }
 }
+/// <summary>
+/// An comparison severity enumeration.
+/// </summary>
 
 // Supporting enums and classes
 // ReportFormat moved to DotCompute.Abstractions.Debugging.ReportingTypes
@@ -427,11 +459,30 @@ public enum ComparisonSeverity
     Warning,
     Error
 }
+/// <summary>
+/// A class that represents comparison issue.
+/// </summary>
 
 public class ComparisonIssue
 {
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public ComparisonSeverity Severity { get; set; }
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    /// <value>The category.</value>
     public required string Category { get; set; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; set; }
+    /// <summary>
+    /// Gets or sets the details.
+    /// </summary>
+    /// <value>The details.</value>
     public string Details { get; set; } = string.Empty;
 }

@@ -23,8 +23,16 @@ namespace DotCompute.Runtime.Services
         private readonly PerformanceCounter? _memoryCounter;
 #pragma warning restore CS0649
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the statistics.
+        /// </summary>
+        /// <value>The statistics.</value>
 
         public SystemMonitoringStatistics Statistics => _statistics;
+        /// <summary>
+        /// Initializes a new instance of the ProductionMonitor class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
 
         public ProductionMonitor(ILogger<ProductionMonitor> logger)
         {
@@ -459,6 +467,9 @@ namespace DotCompute.Runtime.Services
                 _logger.LogErrorMessage(ex, "Error during periodic cleanup");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -489,10 +500,26 @@ namespace DotCompute.Runtime.Services
         internal long _totalHealthChecks;
         internal long _totalMetricsRecorded;
         internal long _totalMonitoringCycles;
+        /// <summary>
+        /// Gets or sets the total health checks.
+        /// </summary>
+        /// <value>The total health checks.</value>
 
         public long TotalHealthChecks => _totalHealthChecks;
+        /// <summary>
+        /// Gets or sets the total metrics recorded.
+        /// </summary>
+        /// <value>The total metrics recorded.</value>
         public long TotalMetricsRecorded => _totalMetricsRecorded;
+        /// <summary>
+        /// Gets or sets the total monitoring cycles.
+        /// </summary>
+        /// <value>The total monitoring cycles.</value>
         public long TotalMonitoringCycles => _totalMonitoringCycles;
+        /// <summary>
+        /// Gets or sets the average metrics per cycle.
+        /// </summary>
+        /// <value>The average metrics per cycle.</value>
         public double AverageMetricsPerCycle => _totalMonitoringCycles == 0 ? 0.0 : (double)_totalMetricsRecorded / _totalMonitoringCycles;
     }
 
@@ -508,14 +535,47 @@ namespace DotCompute.Runtime.Services
         private double _minValue = double.MaxValue;
         private double _maxValue = double.MinValue;
         private readonly TimeSpan _maxAge = TimeSpan.FromHours(1);
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name => _name;
+        /// <summary>
+        /// Gets or sets the current value.
+        /// </summary>
+        /// <value>The current value.</value>
         public double CurrentValue => _currentValue;
+        /// <summary>
+        /// Gets or sets the average value.
+        /// </summary>
+        /// <value>The average value.</value>
         public double AverageValue => GetAverageValue();
+        /// <summary>
+        /// Gets or sets the min value.
+        /// </summary>
+        /// <value>The min value.</value>
         public double MinValue => _minValue == double.MaxValue ? 0 : _minValue;
+        /// <summary>
+        /// Gets or sets the max value.
+        /// </summary>
+        /// <value>The max value.</value>
         public double MaxValue => _maxValue == double.MinValue ? 0 : _maxValue;
+        /// <summary>
+        /// Gets or sets the sample count.
+        /// </summary>
+        /// <value>The sample count.</value>
         public int SampleCount => _samples.Count;
+        /// <summary>
+        /// Gets or sets the unit.
+        /// </summary>
+        /// <value>The unit.</value>
         public string? Unit { get; private set; }
+        /// <summary>
+        /// Performs record value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="unit">The unit.</param>
 
         public void RecordValue(double value, string? unit = null)
         {
@@ -541,6 +601,9 @@ namespace DotCompute.Runtime.Services
                 CleanupOldSamples();
             }
         }
+        /// <summary>
+        /// Performs cleanup old samples.
+        /// </summary>
 
         public void CleanupOldSamples()
         {
@@ -573,6 +636,9 @@ namespace DotCompute.Runtime.Services
                 return _samples.Count == 0 ? 0 : _samples.Average(s => s.Value);
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -582,6 +648,9 @@ namespace DotCompute.Runtime.Services
             }
         }
     }
+    /// <summary>
+    /// A class that represents system health report.
+    /// </summary>
 
     /// <summary>
     /// Supporting types for the monitoring system.
@@ -590,12 +659,18 @@ namespace DotCompute.Runtime.Services
         DateTime Timestamp,
         HealthStatus OverallHealth,
         IReadOnlyList<HealthCheckResult> HealthChecks);
+    /// <summary>
+    /// A class that represents health check result.
+    /// </summary>
 
     public record HealthCheckResult(
         string Component,
         HealthStatus Status,
         DateTime Timestamp,
         string Details);
+    /// <summary>
+    /// A class that represents performance metric.
+    /// </summary>
 
     public record PerformanceMetric(
         string Name,
@@ -605,6 +680,9 @@ namespace DotCompute.Runtime.Services
         double MaxValue,
         int SampleCount,
         string? Unit);
+    /// <summary>
+    /// An health status enumeration.
+    /// </summary>
 
     public enum HealthStatus
     {

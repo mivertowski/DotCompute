@@ -18,6 +18,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     {
         private readonly CudaAccelerator? _accelerator;
         private readonly ILogger<KernelGeneratorCudaTests>? _logger;
+        /// <summary>
+        /// Initializes a new instance of the KernelGeneratorCudaTests class.
+        /// </summary>
+        /// <param name="output">The output.</param>
 
         public KernelGeneratorCudaTests(ITestOutputHelper output) : base(output)
         {
@@ -45,6 +49,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// Gets vector add_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -72,6 +80,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
+        /// <summary>
+        /// Gets matrix multiply_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -106,6 +118,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, result, 0.001f);
         }
+        /// <summary>
+        /// Gets reduction_ with kernel attribute_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -128,6 +144,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             _ = result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
         }
+        /// <summary>
+        /// Gets convolution kernel_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -163,6 +183,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert
             VerifyFloatArraysMatch(expected, result, 0.0001f);
         }
+        /// <summary>
+        /// Gets black scholes kernel_ should_ execute on cuda.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Category", "Hardware")]
@@ -368,11 +392,21 @@ namespace DotCompute.Hardware.Cuda.Tests
             await bufferPut.CopyToAsync(putPrices);
         }
     }
+    /// <summary>
+    /// A class that represents test kernels.
+    /// </summary>
 
     // Kernel definitions - simplified without [Kernel] attribute
     // The [Kernel] attribute would be used with the source generator in a full implementation
     public static class TestKernels
     {
+        /// <summary>
+        /// Performs vector add.
+        /// </summary>
+        /// <param name="a">The a.</param>
+        /// <param name="b">The b.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="length">The length.</param>
         // Note: [Kernel] attribute requires DotCompute.Generators reference
         // For testing, we'll use direct kernel definitions
         public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
@@ -382,6 +416,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                 result[i] = a[i] + b[i];
             }
         }
+        /// <summary>
+        /// Performs matrix multiply.
+        /// </summary>
+        /// <param name="a">The a.</param>
+        /// <param name="b">The b.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="m">The m.</param>
+        /// <param name="n">The n.</param>
+        /// <param name="k">The k.</param>
 
         // [Kernel] attribute would specify CUDA backend with 16x16 block dimensions
         public static void MatrixMultiply(
@@ -401,6 +444,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Performs reduction.
+        /// </summary>
+        /// <param name="data">The data.</param>
+        /// <param name="result">The result.</param>
+        /// <param name="length">The length.</param>
 
         // [Kernel] attribute would specify memory optimization
         public static void Reduction(ReadOnlySpan<float> data, Span<float> result, int length)
@@ -412,6 +461,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             result[0] = sum;
         }
+        /// <summary>
+        /// Performs convolution1 d.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="kernel">The kernel.</param>
+        /// <param name="output">The output.</param>
+        /// <param name="inputSize">The input size.</param>
+        /// <param name="kernelSize">The kernel size.</param>
+        /// <param name="outputSize">The output size.</param>
 
         // [Kernel] attribute for CUDA backend
         public static void Convolution1D(
@@ -428,6 +486,17 @@ namespace DotCompute.Hardware.Cuda.Tests
                 output[i] = sum;
             }
         }
+        /// <summary>
+        /// Performs black scholes.
+        /// </summary>
+        /// <param name="stockPrice">The stock price.</param>
+        /// <param name="strikePrice">The strike price.</param>
+        /// <param name="timeToExpiry">The time to expiry.</param>
+        /// <param name="callPrice">The call price.</param>
+        /// <param name="putPrice">The put price.</param>
+        /// <param name="riskFreeRate">The risk free rate.</param>
+        /// <param name="volatility">The volatility.</param>
+        /// <param name="numOptions">The num options.</param>
 
         // [Kernel] attribute with vector size 4
         public static void BlackScholes(
@@ -465,6 +534,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     // Helper classes for kernel definitions
     internal class VectorAddKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -492,6 +565,10 @@ extern ""C"" __global__ void vector_add_kernel(
 
     internal class MatrixMultiplyKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -526,6 +603,10 @@ extern ""C"" __global__ void matrix_multiply_kernel(
 
     internal class ReductionKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -570,6 +651,10 @@ extern ""C"" __global__ void reduction_kernel(
 
     internal class ConvolutionKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -603,6 +688,10 @@ extern ""C"" __global__ void convolution_1d_kernel(
 
     internal class BlackScholesKernel : IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition()
         {
             return new KernelDefinition
@@ -651,6 +740,10 @@ extern ""C"" __global__ void black_scholes_kernel(
     // Helper interface for kernel definitions
     internal interface IKernel
     {
+        /// <summary>
+        /// Gets the kernel definition.
+        /// </summary>
+        /// <returns>The kernel definition.</returns>
         public KernelDefinition GetKernelDefinition();
     }
 }

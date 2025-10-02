@@ -17,6 +17,13 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
     private readonly ILogger<NuGetPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Dictionary<string, NuGetPluginLoadContext> _loadContexts = [];
     private bool _disposed;
+    /// <summary>
+    /// Gets load plugin asynchronously.
+    /// </summary>
+    /// <param name="packagePath">The package path.</param>
+    /// <param name="packageId">The package identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public Task<IBackendPlugin?> LoadPluginAsync(string packagePath, string packageId, CancellationToken cancellationToken = default)
     {
@@ -73,6 +80,12 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
             }
         }, cancellationToken);
     }
+    /// <summary>
+    /// Gets discover plugins asynchronously.
+    /// </summary>
+    /// <param name="searchPath">The search path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IEnumerable<IBackendPlugin>> DiscoverPluginsAsync(string searchPath, CancellationToken cancellationToken = default)
     {
@@ -114,6 +127,10 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
             return plugins;
         }
     }
+    /// <summary>
+    /// Performs unload plugin.
+    /// </summary>
+    /// <param name="packageId">The package identifier.</param>
 
 
     public void UnloadPlugin(string packageId)
@@ -125,6 +142,12 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
             _logger.LogInformation("Unloaded plugin: {PackageId}", packageId);
         }
     }
+    /// <summary>
+    /// Gets scan for vulnerabilities asynchronously.
+    /// </summary>
+    /// <param name="packagePath">The package path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IEnumerable<string>> ScanForVulnerabilitiesAsync(string packagePath, CancellationToken cancellationToken = default)
     {
@@ -307,6 +330,9 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
             return false;
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

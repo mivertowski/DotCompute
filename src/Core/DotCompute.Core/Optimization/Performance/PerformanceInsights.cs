@@ -10,10 +10,34 @@ namespace DotCompute.Core.Optimization.Performance;
 /// </summary>
 public class PerformanceInsights
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the total workload signatures.
+    /// </summary>
+    /// <value>The total workload signatures.</value>
     public int TotalWorkloadSignatures { get; set; }
+    /// <summary>
+    /// Gets or sets the total backends.
+    /// </summary>
+    /// <value>The total backends.</value>
     public int TotalBackends { get; set; }
-    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; set; } = [];
-    public List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the backend states.
+    /// </summary>
+    /// <value>The backend states.</value>
+    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; } = [];
+    /// <summary>
+    /// Gets or sets the top performing pairs.
+    /// </summary>
+    /// <value>The top performing pairs.</value>
+    public IList<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; } = [];
+    /// <summary>
+    /// Gets or sets the learning statistics.
+    /// </summary>
+    /// <value>The learning statistics.</value>
     public LearningStatistics LearningStatistics { get; set; } = new();
 }

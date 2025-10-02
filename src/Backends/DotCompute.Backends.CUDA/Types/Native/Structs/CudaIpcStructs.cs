@@ -11,6 +11,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaIpcEventHandle
     {
+        /// <summary>
+        /// The reserved.
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         public byte[] reserved;
     }
@@ -21,6 +24,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaIpcMemHandle
     {
+        /// <summary>
+        /// The reserved.
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         public byte[] reserved;
     }

@@ -17,9 +17,9 @@ public sealed class MetalTelemetrySnapshot
     public long TotalOperations { get; set; }
     public long TotalErrors { get; set; }
     public double ErrorRate { get; set; }
-    public Dictionary<string, MetalOperationMetrics> OperationMetrics { get; set; } = [];
-    public Dictionary<string, MetalResourceMetrics> ResourceMetrics { get; set; } = [];
-    public Dictionary<string, object> PerformanceCounters { get; set; } = [];
+    public Dictionary<string, MetalOperationMetrics> OperationMetrics { get; } = [];
+    public Dictionary<string, MetalResourceMetrics> ResourceMetrics { get; } = [];
+    public Dictionary<string, object> PerformanceCounters { get; } = [];
     public HealthStatus HealthStatus { get; set; }
     public MetalSystemInfo SystemInfo { get; set; } = new();
 }
@@ -136,9 +136,9 @@ public sealed class MetalProductionReport
     public MetalTelemetrySnapshot Snapshot { get; set; } = new();
     public MetalPerformanceAnalysis PerformanceAnalysis { get; set; } = new();
     public MetalHealthAnalysis HealthAnalysis { get; set; } = new();
-    public List<Alert> AlertsSummary { get; set; } = [];
-    public List<string> Recommendations { get; set; } = [];
-    public Dictionary<string, object> ExportedMetrics { get; set; } = [];
+    public IList<Alert> AlertsSummary { get; } = [];
+    public IList<string> Recommendations { get; } = [];
+    public Dictionary<string, object> ExportedMetrics { get; } = [];
 }
 
 #endregion
@@ -155,9 +155,9 @@ public sealed class MetalPerformanceAnalysis
     public ThroughputAnalysis ThroughputAnalysis { get; set; } = new();
     public ErrorRateAnalysis ErrorRateAnalysis { get; set; } = new();
     public ResourceUtilizationAnalysis ResourceUtilizationAnalysis { get; set; } = new();
-    public List<PerformanceTrend> PerformanceTrends { get; set; } = [];
+    public IList<PerformanceTrend> PerformanceTrends { get; } = [];
     public double OverallPerformanceScore { get; set; }
-    public List<string> Errors { get; set; } = [];
+    public IList<string> Errors { get; } = [];
 }
 
 /// <summary>
@@ -321,7 +321,7 @@ public sealed class HealthEvent
     public HealthSeverity Severity { get; set; }
     public string Message { get; set; } = string.Empty;
     public Dictionary<string, object>? Properties { get; set; }
-    public Dictionary<string, object> Data { get; set; } = [];
+    public Dictionary<string, object> Data { get; } = [];
 }
 
 /// <summary>
@@ -335,7 +335,7 @@ public sealed class ComponentHealth(string componentName)
     public int ErrorCount { get; private set; }
     public int SuccessCount { get; private set; }
     public string? LastError { get; set; }
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; } = [];
 
     public double SuccessRate => (ErrorCount + SuccessCount) > 0
 
@@ -386,11 +386,11 @@ public sealed class MetalHealthReport
 {
     public DateTimeOffset Timestamp { get; set; }
     public HealthStatus OverallHealth { get; set; }
-    public Dictionary<string, ComponentHealth> ComponentHealthMap { get; set; } = [];
-    public List<HealthEvent> RecentEvents { get; set; } = [];
-    public Dictionary<string, CircuitBreakerState> CircuitBreakerStates { get; set; } = [];
-    public Dictionary<string, object> SystemMetrics { get; set; } = [];
-    public List<string> Recommendations { get; set; } = [];
+    public Dictionary<string, ComponentHealth> ComponentHealthMap { get; } = [];
+    public IList<HealthEvent> RecentEvents { get; } = [];
+    public Dictionary<string, CircuitBreakerState> CircuitBreakerStates { get; } = [];
+    public Dictionary<string, object> SystemMetrics { get; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>
@@ -401,11 +401,11 @@ public sealed class MetalHealthAnalysis
     public DateTimeOffset Timestamp { get; set; }
     public TimeSpan AnalysisPeriod { get; set; }
     public int TotalEvents { get; set; }
-    public Dictionary<string, object> ErrorPatterns { get; set; } = [];
-    public Dictionary<string, object> PerformanceDegradation { get; set; } = [];
-    public Dictionary<string, object> ResourcePressureTrends { get; set; } = [];
+    public Dictionary<string, object> ErrorPatterns { get; } = [];
+    public Dictionary<string, object> PerformanceDegradation { get; } = [];
+    public Dictionary<string, object> ResourcePressureTrends { get; } = [];
     public double HealthScore { get; set; }
-    public List<string> PredictedIssues { get; set; } = [];
+    public IList<string> PredictedIssues { get; } = [];
 }
 
 /// <summary>
@@ -531,7 +531,7 @@ public sealed class StructuredLogEntry
     public Microsoft.Extensions.Logging.LogLevel LogLevel { get; set; }
     public string EventType { get; set; } = string.Empty;
     public string CorrelationId { get; set; } = string.Empty;
-    public Dictionary<string, object> Properties { get; set; } = [];
+    public Dictionary<string, object> Properties { get; } = [];
     public string Message { get; set; } = string.Empty;
 }
 

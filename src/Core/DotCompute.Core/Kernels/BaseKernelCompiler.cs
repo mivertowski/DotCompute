@@ -228,7 +228,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
-            if (paramsObj is IList<object> parameters && parameters.Count == 0)
+            if (paramsObj is IIReadOnlyList<object> parameters && parameters.Count == 0)
             {
                 result.AddError("Kernel must have at least one parameter");
                 return result;
@@ -384,6 +384,13 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         return new KernelDefinition(name, code, entryPoint);
     }
+    /// <summary>
+    /// Gets compile asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<ManagedCompiledKernel> CompileAsync(IKernelSource source, CompilationOptions options, CancellationToken cancellationToken = default)
     {
@@ -412,6 +419,12 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             throw;
         }
     }
+    /// <summary>
+    /// Validates the async.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
     public async Task<KernelValidationResult> ValidateAsync(IKernelSource source, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -589,10 +602,30 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 /// </summary>
 public record CompilationMetrics
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; init; }
+    /// <summary>
+    /// Gets or sets the compilation time.
+    /// </summary>
+    /// <value>The compilation time.</value>
     public required TimeSpan CompilationTime { get; init; }
+    /// <summary>
+    /// Gets or sets the optimization level.
+    /// </summary>
+    /// <value>The optimization level.</value>
     public required OptimizationLevel OptimizationLevel { get; init; }
+    /// <summary>
+    /// Gets or sets the cache hit.
+    /// </summary>
+    /// <value>The cache hit.</value>
     public required bool CacheHit { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTime Timestamp { get; init; }
 
     /// <summary>
@@ -606,8 +639,20 @@ public record CompilationMetrics
 /// </summary>
 public class KernelCompilationException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the KernelCompilationException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public KernelCompilationException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the KernelCompilationException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
+    /// <summary>
+    /// Initializes a new instance of the KernelCompilationException class.
+    /// </summary>
     public KernelCompilationException()
     {
     }

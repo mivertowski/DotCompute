@@ -71,7 +71,7 @@ namespace DotCompute.Backends.CUDA.Execution.Models
         /// <summary>
         /// Gets or sets the percentile values for GPU execution times.
         /// </summary>
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        public Dictionary<int, double> Percentiles { get; } = [];
 
         /// <summary>
         /// Gets or sets the coefficient of variation (relative standard deviation).

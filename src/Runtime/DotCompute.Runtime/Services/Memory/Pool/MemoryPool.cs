@@ -18,12 +18,23 @@ public sealed class MemoryPool : IDisposable
     private readonly ConcurrentDictionary<long, Queue<IntPtr>> _pools = new();
     private readonly Timer _cleanupTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the MemoryPool class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public MemoryPool(ILogger logger)
     {
         _logger = logger;
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
     }
+    /// <summary>
+    /// Attempts to get buffer async.
+    /// </summary>
+    /// <param name="size">The size.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
     public ValueTask<IntPtr?> TryGetBufferAsync(long size, MemoryOptions options, CancellationToken cancellationToken)
     {
@@ -50,6 +61,10 @@ public sealed class MemoryPool : IDisposable
 
         return ValueTask.FromResult<IntPtr?>(null);
     }
+    /// <summary>
+    /// Gets perform maintenance asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask PerformMaintenanceAsync()
     {
@@ -104,6 +119,9 @@ public sealed class MemoryPool : IDisposable
         }
         return result;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

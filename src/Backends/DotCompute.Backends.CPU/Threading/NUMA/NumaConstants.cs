@@ -13,11 +13,20 @@ public static class NumaConstants
     /// </summary>
     public static class Distances
     {
+        /// <summary>
+        /// The local.
+        /// </summary>
         /// <summary>Local node distance.</summary>
         public const int Local = 10;
+        /// <summary>
+        /// The remote.
+        /// </summary>
 
         /// <summary>Remote node distance.</summary>
         public const int Remote = 20;
+        /// <summary>
+        /// The distant.
+        /// </summary>
 
         /// <summary>Distant node distance.</summary>
         public const int Distant = 30;
@@ -28,14 +37,26 @@ public static class NumaConstants
     /// </summary>
     public static class Sizes
     {
+        /// <summary>
+        /// The cache line size.
+        /// </summary>
         /// <summary>Standard cache line size.</summary>
         public const int CacheLineSize = 64;
+        /// <summary>
+        /// The page size.
+        /// </summary>
 
         /// <summary>Standard page size.</summary>
         public const int PageSize = 4096;
+        /// <summary>
+        /// The large page size.
+        /// </summary>
 
         /// <summary>Large page size (2MB).</summary>
         public const int LargePageSize = 2 * 1024 * 1024;
+        /// <summary>
+        /// The huge page size.
+        /// </summary>
 
         /// <summary>Huge page size (1GB).</summary>
         public const int HugePageSize = 1024 * 1024 * 1024;
@@ -46,11 +67,20 @@ public static class NumaConstants
     /// </summary>
     public static class Limits
     {
+        /// <summary>
+        /// The max cpus in mask.
+        /// </summary>
         /// <summary>Maximum CPUs in a single mask (ulong limit).</summary>
         public const int MaxCpusInMask = 64;
+        /// <summary>
+        /// The max processors per node.
+        /// </summary>
 
         /// <summary>Maximum processors per NUMA node estimate.</summary>
         public const int MaxProcessorsPerNode = 128;
+        /// <summary>
+        /// The max numa nodes.
+        /// </summary>
 
         /// <summary>Maximum NUMA nodes supported.</summary>
         public const int MaxNumaNodes = 256;

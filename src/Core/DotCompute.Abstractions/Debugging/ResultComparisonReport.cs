@@ -10,8 +10,8 @@ public class ResultComparisonReport
 {
     public string KernelName { get; init; } = string.Empty;
     public bool ResultsMatch { get; init; }
-    public string[] BackendsCompared { get; init; } = Array.Empty<string>();
-    public List<ResultDifference> Differences { get; init; } = [];
+    public IReadOnlyList<string> BackendsCompared { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<ResultDifference> Differences { get; init; } = [];
     public ComparisonStrategy Strategy { get; init; }
     public float Tolerance { get; init; }
     public Dictionary<string, PerformanceMetrics> PerformanceComparison { get; init; } = [];
@@ -29,7 +29,7 @@ public class ResultComparisonReport
     /// <summary>
     /// List of comparison issues found between the results.
     /// </summary>
-    public List<ComparisonIssue> Issues { get; init; } = [];
+    public IReadOnlyList<ComparisonIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Time when the comparison was performed.
@@ -39,5 +39,5 @@ public class ResultComparisonReport
     /// <summary>
     /// Alternative property name for ResultDifference (backward compatibility).
     /// </summary>
-    public List<ResultDifference> ResultDifference => Differences;
+    public IReadOnlyList<ResultDifference> ResultDifference => Differences;
 }

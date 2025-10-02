@@ -21,6 +21,11 @@ public sealed class CudaContextManager : IDisposable
     private readonly object _contextLock = new();
     private volatile bool _disposed;
     private int _currentDevice = -1;
+    /// <summary>
+    /// Initializes a new instance of the CudaContextManager class.
+    /// </summary>
+    /// <param name="primaryContext">The primary context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaContextManager(CudaContext primaryContext, ILogger logger)
     {
@@ -374,6 +379,9 @@ public sealed class CudaContextManager : IDisposable
             _logger.LogWarning(ex, "Failed to optimize context for device {DeviceId}", deviceId);
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

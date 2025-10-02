@@ -365,6 +365,9 @@ public static class BufferAllocationUtilities
         };
     }
 }
+/// <summary>
+/// An allocation strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Allocation strategy enumeration.
@@ -383,13 +386,45 @@ public enum AllocationStrategy
 /// </summary>
 public sealed class AllocationDescriptor
 {
+    /// <summary>
+    /// Gets or sets the element type.
+    /// </summary>
+    /// <value>The element type.</value>
     public required Type ElementType { get; init; }
+    /// <summary>
+    /// Gets or sets the element size.
+    /// </summary>
+    /// <value>The element size.</value>
     public required int ElementSize { get; init; }
+    /// <summary>
+    /// Gets or sets the count.
+    /// </summary>
+    /// <value>The count.</value>
     public required int Count { get; init; }
+    /// <summary>
+    /// Gets or sets the total size in bytes.
+    /// </summary>
+    /// <value>The total size in bytes.</value>
     public required long TotalSizeInBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public required MemoryOptions Options { get; init; }
+    /// <summary>
+    /// Gets or sets the backend type.
+    /// </summary>
+    /// <value>The backend type.</value>
     public required string BackendType { get; init; }
+    /// <summary>
+    /// Gets or sets the alignment.
+    /// </summary>
+    /// <value>The alignment.</value>
     public required int Alignment { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public required AllocationStrategy Strategy { get; init; }
 }
 
@@ -398,9 +433,29 @@ public sealed class AllocationDescriptor
 /// </summary>
 public sealed class MemoryUsageEstimate
 {
+    /// <summary>
+    /// Gets or sets the base size.
+    /// </summary>
+    /// <value>The base size.</value>
     public required long BaseSize { get; init; }
+    /// <summary>
+    /// Gets or sets the overhead.
+    /// </summary>
+    /// <value>The overhead.</value>
     public required long Overhead { get; init; }
+    /// <summary>
+    /// Gets or sets the alignment padding.
+    /// </summary>
+    /// <value>The alignment padding.</value>
     public required int AlignmentPadding { get; init; }
+    /// <summary>
+    /// Gets or sets the total estimated size.
+    /// </summary>
+    /// <value>The total estimated size.</value>
     public required long TotalEstimatedSize { get; init; }
+    /// <summary>
+    /// Gets or sets the efficiency ratio.
+    /// </summary>
+    /// <value>The efficiency ratio.</value>
     public required double EfficiencyRatio { get; init; }
 }

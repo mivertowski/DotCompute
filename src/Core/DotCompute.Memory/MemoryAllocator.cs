@@ -214,8 +214,20 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
     private readonly int _length;
     private readonly long _sizeInBytes;
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets or sets the memory.
+    /// </summary>
+    /// <value>The memory.</value>
 
     public Memory<T> Memory { get; }
+    /// <summary>
+    /// Initializes a new instance of the AlignedMemoryOwner class.
+    /// </summary>
+    /// <param name="allocator">The allocator.</param>
+    /// <param name="originalMemory">The original memory.</param>
+    /// <param name="alignedMemory">The aligned memory.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
 
     public AlignedMemoryOwner(MemoryAllocator allocator, IntPtr originalMemory, IntPtr alignedMemory, int length, long sizeInBytes)
     {
@@ -231,6 +243,9 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
             Memory = new Memory<T>(span.ToArray());
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -258,8 +273,15 @@ internal sealed class PinnedMemoryOwner<T>(MemoryAllocator allocator, GCHandle h
     private readonly GCHandle _handle = handle;
     private readonly long _sizeInBytes = sizeInBytes;
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets or sets the memory.
+    /// </summary>
+    /// <value>The memory.</value>
 
     public Memory<T> Memory { get; } = new Memory<T>(array);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -278,6 +300,9 @@ internal sealed class PinnedMemoryOwner<T>(MemoryAllocator allocator, GCHandle h
         _allocator.NotifyDeallocation(_sizeInBytes);
     }
 }
+/// <summary>
+/// A class that represents memory allocator statistics.
+/// </summary>
 
 /// <summary>
 /// Statistics about a memory allocator.

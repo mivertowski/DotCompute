@@ -27,6 +27,6 @@ namespace DotCompute.Core.Compute.Types
         /// <summary>
         /// Gets or sets the list of kernel parameters.
         /// </summary>
-        public List<KernelParameter> Parameters { get; set; } = [];
+        public IList<KernelParameter> Parameters { get; } = [];
     }
 }

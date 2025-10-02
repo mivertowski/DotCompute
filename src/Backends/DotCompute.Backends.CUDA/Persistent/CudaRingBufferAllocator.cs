@@ -109,6 +109,9 @@ namespace DotCompute.Backends.CUDA.Persistent
             }
 
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -133,12 +136,30 @@ namespace DotCompute.Backends.CUDA.Persistent
             _allocations.Clear();
             _disposed = true;
         }
+        /// <summary>
+        /// A class that represents ring buffer allocation.
+        /// </summary>
 
         private sealed class RingBufferAllocation(IntPtr devicePointer, long totalBytes, object ringBuffer) : IDisposable
         {
+            /// <summary>
+            /// Gets or sets the device pointer.
+            /// </summary>
+            /// <value>The device pointer.</value>
             public IntPtr DevicePointer { get; } = devicePointer;
+            /// <summary>
+            /// Gets or sets the total bytes.
+            /// </summary>
+            /// <value>The total bytes.</value>
             public long TotalBytes { get; } = totalBytes;
+            /// <summary>
+            /// Gets or sets the ring buffer.
+            /// </summary>
+            /// <value>The ring buffer.</value>
             public object RingBuffer { get; } = ringBuffer;
+            /// <summary>
+            /// Performs dispose.
+            /// </summary>
 
             public void Dispose()
             {
@@ -243,10 +264,27 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly ILogger _logger = logger;
         private int _currentIndex = 0;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the depth.
+        /// </summary>
+        /// <value>The depth.</value>
 
         public int Depth { get; } = depth;
+        /// <summary>
+        /// Gets or sets the elements per slice.
+        /// </summary>
+        /// <value>The elements per slice.</value>
         public long ElementsPerSlice { get; } = elementsPerSlice;
+        /// <summary>
+        /// Gets or sets the current time step.
+        /// </summary>
+        /// <value>The current time step.</value>
         public int CurrentTimeStep => _currentIndex;
+        /// <summary>
+        /// Gets the slice pointer.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <returns>The slice pointer.</returns>
 
         public IntPtr GetSlicePointer(int sliceIndex)
         {
@@ -260,12 +298,21 @@ namespace DotCompute.Backends.CUDA.Persistent
             var actualIndex = (_currentIndex + sliceIndex) % Depth;
             return _basePointer + (int)(actualIndex * _sliceBytes);
         }
+        /// <summary>
+        /// Performs advance.
+        /// </summary>
 
         public void Advance()
         {
             _currentIndex = (_currentIndex + 1) % Depth;
             _logger.LogTrace("Ring buffer advanced to index {Index}", _currentIndex);
         }
+        /// <summary>
+        /// Gets copy to slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data)
         {
@@ -289,6 +336,12 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             await Task.CompletedTask;
         }
+        /// <summary>
+        /// Gets copy from slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data)
         {
@@ -324,6 +377,9 @@ namespace DotCompute.Backends.CUDA.Persistent
             }
 
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose() => _disposed = true;
     }
@@ -337,25 +393,79 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly int _width = width;
         private readonly int _height = height;
         private readonly int _depth = depth;
+        /// <summary>
+        /// Gets or sets the depth.
+        /// </summary>
+        /// <value>The depth.</value>
 
         public int Depth => _ringBuffer.Depth;
+        /// <summary>
+        /// Gets or sets the elements per slice.
+        /// </summary>
+        /// <value>The elements per slice.</value>
         public long ElementsPerSlice => _ringBuffer.ElementsPerSlice;
+        /// <summary>
+        /// Gets or sets the current time step.
+        /// </summary>
+        /// <value>The current time step.</value>
         public int CurrentTimeStep => _ringBuffer.CurrentTimeStep;
+        /// <summary>
+        /// Gets or sets the grid dimensions.
+        /// </summary>
+        /// <value>The grid dimensions.</value>
 
 
         public (int Width, int Height, int Depth) GridDimensions => (_width, _height, _depth);
+        /// <summary>
+        /// Gets or sets the current.
+        /// </summary>
+        /// <value>The current.</value>
 
         public IntPtr Current => _ringBuffer.GetSlicePointer(0);
+        /// <summary>
+        /// Gets or sets the previous.
+        /// </summary>
+        /// <value>The previous.</value>
         public IntPtr Previous => _ringBuffer.GetSlicePointer(Depth - 1);
+        /// <summary>
+        /// Gets or sets the two steps ago.
+        /// </summary>
+        /// <value>The two steps ago.</value>
         public IntPtr TwoStepsAgo => Depth >= 3 ? _ringBuffer.GetSlicePointer(Depth - 2) : IntPtr.Zero;
+        /// <summary>
+        /// Gets the slice pointer.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <returns>The slice pointer.</returns>
 
         public IntPtr GetSlicePointer(int sliceIndex) => _ringBuffer.GetSlicePointer(sliceIndex);
+        /// <summary>
+        /// Performs advance.
+        /// </summary>
         public void Advance() => _ringBuffer.Advance();
+        /// <summary>
+        /// Performs swap buffers.
+        /// </summary>
         public void SwapBuffers() => Advance();
+        /// <summary>
+        /// Gets copy to slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyToSliceAsync(int sliceIndex, ReadOnlyMemory<T> data) => _ringBuffer.CopyToSliceAsync(sliceIndex, data);
+        /// <summary>
+        /// Gets copy from slice asynchronously.
+        /// </summary>
+        /// <param name="sliceIndex">The slice index.</param>
+        /// <param name="data">The data.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyFromSliceAsync(int sliceIndex, Memory<T> data) => _ringBuffer.CopyFromSliceAsync(sliceIndex, data);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose() => _ringBuffer.Dispose();
     }

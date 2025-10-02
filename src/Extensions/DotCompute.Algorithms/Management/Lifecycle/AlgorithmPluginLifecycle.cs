@@ -21,6 +21,11 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     private readonly SemaphoreSlim _stateLock;
     private readonly Timer? _healthCheckTimer;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the AlgorithmPluginLifecycle class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The options.</param>
 
     public AlgorithmPluginLifecycle(ILogger<AlgorithmPluginLifecycle> logger, AlgorithmPluginManagerOptions options)
     {
@@ -436,6 +441,9 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>Plugin lifecycle state.</returns>
     private PluginLifecycleState GetOrCreatePluginState(string pluginId) => _pluginStates.GetOrAdd(pluginId, id => new PluginLifecycleState(id));
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -494,23 +502,83 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 /// </summary>
 internal sealed class PluginLifecycleState(string pluginId)
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public string PluginId { get; } = pluginId;
+    /// <summary>
+    /// Gets or sets the current state.
+    /// </summary>
+    /// <value>The current state.</value>
     public PluginState CurrentState { get; private set; } = PluginState.Loaded;
+    /// <summary>
+    /// Gets or sets the health.
+    /// </summary>
+    /// <value>The health.</value>
     public PluginHealth Health { get; set; } = PluginHealth.Unknown;
+    /// <summary>
+    /// Gets or sets the last state change.
+    /// </summary>
+    /// <value>The last state change.</value>
     public DateTime LastStateChange { get; private set; } = DateTime.UtcNow;
+    /// <summary>
+    /// Gets or sets the last error.
+    /// </summary>
+    /// <value>The last error.</value>
     public Exception? LastError { get; set; }
+    /// <summary>
+    /// Gets or sets the initialization count.
+    /// </summary>
+    /// <value>The initialization count.</value>
 
     public int InitializationCount { get; set; }
+    /// <summary>
+    /// Gets or sets the restart count.
+    /// </summary>
+    /// <value>The restart count.</value>
     public int RestartCount { get; set; }
+    /// <summary>
+    /// Gets or sets the shutdown count.
+    /// </summary>
+    /// <value>The shutdown count.</value>
     public int ShutdownCount { get; set; }
+    /// <summary>
+    /// Gets or sets the health check count.
+    /// </summary>
+    /// <value>The health check count.</value>
     public int HealthCheckCount { get; set; }
+    /// <summary>
+    /// Gets or sets the last initialization.
+    /// </summary>
+    /// <value>The last initialization.</value>
 
     public DateTime? LastInitialization { get; set; }
+    /// <summary>
+    /// Gets or sets the last restart.
+    /// </summary>
+    /// <value>The last restart.</value>
     public DateTime? LastRestart { get; set; }
+    /// <summary>
+    /// Gets or sets the last shutdown.
+    /// </summary>
+    /// <value>The last shutdown.</value>
     public DateTime? LastShutdown { get; set; }
+    /// <summary>
+    /// Gets or sets the last health check.
+    /// </summary>
+    /// <value>The last health check.</value>
     public DateTime? LastHealthCheck { get; set; }
+    /// <summary>
+    /// Gets or sets the state history.
+    /// </summary>
+    /// <value>The state history.</value>
 
     public Queue<StateTransition> StateHistory { get; } = new();
+    /// <summary>
+    /// Performs transition to.
+    /// </summary>
+    /// <param name="newState">The new state.</param>
 
     public void TransitionTo(PluginState newState)
     {
@@ -527,6 +595,9 @@ internal sealed class PluginLifecycleState(string pluginId)
         }
     }
 }
+/// <summary>
+/// A class that represents state transition.
+/// </summary>
 
 /// <summary>
 /// Represents a state transition in plugin lifecycle.
@@ -714,7 +785,7 @@ public sealed class PluginStateInfo
     /// <summary>
     /// Gets the state transition history.
     /// </summary>
-    public List<StateTransition> StateHistory { get; init; } = [];
+    public IReadOnlyList<StateTransition> StateHistory { get; init; } = [];
 }
 
 /// <summary>

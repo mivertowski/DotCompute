@@ -16,7 +16,7 @@ public sealed class InputValidationResult
     /// <summary>
     /// Gets the list of validation issues found.
     /// </summary>
-    public List<string> Issues { get; init; } = [];
+    public IReadOnlyList<string> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the number of inputs validated.
@@ -26,12 +26,12 @@ public sealed class InputValidationResult
     /// <summary>
     /// Gets validation warnings that don't prevent execution.
     /// </summary>
-    public List<string> Warnings { get; init; } = [];
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets validation recommendations for improvement.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets the time taken for validation.

@@ -38,6 +38,13 @@ namespace DotCompute.Backends.CUDA.Execution
         private volatile bool _disposed;
         private long _totalAcquired;
         private long _totalReturned;
+        /// <summary>
+        /// Initializes a new instance of the CudaStreamPool class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="leastPriority">The least priority.</param>
+        /// <param name="greatestPriority">The greatest priority.</param>
 
         public CudaStreamPool(CudaContext context, ILogger<CudaStreamPool> logger, int leastPriority, int greatestPriority)
         {
@@ -465,6 +472,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 throw new ObjectDisposedException(nameof(CudaStreamPool));
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -507,10 +517,30 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class PooledStream
     {
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
         public IntPtr Handle { get; set; }
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public CudaStreamPriority Priority { get; set; }
+        /// <summary>
+        /// Gets or sets the created at.
+        /// </summary>
+        /// <value>The created at.</value>
         public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the acquired at.
+        /// </summary>
+        /// <value>The acquired at.</value>
         public DateTimeOffset? AcquiredAt { get; set; }
+        /// <summary>
+        /// Gets or sets the acquire count.
+        /// </summary>
+        /// <value>The acquire count.</value>
         public long AcquireCount { get; set; }
     }
 
@@ -631,6 +661,10 @@ namespace DotCompute.Backends.CUDA.Execution
             _pool = pool;
             _pooledStream = pooledStream;
         }
+        /// <summary>
+        /// Performs return stream to pool.
+        /// </summary>
+        /// <param name="streamId">The stream identifier.</param>
 
         public void ReturnStreamToPool(StreamId streamId) => _pool.Return(_pooledStream.Handle, _pooledStream.Priority);
     }
@@ -640,6 +674,10 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal interface IStreamReturnManager
     {
+        /// <summary>
+        /// Performs return stream to pool.
+        /// </summary>
+        /// <param name="streamId">The stream identifier.</param>
         public void ReturnStreamToPool(StreamId streamId);
     }
 }

@@ -12,6 +12,11 @@ public sealed class KernelCompilerStatistics
     private long _successfulCompilations;
     private long _cacheHits;
     private double _totalCompilationTimeMs;
+    /// <summary>
+    /// Performs record compilation.
+    /// </summary>
+    /// <param name="timeMs">The time ms.</param>
+    /// <param name="success">The success.</param>
 
     public void RecordCompilation(double timeMs, bool success)
     {
@@ -26,6 +31,9 @@ public sealed class KernelCompilerStatistics
             _totalCompilationTimeMs += timeMs;
         }
     }
+    /// <summary>
+    /// Performs record cache hit.
+    /// </summary>
 
     public void RecordCacheHit() => Interlocked.Increment(ref _cacheHits);
 }

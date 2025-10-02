@@ -9,6 +9,9 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class SolverKernels
 {
+    /// <summary>
+    /// The open c l forward substitution kernel.
+    /// </summary>
     #region Linear System Solvers
 
     /// <summary>
@@ -41,6 +44,9 @@ __kernel void forward_substitution(
         y[i] = 0.0f; // Handle singular case
     }
 }";
+    /// <summary>
+    /// The open c l backward substitution kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for backward substitution (solving Ux = y).
@@ -72,6 +78,9 @@ __kernel void backward_substitution(
         x[i] = 0.0f; // Handle singular case
     }
 }";
+    /// <summary>
+    /// The c u d a triangular solver kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for solving triangular systems with multiple right-hand sides.
@@ -130,6 +139,9 @@ extern ""C"" __global__ void triangular_solve_multi_rhs(
         }
     }
 }";
+    /// <summary>
+    /// The open c l conjugate gradient kernel.
+    /// </summary>
 
     #endregion
 
@@ -174,6 +186,9 @@ __kernel void conjugate_gradient_step(
     // Update search direction: p_new = r_new + beta * p
     p_new[i] = r_new[i] + beta * p[i];
 }";
+    /// <summary>
+    /// The c u d a jacobi iteration kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for Jacobi iteration method.
@@ -221,6 +236,9 @@ extern ""C"" __global__ void jacobi_iteration_cuda(
         residual[i] = res;
     }
 }";
+    /// <summary>
+    /// The open c l gauss seidel kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for Gauss-Seidel iteration method.
@@ -276,6 +294,9 @@ __kernel void gauss_seidel_iteration(
         residual[actual_i] = res;
     }
 }";
+    /// <summary>
+    /// The c u d a gradient descent kernel.
+    /// </summary>
 
     #endregion
 
@@ -308,6 +329,9 @@ extern ""C"" __global__ void gradient_descent_step(
         x[i] -= learning_rate * gradient[i];
     }
 }";
+    /// <summary>
+    /// The open c l adam optimizer kernel.
+    /// </summary>
 
     /// <summary>
     /// OpenCL kernel for Adam optimizer step.
@@ -345,6 +369,9 @@ __kernel void adam_optimizer_step(
     // Update parameters
     parameters[i] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
 }";
+    /// <summary>
+    /// The open c l diagonal preconditioner kernel.
+    /// </summary>
 
     #endregion
 
@@ -373,6 +400,9 @@ __kernel void apply_diagonal_preconditioner(
         output[i] = input[i]; // Identity for near-zero diagonal
     }
 }";
+    /// <summary>
+    /// The c u d a incomplete cholesky kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for incomplete Cholesky preconditioner application.
@@ -427,6 +457,9 @@ extern ""C"" __global__ void apply_incomplete_cholesky_preconditioner(
         }
     }
 }";
+    /// <summary>
+    /// The open c l convergence analysis kernel.
+    /// </summary>
 
     #endregion
 

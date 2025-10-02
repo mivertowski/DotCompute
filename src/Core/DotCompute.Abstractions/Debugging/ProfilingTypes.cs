@@ -41,12 +41,12 @@ public sealed class ProfilingSession
     /// <summary>
     /// Gets the input parameters for the kernel.
     /// </summary>
-    public object[] Inputs { get; init; } = [];
+    public IReadOnlyList<object> Inputs { get; init; } = Array.Empty<object>();
 
     /// <summary>
     /// Gets the profiling data collected during this session.
     /// </summary>
-    public List<ProfilingData> Data { get; init; } = [];
+    public IReadOnlyList<ProfilingData> Data { get; init; } = [];
 
     /// <summary>
     /// Gets the memory usage at the start of the session.
@@ -320,12 +320,12 @@ public sealed class PerformanceAnalysis
     /// <summary>
     /// Gets performance trends identified in the data.
     /// </summary>
-    public List<PerformanceTrend> Trends { get; init; } = [];
+    public IReadOnlyList<PerformanceTrend> Trends { get; init; } = [];
 
     /// <summary>
     /// Gets performance anomalies detected in the data.
     /// </summary>
-    public List<PerformanceAnomaly> Anomalies { get; init; } = [];
+    public IReadOnlyList<PerformanceAnomaly> Anomalies { get; init; } = [];
 
     /// <summary>
     /// Gets the accelerator type used for the analysis.
@@ -468,7 +468,7 @@ public sealed class AcceleratorComparisonResult
     /// <summary>
     /// Gets the accelerator performance summaries.
     /// </summary>
-    public List<AcceleratorPerformanceSummary> AcceleratorSummaries { get; init; } = [];
+    public IReadOnlyList<AcceleratorPerformanceSummary> AcceleratorSummaries { get; init; } = [];
 
     /// <summary>
     /// Gets the fastest accelerator for this kernel.
@@ -498,7 +498,7 @@ public sealed class AcceleratorComparisonResult
     /// <summary>
     /// Gets performance recommendations.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets performance comparisons between accelerators.

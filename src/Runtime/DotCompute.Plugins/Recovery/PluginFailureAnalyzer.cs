@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -18,6 +19,11 @@ public sealed class PluginFailureAnalyzer : IDisposable
     private readonly Timer _analysisTimer;
     private readonly SemaphoreSlim _analysisLock;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginFailureAnalyzer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public PluginFailureAnalyzer(ILogger<PluginFailureAnalyzer> logger, PluginRecoveryConfiguration? config = null)
     {
@@ -238,7 +244,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         _ => false
     };
 
-    private static FailureSeverity DetermineSeverity(List<FailureInstance> failures)
+    private static FailureSeverity DetermineSeverity(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count == 0)
         {
@@ -260,7 +266,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         };
     }
 
-    private static Dictionary<string, double> AnalyzeTemporalPatterns(List<FailureInstance> failures)
+    private static Dictionary<string, double> AnalyzeTemporalPatterns(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count < 2)
         {
@@ -282,7 +288,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         };
     }
 
-    private static Dictionary<string, long> AnalyzeMemoryPatterns(List<FailureInstance> failures)
+    private static Dictionary<string, long> AnalyzeMemoryPatterns(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count == 0)
         {
@@ -308,7 +314,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         var recommendations = new List<string>();
 
         // Memory-based recommendations
-        if (failures.Any(f => f.ExceptionType.Contains("OutOfMemory")))
+        if (failures.Any(f => f.ExceptionType.Contains("OutOfMemory", StringComparison.OrdinalIgnoreCase)))
         {
             recommendations.Add("Consider increasing memory limits or implementing memory pooling");
             recommendations.Add("Review memory usage patterns and optimize allocation strategies");
@@ -316,9 +322,9 @@ public sealed class PluginFailureAnalyzer : IDisposable
 
         // Threading-based recommendations
         var threadingIssues = failures.Where(f =>
-            f.ExceptionType.Contains("Thread") ||
-            f.ExceptionType.Contains("Deadlock") ||
-            f.ExceptionType.Contains("Race")).ToList();
+            f.ExceptionType.Contains("Thread", StringComparison.OrdinalIgnoreCase) ||
+            f.ExceptionType.Contains("Deadlock", StringComparison.CurrentCulture) ||
+            f.ExceptionType.Contains("Race", StringComparison.CurrentCulture)).ToList();
 
         if (threadingIssues.Count > 0)
         {
@@ -352,7 +358,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         return Task.FromResult(recommendations);
     }
 
-    private static double CalculateAnalysisConfidence(List<FailureInstance> failures)
+    private static double CalculateAnalysisConfidence(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count == 0)
         {
@@ -436,7 +442,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
     }
 
     // Helper methods
-    private static double CalculateStandardDeviation(List<double> values)
+    private static double CalculateStandardDeviation(IReadOnlyList<double> values)
     {
         if (values.Count < 2)
         {
@@ -449,7 +455,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         return Math.Sqrt(sumOfSquaredDifferences / values.Count);
     }
 
-    private static TimeSpan CalculateAverageTimeBetweenFailures(List<FailureInstance> failures)
+    private static TimeSpan CalculateAverageTimeBetweenFailures(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count < 2)
         {
@@ -469,7 +475,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         return new TimeSpan(averageTicks);
     }
 
-    private static long CalculateMemoryGrowthTrend(List<FailureInstance> failures)
+    private static long CalculateMemoryGrowthTrend(IReadOnlyList<FailureInstance> failures)
     {
         if (failures.Count < 2)
         {
@@ -602,7 +608,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
             factors.Add("Increasing failure trend");
         }
 
-        if (statistics.MostCommonExceptionType.Contains("OutOfMemory"))
+        if (statistics.MostCommonExceptionType.Contains("OutOfMemory", StringComparison.CurrentCulture))
         {
             factors.Add("Memory management issues");
         }
@@ -610,6 +616,9 @@ public sealed class PluginFailureAnalyzer : IDisposable
 
         return factors;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -623,69 +632,255 @@ public sealed class PluginFailureAnalyzer : IDisposable
         }
     }
 }
+/// <summary>
+/// A class that represents failure instance.
+/// </summary>
 
 // Supporting data structures
 public sealed record FailureInstance
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public required DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the exception type.
+    /// </summary>
+    /// <value>The exception type.</value>
     public required string ExceptionType { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public required string ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the stack trace.
+    /// </summary>
+    /// <value>The stack trace.</value>
     public string? StackTrace { get; init; }
+    /// <summary>
+    /// Gets or sets the accelerator type.
+    /// </summary>
+    /// <value>The accelerator type.</value>
     public string? AcceleratorType { get; init; }
+    /// <summary>
+    /// Gets or sets the operation type.
+    /// </summary>
+    /// <value>The operation type.</value>
     public string? OperationType { get; init; }
+    /// <summary>
+    /// Gets or sets the memory usage.
+    /// </summary>
+    /// <value>The memory usage.</value>
     public long MemoryUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the thread identifier.
+    /// </summary>
+    /// <value>The thread id.</value>
     public int ThreadId { get; init; }
+    /// <summary>
+    /// Gets or sets the process identifier.
+    /// </summary>
+    /// <value>The process id.</value>
     public int ProcessId { get; init; }
 }
+/// <summary>
+/// A class that represents failure analysis result.
+/// </summary>
 
 public sealed class FailureAnalysisResult
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the analysis timestamp.
+    /// </summary>
+    /// <value>The analysis timestamp.</value>
     public required DateTimeOffset AnalysisTimestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the total failures.
+    /// </summary>
+    /// <value>The total failures.</value>
     public required int TotalFailures { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public required FailureSeverity Severity { get; set; }
+    /// <summary>
+    /// Gets or sets the most common exception type.
+    /// </summary>
+    /// <value>The most common exception type.</value>
     public string? MostCommonExceptionType { get; set; }
-    public Dictionary<string, int> ExceptionTypeDistribution { get; set; } = [];
-    public Dictionary<string, double> FailureFrequency { get; set; } = [];
-    public Dictionary<string, long> MemoryPatterns { get; set; } = [];
-    public List<string> Recommendations { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the exception type distribution.
+    /// </summary>
+    /// <value>The exception type distribution.</value>
+    public Dictionary<string, int> ExceptionTypeDistribution { get; } = [];
+    /// <summary>
+    /// Gets or sets the failure frequency.
+    /// </summary>
+    /// <value>The failure frequency.</value>
+    public Dictionary<string, double> FailureFrequency { get; } = [];
+    /// <summary>
+    /// Gets or sets the memory patterns.
+    /// </summary>
+    /// <value>The memory patterns.</value>
+    public Dictionary<string, long> MemoryPatterns { get; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IList<string> Recommendations { get; } = [];
+    /// <summary>
+    /// Gets or sets the confidence.
+    /// </summary>
+    /// <value>The confidence.</value>
     public required double Confidence { get; set; }
 }
+/// <summary>
+/// A class that represents failure pattern.
+/// </summary>
 
 public sealed class FailurePattern
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the last updated.
+    /// </summary>
+    /// <value>The last updated.</value>
     public required DateTimeOffset LastUpdated { get; init; }
+    /// <summary>
+    /// Gets or sets the dominant exception type.
+    /// </summary>
+    /// <value>The dominant exception type.</value>
     public string? DominantExceptionType { get; init; }
+    /// <summary>
+    /// Gets or sets the average failure interval.
+    /// </summary>
+    /// <value>The average failure interval.</value>
     public double AverageFailureInterval { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public FailureSeverity Severity { get; init; }
+    /// <summary>
+    /// Gets or sets the trend direction.
+    /// </summary>
+    /// <value>The trend direction.</value>
     public FailureTrendDirection TrendDirection { get; init; }
+    /// <summary>
+    /// Gets or sets the confidence.
+    /// </summary>
+    /// <value>The confidence.</value>
     public double Confidence { get; init; }
 }
+/// <summary>
+/// A class that represents failure statistics.
+/// </summary>
 
 public sealed class FailureStatistics
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the time window.
+    /// </summary>
+    /// <value>The time window.</value>
     public TimeSpan TimeWindow { get; init; }
+    /// <summary>
+    /// Gets or sets the total failures.
+    /// </summary>
+    /// <value>The total failures.</value>
     public int TotalFailures { get; init; }
+    /// <summary>
+    /// Gets or sets the failure rate.
+    /// </summary>
+    /// <value>The failure rate.</value>
     public double FailureRate { get; init; }
+    /// <summary>
+    /// Gets or sets the most common exception type.
+    /// </summary>
+    /// <value>The most common exception type.</value>
     public string MostCommonExceptionType { get; init; } = "None";
+    /// <summary>
+    /// Gets or sets the average time between failures.
+    /// </summary>
+    /// <value>The average time between failures.</value>
     public TimeSpan AverageTimeBetweenFailures { get; init; }
+    /// <summary>
+    /// Gets or sets the failures per hour.
+    /// </summary>
+    /// <value>The failures per hour.</value>
     public Dictionary<int, int> FailuresPerHour { get; init; } = [];
 }
+/// <summary>
+/// A class that represents failure prediction.
+/// </summary>
 
 public sealed class FailurePrediction
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the prediction timestamp.
+    /// </summary>
+    /// <value>The prediction timestamp.</value>
     public required DateTimeOffset PredictionTimestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the look ahead period.
+    /// </summary>
+    /// <value>The look ahead period.</value>
     public required TimeSpan LookAheadPeriod { get; init; }
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    /// <value>The risk level.</value>
     public required FailureRiskLevel RiskLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the confidence score.
+    /// </summary>
+    /// <value>The confidence score.</value>
     public required double ConfidenceScore { get; set; }
+    /// <summary>
+    /// Gets or sets the estimated failures in period.
+    /// </summary>
+    /// <value>The estimated failures in period.</value>
     public required int EstimatedFailuresInPeriod { get; set; }
+    /// <summary>
+    /// Gets or sets the next likely failure time.
+    /// </summary>
+    /// <value>The next likely failure time.</value>
     public DateTimeOffset? NextLikelyFailureTime { get; set; }
-    public List<string> PrimaryRiskFactors { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the primary risk factors.
+    /// </summary>
+    /// <value>The primary risk factors.</value>
+    public IList<string> PrimaryRiskFactors { get; } = [];
 }
+/// <summary>
+/// An failure severity enumeration.
+/// </summary>
 
 public enum FailureSeverity
 {
@@ -695,6 +890,9 @@ public enum FailureSeverity
     High,
     Critical
 }
+/// <summary>
+/// An failure trend direction enumeration.
+/// </summary>
 
 public enum FailureTrendDirection
 {
@@ -702,6 +900,9 @@ public enum FailureTrendDirection
     Stable,
     Increasing
 }
+/// <summary>
+/// An failure risk level enumeration.
+/// </summary>
 
 public enum FailureRiskLevel
 {

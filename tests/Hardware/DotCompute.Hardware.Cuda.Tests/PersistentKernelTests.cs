@@ -16,6 +16,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     public class PersistentKernelTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private readonly CudaAcceleratorFactory _factory = new();
+        /// <summary>
+        /// Gets ring buffer_ pattern_ kernel_ should_ compile.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task RingBuffer_Pattern_Kernel_Should_Compile()
@@ -63,6 +67,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets time step_ advance_ kernel_ should_ execute.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task TimeStep_Advance_Kernel_Should_Execute()
@@ -141,6 +149,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets wave_ simulation_ kernel_ should_ compile.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Wave_Simulation_Kernel_Should_Compile()
@@ -192,6 +204,12 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Performs kernel_ configuration_ should_ validate_ correctly.
+        /// </summary>
+        /// <param name="ringBufferDepth">The ring buffer depth.</param>
+        /// <param name="blockSize">The block size.</param>
+        /// <param name="shouldBeValid">The should be val identifier.</param>
 
         [Theory]
         [InlineData(1, 256, false)] // Invalid: depth too small
@@ -211,6 +229,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 $"Configuration with depth={ringBufferDepth}, blockSize={blockSize} should be {(shouldBeValid ? "valid" : "invalid")}");
         }
+        /// <summary>
+        /// Gets simple_ persistent_ pattern_ kernel_ should_ execute.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Simple_Persistent_Pattern_Kernel_Should_Execute()
@@ -289,6 +311,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             await kernel.DisposeAsync();
         }
+        /// <summary>
+        /// Gets multi_ buffer_ copy_ pattern_ should_ work.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Multi_Buffer_Copy_Pattern_Should_Work()
@@ -335,6 +361,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }
         }
+        /// <summary>
+        /// Performs grid_ dimensions_ should_ calculate_ correctly.
+        /// </summary>
+        /// <param name="dimensionType">The dimension type.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        /// <param name="depth">The depth.</param>
 
         [Theory]
         [InlineData("1D", 256, 1, 1)]
@@ -364,12 +397,26 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// A class that represents test logger.
+        /// </summary>
 
         private class TestLogger(ITestOutputHelper output) : ILogger
         {
             private readonly ITestOutputHelper _output = output;
+            /// <summary>
+            /// Gets begin scope.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="state">The state.</param>
+            /// <returns>The result of the operation.</returns>
 
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
+            /// <summary>
+            /// Determines whether enabled.
+            /// </summary>
+            /// <param name="logLevel">The log level.</param>
+            /// <returns>true if the condition is met; otherwise, false.</returns>
             public bool IsEnabled(LogLevel logLevel) => true;
 
             void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state,

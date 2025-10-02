@@ -14,9 +14,29 @@ namespace DotCompute.Backends.CPU.Kernels.Models;
 /// </summary>
 internal sealed class CpuKernelCompilationContext
 {
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
     public required KernelDefinition Definition { get; init; }
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public required CompilationOptions Options { get; init; }
+    /// <summary>
+    /// Gets or sets the simd capabilities.
+    /// </summary>
+    /// <value>The simd capabilities.</value>
     public required SimdSummary SimdCapabilities { get; init; }
+    /// <summary>
+    /// Gets or sets the thread pool.
+    /// </summary>
+    /// <value>The thread pool.</value>
     public required CpuThreadPool ThreadPool { get; init; }
+    /// <summary>
+    /// Gets or sets the logger.
+    /// </summary>
+    /// <value>The logger.</value>
     public required ILogger Logger { get; init; }
 }

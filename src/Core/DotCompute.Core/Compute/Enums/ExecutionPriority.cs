@@ -5,6 +5,9 @@
 // All compute engine execution priorities now use the unified type.
 
 namespace DotCompute.Core.Compute.Enums;
+/// <summary>
+/// An execution priority enumeration.
+/// </summary>
 
 // Type alias for backward compatibility
 // Use DotCompute.Abstractions.Execution.ExecutionPriority directly in new code

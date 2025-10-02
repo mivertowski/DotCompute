@@ -32,6 +32,14 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly ConcurrentDictionary<Guid, CudaKernelExecution> _activeExecutions;
         private readonly SemaphoreSlim _executionSemaphore;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaKernelExecutor class.
+        /// </summary>
+        /// <param name="accelerator">The accelerator.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="streamManager">The stream manager.</param>
+        /// <param name="eventManager">The event manager.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaKernelExecutor(
             IAccelerator accelerator,
@@ -56,6 +64,10 @@ namespace DotCompute.Backends.CUDA.Execution
 
             _logger.LogInfoMessage($"CUDA Kernel Executor initialized for device {context.DeviceId} ({_deviceProperties.DeviceName})");
         }
+        /// <summary>
+        /// Gets or sets the accelerator.
+        /// </summary>
+        /// <value>The accelerator.</value>
 
         public IAccelerator Accelerator => _accelerator;
 
@@ -527,7 +539,7 @@ namespace DotCompute.Backends.CUDA.Execution
             return peak_gflops * 0.3; // Assume 30% efficiency for typical workloads
         }
 
-        private BottleneckAnalysis AnalyzeBottlenecks(List<double> timings, List<double> throughputs)
+        private BottleneckAnalysis AnalyzeBottlenecks(List<double> timings, IReadOnlyList<double> throughputs)
         {
             var avgThroughput = throughputs.Count > 0 ? throughputs.Average() : 0;
             var peakThroughput = CalculateComputeThroughput(1.0); // Peak for 1ms
@@ -654,6 +666,9 @@ namespace DotCompute.Backends.CUDA.Execution
                 throw new ObjectDisposedException(nameof(CudaKernelExecutor));
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -706,14 +721,50 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     internal sealed class CudaKernelExecution
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public Guid Id { get; set; }
+        /// <summary>
+        /// Gets or sets the kernel name.
+        /// </summary>
+        /// <value>The kernel name.</value>
         public string KernelName { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the submitted at.
+        /// </summary>
+        /// <value>The submitted at.</value>
         public DateTimeOffset SubmittedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the completed at.
+        /// </summary>
+        /// <value>The completed at.</value>
         public DateTimeOffset? CompletedAt { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether completed.
+        /// </summary>
+        /// <value>The is completed.</value>
         public bool IsCompleted { get; set; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
         public IntPtr Stream { get; set; }
+        /// <summary>
+        /// Gets or sets the start event.
+        /// </summary>
+        /// <value>The start event.</value>
         public IntPtr StartEvent { get; set; }
+        /// <summary>
+        /// Gets or sets the end event.
+        /// </summary>
+        /// <value>The end event.</value>
         public IntPtr EndEvent { get; set; }
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public Exception? Error { get; set; }
     }
 }

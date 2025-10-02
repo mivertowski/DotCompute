@@ -20,10 +20,26 @@ namespace DotCompute.Backends.CUDA
     public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IBackendFactory
     {
         private readonly ILogger<CudaBackendFactory> _logger = logger ?? new NullLogger<CudaBackendFactory>();
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name => "CUDA";
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
         public string Description => "NVIDIA CUDA GPU Backend";
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>The version.</value>
         public Version Version => new(1, 0, 0);
+        /// <summary>
+        /// Determines whether available.
+        /// </summary>
+        /// <returns>true if the condition is met; otherwise, false.</returns>
 
         public bool IsAvailable()
         {
@@ -53,6 +69,10 @@ namespace DotCompute.Backends.CUDA
                 return false;
             }
         }
+        /// <summary>
+        /// Creates a new accelerators.
+        /// </summary>
+        /// <returns>The created accelerators.</returns>
 
         public IEnumerable<IAccelerator> CreateAccelerators()
         {
@@ -98,6 +118,10 @@ namespace DotCompute.Backends.CUDA
                 yield return accelerator;
             }
         }
+        /// <summary>
+        /// Creates a new default accelerator.
+        /// </summary>
+        /// <returns>The created default accelerator.</returns>
 
         public IAccelerator? CreateDefaultAccelerator()
         {
@@ -130,6 +154,10 @@ namespace DotCompute.Backends.CUDA
                 return null;
             }
         }
+        /// <summary>
+        /// Gets the capabilities.
+        /// </summary>
+        /// <returns>The capabilities.</returns>
 
         public BackendCapabilities GetCapabilities()
         {

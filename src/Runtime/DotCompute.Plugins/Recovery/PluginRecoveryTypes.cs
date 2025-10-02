@@ -158,7 +158,7 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Additional custom metrics
         /// </summary>
-        public Dictionary<string, object> CustomMetrics { get; set; } = [];
+        public Dictionary<string, object> CustomMetrics { get; } = [];
 
         /// <summary>
         /// Plugin start time
@@ -169,6 +169,10 @@ namespace DotCompute.Plugins.Recovery
         /// Total runtime duration
         /// </summary>
         public TimeSpan Runtime => DateTimeOffset.UtcNow - StartTime;
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString()
             => $"Plugin={PluginId}, Healthy={IsHealthy}, Errors={ErrorCount}, Restarts={RestartCount}, Uptime={UptimePercent:F1}%";
@@ -202,22 +206,22 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Required dependencies
         /// </summary>
-        public List<string> RequiredDependencies { get; set; } = [];
+        public IList<string> RequiredDependencies { get; } = [];
 
         /// <summary>
         /// Missing dependencies
         /// </summary>
-        public List<string> MissingDependencies { get; set; } = [];
+        public IList<string> MissingDependencies { get; } = [];
 
         /// <summary>
         /// Version conflicts
         /// </summary>
-        public List<string> VersionConflicts { get; set; } = [];
+        public IList<string> VersionConflicts { get; } = [];
 
         /// <summary>
         /// Compatibility warnings
         /// </summary>
-        public List<string> Warnings { get; set; } = [];
+        public IList<string> Warnings { get; } = [];
 
         /// <summary>
         /// Error message if compatibility check fails
@@ -242,12 +246,16 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Gets or sets dependency conflicts
         /// </summary>
-        public List<string> DependencyConflicts { get; set; } = [];
+        public IList<string> DependencyConflicts { get; } = [];
 
         /// <summary>
         /// Gets security issues
         /// </summary>
-        public List<string> SecurityIssues { get; set; } = [];
+        public IList<string> SecurityIssues { get; } = [];
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString()
             => $"Plugin={PluginId}, Compatible={IsCompatible}, MissingDeps={MissingDependencies.Count}, Conflicts={VersionConflicts.Count}";
@@ -262,15 +270,51 @@ namespace DotCompute.Plugins.Recovery
         private readonly PluginRecoveryConfiguration _config = config;
         private readonly List<Exception> _recentErrors = [];
         private readonly object _lock = new();
+        /// <summary>
+        /// Gets or sets the plugin identifier.
+        /// </summary>
+        /// <value>The plugin id.</value>
 
         public string PluginId => _pluginId;
+        /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
+        /// <value>The status.</value>
         public PluginHealthStatus Status { get; private set; } = PluginHealthStatus.Unknown;
+        /// <summary>
+        /// Gets or sets the error count.
+        /// </summary>
+        /// <value>The error count.</value>
         public int ErrorCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the restart count.
+        /// </summary>
+        /// <value>The restart count.</value>
         public int RestartCount { get; private set; }
+        /// <summary>
+        /// Gets or sets the consecutive failures.
+        /// </summary>
+        /// <value>The consecutive failures.</value>
         public int ConsecutiveFailures { get; private set; }
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public DateTimeOffset LastError { get; private set; } = DateTimeOffset.MinValue;
+        /// <summary>
+        /// Gets or sets the last restart.
+        /// </summary>
+        /// <value>The last restart.</value>
         public DateTimeOffset LastRestart { get; private set; } = DateTimeOffset.MinValue;
+        /// <summary>
+        /// Gets or sets the last successful operation.
+        /// </summary>
+        /// <value>The last successful operation.</value>
         public DateTimeOffset LastSuccessfulOperation { get; private set; } = DateTimeOffset.UtcNow;
+        /// <summary>
+        /// Performs record error.
+        /// </summary>
+        /// <param name="error">The error.</param>
 
         public void RecordError(Exception error)
         {
@@ -290,6 +334,9 @@ namespace DotCompute.Plugins.Recovery
                 UpdateHealthStatus();
             }
         }
+        /// <summary>
+        /// Performs record successful recovery.
+        /// </summary>
 
         public void RecordSuccessfulRecovery()
         {
@@ -302,6 +349,9 @@ namespace DotCompute.Plugins.Recovery
                 UpdateHealthStatus();
             }
         }
+        /// <summary>
+        /// Performs record successful operation.
+        /// </summary>
 
         public void RecordSuccessfulOperation()
         {
@@ -312,6 +362,10 @@ namespace DotCompute.Plugins.Recovery
                 UpdateHealthStatus();
             }
         }
+        /// <summary>
+        /// Determines should restart.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public bool ShouldRestart()
         {
@@ -339,6 +393,10 @@ namespace DotCompute.Plugins.Recovery
                 return timeSinceLastRestart >= _config.MinRestartInterval;
             }
         }
+        /// <summary>
+        /// Determines should isolate.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public bool ShouldIsolate()
         {
@@ -353,6 +411,10 @@ namespace DotCompute.Plugins.Recovery
                 return ConsecutiveFailures >= _config.FailureThresholdForIsolation;
             }
         }
+        /// <summary>
+        /// Gets the recent errors.
+        /// </summary>
+        /// <returns>The recent errors.</returns>
 
         public List<Exception> GetRecentErrors()
         {
@@ -478,14 +540,50 @@ namespace DotCompute.Plugins.Recovery
     /// </summary>
     public sealed class PluginResourceUsage
     {
+        /// <summary>
+        /// Gets or sets the plugin identifier.
+        /// </summary>
+        /// <value>The plugin id.</value>
         public string PluginId { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the memory usage bytes.
+        /// </summary>
+        /// <value>The memory usage bytes.</value>
         public long MemoryUsageBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the cpu usage percent.
+        /// </summary>
+        /// <value>The cpu usage percent.</value>
         public double CpuUsagePercent { get; set; }
+        /// <summary>
+        /// Gets or sets the thread count.
+        /// </summary>
+        /// <value>The thread count.</value>
         public int ThreadCount { get; set; }
+        /// <summary>
+        /// Gets or sets the file handle count.
+        /// </summary>
+        /// <value>The file handle count.</value>
         public int FileHandleCount { get; set; }
+        /// <summary>
+        /// Gets or sets the network bytes received.
+        /// </summary>
+        /// <value>The network bytes received.</value>
         public long NetworkBytesReceived { get; set; }
+        /// <summary>
+        /// Gets or sets the network bytes sent.
+        /// </summary>
+        /// <value>The network bytes sent.</value>
         public long NetworkBytesSent { get; set; }
+        /// <summary>
+        /// Gets or sets the processor time.
+        /// </summary>
+        /// <value>The processor time.</value>
         public TimeSpan ProcessorTime { get; set; }
+        /// <summary>
+        /// Gets or sets the measurement time.
+        /// </summary>
+        /// <value>The measurement time.</value>
         public DateTimeOffset MeasurementTime { get; set; } = DateTimeOffset.UtcNow;
 
         /// <summary>
@@ -514,6 +612,10 @@ namespace DotCompute.Plugins.Recovery
                    ThreadCount > Thresholds.ThreadCriticalCount ||
                    FileHandleCount > Thresholds.FileHandleCriticalCount;
         }
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString()
             => $"Plugin={PluginId}, Memory={MemoryUsageBytes / 1024 / 1024}MB, CPU={CpuUsagePercent:F1}%, Threads={ThreadCount}";
@@ -524,13 +626,45 @@ namespace DotCompute.Plugins.Recovery
     /// </summary>
     public sealed class PluginResourceThresholds
     {
+        /// <summary>
+        /// Gets or sets the memory warning bytes.
+        /// </summary>
+        /// <value>The memory warning bytes.</value>
         public long MemoryWarningBytes { get; set; } = 512 * 1024 * 1024; // 512MB
+        /// <summary>
+        /// Gets or sets the memory critical bytes.
+        /// </summary>
+        /// <value>The memory critical bytes.</value>
         public long MemoryCriticalBytes { get; set; } = 1024 * 1024 * 1024; // 1GB
+        /// <summary>
+        /// Gets or sets the cpu warning percent.
+        /// </summary>
+        /// <value>The cpu warning percent.</value>
         public double CpuWarningPercent { get; set; } = 75.0;
+        /// <summary>
+        /// Gets or sets the cpu critical percent.
+        /// </summary>
+        /// <value>The cpu critical percent.</value>
         public double CpuCriticalPercent { get; set; } = 90.0;
+        /// <summary>
+        /// Gets or sets the thread warning count.
+        /// </summary>
+        /// <value>The thread warning count.</value>
         public int ThreadWarningCount { get; set; } = 50;
+        /// <summary>
+        /// Gets or sets the thread critical count.
+        /// </summary>
+        /// <value>The thread critical count.</value>
         public int ThreadCriticalCount { get; set; } = 100;
+        /// <summary>
+        /// Gets or sets the file handle warning count.
+        /// </summary>
+        /// <value>The file handle warning count.</value>
         public int FileHandleWarningCount { get; set; } = 100;
+        /// <summary>
+        /// Gets or sets the file handle critical count.
+        /// </summary>
+        /// <value>The file handle critical count.</value>
         public int FileHandleCriticalCount { get; set; } = 200;
     }
 
@@ -539,23 +673,83 @@ namespace DotCompute.Plugins.Recovery
     /// </summary>
     public sealed class PluginHealthReport
     {
-        public List<PluginHealthInfo> PluginHealths { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the plugin healths.
+        /// </summary>
+        /// <value>The plugin healths.</value>
+        public IList<PluginHealthInfo> PluginHealths { get; } = [];
+        /// <summary>
+        /// Gets or sets the total plugins.
+        /// </summary>
+        /// <value>The total plugins.</value>
         public int TotalPlugins => PluginHealths.Count;
+        /// <summary>
+        /// Gets or sets the healthy plugins.
+        /// </summary>
+        /// <value>The healthy plugins.</value>
         public int HealthyPlugins => PluginHealths.Count(p => p.IsHealthy);
+        /// <summary>
+        /// Gets or sets the unhealthy plugins.
+        /// </summary>
+        /// <value>The unhealthy plugins.</value>
         public int UnhealthyPlugins => TotalPlugins - HealthyPlugins;
+        /// <summary>
+        /// Gets or sets a value indicating whether olated plugins.
+        /// </summary>
+        /// <value>The isolated plugins.</value>
         public int IsolatedPlugins => PluginHealths.Count(p => p.IsIsolated);
+        /// <summary>
+        /// Gets or sets the overall health percent.
+        /// </summary>
+        /// <value>The overall health percent.</value>
         public double OverallHealthPercent => TotalPlugins == 0 ? 100.0 : (double)HealthyPlugins / TotalPlugins * 100.0;
+        /// <summary>
+        /// Gets or sets the report time.
+        /// </summary>
+        /// <value>The report time.</value>
         public DateTimeOffset ReportTime { get; set; } = DateTimeOffset.UtcNow;
+        /// <summary>
+        /// Gets or sets the plugin identifier.
+        /// </summary>
+        /// <value>The plugin id.</value>
 
         // Additional properties for compatibility with PluginHealthMonitor
         public string PluginId { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the status.
+        /// </summary>
+        /// <value>The status.</value>
         public PluginHealthStatus Status { get; set; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+        /// <summary>
+        /// Gets or sets the memory usage bytes.
+        /// </summary>
+        /// <value>The memory usage bytes.</value>
         public long MemoryUsageBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the cpu usage percent.
+        /// </summary>
+        /// <value>The cpu usage percent.</value>
         public double CpuUsagePercent { get; set; }
+        /// <summary>
+        /// Gets or sets the active operations.
+        /// </summary>
+        /// <value>The active operations.</value>
         public int ActiveOperations { get; set; }
+        /// <summary>
+        /// Gets or sets the overall health.
+        /// </summary>
+        /// <value>The overall health.</value>
         public double OverallHealth { get; set; }
-        public Dictionary<string, object> Metrics { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the metrics.
+        /// </summary>
+        /// <value>The metrics.</value>
+        public Dictionary<string, object> Metrics { get; } = [];
 
         /// <summary>
         /// Gets critical plugins that need immediate attention
@@ -568,6 +762,10 @@ namespace DotCompute.Plugins.Recovery
         /// </summary>
         public string GetSummary()
             => $"Plugins: {TotalPlugins}, Healthy: {HealthyPlugins}, Unhealthy: {UnhealthyPlugins}, Isolated: {IsolatedPlugins}, Health: {OverallHealthPercent:F1}%";
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString() => GetSummary();
     }

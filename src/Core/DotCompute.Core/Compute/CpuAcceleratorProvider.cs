@@ -8,6 +8,7 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Kernels;
+using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -127,7 +128,7 @@ namespace DotCompute.Core.Compute
 
                         foreach (var line in lines)
                         {
-                            if (line.StartsWith("Name=") && line.Length > 5)
+                            if (line.StartsWith("Name=", StringComparison.OrdinalIgnoreCase) && line.Length > 5)
                             {
                                 var cpuName = line[5..].Trim();
                                 if (!string.IsNullOrWhiteSpace(cpuName))
@@ -181,7 +182,7 @@ namespace DotCompute.Core.Compute
                     var modelNameLine = lines.FirstOrDefault(l => l.StartsWith("model name", StringComparison.OrdinalIgnoreCase));
                     if (modelNameLine != null)
                     {
-                        var colonIndex = modelNameLine.IndexOf(':');
+                        var colonIndex = modelNameLine.IndexOf(':', StringComparison.OrdinalIgnoreCase);
                         if (colonIndex >= 0 && colonIndex < modelNameLine.Length - 1)
                         {
                             var modelName = modelNameLine[(colonIndex + 1)..].Trim();
@@ -217,7 +218,7 @@ namespace DotCompute.Core.Compute
                         {
                             var output = process.StandardOutput.ReadToEnd();
                             var lines = output.Split('\n');
-                            var modelLine = lines.FirstOrDefault(l => !l.StartsWith("#") && !string.IsNullOrWhiteSpace(l));
+                            var modelLine = lines.FirstOrDefault(l => !l.StartsWith("#", StringComparison.CurrentCulture) && !string.IsNullOrWhiteSpace(l));
                             if (!string.IsNullOrWhiteSpace(modelLine))
                             {
                                 return modelLine.Trim();
@@ -390,7 +391,7 @@ namespace DotCompute.Core.Compute
                 var lines = output.Split('\n');
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith("TotalVisibleMemorySize"))
+                    if (line.StartsWith("TotalVisibleMemorySize", StringComparison.CurrentCulture))
                     {
                         var parts = line.Split('=');
                         if (parts.Length == 2 && long.TryParse(parts[1].Trim(), out var kb))
@@ -414,7 +415,7 @@ namespace DotCompute.Core.Compute
                 if (global::System.IO.File.Exists("/proc/meminfo"))
                 {
                     var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
-                    var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
+                    var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:", StringComparison.CurrentCulture));
                     if (availableLine != null)
                     {
                         var parts = availableLine.Split(_separator, StringSplitOptions.RemoveEmptyEntries);
@@ -477,6 +478,11 @@ namespace DotCompute.Core.Compute
         private readonly ILogger _logger;
         private readonly CpuMemoryManager _memoryManager;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CpuAccelerator class.
+        /// </summary>
+        /// <param name="info">The info.</param>
+        /// <param name="logger">The logger.</param>
 
         public CpuAccelerator(AcceleratorInfo info, ILogger logger)
         {
@@ -484,20 +490,55 @@ namespace DotCompute.Core.Compute
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _memoryManager = new CpuMemoryManager(this, logger as ILogger<CpuMemoryManager> ?? new LoggerFactory().CreateLogger<CpuMemoryManager>());
         }
+        /// <summary>
+        /// Gets or sets the info.
+        /// </summary>
+        /// <value>The info.</value>
 
         public AcceleratorInfo Info { get; }
+        /// <summary>
+        /// Gets or sets the type.
+        /// </summary>
+        /// <value>The type.</value>
 
         public AcceleratorType Type => AcceleratorType.CPU;
+        /// <summary>
+        /// Gets or sets the device type.
+        /// </summary>
+        /// <value>The device type.</value>
 
         public string DeviceType => "CPU";
+        /// <summary>
+        /// Gets or sets the memory.
+        /// </summary>
+        /// <value>The memory.</value>
 
         public IUnifiedMemoryManager Memory => _memoryManager;
+        /// <summary>
+        /// Gets or sets the memory manager.
+        /// </summary>
+        /// <value>The memory manager.</value>
 
         public IUnifiedMemoryManager MemoryManager => _memoryManager;
+        /// <summary>
+        /// Gets or sets the context.
+        /// </summary>
+        /// <value>The context.</value>
 
         public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+        /// <summary>
+        /// Gets or sets a value indicating whether available.
+        /// </summary>
+        /// <value>The is available.</value>
 
         public bool IsAvailable => !_disposed;
+        /// <summary>
+        /// Gets compile kernel asynchronously.
+        /// </summary>
+        /// <param name="definition">The definition.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition definition,
@@ -515,12 +556,21 @@ namespace DotCompute.Core.Compute
             _logger.LogInfoMessage("Successfully compiled CPU kernel: {definition.Name}");
             return await ValueTask.FromResult<ICompiledKernel>(compiledKernel);
         }
+        /// <summary>
+        /// Gets synchronize asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
             // CPU operations are synchronous by default
 
 
             => ValueTask.CompletedTask;
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask DisposeAsync()
         {
@@ -545,8 +595,18 @@ namespace DotCompute.Core.Compute
         /// Gets the kernel unique identifier.
         /// </summary>
         public Guid Id { get; } = Guid.NewGuid();
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name { get; } = name;
+        /// <summary>
+        /// Gets execute asynchronously.
+        /// </summary>
+        /// <param name="arguments">The arguments.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask ExecuteAsync(
             KernelArguments arguments,
@@ -562,12 +622,19 @@ namespace DotCompute.Core.Compute
             // For now, this is a no-op placeholder - TODO
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask DisposeAsync()
         {
             Dispose();
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose() => _disposed = true;
     }

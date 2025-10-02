@@ -309,7 +309,7 @@ public sealed class MetalGraphOptimizer(
         return true;
     }
 
-    private static bool IsValidFusionGroup(List<MetalGraphNode> group)
+    private static bool IsValidFusionGroup(IReadOnlyList<MetalGraphNode> group)
     {
         if (group.Count < 2)
         {
@@ -324,7 +324,7 @@ public sealed class MetalGraphOptimizer(
         return totalMemory <= GetMaxThreadgroupMemory() && totalThreads <= 1024;
     }
 
-    private bool TryFuseKernelGroup(List<MetalGraphNode> kernelGroup)
+    private bool TryFuseKernelGroup(IReadOnlyList<MetalGraphNode> kernelGroup)
     {
         if (kernelGroup.Count < 2)
         {
@@ -374,7 +374,7 @@ public sealed class MetalGraphOptimizer(
         }
     }
 
-    private static object CreateFusedKernel(List<MetalGraphNode> kernelGroup)
+    private static object CreateFusedKernel(IReadOnlyList<MetalGraphNode> kernelGroup)
         // This would involve actual Metal shader language compilation
         // For now, return a placeholder that represents the fused kernel
         => new { Type = "FusedKernel", SourceKernels = kernelGroup.Select(n => n.Kernel).ToList() };
@@ -426,7 +426,7 @@ public sealed class MetalGraphOptimizer(
         return result;
     }
 
-    private static List<List<MetalGraphNode>> FindMemoryCoalescingOpportunities(List<MetalGraphNode> memoryNodes)
+    private static List<List<MetalGraphNode>> FindMemoryCoalescingOpportunities(IReadOnlyList<MetalGraphNode> memoryNodes)
     {
         var opportunities = new List<List<MetalGraphNode>>();
         var processed = new HashSet<string>();
@@ -480,7 +480,7 @@ public sealed class MetalGraphOptimizer(
         return !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
     }
 
-    private bool TryCoalesceMemoryOperations(List<MetalGraphNode> memoryGroup)
+    private bool TryCoalesceMemoryOperations(IReadOnlyList<MetalGraphNode> memoryGroup)
     {
         if (memoryGroup.Count < 2)
         {
@@ -873,7 +873,7 @@ public class MetalOptimizationResult
     public double MemoryReduction { get; set; }
 
     public MetalGraphAnalysis? AnalysisResults { get; set; }
-    public List<string> OptimizationSteps { get; set; } = [];
+    public IList<string> OptimizationSteps { get; } = [];
 }
 
 internal class KernelFusionResult
@@ -886,13 +886,13 @@ internal class MemoryOptimizationResult
 {
     public int OptimizationsApplied { get; set; }
     public List<List<string>> CoalescedOperations { get; set; } = [];
-    public List<string> MemoryOptimizedKernels { get; set; } = [];
+    public IList<string> MemoryOptimizedKernels { get; } = [];
 }
 
 internal class CommandBufferOptimizationResult
 {
     public int OptimizationsApplied { get; set; }
-    public List<MetalCommandBatch> CommandBufferBatches { get; set; } = [];
+    public IList<MetalCommandBatch> CommandBufferBatches { get; } = [];
 }
 
 internal class AppleSiliconOptimizationResult

@@ -515,6 +515,9 @@ public static class ConsolidatedTestDataFactory
         }
         return strings;
     }
+    /// <summary>
+    /// An data pattern enumeration.
+    /// </summary>
 
     #endregion
 

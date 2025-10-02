@@ -29,6 +29,12 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     private readonly ConcurrentDictionary<string, IServiceScope> _acceleratorScopes = new();
     private readonly ConcurrentDictionary<string, IAccelerator> _createdAccelerators = new();
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the DefaultAcceleratorFactory class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="logger">The logger.</param>
 
     public DefaultAcceleratorFactory(
         IServiceProvider serviceProvider,
@@ -42,6 +48,13 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Register default providers
         RegisterDefaultProviders();
     }
+    /// <summary>
+    /// Creates a new async.
+    /// </summary>
+    /// <param name="acceleratorInfo">The accelerator info.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created async.</returns>
 
     public async ValueTask<IAccelerator> CreateAsync(AcceleratorInfo acceleratorInfo, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
     {
@@ -108,6 +121,13 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             throw;
         }
     }
+    /// <summary>
+    /// Creates a new provider async.
+    /// </summary>
+    /// <typeparam name="TProvider">The TProvider type parameter.</typeparam>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created provider async.</returns>
 
     public async ValueTask<TProvider> CreateProviderAsync<TProvider>(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         where TProvider : class, IAcceleratorProvider
@@ -155,6 +175,11 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             throw;
         }
     }
+    /// <summary>
+    /// Determines whether create accelerator.
+    /// </summary>
+    /// <param name="acceleratorType">The accelerator type.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanCreateAccelerator(AcceleratorType acceleratorType)
     {
@@ -162,6 +187,10 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                _serviceProvider.GetServices<IAcceleratorProvider>()
                    .Any(p => p.SupportedTypes.Contains(acceleratorType));
     }
+    /// <summary>
+    /// Gets the supported types.
+    /// </summary>
+    /// <returns>The supported types.</returns>
 
     public IEnumerable<AcceleratorType> GetSupportedTypes()
     {
@@ -178,6 +207,14 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return supportedTypes;
     }
+    /// <summary>
+    /// Creates a new async.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created async.</returns>
 
     public async ValueTask<IAccelerator> CreateAsync(AcceleratorType type, AcceleratorConfiguration? configuration = null, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
     {
@@ -197,6 +234,14 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return await CreateAsync(acceleratorInfo, serviceProvider, cancellationToken);
     }
+    /// <summary>
+    /// Creates a new async.
+    /// </summary>
+    /// <param name="backendName">The backend name.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created async.</returns>
 
     public async ValueTask<IAccelerator> CreateAsync(string backendName, AcceleratorConfiguration? configuration = null, IServiceProvider? serviceProvider = null, CancellationToken cancellationToken = default)
     {
@@ -208,12 +253,22 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return await CreateAsync(type, configuration, serviceProvider, cancellationToken);
     }
+    /// <summary>
+    /// Gets the available types async.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The available types async.</returns>
 
     public async ValueTask<IReadOnlyList<AcceleratorType>> GetAvailableTypesAsync(CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
         return GetSupportedTypes().ToList();
     }
+    /// <summary>
+    /// Gets the available devices async.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The available devices async.</returns>
 
     public async ValueTask<IReadOnlyList<AcceleratorInfo>> GetAvailableDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -237,6 +292,11 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return devices;
     }
+    /// <summary>
+    /// Determines unregister provider.
+    /// </summary>
+    /// <param name="providerType">The provider type.</param>
+    /// <returns>The result of the operation.</returns>
 
     public bool UnregisterProvider(Type providerType)
     {
@@ -254,6 +314,11 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         return keysToRemove.Count > 0;
     }
+    /// <summary>
+    /// Performs register provider.
+    /// </summary>
+    /// <param name="providerType">The provider type.</param>
+    /// <param name="supportedTypes">The supported types.</param>
 
     public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes)
     {
@@ -271,6 +336,11 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             _logger.LogDebugMessage($"Registered provider {providerType.Name} for accelerator type {type}");
         }
     }
+    /// <summary>
+    /// Creates a new accelerator scope.
+    /// </summary>
+    /// <param name="acceleratorId">The accelerator identifier.</param>
+    /// <returns>The created accelerator scope.</returns>
 
     public IServiceScope CreateAcceleratorScope(string acceleratorId)
     {
@@ -437,6 +507,9 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         instance = null;
         return false;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

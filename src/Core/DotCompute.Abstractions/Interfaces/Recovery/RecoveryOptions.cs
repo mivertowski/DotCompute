@@ -14,5 +14,5 @@ public class RecoveryOptions
     public bool ForceGarbageCollection { get; set; }
 
     public TimeSpan MaxRecoveryTime { get; set; } = TimeSpan.FromSeconds(30);
-    public Dictionary<string, object> Context { get; set; } = [];
+    public Dictionary<string, object> Context { get; } = [];
 }

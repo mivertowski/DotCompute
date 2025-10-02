@@ -28,7 +28,7 @@ public sealed class KernelMethodInfo
     /// <summary>
     /// Gets or sets the method parameters.
     /// </summary>
-    public List<ParameterInfo> Parameters { get; set; } = [];
+    public List<ParameterInfo> Parameters { get; } = [];
 
     /// <summary>
     /// Gets or sets the return type of the method.
@@ -38,7 +38,7 @@ public sealed class KernelMethodInfo
     /// <summary>
     /// Gets or sets the list of supported backend accelerators.
     /// </summary>
-    public List<string> Backends { get; set; } = [];
+    public List<string> Backends { get; } = [];
 
     /// <summary>
     /// Gets or sets the vector size for SIMD operations.

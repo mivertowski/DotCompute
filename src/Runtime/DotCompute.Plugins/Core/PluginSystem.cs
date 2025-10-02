@@ -478,9 +478,25 @@ public class PluginSystem : IDisposable
 
     private sealed class LoadedPlugin
     {
+        /// <summary>
+        /// Gets or sets the plugin.
+        /// </summary>
+        /// <value>The plugin.</value>
         public IBackendPlugin Plugin { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the load context.
+        /// </summary>
+        /// <value>The load context.</value>
         public PluginAssemblyLoadContext LoadContext { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the assembly.
+        /// </summary>
+        /// <value>The assembly.</value>
         public Assembly Assembly { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public DateTime LoadTime { get; set; }
     }
 }

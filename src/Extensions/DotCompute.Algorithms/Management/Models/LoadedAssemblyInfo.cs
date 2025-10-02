@@ -41,6 +41,6 @@ namespace DotCompute.Algorithms.Management.Models
         /// <summary>
         /// Gets the plugin information.
         /// </summary>
-        public List<PluginInfo> Plugins { get; } = [];
+        public IList<PluginInfo> Plugins { get; } = [];
     }
 }

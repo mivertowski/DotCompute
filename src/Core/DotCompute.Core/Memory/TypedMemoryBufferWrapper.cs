@@ -13,27 +13,78 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 {
     private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
     private readonly int _length = length;
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
 
     public int Length => _length;
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes => _underlyingBuffer.SizeInBytes;
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public IAccelerator Accelerator => null!; // Will be set by specific implementations
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>The options.</value>
     public MemoryOptions Options => _underlyingBuffer.Options;
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State => _underlyingBuffer.State;
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed => _underlyingBuffer.IsDisposed;
+    /// <summary>
+    /// Gets or sets a value indicating whether on host.
+    /// </summary>
+    /// <value>The is on host.</value>
     public bool IsOnHost => State == BufferState.HostReady || State == BufferState.HostDirty;
+    /// <summary>
+    /// Gets or sets a value indicating whether on device.
+    /// </summary>
+    /// <value>The is on device.</value>
     public bool IsOnDevice => State == BufferState.DeviceReady || State == BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets as span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public Span<T> AsSpan() => throw new NotSupportedException("Direct span access not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets as read only span.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public ReadOnlySpan<T> AsReadOnlySpan() => throw new NotSupportedException("Direct span access not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets as memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public Memory<T> AsMemory() => throw new NotSupportedException("Direct memory access not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets as read only memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public ReadOnlyMemory<T> AsReadOnlyMemory() => throw new NotSupportedException("Direct memory access not supported for generic buffer wrapper");
+    /// <summary>
+    /// Performs ensure on host.
+    /// </summary>
 
 
 
@@ -41,12 +92,21 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
     {
         // State management is handled internally
     }
+    /// <summary>
+    /// Performs ensure on device.
+    /// </summary>
 
 
     public void EnsureOnDevice()
     {
         // State management is handled internally
     }
+    /// <summary>
+    /// Gets ensure on host asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -54,6 +114,12 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
         EnsureOnHost();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Gets ensure on device asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
@@ -61,17 +127,38 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
         EnsureOnDevice();
         return ValueTask.CompletedTask;
     }
+    /// <summary>
+    /// Performs synchronize.
+    /// </summary>
 
 
     public void Synchronize() { }
+    /// <summary>
+    /// Gets synchronize asynchronously.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
+    /// <summary>
+    /// Performs mark host dirty.
+    /// </summary>
 
 
     public void MarkHostDirty() { /* State management is handled internally */ }
+    /// <summary>
+    /// Performs mark device dirty.
+    /// </summary>
     public void MarkDeviceDirty() { /* State management is handled internally */ }
+    /// <summary>
+    /// Gets copy from asynchronously.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
@@ -80,6 +167,12 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
         => await ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // Copy from buffer to host memory
@@ -87,14 +180,29 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
         => await ValueTask.CompletedTask;
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
 
     public void Dispose() => _underlyingBuffer.Dispose();
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public ValueTask DisposeAsync() => _underlyingBuffer.DisposeAsync();
+    /// <summary>
+    /// Gets or sets a value indicating whether dirty.
+    /// </summary>
+    /// <value>The is dirty.</value>
 
     // Additional interface methods
 
     public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
+    /// <summary>
+    /// Gets the device memory.
+    /// </summary>
+    /// <returns>The device memory.</returns>
 
 
     public DeviceMemory GetDeviceMemory()
@@ -102,14 +210,38 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
         => new(IntPtr.Zero, SizeInBytes);
+    /// <summary>
+    /// Gets map.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
     public MappedMemory<T> Map(MapMode mode) => throw new NotSupportedException("Mapping not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets map range.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="mode">The mode.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotSupportedException("Mapping not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets map asynchronously.
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotSupportedException("Mapping not supported for generic buffer wrapper");
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
@@ -118,6 +250,15 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
         await CopyToAsync(temp, cancellationToken);
         await destination.CopyFromAsync(temp, cancellationToken);
     }
+    /// <summary>
+    /// Gets copy to asynchronously.
+    /// </summary>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public async ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
@@ -128,6 +269,12 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
         await CopyToAsync(temp, cancellationToken);
         await destination.CopyFromAsync(temp, cancellationToken);
     }
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
@@ -135,6 +282,14 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
         => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets fill asynchronously.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
@@ -142,6 +297,12 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
 
         => ValueTask.CompletedTask;
+    /// <summary>
+    /// Gets slice.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>The result of the operation.</returns>
 
 
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length) => throw new NotSupportedException("Slicing not supported for generic buffer wrapper");
@@ -166,6 +327,11 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
     public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged => _underlyingBuffer.CopyToAsync(destination, sourceOffset, cancellationToken);
+    /// <summary>
+    /// Gets as type.
+    /// </summary>
+    /// <typeparam name="TNew">The TNew type parameter.</typeparam>
+    /// <returns>The result of the operation.</returns>
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged => throw new NotSupportedException("Type conversion not supported for generic buffer wrapper");
 }

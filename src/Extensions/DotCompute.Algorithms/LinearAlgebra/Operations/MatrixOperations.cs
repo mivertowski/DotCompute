@@ -476,6 +476,11 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 #pragma warning restore CA1508
             return s_kernelManager;
         }
+        /// <summary>
+        /// Performs copy array to matrix.
+        /// </summary>
+        /// <param name="array">The array.</param>
+        /// <param name="matrix">The matrix.</param>
 
         public static void CopyArrayToMatrix(float[] array, Matrix matrix)
         {

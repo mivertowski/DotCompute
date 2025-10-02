@@ -597,6 +597,9 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             throw new ObjectDisposedException(nameof(OptimizedCudaMemoryPrefetcher));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -629,16 +632,55 @@ internal sealed class AccessPattern(IntPtr devicePtr)
 {
     private readonly Queue<MemoryAccess> _accesses = new();
     private readonly object _lock = new();
+    /// <summary>
+    /// Gets or sets the device ptr.
+    /// </summary>
+    /// <value>The device ptr.</value>
 
 
     public IntPtr DevicePtr { get; } = devicePtr;
+    /// <summary>
+    /// Gets or sets the auto prefetch enabled.
+    /// </summary>
+    /// <value>The auto prefetch enabled.</value>
     public bool AutoPrefetchEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets the adaptive prefetch enabled.
+    /// </summary>
+    /// <value>The adaptive prefetch enabled.</value>
     public bool AdaptivePrefetchEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets the memory size.
+    /// </summary>
+    /// <value>The memory size.</value>
     public long MemorySize { get; set; }
+    /// <summary>
+    /// Gets or sets the prefetch distance.
+    /// </summary>
+    /// <value>The prefetch distance.</value>
     public long PrefetchDistance { get; set; } = 64 * 1024; // 64KB default
+    /// <summary>
+    /// Gets or sets the optimal strategy.
+    /// </summary>
+    /// <value>The optimal strategy.</value>
     public PrefetchStrategy OptimalStrategy { get; set; } = PrefetchStrategy.Adaptive;
+    /// <summary>
+    /// Gets or sets the access count.
+    /// </summary>
+    /// <value>The access count.</value>
     public int AccessCount { get; private set; }
+    /// <summary>
+    /// Gets or sets the last access time.
+    /// </summary>
+    /// <value>The last access time.</value>
     public DateTimeOffset LastAccessTime { get; private set; } = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Performs record access.
+    /// </summary>
+    /// <param name="offset">The offset.</param>
+    /// <param name="size">The size.</param>
+    /// <param name="accessType">The access type.</param>
+    /// <param name="timestamp">The timestamp.</param>
 
     public void RecordAccess(long offset, long size, MemoryAccessType accessType, DateTimeOffset timestamp)
     {
@@ -656,6 +698,11 @@ internal sealed class AccessPattern(IntPtr devicePtr)
             }
         }
     }
+    /// <summary>
+    /// Gets the recent accesses.
+    /// </summary>
+    /// <param name="count">The count.</param>
+    /// <returns>The recent accesses.</returns>
 
     public List<MemoryAccess> GetRecentAccesses(int count)
     {
@@ -665,6 +712,9 @@ internal sealed class AccessPattern(IntPtr devicePtr)
         }
     }
 }
+/// <summary>
+/// A memory access structure.
+/// </summary>
 
 /// <summary>
 /// Represents a memory access event.
@@ -683,11 +733,35 @@ internal readonly record struct MemoryAccess(
 /// </summary>
 internal sealed class OptimizedPrefetchRequest
 {
+    /// <summary>
+    /// Gets or sets the device ptr.
+    /// </summary>
+    /// <value>The device ptr.</value>
     public IntPtr DevicePtr { get; set; }
+    /// <summary>
+    /// Gets or sets the offset.
+    /// </summary>
+    /// <value>The offset.</value>
     public long Offset { get; set; }
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public long Size { get; set; }
+    /// <summary>
+    /// Gets or sets the strategy.
+    /// </summary>
+    /// <value>The strategy.</value>
     public PrefetchStrategy Strategy { get; set; }
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public PrefetchPriority Priority { get; set; }
+    /// <summary>
+    /// Gets or sets the created at.
+    /// </summary>
+    /// <value>The created at.</value>
     public DateTimeOffset CreatedAt { get; set; }
 }
 
@@ -696,10 +770,30 @@ internal sealed class OptimizedPrefetchRequest
 /// </summary>
 internal sealed class AccessPatternAnalysis
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether sequential.
+    /// </summary>
+    /// <value>The is sequential.</value>
     public bool IsSequential { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether random.
+    /// </summary>
+    /// <value>The is random.</value>
     public bool IsRandom { get; set; }
+    /// <summary>
+    /// Gets or sets the average stride.
+    /// </summary>
+    /// <value>The average stride.</value>
     public double AverageStride { get; set; }
+    /// <summary>
+    /// Gets or sets the stride variance.
+    /// </summary>
+    /// <value>The stride variance.</value>
     public double StrideVariance { get; set; }
+    /// <summary>
+    /// Gets or sets the access frequency.
+    /// </summary>
+    /// <value>The access frequency.</value>
     public double AccessFrequency { get; set; }
 }
 
@@ -708,20 +802,72 @@ internal sealed class AccessPatternAnalysis
 /// </summary>
 public sealed class PrefetcherConfiguration
 {
+    /// <summary>
+    /// Gets or sets the max concurrent prefetches.
+    /// </summary>
+    /// <value>The max concurrent prefetches.</value>
     public int MaxConcurrentPrefetches { get; init; } = 8;
+    /// <summary>
+    /// Gets or sets the min prefetch size.
+    /// </summary>
+    /// <value>The min prefetch size.</value>
     public long MinPrefetchSize { get; init; } = 4096; // 4KB
+    /// <summary>
+    /// Gets or sets the max prefetch size.
+    /// </summary>
+    /// <value>The max prefetch size.</value>
     public long MaxPrefetchSize { get; init; } = 1024 * 1024; // 1MB
+    /// <summary>
+    /// Gets or sets the min accesses for prediction.
+    /// </summary>
+    /// <value>The min accesses for prediction.</value>
     public int MinAccessesForPrediction { get; init; } = 3;
+    /// <summary>
+    /// Gets or sets the min accesses for optimization.
+    /// </summary>
+    /// <value>The min accesses for optimization.</value>
     public int MinAccessesForOptimization { get; init; } = 10;
+    /// <summary>
+    /// Gets or sets the prediction window size.
+    /// </summary>
+    /// <value>The prediction window size.</value>
     public int PredictionWindowSize { get; init; } = 10;
+    /// <summary>
+    /// Gets or sets the analysis window size.
+    /// </summary>
+    /// <value>The analysis window size.</value>
     public int AnalysisWindowSize { get; init; } = 50;
+    /// <summary>
+    /// Gets or sets the prefetch multiplier.
+    /// </summary>
+    /// <value>The prefetch multiplier.</value>
     public double PrefetchMultiplier { get; init; } = 2.0;
+    /// <summary>
+    /// Gets or sets the maintenance interval.
+    /// </summary>
+    /// <value>The maintenance interval.</value>
     public TimeSpan MaintenanceInterval { get; init; } = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// Gets or sets the pattern retention time.
+    /// </summary>
+    /// <value>The pattern retention time.</value>
     public TimeSpan PatternRetentionTime { get; init; } = TimeSpan.FromHours(1);
+    /// <summary>
+    /// Gets or sets the synchronous mode.
+    /// </summary>
+    /// <value>The synchronous mode.</value>
     public bool SynchronousMode { get; init; }
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
 
 
     public static PrefetcherConfiguration Default => new();
+    /// <summary>
+    /// Gets or sets the aggressive.
+    /// </summary>
+    /// <value>The aggressive.</value>
 
 
     public static PrefetcherConfiguration Aggressive => new()
@@ -732,6 +878,10 @@ public sealed class PrefetcherConfiguration
         PrefetchMultiplier = 4.0,
         MaintenanceInterval = TimeSpan.FromMinutes(2)
     };
+    /// <summary>
+    /// Gets or sets the conservative.
+    /// </summary>
+    /// <value>The conservative.</value>
 
 
     public static PrefetcherConfiguration Conservative => new()
@@ -749,19 +899,62 @@ public sealed class PrefetcherConfiguration
 /// </summary>
 public readonly record struct PrefetcherStatistics
 {
+    /// <summary>
+    /// Gets or sets the total prefetches.
+    /// </summary>
+    /// <value>The total prefetches.</value>
     public long TotalPrefetches { get; init; }
+    /// <summary>
+    /// Gets or sets the successful prefetches.
+    /// </summary>
+    /// <value>The successful prefetches.</value>
     public long SuccessfulPrefetches { get; init; }
+    /// <summary>
+    /// Gets or sets the prefetch hits.
+    /// </summary>
+    /// <value>The prefetch hits.</value>
     public long PrefetchHits { get; init; }
+    /// <summary>
+    /// Gets or sets the prefetch misses.
+    /// </summary>
+    /// <value>The prefetch misses.</value>
     public long PrefetchMisses { get; init; }
+    /// <summary>
+    /// Gets or sets the bandwidth saved.
+    /// </summary>
+    /// <value>The bandwidth saved.</value>
     public long BandwidthSaved { get; init; }
+    /// <summary>
+    /// Gets or sets the active patterns.
+    /// </summary>
+    /// <value>The active patterns.</value>
     public int ActivePatterns { get; init; }
+    /// <summary>
+    /// Gets or sets the pending requests.
+    /// </summary>
+    /// <value>The pending requests.</value>
     public int PendingRequests { get; init; }
+    /// <summary>
+    /// Gets or sets the hit rate.
+    /// </summary>
+    /// <value>The hit rate.</value>
     public double HitRate { get; init; }
+    /// <summary>
+    /// Gets or sets the success rate.
+    /// </summary>
+    /// <value>The success rate.</value>
 
 
     public double SuccessRate => TotalPrefetches > 0 ? (double)SuccessfulPrefetches / TotalPrefetches : 0.0;
+    /// <summary>
+    /// Gets or sets the bandwidth saved m b.
+    /// </summary>
+    /// <value>The bandwidth saved m b.</value>
     public double BandwidthSavedMB => BandwidthSaved / (1024.0 * 1024.0);
 }
+/// <summary>
+/// An memory access type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of memory access patterns.
@@ -772,6 +965,9 @@ public enum MemoryAccessType
     Write,
     ReadWrite
 }
+/// <summary>
+/// An prefetch strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Prefetch strategies for different access patterns.
@@ -783,6 +979,9 @@ public enum PrefetchStrategy
     Random,
     Adaptive
 }
+/// <summary>
+/// An prefetch priority enumeration.
+/// </summary>
 
 /// <summary>
 /// Priority levels for prefetch requests.
@@ -794,6 +993,9 @@ public enum PrefetchPriority
     High,
     Predicted
 }
+/// <summary>
+/// An cache level enumeration.
+/// </summary>
 
 /// <summary>
 /// Cache levels for targeted prefetching.
@@ -804,6 +1006,9 @@ public enum CacheLevel
     L2,
     Global
 }
+/// <summary>
+/// An memory access hint enumeration.
+/// </summary>
 
 /// <summary>
 /// Memory access hints for optimization.

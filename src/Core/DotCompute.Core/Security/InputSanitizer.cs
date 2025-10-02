@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using System;
 
 namespace DotCompute.Core.Security;
 
@@ -85,6 +86,11 @@ public sealed class InputSanitizer : IDisposable
     };
 
     private readonly ValidationStatistics _statistics = new();
+    /// <summary>
+    /// Initializes a new instance of the InputSanitizer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public InputSanitizer(ILogger<InputSanitizer> logger, InputSanitizationConfiguration? configuration = null)
     {
@@ -536,7 +542,7 @@ public sealed class InputSanitizer : IDisposable
         }
 
         // Null byte detection
-        if (input.Contains('\0'))
+        if (input.Contains('\0', StringComparison.OrdinalIgnoreCase))
         {
             result.SecurityThreats.Add(new InputThreat
             {
@@ -760,11 +766,11 @@ public sealed class InputSanitizer : IDisposable
     {
         return parameterName.ToLowerInvariant() switch
         {
-            var name when name.Contains("path") || name.Contains("file") => SanitizationType.FilePath,
-            var name when name.Contains("url") || name.Contains("uri") => SanitizationType.Url,
-            var name when name.Contains("email") => SanitizationType.Email,
-            var name when name.Contains("sql") || name.Contains("query") => SanitizationType.Sql,
-            var name when name.Contains("html") || name.Contains("markup") => SanitizationType.Html,
+            var name when name.Contains("path", StringComparison.OrdinalIgnoreCase) || name.Contains("file", StringComparison.CurrentCulture) => SanitizationType.FilePath,
+            var name when name.Contains("url", StringComparison.CurrentCulture) || name.Contains("uri", StringComparison.CurrentCulture) => SanitizationType.Url,
+            var name when name.Contains("email", StringComparison.CurrentCulture) => SanitizationType.Email,
+            var name when name.Contains("sql", StringComparison.CurrentCulture) || name.Contains("query", StringComparison.CurrentCulture) => SanitizationType.Sql,
+            var name when name.Contains("html", StringComparison.CurrentCulture) || name.Contains("markup", StringComparison.CurrentCulture) => SanitizationType.Html,
             _ when parameterValue is int or long or float or double => SanitizationType.Numeric,
             _ => SanitizationType.General
         };
@@ -800,14 +806,14 @@ public sealed class InputSanitizer : IDisposable
     {
         return patternName switch
         {
-            var name when name.Contains("sql") => ThreatType.SqlInjection,
-            var name when name.Contains("xss") => ThreatType.XssInjection,
-            var name when name.Contains("command") => ThreatType.CommandInjection,
-            var name when name.Contains("path") => ThreatType.PathTraversal,
-            var name when name.Contains("ldap") => ThreatType.LdapInjection,
+            var name when name.Contains("sql", StringComparison.CurrentCulture) => ThreatType.SqlInjection,
+            var name when name.Contains("xss", StringComparison.CurrentCulture) => ThreatType.XssInjection,
+            var name when name.Contains("command", StringComparison.CurrentCulture) => ThreatType.CommandInjection,
+            var name when name.Contains("path", StringComparison.CurrentCulture) => ThreatType.PathTraversal,
+            var name when name.Contains("ldap", StringComparison.CurrentCulture) => ThreatType.LdapInjection,
             var name when name.Contains("code") => ThreatType.CodeInjection,
-            var name when name.Contains("xml") => ThreatType.XmlInjection,
-            var name when name.Contains("nosql") => ThreatType.NoSqlInjection,
+            var name when name.Contains("xml", StringComparison.CurrentCulture) => ThreatType.XmlInjection,
+            var name when name.Contains("nosql", StringComparison.CurrentCulture) => ThreatType.NoSqlInjection,
             _ => ThreatType.GeneralMalicious
         };
     }
@@ -816,9 +822,9 @@ public sealed class InputSanitizer : IDisposable
     {
         return patternName switch
         {
-            var name when name.Contains("advanced") || name.Contains("powershell") => ThreatSeverity.Critical,
-            var name when name.Contains("injection") || name.Contains("traversal") => ThreatSeverity.High,
-            var name when name.Contains("basic") || name.Contains("html") => ThreatSeverity.Medium,
+            var name when name.Contains("advanced", StringComparison.CurrentCulture) || name.Contains("powershell", StringComparison.CurrentCulture) => ThreatSeverity.Critical,
+            var name when name.Contains("injection", StringComparison.CurrentCulture) || name.Contains("traversal", StringComparison.CurrentCulture) => ThreatSeverity.High,
+            var name when name.Contains("basic", StringComparison.CurrentCulture) || name.Contains("html", StringComparison.CurrentCulture) => ThreatSeverity.Medium,
             _ => ThreatSeverity.Low
         };
     }
@@ -862,6 +868,9 @@ public sealed class InputSanitizer : IDisposable
             _logger.LogWarning(ex, "Error logging statistics");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -891,6 +900,10 @@ public sealed class InputSanitizer : IDisposable
 /// </summary>
 public sealed class InputSanitizationConfiguration
 {
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
     public static InputSanitizationConfiguration Default => new()
     {
         MaxInputLength = 10_000,
@@ -899,18 +912,49 @@ public sealed class InputSanitizationConfiguration
         EnableDetailedLogging = false,
         CacheValidationResults = true
     };
+    /// <summary>
+    /// Gets or sets the max input length.
+    /// </summary>
+    /// <value>The max input length.</value>
 
     public int MaxInputLength { get; init; } = 10_000;
+    /// <summary>
+    /// Gets or sets the max high severity threats.
+    /// </summary>
+    /// <value>The max high severity threats.</value>
     public int MaxHighSeverityThreats { get; init; }
+    /// <summary>
+    /// Gets or sets the max global work size.
+    /// </summary>
+    /// <value>The max global work size.</value>
 
     public long MaxGlobalWorkSize { get; init; } = 1_000_000_000L;
+    /// <summary>
+    /// Gets or sets the enable detailed logging.
+    /// </summary>
+    /// <value>The enable detailed logging.</value>
     public bool EnableDetailedLogging { get; init; }
+    /// <summary>
+    /// Gets or sets the cache validation results.
+    /// </summary>
+    /// <value>The cache validation results.</value>
     public bool CacheValidationResults { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the validation timeout.
+    /// </summary>
+    /// <value>The validation timeout.</value>
     public TimeSpan ValidationTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
         => $"MaxLength={MaxInputLength}, MaxThreats={MaxHighSeverityThreats}, DetailedLogging={EnableDetailedLogging}";
 }
+/// <summary>
+/// An sanitization type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of input sanitization.
@@ -927,6 +971,9 @@ public enum SanitizationType
     Numeric,
     KernelParameter
 }
+/// <summary>
+/// An threat type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of security threats.
@@ -951,6 +998,9 @@ public enum ThreatType
     ProcessingError,
     GeneralMalicious
 }
+/// <summary>
+/// An threat severity enumeration.
+/// </summary>
 
 /// <summary>
 /// Severity levels for threats.
@@ -968,10 +1018,30 @@ public enum ThreatSeverity
 /// </summary>
 public sealed class InputThreat
 {
+    /// <summary>
+    /// Gets or sets the threat type.
+    /// </summary>
+    /// <value>The threat type.</value>
     public required ThreatType ThreatType { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public required ThreatSeverity Severity { get; init; }
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    /// <value>The description.</value>
     public required string Description { get; init; }
+    /// <summary>
+    /// Gets or sets the location.
+    /// </summary>
+    /// <value>The location.</value>
     public required string Location { get; init; }
+    /// <summary>
+    /// Gets or sets the recommendation.
+    /// </summary>
+    /// <value>The recommendation.</value>
     public string? Recommendation { get; init; }
 }
 
@@ -980,16 +1050,56 @@ public sealed class InputThreat
 /// </summary>
 public sealed class SanitizationResult
 {
+    /// <summary>
+    /// Gets or sets the original input.
+    /// </summary>
+    /// <value>The original input.</value>
     public required string OriginalInput { get; init; }
+    /// <summary>
+    /// Gets or sets the sanitized input.
+    /// </summary>
+    /// <value>The sanitized input.</value>
     public string? SanitizedInput { get; set; }
+    /// <summary>
+    /// Gets or sets the context.
+    /// </summary>
+    /// <value>The context.</value>
     public required string Context { get; init; }
+    /// <summary>
+    /// Gets or sets the sanitization type.
+    /// </summary>
+    /// <value>The sanitization type.</value>
     public required SanitizationType SanitizationType { get; init; }
+    /// <summary>
+    /// Gets or sets the processing start time.
+    /// </summary>
+    /// <value>The processing start time.</value>
     public DateTimeOffset ProcessingStartTime { get; init; }
+    /// <summary>
+    /// Gets or sets the processing end time.
+    /// </summary>
+    /// <value>The processing end time.</value>
     public DateTimeOffset ProcessingEndTime { get; set; }
+    /// <summary>
+    /// Gets or sets the processing duration.
+    /// </summary>
+    /// <value>The processing duration.</value>
     public TimeSpan ProcessingDuration => ProcessingEndTime - ProcessingStartTime;
+    /// <summary>
+    /// Gets or sets a value indicating whether secure.
+    /// </summary>
+    /// <value>The is secure.</value>
     public bool IsSecure { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<InputThreat> SecurityThreats { get; } = [];
+    /// <summary>
+    /// Gets or sets the security threats.
+    /// </summary>
+    /// <value>The security threats.</value>
+    public IList<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -997,15 +1107,51 @@ public sealed class SanitizationResult
 /// </summary>
 public sealed class ParameterValidationResult
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public required string KernelName { get; init; }
+    /// <summary>
+    /// Gets or sets the parameter count.
+    /// </summary>
+    /// <value>The parameter count.</value>
     public int ParameterCount { get; init; }
+    /// <summary>
+    /// Gets or sets the validation start time.
+    /// </summary>
+    /// <value>The validation start time.</value>
     public DateTimeOffset ValidationStartTime { get; init; }
+    /// <summary>
+    /// Gets or sets the validation end time.
+    /// </summary>
+    /// <value>The validation end time.</value>
     public DateTimeOffset ValidationEndTime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; } = true;
+    /// <summary>
+    /// Gets or sets a value indicating whether invalid parameters.
+    /// </summary>
+    /// <value>The has invalid parameters.</value>
     public bool HasInvalidParameters { get; set; }
-    public List<string> InvalidParameters { get; } = [];
+    /// <summary>
+    /// Gets or sets the invalid parameters.
+    /// </summary>
+    /// <value>The invalid parameters.</value>
+    public IList<string> InvalidParameters { get; } = [];
+    /// <summary>
+    /// Gets or sets the parameter results.
+    /// </summary>
+    /// <value>The parameter results.</value>
     public Dictionary<string, SanitizationResult> ParameterResults { get; } = [];
-    public List<InputThreat> SecurityThreats { get; } = [];
+    /// <summary>
+    /// Gets or sets the security threats.
+    /// </summary>
+    /// <value>The security threats.</value>
+    public IList<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -1013,11 +1159,31 @@ public sealed class ParameterValidationResult
 /// </summary>
 public sealed class PathValidationResult
 {
+    /// <summary>
+    /// Gets or sets the original path.
+    /// </summary>
+    /// <value>The original path.</value>
     public required string OriginalPath { get; init; }
+    /// <summary>
+    /// Gets or sets the sanitized path.
+    /// </summary>
+    /// <value>The sanitized path.</value>
     public string? SanitizedPath { get; set; }
+    /// <summary>
+    /// Gets or sets the base directory.
+    /// </summary>
+    /// <value>The base directory.</value>
     public required string BaseDirectory { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; } = true;
-    public List<InputThreat> SecurityThreats { get; } = [];
+    /// <summary>
+    /// Gets or sets the security threats.
+    /// </summary>
+    /// <value>The security threats.</value>
+    public IList<InputThreat> SecurityThreats { get; } = [];
 }
 
 /// <summary>
@@ -1025,14 +1191,46 @@ public sealed class PathValidationResult
 /// </summary>
 public sealed class WorkGroupValidationResult
 {
+    /// <summary>
+    /// Gets or sets the work group size.
+    /// </summary>
+    /// <value>The work group size.</value>
     public required int[] WorkGroupSize { get; init; }
+    /// <summary>
+    /// Gets or sets the global size.
+    /// </summary>
+    /// <value>The global size.</value>
     public required int[] GlobalSize { get; init; }
+    /// <summary>
+    /// Gets or sets the max work group size.
+    /// </summary>
+    /// <value>The max work group size.</value>
     public int MaxWorkGroupSize { get; init; }
+    /// <summary>
+    /// Gets or sets the total work group size.
+    /// </summary>
+    /// <value>The total work group size.</value>
     public int TotalWorkGroupSize { get; set; }
+    /// <summary>
+    /// Gets or sets the total global size.
+    /// </summary>
+    /// <value>The total global size.</value>
     public long TotalGlobalSize { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; } = true;
-    public List<string> ValidationErrors { get; } = [];
-    public List<string> ValidationWarnings { get; } = [];
+    /// <summary>
+    /// Gets or sets the validation errors.
+    /// </summary>
+    /// <value>The validation errors.</value>
+    public IList<string> ValidationErrors { get; } = [];
+    /// <summary>
+    /// Gets or sets the validation warnings.
+    /// </summary>
+    /// <value>The validation warnings.</value>
+    public IList<string> ValidationWarnings { get; } = [];
 }
 
 /// <summary>
@@ -1040,9 +1238,25 @@ public sealed class WorkGroupValidationResult
 /// </summary>
 public sealed class ValidationRule
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public required string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the validator.
+    /// </summary>
+    /// <value>The validator.</value>
     public required Func<string, bool> Validator { get; init; }
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public required string ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    /// <value>The severity.</value>
     public ThreatSeverity Severity { get; init; } = ThreatSeverity.Medium;
 }
 
@@ -1051,10 +1265,30 @@ public sealed class ValidationRule
 /// </summary>
 public sealed class ValidationStatistics
 {
+    /// <summary>
+    /// Gets or sets the total validations.
+    /// </summary>
+    /// <value>The total validations.</value>
     public long TotalValidations { get; set; }
+    /// <summary>
+    /// Gets or sets the total threats detected.
+    /// </summary>
+    /// <value>The total threats detected.</value>
     public long TotalThreatsDetected { get; set; }
+    /// <summary>
+    /// Gets or sets the total security violations.
+    /// </summary>
+    /// <value>The total security violations.</value>
     public long TotalSecurityViolations { get; set; }
+    /// <summary>
+    /// Gets or sets the validations by type.
+    /// </summary>
+    /// <value>The validations by type.</value>
     public ConcurrentDictionary<SanitizationType, long> ValidationsByType { get; } = new();
+    /// <summary>
+    /// Gets or sets the threats by type.
+    /// </summary>
+    /// <value>The threats by type.</value>
     public ConcurrentDictionary<ThreatType, long> ThreatsByType { get; } = new();
 }
 

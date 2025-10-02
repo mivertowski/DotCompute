@@ -4,6 +4,9 @@
 namespace DotCompute.Backends.CUDA.Types.Native.Enums
 {
     /// <summary>
+    /// An cuda texture address mode enumeration.
+    /// </summary>
+    /// <summary>
     /// CUDA texture address mode enumeration
     /// </summary>
     public enum CudaTextureAddressMode : uint
@@ -13,6 +16,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Mirror = 2,
         Border = 3
     }
+    /// <summary>
+    /// An cuda texture filter mode enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA texture filter mode enumeration
@@ -22,6 +28,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
         Point = 0,
         Linear = 1
     }
+    /// <summary>
+    /// An cuda texture read mode enumeration.
+    /// </summary>
 
     /// <summary>
     /// CUDA texture read mode enumeration

@@ -16,6 +16,11 @@ internal sealed class PluginScopedServiceProvider(IServiceScope scope, Assembly 
     private readonly IServiceScope _scope = scope ?? throw new ArgumentNullException(nameof(scope));
     private readonly Assembly _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    /// <summary>
+    /// Gets the service.
+    /// </summary>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>The service.</returns>
 
     public object? GetService(Type serviceType)
     {

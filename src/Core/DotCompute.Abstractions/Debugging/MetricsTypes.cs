@@ -39,7 +39,7 @@ public sealed class MetricsSeries
     /// <summary>
     /// Gets the data points in this series.
     /// </summary>
-    public List<MetricPoint> Points { get; init; } = [];
+    public IReadOnlyList<MetricPoint> Points { get; init; } = [];
 
     /// <summary>
     /// Gets the unit of measurement for this metric.
@@ -146,12 +146,12 @@ public sealed class MetricsReport
     /// <summary>
     /// Gets detected anomalies in the metrics.
     /// </summary>
-    public List<MetricAnomaly> Anomalies { get; init; } = [];
+    public IReadOnlyList<MetricAnomaly> Anomalies { get; init; } = [];
 
     /// <summary>
     /// Gets performance trends identified in the data.
     /// </summary>
-    public List<PerformanceTrend> Trends { get; init; } = [];
+    public IReadOnlyList<PerformanceTrend> Trends { get; init; } = [];
 }
 
 /// <summary>

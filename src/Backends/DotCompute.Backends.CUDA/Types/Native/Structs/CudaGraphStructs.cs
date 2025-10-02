@@ -11,9 +11,21 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
     [StructLayout(LayoutKind.Sequential)]
     public struct CudaBatchMemOpNodeParams
     {
+        /// <summary>
+        /// The ctx.
+        /// </summary>
         public nint ctx;
+        /// <summary>
+        /// The count.
+        /// </summary>
         public uint count;
+        /// <summary>
+        /// The param array.
+        /// </summary>
         public nint paramArray;
+        /// <summary>
+        /// The flags.
+        /// </summary>
         public uint flags;
     }
 }

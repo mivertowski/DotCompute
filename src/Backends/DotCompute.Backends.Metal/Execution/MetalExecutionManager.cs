@@ -584,12 +584,12 @@ public sealed class MetalExecutionManagerStats
     public MetalStreamStatistics StreamStatistics { get; set; } = new();
     public MetalEventStatistics EventStatistics { get; set; } = new();
     public MetalExecutionStatistics ExecutionStatistics { get; set; } = new();
-    public Dictionary<string, MetalErrorHandler.ErrorStatistics> ErrorStatistics { get; set; } = [];
+    public Dictionary<string, MetalErrorHandler.ErrorStatistics> ErrorStatistics { get; } = [];
     public bool IsGpuAvailable { get; set; }
     public bool IsExecutionPaused { get; set; }
     public bool IsAppleSilicon { get; set; }
-    public Dictionary<string, object> TelemetryMetrics { get; set; } = [];
-    public List<MetalTelemetryEvent> RecentTelemetryEvents { get; set; } = [];
+    public Dictionary<string, object> TelemetryMetrics { get; } = [];
+    public IList<MetalTelemetryEvent> RecentTelemetryEvents { get; } = [];
 }
 
 /// <summary>
@@ -599,8 +599,8 @@ public sealed class MetalExecutionManagerHealthCheck
 {
     public DateTimeOffset CheckTime { get; set; }
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; set; } = [];
-    public Dictionary<string, bool> ComponentHealth { get; set; } = [];
+    public IList<string> Issues { get; } = [];
+    public Dictionary<string, bool> ComponentHealth { get; } = [];
 }
 
 

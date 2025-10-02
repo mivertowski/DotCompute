@@ -15,6 +15,7 @@ using DotCompute.Core.Execution.Analysis;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Execution.Optimization;
+using System;
 
 namespace DotCompute.Core.Execution
 {
@@ -647,11 +648,11 @@ namespace DotCompute.Core.Execution
             // Base execution time estimation based on kernel complexity and device performance
             var baseTime = kernelName.ToLowerInvariant() switch
             {
-                var name when name.Contains("add") => 1.0,
-                var name when name.Contains("multiply") => 1.5,
-                var name when name.Contains("matrix") => 5.0,
-                var name when name.Contains("reduce") => 3.0,
-                var name when name.Contains("conv") => 8.0,
+                var name when name.Contains("add", StringComparison.OrdinalIgnoreCase) => 1.0,
+                var name when name.Contains("multiply", StringComparison.OrdinalIgnoreCase) => 1.5,
+                var name when name.Contains("matrix", StringComparison.CurrentCulture) => 5.0,
+                var name when name.Contains("reduce", StringComparison.CurrentCulture) => 3.0,
+                var name when name.Contains("conv", StringComparison.CurrentCulture) => 8.0,
                 _ => 2.0
             };
 
@@ -730,11 +731,11 @@ namespace DotCompute.Core.Execution
             // Stage processing time based on kernel complexity and device type
             var baseTime = kernelName.ToLowerInvariant() switch
             {
-                var name when name.Contains("linear") => 2.0,
-                var name when name.Contains("conv") => 5.0,
-                var name when name.Contains("attention") => 8.0,
-                var name when name.Contains("norm") => 1.5,
-                var name when name.Contains("activate") => 1.0,
+                var name when name.Contains("linear", StringComparison.CurrentCulture) => 2.0,
+                var name when name.Contains("conv", StringComparison.CurrentCulture) => 5.0,
+                var name when name.Contains("attention", StringComparison.CurrentCulture) => 8.0,
+                var name when name.Contains("norm", StringComparison.CurrentCulture) => 1.5,
+                var name when name.Contains("activate", StringComparison.CurrentCulture) => 1.0,
                 _ => 3.0
             };
 

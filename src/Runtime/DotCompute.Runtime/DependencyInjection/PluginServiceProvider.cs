@@ -21,6 +21,11 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
     private readonly ConcurrentDictionary<string, IServiceCollection> _pluginServices = new();
     private readonly ConcurrentDictionary<string, IServiceProvider> _pluginProviders = new();
     private bool _disposed;
+    /// <summary>
+    /// Creates a new plugin scope.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <returns>The created plugin scope.</returns>
 
     public IServiceScope CreatePluginScope(string pluginId)
     {
@@ -46,6 +51,11 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
             return scope;
         });
     }
+    /// <summary>
+    /// Performs register plugin services.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <param name="configureServices">The configure services.</param>
 
     public void RegisterPluginServices(string pluginId, Action<IServiceCollection> configureServices)
     {
@@ -71,8 +81,20 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
 
         _logger.LogDebugMessage($"Registered {services.Count} services for plugin {pluginId}");
     }
+    /// <summary>
+    /// Gets the plugin service.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <returns>The plugin service.</returns>
 
     public T? GetPluginService<T>(string pluginId) where T : class => (T?)GetPluginService(pluginId, typeof(T));
+    /// <summary>
+    /// Gets the plugin service.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>The plugin service.</returns>
 
     public object? GetPluginService(string pluginId, Type serviceType)
     {
@@ -103,6 +125,12 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         // Last resort: root provider
         return _rootServiceProvider.GetService(serviceType);
     }
+    /// <summary>
+    /// Determines whether service registered.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <param name="serviceType">The service type.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool IsServiceRegistered(string pluginId, Type serviceType)
     {
@@ -126,6 +154,11 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         // Check if available in root provider
         return _rootServiceProvider.GetService(serviceType) != null;
     }
+    /// <summary>
+    /// Gets dispose plugin services asynchronously.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposePluginServicesAsync(string pluginId)
     {
@@ -176,6 +209,9 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
 
         return Array.Empty<ServiceDescriptor>();
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -217,6 +253,12 @@ public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) 
     private readonly ILogger<PluginDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<Type, ConstructorInfo> _constructorCache = new();
     private readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();
+    /// <summary>
+    /// Gets resolve constructor dependencies.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <returns>The result of the operation.</returns>
 
     public object[] ResolveConstructorDependencies(Type pluginType, IServiceProvider serviceProvider)
     {
@@ -242,6 +284,12 @@ public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) 
 
         return dependencies;
     }
+    /// <summary>
+    /// Gets inject properties asynchronously.
+    /// </summary>
+    /// <param name="pluginInstance">The plugin instance.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task InjectPropertiesAsync(object pluginInstance, IServiceProvider serviceProvider)
     {
@@ -282,6 +330,12 @@ public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) 
             }
         }
     }
+    /// <summary>
+    /// Validates the dependencies.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <returns>The result of the operation.</returns>
 
     public PluginDependencyValidationResult ValidateDependencies(Type pluginType, IServiceProvider serviceProvider)
     {
@@ -332,6 +386,11 @@ public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) 
             return PluginDependencyValidationResult.Failure(new[] { ex.Message }, missingDependencies);
         }
     }
+    /// <summary>
+    /// Gets the required services.
+    /// </summary>
+    /// <param name="pluginType">The plugin type.</param>
+    /// <returns>The required services.</returns>
 
     public IEnumerable<Type> GetRequiredServices(Type pluginType)
     {

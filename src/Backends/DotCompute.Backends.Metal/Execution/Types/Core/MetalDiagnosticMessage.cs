@@ -62,5 +62,5 @@ public sealed class MetalDiagnosticMessage
     /// <summary>
     /// Additional context data
     /// </summary>
-    public Dictionary<string, object> Context { get; set; } = [];
+    public Dictionary<string, object> Context { get; } = [];
 }

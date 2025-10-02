@@ -26,12 +26,12 @@ public sealed class MemoryPatternAnalysis
     /// <summary>
     /// Gets the list of memory issues found.
     /// </summary>
-    public List<MemoryIssue> Issues { get; init; } = [];
+    public IReadOnlyList<MemoryIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the list of recommendations for memory optimization.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets the total memory used by input data.

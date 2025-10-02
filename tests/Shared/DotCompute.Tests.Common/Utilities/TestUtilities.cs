@@ -496,13 +496,45 @@ public static class TestUtilities
 /// </summary>
 public class MemoryMeasurement
 {
+    /// <summary>
+    /// Gets or sets the initial memory bytes.
+    /// </summary>
+    /// <value>The initial memory bytes.</value>
     public long InitialMemoryBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the final memory bytes.
+    /// </summary>
+    /// <value>The final memory bytes.</value>
     public long FinalMemoryBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the peak memory bytes.
+    /// </summary>
+    /// <value>The peak memory bytes.</value>
     public long PeakMemoryBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the allocated bytes.
+    /// </summary>
+    /// <value>The allocated bytes.</value>
     public long AllocatedBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the max memory bytes.
+    /// </summary>
+    /// <value>The max memory bytes.</value>
     public long? MaxMemoryBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the meets target.
+    /// </summary>
+    /// <value>The meets target.</value>
     public bool MeetsTarget { get; set; }
+    /// <summary>
+    /// Gets or sets the average memory bytes.
+    /// </summary>
+    /// <value>The average memory bytes.</value>
     public long AverageMemoryBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the measurements.
+    /// </summary>
+    /// <value>The measurements.</value>
     public long[] Measurements { get; set; } = Array.Empty<long>();
 }
 
@@ -511,15 +543,55 @@ public class MemoryMeasurement
 /// </summary>
 public class ConcurrencyTestResult
 {
+    /// <summary>
+    /// Gets or sets the thread count.
+    /// </summary>
+    /// <value>The thread count.</value>
     public int ThreadCount { get; set; }
+    /// <summary>
+    /// Gets or sets the operations per thread.
+    /// </summary>
+    /// <value>The operations per thread.</value>
     public int OperationsPerThread { get; set; }
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public int TotalOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the completed operations.
+    /// </summary>
+    /// <value>The completed operations.</value>
     public int CompletedOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the successful operations.
+    /// </summary>
+    /// <value>The successful operations.</value>
     public int SuccessfulOperations { get; set; }
+    /// <summary>
+    /// Gets or sets the exceptions.
+    /// </summary>
+    /// <value>The exceptions.</value>
     public Exception[] Exceptions { get; set; } = Array.Empty<Exception>();
+    /// <summary>
+    /// Gets or sets the execution time ms.
+    /// </summary>
+    /// <value>The execution time ms.</value>
     public double ExecutionTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the operations per second.
+    /// </summary>
+    /// <value>The operations per second.</value>
     public double OperationsPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; set; }
+    /// <summary>
+    /// Gets or sets the results.
+    /// </summary>
+    /// <value>The results.</value>
     public object[] Results { get; set; } = Array.Empty<object>();
 }
 
@@ -528,10 +600,30 @@ public class ConcurrencyTestResult
 /// </summary>
 public class LogEntry
 {
+    /// <summary>
+    /// Gets or sets the level.
+    /// </summary>
+    /// <value>The level.</value>
     public LogLevel Level { get; set; }
+    /// <summary>
+    /// Gets or sets the event identifier.
+    /// </summary>
+    /// <value>The event id.</value>
     public EventId EventId { get; set; }
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public string Message { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the exception.
+    /// </summary>
+    /// <value>The exception.</value>
     public Exception? Exception { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTime Timestamp { get; set; }
 }
 
@@ -540,17 +632,65 @@ public class LogEntry
 /// </summary>
 public class PerformanceStats
 {
+    /// <summary>
+    /// Gets or sets the iterations.
+    /// </summary>
+    /// <value>The iterations.</value>
     public int Iterations { get; set; }
+    /// <summary>
+    /// Gets or sets the mean time ms.
+    /// </summary>
+    /// <value>The mean time ms.</value>
     public double MeanTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the median time ms.
+    /// </summary>
+    /// <value>The median time ms.</value>
     public double MedianTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the min time ms.
+    /// </summary>
+    /// <value>The min time ms.</value>
     public double MinTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the max time ms.
+    /// </summary>
+    /// <value>The max time ms.</value>
     public double MaxTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the standard deviation ms.
+    /// </summary>
+    /// <value>The standard deviation ms.</value>
     public double StandardDeviationMs { get; set; }
+    /// <summary>
+    /// Gets or sets the total time ms.
+    /// </summary>
+    /// <value>The total time ms.</value>
     public double TotalTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the target time ms.
+    /// </summary>
+    /// <value>The target time ms.</value>
     public double? TargetTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the meets target.
+    /// </summary>
+    /// <value>The meets target.</value>
     public bool MeetsTarget { get; set; }
+    /// <summary>
+    /// Gets or sets the operations per second.
+    /// </summary>
+    /// <value>The operations per second.</value>
     public double OperationsPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the percentile95 ms.
+    /// </summary>
+    /// <value>The percentile95 ms.</value>
     public double Percentile95Ms { get; set; }
+    /// <summary>
+    /// Gets or sets the percentile99 ms.
+    /// </summary>
+    /// <value>The percentile99 ms.</value>
     public double Percentile99Ms { get; set; }
 }
 
@@ -559,6 +699,10 @@ public class PerformanceStats
 /// </summary>
 public interface IMockLogger<T> : ILogger<T>
 {
+    /// <summary>
+    /// Gets or sets the log entries.
+    /// </summary>
+    /// <value>The log entries.</value>
     public List<LogEntry> LogEntries { get; }
 }
 

@@ -221,6 +221,9 @@ namespace DotCompute.Core.Pipelines
         public static class ExecutionMetrics
         {
             private static readonly ThreadLocal<ExecutionContext> _context = new(() => new ExecutionContext());
+            /// <summary>
+            /// Performs start execution.
+            /// </summary>
 
             public static void StartExecution()
             {
@@ -229,6 +232,10 @@ namespace DotCompute.Core.Pipelines
                 context.StartCpuTotal = _currentProcess.TotalProcessorTime;
                 context.StartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
             }
+            /// <summary>
+            /// Gets end execution.
+            /// </summary>
+            /// <returns>The result of the operation.</returns>
 
             public static (double cpuTime, long allocatedBytes, double elapsedMs) EndExecution()
             {
@@ -247,8 +254,17 @@ namespace DotCompute.Core.Pipelines
 
             private class ExecutionContext
             {
+                /// <summary>
+                /// The start time.
+                /// </summary>
                 public long StartTime;
+                /// <summary>
+                /// The start cpu total.
+                /// </summary>
                 public TimeSpan StartCpuTotal;
+                /// <summary>
+                /// The start allocated bytes.
+                /// </summary>
                 public long StartAllocatedBytes;
             }
         }

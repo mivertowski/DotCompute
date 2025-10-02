@@ -10,7 +10,7 @@ namespace DotCompute.Generators.Kernel.Analysis;
 /// </summary>
 public class KernelAttributeParser
 {
-    public static List<string> GetBackendsFromAttribute(AttributeData attribute)
+    public static IReadOnlyList<string> GetBackendsFromAttribute(AttributeData attribute)
     {
         var backends = new List<string> { "CPU" }; // CPU is always supported
 

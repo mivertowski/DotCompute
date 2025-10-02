@@ -466,6 +466,9 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis) => JsonSerializer.Serialize(analysis, new JsonSerializerOptions { WriteIndented = true });
 
     private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis) => $"Memory Analysis for {analysis.KernelName}\nStatus: {(analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}";
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 

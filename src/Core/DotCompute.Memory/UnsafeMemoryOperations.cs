@@ -16,6 +16,9 @@ namespace DotCompute.Memory;
 public static unsafe class UnsafeMemoryOperations
 {
     /// <summary>
+    /// The default alignment.
+    /// </summary>
+    /// <summary>
     /// The default memory alignment for SIMD operations.
     /// </summary>
     public const int DefaultAlignment = 32; // 256-bit alignment for AVX2

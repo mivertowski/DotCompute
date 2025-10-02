@@ -14,6 +14,13 @@ internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logge
 {
     private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
     private volatile bool _disposed;
+    /// <summary>
+    /// Gets attempt recovery.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="operation">The operation.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ErrorRecoveryResult AttemptRecovery(CudaError error, string operation, string? context)
     {
@@ -35,6 +42,10 @@ internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logge
             }
         };
     }
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="policy">The policy.</param>
 
     public static void Configure(ErrorRecoveryPolicy policy)
     {
@@ -138,6 +149,9 @@ internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logge
             };
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

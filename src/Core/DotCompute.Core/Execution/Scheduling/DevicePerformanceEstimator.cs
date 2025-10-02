@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Core.Execution.Scheduling;
 
@@ -18,6 +19,10 @@ internal class DevicePerformanceEstimator
     private readonly ConcurrentDictionary<string, double> _devicePerformanceScores = new();
     private readonly ConcurrentDictionary<string, KernelPerformanceModel> _kernelModels = new();
     private readonly ILogger? _logger;
+    /// <summary>
+    /// Initializes a new instance of the DevicePerformanceEstimator class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public DevicePerformanceEstimator(ILogger? logger = null)
     {
@@ -215,7 +220,7 @@ internal class DevicePerformanceEstimator
         // Adjust based on historical performance if available
         var deviceKey = $"{device.Info.Name}_*"; // Wildcard for all kernels on this device
         var historicalScores = _devicePerformanceScores
-            .Where(kvp => kvp.Key.StartsWith(device.Info.Name))
+            .Where(kvp => kvp.Key.StartsWith(device.Info.Name, StringComparison.OrdinalIgnoreCase))
             .Select(kvp => kvp.Value)
             .ToArray();
 
@@ -223,7 +228,7 @@ internal class DevicePerformanceEstimator
         {
             var avgHistoricalThroughput = historicalScores.Average();
             var cpuBaseline = _devicePerformanceScores
-                .Where(kvp => kvp.Key.Contains("CPU"))
+                .Where(kvp => kvp.Key.Contains("CPU", StringComparison.OrdinalIgnoreCase))
                 .Select(kvp => kvp.Value)
                 .DefaultIfEmpty(50_000_000) // 50 MB/s baseline
                 .Average();
@@ -265,10 +270,10 @@ internal class DevicePerformanceEstimator
         // Add algorithm-specific overhead
         var algorithmOverhead = kernelName.ToLowerInvariant() switch
         {
-            var n when n.Contains("sort") => inputDataSize / 2,     // Sorting needs extra space
-            var n when n.Contains("fft") => inputDataSize,          // FFT needs temporary buffers
-            var n when n.Contains("matrix") => inputDataSize / 4,    // Matrix ops need temp space
-            var n when n.Contains("reduce") => inputDataSize / 8,    // Reduction needs partial results
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => inputDataSize / 2,     // Sorting needs extra space
+            var n when n.Contains("fft", StringComparison.CurrentCulture) => inputDataSize,          // FFT needs temporary buffers
+            var n when n.Contains("matrix", StringComparison.CurrentCulture) => inputDataSize / 4,    // Matrix ops need temp space
+            var n when n.Contains("reduce", StringComparison.CurrentCulture) => inputDataSize / 8,    // Reduction needs partial results
             _ => inputDataSize / 10                                  // Default overhead
         };
 
@@ -428,25 +433,25 @@ internal class DevicePerformanceEstimator
         // Estimate compute intensity based on kernel name patterns
         model.ComputeIntensity = lowerName switch
         {
-            var n when n.Contains("matrix") || n.Contains("gemm") => 50.0,     // Matrix operations are compute-intensive
-            var n when n.Contains("fft") || n.Contains("transform") => 30.0,   // FFT operations
-            var n when n.Contains("conv") || n.Contains("filter") => 25.0,     // Convolution operations
-            var n when n.Contains("sort") => 10.0,                            // Sorting operations
-            var n when n.Contains("reduce") || n.Contains("sum") => 5.0,       // Reduction operations
-            var n when n.Contains("copy") || n.Contains("memcpy") => 1.0,      // Memory operations
+            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => 50.0,     // Matrix operations are compute-intensive
+            var n when n.Contains("fft", StringComparison.CurrentCulture) || n.Contains("transform", StringComparison.CurrentCulture) => 30.0,   // FFT operations
+            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => 25.0,     // Convolution operations
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => 10.0,                            // Sorting operations
+            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("sum", StringComparison.CurrentCulture) => 5.0,       // Reduction operations
+            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => 1.0,      // Memory operations
             _ => 10.0                                                          // Default estimate
         };
 
         // Estimate memory access pattern complexity
         model.MemoryAccessPatternFactor = lowerName switch
         {
-            var n when n.Contains("matrix") => 2.5,       // Complex access patterns
-            var n when n.Contains("transpose") => 3.0,    // Irregular access
-            var n when n.Contains("gather") => 2.8,       // Scattered access
-            var n when n.Contains("scatter") => 2.8,      // Scattered access
-            var n when n.Contains("sort") => 2.2,         // Irregular during sorting
-            var n when n.Contains("scan") => 1.8,         // Somewhat irregular
-            var n when n.Contains("reduce") => 1.5,       // Tree-like access
+            var n when n.Contains("matrix", StringComparison.CurrentCulture) => 2.5,       // Complex access patterns
+            var n when n.Contains("transpose", StringComparison.CurrentCulture) => 3.0,    // Irregular access
+            var n when n.Contains("gather", StringComparison.CurrentCulture) => 2.8,       // Scattered access
+            var n when n.Contains("scatter", StringComparison.CurrentCulture) => 2.8,      // Scattered access
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => 2.2,         // Irregular during sorting
+            var n when n.Contains("scan", StringComparison.CurrentCulture) => 1.8,         // Somewhat irregular
+            var n when n.Contains("reduce", StringComparison.CurrentCulture) => 1.5,       // Tree-like access
             _ => 1.2                                       // Mostly sequential
         };
 
@@ -635,12 +640,12 @@ internal class DevicePerformanceEstimator
         {
             return lowerKernel switch
             {
-                var n when n.Contains("matrix") || n.Contains("gemm") => 1.2,     // Excellent for GPU
-                var n when n.Contains("conv") || n.Contains("filter") => 1.15,    // Very good for GPU
-                var n when n.Contains("fft") || n.Contains("transform") => 1.1,   // Good for GPU
-                var n when n.Contains("reduce") || n.Contains("sum") => 1.05,     // Good for GPU
-                var n when n.Contains("sort") => 0.9,                            // Less ideal for GPU
-                var n when n.Contains("scan") => 0.95,                           // Moderate for GPU
+                var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => 1.2,     // Excellent for GPU
+                var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => 1.15,    // Very good for GPU
+                var n when n.Contains("fft", StringComparison.CurrentCulture) || n.Contains("transform", StringComparison.CurrentCulture) => 1.1,   // Good for GPU
+                var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("sum", StringComparison.CurrentCulture) => 1.05,     // Good for GPU
+                var n when n.Contains("sort", StringComparison.CurrentCulture) => 0.9,                            // Less ideal for GPU
+                var n when n.Contains("scan", StringComparison.CurrentCulture) => 0.95,                           // Moderate for GPU
                 _ => 1.0
             };
         }
@@ -648,9 +653,9 @@ internal class DevicePerformanceEstimator
         // CPU excels at different patterns
         return lowerKernel switch
         {
-            var n when n.Contains("sort") => 1.1,        // Good for CPU
-            var n when n.Contains("scan") => 1.05,       // Good for CPU
-            var n when n.Contains("complex") => 1.05,    // Complex algorithms good for CPU
+            var n when n.Contains("sort", StringComparison.CurrentCulture) => 1.1,        // Good for CPU
+            var n when n.Contains("scan", StringComparison.CurrentCulture) => 1.05,       // Good for CPU
+            var n when n.Contains("complex", StringComparison.CurrentCulture) => 1.05,    // Complex algorithms good for CPU
             _ => 1.0
         };
     }
@@ -684,11 +689,35 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private class DeviceCapabilities
     {
+        /// <summary>
+        /// Gets or sets the compute units.
+        /// </summary>
+        /// <value>The compute units.</value>
         public int ComputeUnits { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth.
+        /// </summary>
+        /// <value>The memory bandwidth.</value>
         public long MemoryBandwidth { get; set; } // Bytes per second
+        /// <summary>
+        /// Gets or sets the compute performance.
+        /// </summary>
+        /// <value>The compute performance.</value>
         public long ComputePerformance { get; set; } // Operations per second
+        /// <summary>
+        /// Gets or sets the memory latency.
+        /// </summary>
+        /// <value>The memory latency.</value>
         public double MemoryLatency { get; set; } // Seconds
+        /// <summary>
+        /// Gets or sets the power efficiency.
+        /// </summary>
+        /// <value>The power efficiency.</value>
         public double PowerEfficiency { get; set; } // Relative factor
+        /// <summary>
+        /// Gets or sets the supported data types.
+        /// </summary>
+        /// <value>The supported data types.</value>
         public string[] SupportedDataTypes { get; set; } = Array.Empty<string>();
     }
 
@@ -697,9 +726,25 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private class PerformanceMeasurement
     {
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        /// <value>The timestamp.</value>
         public DateTime Timestamp { get; set; }
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public TimeSpan ExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the data size.
+        /// </summary>
+        /// <value>The data size.</value>
         public long DataSize { get; set; }
+        /// <summary>
+        /// Gets or sets the throughput.
+        /// </summary>
+        /// <value>The throughput.</value>
         public double Throughput { get; set; }
     }
 
@@ -711,6 +756,10 @@ internal class DevicePerformanceEstimator
         private readonly Queue<PerformanceMeasurement> _measurements = new();
         private readonly object _lock = new();
         private const int MaxMeasurements = 100;
+        /// <summary>
+        /// Gets or sets the measurements.
+        /// </summary>
+        /// <value>The measurements.</value>
 
         public IEnumerable<PerformanceMeasurement> Measurements
         {
@@ -722,6 +771,10 @@ internal class DevicePerformanceEstimator
                 }
             }
         }
+        /// <summary>
+        /// Performs add measurement.
+        /// </summary>
+        /// <param name="measurement">The measurement.</param>
 
         public void AddMeasurement(PerformanceMeasurement measurement)
         {
@@ -743,9 +796,25 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private class KernelPerformanceModel
     {
+        /// <summary>
+        /// Gets or sets the compute intensity.
+        /// </summary>
+        /// <value>The compute intensity.</value>
         public double ComputeIntensity { get; set; } = 10.0; // Operations per byte
+        /// <summary>
+        /// Gets or sets the memory access pattern factor.
+        /// </summary>
+        /// <value>The memory access pattern factor.</value>
         public double MemoryAccessPatternFactor { get; set; } = 1.2; // Complexity factor
+        /// <summary>
+        /// Gets or sets the last updated.
+        /// </summary>
+        /// <value>The last updated.</value>
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+        /// <summary>
+        /// Gets or sets the sample count.
+        /// </summary>
+        /// <value>The sample count.</value>
         public int SampleCount { get; set; } = 0;
     }
 

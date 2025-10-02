@@ -25,28 +25,88 @@ public sealed class UnifiedGeneratedKernel(
     private readonly List<IKernelParameter> _parameters = [];
     private readonly List<string> _optimizations = [];
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
 
     // IGeneratedKernel properties
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    /// <summary>
+    /// Gets or sets the source code.
+    /// </summary>
+    /// <value>The source code.</value>
     public string SourceCode { get; } = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
+    /// <summary>
+    /// Gets or sets the language.
+    /// </summary>
+    /// <value>The language.</value>
     public string Language { get; } = language;
+    /// <summary>
+    /// Gets or sets the target backend.
+    /// </summary>
+    /// <value>The target backend.</value>
     public string TargetBackend { get; } = targetBackend;
+    /// <summary>
+    /// Gets or sets the entry point.
+    /// </summary>
+    /// <value>The entry point.</value>
     public string EntryPoint { get; } = entryPoint;
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    /// <value>The metadata.</value>
     public IReadOnlyDictionary<string, object> Metadata => _metadata;
+    /// <summary>
+    /// Gets or sets the compiled kernel.
+    /// </summary>
+    /// <value>The compiled kernel.</value>
 
     // IExecutableGeneratedKernel properties
     public ICompiledKernel? CompiledKernel { get; private set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether compiled.
+    /// </summary>
+    /// <value>The is compiled.</value>
     public bool IsCompiled => CompiledKernel?.IsValid == true;
+    /// <summary>
+    /// Gets or sets the parameters.
+    /// </summary>
+    /// <value>The parameters.</value>
     public IReadOnlyList<IKernelParameter> Parameters => _parameters;
+    /// <summary>
+    /// Gets or sets the analysis.
+    /// </summary>
+    /// <value>The analysis.</value>
 
     // IAnalyzableGeneratedKernel properties
     public IExpressionAnalysisResult? Analysis { get; private set; }
+    /// <summary>
+    /// Gets or sets the optimizations.
+    /// </summary>
+    /// <value>The optimizations.</value>
     public IReadOnlyList<string> Optimizations => _optimizations;
+    /// <summary>
+    /// Gets or sets the complexity metrics.
+    /// </summary>
+    /// <value>The complexity metrics.</value>
     public IComplexityMetrics ComplexityMetrics => Analysis?.ComplexityMetrics ?? Core.Analysis.UnifiedComplexityMetrics.Builder().Build();
+    /// <summary>
+    /// Gets or sets the memory manager.
+    /// </summary>
+    /// <value>The memory manager.</value>
 
     // IFullGeneratedKernel properties
     public IGpuMemoryManager? MemoryManager { get; private set; }
+    /// <summary>
+    /// Gets or sets the compiled at.
+    /// </summary>
+    /// <value>The compiled at.</value>
     public DateTimeOffset CompiledAt { get; } = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Gets or sets the version.
+    /// </summary>
+    /// <value>The version.</value>
     public Version Version { get; } = new Version(1, 0, 0, 0);
 
     /// <summary>
@@ -218,11 +278,35 @@ public sealed class UnifiedKernelParameter(
     bool isInput = true,
     bool isOutput = false) : IKernelParameter
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public Type Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
+    /// <summary>
+    /// Gets or sets a value indicating whether pointer.
+    /// </summary>
+    /// <value>The is pointer.</value>
     public bool IsPointer { get; } = isPointer;
+    /// <summary>
+    /// Gets or sets a value indicating whether input.
+    /// </summary>
+    /// <value>The is input.</value>
     public bool IsInput { get; } = isInput;
+    /// <summary>
+    /// Gets or sets a value indicating whether output.
+    /// </summary>
+    /// <value>The is output.</value>
     public bool IsOutput { get; } = isOutput;
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString() => $"{Type.Name} {Name}{(IsPointer ? "*" : "")}{(IsOutput ? " [out]" : "")}{(IsInput ? " [in]" : "")}";
 }

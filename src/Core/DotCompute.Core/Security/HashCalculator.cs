@@ -468,7 +468,7 @@ public sealed class HashResult
     /// <inheritdoc/>
     public DateTimeOffset CalculationTime { get; init; }
     /// <inheritdoc/>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 }
 
 /// <summary>
@@ -481,13 +481,13 @@ public sealed class MultiHashResult
     /// <inheritdoc/>
     public DateTimeOffset CalculationTime { get; init; }
     /// <inheritdoc/>
-    public List<string> RequestedAlgorithms { get; init; } = [];
+    public IReadOnlyList<string> RequestedAlgorithms { get; init; } = [];
     /// <inheritdoc/>
     public Dictionary<string, HashResult> HashResults { get; } = [];
     /// <inheritdoc/>
     public bool IsSuccessful { get; set; }
     /// <inheritdoc/>
-    public List<string> Errors { get; } = [];
+    public IList<string> Errors { get; } = [];
 }
 
 /// <summary>
@@ -529,9 +529,9 @@ public sealed class HashAlgorithmValidationResult
     /// <inheritdoc/>
     public bool IsApproved { get; set; }
     /// <inheritdoc/>
-    public List<string> SecurityIssues { get; } = [];
+    public IList<string> SecurityIssues { get; } = [];
     /// <inheritdoc/>
-    public List<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>
@@ -539,7 +539,15 @@ public sealed class HashAlgorithmValidationResult
 /// </summary>
 internal sealed class CachedHashResult
 {
+    /// <summary>
+    /// Gets or sets the result.
+    /// </summary>
+    /// <value>The result.</value>
     public required HashResult Result { get; init; }
+    /// <summary>
+    /// Gets or sets the calculation time.
+    /// </summary>
+    /// <value>The calculation time.</value>
     public DateTimeOffset CalculationTime { get; init; }
 }
 

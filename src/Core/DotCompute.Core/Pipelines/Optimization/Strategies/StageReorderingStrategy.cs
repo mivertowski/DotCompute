@@ -13,15 +13,49 @@ namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 /// </summary>
 internal sealed class StageReorderingStrategy : IOptimizationStrategy
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => "StageReordering";
+    /// <summary>
+    /// Gets or sets the supported optimizations.
+    /// </summary>
+    /// <value>The supported optimizations.</value>
     public OptimizationType SupportedOptimizations => OptimizationType.StageReordering;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type => OptimizationType.StageReordering;
+    /// <summary>
+    /// Determines whether optimize.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanOptimize(IKernelPipeline pipeline)
         => pipeline?.Stages?.Count > 1;
+    /// <summary>
+    /// Determines whether apply.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
+    /// <summary>
+    /// Gets apply asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -37,6 +71,13 @@ internal sealed class StageReorderingStrategy : IOptimizationStrategy
         }
         return pipeline;
     }
+    /// <summary>
+    /// Gets apply internal asynchronously.
+    /// </summary>
+    /// <param name="stages">The stages.</param>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
@@ -70,7 +111,7 @@ internal sealed class StageReorderingStrategy : IOptimizationStrategy
         });
     }
 
-    private static List<IPipelineStage> TopologicalSortWithOptimization(List<IPipelineStage> stages)
+    private static List<IPipelineStage> TopologicalSortWithOptimization(IReadOnlyList<IPipelineStage> stages)
     {
         // Simplified topological sort
         // In practice, this would optimize for cache locality and parallelism

@@ -17,6 +17,11 @@ public sealed class PluginCircuitBreaker : IDisposable
     private readonly ConcurrentDictionary<string, CircuitBreakerState> _circuitStates;
     private readonly Timer _resetTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginCircuitBreaker class.
+    /// </summary>
+    /// <param name="config">The config.</param>
+    /// <param name="logger">The logger.</param>
 
     public PluginCircuitBreaker(PluginRecoveryConfiguration config, ILogger logger)
     {
@@ -249,6 +254,9 @@ public sealed class PluginCircuitBreaker : IDisposable
             _logger.LogError(ex, "Error during circuit breaker reset check");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -267,15 +275,50 @@ public sealed class PluginCircuitBreaker : IDisposable
 /// </summary>
 public sealed class CircuitBreakerState
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public CircuitState State { get; set; } = CircuitState.Closed;
+    /// <summary>
+    /// Gets or sets the consecutive failures.
+    /// </summary>
+    /// <value>The consecutive failures.</value>
     public int ConsecutiveFailures { get; set; }
+    /// <summary>
+    /// Gets or sets the total failures.
+    /// </summary>
+    /// <value>The total failures.</value>
     public int TotalFailures { get; set; }
+    /// <summary>
+    /// Gets or sets the last failure time.
+    /// </summary>
+    /// <value>The last failure time.</value>
     public DateTimeOffset? LastFailureTime { get; set; }
+    /// <summary>
+    /// Gets or sets the last success time.
+    /// </summary>
+    /// <value>The last success time.</value>
     public DateTimeOffset? LastSuccessTime { get; set; }
+    /// <summary>
+    /// Gets or sets the open time.
+    /// </summary>
+    /// <value>The open time.</value>
     public DateTimeOffset? OpenTime { get; set; }
+    /// <summary>
+    /// Gets or sets the half open attempts.
+    /// </summary>
+    /// <value>The half open attempts.</value>
     public int HalfOpenAttempts { get; set; }
 }
+/// <summary>
+/// An circuit state enumeration.
+/// </summary>
 
 /// <summary>
 /// Circuit breaker states
@@ -292,13 +335,45 @@ public enum CircuitState
 /// </summary>
 public sealed class CircuitBreakerStatus
 {
+    /// <summary>
+    /// Gets or sets the plugin identifier.
+    /// </summary>
+    /// <value>The plugin id.</value>
     public required string PluginId { get; init; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public CircuitState State { get; init; }
+    /// <summary>
+    /// Gets or sets the consecutive failures.
+    /// </summary>
+    /// <value>The consecutive failures.</value>
     public int ConsecutiveFailures { get; init; }
+    /// <summary>
+    /// Gets or sets the total failures.
+    /// </summary>
+    /// <value>The total failures.</value>
     public int TotalFailures { get; init; }
+    /// <summary>
+    /// Gets or sets the last failure time.
+    /// </summary>
+    /// <value>The last failure time.</value>
     public DateTimeOffset? LastFailureTime { get; init; }
+    /// <summary>
+    /// Gets or sets the last success time.
+    /// </summary>
+    /// <value>The last success time.</value>
     public DateTimeOffset? LastSuccessTime { get; init; }
+    /// <summary>
+    /// Gets or sets the open time.
+    /// </summary>
+    /// <value>The open time.</value>
     public DateTimeOffset? OpenTime { get; init; }
+    /// <summary>
+    /// Gets or sets the half open attempts.
+    /// </summary>
+    /// <value>The half open attempts.</value>
     public int HalfOpenAttempts { get; init; }
 
     /// <summary>

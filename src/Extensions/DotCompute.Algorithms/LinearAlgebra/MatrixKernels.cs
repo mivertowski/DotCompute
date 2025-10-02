@@ -9,6 +9,9 @@ namespace DotCompute.Algorithms.LinearAlgebra;
 /// </summary>
 public static class MatrixKernels
 {
+    /// <summary>
+    /// The open c l matrix multiply tiled kernel.
+    /// </summary>
     #region Matrix Multiplication Kernels
 
     /// <summary>
@@ -79,6 +82,9 @@ __kernel void matrix_multiply_tiled(
         C[row * N + col] = sum;
     }
 }";
+    /// <summary>
+    /// The c u d a matrix multiply tiled kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for tiled matrix multiplication with shared memory.
@@ -147,6 +153,9 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
+    /// <summary>
+    /// The open c l matrix vector kernel.
+    /// </summary>
 
     #endregion
 
@@ -195,6 +204,9 @@ __kernel void matrix_vector_multiply_optimized(
     
     y[row] = sum;
 }";
+    /// <summary>
+    /// The open c l matrix transpose kernel.
+    /// </summary>
 
     #endregion
 
@@ -239,6 +251,9 @@ __kernel void matrix_transpose_optimized(
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
 }";
+    /// <summary>
+    /// The c u d a matrix transpose kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for cache-optimized matrix transpose.
@@ -277,6 +292,9 @@ extern ""C"" __global__ void matrix_transpose_cuda(
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
 }";
+    /// <summary>
+    /// The open c l matrix elementwise kernel.
+    /// </summary>
 
     #endregion
 
@@ -326,6 +344,9 @@ __kernel void matrix_elementwise_operation(
             break;
     }
 }";
+    /// <summary>
+    /// The c u d a matrix norm kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for matrix norm computation.

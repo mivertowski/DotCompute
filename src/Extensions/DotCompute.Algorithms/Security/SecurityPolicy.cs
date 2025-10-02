@@ -358,17 +358,17 @@ public sealed class SecurityPolicyConfiguration
     /// <summary>
     /// Gets or sets the trusted publishers.
     /// </summary>
-    public List<string> TrustedPublishers { get; set; } = [];
+    public IList<string> TrustedPublishers { get; } = [];
 
     /// <summary>
     /// Gets or sets the blocked assemblies.
     /// </summary>
-    public List<string> BlockedAssemblies { get; set; } = [];
+    public IList<string> BlockedAssemblies { get; } = [];
 
     /// <summary>
     /// Gets or sets the directory policies.
     /// </summary>
-    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; set; } = [];
+    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; } = [];
 }
 
 /// <summary>
@@ -446,12 +446,12 @@ public sealed class SecurityEvaluationResult
     /// <summary>
     /// Gets the security violations found.
     /// </summary>
-    public List<string> Violations { get; } = [];
+    public IList<string> Violations { get; } = [];
 
     /// <summary>
     /// Gets the security warnings.
     /// </summary>
-    public List<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional evaluation metadata.

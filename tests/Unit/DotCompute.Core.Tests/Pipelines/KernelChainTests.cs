@@ -18,12 +18,18 @@ namespace DotCompute.Core.Tests.Pipelines;
 public class KernelChainTests : PipelineTestBase
 {
     private readonly MockComputeOrchestrator _mockOrchestrator;
+    /// <summary>
+    /// Initializes a new instance of the KernelChainTests class.
+    /// </summary>
 
     public KernelChainTests()
     {
         _mockOrchestrator = (MockComputeOrchestrator)Services.GetRequiredService<IComputeOrchestrator>();
         SetupMockKernels();
     }
+    /// <summary>
+    /// Performs kernel chain_ create_ returns valid builder.
+    /// </summary>
 
     [Fact]
     public void KernelChain_Create_ReturnsValidBuilder()
@@ -35,6 +41,10 @@ public class KernelChainTests : PipelineTestBase
         Assert.NotNull(builder);
         _ = Assert.IsAssignableFrom<IKernelChainBuilder>(builder);
     }
+    /// <summary>
+    /// Gets kernel chain_ sequential_ executes in order.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_Sequential_ExecutesInOrder()
@@ -64,6 +74,10 @@ public class KernelChainTests : PipelineTestBase
 
         Assert.All(history, record => Assert.True(record.Success));
     }
+    /// <summary>
+    /// Gets kernel chain_ parallel_ executes concurrently.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_Parallel_ExecutesConcurrently()
@@ -99,6 +113,11 @@ public class KernelChainTests : PipelineTestBase
         var history = _mockOrchestrator.ExecutionHistory;
         Assert.True(history.Count >= 2);
     }
+    /// <summary>
+    /// Gets kernel chain_ branch_ follows condition.
+    /// </summary>
+    /// <param name="conditionValue">The condition value.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(true)]
@@ -135,6 +154,10 @@ public class KernelChainTests : PipelineTestBase
         var expectedSecondKernel = conditionValue ? "VectorMultiply" : "VectorAdd";
         Assert.Equal(expectedSecondKernel, history[1].Name);
     }
+    /// <summary>
+    /// Gets kernel chain_ cache_ improves perfomance.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_Cache_ImprovesPerfomance()
@@ -169,6 +192,11 @@ public class KernelChainTests : PipelineTestBase
             $"Caching did not improve performance. First: {firstExecution.TotalMilliseconds}ms, " +
             $"Second: {secondExecution.TotalMilliseconds}ms");
     }
+    /// <summary>
+    /// Gets kernel chain_ error strategy_ handles failures.
+    /// </summary>
+    /// <param name="strategy">The strategy.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue)]
@@ -222,6 +250,11 @@ public class KernelChainTests : PipelineTestBase
                 break;
         }
     }
+    /// <summary>
+    /// Gets kernel chain_ backend selection_ chooses optimal.
+    /// </summary>
+    /// <param name="backendName">The backend name.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData("CPU")]
@@ -249,6 +282,11 @@ public class KernelChainTests : PipelineTestBase
         _ = Assert.Single(history);
         Assert.True(history[0].Success);
     }
+    /// <summary>
+    /// Gets kernel chain_ data types_ handles all types.
+    /// </summary>
+    /// <param name="dataType">The data type.</param>
+    /// <returns>The result of the operation.</returns>
 
     [Theory]
     [InlineData(typeof(float))]
@@ -295,6 +333,10 @@ public class KernelChainTests : PipelineTestBase
             Assert.Equal(size, result.Length);
         }
     }
+    /// <summary>
+    /// Gets kernel chain_ with validation_ validates inputs.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_WithValidation_ValidatesInputs()
@@ -313,6 +355,10 @@ public class KernelChainTests : PipelineTestBase
         Assert.NotNull(validationResult.Errors);
         Assert.NotEmpty(validationResult.Errors);
     }
+    /// <summary>
+    /// Gets kernel chain_ with profiling_ captures metrics.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_WithProfiling_CapturesMetrics()
@@ -346,6 +392,10 @@ public class KernelChainTests : PipelineTestBase
         Assert.NotNull(result.MemoryMetrics);
         Assert.True(result.MemoryMetrics.TotalMemoryAllocated >= 0);
     }
+    /// <summary>
+    /// Gets kernel chain_ with timeout_ enforces time limit.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_WithTimeout_EnforcesTimeLimit()
@@ -363,6 +413,10 @@ public class KernelChainTests : PipelineTestBase
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
     }
+    /// <summary>
+    /// Gets kernel chain_ memory usage_ stays within bounds.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_MemoryUsage_StaysWithinBounds()
@@ -388,6 +442,10 @@ public class KernelChainTests : PipelineTestBase
         Assert.True(memoryMetrics.MemoryIncreaseMB > 0, "Should allocate some memory");
         Assert.True(memoryMetrics.MemoryIncreaseMB < 50, "Memory usage should stay within bounds");
     }
+    /// <summary>
+    /// Gets kernel chain_ concurrent execution_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task KernelChain_ConcurrentExecution_ThreadSafe()

@@ -11,23 +11,72 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
     /// </summary>
     public class LaunchConfiguration
     {
+        /// <summary>
+        /// Gets or sets the block size x.
+        /// </summary>
+        /// <value>The block size x.</value>
         public int BlockSizeX { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the block size y.
+        /// </summary>
+        /// <value>The block size y.</value>
         public int BlockSizeY { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the block size z.
+        /// </summary>
+        /// <value>The block size z.</value>
         public int BlockSizeZ { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the grid size x.
+        /// </summary>
+        /// <value>The grid size x.</value>
         public int GridSizeX { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the grid size y.
+        /// </summary>
+        /// <value>The grid size y.</value>
         public int GridSizeY { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the grid size z.
+        /// </summary>
+        /// <value>The grid size z.</value>
         public int GridSizeZ { get; set; } = 1;
     }
+    /// <summary>
+    /// A class that represents cuda graph.
+    /// </summary>
 
     public class CudaGraph(string name)
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; } = name;
     }
+    /// <summary>
+    /// A class that represents cuda graph executable.
+    /// </summary>
 
     public class CudaGraphExecutable(CudaGraphTestWrapper wrapper)
     {
+        /// <summary>
+        /// Updates the kernel node.
+        /// </summary>
+        /// <param name="node">The node.</param>
+        /// <param name="arguments">The arguments.</param>
         public static void UpdateKernelNode(object node, params object[] arguments) { }
+        /// <summary>
+        /// Gets launch asynchronously.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>The result of the operation.</returns>
         public static async ValueTask LaunchAsync(object? stream = null) => await Task.Delay(1).ConfigureAwait(false);
+        /// <summary>
+        /// Gets launch asynchronously.
+        /// </summary>
+        /// <param name="arguments">The arguments.</param>
+        /// <returns>The result of the operation.</returns>
         public static async ValueTask LaunchAsync(params object[] arguments) => await Task.Delay(1).ConfigureAwait(false);
     }
 
@@ -82,7 +131,15 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
     /// </summary>
     public class GraphNode
     {
+        /// <summary>
+        /// Gets or sets the node type.
+        /// </summary>
+        /// <value>The node type.</value>
         public string NodeType { get; set; } = "Unknown";
+        /// <summary>
+        /// Gets or sets the kernel.
+        /// </summary>
+        /// <value>The kernel.</value>
         public ICompiledKernel? Kernel { get; set; }
     }
 

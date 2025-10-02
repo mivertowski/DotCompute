@@ -7,6 +7,7 @@ using System.Reflection;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
+using System;
 // using DotCompute.Backends.Metal.Telemetry; // Commented out - invalid namespace
 
 namespace DotCompute.Plugins.Recovery;
@@ -26,9 +27,27 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     private readonly ConcurrentDictionary<string, PluginHealthState> _pluginStates;
     private readonly SemaphoreSlim _recoveryLock;
     private bool _disposed;
+    /// <summary>
+    /// Gets or sets the capability.
+    /// </summary>
+    /// <value>The capability.</value>
 
     public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors;
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    /// <value>The priority.</value>
     public override int Priority => 80;
+    /// <summary>
+    /// Initializes a new instance of the PluginRecoveryManagerRefactored class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="orchestrator">The orchestrator.</param>
+    /// <param name="healthMonitor">The health monitor.</param>
+    /// <param name="failureAnalyzer">The failure analyzer.</param>
+    /// <param name="recoveryStrategies">The recovery strategies.</param>
+    /// <param name="circuitBreaker">The circuit breaker.</param>
+    /// <param name="config">The config.</param>
 
     public PluginRecoveryManagerRefactored(
         ILogger<PluginRecoveryManagerRefactored> logger,
@@ -51,6 +70,12 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
 
         Logger.LogInformation("Refactored Plugin Recovery Manager initialized with modular components");
     }
+    /// <summary>
+    /// Determines whether handle.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public override bool CanHandle(Exception error, PluginRecoveryContext context)
     {
@@ -69,6 +94,14 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
             _ => false
         };
     }
+    /// <summary>
+    /// Gets recover asynchronously.
+    /// </summary>
+    /// <param name="error">The error.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
         Exception error,
@@ -364,8 +397,8 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     private static bool IsPluginRelatedError(Exception error, PluginRecoveryContext context)
     {
         var message = error.Message.ToLowerInvariant();
-        return message.Contains("plugin") ||
-               message.Contains(context.PluginId.ToLowerInvariant()) ||
+        return message.Contains("plugin", StringComparison.CurrentCulture) ||
+               message.Contains(context.PluginId.ToLowerInvariant(), StringComparison.CurrentCulture) ||
                error.StackTrace?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true;
     }
 
@@ -380,6 +413,9 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         var healthyCount = pluginHealth.Values.Count(p => p.IsHealthy);
         return (double)healthyCount / pluginHealth.Count;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public override void Dispose()
     {

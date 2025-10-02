@@ -25,7 +25,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// This is useful for work items that have specific hardware requirements
         /// or benefit from device-specific optimizations.
         /// </remarks>
-        public Dictionary<int, string> PreferredDevices { get; set; } = [];
+        public Dictionary<int, string> PreferredDevices { get; } = [];
 
         /// <summary>
         /// Gets or sets the work item priorities.
@@ -39,7 +39,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// Priority-based scheduling ensures that critical work items are processed
         /// before lower-priority ones, improving overall system responsiveness.
         /// </remarks>
-        public Dictionary<int, int> Priorities { get; set; } = [];
+        public Dictionary<int, int> Priorities { get; } = [];
 
         /// <summary>
         /// Gets or sets the affinity groups for work items.
@@ -54,7 +54,7 @@ namespace DotCompute.Core.Execution.Optimization
         /// similar computational characteristics, allowing for better cache utilization
         /// and reduced data transfer overhead.
         /// </remarks>
-        public Dictionary<int, int> AffinityGroups { get; set; } = [];
+        public Dictionary<int, int> AffinityGroups { get; } = [];
 
         /// <summary>
         /// Gets a value indicating whether any hints have been specified.

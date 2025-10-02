@@ -276,6 +276,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
             // Parse memory copy record
             => metrics.MemoryTransfers++;
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -350,6 +353,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
             uint cbid,
             IntPtr cbdata);
     }
+    /// <summary>
+    /// An cupti result enumeration.
+    /// </summary>
 
     // ========================================
     // CUPTI Data Structures and Enums
@@ -372,6 +378,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         InvalidOperation = 12,
         Unknown = 999
     }
+    /// <summary>
+    /// An cupti activity kind enumeration.
+    /// </summary>
 
     public enum CuptiActivityKind : uint
     {
@@ -390,6 +399,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Overhead = 20,
         MemCpy2 = 21
     }
+    /// <summary>
+    /// An cupti callback domain enumeration.
+    /// </summary>
 
     public enum CuptiCallbackDomain
     {
@@ -406,8 +418,20 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class CuptiMetric
     {
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
         public string Name { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public uint Id { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether available.
+        /// </summary>
+        /// <value>The is available.</value>
         public bool IsAvailable { get; set; }
     }
 
@@ -416,7 +440,15 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class ProfilingSession
     {
+        /// <summary>
+        /// Gets or sets the requested metrics.
+        /// </summary>
+        /// <value>The requested metrics.</value>
         public string[] RequestedMetrics { get; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; }
 
 
@@ -432,17 +464,57 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class KernelMetrics
     {
+        /// <summary>
+        /// Gets or sets the kernel executions.
+        /// </summary>
+        /// <value>The kernel executions.</value>
         public int KernelExecutions { get; set; }
+        /// <summary>
+        /// Gets or sets the memory transfers.
+        /// </summary>
+        /// <value>The memory transfers.</value>
         public int MemoryTransfers { get; set; }
+        /// <summary>
+        /// Gets or sets the metric values.
+        /// </summary>
+        /// <value>The metric values.</value>
         public Dictionary<string, double> MetricValues { get; } = [];
+        /// <summary>
+        /// Gets or sets the achieved occupancy.
+        /// </summary>
+        /// <value>The achieved occupancy.</value>
 
 
         public double AchievedOccupancy => MetricValues.GetValueOrDefault("achieved_occupancy", 0);
+        /// <summary>
+        /// Gets or sets the sm efficiency.
+        /// </summary>
+        /// <value>The sm efficiency.</value>
         public double SmEfficiency => MetricValues.GetValueOrDefault("sm_efficiency", 0);
+        /// <summary>
+        /// Gets or sets the dram read throughput.
+        /// </summary>
+        /// <value>The dram read throughput.</value>
         public double DramReadThroughput => MetricValues.GetValueOrDefault("dram_read_throughput", 0);
+        /// <summary>
+        /// Gets or sets the dram write throughput.
+        /// </summary>
+        /// <value>The dram write throughput.</value>
         public double DramWriteThroughput => MetricValues.GetValueOrDefault("dram_write_throughput", 0);
+        /// <summary>
+        /// Gets or sets the global load throughput.
+        /// </summary>
+        /// <value>The global load throughput.</value>
         public double GlobalLoadThroughput => MetricValues.GetValueOrDefault("gld_throughput", 0);
+        /// <summary>
+        /// Gets or sets the global store throughput.
+        /// </summary>
+        /// <value>The global store throughput.</value>
         public double GlobalStoreThroughput => MetricValues.GetValueOrDefault("gst_throughput", 0);
+        /// <summary>
+        /// Gets or sets the flop efficiency.
+        /// </summary>
+        /// <value>The flop efficiency.</value>
         public double FlopEfficiency => MetricValues.GetValueOrDefault("flop_sp_efficiency", 0);
     }
 }

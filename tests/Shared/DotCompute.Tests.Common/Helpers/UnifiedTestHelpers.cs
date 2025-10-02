@@ -508,9 +508,29 @@ public static class UnifiedTestHelpers
     {
         private readonly ITestOutputHelper _output = output;
         private readonly string _categoryName = categoryName;
+        /// <summary>
+        /// Gets begin scope.
+        /// </summary>
+        /// <typeparam name="TState">The TState type parameter.</typeparam>
+        /// <param name="state">The state.</param>
+        /// <returns>The result of the operation.</returns>
 
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
+        /// <summary>
+        /// Determines whether enabled.
+        /// </summary>
+        /// <param name="logLevel">The log level.</param>
+        /// <returns>true if the condition is met; otherwise, false.</returns>
         public bool IsEnabled(LogLevel logLevel) => true;
+        /// <summary>
+        /// Performs log.
+        /// </summary>
+        /// <typeparam name="TState">The TState type parameter.</typeparam>
+        /// <param name="logLevel">The log level.</param>
+        /// <param name="eventId">The event identifier.</param>
+        /// <param name="state">The state.</param>
+        /// <param name="exception">The exception.</param>
+        /// <param name="formatter">The formatter.</param>
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
             Exception? exception, Func<TState, Exception?, string> formatter)
@@ -531,9 +551,21 @@ public static class UnifiedTestHelpers
     {
         private readonly ITestOutputHelper _output = output;
         private bool _disposed;
+        /// <summary>
+        /// Creates a new logger.
+        /// </summary>
+        /// <param name="categoryName">The category name.</param>
+        /// <returns>The created logger.</returns>
 
         public ILogger CreateLogger(string categoryName) => new TestLogger(_output, categoryName);
+        /// <summary>
+        /// Performs add provider.
+        /// </summary>
+        /// <param name="provider">The provider.</param>
         public void AddProvider(ILoggerProvider provider) { }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -598,14 +630,50 @@ public static class UnifiedTestHelpers
 /// </summary>
 public class SystemHardwareInfo
 {
+    /// <summary>
+    /// Gets or sets the platform.
+    /// </summary>
+    /// <value>The platform.</value>
     public string Platform { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets a value indicating whether cuda.
+    /// </summary>
+    /// <value>The has cuda.</value>
     public bool HasCuda { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether open c l.
+    /// </summary>
+    /// <value>The has open c l.</value>
     public bool HasOpenCL { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether metal.
+    /// </summary>
+    /// <value>The has metal.</value>
     public bool HasMetal { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether apple silicon.
+    /// </summary>
+    /// <value>The is apple silicon.</value>
     public bool IsAppleSilicon { get; set; }
+    /// <summary>
+    /// Gets or sets the supports s i m d.
+    /// </summary>
+    /// <value>The supports s i m d.</value>
     public bool SupportsSIMD { get; set; }
+    /// <summary>
+    /// Gets or sets the processor count.
+    /// </summary>
+    /// <value>The processor count.</value>
     public int ProcessorCount { get; set; }
+    /// <summary>
+    /// Gets or sets the total memory m b.
+    /// </summary>
+    /// <value>The total memory m b.</value>
     public long TotalMemoryMB { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether any gpu.
+    /// </summary>
+    /// <value>The has any gpu.</value>
 
     public bool HasAnyGpu => HasCuda || HasOpenCL || HasMetal;
 }
@@ -615,13 +683,45 @@ public class SystemHardwareInfo
 /// </summary>
 public class PerformanceResult
 {
+    /// <summary>
+    /// Gets or sets the operation name.
+    /// </summary>
+    /// <value>The operation name.</value>
     public string OperationName { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the total time.
+    /// </summary>
+    /// <value>The total time.</value>
     public TimeSpan TotalTime { get; set; }
+    /// <summary>
+    /// Gets or sets the average time.
+    /// </summary>
+    /// <value>The average time.</value>
     public TimeSpan AverageTime { get; set; }
+    /// <summary>
+    /// Gets or sets the iterations.
+    /// </summary>
+    /// <value>The iterations.</value>
     public int Iterations { get; set; }
+    /// <summary>
+    /// Gets or sets the memory delta.
+    /// </summary>
+    /// <value>The memory delta.</value>
     public long MemoryDelta { get; set; }
+    /// <summary>
+    /// Gets or sets the data size.
+    /// </summary>
+    /// <value>The data size.</value>
     public long DataSize { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput g bps.
+    /// </summary>
+    /// <value>The throughput g bps.</value>
     public double ThroughputGBps { get; set; }
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
     {

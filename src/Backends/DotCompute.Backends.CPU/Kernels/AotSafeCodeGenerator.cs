@@ -19,6 +19,9 @@ namespace DotCompute.Backends.CPU.Kernels;
 internal sealed class AotSafeCodeGenerator
 {
     private readonly Dictionary<string, Func<ExtendedKernelExecutionContext, Task>> _kernelImplementations;
+    /// <summary>
+    /// Initializes a new instance of the AotSafeCodeGenerator class.
+    /// </summary>
 
     public AotSafeCodeGenerator()
     {
@@ -448,7 +451,7 @@ internal sealed class AotSafeCodeGenerator
         });
     }
 
-    private Delegate CreateFiveParameterDelegate(List<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
+    private Delegate CreateFiveParameterDelegate(IReadOnlyList<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
     {
         // For five or more parameters, use array-based approach
         return new Action<object[], long[]>((parameters, workItemId) =>
@@ -472,7 +475,7 @@ internal sealed class AotSafeCodeGenerator
         });
     }
 
-    private Delegate CreateGenericDelegate(List<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
+    private Delegate CreateGenericDelegate(IReadOnlyList<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
     {
         // Most flexible approach for complex signatures
         return new Action<object[], long[]>((parameters, workItemId) =>

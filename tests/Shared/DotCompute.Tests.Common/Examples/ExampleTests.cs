@@ -10,6 +10,9 @@ namespace DotCompute.Tests.Common.Examples;
 /// </summary>
 public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
+    /// <summary>
+    /// Performs example_ basic array comparison.
+    /// </summary>
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
     public void Example_BasicArrayComparison()
@@ -35,6 +38,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
 
         Output.WriteLine($"Successfully processed {result.Length} elements");
     }
+    /// <summary>
+    /// Performs example_ performance measurement.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -66,6 +72,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
         var elementsPerSecond = (data.Length * iterations) / (executionTime.TotalMilliseconds / 1000.0);
         Output.WriteLine($"Throughput: {elementsPerSecond:N0} elements/second");
     }
+    /// <summary>
+    /// Performs example_ memory tracking.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -100,6 +109,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
 
         Output.WriteLine($"Processed {largeDataSet.Length:N0} elements, sum = {sum:F2}");
     }
+    /// <summary>
+    /// Performs example_ matrix operations.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -123,6 +135,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
 
         Output.WriteLine($"Matrix multiplication verification completed for {size}x{size} matrices");
     }
+    /// <summary>
+    /// Performs example_ specialized data patterns.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -156,6 +171,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
         Output.WriteLine($"Sparse data has {nonZeroCount} non-zero elements ({sparsityRatio:P1})");
         Output.WriteLine($"Precision data range: [{precisionData.Min():E2}, {precisionData.Max():E2}]");
     }
+    /// <summary>
+    /// Performs example_ error handling.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
@@ -198,6 +216,9 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
 /// </summary>
 public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
+    /// <summary>
+    /// Performs example_ cuda hardware detection.
+    /// </summary>
     [Fact]
     [Trait("Category", TestCategories.RequiresCUDA)]
     public void Example_CudaHardwareDetection()
@@ -216,6 +237,9 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
         Output.WriteLine($"Unified Memory: {capabilities.SupportsUnifiedMemory}");
         Output.WriteLine($"Dynamic Parallelism: {capabilities.SupportsDynamicParallelism}");
     }
+    /// <summary>
+    /// Performs example_ gpu memory tracking.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.RequiresGPU)]
@@ -255,6 +279,9 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
 
         Output.WriteLine($"Processed {data.Length:N0} elements on GPU simulation");
     }
+    /// <summary>
+    /// Performs example_ gpu performance measurement.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.Performance)]
@@ -290,6 +317,9 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
         Output.WriteLine($"Simulated kernel processed {data.Length:N0} elements in {kernelTime:F2}ms");
         Output.WriteLine($"Theoretical bandwidth: {bandwidth:F2} GB/s");
     }
+    /// <summary>
+    /// Performs example_ advanced gpu features.
+    /// </summary>
 
     [Fact]
     [Trait("Category", TestCategories.RequiresCUDA)]

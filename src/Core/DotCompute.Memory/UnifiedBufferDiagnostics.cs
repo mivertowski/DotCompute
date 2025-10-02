@@ -302,12 +302,40 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
 /// </summary>
 public sealed class BufferTransferStats
 {
+    /// <summary>
+    /// Gets or sets the host to device transfers.
+    /// </summary>
+    /// <value>The host to device transfers.</value>
     public long HostToDeviceTransfers { get; init; }
+    /// <summary>
+    /// Gets or sets the device to host transfers.
+    /// </summary>
+    /// <value>The device to host transfers.</value>
     public long DeviceToHostTransfers { get; init; }
+    /// <summary>
+    /// Gets or sets the total transfers.
+    /// </summary>
+    /// <value>The total transfers.</value>
     public long TotalTransfers { get; init; }
+    /// <summary>
+    /// Gets or sets the total transfer time ms.
+    /// </summary>
+    /// <value>The total transfer time ms.</value>
     public long TotalTransferTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the average transfer time ms.
+    /// </summary>
+    /// <value>The average transfer time ms.</value>
     public long AverageTransferTimeMs { get; init; }
+    /// <summary>
+    /// Gets or sets the last access time.
+    /// </summary>
+    /// <value>The last access time.</value>
     public DateTime LastAccessTime { get; init; }
+    /// <summary>
+    /// Gets or sets the current state.
+    /// </summary>
+    /// <value>The current state.</value>
     public BufferState CurrentState { get; init; }
 }
 
@@ -316,15 +344,55 @@ public sealed class BufferTransferStats
 /// </summary>
 public sealed class BufferDiagnosticInfo
 {
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
     public int Length { get; init; }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the element type.
+    /// </summary>
+    /// <value>The element type.</value>
     public string ElementType { get; init; } = "";
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether disposed.
+    /// </summary>
+    /// <value>The is disposed.</value>
     public bool IsDisposed { get; init; }
+    /// <summary>
+    /// Gets or sets the memory info.
+    /// </summary>
+    /// <value>The memory info.</value>
     public BufferMemoryInfo MemoryInfo { get; init; } = null!;
+    /// <summary>
+    /// Gets or sets the transfer stats.
+    /// </summary>
+    /// <value>The transfer stats.</value>
     public BufferTransferStats TransferStats { get; init; } = null!;
+    /// <summary>
+    /// Gets or sets a value indicating whether integrity valid.
+    /// </summary>
+    /// <value>The is integrity valid.</value>
     public bool IsIntegrityValid { get; init; }
+    /// <summary>
+    /// Gets or sets the creation time.
+    /// </summary>
+    /// <value>The creation time.</value>
     public DateTime CreationTime { get; init; }
+    /// <summary>
+    /// Gets or sets the last modified time.
+    /// </summary>
+    /// <value>The last modified time.</value>
     public DateTime LastModifiedTime { get; init; }
 }
 
@@ -333,15 +401,55 @@ public sealed class BufferDiagnosticInfo
 /// </summary>
 public sealed class BufferSnapshot
 {
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
     public Guid Id { get; init; }
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; init; }
+    /// <summary>
+    /// Gets or sets the length.
+    /// </summary>
+    /// <value>The length.</value>
     public int Length { get; init; }
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether on host.
+    /// </summary>
+    /// <value>The is on host.</value>
     public bool IsOnHost { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether on device.
+    /// </summary>
+    /// <value>The is on device.</value>
     public bool IsOnDevice { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether dirty.
+    /// </summary>
+    /// <value>The is dirty.</value>
     public bool IsDirty { get; init; }
+    /// <summary>
+    /// Gets or sets the transfer count.
+    /// </summary>
+    /// <value>The transfer count.</value>
     public long TransferCount { get; init; }
+    /// <summary>
+    /// Gets or sets the last access time.
+    /// </summary>
+    /// <value>The last access time.</value>
     public DateTime LastAccessTime { get; init; }
 }
 
@@ -350,7 +458,19 @@ public sealed class BufferSnapshot
 /// </summary>
 public sealed class BufferValidationResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether valid.
+    /// </summary>
+    /// <value>The is valid.</value>
     public bool IsValid { get; set; }
-    public List<string> Issues { get; init; } = [];
-    public List<string> Warnings { get; init; } = [];
+    /// <summary>
+    /// Gets or sets a value indicating whether sues.
+    /// </summary>
+    /// <value>The issues.</value>
+    public IReadOnlyList<string> Issues { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the warnings.
+    /// </summary>
+    /// <value>The warnings.</value>
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 }

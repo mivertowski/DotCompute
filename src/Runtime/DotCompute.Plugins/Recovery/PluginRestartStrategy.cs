@@ -15,6 +15,11 @@ public sealed class PluginRestartStrategy : IDisposable
     private readonly PluginRecoveryConfiguration _config;
     private readonly ILogger _logger;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the PluginRestartStrategy class.
+    /// </summary>
+    /// <param name="config">The config.</param>
+    /// <param name="logger">The logger.</param>
 
     public PluginRestartStrategy(PluginRecoveryConfiguration config, ILogger logger)
     {
@@ -148,6 +153,9 @@ public sealed class PluginRestartStrategy : IDisposable
         await Task.Delay(300, cancellationToken);
         return true;
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

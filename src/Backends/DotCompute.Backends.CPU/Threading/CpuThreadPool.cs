@@ -607,10 +607,16 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         private const int CPU_SETSIZE = 1024;
         private const int NCPUBITS = 8 * sizeof(ulong);
+        /// <summary>
+        /// The __bits.
+        /// </summary>
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = CPU_SETSIZE / NCPUBITS)]
 #pragma warning disable IDE1006 // Naming Styles
         public ulong[] __bits;
+        /// <summary>
+        /// Initializes a new instance of the cpu_set_t class.
+        /// </summary>
 #pragma warning restore IDE1006 // Naming Styles
 
         public cpu_set_t()
@@ -713,10 +719,19 @@ public sealed class CpuThreadPool : IAsyncDisposable
         _shutdownCts.Dispose();
         _shutdownTcs.SetResult();
     }
+    /// <summary>
+    /// A work item structure.
+    /// </summary>
 
     private readonly struct WorkItem(Action work, CancellationToken cancellationToken)
     {
+        /// <summary>
+        /// The work.
+        /// </summary>
         public readonly Action Work = work;
+        /// <summary>
+        /// The cancellation token.
+        /// </summary>
         public readonly CancellationToken CancellationToken = cancellationToken;
     }
 }

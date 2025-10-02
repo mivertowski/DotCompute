@@ -35,7 +35,7 @@ public sealed class MemoryAccessAnalysis
     /// <summary>
     /// Gets or sets additional analysis metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -71,7 +71,7 @@ public sealed class KernelPerformanceModel
     /// <summary>
     /// Gets or sets identified performance bottlenecks.
     /// </summary>
-    public List<BottleneckType> Bottlenecks { get; set; } = [];
+    public IList<BottleneckType> Bottlenecks { get; } = [];
 }
 
 /// <summary>

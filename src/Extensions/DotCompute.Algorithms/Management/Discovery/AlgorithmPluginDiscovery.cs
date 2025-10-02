@@ -333,6 +333,9 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
             fileName.Equals(excluded, StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith(excluded, StringComparison.OrdinalIgnoreCase));
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -405,5 +408,5 @@ public sealed class PluginTypeInfo
     /// <summary>
     /// Gets the type dependencies.
     /// </summary>
-    public List<string> Dependencies { get; init; } = [];
+    public IReadOnlyList<string> Dependencies { get; init; } = [];
 }

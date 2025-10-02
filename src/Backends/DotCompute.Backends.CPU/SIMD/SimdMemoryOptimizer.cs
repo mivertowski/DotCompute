@@ -199,6 +199,9 @@ public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger lo
 
         return Math.Max(0.1, 1.0 / (stride / elementsPerCacheLine)); // Poor cache utilization
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -215,10 +218,30 @@ public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger lo
 /// </summary>
 public sealed class MemoryAccessPattern
 {
+    /// <summary>
+    /// Gets or sets the block size.
+    /// </summary>
+    /// <value>The block size.</value>
     public int BlockSize { get; init; }
+    /// <summary>
+    /// Gets or sets the vector size.
+    /// </summary>
+    /// <value>The vector size.</value>
     public int VectorSize { get; init; }
+    /// <summary>
+    /// Gets or sets the use sequential access.
+    /// </summary>
+    /// <value>The use sequential access.</value>
     public bool UseSequentialAccess { get; init; }
+    /// <summary>
+    /// Gets or sets the use prefetching.
+    /// </summary>
+    /// <value>The use prefetching.</value>
     public bool UsePrefetching { get; init; }
+    /// <summary>
+    /// Gets or sets the optimal stride.
+    /// </summary>
+    /// <value>The optimal stride.</value>
     public int OptimalStride { get; init; }
 }
 
@@ -227,10 +250,34 @@ public sealed class MemoryAccessPattern
 /// </summary>
 public sealed class MemoryAnalysisResult
 {
+    /// <summary>
+    /// Gets or sets the data size.
+    /// </summary>
+    /// <value>The data size.</value>
     public int DataSize { get; init; }
+    /// <summary>
+    /// Gets or sets the access stride.
+    /// </summary>
+    /// <value>The access stride.</value>
     public int AccessStride { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether aligned.
+    /// </summary>
+    /// <value>The is aligned.</value>
     public bool IsAligned { get; init; }
+    /// <summary>
+    /// Gets or sets the element size.
+    /// </summary>
+    /// <value>The element size.</value>
     public int ElementSize { get; init; }
+    /// <summary>
+    /// Gets or sets the cache efficiency.
+    /// </summary>
+    /// <value>The cache efficiency.</value>
     public double CacheEfficiency { get; set; }
-    public List<string> Recommendations { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    /// <value>The recommendations.</value>
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 }

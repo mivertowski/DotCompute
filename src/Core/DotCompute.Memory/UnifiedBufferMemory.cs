@@ -308,11 +308,39 @@ public sealed partial class UnifiedBuffer<T>
 /// </summary>
 public sealed class BufferMemoryInfo
 {
+    /// <summary>
+    /// Gets or sets the size in bytes.
+    /// </summary>
+    /// <value>The size in bytes.</value>
     public long SizeInBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the host allocated.
+    /// </summary>
+    /// <value>The host allocated.</value>
     public bool HostAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the device allocated.
+    /// </summary>
+    /// <value>The device allocated.</value>
     public bool DeviceAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the host address.
+    /// </summary>
+    /// <value>The host address.</value>
     public IntPtr HostAddress { get; init; }
+    /// <summary>
+    /// Gets or sets the device address.
+    /// </summary>
+    /// <value>The device address.</value>
     public IntPtr DeviceAddress { get; init; }
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    /// <value>The state.</value>
     public BufferState State { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether pinned.
+    /// </summary>
+    /// <value>The is pinned.</value>
     public bool IsPinned { get; init; }
 }

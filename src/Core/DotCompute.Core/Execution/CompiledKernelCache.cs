@@ -16,6 +16,9 @@ namespace DotCompute.Core.Execution
         private readonly ConcurrentDictionary<string, KernelMetadata> _metadata;
         private readonly Lock _disposeLock = new();
         private volatile bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CompiledKernelCache class.
+        /// </summary>
 
         public CompiledKernelCache()
         {
@@ -304,6 +307,10 @@ namespace DotCompute.Core.Execution
 
             return removedCount;
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -404,7 +411,7 @@ namespace DotCompute.Core.Execution
         public long TotalAccessCount { get; set; }
 
         /// <summary>Gets or sets the number of kernels by device type.</summary>
-        public Dictionary<string, int> DeviceTypes { get; set; } = [];
+        public Dictionary<string, int> DeviceTypes { get; } = [];
 
         /// <summary>Gets or sets the total number of cache hits.</summary>
         public long TotalHits { get; set; }
@@ -451,6 +458,9 @@ namespace DotCompute.Core.Execution
         private const int CleanupIntervalMs = 300000; // 5 minutes
         private const int MaxKernelsPerCache = 50;
         private static readonly TimeSpan MaxKernelAge = TimeSpan.FromHours(2);
+        /// <summary>
+        /// Initializes a new instance of the GlobalKernelCacheManager class.
+        /// </summary>
 
         public GlobalKernelCacheManager()
         {
@@ -528,6 +538,10 @@ namespace DotCompute.Core.Execution
         /// Forces immediate cleanup of stale kernels.
         /// </summary>
         public async ValueTask ForceCleanupAsync() => await PerformCleanupAsync().ConfigureAwait(false);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

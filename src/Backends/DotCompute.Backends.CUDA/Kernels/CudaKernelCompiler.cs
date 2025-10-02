@@ -17,6 +17,11 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     private readonly CudaCompilationPipeline _pipeline;
     private readonly ILogger _logger;
     private bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaKernelCompiler class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     [RequiresUnreferencedCode("This type uses runtime code generation and reflection")]
     [RequiresDynamicCode("This type uses runtime code generation for CUDA kernel compilation")]
@@ -38,8 +43,22 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
             LogNvrtcVersionDetected(_logger, major, minor);
         }
     }
+    /// <summary>
+    /// Gets compile kernel asynchronously.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default) => await CompileAsync(definition, options, cancellationToken);
+    /// <summary>
+    /// Gets compile asynchronously.
+    /// </summary>
+    /// <param name="definition">The definition.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
@@ -61,6 +80,13 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
             throw new InvalidOperationException($"Failed to compile CUDA kernel '{definition.Name}'", ex);
         }
     }
+    /// <summary>
+    /// Gets compile batch asynchronously.
+    /// </summary>
+    /// <param name="definitions">The definitions.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<ICompiledKernel[]> CompileBatchAsync(KernelDefinition[] definitions, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
@@ -70,6 +96,12 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
         var results = await _pipeline.CompileBatchAsync(definitions, options, cancellationToken).ConfigureAwait(false);
         return [.. results.Cast<ICompiledKernel>()];
     }
+    /// <summary>
+    /// Returns true if able to get cached, otherwise false.
+    /// </summary>
+    /// <param name="kernelName">The kernel name.</param>
+    /// <param name="compiledKernel">The compiled kernel.</param>
+    /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
     public bool TryGetCached(string kernelName, out ICompiledKernel? compiledKernel)
     {
@@ -79,6 +111,9 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
         compiledKernel = null;
         return false; // Simplified implementation - cache lookup is handled internally by pipeline
     }
+    /// <summary>
+    /// Performs clear cache.
+    /// </summary>
 
     public void ClearCache()
     {
@@ -117,6 +152,9 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     public static (int major, int minor) GetNvrtcVersion() => PTXCompiler.GetNvrtcVersion();
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -135,6 +173,10 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
             LogDisposalError(_logger, ex);
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public async ValueTask DisposeAsync()
     {

@@ -50,6 +50,11 @@ namespace DotCompute.Backends.CUDA
         /// Gets the graph manager for optimized kernel execution.
         /// </summary>
         public CudaGraphManager? GraphManager => _graphManager;
+        /// <summary>
+        /// Initializes a new instance of the CudaAccelerator class.
+        /// </summary>
+        /// <param name="deviceId">The device identifier.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
             : base(

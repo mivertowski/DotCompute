@@ -29,6 +29,11 @@ internal sealed class CpuKernelCache : IDisposable
     private readonly TimeSpan _defaultExpiryTime = TimeSpan.FromHours(1);
     private readonly int _defaultMaxCacheSize = 1000;
     private readonly TimeSpan _defaultCleanupInterval = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// Initializes a new instance of the CpuKernelCache class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public CpuKernelCache(ILogger logger, CacheConfiguration? configuration = null)
     {
@@ -530,6 +535,9 @@ internal sealed class CpuKernelCache : IDisposable
                 : 0
         };
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -562,61 +570,203 @@ internal sealed class CpuKernelCache : IDisposable
         }
     }
 }
+/// <summary>
+/// A class that represents cache configuration.
+/// </summary>
 
 // Supporting classes for cache management
 
 public class CacheConfiguration
 {
+    /// <summary>
+    /// Gets or sets the max cache size.
+    /// </summary>
+    /// <value>The max cache size.</value>
     public int? MaxCacheSize { get; set; }
+    /// <summary>
+    /// Gets or sets the expiry time.
+    /// </summary>
+    /// <value>The expiry time.</value>
     public TimeSpan? ExpiryTime { get; set; }
+    /// <summary>
+    /// Gets or sets the cleanup interval.
+    /// </summary>
+    /// <value>The cleanup interval.</value>
     public TimeSpan? CleanupInterval { get; set; }
+    /// <summary>
+    /// Gets or sets the profile max age.
+    /// </summary>
+    /// <value>The profile max age.</value>
     public TimeSpan? ProfileMaxAge { get; set; }
+    /// <summary>
+    /// Gets or sets the metrics max age.
+    /// </summary>
+    /// <value>The metrics max age.</value>
     public TimeSpan? MetricsMaxAge { get; set; }
 }
+/// <summary>
+/// A class that represents cached kernel.
+/// </summary>
 
 public class CachedKernel
 {
+    /// <summary>
+    /// Gets or sets the cache key.
+    /// </summary>
+    /// <value>The cache key.</value>
     public required string CacheKey { get; set; }
+    /// <summary>
+    /// Gets or sets the compiled kernel.
+    /// </summary>
+    /// <value>The compiled kernel.</value>
     public required CpuCompiledKernel CompiledKernel { get; set; }
+    /// <summary>
+    /// Gets or sets the definition.
+    /// </summary>
+    /// <value>The definition.</value>
     public required KernelDefinition Definition { get; set; }
+    /// <summary>
+    /// Gets or sets the creation time.
+    /// </summary>
+    /// <value>The creation time.</value>
     public DateTimeOffset CreationTime { get; set; }
+    /// <summary>
+    /// Gets or sets the last accessed.
+    /// </summary>
+    /// <value>The last accessed.</value>
     public DateTimeOffset LastAccessed { get; set; }
+    /// <summary>
+    /// Gets or sets the expiry time.
+    /// </summary>
+    /// <value>The expiry time.</value>
     public DateTimeOffset ExpiryTime { get; set; }
+    /// <summary>
+    /// Gets or sets the hit count.
+    /// </summary>
+    /// <value>The hit count.</value>
     public long HitCount { get; set; }
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public long Size { get; set; }
+    /// <summary>
+    /// Gets or sets the execution statistics.
+    /// </summary>
+    /// <value>The execution statistics.</value>
     public ExecutionStatistics? ExecutionStatistics { get; set; }
 }
+/// <summary>
+/// A class that represents cache statistics.
+/// </summary>
 
 public class CacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the kernel cache size.
+    /// </summary>
+    /// <value>The kernel cache size.</value>
     public int KernelCacheSize { get; set; }
+    /// <summary>
+    /// Gets or sets the optimization cache size.
+    /// </summary>
+    /// <value>The optimization cache size.</value>
     public int OptimizationCacheSize { get; set; }
+    /// <summary>
+    /// Gets or sets the performance cache size.
+    /// </summary>
+    /// <value>The performance cache size.</value>
     public int PerformanceCacheSize { get; set; }
+    /// <summary>
+    /// Gets or sets the total memory usage.
+    /// </summary>
+    /// <value>The total memory usage.</value>
     public long TotalMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the hit rate.
+    /// </summary>
+    /// <value>The hit rate.</value>
     public double HitRate { get; set; }
+    /// <summary>
+    /// Gets or sets the eviction count.
+    /// </summary>
+    /// <value>The eviction count.</value>
     public long EvictionCount { get; set; }
+    /// <summary>
+    /// Gets or sets the oldest entry.
+    /// </summary>
+    /// <value>The oldest entry.</value>
     public DateTimeOffset? OldestEntry { get; set; }
+    /// <summary>
+    /// Gets or sets the most accessed entry.
+    /// </summary>
+    /// <value>The most accessed entry.</value>
     public string? MostAccessedEntry { get; set; }
 }
+/// <summary>
+/// A class that represents kernel cache statistics.
+/// </summary>
 
 public class KernelCacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the total memory usage.
+    /// </summary>
+    /// <value>The total memory usage.</value>
     public long TotalMemoryUsage { get; set; }
+    /// <summary>
+    /// Gets or sets the hit rate.
+    /// </summary>
+    /// <value>The hit rate.</value>
     public double HitRate { get; set; }
+    /// <summary>
+    /// Gets or sets the eviction count.
+    /// </summary>
+    /// <value>The eviction count.</value>
     public long EvictionCount { get; set; }
+    /// <summary>
+    /// Gets or sets the oldest entry.
+    /// </summary>
+    /// <value>The oldest entry.</value>
     public DateTimeOffset? OldestEntry { get; set; }
+    /// <summary>
+    /// Gets or sets the most accessed entry.
+    /// </summary>
+    /// <value>The most accessed entry.</value>
     public string? MostAccessedEntry { get; set; }
 }
+/// <summary>
+/// A class that represents optimization cache statistics.
+/// </summary>
 
 public class OptimizationCacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the entry count.
+    /// </summary>
+    /// <value>The entry count.</value>
     public int EntryCount { get; set; }
+    /// <summary>
+    /// Gets or sets the average age.
+    /// </summary>
+    /// <value>The average age.</value>
     public double AverageAge { get; set; }
 }
+/// <summary>
+/// A class that represents performance cache statistics.
+/// </summary>
 
 public class PerformanceCacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the entry count.
+    /// </summary>
+    /// <value>The entry count.</value>
     public int EntryCount { get; set; }
+    /// <summary>
+    /// Gets or sets the average age.
+    /// </summary>
+    /// <value>The average age.</value>
     public double AverageAge { get; set; }
 }
 

@@ -8,6 +8,7 @@ using System.Xml;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Globalization;
+using System;
 
 namespace DotCompute.Core.Security;
 
@@ -228,7 +229,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         return [.. entries.OrderBy(e => e.Timestamp)];
     }
 
-    private static async Task ExportEntriesAsync(List<SecurityLogEntry> entries, string exportPath, AuditExportFormat format)
+    private static async Task ExportEntriesAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath, AuditExportFormat format)
     {
         switch (format)
         {
@@ -246,7 +247,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         }
     }
 
-    private static async Task ExportAsJsonAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsJsonAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath)
     {
         var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions
         {
@@ -256,7 +257,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         await File.WriteAllTextAsync(exportPath, json);
     }
 
-    private static async Task ExportAsCsvAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsCsvAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath)
     {
         var csv = new StringBuilder();
 
@@ -281,7 +282,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         await File.WriteAllTextAsync(exportPath, csv.ToString());
     }
 
-    private static async Task ExportAsXmlAsync(List<SecurityLogEntry> entries, string exportPath)
+    private static async Task ExportAsXmlAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath)
     {
         var settings = new XmlWriterSettings
         {
@@ -330,7 +331,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
             return "";
         }
 
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+        if (value.Contains(',', StringComparison.OrdinalIgnoreCase) || value.Contains('"', StringComparison.OrdinalIgnoreCase) || value.Contains('\n', StringComparison.CurrentCulture) || value.Contains('\r', StringComparison.CurrentCulture))
         {
             return $"\"{value.Replace("\"", "\"\"")}\";";
         }

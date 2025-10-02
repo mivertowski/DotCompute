@@ -28,6 +28,11 @@ public sealed class CircuitBreaker : IDisposable
     private int _consecutiveFailures;
     private long _totalRequests;
     private long _failedRequests;
+    /// <summary>
+    /// Initializes a new instance of the CircuitBreaker class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The config.</param>
 
     public CircuitBreaker(ILogger<CircuitBreaker> logger, CircuitBreakerConfiguration? config = null)
     {
@@ -340,6 +345,9 @@ public sealed class CircuitBreaker : IDisposable
             _logger.LogErrorMessage(ex, "Error during circuit breaker health check");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -385,8 +393,20 @@ public enum CircuitState
 /// </summary>
 public class CircuitOpenException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the CircuitOpenException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public CircuitOpenException(string message) : base(message) { }
+    /// <summary>
+    /// Initializes a new instance of the CircuitOpenException class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
     public CircuitOpenException(string message, Exception innerException) : base(message, innerException) { }
+    /// <summary>
+    /// Initializes a new instance of the CircuitOpenException class.
+    /// </summary>
     public CircuitOpenException()
     {
     }
@@ -397,15 +417,47 @@ public class CircuitOpenException : Exception
 /// </summary>
 public class CircuitBreakerConfiguration
 {
+    /// <summary>
+    /// Gets or sets the failure threshold percentage.
+    /// </summary>
+    /// <value>The failure threshold percentage.</value>
     public double FailureThresholdPercentage { get; set; } = 50.0; // 50%
+    /// <summary>
+    /// Gets or sets the consecutive failure threshold.
+    /// </summary>
+    /// <value>The consecutive failure threshold.</value>
     public int ConsecutiveFailureThreshold { get; set; } = 5;
+    /// <summary>
+    /// Gets or sets the open circuit timeout.
+    /// </summary>
+    /// <value>The open circuit timeout.</value>
     public TimeSpan OpenCircuitTimeout { get; set; } = TimeSpan.FromMinutes(1);
+    /// <summary>
+    /// Gets or sets the operation timeout.
+    /// </summary>
+    /// <value>The operation timeout.</value>
     public TimeSpan OperationTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Gets or sets the health check interval.
+    /// </summary>
+    /// <value>The health check interval.</value>
     public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Gets or sets the minimum throughput.
+    /// </summary>
+    /// <value>The minimum throughput.</value>
     public int MinimumThroughput { get; set; } = 10; // Minimum requests before calculating failure rate
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
 
 
     public static CircuitBreakerConfiguration Default => new();
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public override string ToString()
@@ -419,14 +471,42 @@ public class CircuitBreakerConfiguration
 /// </summary>
 public class RetryPolicy
 {
+    /// <summary>
+    /// Gets or sets the max retries.
+    /// </summary>
+    /// <value>The max retries.</value>
     public int MaxRetries { get; set; } = 3;
+    /// <summary>
+    /// Gets or sets the base delay.
+    /// </summary>
+    /// <value>The base delay.</value>
     public TimeSpan BaseDelay { get; set; } = TimeSpan.FromMilliseconds(100);
+    /// <summary>
+    /// Gets or sets the backoff multiplier.
+    /// </summary>
+    /// <value>The backoff multiplier.</value>
     public double BackoffMultiplier { get; set; } = 2.0;
+    /// <summary>
+    /// Gets or sets the max delay.
+    /// </summary>
+    /// <value>The max delay.</value>
     public TimeSpan MaxDelay { get; set; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Gets or sets the jitter factor.
+    /// </summary>
+    /// <value>The jitter factor.</value>
     public double JitterFactor { get; set; } = 0.1; // 10% jitter
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
 
 
     public static RetryPolicy Default => new();
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
 
     public override string ToString()

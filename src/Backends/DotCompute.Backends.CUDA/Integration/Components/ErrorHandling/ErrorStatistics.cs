@@ -21,14 +21,42 @@ internal sealed class ErrorStatistics
     private long _recentErrors;
     private readonly Dictionary<CudaError, long> _errorCounts = [];
     private readonly object _lock = new();
+    /// <summary>
+    /// Gets or sets the capture detailed diagnostics.
+    /// </summary>
+    /// <value>The capture detailed diagnostics.</value>
 
     public bool CaptureDetailedDiagnostics { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the total errors.
+    /// </summary>
+    /// <value>The total errors.</value>
 
     public long TotalErrors => Interlocked.Read(ref _totalErrors);
+    /// <summary>
+    /// Gets or sets the critical errors.
+    /// </summary>
+    /// <value>The critical errors.</value>
     public long CriticalErrors => Interlocked.Read(ref _criticalErrors);
+    /// <summary>
+    /// Gets or sets the recoverable errors.
+    /// </summary>
+    /// <value>The recoverable errors.</value>
     public long RecoverableErrors => Interlocked.Read(ref _recoverableErrors);
+    /// <summary>
+    /// Gets or sets the recent errors.
+    /// </summary>
+    /// <value>The recent errors.</value>
     public long RecentErrors => Interlocked.Read(ref _recentErrors);
+    /// <summary>
+    /// Gets or sets the recent operations.
+    /// </summary>
+    /// <value>The recent operations.</value>
     public long RecentOperations => Interlocked.Read(ref _recentOperations);
+    /// <summary>
+    /// Gets or sets the recovery success rate.
+    /// </summary>
+    /// <value>The recovery success rate.</value>
 
     public double RecoverySuccessRate
     {
@@ -39,6 +67,10 @@ internal sealed class ErrorStatistics
             return attempts > 0 ? (double)successes / attempts : 0.0;
         }
     }
+    /// <summary>
+    /// Gets or sets the recent error rate.
+    /// </summary>
+    /// <value>The recent error rate.</value>
 
     public double RecentErrorRate
     {
@@ -49,6 +81,10 @@ internal sealed class ErrorStatistics
             return operations > 0 ? (double)errors / operations : 0.0;
         }
     }
+    /// <summary>
+    /// Gets or sets the recent recovery failure rate.
+    /// </summary>
+    /// <value>The recent recovery failure rate.</value>
 
     public double RecentRecoveryFailureRate
     {
@@ -60,6 +96,10 @@ internal sealed class ErrorStatistics
             return attempts > 0 ? (double)failures / attempts : 0.0;
         }
     }
+    /// <summary>
+    /// Performs record error.
+    /// </summary>
+    /// <param name="error">The error.</param>
 
     public void RecordError(CudaError error)
     {
@@ -81,16 +121,30 @@ internal sealed class ErrorStatistics
             _errorCounts[error] = _errorCounts.GetValueOrDefault(error) + 1;
         }
     }
+    /// <summary>
+    /// Performs record recovery success.
+    /// </summary>
 
     public void RecordRecoverySuccess()
     {
         _ = Interlocked.Increment(ref _recoveryAttempts);
         _ = Interlocked.Increment(ref _recoverySuccesses);
     }
+    /// <summary>
+    /// Performs record recovery failure.
+    /// </summary>
 
     public void RecordRecoveryFailure() => _ = Interlocked.Increment(ref _recoveryAttempts);
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="policy">The policy.</param>
 
     public void Configure(ErrorStatisticsPolicy policy) => CaptureDetailedDiagnostics = policy.CaptureDetailedDiagnostics;
+    /// <summary>
+    /// Gets the most common errors.
+    /// </summary>
+    /// <returns>The most common errors.</returns>
 
     public Dictionary<CudaError, long> GetMostCommonErrors()
     {
@@ -102,6 +156,10 @@ internal sealed class ErrorStatistics
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
     }
+    /// <summary>
+    /// Gets the error trends.
+    /// </summary>
+    /// <returns>The error trends.</returns>
 
     public ErrorTrends GetErrorTrends()
     {

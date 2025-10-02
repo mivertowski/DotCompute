@@ -10,12 +10,41 @@ namespace DotCompute.Core.Optimization.Models;
 /// </summary>
 public class WorkloadSignature : IEquatable<WorkloadSignature>
 {
+    /// <summary>
+    /// Gets or sets the kernel name.
+    /// </summary>
+    /// <value>The kernel name.</value>
     public string KernelName { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the data size.
+    /// </summary>
+    /// <value>The data size.</value>
     public long DataSize { get; set; }
+    /// <summary>
+    /// Gets or sets the compute intensity.
+    /// </summary>
+    /// <value>The compute intensity.</value>
     public double ComputeIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the memory intensity.
+    /// </summary>
+    /// <value>The memory intensity.</value>
     public double MemoryIntensity { get; set; }
+    /// <summary>
+    /// Gets or sets the parallelism level.
+    /// </summary>
+    /// <value>The parallelism level.</value>
     public double ParallelismLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the workload pattern.
+    /// </summary>
+    /// <value>The workload pattern.</value>
     public WorkloadPattern WorkloadPattern { get; set; }
+    /// <summary>
+    /// Determines equals.
+    /// </summary>
+    /// <param name="other">The other.</param>
+    /// <returns>The result of the operation.</returns>
 
     public bool Equals(WorkloadSignature? other)
     {
@@ -36,8 +65,17 @@ public class WorkloadSignature : IEquatable<WorkloadSignature>
                Math.Abs(ParallelismLevel - other.ParallelismLevel) < 0.1 &&
                WorkloadPattern == other.WorkloadPattern;
     }
+    /// <summary>
+    /// Determines equals.
+    /// </summary>
+    /// <param name="obj">The obj.</param>
+    /// <returns>The result of the operation.</returns>
 
     public override bool Equals(object? obj) => Equals(obj as WorkloadSignature);
+    /// <summary>
+    /// Gets the hash code.
+    /// </summary>
+    /// <returns>The hash code.</returns>
 
     public override int GetHashCode() => HashCode.Combine(
         KernelName,

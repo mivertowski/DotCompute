@@ -29,6 +29,10 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     // Strategy-specific counters
     private readonly ConcurrentDictionary<SimdExecutionStrategy, long> _strategyUsage;
     private readonly ConcurrentDictionary<ReductionOperation, long> _reductionUsage;
+    /// <summary>
+    /// Initializes a new instance of the SimdPerformanceAnalyzer class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
 
     public SimdPerformanceAnalyzer(ILogger<SimdPerformanceAnalyzer> logger)
     {
@@ -300,6 +304,9 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
             _logger.LogWarning(ex, "Error reporting SIMD performance metrics");
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -327,6 +334,11 @@ public sealed class PerformanceMetric(string name)
     private long _totalElements;
     private long _minTime = long.MaxValue;
     private long _maxTime = long.MinValue;
+    /// <summary>
+    /// Performs record execution.
+    /// </summary>
+    /// <param name="executionTime">The execution time.</param>
+    /// <param name="elementCount">The element count.</param>
 
     public void RecordExecution(TimeSpan executionTime, long elementCount)
     {
@@ -349,6 +361,10 @@ public sealed class PerformanceMetric(string name)
             currentMax = Interlocked.Read(ref _maxTime);
         }
     }
+    /// <summary>
+    /// Gets the snapshot.
+    /// </summary>
+    /// <returns>The snapshot.</returns>
 
     public PerformanceMetricSnapshot GetSnapshot()
     {
@@ -376,12 +392,40 @@ public sealed class PerformanceMetric(string name)
 /// </summary>
 public readonly record struct PerformanceMetricSnapshot
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; init; }
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>The execution count.</value>
     public long ExecutionCount { get; init; }
+    /// <summary>
+    /// Gets or sets the total elements.
+    /// </summary>
+    /// <value>The total elements.</value>
     public long TotalElements { get; init; }
+    /// <summary>
+    /// Gets or sets the average time.
+    /// </summary>
+    /// <value>The average time.</value>
     public TimeSpan AverageTime { get; init; }
+    /// <summary>
+    /// Gets or sets the min time.
+    /// </summary>
+    /// <value>The min time.</value>
     public TimeSpan MinTime { get; init; }
+    /// <summary>
+    /// Gets or sets the max time.
+    /// </summary>
+    /// <value>The max time.</value>
     public TimeSpan MaxTime { get; init; }
+    /// <summary>
+    /// Gets or sets the elements per second.
+    /// </summary>
+    /// <value>The elements per second.</value>
     public double ElementsPerSecond { get; init; }
 }
 
@@ -390,15 +434,55 @@ public readonly record struct PerformanceMetricSnapshot
 /// </summary>
 public readonly record struct ExecutorStatistics
 {
+    /// <summary>
+    /// Gets or sets the total executions.
+    /// </summary>
+    /// <value>The total executions.</value>
     public long TotalExecutions { get; init; }
+    /// <summary>
+    /// Gets or sets the total elements.
+    /// </summary>
+    /// <value>The total elements.</value>
     public long TotalElements { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorized elements.
+    /// </summary>
+    /// <value>The vectorized elements.</value>
     public long VectorizedElements { get; init; }
+    /// <summary>
+    /// Gets or sets the scalar elements.
+    /// </summary>
+    /// <value>The scalar elements.</value>
     public long ScalarElements { get; init; }
+    /// <summary>
+    /// Gets or sets the average execution time.
+    /// </summary>
+    /// <value>The average execution time.</value>
     public TimeSpan AverageExecutionTime { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization ratio.
+    /// </summary>
+    /// <value>The vectorization ratio.</value>
     public double VectorizationRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the performance gain.
+    /// </summary>
+    /// <value>The performance gain.</value>
     public double PerformanceGain { get; init; }
+    /// <summary>
+    /// Gets or sets the total reductions.
+    /// </summary>
+    /// <value>The total reductions.</value>
     public long TotalReductions { get; init; }
+    /// <summary>
+    /// Gets or sets the strategy distribution.
+    /// </summary>
+    /// <value>The strategy distribution.</value>
     public Dictionary<SimdExecutionStrategy, long> StrategyDistribution { get; init; }
+    /// <summary>
+    /// Gets or sets the reduction distribution.
+    /// </summary>
+    /// <value>The reduction distribution.</value>
     public Dictionary<ReductionOperation, long> ReductionDistribution { get; init; }
 }
 
@@ -407,13 +491,40 @@ public readonly record struct ExecutorStatistics
 /// </summary>
 public readonly record struct PerformanceTrendAnalysis
 {
+    /// <summary>
+    /// Gets or sets the analysis time.
+    /// </summary>
+    /// <value>The analysis time.</value>
     public DateTimeOffset AnalysisTime { get; init; }
+    /// <summary>
+    /// Gets or sets the total operations.
+    /// </summary>
+    /// <value>The total operations.</value>
     public long TotalOperations { get; init; }
+    /// <summary>
+    /// Gets or sets the vectorization effectiveness.
+    /// </summary>
+    /// <value>The vectorization effectiveness.</value>
     public double VectorizationEffectiveness { get; init; }
+    /// <summary>
+    /// Gets or sets the average performance.
+    /// </summary>
+    /// <value>The average performance.</value>
     public TimeSpan AveragePerformance { get; init; }
+    /// <summary>
+    /// Gets or sets the preferred strategy.
+    /// </summary>
+    /// <value>The preferred strategy.</value>
     public SimdExecutionStrategy PreferredStrategy { get; init; }
+    /// <summary>
+    /// Gets or sets the performance gain trend.
+    /// </summary>
+    /// <value>The performance gain trend.</value>
     public PerformanceGainTrend PerformanceGainTrend { get; init; }
 }
+/// <summary>
+/// An performance gain trend enumeration.
+/// </summary>
 
 /// <summary>
 /// Performance gain trend indicators.

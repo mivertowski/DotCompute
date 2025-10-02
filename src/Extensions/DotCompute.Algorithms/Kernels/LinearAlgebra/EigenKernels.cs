@@ -10,6 +10,9 @@ namespace DotCompute.Algorithms.Kernels.LinearAlgebra;
 public static class EigenKernels
 {
     /// <summary>
+    /// The open c l power method kernel.
+    /// </summary>
+    /// <summary>
     /// OpenCL kernel for power method iteration.
     /// </summary>
     public const string OpenCLPowerMethodKernel = @"
@@ -51,6 +54,9 @@ __kernel void power_method_iteration(
         norms[get_group_id(0)] = sqrt(local_norms[0]);
     }
 }";
+    /// <summary>
+    /// The c u d a inverse power method kernel.
+    /// </summary>
 
     /// <summary>
     /// CUDA kernel for inverse power method with shift.

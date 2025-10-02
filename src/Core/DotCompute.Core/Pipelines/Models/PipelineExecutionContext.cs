@@ -157,27 +157,27 @@ public sealed class PipelineExecutionContext : AbstractionsMemory.Models.Pipelin
     /// <summary>
     /// Gets or sets the execution metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 
     /// <summary>
     /// Gets or sets the telemetry data.
     /// </summary>
-    public Dictionary<string, object> Telemetry { get; set; } = [];
+    public Dictionary<string, object> Telemetry { get; } = [];
 
     /// <summary>
     /// Gets or sets the performance counters.
     /// </summary>
-    public Dictionary<string, long> PerformanceCounters { get; set; } = [];
+    public Dictionary<string, long> PerformanceCounters { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory allocations tracking.
     /// </summary>
-    public Dictionary<string, long> MemoryAllocations { get; set; } = [];
+    public Dictionary<string, long> MemoryAllocations { get; } = [];
 
     /// <summary>
     /// Gets or sets the execution history for debugging.
     /// </summary>
-    public List<string> ExecutionHistory { get; set; } = [];
+    public IList<string> ExecutionHistory { get; } = [];
 
     /// <summary>
     /// Gets or sets whether debugging is enabled.
@@ -422,7 +422,7 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets additional configuration options.
     /// </summary>
-    public Dictionary<string, object> AdditionalOptions { get; set; } = [];
+    public Dictionary<string, object> AdditionalOptions { get; } = [];
 
     /// <summary>
     /// Gets the default execution options.

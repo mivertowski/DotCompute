@@ -20,6 +20,10 @@ public class CudaKernelCompilerTests : CudaTestBase
     private readonly Mock<ILogger<CudaKernelCompiler>>? _mockLogger;
     private readonly CudaKernelCompiler? _compiler;
     private readonly Backends.CUDA.CudaContext? _context;
+    /// <summary>
+    /// Initializes a new instance of the CudaKernelCompilerTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public CudaKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
@@ -31,6 +35,10 @@ public class CudaKernelCompilerTests : CudaTestBase
             _compiler = new CudaKernelCompiler(_context, _mockLogger.Object);
         }
     }
+    /// <summary>
+    /// Gets compile async_ simple kernel_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #region Basic Compilation Tests
 
@@ -63,6 +71,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Name.Should().Be("vector_add");
         _ = result.Id.Should().NotBeEmpty();
     }
+    /// <summary>
+    /// Gets compile async_ complex kernel_ with shared memory_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -125,6 +137,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _ = result.Name.Should().Be("matrix_multiply");
     }
+    /// <summary>
+    /// Gets compile async_ invalid syntax_ throws compilation exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -149,6 +165,11 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = await act.Should().ThrowAsync<Exception>()
             .WithMessage("*compilation failed*");
     }
+    /// <summary>
+    /// Gets compile async_ different optimization levels_ success.
+    /// </summary>
+    /// <param name="level">The level.</param>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -193,6 +214,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine($"Compiled with optimization level: {level}");
     }
+    /// <summary>
+    /// Gets compile async_ targets correct compute capability.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -234,6 +259,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         // Assert
         _ = result.Should().NotBeNull();
     }
+    /// <summary>
+    /// Gets compile async_ modern gpu features_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -282,6 +311,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully compiled tensor core kernel");
     }
+    /// <summary>
+    /// Gets compile async_ same kernel twice_ uses cached result.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -314,6 +347,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result2.Should().NotBeNull();
         _ = result1.Id.Should().Be(result2.Id, "cached result should have same ID");
     }
+    /// <summary>
+    /// Gets clear cache_ removes cached kernels.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -343,6 +380,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result2.Should().NotBeNull();
         _ = result1.Id.Should().NotBe(result2.Id, "should recompile after cache clear");
     }
+    /// <summary>
+    /// Gets compile async_ concurrent compilations_ thread safe.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -377,6 +418,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = results.Should().AllSatisfy(r => r.Should().NotBeNull());
         _ = results.Select(r => r.Name).Should().OnlyHaveUniqueItems();
     }
+    /// <summary>
+    /// Gets compile async_ concurrent same kernel_ only compiles once.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -409,6 +454,10 @@ public class CudaKernelCompilerTests : CudaTestBase
 
             "all should get the same cached instance");
     }
+    /// <summary>
+    /// Gets compile async_ missing entry point_ throws exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -436,6 +485,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         var act = async () => await _compiler.CompileAsync(definition);
         _ = await act.Should().ThrowAsync<Exception>();
     }
+    /// <summary>
+    /// Gets compile async_ cancellation requested_ throws operation canceled exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -466,6 +519,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         var act = async () => await _compiler.CompileAsync(definition, cancellationToken: cts.Token);
         _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
+    /// <summary>
+    /// Gets compile async_ generates ptx for older gpus.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -504,6 +561,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully generated PTX code");
     }
+    /// <summary>
+    /// Gets compile async_ generates cubin for modern gpus.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]
@@ -542,6 +603,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine($"Successfully generated CUBIN for compute capability {capability}");
     }
+    /// <summary>
+    /// Gets compile async_ dynamic parallelism_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -591,6 +656,10 @@ public class CudaKernelCompilerTests : CudaTestBase
         _ = result.Should().NotBeNull();
         _output.WriteLine("Successfully compiled kernel with dynamic parallelism");
     }
+    /// <summary>
+    /// Gets compile async_ atomic operations_ success.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [SkippableFact]
     [Trait("Category", "CUDA")]

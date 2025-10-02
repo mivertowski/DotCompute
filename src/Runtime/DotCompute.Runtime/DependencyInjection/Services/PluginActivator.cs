@@ -11,8 +11,18 @@ namespace DotCompute.Runtime.DependencyInjection.Services;
 internal sealed class PluginActivator(IServiceProvider serviceProvider) : IPluginActivator
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+    /// <summary>
+    /// Creates a new instance.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The created instance.</returns>
 
     public object CreateInstance(Type type) => ActivatorUtilities.CreateInstance(_serviceProvider, type);
+    /// <summary>
+    /// Creates a new instance.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <returns>The created instance.</returns>
 
     public T CreateInstance<T>() where T : class => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
 }

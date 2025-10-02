@@ -43,6 +43,11 @@ namespace DotCompute.Backends.CUDA.Resilience
         private long _totalErrors;
         private long _recoveredErrors;
         private long _permanentFailures;
+        /// <summary>
+        /// Initializes a new instance of the CudaErrorRecoveryManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaErrorRecoveryManager(CudaContext context, ILogger logger)
         {
@@ -382,6 +387,9 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// Creates a snapshot of the current context state.
         /// </summary>
         public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default) => await _stateManager.CreateSnapshotAsync(cancellationToken);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -408,16 +416,35 @@ namespace DotCompute.Backends.CUDA.Resilience
         {
             private readonly ConcurrentDictionary<CudaError, long> _errorCounts;
             private long _totalErrors;
+            /// <summary>
+            /// Gets or sets the total errors.
+            /// </summary>
+            /// <value>The total errors.</value>
 
 
             public long TotalErrors => _totalErrors;
+            /// <summary>
+            /// Gets or sets the last error.
+            /// </summary>
+            /// <value>The last error.</value>
             public CudaError LastError { get; private set; }
+            /// <summary>
+            /// Gets or sets the last error time.
+            /// </summary>
+            /// <value>The last error time.</value>
             public DateTime LastErrorTime { get; private set; }
+            /// <summary>
+            /// Initializes a new instance of the ErrorStatistics class.
+            /// </summary>
 
             public ErrorStatistics()
             {
                 _errorCounts = new ConcurrentDictionary<CudaError, long>();
             }
+            /// <summary>
+            /// Performs record error.
+            /// </summary>
+            /// <param name="error">The error.</param>
 
             public void RecordError(CudaError error)
             {
@@ -426,6 +453,10 @@ namespace DotCompute.Backends.CUDA.Resilience
                 LastError = error;
                 LastErrorTime = DateTime.UtcNow;
             }
+            /// <summary>
+            /// Gets the most common error.
+            /// </summary>
+            /// <returns>The most common error.</returns>
 
             public CudaError GetMostCommonError()
             {
@@ -497,11 +528,35 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public sealed class ErrorRecoveryStatistics
     {
+        /// <summary>
+        /// Gets or sets the total errors.
+        /// </summary>
+        /// <value>The total errors.</value>
         public long TotalErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the recovered errors.
+        /// </summary>
+        /// <value>The recovered errors.</value>
         public long RecoveredErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the permanent failures.
+        /// </summary>
+        /// <value>The permanent failures.</value>
         public long PermanentFailures { get; init; }
+        /// <summary>
+        /// Gets or sets the recovery success rate.
+        /// </summary>
+        /// <value>The recovery success rate.</value>
         public double RecoverySuccessRate { get; init; }
+        /// <summary>
+        /// Gets or sets the operation statistics.
+        /// </summary>
+        /// <value>The operation statistics.</value>
         public Dictionary<string, OperationErrorStatistics> OperationStatistics { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the resource statistics.
+        /// </summary>
+        /// <value>The resource statistics.</value>
         public ResourceStatistics? ResourceStatistics { get; init; }
     }
 
@@ -510,9 +565,25 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public sealed class OperationErrorStatistics
     {
+        /// <summary>
+        /// Gets or sets the total errors.
+        /// </summary>
+        /// <value>The total errors.</value>
         public long TotalErrors { get; init; }
+        /// <summary>
+        /// Gets or sets the last error.
+        /// </summary>
+        /// <value>The last error.</value>
         public CudaError LastError { get; init; }
+        /// <summary>
+        /// Gets or sets the last error time.
+        /// </summary>
+        /// <value>The last error time.</value>
         public DateTime LastErrorTime { get; init; }
+        /// <summary>
+        /// Gets or sets the most common error.
+        /// </summary>
+        /// <value>The most common error.</value>
         public CudaError MostCommonError { get; init; }
     }
 
@@ -521,12 +592,27 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// </summary>
     public class CudaException : Exception
     {
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>
+        /// <value>The error.</value>
         public CudaError Error { get; }
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="message">The message.</param>
 
         public CudaException(CudaError error, string message) : base(message)
         {
             Error = error;
         }
+        /// <summary>
+        /// Initializes a new instance of the CudaException class.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">The inner exception.</param>
 
         public CudaException(CudaError error, string message, Exception innerException)
 

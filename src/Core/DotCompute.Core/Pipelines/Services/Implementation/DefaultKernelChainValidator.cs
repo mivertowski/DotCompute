@@ -13,6 +13,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// </summary>
     public sealed class DefaultKernelChainValidator(ILogger<DefaultKernelChainValidator>? logger = null) : IKernelChainValidator
     {
+        /// <summary>
+        /// Validates the chain async.
+        /// </summary>
+        /// <param name="steps">The steps.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
         public async Task<KernelChainValidationResult> ValidateChainAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default)
         {
             var stepsList = steps.ToList();
@@ -47,12 +53,25 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                 Warnings = warnings
             };
         }
+        /// <summary>
+        /// Validates the kernel arguments async.
+        /// </summary>
+        /// <param name="kernelName">The kernel name.</param>
+        /// <param name="arguments">The arguments.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async Task<bool> ValidateKernelArgumentsAsync(string kernelName, object[] arguments, CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;
             return true; // Stub implementation
         }
+        /// <summary>
+        /// Gets the optimization recommendations async.
+        /// </summary>
+        /// <param name="steps">The steps.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The optimization recommendations async.</returns>
 
         public async Task<IReadOnlyCollection<KernelChainOptimizationRecommendation>> GetOptimizationRecommendationsAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default)
         {

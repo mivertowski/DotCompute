@@ -26,7 +26,7 @@ public sealed class KernelMetadata
     /// <summary>
     /// Gets the required work group size.
     /// </summary>
-    public long[]? RequiredWorkGroupSize { get; init; }
+    public IReadOnlyList<long>? RequiredWorkGroupSize { get; init; }
 
     /// <summary>
     /// Gets the local memory size required.

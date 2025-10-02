@@ -102,12 +102,12 @@ public class ProfilingResults
     /// <summary>
     /// Gets or sets the timing checkpoints.
     /// </summary>
-    public List<TimingCheckpoint> Checkpoints { get; init; } = [];
+    public IReadOnlyList<TimingCheckpoint> Checkpoints { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the memory usage snapshots.
     /// </summary>
-    public List<MemorySnapshot> MemorySnapshots { get; init; } = [];
+    public IReadOnlyList<MemorySnapshot> MemorySnapshots { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the session context information.

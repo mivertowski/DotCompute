@@ -22,6 +22,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", RequiresHardware)]
     public class CudaAcceleratorHardwareTests(ITestOutputHelper output) : CudaTestBase(output)
     {
+        /// <summary>
+        /// Gets device_ initialization_ should_ succeed_ with_ available_ hardware.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #region Device Initialization Tests
 
@@ -47,6 +51,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             CudaTestHelpers.LogDeviceCapabilities();
             memoryTracker.Checkpoint("After Initialization");
         }
+        /// <summary>
+        /// Gets device_ should_ report_ correct_ hardware_ specifications.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Should_Report_Correct_Hardware_Specifications()
@@ -76,6 +84,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Memory: {deviceInfo.GlobalMemorySize / (1024.0 * 1024.0 * 1024.0):F2} GB");
             Output.WriteLine($"  SMs: {deviceInfo.MaxComputeUnits}");
         }
+        /// <summary>
+        /// Gets device_ should_ support_ minimum_ compute_ capability.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Should_Support_Minimum_Compute_Capability()
@@ -94,6 +106,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = (cc.Major >= 3 && (cc.Major > 3 || cc.Minor >= 5)).Should().BeTrue(
                 $"Compute capability {cc.Major}.{cc.Minor} should be >= 3.5 for modern features");
         }
+        /// <summary>
+        /// Gets simple_ vector_ addition_ kernel_ should_ execute_ successfully.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -181,6 +197,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             var dataSize = elementCount * sizeof(float) * 3; // 3 arrays accessed
             // Performance comparison removed - not needed for this test
         }
+        /// <summary>
+        /// Gets matrix_ multiplication_ kernel_ should_ execute_ correctly.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Matrix_Multiplication_Kernel_Should_Execute_Correctly()
@@ -309,6 +329,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  GFLOPS: {gflops:F2}");
             Output.WriteLine($"  Matrix Size: {matrixSize}x{matrixSize}");
         }
+        /// <summary>
+        /// Gets concurrent_ kernel_ execution_ should_ be_ supported.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -338,6 +362,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Skip.If(true, "Device does not support concurrent kernels");
             }
         }
+        /// <summary>
+        /// Gets unified_ memory_ should_ be_ available_ on_ modern_ hardware.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Unified_Memory_Should_Be_Available_On_Modern_Hardware()
@@ -363,6 +391,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Output.WriteLine("Unified Memory is not available on this device");
             }
         }
+        /// <summary>
+        /// Gets device_ should_ have_ adequate_ shared_ memory.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Should_Have_Adequate_Shared_Memory()
@@ -391,6 +423,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 _ = sharedMemoryKB.Should().BeGreaterThanOrEqualTo(64, "CC 7.0+ devices should support 64KB+ shared memory");
             }
         }
+        /// <summary>
+        /// Gets device_ should_ support_ modern_ memory_ bandwidth.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Should_Support_Modern_Memory_Bandwidth()
@@ -413,6 +449,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Memory bus width: {deviceInfo.MemoryBusWidth} bits");
             Output.WriteLine($"Memory clock: {deviceInfo.MemoryClockRate() / 1000.0:F0} MHz");
         }
+        /// <summary>
+        /// Gets r t x_2000_ ada_ hardware_ should_ have_ specific_ capabilities.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task RTX_2000_Ada_Hardware_Should_Have_Specific_Capabilities()
@@ -444,6 +484,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  RT Cores: {(deviceInfo.SupportsRayTracing() ? "Available" : "Not Available")}");
             Output.WriteLine($"  Tensor Cores: {(deviceInfo.SupportsTensorOperations() ? "Available" : "Not Available")}");
         }
+        /// <summary>
+        /// Gets invalid_ kernel_ should_ produce_ compilation_ error.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 
@@ -477,6 +521,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = await compileAction.Should().ThrowAsync<Exception>("Invalid kernel should fail to compile");
             Output.WriteLine("Kernel compilation error handling verified");
         }
+        /// <summary>
+        /// Gets device_ should_ recover_ from_ kernel_ timeout.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         public async Task Device_Should_Recover_From_Kernel_Timeout()
@@ -529,6 +577,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 _ = testBuffer.Should().NotBeNull("Device should remain functional after kernel timeout");
             }
         }
+        /// <summary>
+        /// Gets memory_ copy_ performance_ should_ meet_ expectations.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         #endregion
 

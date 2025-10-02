@@ -66,6 +66,13 @@ namespace DotCompute.Plugins.Recovery
         /// Last operation timestamp
         /// </summary>
         public DateTimeOffset? LastOperationTime { get; private set; }
+        /// <summary>
+        /// Initializes a new instance of the IsolatedPluginContainer class.
+        /// </summary>
+        /// <param name="pluginId">The plugin identifier.</param>
+        /// <param name="plugin">The plugin.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="config">The config.</param>
 
         public IsolatedPluginContainer(
             string pluginId,
@@ -310,6 +317,9 @@ namespace DotCompute.Plugins.Recovery
                 _logger.LogErrorMessage(ex, $"Error during force termination for plugin {_pluginId}");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -334,6 +344,10 @@ namespace DotCompute.Plugins.Recovery
 
             _disposed = true;
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

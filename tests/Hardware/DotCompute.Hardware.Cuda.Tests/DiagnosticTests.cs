@@ -12,6 +12,9 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", "Diagnostic")]
     public class CudaDiagnosticTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
+        /// <summary>
+        /// Performs diagnose_ device_ properties_ direct.
+        /// </summary>
         [SkippableFact]
         public void Diagnose_Device_Properties_Direct()
         {
@@ -82,6 +85,9 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.True(props.ManagedMemorySupported, $"ManagedMemory should be supported. Raw value: {props.ManagedMemory}, Compute Capability: {props.Major}.{props.Minor}");
         }
+        /// <summary>
+        /// Performs diagnose_ device_ through_ cuda device.
+        /// </summary>
 
 
         [SkippableFact]
@@ -122,6 +128,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             Assert.True(device.SupportsManagedMemory, "Device should support managed memory");
         }
+        /// <summary>
+        /// Gets diagnose_ accelerator_ creation.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         [SkippableFact]
@@ -180,6 +190,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 disposable.Dispose();
             }
         }
+        /// <summary>
+        /// Performs diagnose_ struct_ size_ and_ alignment.
+        /// </summary>
 
 
         [SkippableFact]
@@ -211,6 +224,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 Assert.Equal(1032, sizeof(CudaDeviceProperties));
             }
         }
+        /// <summary>
+        /// Performs diagnose_ multiple_ calls_ consistency.
+        /// </summary>
 
 
         [SkippableFact]

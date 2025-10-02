@@ -20,6 +20,11 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
     private readonly MemoryPool _memoryPool;
     private readonly MemoryUsageTracker _usageTracker;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the CudaMemoryManager class.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    /// <param name="logger">The logger.</param>
 
     public CudaMemoryManager(CudaContext context, ILogger<CudaMemoryManager> logger)
     {
@@ -33,6 +38,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 
         _logger.LogDebug("CUDA memory manager initialized for device {DeviceId}", context.DeviceId);
     }
+    /// <summary>
+    /// Gets allocate asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="count">The count.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     #region IUnifiedMemoryManager Implementation
 
@@ -62,6 +75,13 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to allocate {count} elements of CUDA memory", ex);
         }
     }
+    /// <summary>
+    /// Gets allocate raw asynchronously.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
         long sizeInBytes,
@@ -89,6 +109,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to allocate {sizeInBytes} bytes of CUDA memory", ex);
         }
     }
+    /// <summary>
+    /// Gets allocate and copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
@@ -109,6 +137,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to allocate and copy {source.Length} elements to CUDA memory", ex);
         }
     }
+    /// <summary>
+    /// Creates a new view.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="count">The count.</param>
+    /// <returns>The created view.</returns>
 
     public IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
@@ -127,6 +163,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to create memory view at offset {offset} with count {count}", ex);
         }
     }
+    /// <summary>
+    /// Gets copy to device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
@@ -146,6 +190,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to copy {source.Length} elements to device memory", ex);
         }
     }
+    /// <summary>
+    /// Gets copy from device asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -165,6 +217,14 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to copy {destination.Length} elements from device memory", ex);
         }
     }
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -183,6 +243,17 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException("Failed to copy between buffers", ex);
         }
     }
+    /// <summary>
+    /// Gets copy asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="source">The source.</param>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destination">The destination.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="count">The count.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -205,6 +276,10 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException($"Failed to copy {count} elements with offsets", ex);
         }
     }
+    /// <summary>
+    /// Performs free.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
 
     public void Free(IUnifiedMemoryBuffer buffer)
     {
@@ -232,6 +307,12 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             _logger.LogWarning(ex, "Warning: Failed to free memory buffer");
         }
     }
+    /// <summary>
+    /// Gets free asynchronously.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
@@ -259,6 +340,9 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException("Failed to async free memory buffer", ex);
         }
     }
+    /// <summary>
+    /// Performs clear.
+    /// </summary>
 
     public void Clear()
     {
@@ -276,6 +360,11 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException("Failed to clear memory", ex);
         }
     }
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
     {
@@ -293,15 +382,35 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new MemoryException("Failed to optimize memory", ex);
         }
     }
+    /// <summary>
+    /// Gets or sets the total available memory.
+    /// </summary>
+    /// <value>The total available memory.</value>
 
     #endregion
 
     #region Properties
 
     public long TotalAvailableMemory => _asyncAdapter.TotalAvailableMemory;
+    /// <summary>
+    /// Gets or sets the current allocated memory.
+    /// </summary>
+    /// <value>The current allocated memory.</value>
     public long CurrentAllocatedMemory => _asyncAdapter.CurrentAllocatedMemory;
+    /// <summary>
+    /// Gets or sets the max allocation size.
+    /// </summary>
+    /// <value>The max allocation size.</value>
     public long MaxAllocationSize => _asyncAdapter.MaxAllocationSize;
+    /// <summary>
+    /// Gets or sets the statistics.
+    /// </summary>
+    /// <value>The statistics.</value>
     public MemoryStatistics Statistics => CreateEnhancedStatistics();
+    /// <summary>
+    /// Gets or sets the accelerator.
+    /// </summary>
+    /// <value>The accelerator.</value>
     public IAccelerator Accelerator => _asyncAdapter.Accelerator;
 
     #endregion
@@ -450,6 +559,9 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             throw new ObjectDisposedException(nameof(CudaMemoryManager));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -475,6 +587,10 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             _logger.LogDebug("CUDA memory manager disposed");
         }
     }
+    /// <summary>
+    /// Gets dispose asynchronously.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask DisposeAsync()
     {
@@ -661,14 +777,50 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 /// </summary>
 public readonly record struct MemoryUsageAnalytics
 {
+    /// <summary>
+    /// Gets or sets the total allocations.
+    /// </summary>
+    /// <value>The total allocations.</value>
     public long TotalAllocations { get; init; }
+    /// <summary>
+    /// Gets or sets the total deallocations.
+    /// </summary>
+    /// <value>The total deallocations.</value>
     public long TotalDeallocations { get; init; }
+    /// <summary>
+    /// Gets or sets the total bytes allocated.
+    /// </summary>
+    /// <value>The total bytes allocated.</value>
     public long TotalBytesAllocated { get; init; }
+    /// <summary>
+    /// Gets or sets the total bytes transferred.
+    /// </summary>
+    /// <value>The total bytes transferred.</value>
     public long TotalBytesTransferred { get; init; }
+    /// <summary>
+    /// Gets or sets the failed allocations.
+    /// </summary>
+    /// <value>The failed allocations.</value>
     public long FailedAllocations { get; init; }
+    /// <summary>
+    /// Gets or sets the pool hit ratio.
+    /// </summary>
+    /// <value>The pool hit ratio.</value>
     public double PoolHitRatio { get; init; }
+    /// <summary>
+    /// Gets or sets the average allocation size.
+    /// </summary>
+    /// <value>The average allocation size.</value>
     public double AverageAllocationSize { get; init; }
+    /// <summary>
+    /// Gets or sets the peak memory usage.
+    /// </summary>
+    /// <value>The peak memory usage.</value>
     public long PeakMemoryUsage { get; init; }
+    /// <summary>
+    /// Gets or sets the last optimization time.
+    /// </summary>
+    /// <value>The last optimization time.</value>
     public DateTimeOffset LastOptimizationTime { get; init; }
 }
 
@@ -677,13 +829,45 @@ public readonly record struct MemoryUsageAnalytics
 /// </summary>
 public sealed class MemoryCleanupSummary
 {
+    /// <summary>
+    /// Gets or sets the success.
+    /// </summary>
+    /// <value>The success.</value>
     public bool Success { get; init; }
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>The start time.</value>
     public DateTimeOffset StartTime { get; init; }
+    /// <summary>
+    /// Gets or sets the end time.
+    /// </summary>
+    /// <value>The end time.</value>
     public DateTimeOffset EndTime { get; init; }
+    /// <summary>
+    /// Gets or sets the memory freed.
+    /// </summary>
+    /// <value>The memory freed.</value>
     public long MemoryFreed { get; init; }
+    /// <summary>
+    /// Gets or sets the pool items freed.
+    /// </summary>
+    /// <value>The pool items freed.</value>
     public int PoolItemsFreed { get; init; }
-    public List<string> OptimizationsPerformed { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the optimizations performed.
+    /// </summary>
+    /// <value>The optimizations performed.</value>
+    public IReadOnlyList<string> OptimizationsPerformed { get; init; } = [];
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>The error message.</value>
     public string? ErrorMessage { get; init; }
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>The duration.</value>
 
     public TimeSpan Duration => EndTime - StartTime;
 }
@@ -693,7 +877,15 @@ public sealed class MemoryCleanupSummary
 /// </summary>
 public sealed class MemoryManagementPolicies
 {
+    /// <summary>
+    /// Gets or sets the pooling policy.
+    /// </summary>
+    /// <value>The pooling policy.</value>
     public MemoryPoolingPolicy PoolingPolicy { get; init; } = new();
+    /// <summary>
+    /// Gets or sets the tracking policy.
+    /// </summary>
+    /// <value>The tracking policy.</value>
     public MemoryTrackingPolicy TrackingPolicy { get; init; } = new();
 }
 
@@ -702,9 +894,25 @@ public sealed class MemoryManagementPolicies
 /// </summary>
 public sealed class MemoryPoolingPolicy
 {
+    /// <summary>
+    /// Gets or sets the enable pooling.
+    /// </summary>
+    /// <value>The enable pooling.</value>
     public bool EnablePooling { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the max pool size.
+    /// </summary>
+    /// <value>The max pool size.</value>
     public int MaxPoolSize { get; init; } = 100;
+    /// <summary>
+    /// Gets or sets the max idle time.
+    /// </summary>
+    /// <value>The max idle time.</value>
     public TimeSpan MaxIdleTime { get; init; } = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// Gets or sets the max item size.
+    /// </summary>
+    /// <value>The max item size.</value>
     public long MaxItemSize { get; init; } = 1024 * 1024 * 1024; // 1GB
 }
 
@@ -713,11 +921,26 @@ public sealed class MemoryPoolingPolicy
 /// </summary>
 public sealed class MemoryTrackingPolicy
 {
+    /// <summary>
+    /// Gets or sets the enable detailed tracking.
+    /// </summary>
+    /// <value>The enable detailed tracking.</value>
     public bool EnableDetailedTracking { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the track stack traces.
+    /// </summary>
+    /// <value>The track stack traces.</value>
     public bool TrackStackTraces { get; init; }
+    /// <summary>
+    /// Gets or sets the analytics window.
+    /// </summary>
+    /// <value>The analytics window.</value>
 
     public TimeSpan AnalyticsWindow { get; init; } = TimeSpan.FromMinutes(30);
 }
+/// <summary>
+/// An memory transfer direction enumeration.
+/// </summary>
 
 /// <summary>
 /// Memory transfer direction enumeration.
@@ -741,13 +964,41 @@ internal sealed class MemoryUsageTracker
     private long _failedAllocations;
     private long _peakMemoryUsage;
     private long _currentMemoryUsage;
+    /// <summary>
+    /// Gets or sets the total allocations.
+    /// </summary>
+    /// <value>The total allocations.</value>
 
     public long TotalAllocations => Interlocked.Read(ref _totalAllocations);
+    /// <summary>
+    /// Gets or sets the total deallocations.
+    /// </summary>
+    /// <value>The total deallocations.</value>
     public long TotalDeallocations => Interlocked.Read(ref _totalDeallocations);
+    /// <summary>
+    /// Gets or sets the total bytes allocated.
+    /// </summary>
+    /// <value>The total bytes allocated.</value>
     public long TotalBytesAllocated => Interlocked.Read(ref _totalBytesAllocated);
+    /// <summary>
+    /// Gets or sets the total bytes transferred.
+    /// </summary>
+    /// <value>The total bytes transferred.</value>
     public long TotalBytesTransferred => Interlocked.Read(ref _totalBytesTransferred);
+    /// <summary>
+    /// Gets or sets the failed allocations.
+    /// </summary>
+    /// <value>The failed allocations.</value>
     public long FailedAllocations => Interlocked.Read(ref _failedAllocations);
+    /// <summary>
+    /// Gets or sets the peak memory usage.
+    /// </summary>
+    /// <value>The peak memory usage.</value>
     public long PeakMemoryUsage => Interlocked.Read(ref _peakMemoryUsage);
+    /// <summary>
+    /// Gets or sets the average allocation size.
+    /// </summary>
+    /// <value>The average allocation size.</value>
 
     public double AverageAllocationSize
     {
@@ -758,6 +1009,10 @@ internal sealed class MemoryUsageTracker
             return totalAllocs > 0 ? (double)totalBytes / totalAllocs : 0.0;
         }
     }
+    /// <summary>
+    /// Performs record allocation request.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
 
     public void RecordAllocationRequest(long sizeInBytes)
     {
@@ -767,12 +1022,27 @@ internal sealed class MemoryUsageTracker
         var newUsage = Interlocked.Add(ref _currentMemoryUsage, sizeInBytes);
         UpdatePeakUsage(newUsage);
     }
+    /// <summary>
+    /// Performs record allocation failure.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
 
     public void RecordAllocationFailure(long sizeInBytes) => _ = Interlocked.Increment(ref _failedAllocations);
+    /// <summary>
+    /// Performs record deallocation.
+    /// </summary>
 
     public void RecordDeallocation() => _ = Interlocked.Increment(ref _totalDeallocations);
+    /// <summary>
+    /// Performs record transfer.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="direction">The direction.</param>
 
     public void RecordTransfer(long sizeInBytes, MemoryTransferDirection direction) => _ = Interlocked.Add(ref _totalBytesTransferred, sizeInBytes);
+    /// <summary>
+    /// Performs reset.
+    /// </summary>
 
     public void Reset()
     {
@@ -784,12 +1054,20 @@ internal sealed class MemoryUsageTracker
         _ = Interlocked.Exchange(ref _peakMemoryUsage, 0);
         _ = Interlocked.Exchange(ref _currentMemoryUsage, 0);
     }
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="policy">The policy.</param>
 
     public static void Configure(MemoryTrackingPolicy policy)
     {
         // Configure tracking based on policy
         // Implementation would set tracking preferences
     }
+    /// <summary>
+    /// Gets the current statistics.
+    /// </summary>
+    /// <returns>The current statistics.</returns>
 
     public MemoryUsageAnalytics GetCurrentStatistics()
     {
@@ -832,8 +1110,16 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
     private volatile bool _disposed;
     private int _hitCount = 0; // Initialize to suppress warning
     private int _missCount;
+    /// <summary>
+    /// Gets or sets the last optimization time.
+    /// </summary>
+    /// <value>The last optimization time.</value>
 
     public DateTimeOffset LastOptimizationTime { get; private set; } = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// Gets or sets the hit ratio.
+    /// </summary>
+    /// <value>The hit ratio.</value>
 
     public double HitRatio
     {
@@ -843,6 +1129,14 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
             return total > 0 ? (double)_hitCount / total : 0.0;
         }
     }
+    /// <summary>
+    /// Gets allocate asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The T type parameter.</typeparam>
+    /// <param name="count">The count.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
         int count,
@@ -853,6 +1147,13 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
         _ = Interlocked.Increment(ref _missCount);
         return _memoryManager.AllocateAsync<T>(count, options, cancellationToken);
     }
+    /// <summary>
+    /// Gets allocate raw asynchronously.
+    /// </summary>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(
         long sizeInBytes,
@@ -863,10 +1164,19 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
         _ = Interlocked.Increment(ref _missCount);
         return _memoryManager.AllocateRawAsync(sizeInBytes, options, cancellationToken);
     }
+    /// <summary>
+    /// Determines whether return to pool.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanReturnToPool(IUnifiedMemoryBuffer buffer)
         // Simplified check - in production would validate buffer size, age, etc.
         => buffer != null && !_disposed;
+    /// <summary>
+    /// Performs return to pool.
+    /// </summary>
+    /// <param name="buffer">The buffer.</param>
 
     public void ReturnToPool(IUnifiedMemoryBuffer buffer)
     {
@@ -885,6 +1195,10 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
             _logger.LogWarning(ex, "Failed to return buffer to pool");
         }
     }
+    /// <summary>
+    /// Gets clear.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public int Clear()
     {
@@ -916,6 +1230,9 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
             return totalCleared;
         }
     }
+    /// <summary>
+    /// Performs optimize.
+    /// </summary>
 
     public void Optimize()
     {
@@ -927,11 +1244,18 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
         LastOptimizationTime = DateTimeOffset.UtcNow;
         // Simplified optimization - in production would defragment pools, remove old items
     }
+    /// <summary>
+    /// Performs configure.
+    /// </summary>
+    /// <param name="policy">The policy.</param>
 
     public static void Configure(MemoryPoolingPolicy policy)
     {
         // Configure pool based on policy settings
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {

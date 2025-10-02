@@ -32,6 +32,12 @@ namespace DotCompute.Core.Memory
         private const int MaxBuffersPerSize = 16;
         private const int LargeBufferPoolSize = 8;
         private const int CleanupIntervalMs = 30000; // 30 seconds
+        /// <summary>
+        /// Initializes a new instance of the DeviceBufferPool class.
+        /// </summary>
+        /// <param name="device">The device.</param>
+        /// <param name="deviceCapabilities">The device capabilities.</param>
+        /// <param name="logger">The logger.</param>
 
         public DeviceBufferPool(
             IAccelerator device,
@@ -443,6 +449,10 @@ namespace DotCompute.Core.Memory
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -483,19 +493,75 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private sealed class PoolStatistics
         {
+            /// <summary>
+            /// Gets or sets the allocation count.
+            /// </summary>
+            /// <value>The allocation count.</value>
             public long AllocationCount { get; set; }
+            /// <summary>
+            /// Gets or sets the deallocation count.
+            /// </summary>
+            /// <value>The deallocation count.</value>
             public long DeallocationCount { get; set; }
+            /// <summary>
+            /// Gets or sets the allocation failures.
+            /// </summary>
+            /// <value>The allocation failures.</value>
             public long AllocationFailures { get; set; }
+            /// <summary>
+            /// Gets or sets the total allocated bytes.
+            /// </summary>
+            /// <value>The total allocated bytes.</value>
             public long TotalAllocatedBytes { get; set; }
+            /// <summary>
+            /// Gets or sets the current allocated bytes.
+            /// </summary>
+            /// <value>The current allocated bytes.</value>
             public long CurrentAllocatedBytes { get; set; }
+            /// <summary>
+            /// Gets or sets the peak allocated bytes.
+            /// </summary>
+            /// <value>The peak allocated bytes.</value>
             public long PeakAllocatedBytes { get; set; }
+            /// <summary>
+            /// Gets or sets the active buffers.
+            /// </summary>
+            /// <value>The active buffers.</value>
             public int ActiveBuffers { get; set; }
+            /// <summary>
+            /// Gets or sets the pool hits.
+            /// </summary>
+            /// <value>The pool hits.</value>
             public long PoolHits { get; set; }
+            /// <summary>
+            /// Gets or sets the pool misses.
+            /// </summary>
+            /// <value>The pool misses.</value>
             public long PoolMisses { get; set; }
+            /// <summary>
+            /// Gets or sets the reuse count.
+            /// </summary>
+            /// <value>The reuse count.</value>
             public long ReuseCount { get; set; }
+            /// <summary>
+            /// Gets or sets the returned to pool.
+            /// </summary>
+            /// <value>The returned to pool.</value>
             public long ReturnedToPool { get; set; }
+            /// <summary>
+            /// Gets or sets the streaming allocations.
+            /// </summary>
+            /// <value>The streaming allocations.</value>
             public long StreamingAllocations { get; set; }
+            /// <summary>
+            /// Gets or sets the memory mapped allocations.
+            /// </summary>
+            /// <value>The memory mapped allocations.</value>
             public long MemoryMappedAllocations { get; set; }
+            /// <summary>
+            /// Gets or sets the cleanup count.
+            /// </summary>
+            /// <value>The cleanup count.</value>
             public long CleanupCount { get; set; }
         }
     }
@@ -509,11 +575,35 @@ namespace DotCompute.Core.Memory
         private readonly DeviceBufferPool _pool = pool;
         private readonly long _originalSize = originalSize;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the size in bytes.
+        /// </summary>
+        /// <value>The size in bytes.</value>
 
         public long SizeInBytes => _underlyingBuffer.SizeInBytes;
+        /// <summary>
+        /// Gets or sets the options.
+        /// </summary>
+        /// <value>The options.</value>
         public MemoryOptions Options => _underlyingBuffer.Options;
+        /// <summary>
+        /// Gets or sets a value indicating whether disposed.
+        /// </summary>
+        /// <value>The is disposed.</value>
         public bool IsDisposed => _disposed;
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        /// <value>The state.</value>
         public BufferState State => _underlyingBuffer.State;
+        /// <summary>
+        /// Gets copy from host asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="source">The source.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -522,6 +612,14 @@ namespace DotCompute.Core.Memory
             // The actual implementation would depend on the concrete buffer type
             return ValueTask.CompletedTask;
         }
+        /// <summary>
+        /// Gets copy to host asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="destination">The destination.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -533,6 +631,9 @@ namespace DotCompute.Core.Memory
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -574,6 +675,10 @@ namespace DotCompute.Core.Memory
             // Call the new interface method we just added
             return _underlyingBuffer.CopyToAsync(destination, sourceOffset, cancellationToken);
         }
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {

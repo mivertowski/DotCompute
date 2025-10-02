@@ -88,6 +88,6 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets dependencies on other device tasks.
         /// Contains the indices of other device tasks that must complete before this task can begin.
         /// </summary>
-        public List<int> Dependencies { get; set; } = [];
+        public IList<int> Dependencies { get; } = [];
     }
 }

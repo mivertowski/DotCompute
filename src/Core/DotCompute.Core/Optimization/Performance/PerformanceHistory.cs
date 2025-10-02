@@ -14,9 +14,22 @@ public class PerformanceHistory(WorkloadSignature signature, int maxEntries = 10
     private readonly ConcurrentDictionary<string, List<PerformanceResult>> _backendResults = new();
     private readonly WorkloadSignature _signature = signature;
     private readonly int _maxEntries = maxEntries;
+    /// <summary>
+    /// Gets or sets the signature.
+    /// </summary>
+    /// <value>The signature.</value>
 
     public WorkloadSignature Signature => _signature;
+    /// <summary>
+    /// Gets or sets the total entries.
+    /// </summary>
+    /// <value>The total entries.</value>
     public int TotalEntries => _backendResults.Values.Sum(results => results.Count);
+    /// <summary>
+    /// Performs add performance result.
+    /// </summary>
+    /// <param name="backendId">The backend identifier.</param>
+    /// <param name="result">The result.</param>
 
     public void AddPerformanceResult(string backendId, PerformanceResult result)
     {
@@ -38,6 +51,10 @@ public class PerformanceHistory(WorkloadSignature signature, int maxEntries = 10
                 }
             });
     }
+    /// <summary>
+    /// Gets the performance stats.
+    /// </summary>
+    /// <returns>The performance stats.</returns>
 
     public Dictionary<string, BackendPerformanceStats> GetPerformanceStats()
     {
@@ -84,7 +101,7 @@ public class PerformanceHistory(WorkloadSignature signature, int maxEntries = 10
         return stats;
     }
 
-    private static double CalculateStandardDeviation(List<double> values, double mean)
+    private static double CalculateStandardDeviation(IReadOnlyList<double> values, double mean)
     {
         if (values.Count <= 1)
         {

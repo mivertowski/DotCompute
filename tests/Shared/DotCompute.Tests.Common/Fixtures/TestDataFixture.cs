@@ -14,6 +14,9 @@ public static class TestDataFixture
     /// </summary>
     public static class Small
     {
+        /// <summary>
+        /// The size.
+        /// </summary>
         public const int Size = 1024;
 
 
@@ -46,6 +49,9 @@ public static class TestDataFixture
     /// </summary>
     public static class Medium
     {
+        /// <summary>
+        /// The size.
+        /// </summary>
         public const int Size = 64 * 1024;
 
 
@@ -78,6 +84,9 @@ public static class TestDataFixture
     /// </summary>
     public static class Large
     {
+        /// <summary>
+        /// The size.
+        /// </summary>
         public const int Size = 16 * 1024 * 1024;
 
 
@@ -119,13 +128,34 @@ public static class TestDataFixture
         /// </summary>
         public static class Small32x32
         {
+            /// <summary>
+            /// The rows.
+            /// </summary>
             public const int Rows = 32;
+            /// <summary>
+            /// The columns.
+            /// </summary>
             public const int Columns = 32;
+            /// <summary>
+            /// The size.
+            /// </summary>
             public const int Size = Rows * Columns;
+            /// <summary>
+            /// Gets or sets the identity.
+            /// </summary>
+            /// <value>The identity.</value>
 
 
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
+            /// <summary>
+            /// Gets or sets the random.
+            /// </summary>
+            /// <value>The random.</value>
             public static float[] Random => GenerateRandomFloats(Size, 111);
+            /// <summary>
+            /// Gets or sets the sequential.
+            /// </summary>
+            /// <value>The sequential.</value>
             public static float[] Sequential => GenerateSequentialFloats(Size);
         }
 
@@ -134,13 +164,34 @@ public static class TestDataFixture
         /// </summary>
         public static class Medium256x256
         {
+            /// <summary>
+            /// The rows.
+            /// </summary>
             public const int Rows = 256;
+            /// <summary>
+            /// The columns.
+            /// </summary>
             public const int Columns = 256;
+            /// <summary>
+            /// The size.
+            /// </summary>
             public const int Size = Rows * Columns;
+            /// <summary>
+            /// Gets or sets the identity.
+            /// </summary>
+            /// <value>The identity.</value>
 
 
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
+            /// <summary>
+            /// Gets or sets the random.
+            /// </summary>
+            /// <value>The random.</value>
             public static float[] Random => GenerateRandomFloats(Size, 222);
+            /// <summary>
+            /// Gets or sets the sequential.
+            /// </summary>
+            /// <value>The sequential.</value>
             public static float[] Sequential => GenerateSequentialFloats(Size);
         }
 
@@ -149,13 +200,34 @@ public static class TestDataFixture
         /// </summary>
         public static class Large1024x1024
         {
+            /// <summary>
+            /// The rows.
+            /// </summary>
             public const int Rows = 1024;
+            /// <summary>
+            /// The columns.
+            /// </summary>
             public const int Columns = 1024;
+            /// <summary>
+            /// The size.
+            /// </summary>
             public const int Size = Rows * Columns;
+            /// <summary>
+            /// Gets or sets the identity.
+            /// </summary>
+            /// <value>The identity.</value>
 
 
             public static float[] Identity => GenerateIdentityMatrix(Rows, Columns);
+            /// <summary>
+            /// Gets or sets the random.
+            /// </summary>
+            /// <value>The random.</value>
             public static float[] Random => GenerateRandomFloats(Size, 333);
+            /// <summary>
+            /// Gets or sets the sequential.
+            /// </summary>
+            /// <value>The sequential.</value>
             public static float[] Sequential => GenerateSequentialFloats(Size);
         }
     }
@@ -170,6 +242,9 @@ public static class TestDataFixture
     public static class TestKernels
     {
         /// <summary>
+        /// The vector add cuda.
+        /// </summary>
+        /// <summary>
         /// Simple vector addition kernel (CUDA C).
         /// </summary>
         public const string VectorAddCuda = @"
@@ -181,6 +256,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* result, int si
         result[idx] = a[idx] + b[idx];
     }
 }";
+        /// <summary>
+        /// The vector add open c l.
+        /// </summary>
 
         /// <summary>
         /// Simple vector addition kernel (OpenCL).
@@ -197,6 +275,9 @@ __kernel void vectorAdd(__global const float* a,
         result[idx] = a[idx] + b[idx];
     }
 }";
+        /// <summary>
+        /// The matrix multiply cuda.
+        /// </summary>
 
         /// <summary>
         /// Matrix multiplication kernel (CUDA C).
@@ -218,6 +299,9 @@ extern ""C"" __global__ void matrixMultiply(float* a, float* b, float* result,
         result[row * colsB + col] = sum;
     }
 }";
+        /// <summary>
+        /// The reduction sum cuda.
+        /// </summary>
 
         /// <summary>
         /// Reduction sum kernel (CUDA C).
@@ -244,6 +328,9 @@ extern ""C"" __global__ void reductionSum(float* input, float* output, int size)
     
     if (tid == 0) output[blockIdx.x] = sdata[0];
 }";
+        /// <summary>
+        /// The element wise operation cuda.
+        /// </summary>
 
         /// <summary>
         /// Element-wise operation kernel (CUDA C).
@@ -265,6 +352,9 @@ extern ""C"" __global__ void elementWiseOperation(float* input, float* output,
         }
     }
 }";
+        /// <summary>
+        /// The complex computation cuda.
+        /// </summary>
 
         /// <summary>
         /// Complex computation kernel for performance testing (CUDA C).
@@ -489,6 +579,9 @@ extern ""C"" __global__ void complexComputation(float* input, float* output, int
             return data;
         }
     }
+    /// <summary>
+    /// An data pattern enumeration.
+    /// </summary>
 
     /// <summary>
     /// Data pattern types for specialized test data generation.

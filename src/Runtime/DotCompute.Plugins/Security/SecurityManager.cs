@@ -7,6 +7,7 @@ using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
+using System;
 
 namespace DotCompute.Plugins.Security;
 
@@ -257,7 +258,7 @@ public class SecurityManager(ILogger logger) : IDisposable
 
                 foreach (var suspicious in suspiciousStrings)
                 {
-                    if (stringValue.Contains(suspicious))
+                    if (stringValue.Contains(suspicious, StringComparison.OrdinalIgnoreCase))
                     {
                         analysis.SuspiciousPatterns.Add($"Suspicious string: {suspicious}");
                         break; // Avoid duplicate entries
@@ -362,7 +363,7 @@ public class AssemblyMetadataAnalysis
     /// <summary>
     /// Gets the list of suspicious patterns found.
     /// </summary>
-    public List<string> SuspiciousPatterns { get; } = [];
+    public IList<string> SuspiciousPatterns { get; } = [];
 
     /// <summary>
     /// Gets whether the analysis found any suspicious patterns.
@@ -384,6 +385,9 @@ public class AssemblyMetadataAnalysis
     /// </summary>
     public string? ErrorMessage { get; set; }
 }
+/// <summary>
+/// An risk level enumeration.
+/// </summary>
 
 /// <summary>
 /// Risk levels for assembly analysis.

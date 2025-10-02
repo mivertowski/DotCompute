@@ -376,6 +376,9 @@ public static class HardwareTestHelpers
 
     #endregion
 }
+/// <summary>
+/// An simd instruction set enumeration.
+/// </summary>
 
 #region Supporting Types
 
@@ -399,6 +402,9 @@ public enum SimdInstructionSet
     AVX512DQ,
     AVX512VL
 }
+/// <summary>
+/// An gpu backend enumeration.
+/// </summary>
 
 /// <summary>
 /// GPU backend enumeration
@@ -410,6 +416,9 @@ public enum GpuBackend
     Metal,
     DirectCompute
 }
+/// <summary>
+/// An dot compute test platform enumeration.
+/// </summary>
 
 /// <summary>
 /// Test platform enumeration for DotCompute tests
@@ -427,21 +436,85 @@ public enum DotComputeTestPlatform
 /// </summary>
 public class SimdCapabilities
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether sse.
+    /// </summary>
+    /// <value>The has sse.</value>
     public bool HasSse { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sse2.
+    /// </summary>
+    /// <value>The has sse2.</value>
     public bool HasSse2 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sse3.
+    /// </summary>
+    /// <value>The has sse3.</value>
     public bool HasSse3 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether ssse3.
+    /// </summary>
+    /// <value>The has ssse3.</value>
     public bool HasSsse3 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sse41.
+    /// </summary>
+    /// <value>The has sse41.</value>
     public bool HasSse41 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sse42.
+    /// </summary>
+    /// <value>The has sse42.</value>
     public bool HasSse42 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx.
+    /// </summary>
+    /// <value>The has avx.</value>
     public bool HasAvx { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx2.
+    /// </summary>
+    /// <value>The has avx2.</value>
     public bool HasAvx2 { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether fma.
+    /// </summary>
+    /// <value>The has fma.</value>
     public bool HasFma { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx512 f.
+    /// </summary>
+    /// <value>The has avx512 f.</value>
     public bool HasAvx512F { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx512 bw.
+    /// </summary>
+    /// <value>The has avx512 bw.</value>
     public bool HasAvx512Bw { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx512 cd.
+    /// </summary>
+    /// <value>The has avx512 cd.</value>
     public bool HasAvx512Cd { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx512 dq.
+    /// </summary>
+    /// <value>The has avx512 dq.</value>
     public bool HasAvx512Dq { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether avx512 vl.
+    /// </summary>
+    /// <value>The has avx512 vl.</value>
     public bool HasAvx512Vl { get; set; }
+    /// <summary>
+    /// Gets or sets the vector size.
+    /// </summary>
+    /// <value>The vector size.</value>
     public int VectorSize { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether hardware accelerated.
+    /// </summary>
+    /// <value>The is hardware accelerated.</value>
     public bool IsHardwareAccelerated { get; set; }
 }
 
@@ -450,11 +523,35 @@ public class SimdCapabilities
 /// </summary>
 public class GpuCapabilities
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether cuda.
+    /// </summary>
+    /// <value>The has cuda.</value>
     public bool HasCuda { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether open c l.
+    /// </summary>
+    /// <value>The has open c l.</value>
     public bool HasOpenCL { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether metal.
+    /// </summary>
+    /// <value>The has metal.</value>
     public bool HasMetal { get; set; }
+    /// <summary>
+    /// Gets or sets the cuda devices.
+    /// </summary>
+    /// <value>The cuda devices.</value>
     public GpuDeviceInfo[] CudaDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
+    /// <summary>
+    /// Gets or sets the open c l devices.
+    /// </summary>
+    /// <value>The open c l devices.</value>
     public GpuDeviceInfo[] OpenCLDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
+    /// <summary>
+    /// Gets or sets the metal devices.
+    /// </summary>
+    /// <value>The metal devices.</value>
     public GpuDeviceInfo[] MetalDevices { get; set; } = Array.Empty<GpuDeviceInfo>();
 }
 
@@ -463,9 +560,25 @@ public class GpuCapabilities
 /// </summary>
 public class GpuDeviceInfo
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the memory size.
+    /// </summary>
+    /// <value>The memory size.</value>
     public long MemorySize { get; set; }
+    /// <summary>
+    /// Gets or sets the compute capability.
+    /// </summary>
+    /// <value>The compute capability.</value>
     public string ComputeCapability { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the backend.
+    /// </summary>
+    /// <value>The backend.</value>
     public GpuBackend Backend { get; set; }
 }
 
@@ -474,10 +587,30 @@ public class GpuDeviceInfo
 /// </summary>
 public class TestEnvironment
 {
+    /// <summary>
+    /// Gets or sets the simd capabilities.
+    /// </summary>
+    /// <value>The simd capabilities.</value>
     public SimdCapabilities SimdCapabilities { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the available instruction sets.
+    /// </summary>
+    /// <value>The available instruction sets.</value>
     public SimdInstructionSet[] AvailableInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
+    /// <summary>
+    /// Gets or sets the required instruction sets.
+    /// </summary>
+    /// <value>The required instruction sets.</value>
     public SimdInstructionSet[] RequiredInstructionSets { get; set; } = Array.Empty<SimdInstructionSet>();
+    /// <summary>
+    /// Gets or sets a value indicating whether valid environment.
+    /// </summary>
+    /// <value>The is valid environment.</value>
     public bool IsValidEnvironment { get; set; }
+    /// <summary>
+    /// Gets or sets the platform.
+    /// </summary>
+    /// <value>The platform.</value>
     public DotComputeTestPlatform Platform { get; set; }
 }
 
@@ -486,12 +619,40 @@ public class TestEnvironment
 /// </summary>
 public class SimdPerformanceResult
 {
+    /// <summary>
+    /// Gets or sets the scalar time ms.
+    /// </summary>
+    /// <value>The scalar time ms.</value>
     public double ScalarTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the vector time ms.
+    /// </summary>
+    /// <value>The vector time ms.</value>
     public double VectorTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the speedup ratio.
+    /// </summary>
+    /// <value>The speedup ratio.</value>
     public double SpeedupRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the expected speedup ratio.
+    /// </summary>
+    /// <value>The expected speedup ratio.</value>
     public double ExpectedSpeedupRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the meets expectation.
+    /// </summary>
+    /// <value>The meets expectation.</value>
     public bool MeetsExpectation { get; set; }
+    /// <summary>
+    /// Gets or sets the scalar result.
+    /// </summary>
+    /// <value>The scalar result.</value>
     public PerformanceStats ScalarResult { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the vector result.
+    /// </summary>
+    /// <value>The vector result.</value>
     public PerformanceStats VectorResult { get; set; } = new();
 }
 
@@ -500,12 +661,40 @@ public class SimdPerformanceResult
 /// </summary>
 public class GpuPerformanceResult
 {
+    /// <summary>
+    /// Gets or sets the cpu time ms.
+    /// </summary>
+    /// <value>The cpu time ms.</value>
     public double CpuTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the gpu time ms.
+    /// </summary>
+    /// <value>The gpu time ms.</value>
     public double GpuTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the speedup ratio.
+    /// </summary>
+    /// <value>The speedup ratio.</value>
     public double SpeedupRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the expected speedup ratio.
+    /// </summary>
+    /// <value>The expected speedup ratio.</value>
     public double ExpectedSpeedupRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the meets expectation.
+    /// </summary>
+    /// <value>The meets expectation.</value>
     public bool MeetsExpectation { get; set; }
+    /// <summary>
+    /// Gets or sets the cpu result.
+    /// </summary>
+    /// <value>The cpu result.</value>
     public PerformanceStats CpuResult { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the gpu result.
+    /// </summary>
+    /// <value>The gpu result.</value>
     public PerformanceStats GpuResult { get; set; } = new();
 }
 

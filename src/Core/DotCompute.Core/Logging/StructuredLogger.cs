@@ -21,6 +21,14 @@ public sealed class StructuredLogger : ILogger, IDisposable
     private readonly ConcurrentDictionary<string, object> _globalContext;
     private readonly Timer _flushTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the StructuredLogger class.
+    /// </summary>
+    /// <param name="categoryName">The category name.</param>
+    /// <param name="baseLogger">The base logger.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="logBuffer">The log buffer.</param>
+    /// <param name="logEnricher">The log enricher.</param>
 
     public StructuredLogger(string categoryName, ILogger baseLogger, IOptions<StructuredLoggingOptions> options,
         LogBuffer logBuffer, LogEnricher logEnricher)
@@ -48,8 +56,19 @@ public sealed class StructuredLogger : ILogger, IDisposable
             TimeSpan.FromSeconds(_options.FlushIntervalSeconds),
             TimeSpan.FromSeconds(_options.FlushIntervalSeconds));
     }
+    /// <summary>
+    /// Gets begin scope.
+    /// </summary>
+    /// <typeparam name="TState">The TState type parameter.</typeparam>
+    /// <param name="state">The state.</param>
+    /// <returns>The result of the operation.</returns>
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _baseLogger.BeginScope(state);
+    /// <summary>
+    /// Determines whether enabled.
+    /// </summary>
+    /// <param name="logLevel">The log level.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool IsEnabled(LogLevel logLevel) => _baseLogger.IsEnabled(logLevel);
 
@@ -536,6 +555,9 @@ public sealed class StructuredLogger : ILogger, IDisposable
             throw new ObjectDisposedException(nameof(StructuredLogger));
         }
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
     {
@@ -562,83 +584,295 @@ public sealed class StructuredLogger : ILogger, IDisposable
         _flushTimer?.Dispose();
     }
 }
+/// <summary>
+/// A class that represents structured logging options.
+/// </summary>
 
 // Supporting data structures and enums
 public sealed class StructuredLoggingOptions
 {
+    /// <summary>
+    /// Gets or sets the enable synchronous logging.
+    /// </summary>
+    /// <value>The enable synchronous logging.</value>
     public bool EnableSynchronousLogging { get; set; }
+    /// <summary>
+    /// Gets or sets the flush interval seconds.
+    /// </summary>
+    /// <value>The flush interval seconds.</value>
 
     public int FlushIntervalSeconds { get; set; } = 5;
+    /// <summary>
+    /// Gets or sets the max buffer size.
+    /// </summary>
+    /// <value>The max buffer size.</value>
     public int MaxBufferSize { get; set; } = 10000;
+    /// <summary>
+    /// Gets or sets the enable sensitive data redaction.
+    /// </summary>
+    /// <value>The enable sensitive data redaction.</value>
     public bool EnableSensitiveDataRedaction { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the minimum log level.
+    /// </summary>
+    /// <value>The minimum log level.</value>
     public LogLevel MinimumLogLevel { get; set; } = LogLevel.Information;
 }
+/// <summary>
+/// A class that represents structured log entry.
+/// </summary>
 
 public sealed class StructuredLogEntry
 {
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>The timestamp.</value>
     public DateTimeOffset Timestamp { get; set; }
+    /// <summary>
+    /// Gets or sets the log level.
+    /// </summary>
+    /// <value>The log level.</value>
     public LogLevel LogLevel { get; set; }
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    /// <value>The category.</value>
     public string Category { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>The message.</value>
     public string Message { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the formatted message.
+    /// </summary>
+    /// <value>The formatted message.</value>
     public string FormattedMessage { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the exception.
+    /// </summary>
+    /// <value>The exception.</value>
     public Exception? Exception { get; set; }
+    /// <summary>
+    /// Gets or sets the event identifier.
+    /// </summary>
+    /// <value>The event id.</value>
     public EventId EventId { get; set; }
+    /// <summary>
+    /// Gets or sets the correlation identifier.
+    /// </summary>
+    /// <value>The correlation id.</value>
     public string? CorrelationId { get; set; }
+    /// <summary>
+    /// Gets or sets the trace identifier.
+    /// </summary>
+    /// <value>The trace id.</value>
     public string? TraceId { get; set; }
+    /// <summary>
+    /// Gets or sets the span identifier.
+    /// </summary>
+    /// <value>The span id.</value>
     public string? SpanId { get; set; }
-    public Dictionary<string, object> Properties { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the properties.
+    /// </summary>
+    /// <value>The properties.</value>
+    public Dictionary<string, object> Properties { get; } = [];
+    /// <summary>
+    /// Gets or sets the performance metrics.
+    /// </summary>
+    /// <value>The performance metrics.</value>
     public LogPerformanceMetrics? PerformanceMetrics { get; set; }
 }
+/// <summary>
+/// A class that represents log performance metrics.
+/// </summary>
 
 public sealed class LogPerformanceMetrics
 {
+    /// <summary>
+    /// Gets or sets the execution time ms.
+    /// </summary>
+    /// <value>The execution time ms.</value>
     public double ExecutionTimeMs { get; set; }
+    /// <summary>
+    /// Gets or sets the throughput ops per second.
+    /// </summary>
+    /// <value>The throughput ops per second.</value>
     public double ThroughputOpsPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the memory usage bytes.
+    /// </summary>
+    /// <value>The memory usage bytes.</value>
     public long MemoryUsageBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit ratio.
+    /// </summary>
+    /// <value>The cache hit ratio.</value>
     public double CacheHitRatio { get; set; }
+    /// <summary>
+    /// Gets or sets the device utilization percentage.
+    /// </summary>
+    /// <value>The device utilization percentage.</value>
     public double DeviceUtilizationPercentage { get; set; }
 }
+/// <summary>
+/// A class that represents kernel performance metrics.
+/// </summary>
 
 public sealed class KernelPerformanceMetrics
 {
+    /// <summary>
+    /// Gets or sets the throughput ops per second.
+    /// </summary>
+    /// <value>The throughput ops per second.</value>
     public double ThroughputOpsPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the occupancy percentage.
+    /// </summary>
+    /// <value>The occupancy percentage.</value>
     public double OccupancyPercentage { get; set; }
+    /// <summary>
+    /// Gets or sets the memory bandwidth g b per second.
+    /// </summary>
+    /// <value>The memory bandwidth g b per second.</value>
     public double MemoryBandwidthGBPerSecond { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit rate.
+    /// </summary>
+    /// <value>The cache hit rate.</value>
     public double CacheHitRate { get; set; }
+    /// <summary>
+    /// Gets or sets the instruction throughput.
+    /// </summary>
+    /// <value>The instruction throughput.</value>
     public double InstructionThroughput { get; set; }
+    /// <summary>
+    /// Gets or sets the warp efficiency.
+    /// </summary>
+    /// <value>The warp efficiency.</value>
     public double WarpEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the branch divergence.
+    /// </summary>
+    /// <value>The branch divergence.</value>
     public double BranchDivergence { get; set; }
+    /// <summary>
+    /// Gets or sets the power consumption.
+    /// </summary>
+    /// <value>The power consumption.</value>
     public double PowerConsumption { get; set; }
+    /// <summary>
+    /// Gets or sets the memory usage bytes.
+    /// </summary>
+    /// <value>The memory usage bytes.</value>
     public long MemoryUsageBytes { get; set; }
+    /// <summary>
+    /// Gets or sets the device utilization.
+    /// </summary>
+    /// <value>The device utilization.</value>
     public double DeviceUtilization { get; set; }
 }
+/// <summary>
+/// A class that represents memory access metrics.
+/// </summary>
 
 public sealed class MemoryAccessMetrics
 {
+    /// <summary>
+    /// Gets or sets the access pattern.
+    /// </summary>
+    /// <value>The access pattern.</value>
     public string AccessPattern { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the coalescing efficiency.
+    /// </summary>
+    /// <value>The coalescing efficiency.</value>
     public double CoalescingEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the cache hit rate.
+    /// </summary>
+    /// <value>The cache hit rate.</value>
     public double CacheHitRate { get; set; }
+    /// <summary>
+    /// Gets or sets the memory segment.
+    /// </summary>
+    /// <value>The memory segment.</value>
     public string MemorySegment { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the transfer direction.
+    /// </summary>
+    /// <value>The transfer direction.</value>
     public string TransferDirection { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the queue depth.
+    /// </summary>
+    /// <value>The queue depth.</value>
     public int QueueDepth { get; set; }
 }
+/// <summary>
+/// A class that represents distributed operation metrics.
+/// </summary>
 
 public sealed class DistributedOperationMetrics
 {
+    /// <summary>
+    /// Gets or sets the total duration.
+    /// </summary>
+    /// <value>The total duration.</value>
     public TimeSpan TotalDuration { get; set; }
+    /// <summary>
+    /// Gets or sets the total spans.
+    /// </summary>
+    /// <value>The total spans.</value>
     public int TotalSpans { get; set; }
+    /// <summary>
+    /// Gets or sets the device count.
+    /// </summary>
+    /// <value>The device count.</value>
     public int DeviceCount { get; set; }
+    /// <summary>
+    /// Gets or sets the parallelism efficiency.
+    /// </summary>
+    /// <value>The parallelism efficiency.</value>
     public double ParallelismEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the device efficiency.
+    /// </summary>
+    /// <value>The device efficiency.</value>
     public double DeviceEfficiency { get; set; }
+    /// <summary>
+    /// Gets or sets the critical path duration.
+    /// </summary>
+    /// <value>The critical path duration.</value>
     public double CriticalPathDuration { get; set; }
-    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; set; } = [];
+    /// <summary>
+    /// Gets or sets the device metrics.
+    /// </summary>
+    /// <value>The device metrics.</value>
+    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; } = [];
 }
+/// <summary>
+/// A class that represents device operation metrics.
+/// </summary>
 
 public sealed class DeviceOperationMetrics
 {
+    /// <summary>
+    /// Gets or sets the operation count.
+    /// </summary>
+    /// <value>The operation count.</value>
     public int OperationCount { get; set; }
+    /// <summary>
+    /// Gets or sets the utilization percentage.
+    /// </summary>
+    /// <value>The utilization percentage.</value>
     public double UtilizationPercentage { get; set; }
 }
+/// <summary>
+/// An security event type enumeration.
+/// </summary>
 
 public enum SecurityEventType
 {

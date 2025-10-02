@@ -27,11 +27,35 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
     /// </summary>
     private sealed class CachedAssembly
     {
+        /// <summary>
+        /// Gets or sets the assembly bytes.
+        /// </summary>
+        /// <value>The assembly bytes.</value>
         public required byte[] AssemblyBytes { get; init; }
+        /// <summary>
+        /// Gets or sets the load time.
+        /// </summary>
+        /// <value>The load time.</value>
         public required DateTime LoadTime { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether h.
+        /// </summary>
+        /// <value>The hash.</value>
         public required string Hash { get; init; }
+        /// <summary>
+        /// Gets or sets the last accessed.
+        /// </summary>
+        /// <value>The last accessed.</value>
         public DateTime LastAccessed { get; set; }
+        /// <summary>
+        /// Gets or sets the access count.
+        /// </summary>
+        /// <value>The access count.</value>
         public long AccessCount { get; set; }
+        /// <summary>
+        /// Gets or sets the load duration.
+        /// </summary>
+        /// <value>The load duration.</value>
         public TimeSpan LoadDuration { get; init; }
     }
 
@@ -40,11 +64,35 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
     /// </summary>
     private sealed class CachedExecutionResult
     {
+        /// <summary>
+        /// Gets or sets the result.
+        /// </summary>
+        /// <value>The result.</value>
         public required object Result { get; init; }
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public required DateTime ExecutionTime { get; init; }
+        /// <summary>
+        /// Gets or sets the input hash.
+        /// </summary>
+        /// <value>The input hash.</value>
         public required string InputHash { get; init; }
+        /// <summary>
+        /// Gets or sets the last accessed.
+        /// </summary>
+        /// <value>The last accessed.</value>
         public DateTime LastAccessed { get; set; }
+        /// <summary>
+        /// Gets or sets the execution duration.
+        /// </summary>
+        /// <value>The execution duration.</value>
         public TimeSpan ExecutionDuration { get; init; }
+        /// <summary>
+        /// Gets or sets a value indicating whether valid.
+        /// </summary>
+        /// <value>The is valid.</value>
         public bool IsValid { get; set; } = true;
     }
 

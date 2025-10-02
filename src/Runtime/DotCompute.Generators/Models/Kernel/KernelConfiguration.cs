@@ -24,7 +24,7 @@ public sealed class KernelConfiguration
     /// <summary>
     /// Gets or sets the list of supported backend accelerators.
     /// </summary>
-    public List<string> SupportedBackends { get; set; } = [];
+    public List<string> SupportedBackends { get; } = [];
 
     /// <summary>
     /// Gets or sets the vector size for SIMD operations.

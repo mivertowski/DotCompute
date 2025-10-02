@@ -32,7 +32,7 @@ public sealed class MetalAlertsOptions
     /// <summary>
     /// Gets or sets the notification endpoints
     /// </summary>
-    public List<string> NotificationEndpoints { get; set; } = [];
+    public IList<string> NotificationEndpoints { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory allocation failure threshold

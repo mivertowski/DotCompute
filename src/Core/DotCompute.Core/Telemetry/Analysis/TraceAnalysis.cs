@@ -49,7 +49,7 @@ public sealed class TraceAnalysis
     /// These spans represent the longest chain of dependencies in the trace.
     /// </summary>
     /// <value>A list of spans representing the critical path.</value>
-    public List<SpanData> CriticalPath { get; set; } = [];
+    public IList<SpanData> CriticalPath { get; } = [];
 
     /// <summary>
     /// Gets or sets the duration of the critical path in milliseconds.
@@ -63,21 +63,21 @@ public sealed class TraceAnalysis
     /// Maps device IDs to their utilization percentages (0.0 to 1.0).
     /// </summary>
     /// <value>A dictionary mapping device IDs to utilization percentages.</value>
-    public Dictionary<string, double> DeviceUtilization { get; set; } = [];
+    public Dictionary<string, double> DeviceUtilization { get; } = [];
 
     /// <summary>
     /// Gets or sets the identified performance bottlenecks in the trace.
     /// Each bottleneck includes location, severity, and impact information.
     /// </summary>
     /// <value>A list of performance bottleneck objects.</value>
-    public List<PerformanceBottleneck> Bottlenecks { get; set; } = [];
+    public IList<PerformanceBottleneck> Bottlenecks { get; } = [];
 
     /// <summary>
     /// Gets or sets the memory access patterns observed during the trace.
     /// Provides insights into memory usage efficiency and potential optimizations.
     /// </summary>
     /// <value>A dictionary of memory access pattern data.</value>
-    public Dictionary<string, object> MemoryAccessPatterns { get; set; } = [];
+    public Dictionary<string, object> MemoryAccessPatterns { get; } = [];
 
     /// <summary>
     /// Gets or sets the parallelism efficiency score (0.0 to 1.0).
@@ -98,5 +98,5 @@ public sealed class TraceAnalysis
     /// Provides actionable suggestions for improving trace performance.
     /// </summary>
     /// <value>A list of optimization recommendation strings.</value>
-    public List<string> OptimizationRecommendations { get; set; } = [];
+    public IList<string> OptimizationRecommendations { get; } = [];
 }

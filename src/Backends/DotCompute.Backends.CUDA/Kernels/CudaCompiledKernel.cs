@@ -28,6 +28,10 @@ namespace DotCompute.Backends.CUDA.Compilation
         private IntPtr _module;
         private IntPtr _function;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>The name.</value>
 
         public string Name { get; }
 
@@ -44,6 +48,15 @@ namespace DotCompute.Backends.CUDA.Compilation
         private readonly string _entryPoint;
         private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = [];
         private readonly object _lookupLock = new();
+        /// <summary>
+        /// Initializes a new instance of the CudaCompiledKernel class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="entryPoint">The entry point.</param>
+        /// <param name="ptxData">The ptx data.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaCompiledKernel(
             CudaContext context,
@@ -335,11 +348,35 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// </summary>
         private class JitConfiguration
         {
+            /// <summary>
+            /// Gets or sets the optimization level.
+            /// </summary>
+            /// <value>The optimization level.</value>
             public int OptimizationLevel { get; init; }
+            /// <summary>
+            /// Gets or sets the generate debug info.
+            /// </summary>
+            /// <value>The generate debug info.</value>
             public int GenerateDebugInfo { get; init; }
+            /// <summary>
+            /// Gets or sets the generate line info.
+            /// </summary>
+            /// <value>The generate line info.</value>
             public int GenerateLineInfo { get; init; }
+            /// <summary>
+            /// Gets or sets the log verbose.
+            /// </summary>
+            /// <value>The log verbose.</value>
             public int LogVerbose { get; init; }
+            /// <summary>
+            /// Gets or sets the max registers.
+            /// </summary>
+            /// <value>The max registers.</value>
             public int MaxRegisters { get; init; }
+            /// <summary>
+            /// Gets or sets the description.
+            /// </summary>
+            /// <value>The description.</value>
             public string Description { get; init; } = string.Empty;
         }
 
@@ -418,6 +455,12 @@ namespace DotCompute.Backends.CUDA.Compilation
                 return false;
             }
         }
+        /// <summary>
+        /// Gets execute asynchronously.
+        /// </summary>
+        /// <param name="arguments">The arguments.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask ExecuteAsync(
             KernelArguments arguments,
@@ -530,6 +573,10 @@ namespace DotCompute.Backends.CUDA.Compilation
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+        /// <summary>
+        /// Gets dispose asynchronously.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public async ValueTask DisposeAsync()
         {
@@ -558,6 +605,9 @@ namespace DotCompute.Backends.CUDA.Compilation
                 _logger.LogErrorMessage(ex, "Error during CUDA compiled kernel disposal");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

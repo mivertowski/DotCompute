@@ -248,6 +248,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
             return reasonList.ToString().TrimEnd();
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -313,6 +316,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, ref ulong clocksThrottleReasons);
     }
+    /// <summary>
+    /// An nvml return enumeration.
+    /// </summary>
 
     // ========================================
     // NVML Data Structures and Enums
@@ -342,12 +348,18 @@ namespace DotCompute.Backends.CUDA.Monitoring
         InUse = 19,
         Unknown = 999
     }
+    /// <summary>
+    /// An nvml temperature sensors enumeration.
+    /// </summary>
 
     public enum NvmlTemperatureSensors
     {
         Gpu = 0,
         Count = 1
     }
+    /// <summary>
+    /// An nvml clock type enumeration.
+    /// </summary>
 
     public enum NvmlClockType
     {
@@ -357,25 +369,49 @@ namespace DotCompute.Backends.CUDA.Monitoring
         Video = 3,
         Count = 4
     }
+    /// <summary>
+    /// An nvml pcie util counter enumeration.
+    /// </summary>
 
     public enum NvmlPcieUtilCounter
     {
         TxBytes = 0,
         RxBytes = 1
     }
+    /// <summary>
+    /// A nvml memory structure.
+    /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
     public struct NvmlMemory
     {
+        /// <summary>
+        /// The total.
+        /// </summary>
         public ulong Total;
+        /// <summary>
+        /// The free.
+        /// </summary>
         public ulong Free;
+        /// <summary>
+        /// The used.
+        /// </summary>
         public ulong Used;
     }
+    /// <summary>
+    /// A nvml utilization structure.
+    /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
     public struct NvmlUtilization
     {
+        /// <summary>
+        /// The gpu.
+        /// </summary>
         public uint Gpu;
+        /// <summary>
+        /// The memory.
+        /// </summary>
         public uint Memory;
     }
 
@@ -384,23 +420,95 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
     public sealed class GpuMetrics
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether available.
+        /// </summary>
+        /// <value>The is available.</value>
         public bool IsAvailable { get; set; }
+        /// <summary>
+        /// Gets or sets the device index.
+        /// </summary>
+        /// <value>The device index.</value>
         public int DeviceIndex { get; set; }
+        /// <summary>
+        /// Gets or sets the temperature.
+        /// </summary>
+        /// <value>The temperature.</value>
         public uint Temperature { get; set; }
+        /// <summary>
+        /// Gets or sets the power usage.
+        /// </summary>
+        /// <value>The power usage.</value>
         public double PowerUsage { get; set; }
+        /// <summary>
+        /// Gets or sets the memory used.
+        /// </summary>
+        /// <value>The memory used.</value>
         public ulong MemoryUsed { get; set; }
+        /// <summary>
+        /// Gets or sets the memory total.
+        /// </summary>
+        /// <value>The memory total.</value>
         public ulong MemoryTotal { get; set; }
+        /// <summary>
+        /// Gets or sets the memory free.
+        /// </summary>
+        /// <value>The memory free.</value>
         public ulong MemoryFree { get; set; }
+        /// <summary>
+        /// Gets or sets the memory utilization.
+        /// </summary>
+        /// <value>The memory utilization.</value>
         public double MemoryUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the gpu utilization.
+        /// </summary>
+        /// <value>The gpu utilization.</value>
         public uint GpuUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the memory bandwidth utilization.
+        /// </summary>
+        /// <value>The memory bandwidth utilization.</value>
         public uint MemoryBandwidthUtilization { get; set; }
+        /// <summary>
+        /// Gets or sets the graphics clock m hz.
+        /// </summary>
+        /// <value>The graphics clock m hz.</value>
         public uint GraphicsClockMHz { get; set; }
+        /// <summary>
+        /// Gets or sets the memory clock m hz.
+        /// </summary>
+        /// <value>The memory clock m hz.</value>
         public uint MemoryClockMHz { get; set; }
+        /// <summary>
+        /// Gets or sets the pcie tx bytes.
+        /// </summary>
+        /// <value>The pcie tx bytes.</value>
         public uint PcieTxBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the pcie rx bytes.
+        /// </summary>
+        /// <value>The pcie rx bytes.</value>
         public uint PcieRxBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the fan speed percent.
+        /// </summary>
+        /// <value>The fan speed percent.</value>
         public uint FanSpeedPercent { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether throttling.
+        /// </summary>
+        /// <value>The is throttling.</value>
         public bool IsThrottling { get; set; }
+        /// <summary>
+        /// Gets or sets the throttle reasons.
+        /// </summary>
+        /// <value>The throttle reasons.</value>
         public string ThrottleReasons { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets to string.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         public override string ToString()
         {

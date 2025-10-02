@@ -105,16 +105,25 @@ public interface IBackendPlugin : IDisposable
     /// </summary>
     /// <returns>Current performance metrics.</returns>
     public PluginMetrics GetMetrics();
+    /// <summary>
+    /// Occurs when state changed.
+    /// </summary>
 
     /// <summary>
     /// Raised when the plugin's state changes.
     /// </summary>
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    /// <summary>
+    /// Occurs when error occurred.
+    /// </summary>
 
     /// <summary>
     /// Raised when the plugin encounters an error.
     /// </summary>
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    /// <summary>
+    /// Occurs when health changed.
+    /// </summary>
 
     /// <summary>
     /// Raised when the plugin's health status changes.

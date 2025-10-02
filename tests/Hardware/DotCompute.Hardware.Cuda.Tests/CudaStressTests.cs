@@ -19,6 +19,10 @@ namespace DotCompute.Hardware.Cuda.Tests
     public class CudaStressTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private readonly CudaAcceleratorFactory _factory = new();
+        /// <summary>
+        /// Gets memory pool_ concurrent allocations_ should handle high load.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -87,6 +91,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Thread count: {threadCount}");
             Output.WriteLine($"  Allocations per thread: {allocationsPerThread}");
         }
+        /// <summary>
+        /// Gets pinned memory_ high bandwidth transfers_ should improve performance.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -128,6 +136,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Cleanup
             regularBuffer.Dispose();
         }
+        /// <summary>
+        /// Gets kernel_ execution_ under_ load_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -197,6 +209,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 "Most operations should succeed");
         }
+        /// <summary>
+        /// Gets long running_ kernel_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -285,6 +301,10 @@ namespace DotCompute.Hardware.Cuda.Tests
             _ = hostData.All(v => !float.IsNaN(v) && !float.IsInfinity(v))
                 .Should().BeTrue("All values should remain valid");
         }
+        /// <summary>
+        /// Gets memory_ concurrent access_ should handle multiple buffers.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -324,6 +344,10 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             _ = stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0, "Should measure time");
         }
+        /// <summary>
+        /// Gets full system_ mixed workload_ should remain stable.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -432,13 +456,37 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
             base.Dispose(disposing);
         }
+        /// <summary>
+        /// A class that represents test logger.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
 
         private class TestLogger<T>(ITestOutputHelper output) : ILogger<T>
         {
             private readonly ITestOutputHelper _output = output;
+            /// <summary>
+            /// Gets begin scope.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="state">The state.</param>
+            /// <returns>The result of the operation.</returns>
 
             public IDisposable BeginScope<TState>(TState state) => null!;
+            /// <summary>
+            /// Determines whether enabled.
+            /// </summary>
+            /// <param name="logLevel">The log level.</param>
+            /// <returns>true if the condition is met; otherwise, false.</returns>
             public bool IsEnabled(LogLevel logLevel) => true;
+            /// <summary>
+            /// Performs log.
+            /// </summary>
+            /// <typeparam name="TState">The TState type parameter.</typeparam>
+            /// <param name="logLevel">The log level.</param>
+            /// <param name="eventId">The event identifier.</param>
+            /// <param name="state">The state.</param>
+            /// <param name="exception">The exception.</param>
+            /// <param name="formatter">The formatter.</param>
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
 

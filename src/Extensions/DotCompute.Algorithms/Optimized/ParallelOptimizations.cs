@@ -32,6 +32,10 @@ public static class ParallelOptimizations
         private readonly Thread[] _workers;
         private readonly CancellationTokenSource _cancellation;
         private volatile bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the WorkStealingPool class.
+        /// </summary>
+        /// <param name="workerCount">The worker count.</param>
 
 
         public WorkStealingPool(int workerCount = 0)
@@ -57,6 +61,10 @@ public static class ParallelOptimizations
                 _workers[i].Start();
             }
         }
+        /// <summary>
+        /// Performs execute.
+        /// </summary>
+        /// <param name="task">The task.</param>
 
 
         public void Execute(Action task)
@@ -70,6 +78,12 @@ public static class ParallelOptimizations
             var workerId = Environment.CurrentManagedThreadId % _queues.Length;
             _queues[workerId].Enqueue(task);
         }
+        /// <summary>
+        /// Performs execute parallel.
+        /// </summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="items">The items.</param>
+        /// <param name="action">The action.</param>
 
 
         public void ExecuteParallel<T>(IEnumerable<T> items, Action<T> action)
@@ -170,6 +184,9 @@ public static class ParallelOptimizations
                 Console.WriteLine($"Work-stealing task exception: {ex}");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
 
         public void Dispose()
@@ -202,6 +219,10 @@ public static class ParallelOptimizations
         private volatile int _head;
         private volatile int _tail;
         private readonly object _lock = new();
+        /// <summary>
+        /// Performs enqueue.
+        /// </summary>
+        /// <param name="item">The item.</param>
 
 
         public void Enqueue(Action item)
@@ -222,6 +243,11 @@ public static class ParallelOptimizations
             _array[tail & (_array.Length - 1)] = item;
             _tail = tail + 1;
         }
+        /// <summary>
+        /// Returns true if able to dequeue, otherwise false.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
 
         public bool TryDequeue(out Action? item)
@@ -257,6 +283,11 @@ public static class ParallelOptimizations
 
             return true;
         }
+        /// <summary>
+        /// Returns true if able to steal, otherwise false.
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <returns>true if the operation succeeded; otherwise, false.</returns>
 
 
         public bool TrySteal(out Action? item)

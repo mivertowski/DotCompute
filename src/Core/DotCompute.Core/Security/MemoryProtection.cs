@@ -24,6 +24,11 @@ public sealed class MemoryProtection : IDisposable
     private readonly SemaphoreSlim _allocationLock = new(1, 1);
     private readonly Timer _integrityCheckTimer;
     private volatile bool _disposed;
+    /// <summary>
+    /// Initializes a new instance of the MemoryProtection class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The configuration.</param>
 
     public MemoryProtection(ILogger<MemoryProtection> logger, MemoryProtectionConfiguration? configuration = null)
     {
@@ -717,6 +722,9 @@ public sealed class MemoryProtection : IDisposable
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void MemoryBarrier() => Thread.MemoryBarrier();
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     #endregion
 
@@ -764,6 +772,10 @@ public sealed class MemoryProtection : IDisposable
 /// </summary>
 public sealed class MemoryProtectionConfiguration
 {
+    /// <summary>
+    /// Gets or sets the default.
+    /// </summary>
+    /// <value>The default.</value>
     public static MemoryProtectionConfiguration Default => new()
     {
         EnableIntegrityChecking = true,
@@ -772,12 +784,36 @@ public sealed class MemoryProtectionConfiguration
         MaxAllocationSize = 1024 * 1024 * 1024, // 1GB
         DefaultAlignment = 8
     };
+    /// <summary>
+    /// Gets or sets the enable integrity checking.
+    /// </summary>
+    /// <value>The enable integrity checking.</value>
 
     public bool EnableIntegrityChecking { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the enable secure wiping.
+    /// </summary>
+    /// <value>The enable secure wiping.</value>
     public bool EnableSecureWiping { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the enable guard pages.
+    /// </summary>
+    /// <value>The enable guard pages.</value>
     public bool EnableGuardPages { get; init; } = true;
+    /// <summary>
+    /// Gets or sets the max allocation size.
+    /// </summary>
+    /// <value>The max allocation size.</value>
     public nuint MaxAllocationSize { get; init; } = 1024 * 1024 * 1024;
+    /// <summary>
+    /// Gets or sets the default alignment.
+    /// </summary>
+    /// <value>The default alignment.</value>
     public nuint DefaultAlignment { get; init; } = 8;
+    /// <summary>
+    /// Gets to string.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     public override string ToString()
         => $"Integrity={EnableIntegrityChecking}, SecureWipe={EnableSecureWiping}, GuardPages={EnableGuardPages}, MaxSize={MaxAllocationSize / (1024 * 1024)}MB";
@@ -788,14 +824,50 @@ public sealed class MemoryProtectionConfiguration
 /// </summary>
 public sealed class ProtectedMemoryRegion
 {
+    /// <summary>
+    /// Gets or sets the base address.
+    /// </summary>
+    /// <value>The base address.</value>
     public required IntPtr BaseAddress { get; init; }
+    /// <summary>
+    /// Gets or sets the user data address.
+    /// </summary>
+    /// <value>The user data address.</value>
     public required IntPtr UserDataAddress { get; init; }
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public required nuint Size { get; init; }
+    /// <summary>
+    /// Gets or sets the total size.
+    /// </summary>
+    /// <value>The total size.</value>
     public required nuint TotalSize { get; init; }
+    /// <summary>
+    /// Gets or sets the guard page size.
+    /// </summary>
+    /// <value>The guard page size.</value>
     public required nuint GuardPageSize { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether execute.
+    /// </summary>
+    /// <value>The can execute.</value>
     public required bool CanExecute { get; init; }
+    /// <summary>
+    /// Gets or sets the identifier.
+    /// </summary>
+    /// <value>The identifier.</value>
     public required string Identifier { get; init; }
+    /// <summary>
+    /// Gets or sets the allocation time.
+    /// </summary>
+    /// <value>The allocation time.</value>
     public required DateTimeOffset AllocationTime { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether ary value.
+    /// </summary>
+    /// <value>The canary value.</value>
     public ulong CanaryValue { get; set; }
 }
 
@@ -804,10 +876,30 @@ public sealed class ProtectedMemoryRegion
 /// </summary>
 public sealed class ProtectedMemoryAllocation
 {
+    /// <summary>
+    /// Gets or sets the address.
+    /// </summary>
+    /// <value>The address.</value>
     public required IntPtr Address { get; init; }
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public required nuint Size { get; init; }
+    /// <summary>
+    /// Gets or sets the identifier.
+    /// </summary>
+    /// <value>The identifier.</value>
     public required string Identifier { get; init; }
+    /// <summary>
+    /// Gets or sets a value indicating whether execute.
+    /// </summary>
+    /// <value>The can execute.</value>
     public required bool CanExecute { get; init; }
+    /// <summary>
+    /// Gets or sets the region.
+    /// </summary>
+    /// <value>The region.</value>
     public required ProtectedMemoryRegion Region { get; init; }
 }
 
@@ -816,8 +908,20 @@ public sealed class ProtectedMemoryAllocation
 /// </summary>
 internal sealed class AllocationMetadata
 {
+    /// <summary>
+    /// Gets or sets the region.
+    /// </summary>
+    /// <value>The region.</value>
     public required ProtectedMemoryRegion Region { get; init; }
+    /// <summary>
+    /// Gets or sets the access count.
+    /// </summary>
+    /// <value>The access count.</value>
     public long AccessCount { get; set; }
+    /// <summary>
+    /// Gets or sets the last access.
+    /// </summary>
+    /// <value>The last access.</value>
     public DateTimeOffset LastAccess { get; set; }
 }
 
@@ -826,14 +930,45 @@ internal sealed class AllocationMetadata
 /// </summary>
 public sealed class MemoryViolation
 {
+    /// <summary>
+    /// Gets or sets the violation type.
+    /// </summary>
+    /// <value>The violation type.</value>
     public required MemoryViolationType ViolationType { get; init; }
+    /// <summary>
+    /// Gets or sets the address.
+    /// </summary>
+    /// <value>The address.</value>
     public required IntPtr Address { get; init; }
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    /// <value>The size.</value>
     public nuint Size { get; init; }
+    /// <summary>
+    /// Gets or sets the offset.
+    /// </summary>
+    /// <value>The offset.</value>
     public nuint Offset { get; init; }
+    /// <summary>
+    /// Gets or sets the allowed size.
+    /// </summary>
+    /// <value>The allowed size.</value>
     public nuint AllowedSize { get; init; }
+    /// <summary>
+    /// Gets or sets the region.
+    /// </summary>
+    /// <value>The region.</value>
     public required ProtectedMemoryRegion Region { get; init; }
+    /// <summary>
+    /// Gets or sets the operation.
+    /// </summary>
+    /// <value>The operation.</value>
     public required string Operation { get; init; }
 }
+/// <summary>
+/// An memory violation type enumeration.
+/// </summary>
 
 /// <summary>
 /// Types of memory violations.
@@ -852,10 +987,30 @@ public enum MemoryViolationType
 /// </summary>
 public sealed class MemoryProtectionStatistics
 {
+    /// <summary>
+    /// Gets or sets the active allocations.
+    /// </summary>
+    /// <value>The active allocations.</value>
     public int ActiveAllocations { get; init; }
+    /// <summary>
+    /// Gets or sets the total allocated bytes.
+    /// </summary>
+    /// <value>The total allocated bytes.</value>
     public long TotalAllocatedBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the total guard page bytes.
+    /// </summary>
+    /// <value>The total guard page bytes.</value>
     public long TotalGuardPageBytes { get; init; }
+    /// <summary>
+    /// Gets or sets the violation count.
+    /// </summary>
+    /// <value>The violation count.</value>
     public int ViolationCount { get; init; }
+    /// <summary>
+    /// Gets or sets the corruption detection count.
+    /// </summary>
+    /// <value>The corruption detection count.</value>
     public int CorruptionDetectionCount { get; init; }
 }
 

@@ -310,7 +310,7 @@ public class SecurityEvaluationContext
     /// <summary>
     /// Gets or sets additional context metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -331,12 +331,12 @@ public class SecurityEvaluationResult
     /// <summary>
     /// Gets or sets the list of security violations.
     /// </summary>
-    public List<string> Violations { get; set; } = [];
+    public IList<string> Violations { get; } = [];
 
     /// <summary>
     /// Gets or sets the list of security warnings.
     /// </summary>
-    public List<string> Warnings { get; set; } = [];
+    public IList<string> Warnings { get; } = [];
 }
 
 /// <summary>

@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using System.Diagnostics;
+using System;
 
 namespace DotCompute.Core.Tests.Optimization;
 
@@ -41,6 +42,10 @@ public class OptimizationStrategyTests : IDisposable
     private readonly Mock<IComputeOrchestrator> _mockBaseOrchestrator;
     private readonly List<Mock<IAccelerator>> _mockAccelerators;
     private readonly AdaptiveSelectionOptions _defaultOptions;
+    /// <summary>
+    /// Initializes a new instance of the OptimizationStrategyTests class.
+    /// </summary>
+    /// <param name="output">The output.</param>
 
     public OptimizationStrategyTests(ITestOutputHelper output)
     {
@@ -68,6 +73,9 @@ public class OptimizationStrategyTests : IDisposable
             MaxHistoryEntries = 1000
         };
     }
+    /// <summary>
+    /// Performs adaptive backend selector_ constructor_ initializes correctly.
+    /// </summary>
 
     #region AdaptiveBackendSelector Tests
 
@@ -84,6 +92,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = selector.Should().NotBeNull();
         VerifyLoggerCalled(_mockSelectorLogger, "Adaptive backend selector initialized");
     }
+    /// <summary>
+    /// Performs adaptive backend selector_ constructor_ with null logger_ throws argument null exception.
+    /// </summary>
 
     [Fact]
     public void AdaptiveBackendSelector_Constructor_WithNullLogger_ThrowsArgumentNullException()
@@ -92,6 +103,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = Assert.Throws<ArgumentNullException>(() =>
             new AdaptiveBackendSelector(null!, _mockProfiler.Object));
     }
+    /// <summary>
+    /// Performs adaptive backend selector_ constructor_ with null profiler_ throws argument null exception.
+    /// </summary>
 
     [Fact]
     public void AdaptiveBackendSelector_Constructor_WithNullProfiler_ThrowsArgumentNullException()
@@ -100,6 +114,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = Assert.Throws<ArgumentNullException>(() =>
             new AdaptiveBackendSelector(_mockSelectorLogger.Object, null!));
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with available backends_ returns optimal selection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_WithAvailableBackends_ReturnsOptimalSelection()
@@ -120,6 +138,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = result.Reason.Should().NotBeNullOrEmpty();
         _ = result.SelectionStrategy.Should().NotBe(SelectionStrategy.Fallback);
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with no backends_ returns fallback selection.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_WithNoBackends_ReturnsFallbackSelection()
@@ -141,6 +163,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = result.Reason.Should().Be("No backends available");
         _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with memory intensive workload_ prefers cpu with large memory.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_WithMemoryIntensiveWorkload_PrefersCpuWithLargeMemory()
@@ -164,6 +190,10 @@ public class OptimizationStrategyTests : IDisposable
             SelectionStrategy.RealTime,
             SelectionStrategy.Historical);
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with constraints_ respects constraints.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_WithConstraints_RespectsConstraints()
@@ -191,6 +221,10 @@ public class OptimizationStrategyTests : IDisposable
             _ = result.SelectedBackend.Info.Name.Should().Contain("CPU");
         }
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with invalid parameters_ throws argument exception.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_WithInvalidParameters_ThrowsArgumentException()
@@ -210,6 +244,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             selector.SelectOptimalBackendAsync("TestKernel", workload, null!));
     }
+    /// <summary>
+    /// Gets select optimal backend async_ concurrent calls_ thread safe execution.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task SelectOptimalBackendAsync_ConcurrentCalls_ThreadSafeExecution()
@@ -237,6 +275,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = results.Should().OnlyContain(r => r != null);
         _ = results.Should().OnlyContain(r => r.ConfidenceScore >= 0f && r.ConfidenceScore <= 1f);
     }
+    /// <summary>
+    /// Performs performance optimized orchestrator_ constructor_ initializes correctly.
+    /// </summary>
 
     #endregion
 
@@ -252,6 +293,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = orchestrator.Should().NotBeNull();
         VerifyLoggerCalled(_mockOrchestratorLogger, "Performance-optimized orchestrator initialized");
     }
+    /// <summary>
+    /// Performs performance optimized orchestrator_ constructor_ with null dependencies_ throws argument null exception.
+    /// </summary>
 
     [Fact]
     public void PerformanceOptimizedOrchestrator_Constructor_WithNullDependencies_ThrowsArgumentNullException()
@@ -265,6 +309,10 @@ public class OptimizationStrategyTests : IDisposable
             new PerformanceOptimizedOrchestrator(_mockBaseOrchestrator.Object, null!,
                 _mockProfiler.Object, _mockOrchestratorLogger.Object));
     }
+    /// <summary>
+    /// Gets execute async_ with valid kernel_ returns expected result.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task ExecuteAsync_WithValidKernel_ReturnsExpectedResult()
@@ -283,6 +331,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = result.Should().Be(expectedResult);
         _mockBaseOrchestrator.Verify(o => o.ExecuteAsync<string>("TestKernel", It.IsAny<object[]>()), Times.Once);
     }
+    /// <summary>
+    /// Gets execute with buffers async_ with valid parameters_ executes successfully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task ExecuteWithBuffersAsync_WithValidParameters_ExecutesSuccessfully()
@@ -303,6 +355,10 @@ public class OptimizationStrategyTests : IDisposable
         // Assert
         _ = result.Should().Be(expectedResult);
     }
+    /// <summary>
+    /// Gets the optimal accelerator async_ with kernel name_ returns optimal accelerator.
+    /// </summary>
+    /// <returns>The optimal accelerator async_ with kernel name_ returns optimal accelerator.</returns>
 
     [Fact]
     public async Task GetOptimalAcceleratorAsync_WithKernelName_ReturnsOptimalAccelerator()
@@ -329,6 +385,12 @@ public class OptimizationStrategyTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
     }
+    /// <summary>
+    /// Performs workload characteristics_ creation_ validates correctly.
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <param name="dataSize">The data size.</param>
+    /// <param name="memoryPattern">The memory pattern.</param>
 
     #endregion
 
@@ -352,6 +414,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = workload.ComputeIntensity.Should().BeGreaterThan(0f);
         _ = workload.MemoryIntensity.Should().BeGreaterThan(0f);
     }
+    /// <summary>
+    /// Performs workload signature_ equality_ works correctly.
+    /// </summary>
 
     [Fact]
     public void WorkloadSignature_Equality_WorksCorrectly()
@@ -394,6 +459,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = signature1.Equals(signature3).Should().BeFalse();
         _ = signature1.GetHashCode().Should().NotBe(signature3.GetHashCode());
     }
+    /// <summary>
+    /// Performs performance history_ add result_ stores correctly.
+    /// </summary>
 
     #endregion
 
@@ -423,6 +491,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = stats["TestBackend"].AverageExecutionTimeMs.Should().BeApproximately(150.5, 0.1);
         _ = stats["TestBackend"].SampleCount.Should().Be(1);
     }
+    /// <summary>
+    /// Performs performance history_ calculate statistics_ returns correct values.
+    /// </summary>
 
     [Fact]
     public void PerformanceHistory_CalculateStatistics_ReturnsCorrectValues()
@@ -453,6 +524,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0, 0.1);
         _ = backendStats.SampleCount.Should().Be(3); // Only successful executions
     }
+    /// <summary>
+    /// Performs backend performance state_ update_ tracks correctly.
+    /// </summary>
 
     #endregion
 
@@ -486,6 +560,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = state.LastExecutionTime.Should().BeCloseTo(result.Timestamp, TimeSpan.FromSeconds(1));
         _ = state.RecentExecutionCount.Should().Be(1);
     }
+    /// <summary>
+    /// Performs backend performance state summary_ calculation_ is accurate.
+    /// </summary>
 
     [Fact]
     public void BackendPerformanceStateSummary_Calculation_IsAccurate()
@@ -525,6 +602,10 @@ public class OptimizationStrategyTests : IDisposable
         _ = cudaSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(50, 0.1);
         _ = cudaSummary.RecentExecutionCount.Should().Be(500);
     }
+    /// <summary>
+    /// Gets select optimal backend async_ with all backends unavailable_ handle gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -548,6 +629,9 @@ public class OptimizationStrategyTests : IDisposable
         _ = result.ConfidenceScore.Should().Be(0f);
         _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
     }
+    /// <summary>
+    /// Performs adaptive backend selector_ disposal_ cleans up correctly.
+    /// </summary>
 
     [Fact]
     public void AdaptiveBackendSelector_Disposal_CleansUpCorrectly()
@@ -562,6 +646,10 @@ public class OptimizationStrategyTests : IDisposable
         // Should not throw and should clean up timer
         _ = selector.Invoking(s => s.Dispose()).Should().NotThrow();
     }
+    /// <summary>
+    /// Gets performance optimized orchestrator_ with null result_ handles gracefully.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     [Fact]
     public async Task PerformanceOptimizedOrchestrator_WithNullResult_HandlesGracefully()
@@ -577,6 +665,10 @@ public class OptimizationStrategyTests : IDisposable
         // Assert
         _ = result.Should().BeNull();
     }
+    /// <summary>
+    /// Gets backend selection_ performance_ meets targets.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
 
     #endregion
 
@@ -677,11 +769,14 @@ public class OptimizationStrategyTests : IDisposable
             l => l.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage, StringComparison.CurrentCulture)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+    /// <summary>
+    /// Performs dispose.
+    /// </summary>
 
     public void Dispose()
         // Cleanup any test resources if needed
@@ -695,8 +790,20 @@ public class OptimizationStrategyTests : IDisposable
 /// </summary>
 internal class TestMemoryInfo : MemoryInfo
 {
+    /// <summary>
+    /// Gets or sets the total memory.
+    /// </summary>
+    /// <value>The total memory.</value>
     public new long TotalMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the available memory.
+    /// </summary>
+    /// <value>The available memory.</value>
     public new long AvailableMemory { get; set; }
+    /// <summary>
+    /// Gets or sets the used memory.
+    /// </summary>
+    /// <value>The used memory.</value>
     public new long UsedMemory { get; set; }
 }
 
@@ -705,12 +812,35 @@ internal class TestMemoryInfo : MemoryInfo
 /// </summary>
 internal class PerformanceOptimizationOptions
 {
+    /// <summary>
+    /// Gets or sets the optimization strategy.
+    /// </summary>
+    /// <value>The optimization strategy.</value>
     public OptimizationStrategy OptimizationStrategy { get; set; } = OptimizationStrategy.Balanced;
+    /// <summary>
+    /// Gets or sets the enable performance prediction.
+    /// </summary>
+    /// <value>The enable performance prediction.</value>
     public bool EnablePerformancePrediction { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the cache workload analysis.
+    /// </summary>
+    /// <value>The cache workload analysis.</value>
     public bool CacheWorkloadAnalysis { get; set; } = true;
+    /// <summary>
+    /// Gets or sets the max cache entries.
+    /// </summary>
+    /// <value>The max cache entries.</value>
     public int MaxCacheEntries { get; set; } = 1000;
+    /// <summary>
+    /// Gets or sets the cache expiration time.
+    /// </summary>
+    /// <value>The cache expiration time.</value>
     public TimeSpan CacheExpirationTime { get; set; } = TimeSpan.FromMinutes(30);
 }
+/// <summary>
+/// An optimization strategy enumeration.
+/// </summary>
 
 /// <summary>
 /// Optimization strategy enumeration for testing

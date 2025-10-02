@@ -8,6 +8,7 @@ using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Interfaces;
 using DotCompute.Runtime.Services.Performance.Results;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace DotCompute.Runtime.Services.Implementation;
 
@@ -210,7 +211,7 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
     private static string ExtractKernelName(string sessionName)
     {
         // Extract kernel name from session name pattern: "KernelExecution_{kernelName}_{backend}"
-        if (sessionName.StartsWith("KernelExecution_"))
+        if (sessionName.StartsWith("KernelExecution_", StringComparison.OrdinalIgnoreCase))
         {
             var parts = sessionName.Split('_');
             if (parts.Length >= 2)
@@ -221,7 +222,7 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
         return sessionName;
     }
 
-    private static TimeSpan CalculatePercentile(List<TimeSpan> values, double percentile)
+    private static TimeSpan CalculatePercentile(IReadOnlyList<TimeSpan> values, double percentile)
     {
         if (values.Count == 0)
         {
@@ -234,7 +235,7 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
         return sorted[Math.Max(0, Math.Min(index, sorted.Count - 1))];
     }
 
-    private static TimeSpan CalculateStandardDeviation(List<TimeSpan> values)
+    private static TimeSpan CalculateStandardDeviation(IReadOnlyList<TimeSpan> values)
     {
         if (values.Count == 0)
         {
@@ -247,7 +248,7 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
         return TimeSpan.FromMilliseconds(Math.Sqrt(variance));
     }
 
-    private static async Task ExportToCsvAsync(List<ProfilingResults> sessions, string outputPath)
+    private static async Task ExportToCsvAsync(IReadOnlyList<ProfilingResults> sessions, string outputPath)
     {
         using var writer = new StreamWriter(outputPath);
         await writer.WriteLineAsync("SessionId,SessionName,TotalExecutionTime,CompilationTime,KernelExecutionTime,MemoryTransferTime,PeakMemoryBytes");
@@ -304,13 +305,34 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
         private readonly Dictionary<string, object> _context;
         private DateTime _lastCheckpointTime;
         private readonly Guid _internalId;
+        /// <summary>
+        /// Gets or sets the session identifier.
+        /// </summary>
+        /// <value>The session id.</value>
 
         public string SessionId { get; }
+        /// <summary>
+        /// Gets or sets the operation name.
+        /// </summary>
+        /// <value>The operation name.</value>
         public string OperationName { get; }
+        /// <summary>
+        /// Gets or sets the start time.
+        /// </summary>
+        /// <value>The start time.</value>
         public DateTime StartTime { get; }
+        /// <summary>
+        /// Gets or sets the internal session identifier.
+        /// </summary>
+        /// <value>The internal session id.</value>
 
 
         public Guid InternalSessionId => _internalId;
+        /// <summary>
+        /// Initializes a new instance of the ProfilingSession class.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="profiler">The profiler.</param>
 
         public ProfilingSession(string name, DefaultKernelProfiler profiler)
         {
@@ -327,10 +349,24 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
             _context = [];
             _lastCheckpointTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// Performs record metric.
+        /// </summary>
+        /// <param name="metricName">The metric name.</param>
+        /// <param name="value">The value.</param>
 
         public void RecordMetric(string metricName, double value) => _metrics[metricName] = value;
+        /// <summary>
+        /// Performs add tag.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
 
         public void AddTag(string key, string value) => _tags[key] = value;
+        /// <summary>
+        /// Gets the metrics.
+        /// </summary>
+        /// <returns>The metrics.</returns>
 
 
         public SessionMetrics GetMetrics()
@@ -342,6 +378,10 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
                 Tags = new Dictionary<string, string>(_tags)
             };
         }
+        /// <summary>
+        /// Gets end.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
 
 
         public ProfilingSessionResult End()
@@ -366,6 +406,10 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
                 }
             };
         }
+        /// <summary>
+        /// Performs record checkpoint.
+        /// </summary>
+        /// <param name="checkpointName">The checkpoint name.</param>
 
         // Additional methods for extended functionality
 
@@ -381,6 +425,10 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
             _checkpoints.Add(checkpoint);
             _lastCheckpointTime = now;
         }
+        /// <summary>
+        /// Performs record memory usage.
+        /// </summary>
+        /// <param name="label">The label.</param>
 
         public void RecordMemoryUsage(string? label = null)
         {
@@ -394,8 +442,17 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
             };
             _memorySnapshots.Add(snapshot);
         }
+        /// <summary>
+        /// Performs add context.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
 
         public void AddContext(string key, object value) => _context[key] = value;
+        /// <summary>
+        /// Gets the current results.
+        /// </summary>
+        /// <returns>The current results.</returns>
 
         public ProfilingResults GetCurrentResults()
         {
@@ -418,6 +475,9 @@ public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKer
                 Context = new Dictionary<string, object>(_context)
             };
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {

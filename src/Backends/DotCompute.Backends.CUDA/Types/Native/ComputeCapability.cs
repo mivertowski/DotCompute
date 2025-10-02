@@ -5,11 +5,31 @@ using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Native
 {
+    /// <summary>
+    /// A class that represents compute capability.
+    /// </summary>
     public static class ComputeCapability
     {
+        /// <summary>
+        /// Gets the arch string.
+        /// </summary>
+        /// <param name="major">The major.</param>
+        /// <param name="minor">The minor.</param>
+        /// <returns>The arch string.</returns>
         public static string GetArchString(int major, int minor) => $"compute_{major}{minor}";
+        /// <summary>
+        /// Gets the code string.
+        /// </summary>
+        /// <param name="major">The major.</param>
+        /// <param name="minor">The minor.</param>
+        /// <returns>The code string.</returns>
 
         public static string GetCodeString(int major, int minor) => $"sm_{major}{minor}";
+        /// <summary>
+        /// Gets parse from device.
+        /// </summary>
+        /// <param name="deviceId">The device identifier.</param>
+        /// <returns>The result of the operation.</returns>
 
         public static (int major, int minor) ParseFromDevice(int deviceId)
         {
@@ -18,6 +38,9 @@ namespace DotCompute.Backends.CUDA.Native
             CudaRuntime.CheckError(result, "getting device properties");
             return (props.Major, props.Minor);
         }
+        /// <summary>
+        /// A class that represents known capabilities.
+        /// </summary>
 
         // Common compute capabilities
 #pragma warning disable CA1724 // Type names should not match namespaces - Common is a descriptive nested class name in this context

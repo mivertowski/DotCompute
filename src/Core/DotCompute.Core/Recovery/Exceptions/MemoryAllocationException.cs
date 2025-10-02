@@ -73,6 +73,9 @@ public class MemoryAllocationException : Exception
     /// </code>
     /// </example>
     public MemoryAllocationException(string message, Exception innerException) : base(message, innerException) { }
+    /// <summary>
+    /// Initializes a new instance of the MemoryAllocationException class.
+    /// </summary>
     public MemoryAllocationException()
     {
     }

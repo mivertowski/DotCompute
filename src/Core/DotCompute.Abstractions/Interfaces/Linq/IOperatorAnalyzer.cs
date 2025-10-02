@@ -85,7 +85,7 @@ public sealed class OperatorAnalysisResult
     /// <summary>
     /// Gets or sets the operand types.
     /// </summary>
-    public Type[] OperandTypes { get; set; } = [];
+    public IReadOnlyList<Type> OperandTypes { get; set; } = Array.Empty<Type>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the operator is compute-friendly.
@@ -105,12 +105,12 @@ public sealed class OperatorAnalysisResult
     /// <summary>
     /// Gets or sets backend compatibility information.
     /// </summary>
-    public Dictionary<BackendType, OperatorCompatibility> BackendCompatibility { get; set; } = [];
+    public Dictionary<BackendType, OperatorCompatibility> BackendCompatibility { get; } = [];
 
     /// <summary>
     /// Gets or sets optimization hints for this operator.
     /// </summary>
-    public List<string> OptimizationHints { get; set; } = [];
+    public IList<string> OptimizationHints { get; } = [];
 
     /// <summary>
     /// Gets or sets the estimated computational complexity.
@@ -120,7 +120,7 @@ public sealed class OperatorAnalysisResult
     /// <summary>
     /// Gets or sets fusion opportunities with other operators.
     /// </summary>
-    public List<FusionOpportunity> FusionOpportunities { get; set; } = [];
+    public IList<FusionOpportunity> FusionOpportunities { get; } = [];
 
     /// <summary>
     /// Gets or sets the implementation method for this operator.
@@ -153,13 +153,13 @@ public class VectorizationAnalysis
 public class FusionAnalysisResult
 {
     public bool IsFusionBeneficial { get; set; }
-    public List<FusionOpportunity> Opportunities { get; set; } = [];
+    public IList<FusionOpportunity> Opportunities { get; } = [];
     public double EstimatedImprovement { get; set; }
 }
 
 public class FusionOpportunity
 {
-    public List<ExpressionType> Operators { get; set; } = [];
+    public IList<ExpressionType> Operators { get; } = [];
     public FusionPattern Pattern { get; set; }
     public double PerformanceBenefit { get; set; }
 }
@@ -168,14 +168,14 @@ public class PrecisionAnalysisResult
 {
     public NumericalPrecision Precision { get; set; }
     public bool IsNumericallyStable { get; set; }
-    public List<string> MitigationStrategies { get; set; } = [];
+    public IList<string> MitigationStrategies { get; } = [];
 }
 
 public class OperatorCompatibility
 {
     public bool IsSupported { get; set; }
     public SupportLevel SupportLevel { get; set; }
-    public List<string> Alternatives { get; set; } = [];
+    public IList<string> Alternatives { get; } = [];
 }
 
 public class AccuracyInfo

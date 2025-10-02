@@ -30,6 +30,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         private long _totalCooperativeLaunches;
         private long _totalSynchronizationPoints;
         private bool _disposed;
+        /// <summary>
+        /// Initializes a new instance of the CudaCooperativeGroupsManager class.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="deviceProperties">The device properties.</param>
+        /// <param name="logger">The logger.</param>
 
         public CudaCooperativeGroupsManager(
             CudaContext context,
@@ -465,6 +471,9 @@ namespace DotCompute.Backends.CUDA.Advanced
                 throw new ObjectDisposedException(nameof(CudaCooperativeGroupsManager));
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         public void Dispose()
         {
@@ -476,28 +485,89 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
         }
     }
+    /// <summary>
+    /// A class that represents cuda cooperative kernel.
+    /// </summary>
 
     // Supporting types
     public sealed class CudaCooperativeKernel
     {
+        /// <summary>
+        /// Gets or sets the id.
+        /// </summary>
+        /// <value>The id.</value>
         public string Id { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the base kernel.
+        /// </summary>
+        /// <value>The base kernel.</value>
         public CudaCompiledKernel BaseKernel { get; set; } = null!;
+        /// <summary>
+        /// Gets or sets the optimized at.
+        /// </summary>
+        /// <value>The optimized at.</value>
         public DateTimeOffset OptimizedAt { get; set; }
+        /// <summary>
+        /// Gets or sets the analysis.
+        /// </summary>
+        /// <value>The analysis.</value>
         public CudaCooperativeGroupsAnalysis Analysis { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the optimization level.
+        /// </summary>
+        /// <value>The optimization level.</value>
         public CudaCooperativeOptimizationLevel OptimizationLevel { get; set; }
+        /// <summary>
+        /// Gets or sets the max blocks per s m.
+        /// </summary>
+        /// <value>The max blocks per s m.</value>
         public int MaxBlocksPerSM { get; set; }
+        /// <summary>
+        /// Gets or sets the launch count.
+        /// </summary>
+        /// <value>The launch count.</value>
         public int LaunchCount { get; set; }
+        /// <summary>
+        /// Gets or sets the total execution time.
+        /// </summary>
+        /// <value>The total execution time.</value>
         public TimeSpan TotalExecutionTime { get; set; }
     }
+    /// <summary>
+    /// A class that represents cuda cooperative groups analysis.
+    /// </summary>
 
     public sealed class CudaCooperativeGroupsAnalysis
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether benefit.
+        /// </summary>
+        /// <value>The can benefit.</value>
         public bool CanBenefit { get; set; }
+        /// <summary>
+        /// Gets or sets the estimated speedup.
+        /// </summary>
+        /// <value>The estimated speedup.</value>
         public double EstimatedSpeedup { get; set; } = 1.0;
-        public List<string> RecommendedOptimizations { get; set; } = [];
+        /// <summary>
+        /// Gets or sets the recommended optimizations.
+        /// </summary>
+        /// <value>The recommended optimizations.</value>
+        public IList<string> RecommendedOptimizations { get; } = [];
+        /// <summary>
+        /// Gets or sets the recommended block size.
+        /// </summary>
+        /// <value>The recommended block size.</value>
         public int RecommendedBlockSize { get; set; } = 256;
+        /// <summary>
+        /// Gets or sets the recommended grid size.
+        /// </summary>
+        /// <value>The recommended grid size.</value>
         public int RecommendedGridSize { get; set; } = 1;
     }
+    /// <summary>
+    /// An cuda cooperative optimization level enumeration.
+    /// </summary>
 
     public enum CudaCooperativeOptimizationLevel
     {
@@ -506,27 +576,89 @@ namespace DotCompute.Backends.CUDA.Advanced
         Standard,
         Advanced
     }
+    /// <summary>
+    /// A class that represents cuda cooperative launch config.
+    /// </summary>
 
     public sealed class CudaCooperativeLaunchConfig
     {
+        /// <summary>
+        /// Gets or sets the grid dim x.
+        /// </summary>
+        /// <value>The grid dim x.</value>
         public uint GridDimX { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the grid dim y.
+        /// </summary>
+        /// <value>The grid dim y.</value>
         public uint GridDimY { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the grid dim z.
+        /// </summary>
+        /// <value>The grid dim z.</value>
         public uint GridDimZ { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the block dim x.
+        /// </summary>
+        /// <value>The block dim x.</value>
         public uint BlockDimX { get; set; } = 256;
+        /// <summary>
+        /// Gets or sets the block dim y.
+        /// </summary>
+        /// <value>The block dim y.</value>
         public uint BlockDimY { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the block dim z.
+        /// </summary>
+        /// <value>The block dim z.</value>
         public uint BlockDimZ { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the shared mem bytes.
+        /// </summary>
+        /// <value>The shared mem bytes.</value>
         public uint SharedMemBytes { get; set; }
+        /// <summary>
+        /// Gets or sets the stream.
+        /// </summary>
+        /// <value>The stream.</value>
 
         public IntPtr Stream { get; set; } = IntPtr.Zero;
+        /// <summary>
+        /// Gets or sets the synchronize.
+        /// </summary>
+        /// <value>The synchronize.</value>
         public bool Synchronize { get; set; } = true;
     }
+    /// <summary>
+    /// A class that represents cuda cooperative launch result.
+    /// </summary>
 
     public sealed class CudaCooperativeLaunchResult
     {
+        /// <summary>
+        /// Gets or sets the success.
+        /// </summary>
+        /// <value>The success.</value>
         public bool Success { get; set; }
+        /// <summary>
+        /// Gets or sets the kernel identifier.
+        /// </summary>
+        /// <value>The kernel id.</value>
         public string KernelId { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the execution time.
+        /// </summary>
+        /// <value>The execution time.</value>
         public TimeSpan ExecutionTime { get; set; }
+        /// <summary>
+        /// Gets or sets the launch count.
+        /// </summary>
+        /// <value>The launch count.</value>
         public int LaunchCount { get; set; }
+        /// <summary>
+        /// Gets or sets the error message.
+        /// </summary>
+        /// <value>The error message.</value>
         public string? ErrorMessage { get; set; }
     }
 }

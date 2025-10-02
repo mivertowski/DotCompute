@@ -26,7 +26,7 @@ public class DeterminismReport
     /// <summary>
     /// All execution results for analysis.
     /// </summary>
-    public List<object> AllResults { get; init; } = [];
+    public IReadOnlyList<object> AllResults { get; init; } = [];
 
     /// <summary>
     /// Maximum variation detected between executions.
@@ -41,7 +41,7 @@ public class DeterminismReport
     /// <summary>
     /// Recommendations for achieving deterministic behavior.
     /// </summary>
-    public List<string> Recommendations { get; init; } = [];
+    public IReadOnlyList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Number of runs performed during determinism testing.
@@ -51,7 +51,7 @@ public class DeterminismReport
     /// <summary>
     /// Components identified as non-deterministic.
     /// </summary>
-    public List<string> NonDeterministicComponents { get; init; } = [];
+    public IReadOnlyList<string> NonDeterministicComponents { get; init; } = [];
 
     /// <summary>
     /// Time taken to perform the analysis.

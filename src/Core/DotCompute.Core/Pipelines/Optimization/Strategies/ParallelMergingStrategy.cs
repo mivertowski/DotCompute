@@ -15,15 +15,49 @@ namespace DotCompute.Core.Pipelines.Optimization.Strategies;
 /// </summary>
 internal sealed class ParallelMergingStrategy : IOptimizationStrategy
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>The name.</value>
     public string Name => "ParallelMerging";
+    /// <summary>
+    /// Gets or sets the supported optimizations.
+    /// </summary>
+    /// <value>The supported optimizations.</value>
     public OptimizationType SupportedOptimizations => OptimizationType.ParallelMerging;
+    /// <summary>
+    /// Gets or sets the type.
+    /// </summary>
+    /// <value>The type.</value>
     public OptimizationType Type => OptimizationType.ParallelMerging;
+    /// <summary>
+    /// Determines whether optimize.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
 
     public bool CanOptimize(IKernelPipeline pipeline)
         => pipeline?.Stages?.Count > 1;
+    /// <summary>
+    /// Determines whether apply.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <returns>true if the condition is met; otherwise, false.</returns>
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
+    /// <summary>
+    /// Gets optimize asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
+    /// <summary>
+    /// Gets apply asynchronously.
+    /// </summary>
+    /// <param name="pipeline">The pipeline.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -39,6 +73,13 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         }
         return pipeline;
     }
+    /// <summary>
+    /// Gets apply internal asynchronously.
+    /// </summary>
+    /// <param name="stages">The stages.</param>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the operation.</returns>
 
     public static ValueTask<OptimizationResult> ApplyInternalAsync(
         List<IPipelineStage> stages,
@@ -79,7 +120,7 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         });
     }
 
-    private static List<List<IPipelineStage>> FindIndependentStageGroups(List<IPipelineStage> stages)
+    private static List<List<IPipelineStage>> FindIndependentStageGroups(IReadOnlyList<IPipelineStage> stages)
     {
         var groups = new List<List<IPipelineStage>>();
         var processed = new HashSet<string>();
@@ -115,14 +156,14 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         return groups;
     }
 
-    private static bool CanRunInParallel(IPipelineStage stage1, IPipelineStage stage2, List<IPipelineStage> allStages)
+    private static bool CanRunInParallel(IPipelineStage stage1, IPipelineStage stage2, IReadOnlyList<IPipelineStage> allStages)
     {
         // Check if stages have no dependencies on each other
         return !stage1.Dependencies.Contains(stage2.Id) &&
                !stage2.Dependencies.Contains(stage1.Id);
     }
 
-    private static IPipelineStage CreateParallelStage(List<IPipelineStage> stages)
+    private static IPipelineStage CreateParallelStage(IReadOnlyList<IPipelineStage> stages)
     {
         return new ParallelStage(
             $"Parallel_{Guid.NewGuid():N}",

@@ -22,9 +22,22 @@ namespace DotCompute.Plugins.Recovery
         private readonly Timer _healthMonitorTimer;
         private readonly SemaphoreSlim _recoveryLock;
         private bool _disposed;
+        /// <summary>
+        /// Gets or sets the capability.
+        /// </summary>
+        /// <value>The capability.</value>
 
         public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors; // Plugin errors are a subset of device errors
+        /// <summary>
+        /// Gets or sets the priority.
+        /// </summary>
+        /// <value>The priority.</value>
         public override int Priority => 80;
+        /// <summary>
+        /// Initializes a new instance of the PluginRecoveryCore class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="config">The config.</param>
 
         public PluginRecoveryCore(ILogger<PluginRecoveryCore> logger, PluginRecoveryConfiguration? config = null)
             : base(logger)
@@ -41,6 +54,12 @@ namespace DotCompute.Plugins.Recovery
             Logger.LogInformation("Plugin Recovery Manager initialized with isolation: {Isolation}, auto-restart: {AutoRestart}",
                 _config.EnablePluginIsolation, _config.EnableAutoRestart);
         }
+        /// <summary>
+        /// Determines whether handle.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="context">The context.</param>
+        /// <returns>true if the condition is met; otherwise, false.</returns>
 
         public override bool CanHandle(Exception error, PluginRecoveryContext context)
         {
@@ -56,6 +75,14 @@ namespace DotCompute.Plugins.Recovery
                 _ => false
             };
         }
+        /// <summary>
+        /// Gets recover asynchronously.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The result of the operation.</returns>
 
         public override async Task<RecoveryResult> RecoverAsync(
             Exception error,
@@ -443,6 +470,9 @@ namespace DotCompute.Plugins.Recovery
                 Logger.LogError(ex, "Error during health check");
             }
         }
+        /// <summary>
+        /// Performs dispose.
+        /// </summary>
 
         #endregion
 
