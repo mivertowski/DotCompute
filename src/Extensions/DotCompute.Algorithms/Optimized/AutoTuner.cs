@@ -18,8 +18,6 @@ public sealed class AutoTuner : IDisposable
 {
     // Auto-tuning configuration
     private const int MIN_MEASUREMENTS = 10;
-    private const int MAX_MEASUREMENTS = 100;
-    private const double CONFIDENCE_THRESHOLD = 0.95;
     private const double IMPROVEMENT_THRESHOLD = 0.05; // 5% minimum improvement
     private const int MAX_SEARCH_ITERATIONS = 50;
 
@@ -108,25 +106,15 @@ public sealed class AutoTuner : IDisposable
     /// <summary>
     /// Performance measurement result.
     /// </summary>
-    public readonly struct PerformanceMeasurement
+    public readonly struct PerformanceMeasurement(Dictionary<string, object> parameters,
+
+        double performance, TimeSpan executionTime, double standardDeviation)
     {
-        public readonly Dictionary<string, object> Parameters;
-        public readonly double Performance;
-        public readonly TimeSpan ExecutionTime;
-        public readonly double StandardDeviation;
-        public readonly bool IsValid;
-
-
-        public PerformanceMeasurement(Dictionary<string, object> parameters,
-
-            double performance, TimeSpan executionTime, double standardDeviation)
-        {
-            Parameters = parameters;
-            Performance = performance;
-            ExecutionTime = executionTime;
-            StandardDeviation = standardDeviation;
-            IsValid = performance > 0 && !double.IsNaN(performance);
-        }
+        public readonly Dictionary<string, object> Parameters = parameters;
+        public readonly double Performance = performance;
+        public readonly TimeSpan ExecutionTime = executionTime;
+        public readonly double StandardDeviation = standardDeviation;
+        public readonly bool IsValid = performance > 0 && !double.IsNaN(performance);
     }
 
 
@@ -826,15 +814,15 @@ public sealed class AutoTuner : IDisposable
     }
 
 
-    private static DotCompute.Algorithms.SignalProcessing.Complex[] CreateRandomComplexArray(int size)
+    private static SignalProcessing.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new DotCompute.Algorithms.SignalProcessing.Complex[size];
+        var array = new SignalProcessing.Complex[size];
         var random = new Random(42);
 
 
         for (var i = 0; i < size; i++)
         {
-            array[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)random.NextDouble(), (float)random.NextDouble());
+            array[i] = new SignalProcessing.Complex((float)random.NextDouble(), (float)random.NextDouble());
         }
 
 

@@ -111,9 +111,9 @@ public sealed class SimdInstructionDispatcher : IDisposable
 
             var result = operation switch
             {
-                ReductionOperation.Sum => SimdVectorOperations.Sum<T>(input),
-                ReductionOperation.Min => SimdVectorOperations.Min<T>(input),
-                ReductionOperation.Max => SimdVectorOperations.Max<T>(input),
+                ReductionOperation.Sum => SimdVectorOperations.Sum(input),
+                ReductionOperation.Min => SimdVectorOperations.Min(input),
+                ReductionOperation.Max => SimdVectorOperations.Max(input),
                 ReductionOperation.Product => DispatchProductReduction(input),
                 _ => throw new ArgumentException($"Unsupported reduction operation: {operation}")
             };
@@ -154,27 +154,27 @@ public sealed class SimdInstructionDispatcher : IDisposable
             switch (strategy)
             {
                 case SimdExecutionStrategy.Avx512:
-                    SimdVectorOperations.AddAvx512<T>(ptr1, ptr2, ptrOut, elementCount);
+                    SimdVectorOperations.AddAvx512(ptr1, ptr2, ptrOut, elementCount);
                     _performanceAnalyzer.RecordVectorizedElements(CalculateVectorizedElements<T>(elementCount, 16));
                     break;
 
                 case SimdExecutionStrategy.Avx2:
-                    SimdVectorOperations.AddAvx2<T>(ptr1, ptr2, ptrOut, elementCount);
+                    SimdVectorOperations.AddAvx2(ptr1, ptr2, ptrOut, elementCount);
                     _performanceAnalyzer.RecordVectorizedElements(CalculateVectorizedElements<T>(elementCount, 8));
                     break;
 
                 case SimdExecutionStrategy.Sse:
-                    SimdVectorOperations.AddSse<T>(ptr1, ptr2, ptrOut, elementCount);
+                    SimdVectorOperations.AddSse(ptr1, ptr2, ptrOut, elementCount);
                     _performanceAnalyzer.RecordVectorizedElements(CalculateVectorizedElements<T>(elementCount, 4));
                     break;
 
                 case SimdExecutionStrategy.Neon:
-                    SimdVectorOperations.AddNeon<T>(ptr1, ptr2, ptrOut, elementCount);
+                    SimdVectorOperations.AddNeon(ptr1, ptr2, ptrOut, elementCount);
                     _performanceAnalyzer.RecordVectorizedElements(CalculateVectorizedElements<T>(elementCount, 4));
                     break;
 
                 case SimdExecutionStrategy.Scalar:
-                    SimdScalarOperations.AddRemainder<T>(ptr1, ptr2, ptrOut, elementCount);
+                    SimdScalarOperations.AddRemainder(ptr1, ptr2, ptrOut, elementCount);
                     _performanceAnalyzer.RecordScalarElements(elementCount);
                     break;
 
@@ -191,11 +191,9 @@ public sealed class SimdInstructionDispatcher : IDisposable
     /// <param name="input">Input data.</param>
     /// <returns>Product result.</returns>
     private static T DispatchProductReduction<T>(ReadOnlySpan<T> input) where T : unmanaged
-    {
         // For now, delegate to scalar operations
         // TODO: Implement vectorized product reduction
-        return SimdScalarOperations.Product<T>(input);
-    }
+        => SimdScalarOperations.Product(input);
 
     /// <summary>
     /// Calculates the number of elements that will be processed using vectorized instructions.
@@ -217,10 +215,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
     /// </summary>
     /// <returns>Execution context.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ExecutionContext GetExecutionContext()
-    {
-        return _threadContext.Value ?? throw new InvalidOperationException("Failed to get thread execution context");
-    }
+    private ExecutionContext GetExecutionContext() => _threadContext.Value ?? throw new InvalidOperationException("Failed to get thread execution context");
 
     /// <summary>
     /// Validates execution parameters before dispatching.

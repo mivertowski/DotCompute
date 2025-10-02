@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -174,18 +174,11 @@ namespace DotCompute.Core.Memory.P2P
     /// <summary>
     /// Mock buffer implementation for testing purposes.
     /// </summary>
-    internal sealed class MockBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+    internal sealed class MockBuffer<T>(IAccelerator accelerator, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
     {
-        public MockBuffer(IAccelerator accelerator, int length)
-        {
-            Accelerator = accelerator;
-            Length = length;
-            SizeInBytes = length * Unsafe.SizeOf<T>();
-        }
-
-        public int Length { get; }
-        public long SizeInBytes { get; }
-        public IAccelerator Accelerator { get; }
+        public int Length { get; } = length;
+        public long SizeInBytes { get; } = length * Unsafe.SizeOf<T>();
+        public IAccelerator Accelerator { get; } = accelerator;
         public MemoryOptions Options => MemoryOptions.None;
         public bool IsDisposed => false;
         public BufferState State { get; set; } = BufferState.HostReady;

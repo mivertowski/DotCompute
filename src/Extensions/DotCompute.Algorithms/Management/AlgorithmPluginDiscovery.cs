@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Abstractions;
 
 namespace DotCompute.Algorithms.Management
@@ -13,18 +12,12 @@ namespace DotCompute.Algorithms.Management
     /// <summary>
     /// Handles the discovery of algorithm plugins in directories and NuGet packages.
     /// </summary>
-    public sealed partial class AlgorithmPluginDiscovery : IDisposable
+    public sealed partial class AlgorithmPluginDiscovery(ILogger<AlgorithmPluginDiscovery> logger, AlgorithmPluginManagerOptions options) : IDisposable
     {
-        private readonly ILogger<AlgorithmPluginDiscovery> _logger;
-        private readonly AlgorithmPluginManagerOptions _options;
+        private readonly ILogger<AlgorithmPluginDiscovery> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
         private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
         private bool _disposed;
-
-        public AlgorithmPluginDiscovery(ILogger<AlgorithmPluginDiscovery> logger, AlgorithmPluginManagerOptions options)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
 
         /// <summary>
         /// Discovers plugins in the specified directory.
@@ -111,7 +104,7 @@ namespace DotCompute.Algorithms.Management
                 // Also watch for .pdb files (debug symbols) and .json manifest files
                 SetupAdditionalFileWatchers(assemblyPath, onChanged);
 
-                _watchers.TryAdd(assemblyPath, watcher);
+                _ = _watchers.TryAdd(assemblyPath, watcher);
                 LogHotReloadSetup(assemblyPath);
             }
             catch (Exception ex)
@@ -154,7 +147,7 @@ namespace DotCompute.Algorithms.Management
                     EnableRaisingEvents = true
                 };
                 pdbWatcher.Changed += async (sender, e) => await HandleAssemblyChangedAsync(assemblyPath, onChanged);
-                _watchers.TryAdd(pdbPath, pdbWatcher);
+                _ = _watchers.TryAdd(pdbPath, pdbWatcher);
             }
 
             if (File.Exists(manifestPath))
@@ -165,7 +158,7 @@ namespace DotCompute.Algorithms.Management
                     EnableRaisingEvents = true
                 };
                 manifestWatcher.Changed += async (sender, e) => await HandleAssemblyChangedAsync(assemblyPath, onChanged);
-                _watchers.TryAdd(manifestPath, manifestWatcher);
+                _ = _watchers.TryAdd(manifestPath, manifestWatcher);
             }
         }
 

@@ -19,10 +19,10 @@ namespace DotCompute.Core.Pipelines.Stages
     /// </summary>
     internal sealed class LoopStage(
         string id,
-        Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, int, bool> condition,
+        Func<AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, int, bool> condition,
         List<IPipelineStage> bodyStages) : IPipelineStage
     {
-        private readonly Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, int, bool> _condition = condition;
+        private readonly Func<AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, int, bool> _condition = condition;
         private readonly List<IPipelineStage> _bodyStages = bodyStages;
         private readonly StageMetrics _metrics = new(id);
 
@@ -42,8 +42,8 @@ namespace DotCompute.Core.Pipelines.Stages
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
         /// <inheritdoc/>
-        public async ValueTask<DotCompute.Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(
-            DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context,
+        public async ValueTask<AbsStageExecutionResult> ExecuteAsync(
+            AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -64,7 +64,7 @@ namespace DotCompute.Core.Pipelines.Stages
                         }
                         stageContext.SetMemoryManager(context.MemoryManager);
                         stageContext.SetDevice(context.Device);
-                        stageContext.Options = (context as DotCompute.Core.Pipelines.Models.PipelineExecutionContext)?.Options;
+                        stageContext.Options = (context as PipelineExecutionContext)?.Options;
 
                         var result = await stage.ExecuteAsync(stageContext, cancellationToken);
 

@@ -22,45 +22,25 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// Grid dimensions for kernel launch
     /// </summary>
-    public struct GridDimensions
+    public struct GridDimensions(uint x, uint y = 1, uint z = 1)
     {
-        public uint X { get; set; }
-        public uint Y { get; set; }
-        public uint Z { get; set; }
-
-        public GridDimensions(uint x, uint y = 1, uint z = 1)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        public uint X { get; set; } = x;
+        public uint Y { get; set; } = y;
+        public uint Z { get; set; } = z;
     }
 
     /// <summary>
     /// Block dimensions for kernel launch
     /// </summary>
-    public struct BlockDimensions : IEquatable<BlockDimensions>
+    public struct BlockDimensions(uint x, uint y = 1, uint z = 1) : IEquatable<BlockDimensions>
     {
-        public uint X { get; set; }
-        public uint Y { get; set; }
-        public uint Z { get; set; }
+        public uint X { get; set; } = x;
+        public uint Y { get; set; } = y;
+        public uint Z { get; set; } = z;
 
-        public BlockDimensions(uint x, uint y = 1, uint z = 1)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        public override bool Equals(object? obj) => obj is BlockDimensions other && Equals(other);
 
-        public override bool Equals(object? obj)
-        {
-            return obj is BlockDimensions other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(X, Y, Z);
-        }
+        public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
         public static bool operator ==(BlockDimensions left, BlockDimensions right)
         {
@@ -72,10 +52,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
             return !(left == right);
         }
 
-        public bool Equals(BlockDimensions other)
-        {
-            return X == other.X && Y == other.Y && Z == other.Z;
-        }
+        public bool Equals(BlockDimensions other) => X == other.X && Y == other.Y && Z == other.Z;
     }
 
     /// <summary>

@@ -33,7 +33,7 @@ public sealed class CudaErrorHandler : IDisposable
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="options">The options.</param>
-    /// <exception cref="System.ArgumentNullException">logger</exception>
+    /// <exception cref="ArgumentNullException">logger</exception>
     public CudaErrorHandler(
         ILogger<CudaErrorHandler> logger,
         ErrorRecoveryOptions? options = null)
@@ -184,7 +184,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (CudaException cudaEx)
         {
-            return await HandleCudaExceptionAsync<T>(cudaEx, operation, operationName, cancellationToken);
+            return await HandleCudaExceptionAsync(cudaEx, operation, operationName, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -489,10 +489,7 @@ public sealed class CudaErrorHandler : IDisposable
     /// <summary>
     /// Records successful operation.
     /// </summary>
-    private void RecordSuccess(string operationName, long elapsedMs)
-    {
-        _logger.LogDebugMessage($"Operation {operationName} completed in {elapsedMs}ms");
-    }
+    private void RecordSuccess(string operationName, long elapsedMs) => _logger.LogDebugMessage($"Operation {operationName} completed in {elapsedMs}ms");
 
     /// <summary>
     /// Gets error statistics.

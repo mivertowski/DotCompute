@@ -13,14 +13,19 @@ namespace DotCompute.Plugins.Attributes.Core;
 /// Multiple PluginCapabilityAttribute instances can be applied to a single plugin class
 /// to declare multiple capabilities. Other plugins can query for plugins with specific capabilities.
 /// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginCapabilityAttribute"/> class.
+/// </remarks>
+/// <param name="name">The capability name.</param>
+/// <exception cref="ArgumentNullException">Thrown when name is null.</exception>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-public sealed class PluginCapabilityAttribute : Attribute
+public sealed class PluginCapabilityAttribute(string name) : Attribute
 {
     /// <summary>
     /// Gets the capability name.
     /// This is a unique identifier for the capability type.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>
     /// Gets or sets the capability version.
@@ -33,14 +38,4 @@ public sealed class PluginCapabilityAttribute : Attribute
     /// Can be used to store JSON or other structured data about the capability.
     /// </summary>
     public string? Metadata { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginCapabilityAttribute"/> class.
-    /// </summary>
-    /// <param name="name">The capability name.</param>
-    /// <exception cref="ArgumentNullException">Thrown when name is null.</exception>
-    public PluginCapabilityAttribute(string name)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-    }
 }

@@ -10,10 +10,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// These tests help identify why ManagedMemory is not being detected correctly.
     /// </summary>
     [Trait("Category", "Diagnostic")]
-    public class CudaDiagnosticTests : ConsolidatedTestBase
+    public class CudaDiagnosticTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
-        public CudaDiagnosticTests(ITestOutputHelper output) : base(output) { }
-
         [SkippableFact]
         public void Diagnose_Device_Properties_Direct()
         {
@@ -99,7 +97,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine("=== CudaDevice Class Test ===");
 
 
-            var device = new DotCompute.Backends.CUDA.CudaDevice(0);
+            var device = new Backends.CUDA.CudaDevice(0);
 
 
             Output.WriteLine($"Device Name: {device.Name}");
@@ -109,7 +107,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Check the raw properties
 
-            var propsField = typeof(DotCompute.Backends.CUDA.CudaDevice)
+            var propsField = typeof(Backends.CUDA.CudaDevice)
                 .GetField("_deviceProperties", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
 

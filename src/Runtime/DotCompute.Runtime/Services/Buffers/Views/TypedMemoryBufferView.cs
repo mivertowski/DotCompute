@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Buffers.Views;
 
@@ -11,19 +11,11 @@ namespace DotCompute.Runtime.Services.Buffers.Views;
 /// View over a typed memory buffer.
 /// </summary>
 /// <typeparam name="T">The unmanaged element type.</typeparam>
-public sealed class TypedMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class TypedMemoryBufferView<T>(IUnifiedMemoryBuffer<T> parent, int offset, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly IUnifiedMemoryBuffer<T> _parent;
-    private readonly int _offset;
-    private readonly int _length;
-
-
-    public TypedMemoryBufferView(IUnifiedMemoryBuffer<T> parent, int offset, int length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        _length = length;
-    }
+    private readonly IUnifiedMemoryBuffer<T> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly int _offset = offset;
+    private readonly int _length = length;
 
     // Properties from IUnifiedMemoryBuffer<T>
 

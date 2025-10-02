@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
@@ -411,9 +411,9 @@ namespace DotCompute.Core.Compute
         {
             try
             {
-                if (File.Exists("/proc/meminfo"))
+                if (global::System.IO.File.Exists("/proc/meminfo"))
                 {
-                    var lines = File.ReadAllLines("/proc/meminfo");
+                    var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
                     var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
                     if (availableLine != null)
                     {
@@ -520,7 +520,6 @@ namespace DotCompute.Core.Compute
             // CPU operations are synchronous by default
 
 
-
             => ValueTask.CompletedTask;
 
         public ValueTask DisposeAsync()
@@ -539,7 +538,6 @@ namespace DotCompute.Core.Compute
     /// </summary>
     internal class CpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
     {
-        private readonly KernelDefinition _definition = definition;
         private bool _disposed;
 
 
@@ -571,9 +569,6 @@ namespace DotCompute.Core.Compute
             return ValueTask.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() => _disposed = true;
     }
 }

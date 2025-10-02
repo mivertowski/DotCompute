@@ -271,10 +271,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
     }
 
     private long EstimateCacheSize()
-    {
         // Rough estimation: assume each compiled kernel is ~10KB on average TODO
-        return _cache.Count * 10 * 1024;
-    }
+        => _cache.Count * 10 * 1024;
 
     private void IncrementHitCount(TimeSpan compilationTimeSaved)
     {
@@ -329,9 +327,6 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
         public bool IsExpired => DateTime.UtcNow > ExpiresAt;
 
-        public void UpdateLastAccess()
-        {
-            LastAccessedAt = DateTime.UtcNow;
-        }
+        public void UpdateLastAccess() => LastAccessedAt = DateTime.UtcNow;
     }
 }

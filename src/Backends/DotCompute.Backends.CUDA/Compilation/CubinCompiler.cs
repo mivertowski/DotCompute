@@ -163,26 +163,21 @@ internal static class CubinCompiler
             compilationOptions.Add("--maxrregcount=32"); // Limit register usage for better occupancy
         }
 
-        return compilationOptions.ToArray();
+        return [.. compilationOptions];
     }
 
     /// <summary>
     /// Gets the target compute capability for CUBIN compilation.
     /// </summary>
     private static (int major, int minor) GetTargetComputeCapability()
-    {
         // For CUBIN, we target the actual device capability
         // Cap at compute_86 for CUDA 12.8 compatibility
-        return (8, 6);
-    }
+        => (8, 6);
 
     /// <summary>
     /// Checks if debug mode is enabled.
     /// </summary>
-    private static bool IsDebugMode(CompilationOptions? options)
-    {
-        return options?.GenerateDebugInfo == true || options?.EnableDeviceDebugging == true;
-    }
+    private static bool IsDebugMode(CompilationOptions? options) => options?.GenerateDebugInfo == true || options?.EnableDeviceDebugging == true;
 
     /// <summary>
     /// Gets the compilation log from NVRTC program.

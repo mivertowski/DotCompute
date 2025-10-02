@@ -255,7 +255,7 @@ namespace DotCompute.Plugins.Recovery
 
                 // Check dependencies
                 var dependencies = pluginAssembly.GetReferencedAssemblies();
-                result.RequiredDependencies = dependencies.Select(d => d.FullName).ToList();
+                result.RequiredDependencies = [.. dependencies.Select(d => d.FullName)];
 
                 // Perform compatibility checks
                 result.IsCompatible = true; // Simplified check
@@ -275,7 +275,7 @@ namespace DotCompute.Plugins.Recovery
 
         #region Private Methods
 
-        private PluginRecoveryStrategy DetermineRecoveryStrategy(
+        private static PluginRecoveryStrategy DetermineRecoveryStrategy(
             Exception error,
             PluginRecoveryContext context,
             PluginHealthState healthState)
@@ -384,7 +384,7 @@ namespace DotCompute.Plugins.Recovery
                    error.Source?.Contains("plugin", StringComparison.OrdinalIgnoreCase) == true;
         }
 
-        private async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
+        private static async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
         {
             try
             {
@@ -397,7 +397,7 @@ namespace DotCompute.Plugins.Recovery
             }
         }
 
-        private async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
+        private static async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
         {
             try
             {

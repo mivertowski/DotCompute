@@ -91,7 +91,7 @@ namespace DotCompute.Backends.CUDA.Types
                             allocationCount++;
                         }
                     }
-                    catch (System.Exception ex)
+                    catch (Exception ex)
                     {
                         _logger?.LogError(ex, "Error freeing allocation during reset");
                     }
@@ -108,7 +108,7 @@ namespace DotCompute.Backends.CUDA.Types
 
                     allocationCount, DeviceIndex);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during CUDA memory manager reset for device {DeviceIndex}", DeviceIndex);
                 throw;
@@ -134,7 +134,7 @@ namespace DotCompute.Backends.CUDA.Types
                     _disposed = true;
                     _logger?.LogDebug("Async disposal completed for CUDA memory manager device {DeviceIndex}", DeviceIndex);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogError(ex, "Error during async disposal of CUDA memory manager device {DeviceIndex}", DeviceIndex);
                     // Still mark as disposed to prevent further operations
@@ -156,7 +156,7 @@ namespace DotCompute.Backends.CUDA.Types
                     Reset();
                     _disposed = true;
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogError(ex, "Error during disposal of CUDA memory manager device {DeviceIndex}", DeviceIndex);
                     _disposed = true;

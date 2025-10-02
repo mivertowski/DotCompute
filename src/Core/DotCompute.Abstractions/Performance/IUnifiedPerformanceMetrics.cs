@@ -315,20 +315,10 @@ public enum MetricsExportFormat
 /// <summary>
 /// High-resolution timer for performance measurements.
 /// </summary>
-public sealed class PerformanceTimer : IDisposable
+public sealed class PerformanceTimer(string operationName, IUnifiedPerformanceMetrics? metrics = null) : IDisposable
 {
-    private readonly Stopwatch _stopwatch;
-    private readonly IUnifiedPerformanceMetrics? _metrics;
-    private readonly string _operationName;
-
-
-    public PerformanceTimer(string operationName, IUnifiedPerformanceMetrics? metrics = null)
-    {
-        _operationName = operationName;
-        _metrics = metrics;
-        _stopwatch = Stopwatch.StartNew();
-    }
-
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+    private readonly IUnifiedPerformanceMetrics? _metrics = metrics;
 
     public TimeSpan Elapsed => _stopwatch.Elapsed;
 

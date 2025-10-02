@@ -2,9 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using System.Net.Sockets;
-using System.Net.Http;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
@@ -288,11 +287,7 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        var loadedPlugin = _registry.GetLoadedPlugin(pluginId);
-        if (loadedPlugin == null)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
-        }
+        var loadedPlugin = _registry.GetLoadedPlugin(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
 
         // Check plugin health before execution
         if (loadedPlugin.Health == PluginHealth.Critical || loadedPlugin.State != PluginState.Running)
@@ -388,7 +383,7 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             var assemblyPath = loadedPlugin.Metadata.AssemblyPath;
 
             // Unregister current plugin
-            await UnregisterPluginAsync(pluginId).ConfigureAwait(false);
+            _ = await UnregisterPluginAsync(pluginId).ConfigureAwait(false);
 
             // Small delay to allow for file system events
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
@@ -425,16 +420,16 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
     /// </summary>
     /// <param name="acceleratorType">The accelerator type.</param>
     /// <returns>Compatible plugins.</returns>
-    public IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType) =>
-        _registry.GetPluginsByAcceleratorType(acceleratorType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByAcceleratorType(AcceleratorType acceleratorType)
+        => _registry.GetPluginsByAcceleratorType(acceleratorType);
 
     /// <summary>
     /// Gets all plugins by input type.
     /// </summary>
     /// <param name="inputType">The input type.</param>
     /// <returns>Compatible plugins.</returns>
-    public IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType) =>
-        _registry.GetPluginsByInputType(inputType);
+    public IEnumerable<IAlgorithmPlugin> GetPluginsByInputType(Type inputType)
+        => _registry.GetPluginsByInputType(inputType);
 
     /// <summary>
     /// Gets all healthy plugins.
@@ -480,7 +475,7 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             _registry.UpdatePluginHealth(plugin.Id, PluginHealth.Critical);
 
             // Remove from registry on initialization failure
-            _registry.UnregisterPlugin(plugin.Id);
+            _ = _registry.UnregisterPlugin(plugin.Id);
 
             LogPluginInitializationFailed(plugin.Id, ex.Message);
             throw;
@@ -562,23 +557,17 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
     /// <summary>
     /// Handles file watcher errors.
     /// </summary>
-    private void OnWatcherError(object? sender, FileWatcherErrorEventArgs e)
-    {
-        LogWatcherError(e.Error.Message);
-    }
+    private void OnWatcherError(object? sender, FileWatcherErrorEventArgs e) => LogWatcherError(e.Error.Message);
 
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
-    private void PerformHealthChecksWrapper(object? state)
-    {
-        _ = Task.Run(async () => await PerformHealthChecks().ConfigureAwait(false));
-    }
+    private void PerformHealthChecksWrapper(object? state) => _ = Task.Run(PerformHealthChecksAsync);
 
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
-    private async Task PerformHealthChecks()
+    private async Task PerformHealthChecksAsync()
     {
         if (_disposed)
         {

@@ -27,7 +27,6 @@ namespace DotCompute.Core.Memory
         // Coherence configuration
         private const int CoherenceMonitorIntervalMs = 5000; // 5 seconds
         private const double IncoherentThresholdRatio = 0.1; // 10%
-        private const int MaxCoherentCopiesPerBuffer = 8;
 
         public P2PMemoryCoherenceManager(ILogger logger)
         {
@@ -359,7 +358,6 @@ namespace DotCompute.Core.Memory
 
 
 
-
             => await Task.CompletedTask; // Placeholder for P2P copy
 
         /// <summary>
@@ -375,7 +373,6 @@ namespace DotCompute.Core.Memory
 
 
 
-
             => await Task.CompletedTask;
 
         /// <summary>
@@ -387,7 +384,6 @@ namespace DotCompute.Core.Memory
             P2PBufferCoherenceInfo coherenceInfo,
             CancellationToken cancellationToken)
             // Chunked synchronization for large buffers
-
 
 
 
@@ -606,7 +602,6 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private static int GetElementSize(object buffer)
             // This would use reflection or type information in a real implementation
-
 
 
             => 4; // Assume 4-byte elements for simplicity

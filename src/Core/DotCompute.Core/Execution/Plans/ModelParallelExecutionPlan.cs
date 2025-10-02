@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
 
 namespace DotCompute.Core.Execution.Plans
@@ -135,7 +134,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the buffer containing the tensor data.
         /// The actual memory buffer where tensor data is stored, if allocated.
         /// </summary>
-        public AbstractionsMemory.IUnifiedMemoryBuffer<T>? Buffer { get; set; }
+        public IUnifiedMemoryBuffer<T>? Buffer { get; set; }
 
         /// <summary>
         /// Gets the total number of elements in the tensor.

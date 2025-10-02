@@ -7,10 +7,8 @@ using DotCompute.Core.Extensions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 
-public class SimpleKernelDebugTest : CudaTestBase
+public class SimpleKernelDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
-    public SimpleKernelDebugTest(ITestOutputHelper output) : base(output) { }
-
     [SkippableFact]
     public async Task Simplest_Kernel_Should_Set_Values()
     {

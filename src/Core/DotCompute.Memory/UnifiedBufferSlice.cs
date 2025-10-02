@@ -211,10 +211,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-    {
-        await FillAsync(value, 0, _length, cancellationToken).ConfigureAwait(false);
-    }
+    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => await FillAsync(value, 0, _length, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
@@ -232,7 +229,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -240,7 +237,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -251,7 +248,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -276,14 +273,14 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
@@ -297,7 +294,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc />
-    public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.SynchronizeAsync(context, cancellationToken);
@@ -356,10 +353,7 @@ public sealed class UnifiedBufferSlice<T> : IUnifiedMemoryBuffer<T> where T : un
     /// <summary>
     /// Disposes the slice. This doesn't dispose the parent buffer, just invalidates this slice.
     /// </summary>
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 
     /// <summary>
     /// Asynchronously disposes the slice. This doesn't dispose the parent buffer, just invalidates this slice.

@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Intrinsics;
 

@@ -23,9 +23,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", TestCategories.Hardware)]
     [Trait("Category", TestCategories.Memory)]
     [Trait("Category", RequiresHardware)]
-    public class CudaMemoryHardwareTests : CudaTestBase
+    public class CudaMemoryHardwareTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        public CudaMemoryHardwareTests(ITestOutputHelper output) : base(output) { }
 
         #region Basic Memory Allocation Tests
 
@@ -229,18 +228,18 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 var dataSize = elementCount * sizeof(float);
                 UnifiedTestHelpers.ComparePerformanceResults(
-                    new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                    new SharedTestUtilities.Performance.PerformanceResult
                     {
                         OperationName = "Host-to-Device Copy",
                         Duration = perfMeasurement.Duration,
-                        Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                        Checkpoints = Array.Empty<Checkpoint>(),
                         Timestamp = DateTime.UtcNow
                     },
-                    new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                    new SharedTestUtilities.Performance.PerformanceResult
                     {
                         OperationName = "Expected Performance",
                         Duration = TimeSpan.FromMilliseconds(100),
-                        Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                        Checkpoints = Array.Empty<Checkpoint>(),
                         Timestamp = DateTime.UtcNow
                     });
             }
@@ -418,7 +417,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await destBuffer.CopyFromAsync(sourceBuffer.AsReadOnlyMemory());
             }
             await accelerator.SynchronizeAsync();
-            perfMeasurement.Stop();
+            _ = perfMeasurement.Stop();
 
             // Verify copy correctness
 
@@ -434,18 +433,18 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             UnifiedTestHelpers.ComparePerformanceResults(
-                new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                new SharedTestUtilities.Performance.PerformanceResult
                 {
                     OperationName = "Device-to-Device Copy",
                     Duration = perfMeasurement.ElapsedTime,
-                    Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                    Checkpoints = Array.Empty<Checkpoint>(),
                     Timestamp = DateTime.UtcNow
                 },
-                new DotCompute.SharedTestUtilities.Performance.PerformanceResult
+                new SharedTestUtilities.Performance.PerformanceResult
                 {
                     OperationName = "Expected Performance",
                     Duration = TimeSpan.FromMilliseconds(100),
-                    Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
+                    Checkpoints = Array.Empty<Checkpoint>(),
                     Timestamp = DateTime.UtcNow
                 });
             Output.WriteLine($"Device-to-Device Copy Bandwidth: {bandwidth:F2} GB/s");
@@ -626,7 +625,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 );
             }
             await accelerator.SynchronizeAsync();
-            coalescedPerf.Stop();
+            _ = coalescedPerf.Stop();
 
             // Measure strided access performance
 
@@ -650,7 +649,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 );
             }
             await accelerator.SynchronizeAsync();
-            stridedPerf.Stop();
+            _ = stridedPerf.Stop();
 
 
             var dataSize = arraySize * sizeof(float) * 2 * 10; // Read + write, 10 iterations

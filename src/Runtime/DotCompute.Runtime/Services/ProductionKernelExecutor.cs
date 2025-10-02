@@ -42,7 +42,7 @@ namespace DotCompute.Runtime.Services
         /// Executes a kernel asynchronously with comprehensive monitoring and error handling.
         /// </summary>
         public async Task<KernelExecutionResult> ExecuteKernelAsync(
-            DotCompute.Abstractions.ICompiledKernel kernel,
+            ICompiledKernel kernel,
             IKernelExecutionParameters parameters,
             CancellationToken cancellationToken = default)
         {
@@ -118,7 +118,7 @@ namespace DotCompute.Runtime.Services
         /// Executes a batch of kernels with optimized scheduling.
         /// </summary>
         public async Task<IReadOnlyList<KernelExecutionResult>> ExecuteBatchAsync(
-            IEnumerable<(DotCompute.Abstractions.ICompiledKernel Kernel, IKernelExecutionParameters Parameters)> kernelBatch,
+            IEnumerable<(ICompiledKernel Kernel, IKernelExecutionParameters Parameters)> kernelBatch,
             BatchExecutionOptions? options = null,
             CancellationToken cancellationToken = default)
         {
@@ -267,22 +267,14 @@ namespace DotCompute.Runtime.Services
     /// <summary>
     /// Represents a kernel that is currently executing.
     /// </summary>
-    public sealed class ExecutingKernel
+    public sealed class ExecutingKernel(Guid id, string kernelName, Stopwatch stopwatch)
     {
-        private readonly Stopwatch _stopwatch;
+        private readonly Stopwatch _stopwatch = stopwatch;
         private volatile KernelExecutionState _state = KernelExecutionState.Running;
 
-        public ExecutingKernel(Guid id, string kernelName, Stopwatch stopwatch)
-        {
-            Id = id;
-            KernelName = kernelName;
-            StartTime = DateTime.UtcNow;
-            _stopwatch = stopwatch;
-        }
-
-        public Guid Id { get; }
-        public string KernelName { get; }
-        public DateTime StartTime { get; }
+        public Guid Id { get; } = id;
+        public string KernelName { get; } = kernelName;
+        public DateTime StartTime { get; } = DateTime.UtcNow;
         public TimeSpan ElapsedTime => _stopwatch.Elapsed;
         public KernelExecutionState State => _state;
         public Exception? LastError { get; private set; }
@@ -353,34 +345,24 @@ namespace DotCompute.Runtime.Services
         public Exception? Error { get; }
         public TimeSpan ExecutionTime { get; }
 
-        public static KernelExecutionResult Success(Guid executionId, TimeSpan executionTime) =>
-            new(executionId, true, null, executionTime);
+        public static KernelExecutionResult Success(Guid executionId, TimeSpan executionTime)
+            => new(executionId, true, null, executionTime);
 
-        public static KernelExecutionResult Failure(Guid executionId, Exception error, TimeSpan executionTime) =>
-            new(executionId, false, error, executionTime);
+        public static KernelExecutionResult Failure(Guid executionId, Exception error, TimeSpan executionTime)
+            => new(executionId, false, error, executionTime);
     }
 
     /// <summary>
     /// Represents the current status of a kernel execution.
     /// </summary>
-    public sealed class KernelExecutionStatus
+    public sealed class KernelExecutionStatus(Guid id, string kernelName, KernelExecutionState state, DateTime startTime, TimeSpan elapsedTime, Exception? lastError)
     {
-        public KernelExecutionStatus(Guid id, string kernelName, KernelExecutionState state, DateTime startTime, TimeSpan elapsedTime, Exception? lastError)
-        {
-            Id = id;
-            KernelName = kernelName;
-            State = state;
-            StartTime = startTime;
-            ElapsedTime = elapsedTime;
-            LastError = lastError;
-        }
-
-        public Guid Id { get; }
-        public string KernelName { get; }
-        public KernelExecutionState State { get; }
-        public DateTime StartTime { get; }
-        public TimeSpan ElapsedTime { get; }
-        public Exception? LastError { get; }
+        public Guid Id { get; } = id;
+        public string KernelName { get; } = kernelName;
+        public KernelExecutionState State { get; } = state;
+        public DateTime StartTime { get; } = startTime;
+        public TimeSpan ElapsedTime { get; } = elapsedTime;
+        public Exception? LastError { get; } = lastError;
     }
 
     /// <summary>

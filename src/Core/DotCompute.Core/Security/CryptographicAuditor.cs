@@ -262,7 +262,7 @@ internal sealed class CryptographicAuditor : IDisposable
                     .ToDictionary(g => g.Key, g => g.Count()),
                 EventsByType = events.GroupBy(e => e.EventType)
                     .ToDictionary(g => g.Key, g => g.Count()),
-                SecurityIncidents = events.Where(e => e.Category == SecurityEventCategory.SecurityIncident).ToList(),
+                SecurityIncidents = [.. events.Where(e => e.Category == SecurityEventCategory.SecurityIncident)],
                 RecommendationsGenerated = GenerateSecurityRecommendations(events)
             };
 
@@ -433,7 +433,7 @@ internal sealed class CryptographicAuditor : IDisposable
             }
         }
 
-        return events.OrderBy(e => e.Timestamp).ToList();
+        return [.. events.OrderBy(e => e.Timestamp)];
     }
 
     private static List<string> GenerateSecurityRecommendations(List<SecurityEvent> events)
@@ -461,7 +461,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return recommendations;
     }
 
-    private SecurityMetrics CalculateSecurityMetrics(List<SecurityEvent> events)
+    private static SecurityMetrics CalculateSecurityMetrics(List<SecurityEvent> events)
     {
         return new SecurityMetrics
         {
@@ -506,7 +506,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return Math.Max(0, Math.Min(100, score));
     }
 
-    private string ConvertToCsv(List<SecurityEvent> events)
+    private static string ConvertToCsv(List<SecurityEvent> events)
     {
         var csv = new StringBuilder();
         _ = csv.AppendLine("EventId,Timestamp,EventType,Severity,Category,Description,UserId,SessionId");
@@ -520,7 +520,7 @@ internal sealed class CryptographicAuditor : IDisposable
         return csv.ToString();
     }
 
-    private string ConvertToXml(List<SecurityEvent> events)
+    private static string ConvertToXml(List<SecurityEvent> events)
     {
         // Simplified XML conversion - in practice, use XmlDocument or XElement
         var xml = new StringBuilder();
@@ -542,10 +542,8 @@ internal sealed class CryptographicAuditor : IDisposable
     }
 
     private static string? GetSourceAddress()
-    {
         // In a real implementation, this would extract the source IP address
-        return "localhost";
-    }
+        => "localhost";
 
     public void Dispose()
     {
@@ -617,11 +615,11 @@ public class SecurityAuditReport
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
     public int TotalEvents { get; set; }
-    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; set; } = new();
-    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; set; } = new();
-    public Dictionary<string, int> EventsByType { get; set; } = new();
-    public List<SecurityEvent> SecurityIncidents { get; set; } = new();
-    public List<string> RecommendationsGenerated { get; set; } = new();
+    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; set; } = [];
+    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; set; } = [];
+    public Dictionary<string, int> EventsByType { get; set; } = [];
+    public List<SecurityEvent> SecurityIncidents { get; set; } = [];
+    public List<string> RecommendationsGenerated { get; set; } = [];
     public SecurityMetrics? SecurityMetrics { get; set; }
 }
 
@@ -635,29 +633,4 @@ public class SecurityMetrics
     public int CryptographicOperations { get; set; }
     public double AverageResponseTime { get; set; }
     public double SecurityScore { get; set; }
-    public int ActiveCorrelations { get; set; }
-    public double AverageEventsPerCorrelation { get; set; }
-
-    // Properties expected by SecurityMetricsLogger
-    public Dictionary<SecurityEventType, long> EventsByType { get; set; } = new();
-    public long AuthenticationSuccessCount { get; set; }
-    public long AuthenticationFailureCount { get; set; }
-    public long AccessGrantedCount { get; set; }
-    public long AccessDeniedCount { get; set; }
-    public long SecurityViolationCount { get; set; }
-    public long DataAccessCount { get; set; }
-    public long DataModificationCount { get; set; }
-    public long DataDeletionCount { get; set; }
-    public Dictionary<DotCompute.Core.Security.SecurityLevel, long> EventsByLevel { get; set; } = new();
-    public long CriticalEventCount { get; set; }
-    public long HighEventCount { get; set; }
-    public long MediumEventCount { get; set; }
-    public long LowEventCount { get; set; }
-    public long InformationalEventCount { get; set; }
-    public long TotalEventCount { get; set; }
-    public int UniqueUsersCount { get; set; }
-    public ConcurrentDictionary<string, long> UserEventCounts { get; set; } = new();
-    public ConcurrentDictionary<string, long> ResourceEventCounts { get; set; } = new();
-    public DateTimeOffset FirstEventTime { get; set; }
-    public DateTimeOffset LastEventTime { get; set; }
 }

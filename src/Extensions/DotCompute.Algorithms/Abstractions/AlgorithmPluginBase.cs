@@ -11,20 +11,15 @@ namespace DotCompute.Algorithms.Abstractions;
 /// <summary>
 /// Base class for algorithm plugins providing common functionality.
 /// </summary>
-public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
+/// <remarks>
+/// Initializes a new instance of the <see cref="AlgorithmPluginBase"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+public abstract partial class AlgorithmPluginBase(ILogger logger) : IAlgorithmPlugin
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private IAccelerator? _accelerator;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlgorithmPluginBase"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    protected AlgorithmPluginBase(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <inheritdoc/>
     public abstract string Id { get; }

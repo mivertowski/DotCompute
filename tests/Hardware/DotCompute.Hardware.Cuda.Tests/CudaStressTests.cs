@@ -16,14 +16,9 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Collection("CUDA Stress Tests")]
     [Trait("Category", "Stress")]
     [Trait("Category", "HardwareRequired")]
-    public class CudaStressTests : CudaTestBase
+    public class CudaStressTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        private readonly CudaAcceleratorFactory _factory;
-
-        public CudaStressTests(ITestOutputHelper output) : base(output)
-        {
-            _factory = new CudaAcceleratorFactory();
-        }
+        private readonly CudaAcceleratorFactory _factory = new();
 
         [SkippableFact]
         [Trait("Duration", "Long")]
@@ -438,14 +433,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             base.Dispose(disposing);
         }
 
-        private class TestLogger<T> : ILogger<T>
+        private class TestLogger<T>(ITestOutputHelper output) : ILogger<T>
         {
-            private readonly ITestOutputHelper _output;
-
-            public TestLogger(ITestOutputHelper output)
-            {
-                _output = output;
-            }
+            private readonly ITestOutputHelper _output = output;
 
             public IDisposable BeginScope<TState>(TState state) => null!;
             public bool IsEnabled(LogLevel logLevel) => true;

@@ -156,10 +156,7 @@ public sealed class StageExecutionMetrics
     /// </summary>
     /// <param name="name">Name of the metric</param>
     /// <param name="value">Value of the metric</param>
-    public void AddCustomMetric(string name, object value)
-    {
-        CustomMetrics[name] = value;
-    }
+    public void AddCustomMetric(string name, object value) => CustomMetrics[name] = value;
 
     /// <summary>
     /// Gets a custom metric value.
@@ -167,29 +164,20 @@ public sealed class StageExecutionMetrics
     /// <typeparam name="T">Type of the metric value</typeparam>
     /// <param name="name">Name of the metric</param>
     /// <returns>The metric value, or default if not found</returns>
-    public T? GetCustomMetric<T>(string name)
-    {
-        return CustomMetrics.TryGetValue(name, out var value) && value is T typedValue ? typedValue : default;
-    }
+    public T? GetCustomMetric<T>(string name) => CustomMetrics.TryGetValue(name, out var value) && value is T typedValue ? typedValue : default;
 
     /// <summary>
     /// Adds a warning message to the stage metrics.
     /// </summary>
     /// <param name="warning">Warning message to add</param>
-    public void AddWarning(string warning)
-    {
-        Warnings.Add($"[{DateTime.UtcNow:HH:mm:ss.fff}] {warning}");
-    }
+    public void AddWarning(string warning) => Warnings.Add($"[{DateTime.UtcNow:HH:mm:ss.fff}] {warning}");
 
     /// <summary>
     /// Adds debug information to the stage metrics.
     /// </summary>
     /// <param name="key">Debug information key</param>
     /// <param name="value">Debug information value</param>
-    public void AddDebugInfo(string key, object value)
-    {
-        DebugInfo[key] = value;
-    }
+    public void AddDebugInfo(string key, object value) => DebugInfo[key] = value;
 
     /// <summary>
     /// Calculates the efficiency ratio for this stage.

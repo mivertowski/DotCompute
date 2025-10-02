@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
@@ -110,12 +110,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     internal MetalDeviceInfo GetDeviceInfo()
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         var info = accelerator.Info;
         return new MetalDeviceInfo
         {
@@ -132,12 +127,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public async Task<IUnifiedMemoryBuffer> AllocateBufferAsync<T>(int size) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return await accelerator.Memory.AllocateAsync<T>(size, default).ConfigureAwait(false);
     }
 
@@ -146,12 +136,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public Task CopyToBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return buffer.CopyFromAsync(data.AsMemory()).AsTask();
     }
 
@@ -160,12 +145,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public Task CopyFromBufferAsync<T>(IUnifiedMemoryBuffer<T> buffer, T[] data) where T : unmanaged
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         return buffer.CopyToAsync(data.AsMemory()).AsTask();
     }
 
@@ -174,12 +154,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public IntPtr CompileFunction(string source, string functionName)
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         try
         {
             // Use the accelerator to compile the Metal shader source
@@ -207,12 +182,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public async Task ExecuteComputeShaderAsync(IntPtr function, params IUnifiedMemoryBuffer[] buffers)
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         if (function == IntPtr.Zero)
         {
             throw new ArgumentException("Invalid function handle", nameof(function));
@@ -242,12 +212,7 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public IntPtr CreateCommandQueue()
     {
-        var accelerator = GetDefaultAccelerator();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException("No Metal accelerator available");
-        }
-
+        var accelerator = GetDefaultAccelerator() ?? throw new InvalidOperationException("No Metal accelerator available");
         try
         {
             // Return the command queue handle from the accelerator

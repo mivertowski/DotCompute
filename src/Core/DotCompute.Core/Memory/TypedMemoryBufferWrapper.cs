@@ -9,18 +9,10 @@ namespace DotCompute.Core.Memory;
 /// <summary>
 /// Wraps an untyped memory buffer to provide typed access.
 /// </summary>
-internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly IUnifiedMemoryBuffer _underlyingBuffer;
-    private readonly int _length;
-
-
-    public TypedMemoryBufferWrapper(IUnifiedMemoryBuffer underlyingBuffer, int length)
-    {
-        _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
-        _length = length;
-    }
-
+    private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
+    private readonly int _length = length;
 
     public int Length => _length;
     public long SizeInBytes => _underlyingBuffer.SizeInBytes;
@@ -87,13 +79,11 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
 
 
-
         => await ValueTask.CompletedTask;
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // Copy from buffer to host memory
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
-
 
 
         => await ValueTask.CompletedTask;
@@ -109,7 +99,6 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
 
     public DeviceMemory GetDeviceMemory()
         // Return a default device memory handle
-
 
 
         => new(IntPtr.Zero, SizeInBytes);
@@ -145,13 +134,11 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
         // Default implementation - derived classes can override for better performance
 
 
-
         => ValueTask.CompletedTask;
 
 
     public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
-
 
 
         => ValueTask.CompletedTask;

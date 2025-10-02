@@ -49,7 +49,7 @@ public sealed partial class UnifiedPluginManager : IDisposable
         _executionService = new AlgorithmPluginExecutor(logger);
         _dependencyResolver = new AlgorithmPluginDependencyResolver(logger);
         _healthMonitor = new AlgorithmPluginHealthMonitor(logger, config.HealthMonitoringOptions);
-        _loadedPlugins = new Dictionary<string, IAlgorithmPlugin>();
+        _loadedPlugins = [];
 
         LogUnifiedPluginManagerInitialized();
     }
@@ -170,7 +170,7 @@ public sealed partial class UnifiedPluginManager : IDisposable
                     return false;
                 }
 
-                _loadedPlugins.Remove(pluginId);
+                _ = _loadedPlugins.Remove(pluginId);
             }
 
             // Stop health monitoring
@@ -290,10 +290,7 @@ public sealed partial class UnifiedPluginManager : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
     public void Dispose()
@@ -406,7 +403,7 @@ public sealed class PluginDiscoveryOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan.
     /// </summary>
-    public IList<string> PluginDirectories { get; set; } = new List<string>();
+    public IList<string> PluginDirectories { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether to scan subdirectories.
@@ -416,7 +413,7 @@ public sealed class PluginDiscoveryOptions
     /// <summary>
     /// Gets or sets file patterns to match.
     /// </summary>
-    public IList<string> FilePatterns { get; set; } = new List<string> { "*.dll" };
+    public IList<string> FilePatterns { get; set; } = ["*.dll"];
 }
 
 /// <summary>

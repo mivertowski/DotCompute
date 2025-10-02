@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -13,24 +13,17 @@ namespace DotCompute.Core.Memory.P2P
     /// Performs P2P capability validation through comprehensive performance benchmarking.
     /// Handles single P2P benchmarks, multi-GPU benchmarks, and transfer pattern analysis.
     /// </summary>
-    internal sealed class P2PCapabilityValidator : IAsyncDisposable
+    internal sealed class P2PCapabilityValidator(ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<string, P2PBenchmarkResult> _benchmarkCache;
-        private readonly SemaphoreSlim _benchmarkSemaphore;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, P2PBenchmarkResult> _benchmarkCache = new();
+        private readonly SemaphoreSlim _benchmarkSemaphore = new(MaxConcurrentBenchmarks, MaxConcurrentBenchmarks);
         private bool _disposed;
 
         // Benchmark configuration
         private const int MaxConcurrentBenchmarks = 4;
         private const int BenchmarkWarmupIterations = 3;
         private const int BenchmarkMeasurementIterations = 10;
-
-        public P2PCapabilityValidator(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _benchmarkCache = new ConcurrentDictionary<string, P2PBenchmarkResult>();
-            _benchmarkSemaphore = new SemaphoreSlim(MaxConcurrentBenchmarks, MaxConcurrentBenchmarks);
-        }
 
         /// <summary>
         /// Executes comprehensive P2P performance benchmarks.
@@ -372,14 +365,10 @@ namespace DotCompute.Core.Memory.P2P
             benchmarkResult.TotalBenchmarkTimeMs = (DateTimeOffset.UtcNow - benchmarkResult.BenchmarkTime).TotalMilliseconds;
         }
 
-        private static string GetBenchmarkCacheKey(string sourceDeviceId, string targetDeviceId, P2PBenchmarkOptions options)
-        {
-            return $"{sourceDeviceId}->{targetDeviceId}_{options.MinTransferSizeMB}-{options.MaxTransferSizeMB}";
-        }
+        private static string GetBenchmarkCacheKey(string sourceDeviceId, string targetDeviceId, P2PBenchmarkOptions options) => $"{sourceDeviceId}->{targetDeviceId}_{options.MinTransferSizeMB}-{options.MaxTransferSizeMB}";
 
         public async ValueTask DisposeAsync()
         {
-            await Task.CompletedTask.ConfigureAwait(false);
             if (!_disposed)
             {
                 _benchmarkSemaphore?.Dispose();

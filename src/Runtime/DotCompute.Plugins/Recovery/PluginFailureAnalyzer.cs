@@ -105,7 +105,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
             List<FailureInstance> failuresCopy;
             lock (failures)
             {
-                failuresCopy = new List<FailureInstance>(failures);
+                failuresCopy = [.. failures];
             }
 
             return await PerformDetailedAnalysisAsync(pluginId, failuresCopy, cancellationToken);
@@ -119,10 +119,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
     /// <summary>
     /// Gets identified failure patterns for a plugin
     /// </summary>
-    public FailurePattern? GetFailurePattern(string pluginId)
-    {
-        return _identifiedPatterns.TryGetValue(pluginId, out var pattern) ? pattern : null;
-    }
+    public FailurePattern? GetFailurePattern(string pluginId) => _identifiedPatterns.TryGetValue(pluginId, out var pattern) ? pattern : null;
 
     /// <summary>
     /// Gets failure statistics for a plugin over a specified time window
@@ -141,7 +138,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
 
         lock (failures)
         {
-            recentFailures = failures.Where(f => f.Timestamp >= cutoff).ToList();
+            recentFailures = [.. failures.Where(f => f.Timestamp >= cutoff)];
         }
 
         var statistics = new FailureStatistics
@@ -267,7 +264,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
     {
         if (failures.Count < 2)
         {
-            return new Dictionary<string, double>();
+            return [];
         }
 
 
@@ -289,7 +286,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
     {
         if (failures.Count == 0)
         {
-            return new Dictionary<string, long>();
+            return [];
         }
 
 

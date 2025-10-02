@@ -6,20 +6,16 @@ namespace DotCompute.Runtime.DependencyInjection.Attributes;
 /// <summary>
 /// Attribute to mark properties for dependency injection.
 /// </summary>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginInjectAttribute"/> class.
+/// </remarks>
+/// <param name="required">Whether the dependency is required.</param>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class PluginInjectAttribute : Attribute
+public sealed class PluginInjectAttribute(bool required = true) : Attribute
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginInjectAttribute"/> class.
-    /// </summary>
-    /// <param name="required">Whether the dependency is required.</param>
-    public PluginInjectAttribute(bool required = true)
-    {
-        Required = required;
-    }
 
     /// <summary>
     /// Gets whether the dependency is required.
     /// </summary>
-    public bool Required { get; }
+    public bool Required { get; } = required;
 }

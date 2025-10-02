@@ -10,22 +10,13 @@ namespace DotCompute.Core.Pipelines.Optimization.Models;
 /// <summary>
 /// Custom optimization pass implementation.
 /// </summary>
-internal sealed class CustomOptimizationPass : IOptimizationPass
+internal sealed class CustomOptimizationPass(string name, Func<IKernelPipeline, Task<IKernelPipeline>> optimizationLogic) : IOptimizationPass
 {
-    private readonly Func<IKernelPipeline, Task<IKernelPipeline>> _optimizationLogic;
+    private readonly Func<IKernelPipeline, Task<IKernelPipeline>> _optimizationLogic = optimizationLogic ?? throw new ArgumentNullException(nameof(optimizationLogic));
 
-    public CustomOptimizationPass(string name, Func<IKernelPipeline, Task<IKernelPipeline>> optimizationLogic)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        _optimizationLogic = optimizationLogic ?? throw new ArgumentNullException(nameof(optimizationLogic));
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     public OptimizationType OptimizationType => OptimizationType.None; // Custom optimizations don't have a specific type
 
-    public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
-    {
-        return _optimizationLogic(pipeline);
-    }
+    public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => _optimizationLogic(pipeline);
 }

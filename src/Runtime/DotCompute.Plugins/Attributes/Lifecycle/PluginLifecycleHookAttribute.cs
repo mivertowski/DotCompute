@@ -13,14 +13,18 @@ namespace DotCompute.Plugins.Attributes.Lifecycle;
 /// The method marked with this attribute should be public and can be either void or return a Task for async operations.
 /// The plugin system will automatically invoke these methods at the appropriate lifecycle stage.
 /// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginLifecycleHookAttribute"/> class.
+/// </remarks>
+/// <param name="stage">The lifecycle stage for this hook.</param>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-public sealed class PluginLifecycleHookAttribute : Attribute
+public sealed class PluginLifecycleHookAttribute(PluginLifecycleStage stage) : Attribute
 {
     /// <summary>
     /// Gets the lifecycle stage for this hook.
     /// Determines when this method will be invoked during the plugin lifecycle.
     /// </summary>
-    public PluginLifecycleStage Stage { get; }
+    public PluginLifecycleStage Stage { get; } = stage;
 
     /// <summary>
     /// Gets or sets the priority for hook execution.
@@ -34,13 +38,4 @@ public sealed class PluginLifecycleHookAttribute : Attribute
     /// When false, exceptions are logged but plugin loading continues.
     /// </summary>
     public bool IsCritical { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginLifecycleHookAttribute"/> class.
-    /// </summary>
-    /// <param name="stage">The lifecycle stage for this hook.</param>
-    public PluginLifecycleHookAttribute(PluginLifecycleStage stage)
-    {
-        Stage = stage;
-    }
 }

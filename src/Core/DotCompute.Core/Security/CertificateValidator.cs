@@ -22,7 +22,7 @@ public sealed class CertificateValidator : IDisposable
     public CertificateValidator(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _validationCache = new Dictionary<string, CachedCertificateValidation>();
+        _validationCache = [];
 
         // Set up cache cleanup timer
         _cacheCleanupTimer = new Timer(CleanupCache, null,
@@ -395,10 +395,7 @@ public sealed class CertificateValidator : IDisposable
         return weakAlgorithms.Any(weak => algorithmName.Contains(weak, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string GenerateCacheKey(string thumbprint, bool checkRevocation)
-    {
-        return $"{thumbprint}_{checkRevocation}";
-    }
+    private static string GenerateCacheKey(string thumbprint, bool checkRevocation) => $"{thumbprint}_{checkRevocation}";
 
     private void CleanupCache(object? state)
     {
@@ -437,14 +434,12 @@ public sealed class CertificateValidator : IDisposable
         if (!_disposed)
         {
             _cacheCleanupTimer?.Dispose();
-
-
+            
             lock (_cacheLock)
             {
                 _validationCache.Clear();
             }
-
-
+            
             _disposed = true;
             _logger.LogDebugMessage("Certificate Validator disposed");
         }

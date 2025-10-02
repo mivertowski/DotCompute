@@ -38,7 +38,7 @@ internal class DevicePerformanceEstimator
             ComputePerformance = 100_000_000_000L, // 100 GFLOPS
             MemoryLatency = 0.0001, // 100μs
             PowerEfficiency = 1.0,
-            SupportedDataTypes = new[] { "float", "double", "int", "long" }
+            SupportedDataTypes = ["float", "double", "int", "long"]
         };
 
         _deviceCapabilities["CUDA"] = new DeviceCapabilities
@@ -48,7 +48,7 @@ internal class DevicePerformanceEstimator
             ComputePerformance = 15_000_000_000_000L, // 15 TFLOPS
             MemoryLatency = 0.0005, // 500μs
             PowerEfficiency = 3.0,
-            SupportedDataTypes = new[] { "float", "half", "int" }
+            SupportedDataTypes = ["float", "half", "int"]
         };
 
         _deviceCapabilities["METAL"] = new DeviceCapabilities
@@ -58,7 +58,7 @@ internal class DevicePerformanceEstimator
             ComputePerformance = 10_000_000_000_000L, // 10 TFLOPS
             MemoryLatency = 0.0003, // 300μs
             PowerEfficiency = 2.5,
-            SupportedDataTypes = new[] { "float", "half", "int" }
+            SupportedDataTypes = ["float", "half", "int"]
         };
     }
 
@@ -415,10 +415,7 @@ internal class DevicePerformanceEstimator
     /// <summary>
     /// Generates a performance key for caching.
     /// </summary>
-    private static string GetPerformanceKey(string kernelName, IAccelerator device)
-    {
-        return $"{device.Info.Name}_{kernelName}";
-    }
+    private static string GetPerformanceKey(string kernelName, IAccelerator device) => $"{device.Info.Name}_{kernelName}";
 
     /// <summary>
     /// Analyzes kernel characteristics to create a performance model.
@@ -749,8 +746,7 @@ internal class DevicePerformanceEstimator
         public double ComputeIntensity { get; set; } = 10.0; // Operations per byte
         public double MemoryAccessPatternFactor { get; set; } = 1.2; // Complexity factor
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-        public int SampleCount { get; set; }
-
+        public int SampleCount { get; set; } = 0;
     }
 
     #endregion

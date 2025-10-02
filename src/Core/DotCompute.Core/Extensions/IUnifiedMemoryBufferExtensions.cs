@@ -172,10 +172,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         public static ValueTask ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
 
-            T[] destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return buffer.ReadAsync(destination.AsMemory(), offset, cancellationToken);
-        }
+            T[] destination, int offset, CancellationToken cancellationToken = default) where T : unmanaged => buffer.ReadAsync(destination.AsMemory(), offset, cancellationToken);
 
         /// <summary>
         /// Reads data from the buffer asynchronously into a memory location.
@@ -278,10 +275,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         public static ValueTask WriteAsync<T>(this IUnifiedMemoryBuffer<T> buffer,
 
-            T[] data, int offset, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return buffer.WriteAsync(data.AsMemory(), offset, cancellationToken);
-        }
+            T[] data, int offset, CancellationToken cancellationToken = default) where T : unmanaged => buffer.WriteAsync(data.AsMemory(), offset, cancellationToken);
 
         /// <summary>
         /// Writes data to the buffer asynchronously with memory input.

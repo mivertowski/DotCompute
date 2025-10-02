@@ -10,17 +10,11 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// Memory access pattern optimizer for SIMD operations
 /// </summary>
-public sealed class SimdMemoryOptimizer : IDisposable
+public sealed class SimdMemoryOptimizer(ExecutorConfiguration config, ILogger logger) : IDisposable
 {
-    private readonly ExecutorConfiguration _config;
-    private readonly ILogger _logger;
+    private readonly ExecutorConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
-
-    public SimdMemoryOptimizer(ExecutorConfiguration config, ILogger logger)
-    {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Optimizes memory layout for vectorized operations

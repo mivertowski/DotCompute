@@ -191,8 +191,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
                 }
 
                 // Add event to activity
-                _ = activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, new ActivityTagsCollection(
-                    attributes?.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value)) ?? Enumerable.Empty<KeyValuePair<string, object?>>())
+                _ = activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, [.. attributes?.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value)) ?? Enumerable.Empty<KeyValuePair<string, object?>>()]
                 ));
             }
         }
@@ -203,7 +202,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     }
 
 
-    public Abstractions.Interfaces.Telemetry.IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
+    public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
     {
         if (_disposed)
         {
@@ -528,7 +527,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 /// <summary>
 /// Production-grade operation timer implementation with full telemetry integration.
 /// </summary>
-internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemetry.IOperationTimer
+internal sealed class ProductionOperationTimer : IOperationTimer
 {
     private readonly string _operationName;
     private readonly IDictionary<string, object?>? _tags;
@@ -671,24 +670,15 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
     }
 
     // Simple timer handle implementation
-    private sealed class TimerHandle : ITimerHandle, IDisposable
+    private sealed class TimerHandle(string operationName, string operationId) : ITimerHandle, IDisposable
     {
-        private readonly Stopwatch _stopwatch;
-        private readonly Dictionary<string, TimeSpan> _checkpoints;
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+        private readonly Dictionary<string, TimeSpan> _checkpoints = [];
 
-        public string OperationName { get; }
-        public string OperationId { get; }
-        public DateTime StartTime { get; }
+        public string OperationName { get; } = operationName ?? throw new ArgumentNullException(nameof(operationName));
+        public string OperationId { get; } = operationId ?? Guid.NewGuid().ToString();
+        public DateTime StartTime { get; } = DateTime.UtcNow;
         public TimeSpan Elapsed => _stopwatch.Elapsed;
-
-        public TimerHandle(string operationName, string operationId)
-        {
-            OperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
-            OperationId = operationId ?? Guid.NewGuid().ToString();
-            StartTime = DateTime.UtcNow;
-            _stopwatch = Stopwatch.StartNew();
-            _checkpoints = [];
-        }
 
         public TimeSpan Stop(IDictionary<string, object>? metadata = null)
         {
@@ -703,10 +693,7 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
             return elapsed;
         }
 
-        public IDictionary<string, TimeSpan> GetCheckpoints()
-        {
-            return new Dictionary<string, TimeSpan>(_checkpoints);
-        }
+        public IDictionary<string, TimeSpan> GetCheckpoints() => new Dictionary<string, TimeSpan>(_checkpoints);
 
         public void Dispose()
         {

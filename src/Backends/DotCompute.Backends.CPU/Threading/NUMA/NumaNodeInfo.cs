@@ -70,8 +70,8 @@ public sealed class NumaNode
     /// </summary>
     /// <param name="cpuId">The CPU ID to check.</param>
     /// <returns>True if the CPU belongs to this node.</returns>
-    public bool ContainsCpu(int cpuId) =>
-        cpuId >= 0 && cpuId < NumaConstants.Limits.MaxCpusInMask &&
+    public bool ContainsCpu(int cpuId)
+        => cpuId >= 0 && cpuId < NumaConstants.Limits.MaxCpusInMask &&
         (ProcessorMask & (1UL << cpuId)) != 0;
 
     /// <summary>
@@ -79,20 +79,16 @@ public sealed class NumaNode
     /// </summary>
     /// <returns>Estimated utilization between 0.0 and 1.0.</returns>
     public static double GetEstimatedUtilization()
-    {
         // This would be implemented with actual performance counters in production
-        return 0.0;
-    }
+        => 0.0;
 
     /// <summary>
     /// Gets the memory bandwidth estimate for this node.
     /// </summary>
     /// <returns>Estimated memory bandwidth in GB/s.</returns>
     public double GetEstimatedMemoryBandwidth()
-    {
         // This would be implemented with actual memory benchmarks in production
-        return ProcessorCount * 25.0; // Rough estimate: 25 GB/s per core
-    }
+        => ProcessorCount * 25.0; // Rough estimate: 25 GB/s per core
 }
 
 /// <summary>

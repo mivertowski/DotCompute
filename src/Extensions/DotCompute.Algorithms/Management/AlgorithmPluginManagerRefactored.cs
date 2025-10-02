@@ -167,7 +167,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
                     catch (Exception ex)
                     {
                         // Remove from registry if initialization failed
-                        _registry.UnregisterPlugin(loadedPlugin.Plugin.Id);
+                        _ = _registry.UnregisterPlugin(loadedPlugin.Plugin.Id);
                         LogPluginInitializationFailed(loadedPlugin.Plugin.Id, ex.Message);
                     }
                 }
@@ -200,7 +200,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
         {
             Plugin = plugin,
             Metadata = metadata,
-            LoadContext = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as DotCompute.Algorithms.Management.Loading.PluginAssemblyLoadContext
+            LoadContext = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as Loading.PluginAssemblyLoadContext
                 ?? throw new InvalidOperationException("Unable to get load context for plugin assembly"),
             Assembly = plugin.GetType().Assembly,
             AssemblyLocation = plugin.GetType().Assembly.Location,

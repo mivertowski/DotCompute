@@ -298,7 +298,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         });
 
         // Assert
-        result.Should().Be(42);
+        _ = result.Should().Be(42);
 
         var timers = _telemetryProvider.GetTimers();
         _ = timers["test_function"].Should().HaveCount(1);
@@ -317,7 +317,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         });
 
         // Assert
-        result.Should().Be("success");
+        _ = result.Should().Be("success");
 
         var timers = _telemetryProvider.GetTimers();
         _ = timers["async_test_function"].Should().HaveCount(1);
@@ -787,7 +787,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 /// <summary>
 /// Test implementation of BaseTelemetryProvider for comprehensive testing.
 /// </summary>
-internal sealed class TestTelemetryProvider : BaseTelemetryProvider
+internal sealed class TestTelemetryProvider(ILogger<BaseTelemetryProvider> logger) : BaseTelemetryProvider(
+    logger,
+    new TelemetryConfiguration(),
+    "Test",
+    "1.0.0")
 {
     private readonly object _lock = new();
     private readonly Dictionary<string, List<MetricDataPoint>> _metrics = [];
@@ -807,14 +811,6 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
     // Test tracking
     public int CleanupCount { get; private set; }
-
-    public TestTelemetryProvider(ILogger<BaseTelemetryProvider> logger) : base(
-        logger,
-        new TelemetryConfiguration(),
-        "Test",
-        "1.0.0")
-    {
-    }
 
     protected override string GetBackendType() => "Test";
 
@@ -957,7 +953,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     {
         lock (_lock)
         {
-            return _events.ToList();
+            return [.. _events];
         }
     }
 
@@ -965,7 +961,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     {
         lock (_lock)
         {
-            return _exceptions.ToList();
+            return [.. _exceptions];
         }
     }
 
@@ -973,7 +969,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     {
         lock (_lock)
         {
-            return _dependencies.ToList();
+            return [.. _dependencies];
         }
     }
 
@@ -1000,10 +996,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         _samplingRate = rate;
     }
 
-    public void AddMetricFilter(Func<string, bool> filter)
-    {
-        _metricFilter = filter;
-    }
+    public void AddMetricFilter(Func<string, bool> filter) => _metricFilter = filter;
 
     public void SetRetentionPolicy(TimeSpan period, int maxCount = int.MaxValue)
     {
@@ -1011,10 +1004,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         _maxRetentionCount = maxCount;
     }
 
-    public void SetMemoryPressureThreshold(long bytes)
-    {
-        _memoryPressureThreshold = bytes;
-    }
+    public void SetMemoryPressureThreshold(long bytes) => _memoryPressureThreshold = bytes;
 
     public void CheckMemoryPressure()
     {
@@ -1225,32 +1215,19 @@ public class MetricStatistics
     public double StandardDeviation { get; set; }
 }
 
-internal class TestTelemetryTimer : IOperationTimer
+internal class TestTelemetryTimer(string timerName, TestTelemetryProvider provider) : ITelemetryTimer
 {
-    private readonly string _timerName;
-    private readonly TestTelemetryProvider _provider;
-    private readonly Dictionary<string, OperationStatistics> _statistics = new();
+    private readonly TestTelemetryProvider _provider = provider;
+    private readonly Dictionary<string, OperationStatistics> _statistics = [];
     private bool _disposed;
 
     public bool IsEnabled { get; private set; } = true;
     public TimeSpan MinimumDurationThreshold { get; private set; } = TimeSpan.Zero;
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
 
-    public TestTelemetryTimer(string timerName, TestTelemetryProvider provider)
-    {
-        _timerName = timerName;
-        _provider = provider;
-    }
+    public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TestTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString(), this);
 
-    public ITimerHandle StartOperation(string operationName, string? operationId = null)
-    {
-        return new TestTimerHandle(operationName, operationId ?? Guid.NewGuid().ToString(), this);
-    }
-
-    public IDisposable StartOperationScope(string operationName, string? operationId = null)
-    {
-        return StartOperation(operationName, operationId);
-    }
+    public IDisposable StartOperationScope(string operationName, string? operationId = null) => StartOperation(operationName, operationId);
 
     public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation)
     {
@@ -1345,25 +1322,13 @@ internal class TestTelemetryTimer : IOperationTimer
         });
     }
 
-    public OperationStatistics? GetStatistics(string operationName)
-    {
-        return _statistics.TryGetValue(operationName, out var stats) ? stats : null;
-    }
+    public OperationStatistics? GetStatistics(string operationName) => _statistics.TryGetValue(operationName, out var stats) ? stats : null;
 
-    public IDictionary<string, OperationStatistics> GetAllStatistics()
-    {
-        return new Dictionary<string, OperationStatistics>(_statistics);
-    }
+    public IDictionary<string, OperationStatistics> GetAllStatistics() => new Dictionary<string, OperationStatistics>(_statistics);
 
-    public void ClearStatistics(string operationName)
-    {
-        _ = _statistics.Remove(operationName);
-    }
+    public void ClearStatistics(string operationName) => _ = _statistics.Remove(operationName);
 
-    public void ClearAllStatistics()
-    {
-        _statistics.Clear();
-    }
+    public void ClearAllStatistics() => _statistics.Clear();
 
     public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null)
     {
@@ -1376,15 +1341,9 @@ internal class TestTelemetryTimer : IOperationTimer
         };
     }
 
-    public void SetEnabled(bool enabled)
-    {
-        IsEnabled = enabled;
-    }
+    public void SetEnabled(bool enabled) => IsEnabled = enabled;
 
-    public void SetMinimumDurationThreshold(TimeSpan threshold)
-    {
-        MinimumDurationThreshold = threshold;
-    }
+    public void SetMinimumDurationThreshold(TimeSpan threshold) => MinimumDurationThreshold = threshold;
 
     public void Dispose()
     {
@@ -1395,26 +1354,17 @@ internal class TestTelemetryTimer : IOperationTimer
     }
 }
 
-internal class TestTimerHandle : ITimerHandle
+internal class TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer) : ITimerHandle
 {
-    private readonly TestTelemetryTimer _timer;
-    private readonly Stopwatch _stopwatch;
-    private readonly Dictionary<string, TimeSpan> _checkpoints = new();
+    private readonly TestTelemetryTimer _timer = timer;
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+    private readonly Dictionary<string, TimeSpan> _checkpoints = [];
     private bool _disposed;
 
-    public string OperationName { get; }
-    public string OperationId { get; }
-    public DateTime StartTime { get; }
+    public string OperationName { get; } = operationName;
+    public string OperationId { get; } = operationId;
+    public DateTime StartTime { get; } = DateTime.UtcNow;
     public TimeSpan Elapsed => _stopwatch.Elapsed;
-
-    public TestTimerHandle(string operationName, string operationId, TestTelemetryTimer timer)
-    {
-        OperationName = operationName;
-        OperationId = operationId;
-        _timer = timer;
-        StartTime = DateTime.UtcNow;
-        _stopwatch = Stopwatch.StartNew();
-    }
 
     public TimeSpan Stop(IDictionary<string, object>? metadata = null)
     {
@@ -1432,10 +1382,7 @@ internal class TestTimerHandle : ITimerHandle
         return elapsed;
     }
 
-    public IDictionary<string, TimeSpan> GetCheckpoints()
-    {
-        return new Dictionary<string, TimeSpan>(_checkpoints);
-    }
+    public IDictionary<string, TimeSpan> GetCheckpoints() => new Dictionary<string, TimeSpan>(_checkpoints);
 
     public void Dispose()
     {

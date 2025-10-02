@@ -8,12 +8,8 @@ namespace DotCompute.Tests.Common.Examples;
 /// Example tests demonstrating the usage of DotCompute test infrastructure.
 /// These examples show best practices for testing accelerated computing scenarios.
 /// </summary>
-public class ExampleTests : ConsolidatedTestBase
+public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
-    public ExampleTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     [Trait("Category", TestCategories.HardwareIndependent)]
     public void Example_BasicArrayComparison()
@@ -200,12 +196,8 @@ public class ExampleTests : ConsolidatedTestBase
 /// Example GPU-specific tests demonstrating GPU test infrastructure.
 /// These tests will be skipped if appropriate hardware is not available.
 /// </summary>
-public class ExampleGpuTests : ConsolidatedTestBase
+public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
 {
-    public ExampleGpuTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     [Trait("Category", TestCategories.RequiresCUDA)]
     public void Example_CudaHardwareDetection()

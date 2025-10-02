@@ -6,7 +6,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Core.Debugging;
@@ -15,24 +14,15 @@ namespace DotCompute.Core.Debugging;
 /// Handles report generation and metrics for kernel debugging operations.
 /// Provides comprehensive reporting capabilities and result comparison.
 /// </summary>
-internal sealed class KernelDebugReporter : IDisposable
+internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) : IDisposable
 {
-    private readonly ILogger<KernelDebugReporter> _logger;
-    private DebugServiceOptions _options;
+    private readonly ILogger<KernelDebugReporter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private DebugServiceOptions _options = new();
     private bool _disposed;
 
-    public KernelDebugReporter(ILogger<KernelDebugReporter> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = new DebugServiceOptions();
-    }
+    public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    public void Configure(DebugServiceOptions options)
-    {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
-
-    public Task<ResultComparisonReport> CompareResultsAsync(
+    public async Task<ResultComparisonReport> CompareResultsAsync(
         KernelExecutionResult result1,
         KernelExecutionResult result2,
         float tolerance = 1e-6f)
@@ -84,10 +74,10 @@ internal sealed class KernelDebugReporter : IDisposable
             }
 
             // Compare memory usage
-            if (result1.MemoryUsed > 0 && result2.MemoryUsed > 0)
+            if (result1.MemoryUsage > 0 && result2.MemoryUsage > 0)
             {
-                var memoryDifference = Math.Abs(result1.MemoryUsed - result2.MemoryUsed);
-                var averageMemory = (result1.MemoryUsed + result2.MemoryUsed) / 2.0;
+                var memoryDifference = Math.Abs(result1.MemoryUsage - result2.MemoryUsage);
+                var averageMemory = (result1.MemoryUsage + result2.MemoryUsage) / 2.0;
 
                 if (memoryDifference / averageMemory > 0.3) // >30% difference
                 {
@@ -96,8 +86,8 @@ internal sealed class KernelDebugReporter : IDisposable
                         Severity = ComparisonSeverity.Warning,
                         Category = "Memory Usage",
                         Description = "Significant memory usage difference detected",
-                        Details = $"{result1.BackendType}: {result1.MemoryUsed:N0} bytes | " +
-                                 $"{result2.BackendType}: {result2.MemoryUsed:N0} bytes"
+                        Details = $"{result1.BackendType}: {result1.MemoryUsage:N0} bytes | " +
+                                 $"{result2.BackendType}: {result2.MemoryUsage:N0} bytes"
                     });
                 }
             }
@@ -117,23 +107,25 @@ internal sealed class KernelDebugReporter : IDisposable
                     });
                 }
 
-                // ResultsMatch is set in the report object creation
-                // ResultDifference is a computed property from Differences list
+                report.ResultsMatch = resultComparison.IsMatch;
+                report.ResultDifference = resultComparison.Difference;
             }
             else
             {
-                // ResultsMatch is set in the report object creation
-                // ResultDifference is a computed property from Differences list
+                report.ResultsMatch = false;
+                report.ResultDifference = float.MaxValue;
             }
 
-            // Return the report
-            return Task.FromResult(report);
+            // Generate summary
+            report.Summary = GenerateComparisonSummary(report);
+
+            return report;
         }
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, "Error during result comparison");
 
-            return Task.FromResult(new ResultComparisonReport
+            return new ResultComparisonReport
             {
                 Result1 = result1,
                 Result2 = result2,
@@ -147,12 +139,12 @@ internal sealed class KernelDebugReporter : IDisposable
                     Description = "Failed to compare results",
                     Details = ex.Message
                 }],
-                Differences = []
-            });
+                Summary = "Comparison failed due to error"
+            };
         }
     }
 
-    public Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
+    public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(validationResult);
@@ -186,42 +178,34 @@ internal sealed class KernelDebugReporter : IDisposable
         if (validationResult.Results?.Any() == true)
         {
             _ = report.AppendLine("--- Backend Execution Results ---");
-            foreach (var kvp in validationResult.Results)
+            foreach (var result in validationResult.Results)
             {
-                if (kvp.Value is KernelExecutionResult result)
+                _ = report.AppendLine($"Backend: {result.BackendType}");
+                _ = report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
+                _ = report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
+                if (result.MemoryUsage > 0)
                 {
-                    _ = report.AppendLine($"Backend: {result.BackendType}");
-                    _ = report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
-                    _ = report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
-                    if (result.MemoryUsed > 0)
-                    {
-                        _ = report.AppendLine($"  Memory Usage: {result.MemoryUsed:N0} bytes");
-                    }
-                    if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
-                    {
-                        _ = report.AppendLine($"  Error: {result.ErrorMessage}");
-                    }
-                    _ = report.AppendLine();
+                    _ = report.AppendLine($"  Memory Usage: {result.MemoryUsage:N0} bytes");
                 }
+                if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    _ = report.AppendLine($"  Error: {result.ErrorMessage}");
+                }
+                _ = report.AppendLine();
             }
         }
 
         // Cross-Backend Comparisons
-        if (validationResult.Results?.Any() == true && validationResult.Results.Count > 1)
+        if (validationResult.Comparisons?.Any() == true)
         {
             _ = report.AppendLine("--- Cross-Backend Comparisons ---");
-            var results = validationResult.Results.Values.OfType<KernelExecutionResult>().ToList();
-            if (results.Count >= 2)
+            foreach (var comparison in validationResult.Comparisons)
             {
-                var result1 = results[0];
-                var result2 = results[1];
-                var match = result1.Success == result2.Success;
-                var status = match ? "✓ MATCH" : "✗ DIFFER";
-                _ = report.AppendLine($"{result1.BackendType} vs {result2.BackendType}: {status}");
-                if (!match)
+                var status = comparison.IsMatch ? "✓ MATCH" : "✗ DIFFER";
+                _ = report.AppendLine($"{comparison.Backend1} vs {comparison.Backend2}: {status}");
+                if (!comparison.IsMatch)
                 {
-                    var timeDiff = Math.Abs(result1.ExecutionTime.TotalMilliseconds - result2.ExecutionTime.TotalMilliseconds);
-                    _ = report.AppendLine($"  Time Difference: {timeDiff:F6}ms");
+                    _ = report.AppendLine($"  Difference: {comparison.Difference:F6}");
                 }
             }
             _ = report.AppendLine();
@@ -238,17 +222,16 @@ internal sealed class KernelDebugReporter : IDisposable
                 foreach (var issue in group)
                 {
                     _ = report.AppendLine($"  • {issue.Message}");
-                    if (issue.Details?.Any() == true)
+                    if (!string.IsNullOrEmpty(issue.Details))
                     {
-                        var details = issue.Details.TryGetValue("message", out var msg) ? msg?.ToString() : "No details available";
-                        _ = report.AppendLine($"    Details: {issue.Context ?? details}");
+                        _ = report.AppendLine($"    Details: {issue.Details}");
                     }
                 }
                 _ = report.AppendLine();
             }
         }
 
-        return Task.FromResult(report.ToString());
+        return report.ToString();
     }
 
     public async Task<string> ExportReportAsync(object report, ReportFormat format)
@@ -263,13 +246,13 @@ internal sealed class KernelDebugReporter : IDisposable
                 ReportFormat.Json => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
                 ReportFormat.Xml => await ExportToXmlAsync(report),
                 ReportFormat.Csv => await ExportToCsvAsync(report),
-                ReportFormat.PlainText => await ExportToTextAsync(report),
+                ReportFormat.Text => await ExportToTextAsync(report),
                 _ => throw new ArgumentException($"Unsupported report format: {format}")
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting report in format {format}", format);
+            _logger.LogErrorMessage(ex, "Error exporting report in format {format}", format);
             throw;
         }
     }
@@ -366,10 +349,9 @@ internal sealed class KernelDebugReporter : IDisposable
         else
         {
             _ = summary.Append("Results differ");
-            if (report.Differences.Any())
+            if (report.ResultDifference < float.MaxValue)
             {
-                var maxDiff = report.Differences.Max(d => d.Difference);
-                _ = summary.Append($" (max difference: {maxDiff:F6})");
+                _ = summary.Append($" (difference: {report.ResultDifference:F6})");
             }
         }
 
@@ -404,13 +386,10 @@ internal sealed class KernelDebugReporter : IDisposable
 
             if (validation.Results != null)
             {
-                foreach (var kvp in validation.Results)
+                foreach (var result in validation.Results)
                 {
-                    if (kvp.Value is KernelExecutionResult result)
-                    {
-                        _ = csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
-                                     $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsed}");
-                    }
+                    csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
+                                 $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsage}");
                 }
             }
 
@@ -442,4 +421,17 @@ internal sealed class KernelDebugReporter : IDisposable
 // Supporting enums and classes
 // ReportFormat moved to DotCompute.Abstractions.Debugging.ReportingTypes
 
-// ComparisonSeverity and ComparisonIssue types have been moved to DotCompute.Abstractions.Debugging
+public enum ComparisonSeverity
+{
+    Info,
+    Warning,
+    Error
+}
+
+public class ComparisonIssue
+{
+    public ComparisonSeverity Severity { get; set; }
+    public required string Category { get; set; }
+    public required string Description { get; set; }
+    public string Details { get; set; } = string.Empty;
+}

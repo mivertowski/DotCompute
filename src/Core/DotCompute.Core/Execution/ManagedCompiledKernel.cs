@@ -13,50 +13,42 @@ namespace DotCompute.Core.Execution;
 /// Managed wrapper for compiled kernels that provides additional metadata and lifecycle management.
 /// Tracks execution statistics, compilation information, and performance metrics.
 /// </summary>
-public sealed class ManagedCompiledKernel : IAsyncDisposable
+/// <remarks>
+/// Initializes a new instance of the ManagedCompiledKernel class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="device">The target accelerator device.</param>
+/// <param name="kernel">The compiled kernel instance.</param>
+/// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+public sealed class ManagedCompiledKernel(string name, IAccelerator device, CompiledKernel kernel) : IAsyncDisposable
 {
     private bool _disposed;
     private long _executionCount;
     private double _totalExecutionTimeMs;
 
     /// <summary>
-    /// Initializes a new instance of the ManagedCompiledKernel class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="device">The target accelerator device.</param>
-    /// <param name="kernel">The compiled kernel instance.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
-    public ManagedCompiledKernel(string name, IAccelerator device, CompiledKernel kernel)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Device = device ?? throw new ArgumentNullException(nameof(device));
-        Kernel = new CompiledKernelWrapper(kernel);
-        CompilationTime = DateTimeOffset.UtcNow;
-    }
-
-    /// <summary>
     /// Gets the kernel name.
     /// </summary>
     /// <value>The unique name identifier for this kernel.</value>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>
     /// Gets the target device.
     /// </summary>
     /// <value>The accelerator device this kernel was compiled for.</value>
-    public IAccelerator Device { get; }
+    public IAccelerator Device { get; } = device ?? throw new ArgumentNullException(nameof(device));
 
     /// <summary>
     /// Gets the compiled kernel wrapper.
     /// </summary>
     /// <value>The wrapped compiled kernel implementation.</value>
-    public ICompiledKernel Kernel { get; }
+    public ICompiledKernel Kernel { get; } = new CompiledKernelWrapper(kernel);
 
     /// <summary>
     /// Gets the compilation timestamp.
     /// </summary>
     /// <value>The date and time when this kernel was compiled.</value>
-    public DateTimeOffset CompilationTime { get; }
+    public DateTimeOffset CompilationTime { get; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Gets the number of times this kernel has been executed.

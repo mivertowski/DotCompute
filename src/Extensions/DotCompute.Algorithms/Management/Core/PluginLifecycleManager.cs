@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Metadata;
@@ -17,11 +17,20 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Service responsible for managing plugin lifecycle operations.
 /// </summary>
-public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginLifecycleManager"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="accelerator">The accelerator to use for plugins.</param>
+/// <param name="hotReloadService">Optional hot reload service.</param>
+public sealed partial class PluginLifecycleManager(
+    ILogger<PluginLifecycleManager> logger,
+    IAccelerator accelerator,
+    IHotReloadService? hotReloadService = null) : IPluginLifecycleManager
 {
-    private readonly ILogger<PluginLifecycleManager> _logger;
-    private readonly IAccelerator _accelerator;
-    private readonly IHotReloadService? _hotReloadService;
+    private readonly ILogger<PluginLifecycleManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+    private readonly IHotReloadService? _hotReloadService = hotReloadService;
     private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
 
@@ -41,22 +50,6 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
         public DateTime LastExecution { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }
         public Exception? LastError { get; set; }
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginLifecycleManager"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="accelerator">The accelerator to use for plugins.</param>
-    /// <param name="hotReloadService">Optional hot reload service.</param>
-    public PluginLifecycleManager(
-        ILogger<PluginLifecycleManager> logger,
-        IAccelerator accelerator,
-        IHotReloadService? hotReloadService = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        _hotReloadService = hotReloadService;
     }
 
     /// <inheritdoc/>
@@ -144,7 +137,7 @@ public sealed partial class PluginLifecycleManager : IPluginLifecycleManager
             Capabilities = Array.Empty<string>(),
             SupportedAccelerators = Array.Empty<string>(),
             LoadContextName = $"External_{plugin.Id}",
-            AdditionalMetadata = new Dictionary<string, object>()
+            AdditionalMetadata = []
         };
 
         // Use default load context for external plugins

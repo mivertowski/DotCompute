@@ -21,20 +21,17 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
     public bool CanOptimize(IKernelPipeline pipeline) => pipeline?.Stages?.Any() == true;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
-    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
-    {
-        return await ApplyAsync(pipeline, cancellationToken);
-    }
+    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
         var settings = new PipelineOptimizationSettings
         {
             OptimizationTypes = OptimizationType.DeadCodeElimination,
-            Level = OptimizationLevel.Balanced
+            Level = (AbstractionsMemory.Pipelines.Models.OptimizationLevel)OptimizationLevel.Balanced
         };
 
-        var result = await ApplyInternalAsync(pipeline.Stages.ToList(), settings, cancellationToken);
+        var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);
         if (result.WasApplied)
         {
             return CreateOptimizedPipeline(pipeline, result.OptimizedStages, settings);
@@ -82,12 +79,10 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
     private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
         // Simplified - in practice would analyze data flow
 
-
         => [.. stages.SelectMany(s => s.Dependencies)];
 
     private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
         // Check if stage produces useful output or has side effects
-
 
         => usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Computation;
 

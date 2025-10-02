@@ -14,8 +14,8 @@ public sealed class MemoryTracker : IDisposable
     private readonly ILogger<MemoryTracker> _logger;
     private readonly ILoggerFactory? _loggerFactory;
     private readonly long _initialMemory;
-    private readonly Dictionary<string, long> _checkpoints = new();
-    private readonly List<MemorySnapshot> _snapshots = new();
+    private readonly Dictionary<string, long> _checkpoints = [];
+    private readonly List<MemorySnapshot> _snapshots = [];
     private bool _disposed;
 
     // High-performance LoggerMessage delegates
@@ -136,10 +136,7 @@ public sealed class MemoryTracker : IDisposable
     /// <summary>
     /// Gets the memory usage at a specific checkpoint.
     /// </summary>
-    public long GetCheckpointMemory(string name)
-    {
-        return _checkpoints.TryGetValue(name, out var memory) ? memory : -1;
-    }
+    public long GetCheckpointMemory(string name) => _checkpoints.TryGetValue(name, out var memory) ? memory : -1;
 
     /// <summary>
     /// Gets the memory difference between two checkpoints.
@@ -192,7 +189,7 @@ public sealed class MemoryTracker : IDisposable
             PeakMemory = peakMemory,
             TotalDelta = currentStats.DeltaFromStart,
             Checkpoints = new Dictionary<string, long>(_checkpoints),
-            Snapshots = _snapshots.ToArray(),
+            Snapshots = [.. _snapshots],
             CurrentStatistics = currentStats
         };
     }

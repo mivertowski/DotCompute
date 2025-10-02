@@ -138,7 +138,7 @@ public static class AnalyzerDemo
 
     private static class Kernel
     {
-        public static ThreadId ThreadId => new ThreadId();
+        public static ThreadId ThreadId => new();
     }
 
     private struct ThreadId
@@ -262,7 +262,7 @@ public static class PerformanceAnalysisExamples
 
     private static class Kernel
     {
-        public static ThreadId ThreadId => new ThreadId();
+        public static ThreadId ThreadId => new();
     }
 
     private struct ThreadId

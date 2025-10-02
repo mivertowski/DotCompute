@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Kernels.Types;
@@ -22,11 +22,19 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// CPU-based compute accelerator with SIMD vectorization support.
 /// Migrated to use BaseAccelerator, reducing code by 75% while maintaining full functionality.
 /// </summary>
-public sealed class CpuAccelerator : BaseAccelerator
+public sealed class CpuAccelerator(
+    IOptions<CpuAcceleratorOptions> options,
+    IOptions<CpuThreadPoolOptions> threadPoolOptions,
+    ILogger<CpuAccelerator> logger) : BaseAccelerator(
+        BuildAcceleratorInfo(),
+        AcceleratorType.CPU,
+        CreateCpuMemoryManager(logger),
+        new AcceleratorContext(IntPtr.Zero, 0),
+        logger)
 {
-    private readonly CpuAcceleratorOptions _options;
-    private readonly CpuThreadPool _threadPool;
-    private readonly ILogger<CpuAccelerator> _logger;
+    private readonly CpuAcceleratorOptions _options = options.Value;
+    private readonly CpuThreadPool _threadPool = new(threadPoolOptions);
+    private readonly ILogger<CpuAccelerator> _logger = logger;
 
     #region LoggerMessage Delegates
 
@@ -45,23 +53,6 @@ public sealed class CpuAccelerator : BaseAccelerator
             "Failed to create optimized kernel for {KernelName}, falling back to standard compilation");
 
     #endregion
-
-
-    public CpuAccelerator(
-        IOptions<CpuAcceleratorOptions> options,
-        IOptions<CpuThreadPoolOptions> threadPoolOptions,
-        ILogger<CpuAccelerator> logger)
-        : base(
-            BuildAcceleratorInfo(),
-            AcceleratorType.CPU,
-            CreateCpuMemoryManager(logger),
-            new AcceleratorContext(IntPtr.Zero, 0),
-            logger)
-    {
-        _options = options.Value;
-        _logger = logger;
-        _threadPool = new CpuThreadPool(threadPoolOptions);
-    }
 
     private static CpuMemoryManager CreateCpuMemoryManager(ILogger logger)
     {
@@ -105,7 +96,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         };
 
         // Use AOT-compatible compiler when dynamic code compilation is not available
-        var coreCompiledKernel = global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
+        var coreCompiledKernel = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
             ? await CpuKernelCompiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
             : await new AotCpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
@@ -240,7 +231,7 @@ public sealed class CpuAccelerator : BaseAccelerator
         }
     }
 
-    [global::System.Runtime.Versioning.SupportedOSPlatform("linux")]
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static long GetLinuxPhysicalMemory()
     {
         try

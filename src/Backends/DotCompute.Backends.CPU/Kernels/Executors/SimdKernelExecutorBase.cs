@@ -13,28 +13,22 @@ namespace DotCompute.Backends.CPU.Kernels.Executors;
 /// Base class for SIMD kernel executors.
 /// Provides common functionality for hardware-specific SIMD implementations.
 /// </summary>
-internal abstract class SimdKernelExecutorBase
+/// <remarks>
+/// Initializes a new instance of the SimdKernelExecutorBase class.
+/// </remarks>
+/// <param name="definition">The kernel definition.</param>
+/// <param name="executionPlan">The execution plan for the kernel.</param>
+internal abstract class SimdKernelExecutorBase(KernelDefinition definition, KernelExecutionPlan executionPlan)
 {
     /// <summary>
     /// Gets the kernel definition containing metadata and configuration.
     /// </summary>
-    protected KernelDefinition Definition { get; }
+    protected KernelDefinition Definition { get; } = definition ?? throw new ArgumentNullException(nameof(definition));
 
     /// <summary>
     /// Gets the execution plan specifying vectorization strategy.
     /// </summary>
-    protected KernelExecutionPlan ExecutionPlan { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the SimdKernelExecutorBase class.
-    /// </summary>
-    /// <param name="definition">The kernel definition.</param>
-    /// <param name="executionPlan">The execution plan for the kernel.</param>
-    protected SimdKernelExecutorBase(KernelDefinition definition, KernelExecutionPlan executionPlan)
-    {
-        Definition = definition ?? throw new ArgumentNullException(nameof(definition));
-        ExecutionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
-    }
+    protected KernelExecutionPlan ExecutionPlan { get; } = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
 
     /// <summary>
     /// Executes the kernel with the given input and output buffers.

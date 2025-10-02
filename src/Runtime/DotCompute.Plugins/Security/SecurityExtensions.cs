@@ -98,9 +98,9 @@ public static class SecurityExtensions
         // Check for dangerous types
         var dangerousTypes = new[]
         {
-            typeof(System.Reflection.Assembly),
-            typeof(System.AppDomain),
-            typeof(global::System.Runtime.InteropServices.Marshal),
+            typeof(Assembly),
+            typeof(AppDomain),
+            typeof(System.Runtime.InteropServices.Marshal),
             typeof(System.Diagnostics.Process)
         };
 

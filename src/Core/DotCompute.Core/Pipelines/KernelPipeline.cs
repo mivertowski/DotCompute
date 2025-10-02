@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Models.Pipelines;
 using PipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
 using DotCompute.Core.Validation;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Pipelines;
 using AbstractionsPipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
 using CorePipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
@@ -203,7 +204,7 @@ namespace DotCompute.Core.Pipelines
                     DataTransferTime = ExtractDataTransferTimes(stageResults).Values.Aggregate(TimeSpan.Zero, (sum, time) => sum + time),
                     ParallelExecutions = stageResults.Count(r => r.Metadata?.ContainsKey("IsParallel") == true),
                     Throughput = stageResults.Count > 0 ? stageResults.Count / stopwatch.Elapsed.TotalSeconds : 0,
-                    ExecutionStatus = errors.Count == 0 ? AbstractionsMemory.Types.ExecutionStatus.Completed : AbstractionsMemory.Types.ExecutionStatus.Failed,
+                    ExecutionStatus = errors.Count == 0 ? DotCompute.Abstractions.Types.ExecutionStatus.Completed : DotCompute.Abstractions.Types.ExecutionStatus.Failed,
                     AdditionalMetrics = new Dictionary<string, object>
                     {
                         ["ComputeUtilization"] = CalculateComputeUtilization(stageResults),
@@ -291,9 +292,10 @@ namespace DotCompute.Core.Pipelines
             if (_stages.Count == 0)
             {
                 errors.Add(new ValidationIssue(
-                    "NO_STAGES",
+                    ValidationSeverity.Error,
                     "Pipeline must contain at least one stage",
-                    ValidationSeverity.Error));
+                    "NO_STAGES",
+                    "Stages"));
             }
 
             // Validate stage dependencies
@@ -306,9 +308,10 @@ namespace DotCompute.Core.Pipelines
                     foreach (var error in stageValidation.Errors)
                     {
                         errors.Add(new ValidationIssue(
-                            $"STAGE_ERROR_{stage.Id}",
+                            ValidationSeverity.Error,
                             $"Stage '{stage.Name}': {error}",
-                            ValidationSeverity.Error));
+                            $"STAGE_ERROR_{stage.Id}",
+                            $"Stages[{stage.Id}]"));
                     }
                 }
 
@@ -331,9 +334,11 @@ namespace DotCompute.Core.Pipelines
                     if (!stageIds.Contains(dep))
                     {
                         errors.Add(new ValidationIssue(
-                            "INVALID_DEPENDENCY",
+                            ValidationSeverity.Error,
                             $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
-                            ValidationSeverity.Error));
+                            "INVALID_DEPENDENCY",
+                            $"Stages[{stage.Id}].Dependencies",
+                            dep));
                     }
                 }
             }
@@ -342,9 +347,10 @@ namespace DotCompute.Core.Pipelines
             if (HasCircularDependencies())
             {
                 errors.Add(new ValidationIssue(
-                    "CIRCULAR_DEPENDENCY",
+                    ValidationSeverity.Error,
                     "Pipeline contains circular dependencies",
-                    ValidationSeverity.Error));
+                    "CIRCULAR_DEPENDENCY",
+                    "Stages"));
             }
 
             // Validate optimization settings
@@ -362,8 +368,8 @@ namespace DotCompute.Core.Pipelines
             return new PipelineValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors.Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code ?? "UNKNOWN", e.Message, ValidationSeverity.Error)).ToList() : null,
-                Warnings = warnings.Count > 0 ? warnings.Select(w => new DotCompute.Abstractions.Validation.ValidationWarning { Code = w.Code, Message = w.Message, Severity = AbstractionsMemory.Validation.WarningSeverity.Medium }).ToList() : null
+                Errors = errors.Count > 0 ? errors.Select(e => new ValidationIssue(e.Code ?? "UNKNOWN", e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error)).ToList() : null,
+                Warnings = warnings.Count > 0 ? warnings.Select(w => new AbstractionsMemory.Validation.ValidationWarning { Code = w.Code, Message = w.Message, Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium }).ToList() : null
             };
         }
 
@@ -485,8 +491,8 @@ namespace DotCompute.Core.Pipelines
 
                     switch (errorResult.Action)
                     {
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.None:
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Failed:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.None:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Failed:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
@@ -496,12 +502,12 @@ namespace DotCompute.Core.Pipelines
                                 Error = ex
                             };
 
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Retry:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Retry:
                             // Simple retry - in production, add backoff
                             return await ExecuteStageAsync(stage, context, executionId, currentOutputs, cancellationToken);
 
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Skip:
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Ignored:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Skip:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Ignored:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
@@ -510,7 +516,7 @@ namespace DotCompute.Core.Pipelines
                                 OutputData = []
                             };
 
-                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Abort:
+                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Abort:
                         default:
                             throw;
                     }
@@ -638,7 +644,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts Models.Pipelines.PipelineExecutionContext to Core.Pipelines.Models.PipelineExecutionContext
         /// </summary>
-        private static CorePipelineExecutionContext ConvertToCorePipelineExecutionContext(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext modelsContext)
+        private static CorePipelineExecutionContext ConvertToCorePipelineExecutionContext(PipelineExecutionContext modelsContext)
         {
             return new CorePipelineExecutionContext
             {
@@ -652,9 +658,9 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts Pipelines.Models.PipelineExecutionMetrics to Models.Pipelines.PipelineExecutionMetrics
         /// </summary>
-        private static DotCompute.Abstractions.Models.Pipelines.PipelineExecutionMetrics ConvertToModelsPipelineExecutionMetrics(AbstractionsPipelineExecutionMetrics pipelineMetrics)
+        private static PipelineExecutionMetrics ConvertToModelsPipelineExecutionMetrics(AbstractionsPipelineExecutionMetrics pipelineMetrics)
         {
-            return new DotCompute.Abstractions.Models.Pipelines.PipelineExecutionMetrics
+            return new PipelineExecutionMetrics
             {
                 ExecutionId = pipelineMetrics.ExecutionId,
                 PipelineName = pipelineMetrics.PipelineName,
@@ -674,14 +680,14 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts ValidationIssue from Abstractions to Validation namespace
         /// </summary>
-        private static IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> ConvertValidationIssues(IReadOnlyList<DotCompute.Abstractions.Validation.ValidationIssue> issues)
+        private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyList<ValidationIssue> issues)
         {
-            return issues.Select(issue => new DotCompute.Abstractions.Validation.ValidationIssue(
-                issue.Code,
+            return issues.Select(issue => new ValidationIssue(
+                (ValidationSeverity)(int)issue.Severity,
                 issue.Message,
-                (DotCompute.Abstractions.Validation.ValidationSeverity)(int)issue.Severity
-            )
-            { Source = issue.Source }).ToList();
+                issue.Code,
+                issue.Source
+            )).ToList();
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));

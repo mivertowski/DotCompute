@@ -16,10 +16,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", "CUDA")]
     [Trait("Category", "Hardware")]
     [Trait("Category", "CUDA13")]
-    public class Cuda13CompatibilityTests : CudaTestBase
+    public class Cuda13CompatibilityTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        public Cuda13CompatibilityTests(ITestOutputHelper output) : base(output) { }
-
         [SkippableFact]
         public async Task CUDA_13_Should_Require_Minimum_Compute_Capability_7_5()
         {
@@ -237,7 +235,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // 1. Shared memory register spilling should be configurable
 
-            var compilerOptions = new DotCompute.Backends.CUDA.Configuration.CudaCompilationOptions
+            var compilerOptions = new Backends.CUDA.Configuration.CudaCompilationOptions
             {
                 EnableSharedMemoryRegisterSpilling = true
             };
@@ -257,7 +255,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             try
             {
                 var kernel = await accelerator.CompileKernelAsync(
-                    new DotCompute.Abstractions.Kernels.KernelDefinition
+                    new Abstractions.Kernels.KernelDefinition
                     {
                         Name = "testCoopGroups",
                         Source = kernelWithCoopGroups,
@@ -327,11 +325,9 @@ namespace DotCompute.Hardware.Cuda.Tests
         /// Helper to get device info without validation for testing purposes
         /// </summary>
         private static async Task<DeviceInfo?> GetDeviceInfoWithoutValidation()
-        {
             // Simplified version - just return null for now
             // Full implementation would require additional P/Invoke setup
-            return await Task.FromResult<DeviceInfo?>(null);
-        }
+            => await Task.FromResult<DeviceInfo?>(null);
 
 
         private class DeviceInfo
@@ -348,7 +344,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         }
 
 
-        private static string GetArchitectureName(DotCompute.Abstractions.AcceleratorInfo info)
+        private static string GetArchitectureName(Abstractions.AcceleratorInfo info)
         {
             var cc = info.ComputeCapability;
 

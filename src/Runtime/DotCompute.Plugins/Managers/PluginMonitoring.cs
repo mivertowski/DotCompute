@@ -325,12 +325,9 @@ internal class PluginHealthMonitor : IDisposable
         }
     }
 
-    private void PeriodicHealthCheckWrapper(object? state)
-    {
-        _ = Task.Run(async () => await PeriodicHealthCheck(state));
-    }
+    private void PeriodicHealthCheckWrapper(object? state) => _ = Task.Run(async () => await PeriodicHealthCheckAsync(state));
 
-    private async Task PeriodicHealthCheck(object? state)
+    private async Task PeriodicHealthCheckAsync(object? state)
     {
         try
         {
@@ -513,12 +510,9 @@ internal class PluginMetricsCollector : IDisposable
         return Task.FromResult<PluginMetrics?>(null);
     }
 
-    private void CollectMetricsWrapper(object? state)
-    {
-        _ = Task.Run(async () => await CollectMetrics(state));
-    }
+    private void CollectMetricsWrapper(object? state) => _ = Task.Run(async () => await CollectMetricsAsync(state));
 
-    private async Task CollectMetrics(object? state)
+    private async Task CollectMetricsAsync(object? state)
     {
         try
         {

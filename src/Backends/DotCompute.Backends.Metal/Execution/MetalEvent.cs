@@ -20,11 +20,9 @@ public sealed class MetalEventManager : IDisposable
     private readonly ConcurrentDictionary<string, MetalTimingSession> _timingSessions;
     private readonly SemaphoreSlim _eventCreationSemaphore;
     private readonly Timer _maintenanceTimer;
-    private readonly object _lockObject = new();
 
     // Event configuration
     private const int MAX_CONCURRENT_EVENTS = 1000; // Metal typically has lower limits than CUDA
-    private const int INITIAL_POOL_SIZE = 50;
     private const int TIMING_EVENT_POOL_SIZE = 25;
     private const int SYNC_EVENT_POOL_SIZE = 25;
 
@@ -194,11 +192,9 @@ public sealed class MetalEventManager : IDisposable
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordEventFast(IntPtr eventHandle, IntPtr commandQueue)
-    {
         // Direct Metal event recording for performance-critical paths
         // This would use native Metal APIs directly
-        _logger.LogTrace("Recorded event (fast path) on command queue {CommandQueue}", commandQueue);
-    }
+        => _logger.LogTrace("Recorded event (fast path) on command queue {CommandQueue}", commandQueue);
 
     /// <summary>
     /// Waits for an event asynchronously

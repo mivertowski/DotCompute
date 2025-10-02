@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -28,7 +28,6 @@ namespace DotCompute.Core.Memory.P2P
 
         // Transfer configuration
         private const int MaxConcurrentTransfers = 16;
-        private const int DefaultChunkSizeBytes = 8 * 1024 * 1024; // 8MB
         private const double ValidationThresholdGB = 0.1; // Validate transfers > 100MB
 
         public P2PTransferManager(

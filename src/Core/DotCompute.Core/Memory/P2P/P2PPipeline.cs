@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -24,9 +24,6 @@ namespace DotCompute.Core.Memory.P2P
         private readonly SemaphoreSlim _pipelineSemaphore;
         private readonly CancellationTokenSource _pipelineCts;
         private bool _disposed;
-
-        // Pipeline configuration
-        private const int DefaultStageBufferSize = 4 * 1024 * 1024; // 4MB per stage
         private const int MaxPipelineDepth = 8;
 
         public P2PPipeline(

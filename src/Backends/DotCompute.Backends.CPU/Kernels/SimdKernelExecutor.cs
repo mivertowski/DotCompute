@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -13,27 +13,18 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// High-performance SIMD kernel executor with hardware-specific optimizations.
 /// </summary>
-public sealed class HardwareSimdKernelExecutor
+/// <remarks>
+/// Initializes a new instance of the <see cref="HardwareSimdKernelExecutor"/> class.
+/// </remarks>
+/// <param name="simdCapabilities">The simd capabilities.</param>
+/// <exception cref="ArgumentNullException">simdCapabilities</exception>
+public sealed class HardwareSimdKernelExecutor(SimdSummary simdCapabilities)
 {
-    private readonly SimdSummary _simdCapabilities;
-    private readonly int _preferredVectorWidth;
-    private readonly bool _supportsAvx512;
-    private readonly bool _supportsAvx2;
-    private readonly bool _supportsFma;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="HardwareSimdKernelExecutor"/> class.
-    /// </summary>
-    /// <param name="simdCapabilities">The simd capabilities.</param>
-    /// <exception cref="System.ArgumentNullException">simdCapabilities</exception>
-    public HardwareSimdKernelExecutor(SimdSummary simdCapabilities)
-    {
-        _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
-        _preferredVectorWidth = simdCapabilities.PreferredVectorWidth;
-        _supportsAvx512 = simdCapabilities.SupportedInstructionSets.Contains("AVX512F");
-        _supportsAvx2 = simdCapabilities.SupportedInstructionSets.Contains("AVX2");
-        _supportsFma = simdCapabilities.SupportedInstructionSets.Contains("FMA");
-    }
+    private readonly SimdSummary _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
+    private readonly int _preferredVectorWidth = simdCapabilities.PreferredVectorWidth;
+    private readonly bool _supportsAvx512 = simdCapabilities.SupportedInstructionSets.Contains("AVX512F");
+    private readonly bool _supportsAvx2 = simdCapabilities.SupportedInstructionSets.Contains("AVX2");
+    private readonly bool _supportsFma = simdCapabilities.SupportedInstructionSets.Contains("FMA");
 
     /// <summary>
     /// Executes a vectorized kernel with optimal SIMD instructions.

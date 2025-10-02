@@ -30,28 +30,19 @@ public static class NumaInfo
     /// Forces a re-discovery of the NUMA topology.
     /// </summary>
     /// <returns>Newly discovered topology.</returns>
-    public static NumaTopology RediscoverTopology()
-    {
-        return NumaTopologyDetector.RediscoverTopology();
-    }
+    public static NumaTopology RediscoverTopology() => NumaTopologyDetector.RediscoverTopology();
 
     /// <summary>
     /// Creates a new NUMA affinity manager.
     /// </summary>
     /// <returns>NUMA affinity manager instance.</returns>
-    public static NumaAffinityManager CreateAffinityManager()
-    {
-        return new NumaAffinityManager(Topology);
-    }
+    public static NumaAffinityManager CreateAffinityManager() => new(Topology);
 
     /// <summary>
     /// Creates a new NUMA memory manager.
     /// </summary>
     /// <returns>NUMA memory manager instance.</returns>
-    public static NumaMemoryManager CreateMemoryManager()
-    {
-        return new NumaMemoryManager(Topology);
-    }
+    public static NumaMemoryManager CreateMemoryManager() => new(Topology);
 
     /// <summary>
     /// Gets CPU mapping information for a specific node.
@@ -60,18 +51,12 @@ public static class NumaInfo
     /// <param name="cpuMask">CPU mask for the node.</param>
     /// <param name="cpuCount">Number of CPUs in the node.</param>
     /// <returns>True if mapping information was retrieved successfully.</returns>
-    public static bool GetNodeCpuMapping(int nodeId, out ulong cpuMask, out int cpuCount)
-    {
-        return NumaPlatformDetector.GetNodeCpuMapping(nodeId, out cpuMask, out cpuCount);
-    }
+    public static bool GetNodeCpuMapping(int nodeId, out ulong cpuMask, out int cpuCount) => NumaPlatformDetector.GetNodeCpuMapping(nodeId, out cpuMask, out cpuCount);
 
     /// <summary>
     /// Gets memory size information for a specific node.
     /// </summary>
     /// <param name="nodeId">NUMA node ID.</param>
     /// <returns>Memory size in bytes, or 0 if unknown.</returns>
-    public static long GetNodeMemorySize(int nodeId)
-    {
-        return NumaPlatformDetector.GetNodeMemorySize(nodeId);
-    }
+    public static long GetNodeMemorySize(int nodeId) => NumaPlatformDetector.GetNodeMemorySize(nodeId);
 }

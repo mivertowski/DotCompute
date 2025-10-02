@@ -65,11 +65,7 @@ public class PluginSandbox : IDisposable
 
             // Get the plugin type
 
-            var pluginType = assembly.GetType(typeName);
-            if (pluginType == null)
-            {
-                throw new InvalidOperationException($"Plugin type '{typeName}' not found in assembly");
-            }
+            var pluginType = assembly.GetType(typeName) ?? throw new InvalidOperationException($"Plugin type '{typeName}' not found in assembly");
 
             // Validate the plugin type implements required interfaces
             if (!typeof(T).IsAssignableFrom(pluginType))
@@ -234,18 +230,10 @@ public class PluginSandbox : IDisposable
         try
         {
             // Check for parameterless constructor
-            var constructor = pluginType.GetConstructor(Type.EmptyTypes);
-            if (constructor == null)
-            {
-                throw new InvalidOperationException($"Plugin type '{pluginType.Name}' must have a parameterless constructor for sandboxing");
-            }
+            var constructor = pluginType.GetConstructor(Type.EmptyTypes) ?? throw new InvalidOperationException($"Plugin type '{pluginType.Name}' must have a parameterless constructor for sandboxing");
 
             // Create instance with security monitoring
-            var instance = Activator.CreateInstance(pluginType);
-            if (instance == null)
-            {
-                throw new InvalidOperationException($"Failed to create instance of plugin type '{pluginType.Name}'");
-            }
+            var instance = Activator.CreateInstance(pluginType) ?? throw new InvalidOperationException($"Failed to create instance of plugin type '{pluginType.Name}'");
 
             // Apply security wrapper if needed
             return await ApplySecurityWrapperAsync(instance, securityContext, cancellationToken);
@@ -361,10 +349,10 @@ public class PluginSandbox : IDisposable
     /// <summary>
     /// Creates a security principal for the sandbox context.
     /// </summary>
-    private static global::System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
+    private static System.Security.Principal.IPrincipal CreateSecurityPrincipal(SecurityContext context)
     {
-        var identity = new global::System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
-        var principal = new global::System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);
+        var identity = new System.Security.Principal.GenericIdentity("SandboxedPlugin", "Custom");
+        var principal = new System.Security.Principal.GenericPrincipal(identity, [.. context.AllowedPermissions]);
         return principal;
     }
 

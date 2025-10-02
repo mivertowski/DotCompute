@@ -15,12 +15,20 @@ namespace DotCompute.Core.Recovery.Gpu;
 /// and provides mechanisms to detect hanging kernels and cancel them gracefully.
 /// It maintains thread-safe state and integrates with the logging system for diagnostics.
 /// </remarks>
-public class KernelExecutionMonitor : IKernelExecutionMonitor
+/// <remarks>
+/// Initializes a new instance of the <see cref="KernelExecutionMonitor"/> class.
+/// </remarks>
+/// <param name="kernelId">The unique identifier for the kernel to monitor.</param>
+/// <param name="timeout">The timeout duration for kernel execution.</param>
+/// <param name="logger">The logger instance for diagnostic output.</param>
+/// <param name="deviceId">The identifier of the GPU device (optional, defaults to "unknown").</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelId"/> or <paramref name="logger"/> is null.</exception>
+public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
 {
-    private readonly ILogger _logger;
-    private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly DateTimeOffset _startTime;
-    private readonly TimeSpan _timeout;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly DateTimeOffset _startTime = DateTimeOffset.UtcNow;
+    private readonly TimeSpan _timeout = timeout;
     private volatile bool _completed;
     private volatile bool _disposed;
 
@@ -28,13 +36,13 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
     /// Gets the unique identifier of the kernel being monitored.
     /// </summary>
     /// <value>The kernel identifier string.</value>
-    public string KernelId { get; }
+    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
 
     /// <summary>
     /// Gets the identifier of the GPU device where the kernel is executing.
     /// </summary>
     /// <value>The device identifier string.</value>
-    public string DeviceId { get; }
+    public string DeviceId { get; } = deviceId;
 
     /// <summary>
     /// Gets the current execution time of the monitored kernel.
@@ -56,24 +64,6 @@ public class KernelExecutionMonitor : IKernelExecutionMonitor
     /// </summary>
     /// <value><c>true</c> if the kernel has finished execution; otherwise, <c>false</c>.</value>
     public bool IsCompleted => _completed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelExecutionMonitor"/> class.
-    /// </summary>
-    /// <param name="kernelId">The unique identifier for the kernel to monitor.</param>
-    /// <param name="timeout">The timeout duration for kernel execution.</param>
-    /// <param name="logger">The logger instance for diagnostic output.</param>
-    /// <param name="deviceId">The identifier of the GPU device (optional, defaults to "unknown").</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelId"/> or <paramref name="logger"/> is null.</exception>
-    public KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown")
-    {
-        KernelId = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
-        DeviceId = deviceId;
-        _timeout = timeout;
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _cancellationTokenSource = new CancellationTokenSource();
-        _startTime = DateTimeOffset.UtcNow;
-    }
 
     /// <summary>
     /// Asynchronously cancels the kernel execution.

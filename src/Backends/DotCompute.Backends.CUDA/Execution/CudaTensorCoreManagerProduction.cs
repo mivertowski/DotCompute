@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Backends.CUDA.DeviceManagement;
 using DotCompute.Backends.CUDA.Models;
@@ -803,8 +803,7 @@ public sealed class TensorCoreException : Exception
 /// <summary>
 /// CUDA dimension structure.
 /// </summary>
-public struct dim3
+public struct dim3(uint x, uint y, uint z)
 {
-    public uint x, y, z;
-    public dim3(uint x, uint y, uint z) { this.x = x; this.y = y; this.z = z; }
+    public uint x = x, y = y, z = z;
 }

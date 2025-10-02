@@ -10,26 +10,17 @@ namespace DotCompute.Runtime.Services.Buffers;
 /// <summary>
 /// Production memory buffer view implementation.
 /// </summary>
-public sealed class ProductionMemoryBufferView : IUnifiedMemoryBuffer
+public sealed class ProductionMemoryBufferView(long viewId, IUnifiedMemoryBuffer parentBuffer, long offset, long length, ILogger logger) : IUnifiedMemoryBuffer
 {
-    public long SizeInBytes { get; }
+    public long SizeInBytes { get; } = length;
     public MemoryOptions Options => _parentBuffer.Options;
     public bool IsDisposed { get; private set; }
     public BufferState State => _parentBuffer.State;
 
-    private readonly long _viewId;
-    private readonly IUnifiedMemoryBuffer _parentBuffer;
-    private readonly long _offset;
-    private readonly ILogger _logger;
-
-    public ProductionMemoryBufferView(long viewId, IUnifiedMemoryBuffer parentBuffer, long offset, long length, ILogger logger)
-    {
-        _viewId = viewId;
-        _parentBuffer = parentBuffer;
-        _offset = offset;
-        SizeInBytes = length;
-        _logger = logger;
-    }
+    private readonly long _viewId = viewId;
+    private readonly IUnifiedMemoryBuffer _parentBuffer = parentBuffer;
+    private readonly long _offset = offset;
+    private readonly ILogger _logger = logger;
 
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {

@@ -8,7 +8,6 @@ namespace DotCompute.Core.Optimization.Performance;
 /// </summary>
 public class PerformanceResult
 {
-    public string BackendId { get; set; } = string.Empty;
     public double ExecutionTimeMs { get; set; }
     public double ThroughputOpsPerSecond { get; set; }
     public long MemoryUsedBytes { get; set; }

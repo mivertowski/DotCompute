@@ -1,4 +1,4 @@
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Models;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -123,8 +123,8 @@ namespace DotCompute.Backends.CUDA.Optimization
             // Create launch configuration
             var config = new LaunchConfiguration
             {
-                BlockSize = new DotCompute.Abstractions.Types.Dim3(blockSize, 1, 1),
-                GridSize = new DotCompute.Abstractions.Types.Dim3(gridSize, 1, 1),
+                BlockSize = new Abstractions.Types.Dim3(blockSize, 1, 1),
+                GridSize = new Abstractions.Types.Dim3(gridSize, 1, 1),
                 SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                 TheoreticalOccupancy = occupancy.Percentage,
                 ActiveWarps = occupancy.ActiveWarps,
@@ -347,8 +347,8 @@ namespace DotCompute.Backends.CUDA.Optimization
 
                         bestConfig = new LaunchConfiguration
                         {
-                            BlockSize = new DotCompute.Abstractions.Types.Dim3(blockDim.X, blockDim.Y, 1),
-                            GridSize = new DotCompute.Abstractions.Types.Dim3(gridX, gridY, 1),
+                            BlockSize = new Abstractions.Types.Dim3(blockDim.X, blockDim.Y, 1),
+                            GridSize = new Abstractions.Types.Dim3(gridX, gridY, 1),
                             SharedMemoryBytes = dynamicSharedMemory + (nuint)kernelAttrs.SharedSizeBytes,
                             TheoreticalOccupancy = occupancy.Percentage,
                             ActiveWarps = occupancy.ActiveWarps,
@@ -665,8 +665,8 @@ namespace DotCompute.Backends.CUDA.Optimization
                         var newSize = ((optimized.BlockSize.X / 128) + 1) * 128;
                         if (newSize <= deviceProps.MaxThreadsPerBlock)
                         {
-                            optimized.BlockSize = new DotCompute.Abstractions.Types.Dim3(newSize, 1, 1);
-                            optimized.GridSize = new DotCompute.Abstractions.Types.Dim3(
+                            optimized.BlockSize = new Abstractions.Types.Dim3(newSize, 1, 1);
+                            optimized.GridSize = new Abstractions.Types.Dim3(
                                 (optimized.GridSize.X * baseConfig.BlockSize.X + newSize - 1) / newSize,
                                 1, 1);
                         }
@@ -688,8 +688,8 @@ namespace DotCompute.Backends.CUDA.Optimization
 
                     if (largerBlock > optimized.BlockSize.X)
                     {
-                        optimized.BlockSize = new DotCompute.Abstractions.Types.Dim3(largerBlock, 1, 1);
-                        optimized.GridSize = new DotCompute.Abstractions.Types.Dim3(
+                        optimized.BlockSize = new Abstractions.Types.Dim3(largerBlock, 1, 1);
+                        optimized.GridSize = new Abstractions.Types.Dim3(
                             (optimized.GridSize.X * baseConfig.BlockSize.X + largerBlock - 1) / largerBlock,
                             1, 1);
                     }
@@ -794,32 +794,19 @@ namespace DotCompute.Backends.CUDA.Optimization
             public int MaxDeviceDepth { get; set; }
         }
 
-        public struct Dim3
+        public struct Dim3(int x, int y, int z)
         {
-            public int X { get; }
-            public int Y { get; }
-            public int Z { get; }
-
-            public Dim3(int x, int y, int z)
-            {
-                X = x;
-                Y = y;
-                Z = z;
-            }
+            public int X { get; } = x;
+            public int Y { get; } = y;
+            public int Z { get; } = z;
 
             public override string ToString() => $"({X},{Y},{Z})";
         }
 
-        public struct Dim2
+        public struct Dim2(int x, int y)
         {
-            public int X { get; }
-            public int Y { get; }
-
-            public Dim2(int x, int y)
-            {
-                X = x;
-                Y = y;
-            }
+            public int X { get; } = x;
+            public int Y { get; } = y;
 
             public override string ToString() => $"({X},{Y})";
         }

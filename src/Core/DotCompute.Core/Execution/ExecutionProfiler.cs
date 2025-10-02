@@ -11,10 +11,6 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ExecutionProfiler : IAsyncDisposable
 {
-    private readonly ILogger _logger;
-    private readonly Dictionary<Guid, ExecutionProfilingData> _profilingData;
-    private bool _disposed;
-
     public ExecutionProfiler(ILogger logger)
     {
         _logger = logger;

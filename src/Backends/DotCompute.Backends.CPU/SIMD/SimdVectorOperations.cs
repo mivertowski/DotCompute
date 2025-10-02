@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.Arm;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CPU.Kernels.Simd;
@@ -14,17 +14,10 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// High-performance vectorized operations with instruction-specific optimizations
 /// </summary>
-public sealed class SimdVectorOperations : IDisposable
+public sealed class SimdVectorOperations(SimdSummary capabilities, ILogger logger) : IDisposable
 {
-    private readonly SimdSummary _capabilities;
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
-
-    public SimdVectorOperations(SimdSummary capabilities, ILogger logger)
-    {
-        _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Executes vectorized operations based on strategy
@@ -40,19 +33,19 @@ public sealed class SimdVectorOperations : IDisposable
         switch (strategy)
         {
             case SimdExecutionStrategy.Avx512:
-                ExecuteAvx512<T>(input1, input2, output, elementCount, context);
+                ExecuteAvx512(input1, input2, output, elementCount, context);
                 break;
             case SimdExecutionStrategy.Avx2:
-                ExecuteAvx2<T>(input1, input2, output, elementCount, context);
+                ExecuteAvx2(input1, input2, output, elementCount, context);
                 break;
             case SimdExecutionStrategy.Sse:
-                ExecuteSse<T>(input1, input2, output, elementCount, context);
+                ExecuteSse(input1, input2, output, elementCount, context);
                 break;
             case SimdExecutionStrategy.Neon:
-                ExecuteNeon<T>(input1, input2, output, elementCount, context);
+                ExecuteNeon(input1, input2, output, elementCount, context);
                 break;
             case SimdExecutionStrategy.Scalar:
-                ExecuteScalar<T>(input1, input2, output, elementCount, context);
+                ExecuteScalar(input1, input2, output, elementCount, context);
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported execution strategy: {strategy}");
@@ -69,10 +62,10 @@ public sealed class SimdVectorOperations : IDisposable
     {
         return operation switch
         {
-            ReductionOperation.Sum => ExecuteVectorizedSum<T>(input, context),
-            ReductionOperation.Min => ExecuteVectorizedMin<T>(input, context),
-            ReductionOperation.Max => ExecuteVectorizedMax<T>(input, context),
-            ReductionOperation.Product => ExecuteVectorizedProduct<T>(input, context),
+            ReductionOperation.Sum => ExecuteVectorizedSum(input, context),
+            ReductionOperation.Min => ExecuteVectorizedMin(input, context),
+            ReductionOperation.Max => ExecuteVectorizedMax(input, context),
+            ReductionOperation.Product => ExecuteVectorizedProduct(input, context),
             _ => throw new ArgumentException($"Unsupported reduction operation: {operation}")
         };
     }

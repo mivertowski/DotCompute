@@ -67,7 +67,7 @@ public sealed class KernelMethodAnalyzer
         var configuration = KernelAttributeAnalyzer.AnalyzeKernelConfiguration(kernelAttribute);
 
         // Analyze method parameters
-        var parameters = _parameterAnalyzer.AnalyzeParameters(methodSymbol);
+        var parameters = KernelParameterAnalyzer.AnalyzeParameters(methodSymbol);
 
         // Validate method compatibility
         if (!ValidateMethodCompatibility(methodSymbol, parameters))
@@ -148,10 +148,9 @@ public sealed class KernelMethodAnalyzer
     /// <returns>A list of method symbols that have kernel attributes.</returns>
     private static List<IMethodSymbol> GetKernelMethodsFromClass(INamedTypeSymbol classSymbol)
     {
-        return classSymbol.GetMembers()
+        return [.. classSymbol.GetMembers()
             .OfType<IMethodSymbol>()
-            .Where(m => m.GetAttributes().Any(a => IsKernelAttribute(a.AttributeClass)))
-            .ToList();
+            .Where(m => m.GetAttributes().Any(a => IsKernelAttribute(a.AttributeClass)))];
     }
 
     /// <summary>
@@ -203,10 +202,8 @@ public sealed class KernelMethodAnalyzer
     /// <param name="returnType">The return type to check.</param>
     /// <returns>True if the return type is compatible; otherwise, false.</returns>
     private static bool IsCompatibleReturnType(ITypeSymbol returnType)
-    {
         // Currently only void is supported for kernels
-        return returnType.SpecialType == SpecialType.System_Void;
-    }
+        => returnType.SpecialType == SpecialType.System_Void;
 
     /// <summary>
     /// Determines if a parameter type is compatible with kernel generation.
@@ -307,10 +304,7 @@ public sealed class KernelMethodAnalyzer
     /// <summary>
     /// Determines if method is suitable for vectorization.
     /// </summary>
-    private static bool IsVectorizable(string methodBody)
-    {
-        return ContainsArithmeticOperations(methodBody) && !methodBody.Contains("goto");
-    }
+    private static bool IsVectorizable(string methodBody) => ContainsArithmeticOperations(methodBody) && !methodBody.Contains("goto");
 
     /// <summary>
     /// Calculates a complexity score for the method.

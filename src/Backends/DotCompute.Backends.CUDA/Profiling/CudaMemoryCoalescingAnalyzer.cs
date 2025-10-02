@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 // using DotCompute.Backends.CUDA.Analysis.Enums; // Not needed for core functionality
 // using DotCompute.Core.Models; // Commented out to avoid conflicts
 using Microsoft.Extensions.Logging;
@@ -200,7 +200,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         public async Task<Matrix2DAccessAnalysis> Analyze2DAccessPatternAsync(
             int rows,
             int cols,
-            DotCompute.Backends.CUDA.Analysis.Types.AccessOrder accessOrder,
+            Types.AccessOrder accessOrder,
             int elementSize,
             int blockDimX,
             int blockDimY,
@@ -678,7 +678,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 optimizations.Add("Overlap computation with memory transfers");
             }
 
-            return optimizations.Distinct().ToList();
+            return [.. optimizations.Distinct()];
         }
 
         private static TileAnalysis AnalyzeTileEfficiency(

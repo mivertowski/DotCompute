@@ -14,26 +14,17 @@ namespace DotCompute.Runtime.Services.Implementation;
 /// <summary>
 /// Default implementation of kernel profiler with in-memory storage and basic export capabilities.
 /// </summary>
-public class DefaultKernelProfiler : IKernelProfiler, IDisposable
+/// <remarks>
+/// Initializes a new instance of the DefaultKernelProfiler class.
+/// </remarks>
+public class DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger) : IKernelProfiler, IDisposable
 {
-    private readonly ILogger<DefaultKernelProfiler> _logger;
-    private readonly ConcurrentDictionary<Guid, ProfilingSession> _activeSessions;
-    private readonly ConcurrentDictionary<Guid, ProfilingResults> _completedSessions;
-    private readonly ConcurrentDictionary<string, List<ProfilingResults>> _kernelHistory;
-    private readonly ReaderWriterLockSlim _lock;
+    private readonly ILogger<DefaultKernelProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<Guid, ProfilingSession> _activeSessions = new();
+    private readonly ConcurrentDictionary<Guid, ProfilingResults> _completedSessions = new();
+    private readonly ConcurrentDictionary<string, List<ProfilingResults>> _kernelHistory = new();
+    private readonly ReaderWriterLockSlim _lock = new();
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the DefaultKernelProfiler class.
-    /// </summary>
-    public DefaultKernelProfiler(ILogger<DefaultKernelProfiler> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeSessions = new ConcurrentDictionary<Guid, ProfilingSession>();
-        _completedSessions = new ConcurrentDictionary<Guid, ProfilingResults>();
-        _kernelHistory = new ConcurrentDictionary<string, List<ProfilingResults>>();
-        _lock = new ReaderWriterLockSlim();
-    }
 
     /// <inheritdoc />
     public IProfilingSession StartProfiling(string sessionName)
@@ -136,7 +127,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
         if (timeRange != null)
         {
             // Filter by time range if needed
-            sessions = sessions.Where(s => s.SessionId != Guid.Empty).ToList();
+            sessions = [.. sessions.Where(s => s.SessionId != Guid.Empty)];
         }
 
         switch (format)
@@ -337,15 +328,9 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
             _lastCheckpointTime = DateTime.UtcNow;
         }
 
-        public void RecordMetric(string metricName, double value)
-        {
-            _metrics[metricName] = value;
-        }
+        public void RecordMetric(string metricName, double value) => _metrics[metricName] = value;
 
-        public void AddTag(string key, string value)
-        {
-            _tags[key] = value;
-        }
+        public void AddTag(string key, string value) => _tags[key] = value;
 
 
         public SessionMetrics GetMetrics()
@@ -410,10 +395,7 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
             _memorySnapshots.Add(snapshot);
         }
 
-        public void AddContext(string key, object value)
-        {
-            _context[key] = value;
-        }
+        public void AddContext(string key, object value) => _context[key] = value;
 
         public ProfilingResults GetCurrentResults()
         {
@@ -431,8 +413,8 @@ public class DefaultKernelProfiler : IKernelProfiler, IDisposable
 
                     : 0,
                 CustomMetrics = new Dictionary<string, double>(_metrics),
-                Checkpoints = new List<TimingCheckpoint>(_checkpoints),
-                MemorySnapshots = new List<MemorySnapshot>(_memorySnapshots),
+                Checkpoints = [.. _checkpoints],
+                MemorySnapshots = [.. _memorySnapshots],
                 Context = new Dictionary<string, object>(_context)
             };
         }

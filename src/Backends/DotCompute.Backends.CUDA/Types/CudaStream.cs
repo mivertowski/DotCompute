@@ -6,26 +6,21 @@ namespace DotCompute.Backends.CUDA.Types;
 /// <summary>
 /// Represents a CUDA stream for asynchronous operations.
 /// </summary>
-public struct CudaStream : IEquatable<CudaStream>
+/// <remarks>
+/// Initializes a new instance of the <see cref="CudaStream"/> struct.
+/// </remarks>
+/// <param name="handle">The stream handle.</param>
+public struct CudaStream(IntPtr handle) : IEquatable<CudaStream>
 {
     /// <summary>
     /// Gets the stream handle.
     /// </summary>
-    public IntPtr Handle { get; }
+    public IntPtr Handle { get; } = handle;
 
     /// <summary>
     /// Gets a value indicating whether this is the default stream.
     /// </summary>
     public bool IsDefault => Handle == IntPtr.Zero;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaStream"/> struct.
-    /// </summary>
-    /// <param name="handle">The stream handle.</param>
-    public CudaStream(IntPtr handle)
-    {
-        Handle = handle;
-    }
 
     /// <summary>
     /// Gets the default CUDA stream.

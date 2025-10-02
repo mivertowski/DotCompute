@@ -13,15 +13,15 @@ namespace DotCompute.Backends.CUDA.Resilience
     /// Manages and preserves CUDA context state for recovery operations.
     /// Tracks all allocated resources and provides state snapshots for recovery.
     /// </summary>
-    public sealed class CudaContextStateManager : IDisposable
+    public sealed class CudaContextStateManager(ILogger logger) : IDisposable
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<IntPtr, ResourceInfo> _allocatedMemory;
-        private readonly ConcurrentDictionary<IntPtr, StreamInfo> _activeStreams;
-        private readonly ConcurrentDictionary<IntPtr, EventInfo> _activeEvents;
-        private readonly ConcurrentDictionary<string, ModuleInfo> _loadedModules;
-        private readonly ConcurrentDictionary<string, KernelInfo> _compiledKernels;
-        private readonly ReaderWriterLockSlim _stateLock;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<IntPtr, ResourceInfo> _allocatedMemory = new();
+        private readonly ConcurrentDictionary<IntPtr, StreamInfo> _activeStreams = new();
+        private readonly ConcurrentDictionary<IntPtr, EventInfo> _activeEvents = new();
+        private readonly ConcurrentDictionary<string, ModuleInfo> _loadedModules = new();
+        private readonly ConcurrentDictionary<string, KernelInfo> _compiledKernels = new();
+        private readonly ReaderWriterLockSlim _stateLock = new();
         private ContextSnapshot? _lastSnapshot;
         private bool _disposed;
 
@@ -30,17 +30,6 @@ namespace DotCompute.Backends.CUDA.Resilience
         private long _totalMemoryFreed;
         private int _activeAllocations;
         private int _recoveryCount;
-
-        public CudaContextStateManager(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _allocatedMemory = new ConcurrentDictionary<IntPtr, ResourceInfo>();
-            _activeStreams = new ConcurrentDictionary<IntPtr, StreamInfo>();
-            _activeEvents = new ConcurrentDictionary<IntPtr, EventInfo>();
-            _loadedModules = new ConcurrentDictionary<string, ModuleInfo>();
-            _compiledKernels = new ConcurrentDictionary<string, KernelInfo>();
-            _stateLock = new ReaderWriterLockSlim();
-        }
 
         /// <summary>
         /// Gets current resource statistics.

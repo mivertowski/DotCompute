@@ -11,15 +11,10 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// Detects and manages P2P capabilities between accelerator devices.
     /// </summary>
-    public sealed class P2PCapabilityDetector : IAsyncDisposable
+    public sealed class P2PCapabilityDetector(ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private bool _disposed;
-
-        public P2PCapabilityDetector(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Detects P2P capability between two devices using real hardware interrogation.

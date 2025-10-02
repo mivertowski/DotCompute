@@ -131,8 +131,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
             ["size_category"] = GetSizeCategory(sizeBytes)
         };
 
-        _operationCounter.Add(1, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
-        _operationDuration.Record(duration.TotalMilliseconds, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
+        _operationCounter.Add(1, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
+        _operationDuration.Record(duration.TotalMilliseconds, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
 
         if (!success)
         {
@@ -173,8 +173,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
             ["correlation_id"] = correlationId
         };
 
-        _operationCounter.Add(1, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
-        _operationDuration.Record(duration.TotalMilliseconds, tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray());
+        _operationCounter.Add(1, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
+        _operationDuration.Record(duration.TotalMilliseconds, [.. tags.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value))]);
 
         if (!success)
         {
@@ -570,10 +570,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         return recommendations;
     }
 
-    protected override string GetBackendType()
-    {
-        return "Metal";
-    }
+    protected override string GetBackendType() => "Metal";
 
     public override void Dispose()
     {

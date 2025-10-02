@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Execution.Plans
 {
@@ -18,13 +17,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the input buffers containing the data to be processed.
         /// These buffers hold the input data that will be distributed across devices.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the output buffers where results will be stored.
         /// These buffers will contain the computed results from all devices.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the device-specific tasks that define how work is distributed.
@@ -65,13 +64,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the device-local input buffers.
         /// These are the input data buffers that have been transferred to the device's memory.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the device-local output buffers.
         /// These are the output data buffers where the device will store its computed results.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the start index in the global data array.

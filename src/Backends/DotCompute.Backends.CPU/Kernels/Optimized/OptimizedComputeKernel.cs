@@ -16,16 +16,14 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// iterative mathematical operations including transcendental functions
 /// (sin, cos, sqrt, pow) that stress the CPU's floating-point units.
 /// </remarks>
-internal class OptimizedComputeKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedComputeKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class OptimizedComputeKernel(string name, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedComputeKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public OptimizedComputeKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
 
     /// <summary>
     /// Executes the compute-intensive kernel asynchronously.
@@ -56,7 +54,7 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
 
-        await Task.Run(() => ExecuteComputeIntensiveOptimized(inputBuffer, outputBuffer, elementCount, iterations), cancellationToken);
+        await Task.Run(() => ExecuteComputeIntensiveOptimizedAsync(inputBuffer, outputBuffer, elementCount, iterations), cancellationToken);
     }
 
     /// <summary>
@@ -71,7 +69,7 @@ internal class OptimizedComputeKernel : Base.OptimizedKernelBase
     /// square roots, and power operations to create a compute-bound workload that
     /// stresses the floating-point execution units.
     /// </remarks>
-    private static async Task ExecuteComputeIntensiveOptimized(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount, int iterations)
+    private static async Task ExecuteComputeIntensiveOptimizedAsync(IUnifiedMemoryBuffer inputBuffer, IUnifiedMemoryBuffer outputBuffer, int elementCount, int iterations)
     {
         var input = new float[elementCount];
         var output = new float[elementCount];

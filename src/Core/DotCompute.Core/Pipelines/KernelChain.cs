@@ -66,7 +66,7 @@ namespace DotCompute.Core.Pipelines
         /// <param name="kernelName">The name of the kernel to execute</param>
         /// <param name="args">Arguments to pass to the kernel</param>
         /// <returns>Task containing the kernel execution result</returns>
-        public static async Task<T> Quick<T>(string kernelName, params object[] args)
+        public static async Task<T> QuickAsync<T>(string kernelName, params object[] args)
         {
             await using var chain = Create();
             return await chain.Kernel(kernelName, args).ExecuteAsync<T>();
@@ -78,7 +78,7 @@ namespace DotCompute.Core.Pipelines
         /// <param name="kernelName">The name of the kernel to execute</param>
         /// <param name="args">Arguments to pass to the kernel</param>
         /// <returns>Task representing the kernel execution</returns>
-        public static async Task Quick(string kernelName, params object[] args)
+        public static async Task QuickAsync(string kernelName, params object[] args)
         {
             await using var chain = Create();
             _ = await chain.Kernel(kernelName, args).ExecuteAsync<object>();
@@ -89,20 +89,14 @@ namespace DotCompute.Core.Pipelines
         /// </summary>
         /// <param name="preferredBackend">The preferred backend for execution</param>
         /// <returns>A new kernel chain builder configured for the specified backend</returns>
-        public static IKernelChainBuilder OnBackend(string preferredBackend)
-        {
-            return Create().OnBackend(preferredBackend);
-        }
+        public static IKernelChainBuilder OnBackend(string preferredBackend) => Create().OnBackend(preferredBackend);
 
         /// <summary>
         /// Creates a kernel chain builder with profiling enabled.
         /// </summary>
         /// <param name="profileName">Optional profile name for identification</param>
         /// <returns>A new kernel chain builder with profiling enabled</returns>
-        public static IKernelChainBuilder WithProfiling(string? profileName = null)
-        {
-            return Create().WithProfiling(profileName);
-        }
+        public static IKernelChainBuilder WithProfiling(string? profileName = null) => Create().WithProfiling(profileName);
 
         /// <summary>
         /// Gets diagnostic information about the kernel chain system.

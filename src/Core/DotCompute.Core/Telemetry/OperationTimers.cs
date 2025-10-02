@@ -129,20 +129,14 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
     public void SetEnabled(bool enabled) { }
     public void SetMinimumDurationThreshold(TimeSpan threshold) { }
 
-    private sealed class SimpleTimerHandle : ITimerHandle, IDisposable
+    private sealed class SimpleTimerHandle(string operationName, string operationId) : ITimerHandle, IDisposable
     {
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
-        public string OperationName { get; }
-        public string OperationId { get; }
+        public string OperationName { get; } = operationName;
+        public string OperationId { get; } = operationId;
         public DateTime StartTime { get; } = DateTime.UtcNow;
         public TimeSpan Elapsed => _stopwatch.Elapsed;
-
-        public SimpleTimerHandle(string operationName, string operationId)
-        {
-            OperationName = operationName;
-            OperationId = operationId;
-        }
 
         public TimeSpan Stop(IDictionary<string, object>? metadata = null)
         {

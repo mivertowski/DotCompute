@@ -9,14 +9,9 @@ namespace DotCompute.Plugins.Loaders.Internal;
 /// <summary>
 /// Code analyzer for detecting malicious patterns in assemblies.
 /// </summary>
-internal class CodeAnalyzer
+internal class CodeAnalyzer(ILogger logger)
 {
-    private readonly ILogger _logger;
-
-    public CodeAnalyzer(ILogger logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger _logger = logger;
 
     public async Task<CodeAnalysisResult> AnalyzeAssemblyAsync(string assemblyPath, CancellationToken cancellationToken)
     {

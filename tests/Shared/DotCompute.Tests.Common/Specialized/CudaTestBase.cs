@@ -190,17 +190,11 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     /// <summary>
     /// Performance measurement utility specifically for CUDA kernels.
     /// </summary>
-    protected class CudaPerformanceMeasurement
+    protected class CudaPerformanceMeasurement(string operationName, ITestOutputHelper output)
     {
         private readonly Stopwatch _stopwatch = new();
-        private readonly string _operationName;
-        private readonly ITestOutputHelper _output;
-
-        public CudaPerformanceMeasurement(string operationName, ITestOutputHelper output)
-        {
-            _operationName = operationName;
-            _output = output;
-        }
+        private readonly string _operationName = operationName;
+        private readonly ITestOutputHelper _output = output;
 
         public void Start() => _stopwatch.Restart();
         public void Stop() => _stopwatch.Stop();

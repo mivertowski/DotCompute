@@ -14,21 +14,15 @@ namespace DotCompute.Core.Execution.Analysis
     /// to calculate performance scores for device selection and workload distribution.
     /// It maintains a cache of performance data to improve estimation accuracy over time.
     /// </remarks>
-    public sealed class DevicePerformanceEstimator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DevicePerformanceEstimator"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for diagnostic information.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public sealed class DevicePerformanceEstimator(ILogger logger)
     {
-        private readonly ILogger _logger;
-        private readonly Dictionary<string, DevicePerformanceCache> _performanceCache;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DevicePerformanceEstimator"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public DevicePerformanceEstimator(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceCache = [];
-        }
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly Dictionary<string, DevicePerformanceCache> _performanceCache = [];
 
         /// <summary>
         /// Calculates a performance score for device selection based on hardware characteristics and historical data.

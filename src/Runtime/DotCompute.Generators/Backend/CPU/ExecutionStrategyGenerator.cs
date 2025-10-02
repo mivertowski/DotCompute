@@ -10,19 +10,14 @@ namespace DotCompute.Generators.Backend.CPU;
 /// <summary>
 /// Generates the main execution strategy that selects the best implementation at runtime.
 /// </summary>
-public class ExecutionStrategyGenerator : CpuCodeGeneratorBase
+public class ExecutionStrategyGenerator(
+    string methodName,
+    IReadOnlyList<KernelParameter> parameters,
+    MethodDeclarationSyntax methodSyntax,
+    VectorizationInfo vectorizationInfo) : CpuCodeGeneratorBase(methodName, parameters, methodSyntax, vectorizationInfo)
 {
+
     #region Constructor
-
-
-    public ExecutionStrategyGenerator(
-        string methodName,
-        IReadOnlyList<KernelParameter> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        VectorizationInfo vectorizationInfo)
-        : base(methodName, parameters, methodSyntax, vectorizationInfo)
-    {
-    }
 
     #endregion
 

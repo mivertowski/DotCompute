@@ -3,9 +3,7 @@
 
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
-using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security.Core;
 
@@ -308,7 +306,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         }
     }
 
-    private async Task<SecurityEvaluationContext> CreateSecurityEvaluationContextAsync(
+    private static async Task<SecurityEvaluationContext> CreateSecurityEvaluationContextAsync(
         string assemblyPath,
         DigitalSignatureResult? digitalSignature,
         StrongNameResult? strongName)
@@ -387,7 +385,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         return level;
     }
 
-    private UnifiedSecurityResult CreatePassingResult()
+    private static UnifiedSecurityResult CreatePassingResult()
     {
         return new UnifiedSecurityResult
         {

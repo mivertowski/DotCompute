@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
@@ -17,38 +17,31 @@ namespace DotCompute.Backends.CPU.Kernels.Base;
 /// It includes common functionality for lifecycle management, argument validation, and
 /// performance monitoring through logging.
 /// </remarks>
-internal abstract class OptimizedKernelBase : ICompiledKernel
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedKernelBase"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+/// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
+internal abstract class OptimizedKernelBase(string name, CompilationOptions options, ILogger logger) : ICompiledKernel
 {
     /// <summary>
     /// Gets the logger instance for this kernel.
     /// </summary>
-    protected readonly ILogger Logger;
+    protected readonly ILogger Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
 
     /// <summary>
     /// Gets the compilation options used for this kernel.
     /// </summary>
-    protected readonly CompilationOptions Options;
+    protected readonly CompilationOptions Options = options ?? throw new ArgumentNullException(nameof(options));
 
 
     /// <summary>
     /// Gets a value indicating whether this kernel has been disposed.
     /// </summary>
     protected bool Disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedKernelBase"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
-    protected OptimizedKernelBase(string name, CompilationOptions options, ILogger logger)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Options = options ?? throw new ArgumentNullException(nameof(options));
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Gets the unique identifier for this kernel.
@@ -58,7 +51,7 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     /// <summary>
     /// Gets the name of the kernel.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>
     /// Executes the kernel asynchronously with the specified arguments.
@@ -79,10 +72,7 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
         return ValueTask.CompletedTask;
     }
 
-    public void Dispose()
-    {
-        Disposed = true;
-    }
+    public void Dispose() => Disposed = true;
 
     /// <summary>
     /// Throws an <see cref="ObjectDisposedException"/> if the kernel has been disposed.

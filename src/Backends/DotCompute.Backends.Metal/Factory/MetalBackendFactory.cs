@@ -13,21 +13,14 @@ namespace DotCompute.Backends.Metal.Factory
     /// <summary>
     /// Factory for creating Metal accelerators
     /// </summary>
-    public sealed class MetalBackendFactory
+    public sealed class MetalBackendFactory(
+        ILogger<MetalBackendFactory>? logger = null,
+        ILoggerFactory? loggerFactory = null,
+        IOptions<MetalAcceleratorOptions>? options = null)
     {
-        private readonly ILogger<MetalBackendFactory> _logger;
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly IOptions<MetalAcceleratorOptions> _options;
-
-        public MetalBackendFactory(
-            ILogger<MetalBackendFactory>? logger = null,
-            ILoggerFactory? loggerFactory = null,
-            IOptions<MetalAcceleratorOptions>? options = null)
-        {
-            _logger = logger ?? NullLogger<MetalBackendFactory>.Instance;
-            _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-            _options = options ?? Options.Create(new MetalAcceleratorOptions());
-        }
+        private readonly ILogger<MetalBackendFactory> _logger = logger ?? NullLogger<MetalBackendFactory>.Instance;
+        private readonly ILoggerFactory _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+        private readonly IOptions<MetalAcceleratorOptions> _options = options ?? Options.Create(new MetalAcceleratorOptions());
 
         /// <summary>
         /// Check if Metal is supported on this system

@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography;
+using System.Security;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -57,7 +58,16 @@ public sealed class EncryptionManager : IDisposable
             aes.KeySize = keySize;
             aes.GenerateKey();
 
-            return new SecureKeyContainer(KeyType.AES, (byte[])aes.Key.Clone(), identifier, purpose, keySize);
+            return new SecureKeyContainer
+            {
+                KeyType = KeyType.AES,
+                KeySize = keySize,
+                Identifier = identifier,
+                Purpose = purpose,
+                CreationTime = DateTimeOffset.UtcNow,
+                KeyData = new SecureString(),
+                RawKeyData = (byte[])aes.Key.Clone()
+            };
         });
     }
 
@@ -79,7 +89,16 @@ public sealed class EncryptionManager : IDisposable
             var keyBytes = new byte[32]; // ChaCha20 uses 256-bit keys
             _randomGenerator.GetBytes(keyBytes);
 
-            return new SecureKeyContainer(KeyType.ChaCha20, keyBytes, identifier, purpose, 256);
+            return new SecureKeyContainer
+            {
+                KeyType = KeyType.ChaCha20,
+                KeySize = 256,
+                Identifier = identifier,
+                Purpose = purpose,
+                CreationTime = DateTimeOffset.UtcNow,
+                KeyData = new SecureString(),
+                RawKeyData = keyBytes
+            };
         });
     }
 
@@ -233,7 +252,7 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.GetKeyBytes(), AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
 
                 var nonce = new byte[AesGcm.NonceByteSizes.MaxSize];
                 var tag = new byte[AesGcm.TagByteSizes.MaxSize];
@@ -278,7 +297,7 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.GetKeyBytes();
+                aes.Key = keyContainer.RawKeyData;
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.GenerateIV();
@@ -327,13 +346,11 @@ public sealed class EncryptionManager : IDisposable
 
                 _randomGenerator.GetBytes(nonce);
                 _randomGenerator.GetBytes(tag);
-
+                
                 // In a real implementation, this would be actual ChaCha20 encryption
-
                 data.Span.CopyTo(ciphertext);
-
+                
                 // XOR with pseudo-random data for demonstration
-
                 var keyStream = new byte[data.Length];
                 _randomGenerator.GetBytes(keyStream);
                 for (var i = 0; i < ciphertext.Length; i++)
@@ -371,7 +388,7 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.GetKeyBytes(), AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
 
                 var plaintext = new byte[encryptedData.Length];
 
@@ -408,7 +425,7 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.GetKeyBytes();
+                aes.Key = keyContainer.RawKeyData;
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.IV = nonce.ToArray();
@@ -451,9 +468,8 @@ public sealed class EncryptionManager : IDisposable
                 // ChaCha20-Poly1305 decryption would go here
                 // For now, return a mock implementation that reverses the mock encryption
                 var plaintext = new byte[encryptedData.Length];
-
+                
                 // Mock decryption - XOR with the same pseudo-random data
-
                 var keyStream = new byte[encryptedData.Length];
                 _randomGenerator.GetBytes(keyStream);
                 for (var i = 0; i < plaintext.Length; i++)
@@ -498,10 +514,10 @@ public sealed class EncryptionManager : IDisposable
         var validSizes = algorithm switch
         {
             var alg when alg.StartsWith("AES-256") => new[] { 256 },
-            var alg when alg.StartsWith("AES-192") => new[] { 192 },
-            var alg when alg.StartsWith("AES-128") => new[] { 128 },
-            var alg when alg.Contains("ChaCha20") => new[] { 256 },
-            _ => new[] { 128, 192, 256 } // Default AES sizes
+            var alg when alg.StartsWith("AES-192") => [192],
+            var alg when alg.StartsWith("AES-128") => [128],
+            var alg when alg.Contains("ChaCha20") => [256],
+            _ => [128, 192, 256] // Default AES sizes
         };
 
         if (!validSizes.Contains(keySize))

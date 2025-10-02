@@ -10,22 +10,12 @@ namespace DotCompute.Algorithms.Types.SignalProcessing;
 /// <summary>
 /// Non-static convolution operations wrapper for compatibility.
 /// </summary>
-public class ConvolutionOperations : IDisposable
+/// <remarks>
+/// Initializes a new instance of the ConvolutionOperations class.
+/// </remarks>
+public class ConvolutionOperations(object kernelManager, object accelerator, object? logger = null) : IDisposable
 {
-    private readonly object _kernelManager;
-    private readonly object _accelerator;
-    private readonly object? _logger;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the ConvolutionOperations class.
-    /// </summary>
-    public ConvolutionOperations(object kernelManager, object accelerator, object? logger = null)
-    {
-        _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        _logger = logger;
-    }
 
     /// <summary>
     /// Perform 1D convolution.

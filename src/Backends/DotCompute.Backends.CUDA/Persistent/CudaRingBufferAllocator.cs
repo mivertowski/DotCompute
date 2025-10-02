@@ -13,19 +13,12 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// Manages ring buffer allocations for persistent kernels.
     /// Ring buffers enable efficient temporal data management for wave propagation and similar algorithms.
     /// </summary>
-    public sealed class CudaRingBufferAllocator : IDisposable
+    public sealed class CudaRingBufferAllocator(CudaContext context, ILogger logger) : IDisposable
     {
-        private readonly CudaContext _context;
-        private readonly ILogger _logger;
-        private readonly List<RingBufferAllocation> _allocations;
+        private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly List<RingBufferAllocation> _allocations = [];
         private bool _disposed;
-
-        public CudaRingBufferAllocator(CudaContext context, ILogger logger)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _allocations = [];
-        }
 
         /// <summary>
         /// Allocates a ring buffer with the specified depth and element count.
@@ -141,18 +134,11 @@ namespace DotCompute.Backends.CUDA.Persistent
             _disposed = true;
         }
 
-        private sealed class RingBufferAllocation : IDisposable
+        private sealed class RingBufferAllocation(IntPtr devicePointer, long totalBytes, object ringBuffer) : IDisposable
         {
-            public IntPtr DevicePointer { get; }
-            public long TotalBytes { get; }
-            public object RingBuffer { get; }
-
-            public RingBufferAllocation(IntPtr devicePointer, long totalBytes, object ringBuffer)
-            {
-                DevicePointer = devicePointer;
-                TotalBytes = totalBytes;
-                RingBuffer = ringBuffer;
-            }
+            public IntPtr DevicePointer { get; } = devicePointer;
+            public long TotalBytes { get; } = totalBytes;
+            public object RingBuffer { get; } = ringBuffer;
 
             public void Dispose()
             {
@@ -244,35 +230,23 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Implementation of ring buffer for device memory.
     /// </summary>
-    internal sealed class RingBuffer<T> : IRingBuffer<T> where T : unmanaged
+    internal sealed class RingBuffer<T>(
+        IntPtr basePointer,
+        int depth,
+        long elementsPerSlice,
+        long sliceBytes,
+        CudaContext context,
+        ILogger logger) : IRingBuffer<T> where T : unmanaged
     {
-        private readonly IntPtr _basePointer;
-        private readonly long _sliceBytes;
-        private readonly CudaContext _context;
-        private readonly ILogger _logger;
-        private int _currentIndex;
+        private readonly IntPtr _basePointer = basePointer;
+        private readonly long _sliceBytes = sliceBytes;
+        private readonly ILogger _logger = logger;
+        private int _currentIndex = 0;
         private bool _disposed;
 
-        public int Depth { get; }
-        public long ElementsPerSlice { get; }
+        public int Depth { get; } = depth;
+        public long ElementsPerSlice { get; } = elementsPerSlice;
         public int CurrentTimeStep => _currentIndex;
-
-        public RingBuffer(
-            IntPtr basePointer,
-            int depth,
-            long elementsPerSlice,
-            long sliceBytes,
-            CudaContext context,
-            ILogger logger)
-        {
-            _basePointer = basePointer;
-            Depth = depth;
-            ElementsPerSlice = elementsPerSlice;
-            _sliceBytes = sliceBytes;
-            _context = context;
-            _logger = logger;
-            _currentIndex = 0;
-        }
 
         public IntPtr GetSlicePointer(int sliceIndex)
         {
@@ -346,34 +320,23 @@ namespace DotCompute.Backends.CUDA.Persistent
             if (_disposed)
             {
 
-                throw new ObjectDisposedException(nameof(RingBuffer<T>));
+                throw new ObjectDisposedException(nameof(RingBuffer<>));
             }
 
         }
 
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() => _disposed = true;
     }
 
     /// <summary>
     /// Specialized ring buffer implementation for wave simulations.
     /// </summary>
-    internal sealed class WaveRingBuffer<T> : IWaveRingBuffer<T> where T : unmanaged
+    internal sealed class WaveRingBuffer<T>(IRingBuffer<T> ringBuffer, int width, int height, int depth) : IWaveRingBuffer<T> where T : unmanaged
     {
-        private readonly IRingBuffer<T> _ringBuffer;
-        private readonly int _width;
-        private readonly int _height;
-        private readonly int _depth;
-
-        public WaveRingBuffer(IRingBuffer<T> ringBuffer, int width, int height, int depth)
-        {
-            _ringBuffer = ringBuffer ?? throw new ArgumentNullException(nameof(ringBuffer));
-            _width = width;
-            _height = height;
-            _depth = depth;
-        }
+        private readonly IRingBuffer<T> _ringBuffer = ringBuffer ?? throw new ArgumentNullException(nameof(ringBuffer));
+        private readonly int _width = width;
+        private readonly int _height = height;
+        private readonly int _depth = depth;
 
         public int Depth => _ringBuffer.Depth;
         public long ElementsPerSlice => _ringBuffer.ElementsPerSlice;

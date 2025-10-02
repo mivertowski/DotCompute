@@ -4,7 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Runtime.Services.Buffers.Views;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Buffers;
 
@@ -12,17 +12,10 @@ namespace DotCompute.Runtime.Services.Buffers;
 /// Typed wrapper around untyped memory buffer to provide IUnifiedMemoryBuffer{T} interface.
 /// </summary>
 /// <typeparam name="T">The unmanaged element type.</typeparam>
-public sealed class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer buffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly IUnifiedMemoryBuffer _buffer;
-    private readonly int _length;
-
-
-    public TypedMemoryBufferWrapper(IUnifiedMemoryBuffer buffer, int length)
-    {
-        _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
-        _length = length;
-    }
+    private readonly IUnifiedMemoryBuffer _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+    private readonly int _length = length;
 
     // Properties from IUnifiedMemoryBuffer<T>
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Native;
@@ -15,29 +15,18 @@ namespace DotCompute.Backends.CUDA.Compilation
     /// <summary>
     /// Launch configuration for CUDA kernels
     /// </summary>
-    public readonly struct CudaLaunchConfig
+    public readonly struct CudaLaunchConfig(
+        uint gridX, uint gridY, uint gridZ,
+        uint blockX, uint blockY, uint blockZ,
+        uint sharedMemoryBytes = 0)
     {
-        public uint GridX { get; }
-        public uint GridY { get; }
-        public uint GridZ { get; }
-        public uint BlockX { get; }
-        public uint BlockY { get; }
-        public uint BlockZ { get; }
-        public uint SharedMemoryBytes { get; }
-
-        public CudaLaunchConfig(
-            uint gridX, uint gridY, uint gridZ,
-            uint blockX, uint blockY, uint blockZ,
-            uint sharedMemoryBytes = 0)
-        {
-            GridX = gridX;
-            GridY = gridY;
-            GridZ = gridZ;
-            BlockX = blockX;
-            BlockY = blockY;
-            BlockZ = blockZ;
-            SharedMemoryBytes = sharedMemoryBytes;
-        }
+        public uint GridX { get; } = gridX;
+        public uint GridY { get; } = gridY;
+        public uint GridZ { get; } = gridZ;
+        public uint BlockX { get; } = blockX;
+        public uint BlockY { get; } = blockY;
+        public uint BlockZ { get; } = blockZ;
+        public uint SharedMemoryBytes { get; } = sharedMemoryBytes;
 
         public static CudaLaunchConfig Create1D(int totalThreads, int blockSize = 256)
         {
@@ -94,10 +83,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             IntPtr function,
             KernelArguments arguments,
             CudaLaunchConfig? config = null,
-            CancellationToken cancellationToken = default)
-        {
-            await LaunchKernelInternalAsync(function, arguments, config, false, cancellationToken).ConfigureAwait(false);
-        }
+            CancellationToken cancellationToken = default) => await LaunchKernelInternalAsync(function, arguments, config, false, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Launches a CUDA cooperative kernel for grid-wide synchronization (CUDA 13.0+)
@@ -106,10 +92,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             IntPtr function,
             KernelArguments arguments,
             CudaLaunchConfig? config = null,
-            CancellationToken cancellationToken = default)
-        {
-            await LaunchKernelInternalAsync(function, arguments, config, true, cancellationToken).ConfigureAwait(false);
-        }
+            CancellationToken cancellationToken = default) => await LaunchKernelInternalAsync(function, arguments, config, true, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Internal kernel launch implementation supporting both regular and cooperative launches
@@ -477,7 +460,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             if (argValue is ISyncMemoryBuffer)
             {
                 // For CUDA memory buffers, we need the device pointer
-                if (argValue is DotCompute.Backends.CUDA.Memory.CudaMemoryBuffer cudaBuffer)
+                if (argValue is Memory.CudaMemoryBuffer cudaBuffer)
                 {
                     var devicePtr = cudaBuffer.DevicePointer;
                     // CRITICAL: Store the device pointer value and return a pointer TO it

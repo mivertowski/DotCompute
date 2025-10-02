@@ -11,7 +11,6 @@ namespace DotCompute.Algorithms.Management.Validation;
 /// </summary>
 public sealed class SecurityValidator : ISecurityValidator, IDisposable
 {
-    private readonly ILogger<SecurityValidator> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
     private bool _disposed;
 
@@ -27,7 +26,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// <summary>
     /// Validates assembly security using comprehensive security policies and scanning.
     /// </summary>
-    public Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
+    public static Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
         // Stub implementation - always returns true
 
 
@@ -36,7 +35,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// <summary>
     /// Validates strong name signature of an assembly.
     /// </summary>
-    public Task<bool> ValidateStrongNameAsync(string assemblyPath)
+    public static Task<bool> ValidateStrongNameAsync(string assemblyPath)
         // Stub implementation - always returns true
 
 
@@ -45,7 +44,7 @@ public sealed class SecurityValidator : ISecurityValidator, IDisposable
     /// <summary>
     /// Checks if the required framework version is compatible.
     /// </summary>
-    public bool IsVersionCompatible(Version? requiredVersion)
+    public static bool IsVersionCompatible(Version? requiredVersion)
         // Stub implementation - always returns true
 
 

@@ -52,7 +52,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="nodeId">Target NUMA node ID.</param>
     /// <param name="priority">Task priority.</param>
     /// <returns>Task representing the scheduled work.</returns>
-    public Task ScheduleOnNode(Action action, int nodeId, TaskPriority priority = TaskPriority.Normal)
+    public Task ScheduleOnNodeAsync(Action action, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
 
@@ -70,7 +70,7 @@ public sealed class NumaScheduler : IDisposable
         }
 
 
-        return ScheduleOnNode(() => { action(); return Task.CompletedTask; }, nodeId, priority);
+        return ScheduleOnNodeAsync(() => { action(); return Task.CompletedTask; }, nodeId, priority);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="nodeId">Target NUMA node ID.</param>
     /// <param name="priority">Task priority.</param>
     /// <returns>Task representing the scheduled work.</returns>
-    public Task<T> ScheduleOnNode<T>(Func<T> function, int nodeId, TaskPriority priority = TaskPriority.Normal)
+    public Task<T> ScheduleOnNodeAsync<T>(Func<T> function, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
 
@@ -99,7 +99,7 @@ public sealed class NumaScheduler : IDisposable
         }
 
 
-        return ScheduleOnNode(() => Task.FromResult(function()), nodeId, priority);
+        return ScheduleOnNodeAsync(() => Task.FromResult(function()), nodeId, priority);
     }
 
     /// <summary>
@@ -110,7 +110,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="nodeId">Target NUMA node ID.</param>
     /// <param name="priority">Task priority.</param>
     /// <returns>Task representing the scheduled work.</returns>
-    public Task<T> ScheduleOnNode<T>(Func<Task<T>> asyncFunction, int nodeId, TaskPriority priority = TaskPriority.Normal)
+    public Task<T> ScheduleOnNodeAsync<T>(Func<Task<T>> asyncFunction, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
 
@@ -164,7 +164,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="processorIds">Preferred processor IDs.</param>
     /// <param name="priority">Task priority.</param>
     /// <returns>Task representing the scheduled work.</returns>
-    public Task ScheduleOptimal(Action action, IEnumerable<int>? processorIds = null, TaskPriority priority = TaskPriority.Normal)
+    public Task ScheduleOptimalAsync(Action action, IEnumerable<int>? processorIds = null, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
 
@@ -172,7 +172,7 @@ public sealed class NumaScheduler : IDisposable
             ? _topology.GetOptimalNodeForProcessors(processorIds)
             : GetLeastLoadedNode();
 
-        return ScheduleOnNode(action, optimalNode, priority);
+        return ScheduleOnNodeAsync(action, optimalNode, priority);
     }
 
     /// <summary>
@@ -183,7 +183,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="processorIds">Preferred processor IDs.</param>
     /// <param name="priority">Task priority.</param>
     /// <returns>Task representing the scheduled work.</returns>
-    public Task<T> ScheduleOptimal<T>(Func<T> function, IEnumerable<int>? processorIds = null, TaskPriority priority = TaskPriority.Normal)
+    public Task<T> ScheduleOptimalAsync<T>(Func<T> function, IEnumerable<int>? processorIds = null, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
 
@@ -191,7 +191,7 @@ public sealed class NumaScheduler : IDisposable
             ? _topology.GetOptimalNodeForProcessors(processorIds)
             : GetLeastLoadedNode();
 
-        return ScheduleOnNode(function, optimalNode, priority);
+        return ScheduleOnNodeAsync(function, optimalNode, priority);
     }
 
     /// <summary>
@@ -200,7 +200,7 @@ public sealed class NumaScheduler : IDisposable
     /// <param name="actions">Actions to execute in parallel.</param>
     /// <param name="strategy">Load balancing strategy.</param>
     /// <returns>Task representing all parallel work.</returns>
-    public Task ScheduleParallel(IEnumerable<Action> actions, LoadBalancingStrategy strategy = LoadBalancingStrategy.RoundRobin)
+    public Task ScheduleParallelAsync(IEnumerable<Action> actions, LoadBalancingStrategy strategy = LoadBalancingStrategy.RoundRobin)
     {
         ThrowIfDisposed();
 
@@ -225,7 +225,7 @@ public sealed class NumaScheduler : IDisposable
                 _ => i % _topology.NodeCount
             };
 
-            tasks.Add(ScheduleOnNode(actionList[i], nodeId));
+            tasks.Add(ScheduleOnNodeAsync(actionList[i], nodeId));
         }
 
         return Task.WhenAll(tasks);
@@ -291,11 +291,11 @@ public sealed class NumaScheduler : IDisposable
         for (var nodeId = 0; nodeId < _topology.NodeCount; nodeId++)
         {
             var capturedNodeId = nodeId;
-            _schedulerTasks[nodeId] = Task.Run(async () => await RunSchedulerForNode(capturedNodeId).ConfigureAwait(false));
+            _schedulerTasks[nodeId] = Task.Run(async () => await RunSchedulerForNodeAsync(capturedNodeId).ConfigureAwait(false));
         }
     }
 
-    private async Task RunSchedulerForNode(int nodeId)
+    private async Task RunSchedulerForNodeAsync(int nodeId)
     {
         var token = _cancellationTokenSource.Token;
 
@@ -358,10 +358,8 @@ public sealed class NumaScheduler : IDisposable
     }
 
     private int GetCurrentThreadNode()
-    {
         // In a full implementation, this would check current thread affinity
-        return Environment.CurrentManagedThreadId % _topology.NodeCount;
-    }
+        => Environment.CurrentManagedThreadId % _topology.NodeCount;
 
     private static double CalculateLoadImbalance(int[] queueLengths)
     {

@@ -9,17 +9,9 @@ namespace DotCompute.Plugins.Loaders.NuGet;
 /// <summary>
 /// Custom AssemblyLoadContext for NuGet-based plugins with proper isolation
 /// </summary>
-public sealed class NuGetPluginLoadContext : AssemblyLoadContext
+public sealed class NuGetPluginLoadContext(string pluginPath, string contextName, bool isCollectible = true) : AssemblyLoadContext(contextName, isCollectible)
 {
-    private readonly AssemblyDependencyResolver _resolver;
-    private readonly string _pluginPath;
-
-    public NuGetPluginLoadContext(string pluginPath, string contextName, bool isCollectible = true)
-        : base(contextName, isCollectible)
-    {
-        _pluginPath = pluginPath ?? throw new ArgumentNullException(nameof(pluginPath));
-        _resolver = new AssemblyDependencyResolver(pluginPath);
-    }
+    private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {

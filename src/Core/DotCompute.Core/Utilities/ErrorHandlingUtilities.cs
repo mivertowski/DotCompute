@@ -19,7 +19,6 @@ namespace DotCompute.Core.Utilities;
 public static class ErrorHandlingUtilities
 {
     private static readonly ConcurrentDictionary<Type, ErrorClassification> ErrorClassificationCache = new();
-    private static readonly ConcurrentDictionary<string, ErrorPattern> ErrorPatternCache = new();
 
     /// <summary>
     /// Classifies an exception into predefined categories for appropriate handling.

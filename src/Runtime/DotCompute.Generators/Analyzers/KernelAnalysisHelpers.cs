@@ -156,7 +156,7 @@ internal static class KernelAnalysisHelpers
         }
 
 
-        return backends.ToArray();
+        return [.. backends];
     }
 
     /// <summary>

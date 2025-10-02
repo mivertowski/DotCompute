@@ -3,10 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using DotCompute.Abstractions.Types;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
-using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Services;
@@ -40,7 +38,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         public TimeSpan MinExecutionTime { get; set; } = TimeSpan.MaxValue;
         public TimeSpan MaxExecutionTime { get; set; }
         public Queue<ExecutionRecord> RecentExecutions { get; } = new();
-        public Dictionary<string, long> ErrorCounts { get; } = new();
+        public Dictionary<string, long> ErrorCounts { get; } = [];
         public long TotalMemoryAllocated { get; set; }
         public double AverageCpuUsage { get; set; }
         public DateTime FirstExecution { get; set; }
@@ -179,7 +177,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             metricsData.RecentExecutions.Enqueue(executionRecord);
             while (metricsData.RecentExecutions.Count > 100)
             {
-                metricsData.RecentExecutions.Dequeue();
+                _ = metricsData.RecentExecutions.Dequeue();
             }
         }
 
@@ -447,7 +445,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     /// <summary>
     /// Gets current CPU usage percentage.
     /// </summary>
-    private double GetCurrentCpuUsage()
+    private static double GetCurrentCpuUsage()
     {
         try
         {
@@ -513,7 +511,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
                     // Keep only last 24 hours of snapshots (1440 minutes)
                     while (kvp.Value.PerformanceHistory.Count > 1440)
                     {
-                        kvp.Value.PerformanceHistory.Dequeue();
+                        _ = kvp.Value.PerformanceHistory.Dequeue();
                     }
                 }
             }
@@ -543,14 +541,14 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     {
         var allMetrics = GetAllPluginMetrics().ToList();
         var csv = new System.Text.StringBuilder();
-        
+
         // Header
-        csv.AppendLine("PluginId,TotalExecutions,SuccessfulExecutions,FailedExecutions,SuccessRate,AverageExecutionTime,MinExecutionTime,MaxExecutionTime");
+        _ = csv.AppendLine("PluginId,TotalExecutions,SuccessfulExecutions,FailedExecutions,SuccessRate,AverageExecutionTime,MinExecutionTime,MaxExecutionTime");
         
         // Data
         foreach (var metrics in allMetrics)
         {
-            csv.AppendLine($"{metrics.PluginId},{metrics.TotalExecutions},{metrics.SuccessfulExecutions},{metrics.FailedExecutions},{metrics.SuccessRate:F4},{metrics.AverageExecutionTime.TotalMilliseconds},{metrics.MinExecutionTime.TotalMilliseconds},{metrics.MaxExecutionTime.TotalMilliseconds}");
+            _ = csv.AppendLine($"{metrics.PluginId},{metrics.TotalExecutions},{metrics.SuccessfulExecutions},{metrics.FailedExecutions},{metrics.SuccessRate:F4},{metrics.AverageExecutionTime.TotalMilliseconds},{metrics.MinExecutionTime.TotalMilliseconds},{metrics.MaxExecutionTime.TotalMilliseconds}");
         }
         
         return csv.ToString();
@@ -563,22 +561,22 @@ public sealed class AlgorithmPluginMetrics : IDisposable
     {
         var allMetrics = GetAllPluginMetrics();
         var xml = new System.Text.StringBuilder();
-        
-        xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        xml.AppendLine("<PluginMetrics>");
+
+        _ = xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        _ = xml.AppendLine("<PluginMetrics>");
         
         foreach (var metrics in allMetrics)
         {
-            xml.AppendLine($"  <Plugin Id=\"{metrics.PluginId}\">");
-            xml.AppendLine($"    <TotalExecutions>{metrics.TotalExecutions}</TotalExecutions>");
-            xml.AppendLine($"    <SuccessfulExecutions>{metrics.SuccessfulExecutions}</SuccessfulExecutions>");
-            xml.AppendLine($"    <FailedExecutions>{metrics.FailedExecutions}</FailedExecutions>");
-            xml.AppendLine($"    <SuccessRate>{metrics.SuccessRate:F4}</SuccessRate>");
-            xml.AppendLine($"    <AverageExecutionTime>{metrics.AverageExecutionTime.TotalMilliseconds}</AverageExecutionTime>");
-            xml.AppendLine("  </Plugin>");
+            _ = xml.AppendLine($"  <Plugin Id=\"{metrics.PluginId}\">");
+            _ = xml.AppendLine($"    <TotalExecutions>{metrics.TotalExecutions}</TotalExecutions>");
+            _ = xml.AppendLine($"    <SuccessfulExecutions>{metrics.SuccessfulExecutions}</SuccessfulExecutions>");
+            _ = xml.AppendLine($"    <FailedExecutions>{metrics.FailedExecutions}</FailedExecutions>");
+            _ = xml.AppendLine($"    <SuccessRate>{metrics.SuccessRate:F4}</SuccessRate>");
+            _ = xml.AppendLine($"    <AverageExecutionTime>{metrics.AverageExecutionTime.TotalMilliseconds}</AverageExecutionTime>");
+            _ = xml.AppendLine("  </Plugin>");
         }
-        
-        xml.AppendLine("</PluginMetrics>");
+
+        _ = xml.AppendLine("</PluginMetrics>");
         return xml.ToString();
     }
 
@@ -613,7 +611,7 @@ public sealed class PluginMetrics
     public TimeSpan TotalExecutionTime { get; init; }
     public DateTime FirstExecution { get; init; }
     public DateTime LastExecution { get; init; }
-    public Dictionary<string, long> ErrorCounts { get; init; } = new();
+    public Dictionary<string, long> ErrorCounts { get; init; } = [];
     public long TotalMemoryAllocated { get; init; }
     public double AverageCpuUsage { get; init; }
     public double ThroughputPerSecond { get; init; }

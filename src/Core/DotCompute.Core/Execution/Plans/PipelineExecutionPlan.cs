@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
 
 namespace DotCompute.Core.Execution.Plans
@@ -78,13 +77,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the input buffers for this stage.
         /// Buffers containing the input data that this stage will process.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the output buffers for this stage.
         /// Buffers where this stage will write its computed results.
         /// </summary>
-        public required AbstractionsMemory.IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
+        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
 
         /// <summary>
         /// Gets or sets the processing time estimate for this stage in milliseconds.

@@ -17,7 +17,7 @@ public sealed class PerformanceMeasurement : IDisposable
     private readonly string _operationName;
     private readonly Stopwatch _stopwatch;
     private readonly MemoryTracker? _memoryTracker;
-    private readonly List<Checkpoint> _checkpoints = new();
+    private readonly List<Checkpoint> _checkpoints = [];
     private bool _disposed;
     private bool _isRunning;
 
@@ -294,7 +294,7 @@ public sealed class PerformanceMeasurement : IDisposable
         {
             OperationName = _operationName,
             Duration = _stopwatch.Elapsed,
-            Checkpoints = _checkpoints.ToArray(),
+            Checkpoints = [.. _checkpoints],
             MemoryReport = _memoryTracker?.GetReport(),
             Timestamp = DateTime.UtcNow
         };
@@ -356,10 +356,7 @@ public sealed class PerformanceResult
     /// <summary>
     /// Gets the throughput in operations per second.
     /// </summary>
-    public double GetThroughput(long operationCount)
-    {
-        return operationCount / Duration.TotalSeconds;
-    }
+    public double GetThroughput(long operationCount) => operationCount / Duration.TotalSeconds;
 
     /// <summary>
     /// Gets the time between two checkpoints.

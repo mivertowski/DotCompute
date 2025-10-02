@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 using DotCompute.Plugins.Loaders.NuGet.Types;
@@ -14,19 +14,12 @@ namespace DotCompute.Plugins.Loaders;
 /// <summary>
 /// Advanced compatibility checker for NuGet plugins with framework and platform validation.
 /// </summary>
-public class CompatibilityChecker
+public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings)
 {
-    private readonly ILogger _logger;
-    private readonly CompatibilitySettings _settings;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CompatibilitySettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     private readonly ConcurrentDictionary<string, CompatibilityMatrix> _compatibilityCache = new();
-    private readonly RuntimeEnvironment _runtimeEnvironment;
-
-    public CompatibilityChecker(ILogger logger, CompatibilitySettings settings)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _runtimeEnvironment = new RuntimeEnvironment();
-    }
+    private readonly RuntimeEnvironment _runtimeEnvironment = new();
 
     /// <summary>
     /// Validates compatibility of a plugin with the current runtime environment.
@@ -524,7 +517,7 @@ public class CompatibilityChecker
 
             // Get target framework from assembly attributes
 
-            var targetFrameworkAttr = assembly.GetCustomAttribute<global::System.Runtime.Versioning.TargetFrameworkAttribute>();
+            var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
             if (targetFrameworkAttr != null)
             {
                 info.TargetFramework = targetFrameworkAttr.FrameworkName;
@@ -853,5 +846,5 @@ internal class RuntimeEnvironment
     public string OSDescription { get; } = RuntimeInformation.OSDescription;
     public Architecture Architecture { get; } = RuntimeInformation.OSArchitecture;
     public string RuntimeIdentifier { get; } = RuntimeInformation.RuntimeIdentifier;
-    public bool IsAotRuntime { get; } = !global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+    public bool IsAotRuntime { get; } = !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 }

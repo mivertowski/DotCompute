@@ -14,25 +14,17 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Adapter that wraps CudaMemoryManager for async operations.
     /// Bridges the CUDA memory manager with the unified memory interface.
     /// </summary>
-    public sealed class CudaAsyncMemoryManagerAdapter : Abstractions.IUnifiedMemoryManager
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
+    /// </remarks>
+    /// <param name="memoryManager">The underlying CUDA memory manager.</param>
+    public sealed class CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager) : IUnifiedMemoryManager
     {
-        private readonly CudaMemoryManager _memoryManager;
-        private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes;
+        private readonly CudaMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+        private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes = new();
         private long _totalAllocatedBytes;
         private bool _disposed;
-        private readonly string _instanceId;
         private IAccelerator? _accelerator;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaAsyncMemoryManagerAdapter"/> class.
-        /// </summary>
-        /// <param name="memoryManager">The underlying CUDA memory manager.</param>
-        public CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager)
-        {
-            _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _bufferSizes = new ConcurrentDictionary<IUnifiedMemoryBuffer, long>();
-            _instanceId = Guid.NewGuid().ToString("N")[0..8];
-        }
 
         /// <inheritdoc/>
         public long TotalAvailableMemory => _memoryManager.TotalMemory;
@@ -296,7 +288,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var buffer = await AllocateAsync<T>(data.Length, options, cancellationToken).ConfigureAwait(false);
                 await CopyToDeviceAsync(data, buffer, cancellationToken).ConfigureAwait(false);
                 return buffer;
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
 
@@ -331,7 +323,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
                 return (IUnifiedMemoryBuffer)buffer;
-            }, cancellationToken).AsValueTask();
+            }, cancellationToken).AsValueTaskAsync();
         }
 
 
@@ -413,10 +405,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// Sets the accelerator reference. This should only be called by CudaAccelerator during initialization.
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
-        internal void SetAccelerator(IAccelerator accelerator)
-        {
-            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        }
+        internal void SetAccelerator(IAccelerator accelerator) => _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
         /// <inheritdoc/>
         public void Dispose()
@@ -480,10 +469,7 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
-        {
-            return new ValueTask(Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken));
-        }
+        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => MemsetDevice(deviceMemory, value, sizeInBytes), cancellationToken));
 
         /// <inheritdoc/>
         public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
@@ -524,16 +510,10 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         /// <inheritdoc/>
-        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
-        {
-            return new ValueTask(Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken));
-        }
+        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => CopyHostToDevice(hostPointer, deviceMemory, sizeInBytes), cancellationToken));
 
         /// <inheritdoc/>
-        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
-        {
-            return new ValueTask(Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken));
-        }
+        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => new(Task.Run(() => CopyDeviceToHost(deviceMemory, hostPointer, sizeInBytes), cancellationToken));
 
         /// <inheritdoc/>
         public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
@@ -554,9 +534,6 @@ namespace DotCompute.Backends.CUDA.Memory
             CudaRuntime.CheckError(result, "copying device to device memory");
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }

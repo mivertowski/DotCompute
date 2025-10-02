@@ -16,28 +16,18 @@ namespace DotCompute.Core.Debugging;
 /// Handles performance profiling and execution tracing for kernel debugging.
 /// Provides detailed performance metrics and execution traces.
 /// </summary>
-public sealed class KernelDebugProfiler : IDisposable
+public sealed class KernelDebugProfiler(
+    ILogger<KernelDebugProfiler> logger,
+    ConcurrentQueue<KernelExecutionResult> executionHistory) : IDisposable
 {
-    private readonly ILogger<KernelDebugProfiler> _logger;
-    private readonly ConcurrentQueue<DotCompute.Abstractions.Debugging.KernelExecutionResult> _executionHistory;
-    private DebugServiceOptions _options;
+    private readonly ILogger<KernelDebugProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = executionHistory ?? throw new ArgumentNullException(nameof(executionHistory));
+    private DebugServiceOptions _options = new();
     private bool _disposed;
 
-    public KernelDebugProfiler(
-        ILogger<KernelDebugProfiler> logger,
-        ConcurrentQueue<DotCompute.Abstractions.Debugging.KernelExecutionResult> executionHistory)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _executionHistory = executionHistory ?? throw new ArgumentNullException(nameof(executionHistory));
-        _options = new DebugServiceOptions();
-    }
+    public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    public void Configure(DebugServiceOptions options)
-    {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
-
-    public async Task<DotCompute.Abstractions.Debugging.KernelExecutionResult> ExecuteWithProfilingAsync(
+    public async Task<KernelExecutionResult> ExecuteWithProfilingAsync(
         string kernelName,
         string backendType,
         object[] inputs,
@@ -67,7 +57,7 @@ public sealed class KernelDebugProfiler : IDisposable
             stopwatch.Stop();
             var memoryAfter = GC.GetTotalMemory(false);
 
-            var executionResult = new DotCompute.Abstractions.Debugging.KernelExecutionResult
+            var executionResult = new KernelExecutionResult
             {
                 KernelName = kernelName,
                 BackendType = backendType,
@@ -95,7 +85,7 @@ public sealed class KernelDebugProfiler : IDisposable
             stopwatch.Stop();
             _logger.LogError(ex, "Error during profiled execution of {kernelName} on {backendType}", kernelName, backendType);
 
-            var failedResult = new DotCompute.Abstractions.Debugging.KernelExecutionResult
+            var failedResult = new KernelExecutionResult
             {
                 KernelName = kernelName,
                 BackendType = backendType,
@@ -254,7 +244,7 @@ public sealed class KernelDebugProfiler : IDisposable
         }
     }
 
-    public Task<DotCompute.Core.Debugging.Types.PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
+    public Task<PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
@@ -462,7 +452,7 @@ public sealed class KernelDebugProfiler : IDisposable
     /// </summary>
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <returns>Bottleneck analysis result.</returns>
-    public async Task<DotCompute.Core.Debugging.Core.BottleneckAnalysis> DetectBottlenecksAsync(string kernelName)
+    public async Task<Core.BottleneckAnalysis> DetectBottlenecksAsync(string kernelName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await Task.CompletedTask; // Make async for consistency
@@ -471,7 +461,7 @@ public sealed class KernelDebugProfiler : IDisposable
             .Where(r => r.KernelName == kernelName)
             .ToList();
 
-        var bottlenecks = new List<DotCompute.Abstractions.Debugging.PerformanceBottleneck>();
+        var bottlenecks = new List<PerformanceBottleneck>();
 
         if (relevantResults.Any())
         {
@@ -480,7 +470,7 @@ public sealed class KernelDebugProfiler : IDisposable
 
             if (slowExecutions.Any())
             {
-                bottlenecks.Add(new DotCompute.Abstractions.Debugging.PerformanceBottleneck
+                bottlenecks.Add(new PerformanceBottleneck
                 {
                     Description = $"Slow execution detected in {slowExecutions.Count()} runs - {(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
                     Severity = BottleneckSeverity.Medium,
@@ -489,10 +479,10 @@ public sealed class KernelDebugProfiler : IDisposable
             }
         }
 
-        return new DotCompute.Core.Debugging.Core.BottleneckAnalysis
+        return new Core.BottleneckAnalysis
         {
             KernelName = kernelName,
-            Bottlenecks = bottlenecks.Select(b => new DotCompute.Core.Debugging.Core.Bottleneck
+            Bottlenecks = bottlenecks.Select(b => new Core.Bottleneck
             {
                 Type = AbstractionsMemory.Types.BottleneckType.Unknown,
                 Severity = BottleneckSeverity.Medium,
@@ -509,7 +499,7 @@ public sealed class KernelDebugProfiler : IDisposable
     /// </summary>
     /// <param name="kernelName">Name of the kernel.</param>
     /// <returns>Execution statistics.</returns>
-    public DotCompute.Abstractions.Debugging.ExecutionStatistics GetExecutionStatistics(string kernelName)
+    public ExecutionStatistics GetExecutionStatistics(string kernelName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -519,7 +509,7 @@ public sealed class KernelDebugProfiler : IDisposable
 
         if (!relevantResults.Any())
         {
-            return new DotCompute.Abstractions.Debugging.ExecutionStatistics
+            return new ExecutionStatistics
             {
                 KernelName = kernelName,
                 TotalExecutions = 0,
@@ -545,12 +535,10 @@ public sealed class KernelDebugProfiler : IDisposable
         };
     }
 
-    private static long GetMemoryUsage(DotCompute.Abstractions.Debugging.KernelExecutionResult result)
-    {
+    private static long GetMemoryUsage(KernelExecutionResult result)
         // Since KernelExecutionResult doesn't have memory usage property,
         // we'll return 0 for now. In a real implementation, this could be tracked separately.
-        return 0;
-    }
+        => 0;
 
     public void Dispose()
     {

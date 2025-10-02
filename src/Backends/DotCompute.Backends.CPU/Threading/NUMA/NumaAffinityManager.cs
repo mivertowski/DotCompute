@@ -9,24 +9,17 @@ namespace DotCompute.Backends.CPU.Threading.NUMA;
 /// <summary>
 /// Manages thread and process affinity for NUMA optimization.
 /// </summary>
-public sealed class NumaAffinityManager : IDisposable
+/// <remarks>
+/// Initializes a new instance of the NumaAffinityManager class.
+/// </remarks>
+/// <param name="topology">NUMA topology information.</param>
+public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
 {
-    private readonly NumaTopology _topology;
-    private readonly ConcurrentDictionary<int, AffinityInfo> _threadAffinities;
-    private readonly ConcurrentDictionary<int, AffinityInfo> _processAffinities;
+    private readonly NumaTopology _topology = topology ?? throw new ArgumentNullException(nameof(topology));
+    private readonly ConcurrentDictionary<int, AffinityInfo> _threadAffinities = new();
+    private readonly ConcurrentDictionary<int, AffinityInfo> _processAffinities = new();
     private readonly object _lock = new();
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the NumaAffinityManager class.
-    /// </summary>
-    /// <param name="topology">NUMA topology information.</param>
-    public NumaAffinityManager(NumaTopology topology)
-    {
-        _topology = topology ?? throw new ArgumentNullException(nameof(topology));
-        _threadAffinities = new ConcurrentDictionary<int, AffinityInfo>();
-        _processAffinities = new ConcurrentDictionary<int, AffinityInfo>();
-    }
 
     /// <summary>
     /// Sets thread affinity to a specific NUMA node.

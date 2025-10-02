@@ -3,11 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
-using DotCompute.Algorithms.LinearAlgebra.Components;
-using DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
@@ -19,34 +15,23 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <summary>
     /// Specialized component for GPU-accelerated linear system solvers including LU, Cholesky, QR, and iterative methods.
     /// </summary>
-    public sealed class GpuSolverOperations : IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the GpuSolverOperations.
+    /// </remarks>
+    /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="matrixOps">Matrix operations component.</param>
+    /// <param name="vectorOps">Vector operations component.</param>
+    public sealed class GpuSolverOperations(
+        KernelManager kernelManager,
+        ILogger<GpuSolverOperations> logger,
+        GpuMatrixOperations matrixOps,
+        GpuVectorOperations vectorOps) : IDisposable
     {
-        private readonly KernelManager _kernelManager;
-        private readonly ILogger<GpuSolverOperations> _logger;
-        private readonly GpuMatrixOperations _matrixOps;
-        private readonly GpuVectorOperations _vectorOps;
-        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
+        private readonly GpuMatrixOperations _matrixOps = matrixOps ?? throw new ArgumentNullException(nameof(matrixOps));
+        private readonly GpuVectorOperations _vectorOps = vectorOps ?? throw new ArgumentNullException(nameof(vectorOps));
+        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the GpuSolverOperations.
-        /// </summary>
-        /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
-        /// <param name="logger">Logger instance.</param>
-        /// <param name="matrixOps">Matrix operations component.</param>
-        /// <param name="vectorOps">Vector operations component.</param>
-        public GpuSolverOperations(
-            KernelManager kernelManager, 
-            ILogger<GpuSolverOperations> logger,
-            GpuMatrixOperations matrixOps,
-            GpuVectorOperations vectorOps)
-        {
-            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _matrixOps = matrixOps ?? throw new ArgumentNullException(nameof(matrixOps));
-            _vectorOps = vectorOps ?? throw new ArgumentNullException(nameof(vectorOps));
-            _kernelCache = [];
-        }
 
         /// <summary>
         /// Solves a linear system using LU decomposition.
@@ -80,7 +65,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="accelerator">GPU accelerator.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Solution vector.</returns>
-        public async Task<Matrix> SolveCholeskyAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken = default)
+        public static async Task<Matrix> SolveCholeskyAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -151,7 +136,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <summary>
         /// Executes GPU-based LU decomposition with atomic pivoting.
         /// </summary>
-        private async Task<(Matrix L, Matrix U, int[] P)> ExecuteLUDecompositionAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
+        private static async Task<(Matrix L, Matrix U, int[] P)> ExecuteLUDecompositionAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
         {
             var n = matrix.Rows;
             var context = new KernelGenerationContext
@@ -280,7 +265,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <summary>
         /// Solves linear system using precomputed LU decomposition.
         /// </summary>
-        private async Task<Matrix> SolveWithLUAsync(Matrix l, Matrix u, int[] p, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
+        private static async Task<Matrix> SolveWithLUAsync(Matrix l, Matrix u, int[] p, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
         {
             // Apply permutation to b
             var pb = new Matrix(b.Rows, b.Columns);
@@ -404,10 +389,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// GPU-accelerated BiCGSTAB solver for general matrices.
         /// </summary>
         private async Task<Matrix> BiCGSTABSolveAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
-        {
             // Simplified BiCGSTAB implementation - would use advanced GPU kernels in full version
-            return await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
-        }
+            => await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
 
         private static MatrixProperties AnalyzeMatrixProperties(Matrix matrix)
         {

@@ -919,19 +919,13 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     /// Gets current GPU memory usage (virtual - override in GPU-specific tests).
     /// </summary>
     /// <returns>Current GPU memory usage in bytes.</returns>
-    protected virtual long GetCurrentGpuMemoryUsage()
-    {
-        return 1024 * 1024 * 256; // 256MB placeholder
-    }
+    protected virtual long GetCurrentGpuMemoryUsage() => 1024 * 1024 * 256; // 256MB placeholder
 
     /// <summary>
     /// Gets free GPU memory (virtual - override in GPU-specific tests).
     /// </summary>
     /// <returns>Free GPU memory in bytes.</returns>
-    protected virtual long GetFreeGpuMemory()
-    {
-        return 1024L * 1024L * 1024L * 7L; // 7GB placeholder
-    }
+    protected virtual long GetFreeGpuMemory() => 1024L * 1024L * 1024L * 7L; // 7GB placeholder
 
     #endregion
 
@@ -1032,10 +1026,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     /// Adds a disposable object to be cleaned up when the test completes.
     /// </summary>
     /// <param name="disposable">Disposable object to track.</param>
-    protected void TrackDisposable(IDisposable disposable)
-    {
-        _disposables.Add(disposable);
-    }
+    protected void TrackDisposable(IDisposable disposable) => _disposables.Add(disposable);
 
     /// <summary>
     /// Executes operations concurrently for thread safety testing.
@@ -1058,7 +1049,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
 
 
         var results = await Task.WhenAll(tasks);
-        return new List<T>(results);
+        return [.. results];
     }
 
     #endregion

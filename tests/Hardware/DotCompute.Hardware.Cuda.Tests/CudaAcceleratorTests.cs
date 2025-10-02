@@ -13,10 +13,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests device initialization, memory operations, and hardware verification.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaAcceleratorTests : CudaTestBase
+    public class CudaAcceleratorTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        public CudaAcceleratorTests(ITestOutputHelper output) : base(output) { }
-
         [SkippableFact]
         public async Task Device_Initialization_Should_Succeed_With_RTX_2000()
         {

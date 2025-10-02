@@ -25,14 +25,13 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
         // Error tracking
         private const int MaxErrorHistorySize = 1000;
-        private const int MaxRetryAttempts = 3;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaErrorRecovery"/> class.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">
+        /// <exception cref="ArgumentNullException">
         /// context
         /// or
         /// logger
@@ -254,9 +253,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
                 CudaErrorStrategy.RetryWithDelay => await RetryOperationAsync(errorEvent, 2, TimeSpan.FromMilliseconds(100), cancellationToken),
                 CudaErrorStrategy.RetryWithGC => await RetryWithGarbageCollectionAsync(errorEvent, cancellationToken),
                 CudaErrorStrategy.ResetContext => await ResetContextRecoveryAsync(errorEvent, cancellationToken),
-                CudaErrorStrategy.LogAndContinue => LogAndContinueAsync(errorEvent),
-                CudaErrorStrategy.LogAndThrow => LogAndThrowAsync(errorEvent),
-                _ => LogAndThrowAsync(errorEvent)
+                CudaErrorStrategy.LogAndContinue => LogAndContinue(errorEvent),
+                CudaErrorStrategy.LogAndThrow => LogAndThrow(errorEvent),
+                _ => LogAndThrow(errorEvent)
             };
         }
 
@@ -357,7 +356,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             };
         }
 
-        private CudaErrorRecoveryResult LogAndContinueAsync(CudaErrorEvent errorEvent)
+        private CudaErrorRecoveryResult LogAndContinue(CudaErrorEvent errorEvent)
         {
             _logger.LogWarningMessage($"Continuing after error {errorEvent.Error} in operation '{errorEvent.Operation}'");
 
@@ -369,7 +368,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
             };
         }
 
-        private static CudaErrorRecoveryResult LogAndThrowAsync(CudaErrorEvent errorEvent)
+        private static CudaErrorRecoveryResult LogAndThrow(CudaErrorEvent errorEvent)
         {
             return new CudaErrorRecoveryResult
             {

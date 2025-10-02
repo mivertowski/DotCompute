@@ -200,7 +200,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     /// </summary>
     public PluginHealthReport GetHealthReport()
     {
-        var healthReport = _healthMonitor.GenerateHealthReport(_pluginStates.Values);
+        var healthReport = PluginHealthMonitor.GenerateHealthReport(_pluginStates.Values);
         var pluginHealth = new Dictionary<string, PluginHealthInfo>();
 
         foreach (var kvp in _pluginStates)

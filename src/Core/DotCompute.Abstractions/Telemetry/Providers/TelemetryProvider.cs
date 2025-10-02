@@ -66,7 +66,7 @@ public abstract class DistributedTracer : IDisposable
     /// <param name="parentContext">The parent context.</param>
     /// <param name="tags">Additional tags.</param>
     /// <returns>The trace context.</returns>
-    public abstract DotCompute.Abstractions.Telemetry.Context.TraceContext StartTrace(string operationName, string? correlationId, object? parentContext, Dictionary<string, object?>? tags);
+    public abstract Context.TraceContext StartTrace(string operationName, string? correlationId, object? parentContext, Dictionary<string, object?>? tags);
 
     /// <summary>
     /// Finishes a trace.
@@ -74,7 +74,7 @@ public abstract class DistributedTracer : IDisposable
     /// <param name="correlationId">The correlation ID.</param>
     /// <param name="status">The trace status.</param>
     /// <returns>The trace data.</returns>
-    public abstract Task<DotCompute.Abstractions.Telemetry.Traces.TraceData?> FinishTraceAsync(string correlationId, TraceStatus status);
+    public abstract Task<Traces.TraceData?> FinishTraceAsync(string correlationId, TraceStatus status);
 
     /// <summary>
     /// Disposes the distributed tracer.
@@ -97,7 +97,7 @@ public abstract class PerformanceProfiler : IDisposable
     /// <param name="options">The profile options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The performance profile.</returns>
-    public abstract Task<DotCompute.Abstractions.Telemetry.Profiles.PerformanceProfile> CreateProfileAsync(string correlationId, ProfileOptions? options, CancellationToken cancellationToken);
+    public abstract Task<Profiles.PerformanceProfile> CreateProfileAsync(string correlationId, ProfileOptions? options, CancellationToken cancellationToken);
 
     /// <summary>
     /// Disposes the performance profiler.
@@ -122,7 +122,7 @@ public abstract class StructuredLogger : IDisposable
     /// <param name="metrics">The performance metrics.</param>
     /// <param name="correlationId">The correlation ID.</param>
     /// <param name="exception">The exception, if any.</param>
-    public abstract void LogKernelExecution(string kernelName, string deviceId, TimeSpan executionTime, DotCompute.Abstractions.Logging.KernelPerformanceMetrics metrics, string? correlationId, Exception? exception);
+    public abstract void LogKernelExecution(string kernelName, string deviceId, TimeSpan executionTime, Logging.KernelPerformanceMetrics metrics, string? correlationId, Exception? exception);
 
     /// <summary>
     /// Logs a memory operation event.
@@ -134,7 +134,7 @@ public abstract class StructuredLogger : IDisposable
     /// <param name="metrics">The memory metrics.</param>
     /// <param name="correlationId">The correlation ID.</param>
     /// <param name="exception">The exception, if any.</param>
-    public abstract void LogMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration, DotCompute.Abstractions.Logging.MemoryAccessMetrics metrics, string? correlationId, Exception? exception);
+    public abstract void LogMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration, Logging.MemoryAccessMetrics metrics, string? correlationId, Exception? exception);
 
     /// <summary>
     /// Disposes the structured logger.

@@ -11,28 +11,19 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Represents a slice view of a CpuMemoryBuffer without creating a new buffer.
 /// Provides a window into the parent buffer with proper bounds checking.
 /// </summary>
-internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDisposable
+internal sealed class CpuMemoryBufferSlice(
+    CpuMemoryBuffer parentBuffer,
+    int offset,
+    int length,
+    CpuMemoryManager memoryManager,
+    ILogger? logger) : IUnifiedMemoryBuffer<byte>, IDisposable
 {
-    private readonly CpuMemoryBuffer _parentBuffer;
-    private readonly int _offset;
-    private readonly int _length;
-    private readonly CpuMemoryManager _memoryManager;
-    private readonly ILogger? _logger;
+    private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+    private readonly int _offset = offset;
+    private readonly int _length = length;
+    private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger? _logger = logger;
     private bool _isDisposed;
-
-    public CpuMemoryBufferSlice(
-        CpuMemoryBuffer parentBuffer,
-        int offset,
-        int length,
-        CpuMemoryManager memoryManager,
-        ILogger? logger)
-    {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        _offset = offset;
-        _length = length;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger;
-    }
 
     public long SizeInBytes => _length;
     public int Count => _length;
@@ -110,10 +101,7 @@ internal sealed class CpuMemoryBufferSlice : IUnifiedMemoryBuffer<byte>, IDispos
         });
     }
 
-    public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();

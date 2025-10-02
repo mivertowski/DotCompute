@@ -63,7 +63,7 @@ public sealed class Matrix2DAccessAnalysis
     /// <summary>
     /// Gets or sets the tile analysis results.
     /// </summary>
-    public DotCompute.Abstractions.Types.TileAnalysis TileAnalysis { get; set; } = new();
+    public Abstractions.Types.TileAnalysis TileAnalysis { get; set; } = new();
 
     /// <summary>
     /// Gets or sets optimization recommendations.

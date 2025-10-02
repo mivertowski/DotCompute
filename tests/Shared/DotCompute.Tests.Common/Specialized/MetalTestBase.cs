@@ -34,38 +34,26 @@ public abstract class MetalTestBase : ConsolidatedTestBase
     /// Enhanced Metal availability check with device validation.
     /// </summary>
     /// <returns>True if Metal is available and functional, false otherwise.</returns>
-    protected new static bool IsMetalAvailable()
-    {
-        return ConsolidatedTestBase.IsMetalAvailable();
-    }
+    protected new static bool IsMetalAvailable() => ConsolidatedTestBase.IsMetalAvailable();
 
     /// <summary>
     /// Check if running on Apple Silicon (M1/M2/M3/M4).
     /// </summary>
     /// <returns>True if running on Apple Silicon, false otherwise.</returns>
-    protected new static bool IsAppleSilicon()
-    {
-        return ConsolidatedTestBase.IsAppleSilicon();
-    }
+    protected new static bool IsAppleSilicon() => ConsolidatedTestBase.IsAppleSilicon();
 
     /// <summary>
     /// Get the macOS version.
     /// </summary>
     /// <returns>macOS version.</returns>
-    protected static Version GetMacOSVersion()
-    {
-        return Environment.OSVersion.Version;
-    }
+    protected static Version GetMacOSVersion() => Environment.OSVersion.Version;
 
     /// <summary>
     /// Check if macOS version meets minimum requirements for Metal features.
     /// </summary>
     /// <param name="minimumVersion">Minimum required macOS version.</param>
     /// <returns>True if version requirement is met, false otherwise.</returns>
-    protected static bool HasMinimumMacOSVersion(Version minimumVersion)
-    {
-        return GetMacOSVersion() >= minimumVersion;
-    }
+    protected static bool HasMinimumMacOSVersion(Version minimumVersion) => GetMacOSVersion() >= minimumVersion;
 
     /// <summary>
     /// Get detailed Metal device information for logging.
@@ -164,17 +152,11 @@ public abstract class MetalTestBase : ConsolidatedTestBase
     /// <summary>
     /// Performance measurement utility specifically for Metal operations.
     /// </summary>
-    protected class MetalPerformanceMeasurement
+    protected class MetalPerformanceMeasurement(string operationName, ITestOutputHelper output)
     {
         private readonly Stopwatch _stopwatch = new();
-        private readonly string _operationName;
-        private readonly ITestOutputHelper _output;
-
-        public MetalPerformanceMeasurement(string operationName, ITestOutputHelper output)
-        {
-            _operationName = operationName;
-            _output = output;
-        }
+        private readonly string _operationName = operationName;
+        private readonly ITestOutputHelper _output = output;
 
         public void Start() => _stopwatch.Restart();
         public void Stop() => _stopwatch.Stop();
@@ -270,10 +252,7 @@ public abstract class MetalTestBase : ConsolidatedTestBase
         /// <summary>
         /// Creates matrix data optimized for Metal Performance Shaders.
         /// </summary>
-        public static float[] CreateMPSMatrix(int rows, int cols, bool identity = false, int seed = 42)
-        {
-            return UnifiedTestHelpers.TestDataGenerator.CreateMatrix(rows, cols, identity, seed);
-        }
+        public static float[] CreateMPSMatrix(int rows, int cols, bool identity = false, int seed = 42) => UnifiedTestHelpers.TestDataGenerator.CreateMatrix(rows, cols, identity, seed);
     }
 
     #endregion

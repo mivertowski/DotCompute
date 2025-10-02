@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Memory;
 
@@ -13,7 +12,6 @@ namespace DotCompute.Memory;
 /// </summary>
 public sealed partial class UnifiedBuffer<T> : IDisposable
 {
-    private readonly Stopwatch _transferStopwatch = new();
     private long _hostToDeviceTransfers;
     private long _deviceToHostTransfers;
     private long _totalTransferTime;
@@ -189,8 +187,8 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
         var result = new BufferValidationResult
         {
             IsValid = true,
-            Issues = new List<string>(),
-            Warnings = new List<string>()
+            Issues = [],
+            Warnings = []
         };
 
         // Check basic properties
@@ -353,6 +351,6 @@ public sealed class BufferSnapshot
 public sealed class BufferValidationResult
 {
     public bool IsValid { get; set; }
-    public List<string> Issues { get; init; } = new();
-    public List<string> Warnings { get; init; } = new();
+    public List<string> Issues { get; init; } = [];
+    public List<string> Warnings { get; init; } = [];
 }

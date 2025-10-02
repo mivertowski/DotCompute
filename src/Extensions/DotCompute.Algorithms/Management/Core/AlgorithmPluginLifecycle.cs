@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
@@ -229,13 +228,13 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         }
 
         // Validate supported accelerators
-        if (!plugin.SupportedAcceleratorTypes.Any())
+        if (plugin.SupportedAcceleratorTypes.Length == 0)
         {
             throw new InvalidOperationException("Plugin must support at least one accelerator type");
         }
 
         // Validate input types
-        if (!plugin.InputTypes.Any())
+        if (plugin.InputTypes.Length == 0)
         {
             throw new InvalidOperationException("Plugin must specify at least one input type");
         }
@@ -277,7 +276,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     private static bool IsTransientError(Exception ex)
     {
         return ex is TimeoutException ||
-               ex is System.Net.Http.HttpRequestException ||
+               ex is HttpRequestException ||
                ex is System.Net.Sockets.SocketException ||
                (ex is IOException ioEx && ioEx.Message.Contains("network", StringComparison.OrdinalIgnoreCase));
     }
@@ -400,7 +399,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     /// <summary>
     /// Detects potential resource leaks for a loaded plugin.
     /// </summary>
-    private async Task PerformResourceLeakDetectionAsync(LoadedPlugin loadedPlugin, PluginHealthResult healthResult)
+    private static async Task PerformResourceLeakDetectionAsync(LoadedPlugin loadedPlugin, PluginHealthResult healthResult)
     {
         try
         {
@@ -470,15 +469,12 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     /// <summary>
     /// Wrapper for health check timer callback.
     /// </summary>
-    private void PerformHealthChecksWrapper(object? state)
-    {
-        _ = Task.Run(async () => await PerformHealthChecks(state));
-    }
+    private void PerformHealthChecksWrapper(object? state) => _ = Task.Run(async () => await PerformHealthChecksAsync(state));
 
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
-    private async Task PerformHealthChecks(object? state)
+    private async Task PerformHealthChecksAsync(object? state)
     {
         if (_disposed)
         {

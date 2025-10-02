@@ -74,7 +74,7 @@ public sealed class KernelFormatters
     /// <param name="originalNamespace">The original namespace.</param>
     /// <param name="backend">The target backend (CPU, CUDA, Metal, etc.).</param>
     /// <returns>A formatted namespace with backend suffix.</returns>
-    public string FormatBackendNamespace(string originalNamespace, string backend)
+    public static string FormatBackendNamespace(string originalNamespace, string backend)
     {
         var generatedNamespace = FormatGeneratedNamespace(originalNamespace);
         return $"{generatedNamespace}.{backend}";
@@ -129,13 +129,13 @@ public sealed class KernelFormatters
     /// <param name="includeModifiers">Whether to include parameter modifiers.</param>
     /// <returns>A formatted parameter list.</returns>
     public string FormatParameterList(
-        System.Collections.Generic.IEnumerable<Models.Kernel.ParameterInfo> parameters,
+        IEnumerable<Models.Kernel.ParameterInfo> parameters,
         bool includeTypes = true,
         bool includeModifiers = false)
     {
         var formattedParams = parameters.Select(p =>
         {
-            var parts = new System.Collections.Generic.List<string>();
+            var parts = new List<string>();
 
             if (includeModifiers && p.IsReadOnly && !p.Type.Contains("ReadOnly"))
             {
@@ -335,7 +335,7 @@ public sealed class KernelFormatters
             return input;
         }
 
-        var words = input.Split(new char[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+        var words = input.Split(['_'], StringSplitOptions.RemoveEmptyEntries);
         return string.Join("", words.Select(word =>
             char.ToUpperInvariant(word[0]) + word.Substring(1).ToLowerInvariant()));
     }
@@ -440,11 +440,11 @@ public sealed class KernelFormatters
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
         {
-            return new[] { text };
+            return [text];
         }
 
-        var words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var lines = new System.Collections.Generic.List<string>();
+        var words = text.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        var lines = new List<string>();
         var currentLine = new System.Text.StringBuilder();
 
         foreach (var word in words)
@@ -468,7 +468,7 @@ public sealed class KernelFormatters
             lines.Add(currentLine.ToString());
         }
 
-        return lines.ToArray();
+        return [.. lines];
     }
 }
 

@@ -59,26 +59,17 @@ public sealed class MetalErrorHandler : IDisposable
     /// <summary>
     /// Creates the main retry policy for transient errors
     /// </summary>
-    private IAsyncPolicy CreateRetryPolicy()
-    {
-        return new SimpleRetryPolicy(_options.MaxRetryAttempts, TimeSpan.FromMilliseconds(100), _logger);
-    }
+    private IAsyncPolicy CreateRetryPolicy() => new SimpleRetryPolicy(_options.MaxRetryAttempts, TimeSpan.FromMilliseconds(100), _logger);
 
     /// <summary>
     /// Creates specialized retry policy for memory allocation errors
     /// </summary>
-    private IAsyncPolicy CreateMemoryRetryPolicy()
-    {
-        return new SimpleRetryPolicy(_options.MemoryRetryAttempts, TimeSpan.FromMilliseconds(500), _logger);
-    }
+    private IAsyncPolicy CreateMemoryRetryPolicy() => new SimpleRetryPolicy(_options.MemoryRetryAttempts, TimeSpan.FromMilliseconds(500), _logger);
 
     /// <summary>
     /// Creates circuit breaker policy for catastrophic failures
     /// </summary>
-    private IAsyncPolicy<bool> CreateCircuitBreakerPolicy()
-    {
-        return new SimpleRetryPolicy<bool>(_options.CircuitBreakerThreshold, TimeSpan.FromSeconds(1), _logger);
-    }
+    private IAsyncPolicy<bool> CreateCircuitBreakerPolicy() => new SimpleRetryPolicy<bool>(_options.CircuitBreakerThreshold, TimeSpan.FromSeconds(1), _logger);
 
     /// <summary>
     /// Executes a Metal operation with comprehensive error handling
@@ -128,7 +119,7 @@ public sealed class MetalErrorHandler : IDisposable
         }
         catch (MetalException metalEx)
         {
-            return await HandleMetalExceptionAsync<T>(metalEx, operation, operationName, cancellationToken).ConfigureAwait(false);
+            return await HandleMetalExceptionAsync(metalEx, operation, operationName, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -532,10 +523,7 @@ public sealed class MetalErrorHandler : IDisposable
     /// <summary>
     /// Records successful operation
     /// </summary>
-    private void RecordSuccess(string operationName, long elapsedMs)
-    {
-        _logger.LogDebug("Metal operation {OperationName} completed in {ElapsedMs}ms", operationName, elapsedMs);
-    }
+    private void RecordSuccess(string operationName, long elapsedMs) => _logger.LogDebug("Metal operation {OperationName} completed in {ElapsedMs}ms", operationName, elapsedMs);
 
     /// <summary>
     /// Gets error statistics
@@ -579,11 +567,9 @@ public sealed class MetalErrorHandler : IDisposable
     /// Disposes the error handler resources
     /// </summary>
     public void Dispose()
-    {
         // MetalErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
-        ClearStatistics();
-    }
+        => ClearStatistics();
 
     /// <summary>
     /// Error statistics tracking
@@ -735,35 +721,20 @@ public class MetalOperationException : MetalException
 /// <summary>
 /// Exception thrown when Metal GPU becomes unavailable
 /// </summary>
-public class MetalUnavailableException : MetalException
+public class MetalUnavailableException(string message) : MetalException(MetalError.DeviceNotReady, message)
 {
-    public MetalUnavailableException(string message)
-
-        : base(MetalError.DeviceNotReady, message)
-    {
-    }
 }
 
 /// <summary>
 /// Exception thrown when Metal device error occurs
 /// </summary>
-public class MetalDeviceException : MetalException
+public class MetalDeviceException(string message) : MetalException(MetalError.DeviceNotFound, message)
 {
-    public MetalDeviceException(string message)
-
-        : base(MetalError.DeviceNotFound, message)
-    {
-    }
 }
 
 /// <summary>
 /// Exception thrown when CPU fallback is required
 /// </summary>
-public class MetalCpuFallbackRequiredException : MetalException
+public class MetalCpuFallbackRequiredException(string message) : MetalException(MetalError.UnsupportedFeature, message)
 {
-    public MetalCpuFallbackRequiredException(string message)
-
-        : base(MetalError.UnsupportedFeature, message)
-    {
-    }
 }

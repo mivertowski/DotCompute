@@ -298,7 +298,7 @@ public sealed class MetalPerformanceCounters : IDisposable
             analysis.ResourceUtilizationAnalysis = AnalyzeResourceUtilization(counters);
 
             // Analyze performance trends
-            analysis.PerformanceTrends = new List<PerformanceTrend> { AnalyzePerformanceTrends(counters) };
+            analysis.PerformanceTrends = [AnalyzePerformanceTrends(counters)];
 
             // Generate performance score
             analysis.OverallPerformanceScore = CalculatePerformanceScore(analysis);
@@ -493,18 +493,14 @@ public sealed class MetalPerformanceCounters : IDisposable
     }
 
     private void RecordThermalMetrics()
-    {
         // Placeholder for thermal monitoring
         // Would integrate with IOKit on macOS for real thermal data
-        _logger.LogTrace("Thermal metrics recording not implemented");
-    }
+        => _logger.LogTrace("Thermal metrics recording not implemented");
 
     private void RecordPowerMetrics()
-    {
         // Placeholder for power monitoring
         // Would integrate with IOKit on macOS for real power data
-        _logger.LogTrace("Power metrics recording not implemented");
-    }
+        => _logger.LogTrace("Power metrics recording not implemented");
 
     private static string GetAllocationSizeCategory(long sizeBytes)
     {

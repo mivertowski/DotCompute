@@ -124,10 +124,7 @@ public sealed class KernelArgument
     /// <param name="name">The argument name</param>
     /// <param name="value">The argument value</param>
     /// <returns>A new KernelArgument</returns>
-    public static KernelArgument Create<T>(string name, T value)
-    {
-        return new KernelArgument(name, typeof(T), value);
-    }
+    public static KernelArgument Create<T>(string name, T value) => new(name, typeof(T), value);
 
     /// <summary>
     /// Creates a pointer/buffer argument
@@ -229,8 +226,5 @@ public sealed class KernelArgument
     /// <summary>
     /// Returns a string representation of the argument
     /// </summary>
-    public override string ToString()
-    {
-        return $"{Name}: {Type.Name} = {Value}";
-    }
+    public override string ToString() => $"{Name}: {Type.Name} = {Value}";
 }

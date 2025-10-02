@@ -319,7 +319,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Applies a specific optimization to a kernel.
         /// </summary>
-        private async Task<AppliedOptimization> ApplyOptimizationAsync(
+        private static async Task<AppliedOptimization> ApplyOptimizationAsync(
             ICompiledKernel kernel,
             OptimizationRecommendation recommendation,
             CancellationToken cancellationToken)
@@ -459,17 +459,12 @@ namespace DotCompute.Runtime.Services
         public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     }
 
-    public sealed class KernelPerformanceProfile
+    public sealed class KernelPerformanceProfile(string kernelName)
     {
-        private readonly List<KernelExecutionMetrics> _executions = new();
+        private readonly List<KernelExecutionMetrics> _executions = [];
         private readonly object _lock = new();
 
-        public KernelPerformanceProfile(string kernelName)
-        {
-            KernelName = kernelName;
-        }
-
-        public string KernelName { get; }
+        public string KernelName { get; } = kernelName;
         public int ExecutionCount { get; private set; }
 
         public void AddExecution(KernelExecutionMetrics metrics)
@@ -485,7 +480,7 @@ namespace DotCompute.Runtime.Services
         {
             lock (_lock)
             {
-                return _executions.Select(e => e.ExecutionTime).ToList();
+                return [.. _executions.Select(e => e.ExecutionTime)];
             }
         }
 
@@ -493,7 +488,7 @@ namespace DotCompute.Runtime.Services
         {
             lock (_lock)
             {
-                return _executions.Select(e => e.MemoryUsageMB).ToList();
+                return [.. _executions.Select(e => e.MemoryUsageMB)];
             }
         }
 
@@ -501,7 +496,7 @@ namespace DotCompute.Runtime.Services
         {
             lock (_lock)
             {
-                return _executions.Select(e => e.WorkGroupSize).ToList();
+                return [.. _executions.Select(e => e.WorkGroupSize)];
             }
         }
 
@@ -509,7 +504,7 @@ namespace DotCompute.Runtime.Services
         {
             lock (_lock)
             {
-                return _executions.Select(e => e.CompilationTime).ToList();
+                return [.. _executions.Select(e => e.CompilationTime)];
             }
         }
     }
@@ -542,8 +537,8 @@ namespace DotCompute.Runtime.Services
         string KernelName,
         IReadOnlyList<OptimizationRecommendation> Recommendations)
     {
-        public static OptimizationRecommendations NoData(string kernelName) =>
-            new(kernelName, Array.Empty<OptimizationRecommendation>());
+        public static OptimizationRecommendations NoData(string kernelName)
+            => new(kernelName, Array.Empty<OptimizationRecommendation>());
     }
 
     public record OptimizationResult(
@@ -555,24 +550,19 @@ namespace DotCompute.Runtime.Services
         bool IsSuccess,
         string Message)
     {
-        public static AppliedOptimization Success(OptimizationType type, string message) =>
-            new(type, true, message);
+        public static AppliedOptimization Success(OptimizationType type, string message)
+            => new(type, true, message);
 
-        public static AppliedOptimization Failed(OptimizationType type, string message) =>
-            new(type, false, message);
+        public static AppliedOptimization Failed(OptimizationType type, string message)
+            => new(type, false, message);
 
-        public static AppliedOptimization Skipped(OptimizationType type, string reason) =>
-            new(type, false, $"Skipped: {reason}");
+        public static AppliedOptimization Skipped(OptimizationType type, string reason)
+            => new(type, false, $"Skipped: {reason}");
     }
 
-    public sealed class OptimizationStrategy
+    public sealed class OptimizationStrategy(string kernelName)
     {
-        public OptimizationStrategy(string kernelName)
-        {
-            KernelName = kernelName;
-        }
-
-        public string KernelName { get; }
+        public string KernelName { get; } = kernelName;
         public bool EnableAutomaticOptimization { get; set; } = true;
         public OptimizationPriority MinimumPriority { get; set; } = OptimizationPriority.Medium;
         public TimeSpan OptimizationInterval { get; set; } = TimeSpan.FromMinutes(10);

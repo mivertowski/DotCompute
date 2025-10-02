@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -62,7 +62,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     /// <summary>
     /// Gets the memory options for this buffer.
     /// </summary>
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => MemoryOptions.None;
+    public MemoryOptions Options => MemoryOptions.None;
 
     /// <summary>
     /// Gets the buffer state for tracking transfers.

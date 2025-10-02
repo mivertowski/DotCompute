@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -15,16 +12,10 @@ namespace DotCompute.Algorithms.Management;
 /// <summary>
 /// Handles plugin execution with retry policies, circuit breakers, and performance tracking.
 /// </summary>
-public class AlgorithmPluginExecutor
+public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
 {
-    private readonly ILogger<AlgorithmPluginExecutor> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
-
-    public AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
+    private readonly ILogger<AlgorithmPluginExecutor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
     /// Executes a plugin with the specified input and retry policies.
@@ -66,7 +57,7 @@ public class AlgorithmPluginExecutor
             }
             else
             {
-                result = await plugin.ExecuteAsync(new object[] { input }, null, cancellationToken);
+                result = await plugin.ExecuteAsync([input], null, cancellationToken);
             }
 
             stopwatch.Stop();
@@ -133,7 +124,7 @@ public class AlgorithmPluginExecutor
                 _logger.LogDebug("Executing plugin {PluginId} with execution ID: {ExecutionId}",
                     plugin.Id, executionId);
 
-                return await plugin.ExecuteAsync(new object[] { input }, null, cancellationToken);
+                return await plugin.ExecuteAsync([input], null, cancellationToken);
             }
             catch (OperationCanceledException)
             {

@@ -363,10 +363,7 @@ internal sealed class CpuKernelCache : IDisposable
 
     // Private implementation methods
 
-    private static bool IsKernelValid(CachedKernel cachedKernel)
-    {
-        return DateTimeOffset.UtcNow < cachedKernel.ExpiryTime;
-    }
+    private static bool IsKernelValid(CachedKernel cachedKernel) => DateTimeOffset.UtcNow < cachedKernel.ExpiryTime;
 
     private bool IsProfileValid(OptimizationProfile profile)
     {

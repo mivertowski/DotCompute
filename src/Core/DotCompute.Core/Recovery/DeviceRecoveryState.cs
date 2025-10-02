@@ -8,7 +8,7 @@ namespace DotCompute.Core.Recovery;
 /// <summary>
 /// Tracks recovery state for a specific GPU device
 /// </summary>
-public class DeviceRecoveryState
+public class DeviceRecoveryState(string deviceId)
 {
     private readonly ConcurrentQueue<Exception> _recentErrors = new();
     private readonly object _lock = new();
@@ -17,18 +17,13 @@ public class DeviceRecoveryState
     private int _totalRecoveryAttempts;
     private int _successfulRecoveries;
 
-    public string DeviceId { get; }
+    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
     public bool IsHealthy { get; private set; } = true;
     public Exception? LastError { get; private set; }
     public int ConsecutiveFailures => _consecutiveFailures;
     public int TotalRecoveryAttempts => _totalRecoveryAttempts;
     public int SuccessfulRecoveries => _successfulRecoveries;
     public DateTimeOffset LastHealthCheck { get; private set; } = DateTimeOffset.UtcNow;
-
-    public DeviceRecoveryState(string deviceId)
-    {
-        DeviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
-    }
 
     public void RecordError(Exception error)
     {

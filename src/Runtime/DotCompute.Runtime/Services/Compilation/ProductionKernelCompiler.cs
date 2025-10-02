@@ -160,10 +160,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
     ValueTask<ICompiledKernel> IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>.CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options,
-        CancellationToken cancellationToken)
-    {
-        return CompileAsync(definition, options, cancellationToken);
-    }
+        CancellationToken cancellationToken) => CompileAsync(definition, options, cancellationToken);
 
     ValueTask<ICompiledKernel> IUnifiedKernelCompiler<KernelDefinition, ICompiledKernel>.OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken)
     {
@@ -191,10 +188,10 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         }
 
         // Apply language-specific compilation steps
-        await PerformLanguageSpecificCompilation(definition, options, cancellationToken);
+        await PerformLanguageSpecificCompilationAsync(definition, options, cancellationToken);
 
         // Generate optimized bytecode based on source and target architecture
-        var bytecode = await GenerateOptimizedBytecode(definition, options, cancellationToken);
+        var bytecode = await GenerateOptimizedBytecodeAsync(definition, options, cancellationToken);
 
         // Create kernel configuration
         var config = new KernelConfiguration(new Dim3(1, 1, 1), options?.PreferredBlockSize ?? new Dim3(256, 1, 1));
@@ -207,18 +204,18 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _logger);
     }
 
-    private async Task PerformLanguageSpecificCompilation(
+    private async Task PerformLanguageSpecificCompilationAsync(
         KernelDefinition definition,
         CompilationOptions? options,
         CancellationToken cancellationToken)
     {
         var compilationTime = definition.Language switch
         {
-            KernelLanguage.CSharp => await CompileCSharpKernel(definition, options, cancellationToken),
-            KernelLanguage.CUDA => await CompileCudaKernel(definition, options, cancellationToken),
-            KernelLanguage.OpenCL => await CompileOpenCLKernel(definition, options, cancellationToken),
-            KernelLanguage.HLSL => await CompileHLSLKernel(definition, options, cancellationToken),
-            KernelLanguage.Metal => await CompileMetalKernel(definition, options, cancellationToken),
+            KernelLanguage.CSharp => await CompileCSharpKernelAsync(definition, options, cancellationToken),
+            KernelLanguage.CUDA => await CompileCudaKernelAsync(definition, options, cancellationToken),
+            KernelLanguage.OpenCL => await CompileOpenCLKernelAsync(definition, options, cancellationToken),
+            KernelLanguage.HLSL => await CompileHLSLKernelAsync(definition, options, cancellationToken),
+            KernelLanguage.Metal => await CompileMetalKernelAsync(definition, options, cancellationToken),
             _ => throw new NotSupportedException($"Kernel language {definition.Language} is not supported")
         };
 
@@ -226,7 +223,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             definition.Language, compilationTime);
     }
 
-    private static async ValueTask<double> CompileCSharpKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static async ValueTask<double> CompileCSharpKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -242,7 +239,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private async ValueTask<double> CompileCudaKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private async ValueTask<double> CompileCudaKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -258,7 +255,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private async ValueTask<double> CompileOpenCLKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private async ValueTask<double> CompileOpenCLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -274,7 +271,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private static async ValueTask<double> CompileHLSLKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private static async ValueTask<double> CompileHLSLKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -284,7 +281,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private async ValueTask<double> CompileMetalKernel(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
+    private async ValueTask<double> CompileMetalKernelAsync(KernelDefinition definition, CompilationOptions? options, CancellationToken cancellationToken)
     {
         var startTime = Stopwatch.GetTimestamp();
 
@@ -300,7 +297,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private async ValueTask<byte[]> GenerateOptimizedBytecode(
+    private async ValueTask<byte[]> GenerateOptimizedBytecodeAsync(
         KernelDefinition definition,
         CompilationOptions? options,
         CancellationToken cancellationToken)
@@ -340,11 +337,11 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         var header = definition.Language switch
         {
             KernelLanguage.CSharp => new byte[] { 0x43, 0x53, 0x48, 0x52 }, // "CSHR"
-            KernelLanguage.CUDA => new byte[] { 0x43, 0x55, 0x44, 0x41 },   // "CUDA"
-            KernelLanguage.OpenCL => new byte[] { 0x4F, 0x43, 0x4C, 0x00 }, // "OCL\0"
-            KernelLanguage.HLSL => new byte[] { 0x48, 0x4C, 0x53, 0x4C },   // "HLSL"
-            KernelLanguage.Metal => new byte[] { 0x4D, 0x54, 0x4C, 0x00 },  // "MTL\0"
-            _ => new byte[] { 0x47, 0x45, 0x4E, 0x00 }                      // "GEN\0"
+            KernelLanguage.CUDA => [0x43, 0x55, 0x44, 0x41],   // "CUDA"
+            KernelLanguage.OpenCL => [0x4F, 0x43, 0x4C, 0x00], // "OCL\0"
+            KernelLanguage.HLSL => [0x48, 0x4C, 0x53, 0x4C],   // "HLSL"
+            KernelLanguage.Metal => [0x4D, 0x54, 0x4C, 0x00],  // "MTL\0"
+            _ => [0x47, 0x45, 0x4E, 0x00]                      // "GEN\0"
         };
 
         Array.Copy(header, 0, bytecode, 0, Math.Min(header.Length, bytecode.Length));
@@ -440,7 +437,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
         foreach (var kernelDef in kernelDefinitions)
         {
-            tasks.Add(CompileKernelWithName(kernelDef, accelerator, cancellationToken));
+            tasks.Add(CompileKernelWithNameAsync(kernelDef, accelerator, cancellationToken));
         }
 
         try
@@ -460,7 +457,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         return results;
     }
 
-    private async Task<(string name, ICompiledKernel kernel)> CompileKernelWithName(
+    private async Task<(string name, ICompiledKernel kernel)> CompileKernelWithNameAsync(
         KernelDefinition kernelDef,
         IAccelerator accelerator,
         CancellationToken cancellationToken)

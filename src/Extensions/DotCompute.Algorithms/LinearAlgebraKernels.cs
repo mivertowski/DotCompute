@@ -1,10 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Kernels;
-using DotCompute.Algorithms.Types.Kernels;
-using System.Text;
-
 namespace DotCompute.Algorithms
 {
 
@@ -1042,20 +1038,17 @@ __kernel void lu_decomposition_step(
         value |= value >> 16;
         return value + 1;
     }
-    
-    private static int GetPreviousPowerOfTwo(int value)
-    {
-        return GetNextPowerOfTwo(value + 1) / 2;
-    }
 
-#endregion
+        private static int GetPreviousPowerOfTwo(int value) => GetNextPowerOfTwo(value + 1) / 2;
 
-#region Supporting Types
+        #endregion
 
-/// <summary>
-/// Enumeration of supported linear algebra operations.
-/// </summary>
-public enum LinearAlgebraOperation
+        #region Supporting Types
+
+        /// <summary>
+        /// Enumeration of supported linear algebra operations.
+        /// </summary>
+        public enum LinearAlgebraOperation
 {
     MatrixMultiply,
     HouseholderVector,

@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 using DotCompute.Backends.CPU.Intrinsics;
 using Microsoft.Extensions.Logging;
 
@@ -11,17 +11,11 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// SIMD-optimized matrix operations with cache-friendly algorithms
 /// </summary>
-public sealed class SimdMatrixOperations : IDisposable
+public sealed class SimdMatrixOperations(SimdSummary capabilities, ILogger logger) : IDisposable
 {
-    private readonly SimdSummary _capabilities;
-    private readonly ILogger _logger;
+    private readonly SimdSummary _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
-
-    public SimdMatrixOperations(SimdSummary capabilities, ILogger logger)
-    {
-        _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Executes matrix operations with SIMD optimization
@@ -413,7 +407,7 @@ public sealed class SimdMatrixOperations : IDisposable
     }
 
     // Stub implementations
-    private void ExecuteDoubleMatrixMultiply(
+    private static void ExecuteDoubleMatrixMultiply(
         ReadOnlySpan<double> matrixA,
         ReadOnlySpan<double> matrixB,
         Span<double> result,

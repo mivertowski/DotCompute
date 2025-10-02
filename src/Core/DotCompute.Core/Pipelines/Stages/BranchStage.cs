@@ -18,11 +18,11 @@ namespace DotCompute.Core.Pipelines.Stages
     /// </summary>
     internal sealed class BranchStage(
         string id,
-        Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, bool> condition,
+        Func<AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, bool> condition,
         List<IPipelineStage> trueStages,
         List<IPipelineStage>? falseStages) : IPipelineStage
     {
-        private readonly Func<DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, bool> _condition = condition;
+        private readonly Func<AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, bool> _condition = condition;
         private readonly List<IPipelineStage> _trueStages = trueStages;
         private readonly List<IPipelineStage>? _falseStages = falseStages;
         private readonly StageMetrics _metrics = new(id);
@@ -43,8 +43,8 @@ namespace DotCompute.Core.Pipelines.Stages
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
         /// <inheritdoc/>
-        public async ValueTask<DotCompute.Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(
-            DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context,
+        public async ValueTask<AbsStageExecutionResult> ExecuteAsync(
+            AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -60,14 +60,14 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     foreach (var stage in stagesToExecute)
                     {
-                        var stageContext = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
+                        var stageContext = new Models.PipelineExecutionContext();
                         foreach (var kvp in outputs)
                         {
                             stageContext.Inputs[kvp.Key] = kvp.Value;
                         }
                         stageContext.SetMemoryManager(context.MemoryManager);
                         stageContext.SetDevice(context.Device);
-                        stageContext.Options = (context as DotCompute.Core.Pipelines.Models.PipelineExecutionContext)?.Options;
+                        stageContext.Options = (context as Models.PipelineExecutionContext)?.Options;
 
                         var result = await stage.ExecuteAsync(stageContext, cancellationToken);
 
@@ -132,7 +132,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
             if (_condition == null)
             {
-                errors.Add(new ValidationIssue("BRANCH_001", "Branch condition is required", AbstractionsMemory.Validation.ValidationSeverity.Error));
+                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Branch condition is required", "BRANCH_001"));
             }
 
             var warnings = new List<string>();

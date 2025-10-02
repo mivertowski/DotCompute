@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution
@@ -13,8 +12,6 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public class LoadBalancer
     {
-        private readonly IAccelerator[] _devices;
-        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoadBalancer"/> class.

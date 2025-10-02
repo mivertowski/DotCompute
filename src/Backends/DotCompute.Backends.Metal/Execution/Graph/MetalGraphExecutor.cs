@@ -263,7 +263,7 @@ public sealed class MetalGraphExecutor : IDisposable
 
     #region Private Implementation
 
-    private async Task<List<string>> ValidateGraphAsync(MetalComputeGraph graph, CancellationToken cancellationToken)
+    private static async Task<List<string>> ValidateGraphAsync(MetalComputeGraph graph, CancellationToken cancellationToken)
     {
         var errors = new List<string>();
 
@@ -408,7 +408,7 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(computeEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
             _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups",
 
@@ -444,7 +444,7 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
             context.TotalMemoryTransferred += node.CopySize;
 
@@ -481,7 +481,7 @@ public sealed class MetalGraphExecutor : IDisposable
             EndMetalCommandEncoding(blitEncoder);
 
             // Commit and wait
-            await CommitAndWaitMetalCommandBuffer(commandBuffer);
+            await CommitAndWaitMetalCommandBufferAsync(commandBuffer);
 
             context.TotalMemoryTransferred += node.CopySize;
 
@@ -504,7 +504,7 @@ public sealed class MetalGraphExecutor : IDisposable
         _logger.LogTrace("Executed barrier node '{NodeId}'", node.Id);
     }
 
-    private List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyList<MetalGraphNode> nodes)
+    private static List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyList<MetalGraphNode> nodes)
     {
         var levels = new List<List<MetalGraphNode>>();
         var nodeToLevel = new Dictionary<string, int>();
@@ -590,11 +590,9 @@ public sealed class MetalGraphExecutor : IDisposable
     }
 
     private static long GetAvailableMetalMemory()
-    {
         // This would query the actual Metal device memory
         // For now, return a reasonable default (8GB for Apple Silicon)
-        return 8L * 1024 * 1024 * 1024;
-    }
+        => 8L * 1024 * 1024 * 1024;
 
     #endregion
 
@@ -604,22 +602,16 @@ public sealed class MetalGraphExecutor : IDisposable
     // For now, they are stubs that simulate the actual Metal operations
 
     private static IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
-    {
         // Create Metal command buffer from command queue
-        return new IntPtr(0x1000); // Stub
-    }
+        => new(0x1000); // Stub
 
     private static IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
-    {
         // Create compute command encoder
-        return new IntPtr(0x2000); // Stub
-    }
+        => new(0x2000); // Stub
 
     private static IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
-    {
         // Create blit command encoder
-        return new IntPtr(0x3000); // Stub
-    }
+        => new(0x3000); // Stub
 
     private static void SetMetalComputePipelineState(IntPtr encoder, object kernel)
     {
@@ -651,11 +643,9 @@ public sealed class MetalGraphExecutor : IDisposable
         // End command encoding
     }
 
-    private static async Task CommitAndWaitMetalCommandBuffer(IntPtr commandBuffer)
-    {
+    private static async Task CommitAndWaitMetalCommandBufferAsync(IntPtr commandBuffer)
         // Commit command buffer and wait for completion
-        await Task.Delay(1); // Simulate GPU execution time
-    }
+        => await Task.Delay(1); // Simulate GPU execution time
 
     private static void ReleaseMetalCommandBuffer(IntPtr commandBuffer)
     {
@@ -712,20 +702,12 @@ public sealed class MetalGraphExecutor : IDisposable
 /// <summary>
 /// Represents the execution context for a Metal compute graph.
 /// </summary>
-public class GraphExecutionContext
+public class GraphExecutionContext(string executionId, MetalComputeGraph graph, IntPtr commandQueue, CancellationToken cancellationToken)
 {
-    public GraphExecutionContext(string executionId, MetalComputeGraph graph, IntPtr commandQueue, CancellationToken cancellationToken)
-    {
-        ExecutionId = executionId;
-        Graph = graph;
-        CommandQueue = commandQueue;
-        CancellationToken = cancellationToken;
-    }
-
-    public string ExecutionId { get; }
-    public MetalComputeGraph Graph { get; }
-    public IntPtr CommandQueue { get; }
-    public CancellationToken CancellationToken { get; }
+    public string ExecutionId { get; } = executionId;
+    public MetalComputeGraph Graph { get; } = graph;
+    public IntPtr CommandQueue { get; } = commandQueue;
+    public CancellationToken CancellationToken { get; } = cancellationToken;
 
 
     public int NodesExecuted { get; set; }

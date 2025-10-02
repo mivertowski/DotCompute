@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Abstractions.Types;
@@ -12,122 +12,100 @@ namespace DotCompute.Abstractions.Types;
 /// bandwidth utilization, and access patterns
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct MemoryAccessMetrics
+public readonly struct MemoryAccessMetrics(
+    long bytesTransferred,
+    TimeSpan duration,
+    int accessCount = 1,
+    MemoryAccessPattern accessPattern = MemoryAccessPattern.Sequential,
+    double cacheHitRate = 0.0,
+    int cacheMisses = 0,
+    long latencyNanoseconds = 0,
+    MemoryType sourceMemoryType = MemoryType.Host,
+    MemoryType destinationMemoryType = MemoryType.Device,
+    int alignmentBytes = 1,
+    bool isCoalesced = false,
+    long peakMemoryUsage = 0,
+    int fragmentationEvents = 0)
 {
     /// <summary>
     /// Total bytes transferred
     /// </summary>
-    public readonly long BytesTransferred;
+    public readonly long BytesTransferred = bytesTransferred;
 
     /// <summary>
     /// Duration of the memory operation
     /// </summary>
-    public readonly TimeSpan Duration;
+    public readonly TimeSpan Duration = duration;
 
     /// <summary>
     /// Calculated bandwidth in bytes per second
     /// </summary>
-    public readonly double BandwidthBytesPerSecond;
-
-    /// <summary>
-    /// Number of memory access operations
-    /// </summary>
-    public readonly int AccessCount;
-
-    /// <summary>
-    /// Memory access pattern type
-    /// </summary>
-    public readonly MemoryAccessPattern AccessPattern;
-
-    /// <summary>
-    /// Cache hit rate (0.0 to 1.0)
-    /// </summary>
-    public readonly double CacheHitRate;
-
-    /// <summary>
-    /// Number of cache misses
-    /// </summary>
-    public readonly int CacheMisses;
-
-    /// <summary>
-    /// Memory latency in nanoseconds
-    /// </summary>
-    public readonly long LatencyNanoseconds;
-
-    /// <summary>
-    /// Memory efficiency score (0.0 to 1.0)
-    /// </summary>
-    public readonly double EfficiencyScore;
-
-    /// <summary>
-    /// Source memory type
-    /// </summary>
-    public readonly MemoryType SourceMemoryType;
-
-    /// <summary>
-    /// Destination memory type
-    /// </summary>
-    public readonly MemoryType DestinationMemoryType;
-
-    /// <summary>
-    /// Memory alignment in bytes
-    /// </summary>
-    public readonly int AlignmentBytes;
-
-    /// <summary>
-    /// Whether the operation was coalesced
-    /// </summary>
-    public readonly bool IsCoalesced;
-
-    /// <summary>
-    /// Peak memory usage during operation
-    /// </summary>
-    public readonly long PeakMemoryUsage;
-
-    /// <summary>
-    /// Number of memory fragmentation events
-    /// </summary>
-    public readonly int FragmentationEvents;
-
-    public MemoryAccessMetrics(
-        long bytesTransferred,
-        TimeSpan duration,
-        int accessCount = 1,
-        MemoryAccessPattern accessPattern = MemoryAccessPattern.Sequential,
-        double cacheHitRate = 0.0,
-        int cacheMisses = 0,
-        long latencyNanoseconds = 0,
-        MemoryType sourceMemoryType = MemoryType.Host,
-        MemoryType destinationMemoryType = MemoryType.Device,
-        int alignmentBytes = 1,
-        bool isCoalesced = false,
-        long peakMemoryUsage = 0,
-        int fragmentationEvents = 0)
-    {
-        BytesTransferred = bytesTransferred;
-        Duration = duration;
-        AccessCount = accessCount;
-        AccessPattern = accessPattern;
-        CacheHitRate = Math.Clamp(cacheHitRate, 0.0, 1.0);
-        CacheMisses = cacheMisses;
-        LatencyNanoseconds = latencyNanoseconds;
-        SourceMemoryType = sourceMemoryType;
-        DestinationMemoryType = destinationMemoryType;
-        AlignmentBytes = alignmentBytes;
-        IsCoalesced = isCoalesced;
-        PeakMemoryUsage = peakMemoryUsage;
-        FragmentationEvents = fragmentationEvents;
-
-        // Calculate derived metrics
-        BandwidthBytesPerSecond = duration.TotalSeconds > 0
+    public readonly double BandwidthBytesPerSecond = duration.TotalSeconds > 0
 
             ? bytesTransferred / duration.TotalSeconds
 
             : 0.0;
 
-        EfficiencyScore = CalculateEfficiencyScore(
+    /// <summary>
+    /// Number of memory access operations
+    /// </summary>
+    public readonly int AccessCount = accessCount;
+
+    /// <summary>
+    /// Memory access pattern type
+    /// </summary>
+    public readonly MemoryAccessPattern AccessPattern = accessPattern;
+
+    /// <summary>
+    /// Cache hit rate (0.0 to 1.0)
+    /// </summary>
+    public readonly double CacheHitRate = Math.Clamp(cacheHitRate, 0.0, 1.0);
+
+    /// <summary>
+    /// Number of cache misses
+    /// </summary>
+    public readonly int CacheMisses = cacheMisses;
+
+    /// <summary>
+    /// Memory latency in nanoseconds
+    /// </summary>
+    public readonly long LatencyNanoseconds = latencyNanoseconds;
+
+    /// <summary>
+    /// Memory efficiency score (0.0 to 1.0)
+    /// </summary>
+    public readonly double EfficiencyScore = CalculateEfficiencyScore(
             cacheHitRate, isCoalesced, accessPattern, alignmentBytes);
-    }
+
+    /// <summary>
+    /// Source memory type
+    /// </summary>
+    public readonly MemoryType SourceMemoryType = sourceMemoryType;
+
+    /// <summary>
+    /// Destination memory type
+    /// </summary>
+    public readonly MemoryType DestinationMemoryType = destinationMemoryType;
+
+    /// <summary>
+    /// Memory alignment in bytes
+    /// </summary>
+    public readonly int AlignmentBytes = alignmentBytes;
+
+    /// <summary>
+    /// Whether the operation was coalesced
+    /// </summary>
+    public readonly bool IsCoalesced = isCoalesced;
+
+    /// <summary>
+    /// Peak memory usage during operation
+    /// </summary>
+    public readonly long PeakMemoryUsage = peakMemoryUsage;
+
+    /// <summary>
+    /// Number of memory fragmentation events
+    /// </summary>
+    public readonly int FragmentationEvents = fragmentationEvents;
 
     /// <summary>
     /// Bandwidth in megabytes per second

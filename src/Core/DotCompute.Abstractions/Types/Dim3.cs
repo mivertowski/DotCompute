@@ -13,39 +13,32 @@ namespace DotCompute.Abstractions.Types;
 /// This structure is commonly used to specify the dimensions of thread blocks and grids
 /// in GPU kernel execution configurations.
 /// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="Dim3"/> struct with specified dimensions.
+/// </remarks>
+/// <param name="x">The X dimension value.</param>
+/// <param name="y">The Y dimension value. Defaults to 1.</param>
+/// <param name="z">The Z dimension value. Defaults to 1.</param>
 [TypeConverter(typeof(Dim3TypeConverter))]
-public readonly struct Dim3 : IEquatable<Dim3>
+public readonly struct Dim3(int x, int y = 1, int z = 1) : IEquatable<Dim3>
 {
     /// <summary>
     /// Gets the X dimension value.
     /// </summary>
     /// <value>The number of elements in the X dimension.</value>
-    public int X { get; }
+    public int X { get; } = x;
 
     /// <summary>
     /// Gets the Y dimension value.
     /// </summary>
     /// <value>The number of elements in the Y dimension.</value>
-    public int Y { get; }
+    public int Y { get; } = y;
 
     /// <summary>
     /// Gets the Z dimension value.
     /// </summary>
     /// <value>The number of elements in the Z dimension.</value>
-    public int Z { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Dim3"/> struct with specified dimensions.
-    /// </summary>
-    /// <param name="x">The X dimension value.</param>
-    /// <param name="y">The Y dimension value. Defaults to 1.</param>
-    /// <param name="z">The Z dimension value. Defaults to 1.</param>
-    public Dim3(int x, int y = 1, int z = 1)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-    }
+    public int Z { get; } = z;
 
     /// <summary>
     /// Gets the total number of elements across all dimensions.

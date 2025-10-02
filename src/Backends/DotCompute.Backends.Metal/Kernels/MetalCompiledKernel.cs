@@ -25,7 +25,7 @@ int maxTotalThreadsPerThreadgroup,
 (int x, int y, int z) threadExecutionWidth,
 CompilationMetadata metadata,
 ILogger logger,
-MetalCommandBufferPool? commandBufferPool = null) : DotCompute.Abstractions.ICompiledKernel
+MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly IntPtr _pipelineState = pipelineState;
@@ -328,10 +328,7 @@ MetalCommandBufferPool? commandBufferPool = null) : DotCompute.Abstractions.ICom
         };
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await Task.Run(Dispose).ConfigureAwait(false);
-    }
+    public async ValueTask DisposeAsync() => await Task.Run(Dispose).ConfigureAwait(false);
 
     public void Dispose()
     {

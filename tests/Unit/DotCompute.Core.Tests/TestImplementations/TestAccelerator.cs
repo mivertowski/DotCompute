@@ -12,7 +12,10 @@ namespace DotCompute.Core.Tests.TestImplementations;
 /// Test implementation of BaseAccelerator for unit testing.
 /// Provides visibility into protected methods and tracks method calls.
 /// </summary>
-public class TestAccelerator : BaseAccelerator
+public class TestAccelerator(
+    AcceleratorInfo info,
+    IUnifiedMemoryManager memoryManager,
+    ILogger logger) : BaseAccelerator(info, AcceleratorType.CPU, memoryManager, new AcceleratorContext(IntPtr.Zero, 0), logger)
 {
     private readonly ConcurrentDictionary<string, ICompiledKernel> _kernelCache = new();
     private int _compilationCount;
@@ -36,14 +39,6 @@ public class TestAccelerator : BaseAccelerator
     // Performance tracking
     public int CompilationCount => _compilationCount;
     public int CacheHits => _cacheHits;
-
-    public TestAccelerator(
-        AcceleratorInfo info,
-        IUnifiedMemoryManager memoryManager,
-        ILogger logger)
-        : base(info, AcceleratorType.CPU, memoryManager, new AcceleratorContext(IntPtr.Zero, 0), logger)
-    {
-    }
 
     protected override object? InitializeCore()
     {
@@ -82,7 +77,7 @@ public class TestAccelerator : BaseAccelerator
         var compiledKernel = new TestCompiledKernel(
             kernelDefinition.Name,
             kernelDefinition.EntryFunction,
-            new byte[] { 0x01, 0x02, 0x03 });
+            [0x01, 0x02, 0x03]);
 
         // Log metrics
         TestLogCompilationMetrics(kernelDefinition.Name, TimeSpan.FromMilliseconds(10), compiledKernel.ByteCode.Length);
@@ -130,44 +125,30 @@ public class TestAccelerator : BaseAccelerator
 
     public new AcceleratorContext Context => base.Context;
 
-    public void Dispose()
-    {
-        DisposeAsync().AsTask().Wait();
-    }
+    public void Dispose() => DisposeAsync().AsTask().Wait();
 }
 
 /// <summary>
 /// Test implementation of ICompiledKernel for unit testing.
 /// </summary>
-public class TestCompiledKernel : ICompiledKernel
+public class TestCompiledKernel(string kernelName, string entryFunction, byte[] byteCode) : ICompiledKernel
 {
     public Guid Id { get; } = Guid.NewGuid();
-    public string Name { get; }
-    public string EntryFunction { get; }
-    public byte[] ByteCode { get; }
+    public string Name { get; } = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
+    public string EntryFunction { get; } = entryFunction ?? throw new ArgumentNullException(nameof(entryFunction));
+    public byte[] ByteCode { get; } = byteCode ?? throw new ArgumentNullException(nameof(byteCode));
     public bool IsValid => ByteCode.Length > 0;
     public int MaxThreadsPerBlock => 1024;
     public int RequiredSharedMemory => 0;
     public int RegistersPerThread => 32;
 
-    public TestCompiledKernel(string kernelName, string entryFunction, byte[] byteCode)
-    {
-        Name = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
-        EntryFunction = entryFunction ?? throw new ArgumentNullException(nameof(entryFunction));
-        ByteCode = byteCode ?? throw new ArgumentNullException(nameof(byteCode));
-    }
-
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
-    {
         // Test implementation - return completed task
-        return ValueTask.CompletedTask;
-    }
+        => ValueTask.CompletedTask;
 
     public ValueTask DisposeAsync()
-    {
         // Test implementation - no resources to dispose
-        return ValueTask.CompletedTask;
-    }
+        => ValueTask.CompletedTask;
 
     public void Dispose()
     {

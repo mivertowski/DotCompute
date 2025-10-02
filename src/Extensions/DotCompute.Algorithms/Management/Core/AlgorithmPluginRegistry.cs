@@ -17,9 +17,9 @@ namespace DotCompute.Algorithms.Management.Core;
 /// Core registry for managing algorithm plugin registration and lookup.
 /// Handles plugin collection, metadata storage, and state management.
 /// </summary>
-public sealed partial class AlgorithmPluginRegistry : IAsyncDisposable, IDisposable
+public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegistry> logger) : IAsyncDisposable, IDisposable
 {
-    private readonly ILogger<AlgorithmPluginRegistry> _logger;
+    private readonly ILogger<AlgorithmPluginRegistry> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
     private bool _disposed;
 
@@ -39,11 +39,6 @@ public sealed partial class AlgorithmPluginRegistry : IAsyncDisposable, IDisposa
         public DateTime LastExecution { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }
         public Exception? LastError { get; set; }
-    }
-
-    public AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegistry> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>

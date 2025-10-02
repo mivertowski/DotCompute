@@ -10,19 +10,14 @@ namespace DotCompute.Generators.Backend.CPU;
 /// <summary>
 /// Generates AVX2-specific optimized code for x86/x64 processors.
 /// </summary>
-public class Avx2CodeGenerator : CpuCodeGeneratorBase
+public class Avx2CodeGenerator(
+    string methodName,
+    IReadOnlyList<KernelParameter> parameters,
+    MethodDeclarationSyntax methodSyntax,
+    VectorizationInfo vectorizationInfo) : CpuCodeGeneratorBase(methodName, parameters, methodSyntax, vectorizationInfo)
 {
+
     #region Constructor
-
-
-    public Avx2CodeGenerator(
-        string methodName,
-        IReadOnlyList<KernelParameter> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        VectorizationInfo vectorizationInfo)
-        : base(methodName, parameters, methodSyntax, vectorizationInfo)
-    {
-    }
 
     #endregion
 

@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 
@@ -268,32 +268,22 @@ public class ResourceMonitor : IDisposable
 /// <summary>
 /// Tracks resource usage for a specific plugin.
 /// </summary>
-internal class PluginResourceTracker : IDisposable
+internal class PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogger logger) : IDisposable
 {
-    private readonly Guid _pluginId;
-    private readonly ResourceLimits _limits;
-    private readonly ILogger _logger;
-    private readonly Stopwatch _executionTimer;
+    private readonly Guid _pluginId = pluginId;
+    private readonly ResourceLimits _limits = limits ?? throw new ArgumentNullException(nameof(limits));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Stopwatch _executionTimer = Stopwatch.StartNew();
     private readonly object _usageLock = new();
 
 
-    private readonly ResourceUsage _currentUsage;
-    private DateTime _lastUpdate;
+    private readonly ResourceUsage _currentUsage = new();
+    private DateTime _lastUpdate = DateTime.UtcNow;
 #pragma warning disable CS0649 // Field is never assigned to
     private readonly long _lastFileIOCount;
     private readonly long _lastNetworkIOCount;
 #pragma warning restore CS0649
     private bool _disposed;
-
-    public PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogger logger)
-    {
-        _pluginId = pluginId;
-        _limits = limits ?? throw new ArgumentNullException(nameof(limits));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _executionTimer = Stopwatch.StartNew();
-        _currentUsage = new ResourceUsage();
-        _lastUpdate = DateTime.UtcNow;
-    }
 
     public Guid PluginId => _pluginId;
 

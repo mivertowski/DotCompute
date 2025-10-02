@@ -14,14 +14,19 @@ namespace DotCompute.Plugins.Attributes.Dependency;
 /// to specify multiple dependencies. The plugin system will ensure all required dependencies
 /// are loaded before the dependent plugin.
 /// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginDependencyAttribute"/> class.
+/// </remarks>
+/// <param name="pluginId">The ID of the required plugin.</param>
+/// <exception cref="ArgumentNullException">Thrown when pluginId is null.</exception>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-public sealed class PluginDependencyAttribute : Attribute
+public sealed class PluginDependencyAttribute(string pluginId) : Attribute
 {
     /// <summary>
     /// Gets the ID of the required plugin.
     /// This must match the ID of an available plugin in the system.
     /// </summary>
-    public string PluginId { get; }
+    public string PluginId { get; } = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
 
     /// <summary>
     /// Gets or sets the minimum version required.
@@ -41,14 +46,4 @@ public sealed class PluginDependencyAttribute : Attribute
     /// When false (default), missing dependencies will prevent plugin loading.
     /// </summary>
     public bool IsOptional { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginDependencyAttribute"/> class.
-    /// </summary>
-    /// <param name="pluginId">The ID of the required plugin.</param>
-    /// <exception cref="ArgumentNullException">Thrown when pluginId is null.</exception>
-    public PluginDependencyAttribute(string pluginId)
-    {
-        PluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
-    }
 }

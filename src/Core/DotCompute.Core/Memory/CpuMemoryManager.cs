@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
@@ -12,21 +12,13 @@ namespace DotCompute.Core.Memory;
 /// <summary>
 /// CPU memory manager implementation that extends BaseMemoryManager.
 /// </summary>
-public class CpuMemoryManager : BaseMemoryManager
+public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager> logger) : BaseMemoryManager(logger)
 {
-    private readonly IAccelerator _accelerator;
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
     private long _totalAllocations;
     private long _totalDeallocations;
     private long _currentAllocatedBytes;
     private long _peakAllocatedBytes;
-
-
-    public CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager> logger)
-
-        : base(logger)
-    {
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-    }
 
 
     /// <inheritdoc/>
@@ -34,7 +26,7 @@ public class CpuMemoryManager : BaseMemoryManager
 
 
     /// <inheritdoc/>
-    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
+    public override MemoryStatistics Statistics => new()
 
     {
         TotalAllocated = _currentAllocatedBytes,
@@ -224,7 +216,6 @@ public class CpuMemoryManager : BaseMemoryManager
         // Would need to implement a view wrapper for CPU buffers
 
 
-
         => throw new NotSupportedException("CPU memory views are not yet implemented");
 }
 
@@ -340,18 +331,10 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
 /// <summary>
 /// CPU memory buffer implementation with type safety.
 /// </summary>
-public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly IUnifiedMemoryBuffer _underlyingBuffer;
-    private readonly int _length;
-
-
-    public CpuMemoryBuffer(IUnifiedMemoryBuffer underlyingBuffer, int length)
-    {
-        _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
-        _length = length;
-    }
-
+    private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
+    private readonly int _length = length;
 
     public int Length => _length;
     public long SizeInBytes => _underlyingBuffer.SizeInBytes;
@@ -379,7 +362,6 @@ public class CpuMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
     public Memory<T> AsMemory()
         // For CPU buffers, we need to create a properly typed memory
         // This is a temporary implementation - proper buffer management needed
-
 
 
         => throw new NotSupportedException("Direct Memory<T> access not yet implemented for CpuMemoryBuffer<T>");

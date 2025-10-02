@@ -11,20 +11,13 @@ namespace DotCompute.Core.Security;
 /// Handles security metrics tracking and statistical analysis.
 /// Provides insights into security events and patterns.
 /// </summary>
-public sealed class SecurityMetricsLogger
+public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
+    SecurityMetrics metrics,
+    ConcurrentDictionary<string, CorrelationContext> correlationContexts)
 {
-    private readonly ILogger _logger;
-    private readonly SecurityMetrics _metrics;
-    private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts;
-
-    public SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
-        SecurityMetrics metrics,
-        ConcurrentDictionary<string, CorrelationContext> correlationContexts)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
-        _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
-    }
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SecurityMetrics _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+    private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
 
     /// <summary>
     /// Gets current security metrics.

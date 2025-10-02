@@ -11,18 +11,12 @@ namespace DotCompute.Plugins.Loaders;
 /// <summary>
 /// Advanced dependency resolver for NuGet plugins with transitive dependency support.
 /// </summary>
-public class DependencyResolver
+public class DependencyResolver(ILogger logger, DependencyResolutionSettings settings)
 {
-    private readonly ILogger _logger;
-    private readonly DependencyResolutionSettings _settings;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DependencyResolutionSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     private readonly ConcurrentDictionary<string, ResolvedPackage> _packageCache = new();
     private readonly SemaphoreSlim _resolutionSemaphore = new(1, 1);
-
-    public DependencyResolver(ILogger logger, DependencyResolutionSettings settings)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-    }
 
     /// <summary>
     /// Resolves all dependencies for a plugin, including transitive dependencies.

@@ -158,7 +158,7 @@ namespace DotCompute.Backends.CUDA.Memory
             await _prefetchSemaphore.WaitAsync(cancellationToken);
             try
             {
-                var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, deviceId, stream);
+                var result = CudaRuntime.cudaMemPrefetch(ptr, (nuint)sizeInBytes, deviceId, stream);
 
 
                 if (result == CudaError.Success)
@@ -219,7 +219,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 // CPU is specified as device -1 in CUDA
                 const int cpuDevice = -1;
-                var result = CudaRuntime.cudaMemPrefetchAsync(ptr, (nuint)sizeInBytes, cpuDevice, stream);
+                var result = CudaRuntime.cudaMemPrefetch(ptr, (nuint)sizeInBytes, cpuDevice, stream);
 
 
                 if (result == CudaError.Success)
@@ -272,7 +272,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             return await Task.Run(() =>
             {
-                var result = CudaRuntime.cudaMemAdvise(ptr, (nuint)sizeInBytes, (CudaMemoryAdvise)advice, deviceId);
+                var result = CudaRuntime.cudaMemAdvise(ptr, (nuint)sizeInBytes, (CudaMemoryAdvice)advice, deviceId);
 
 
                 if (result == CudaError.Success)
@@ -369,10 +369,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Records a prefetch miss (data was not where expected).
         /// </summary>
-        public void RecordPrefetchMiss(IntPtr ptr)
-        {
-            _ = Interlocked.Increment(ref _prefetchMisses);
-        }
+        public void RecordPrefetchMiss(IntPtr ptr) => _ = Interlocked.Increment(ref _prefetchMisses);
 
         /// <summary>
         /// Gets prefetch statistics.
@@ -414,22 +411,13 @@ namespace DotCompute.Backends.CUDA.Memory
             _logger.LogInfoMessage($"Disposed memory prefetcher. Total prefetched: {_totalPrefetchedBytes} bytes in {_prefetchCount} operations");
         }
 
-        private sealed class PrefetchInfo
+        private sealed class PrefetchInfo(IntPtr pointer, long size, int deviceId, PrefetchTarget target)
         {
-            public IntPtr Pointer { get; }
-            public long Size { get; }
-            public int DeviceId { get; }
-            public PrefetchTarget Target { get; }
-            public DateTime Timestamp { get; }
-
-            public PrefetchInfo(IntPtr pointer, long size, int deviceId, PrefetchTarget target)
-            {
-                Pointer = pointer;
-                Size = size;
-                DeviceId = deviceId;
-                Target = target;
-                Timestamp = DateTime.UtcNow;
-            }
+            public IntPtr Pointer { get; } = pointer;
+            public long Size { get; } = size;
+            public int DeviceId { get; } = deviceId;
+            public PrefetchTarget Target { get; } = target;
+            public DateTime Timestamp { get; } = DateTime.UtcNow;
         }
     }
 

@@ -164,10 +164,7 @@ public sealed class StageValidationResult
     /// Gets the total number of issues (errors + warnings).
     /// </summary>
     /// <returns>Total issue count</returns>
-    public int GetTotalIssueCount()
-    {
-        return Errors.Count + Warnings.Count;
-    }
+    public int GetTotalIssueCount() => Errors.Count + Warnings.Count;
 
     /// <summary>
     /// Gets whether the validation has any critical issues.

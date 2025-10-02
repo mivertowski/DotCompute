@@ -35,7 +35,7 @@ public sealed class CudaBackendIntegration : IDisposable
     // Core component managers
     private readonly CudaDeviceManager _deviceManager;
     private readonly Components.CudaKernelExecutor _kernelExecutor;
-    private readonly Components.CudaMemoryManager _memoryManager;
+    private readonly CudaMemoryManager _memoryManager;
     private readonly CudaErrorHandler _errorHandler;
 
     // Stream and event management
@@ -66,14 +66,14 @@ public sealed class CudaBackendIntegration : IDisposable
         // Initialize core component managers
         _deviceManager = new CudaDeviceManager(loggerFactory.CreateLogger<CudaDeviceManager>());
         _errorHandler = new CudaErrorHandler(context, loggerFactory.CreateLogger<CudaErrorHandler>());
-        _memoryManager = new Components.CudaMemoryManager(context, loggerFactory.CreateLogger<Components.CudaMemoryManager>());
+        _memoryManager = new CudaMemoryManager(context, loggerFactory.CreateLogger<CudaMemoryManager>());
 
         // Initialize stream and event management
         _streamManager = new CudaStreamManager(context, loggerFactory.CreateLogger<CudaStreamManager>());
         _eventManager = new CudaEventManager(context, loggerFactory.CreateLogger<CudaEventManager>());
 
         // Initialize kernel executor with all dependencies
-        var accelerator = _deviceManager.CreateAcceleratorWrapper(context);
+        var accelerator = CudaDeviceManager.CreateAcceleratorWrapper(context);
         _kernelExecutor = new Components.CudaKernelExecutor(
             accelerator, context, _streamManager, _eventManager,
             loggerFactory.CreateLogger<Components.CudaKernelExecutor>());
@@ -106,7 +106,7 @@ public sealed class CudaBackendIntegration : IDisposable
     /// <summary>
     /// Memory manager for unified memory operations.
     /// </summary>
-    public Components.CudaMemoryManager MemoryManager => _memoryManager;
+    public CudaMemoryManager MemoryManager => _memoryManager;
 
     /// <summary>
     /// Error handler for comprehensive error management.
@@ -423,10 +423,8 @@ public sealed class CudaBackendIntegration : IDisposable
         AbstractionsKernelArgument[] arguments,
         CudaExecutionOptions options,
         CancellationToken cancellationToken)
-    {
         // Advanced optimizations are simplified in this implementation
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
         CudaCompiledKernel kernel,
@@ -457,14 +455,12 @@ public sealed class CudaBackendIntegration : IDisposable
     }
 
     private static ICompiledKernel ConvertToCompiledKernel(CudaCompiledKernel cudaKernel)
-    {
         // Convert CUDA-specific kernel to ICompiledKernel interface
-        return cudaKernel; // CudaCompiledKernel implements ICompiledKernel
-    }
+        => cudaKernel; // CudaCompiledKernel implements ICompiledKernel
 
     private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
     {
-        return arguments.Select(arg => new InterfacesKernelArgument
+        return [.. arguments.Select(arg => new InterfacesKernelArgument
         {
             Name = arg.Name,
             Value = arg.Value ?? new object(),
@@ -473,7 +469,7 @@ public sealed class CudaBackendIntegration : IDisposable
             MemoryBuffer = arg.MemoryBuffer as IUnifiedMemoryBuffer,
             SizeInBytes = arg.SizeInBytes,
             IsOutput = arg.IsOutput
-        }).ToArray();
+        })];
     }
 
     private static int[] EstimateProblemSize(AbstractionsKernelArgument[] arguments)
@@ -575,10 +571,7 @@ public sealed class CudaBackendIntegration : IDisposable
         return enabledRatio > 0.5 ? 1.0 : enabledRatio * 2.0;
     }
 
-    private static double CalculatePerformanceHealth(CudaPerformanceMetrics metrics)
-    {
-        return metrics.MemoryUtilization < 0.9 && metrics.ComputeUtilization < 0.95 ? 1.0 : 0.5;
-    }
+    private static double CalculatePerformanceHealth(CudaPerformanceMetrics metrics) => metrics.MemoryUtilization < 0.9 && metrics.ComputeUtilization < 0.95 ? 1.0 : 0.5;
 
     private static double CalculateMemoryHealth(MemoryUsageAnalytics analytics)
     {

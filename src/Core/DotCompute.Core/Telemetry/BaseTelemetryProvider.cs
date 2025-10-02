@@ -504,10 +504,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// <summary>
     /// Gets a specific meter for advanced scenarios.
     /// </summary>
-    public virtual Meter GetMeter(string name, string? version = null)
-    {
-        return new Meter(name, version);
-    }
+    public virtual Meter GetMeter(string name, string? version = null) => new(name, version);
 
     #endregion
 

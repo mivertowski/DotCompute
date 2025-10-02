@@ -6,22 +6,25 @@ namespace DotCompute.Abstractions.Validation;
 /// <summary>
 /// Represents a validation issue (error or warning).
 /// </summary>
-public sealed class ValidationIssue
+/// <remarks>
+/// Creates a new validation issue.
+/// </remarks>
+public sealed class ValidationIssue(string code, string message, ValidationSeverity severity = ValidationSeverity.Error)
 {
     /// <summary>
     /// Gets the error code.
     /// </summary>
-    public string Code { get; init; } = string.Empty;
+    public string Code { get; init; } = code;
 
     /// <summary>
     /// Gets the error message.
     /// </summary>
-    public string Message { get; init; } = string.Empty;
+    public string Message { get; init; } = message;
 
     /// <summary>
     /// Gets the severity level.
     /// </summary>
-    public ValidationSeverity Severity { get; init; }
+    public ValidationSeverity Severity { get; init; } = severity;
 
     /// <summary>
     /// Gets the source location if applicable.
@@ -37,16 +40,6 @@ public sealed class ValidationIssue
     /// Gets the column number if applicable.
     /// </summary>
     public int? Column { get; init; }
-
-    /// <summary>
-    /// Creates a new validation issue.
-    /// </summary>
-    public ValidationIssue(string code, string message, ValidationSeverity severity = ValidationSeverity.Error)
-    {
-        Code = code;
-        Message = message;
-        Severity = severity;
-    }
 
     /// <summary>
     /// Creates an error validation issue.

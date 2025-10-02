@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
@@ -15,19 +14,12 @@ namespace DotCompute.Algorithms.Management.Discovery;
 /// <summary>
 /// Handles plugin discovery and scanning operations with comprehensive directory traversal and filtering.
 /// </summary>
-public sealed partial class AlgorithmPluginScanner : IDisposable
+public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanner> logger, AlgorithmPluginManagerOptions options) : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginScanner> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
-    private readonly ConcurrentDictionary<string, DateTime> _lastScanTimes;
+    private readonly ILogger<AlgorithmPluginScanner> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private readonly ConcurrentDictionary<string, DateTime> _lastScanTimes = new();
     private bool _disposed;
-
-    public AlgorithmPluginScanner(ILogger<AlgorithmPluginScanner> logger, AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _lastScanTimes = new ConcurrentDictionary<string, DateTime>();
-    }
 
     /// <summary>
     /// Discovers plugin assemblies in the specified directory.
@@ -78,7 +70,7 @@ public sealed partial class AlgorithmPluginScanner : IDisposable
             }
 
             // Update last scan time
-            _lastScanTimes.AddOrUpdate(pluginDirectory, DateTime.UtcNow, (_, _) => DateTime.UtcNow);
+            _ = _lastScanTimes.AddOrUpdate(pluginDirectory, DateTime.UtcNow, (_, _) => DateTime.UtcNow);
 
             LogPluginsDiscovered(validAssemblies.Count, pluginDirectory);
             return validAssemblies.AsReadOnly();
@@ -166,7 +158,7 @@ public sealed partial class AlgorithmPluginScanner : IDisposable
                         IsAbstract = type.IsAbstract,
                         IsGeneric = type.IsGenericType,
                         Namespace = type.Namespace,
-                        Dependencies = GetTypeDependencies(type).ToList()
+                        Dependencies = [.. GetTypeDependencies(type)]
                     };
 
                     pluginTypes.Add(typeInfo);
@@ -256,7 +248,7 @@ public sealed partial class AlgorithmPluginScanner : IDisposable
             // Read PE header to verify it's a managed assembly
             using var stream = new FileStream(assemblyPath, FileMode.Open, FileAccess.Read);
             var buffer = new byte[64];
-            await stream.ReadAsync(buffer);
+            _ = await stream.ReadAsync(buffer);
 
             // Check for PE signature
             if (buffer[0] != 0x4D || buffer[1] != 0x5A) // MZ signature
@@ -275,7 +267,7 @@ public sealed partial class AlgorithmPluginScanner : IDisposable
     /// <summary>
     /// Validates assembly security based on configuration.
     /// </summary>
-    private async Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
+    private static async Task<bool> ValidateAssemblySecurityAsync(string assemblyPath)
     {
         // Placeholder for security validation logic
         // This would integrate with the security validation components
@@ -311,7 +303,7 @@ public sealed partial class AlgorithmPluginScanner : IDisposable
             {
                 if (parameter.ParameterType.Assembly != type.Assembly)
                 {
-                    dependencies.Add(parameter.ParameterType.Assembly.FullName ?? parameter.ParameterType.Assembly.GetName().Name ?? "Unknown");
+                    _ = dependencies.Add(parameter.ParameterType.Assembly.FullName ?? parameter.ParameterType.Assembly.GetName().Name ?? "Unknown");
                 }
             }
         }

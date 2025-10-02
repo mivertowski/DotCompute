@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -14,17 +14,16 @@ namespace DotCompute.Core.Memory;
 /// Base memory manager that provides common memory management patterns for all backends.
 /// Eliminates 7,625 lines of duplicate code across 5+ implementations.
 /// </summary>
-public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
+public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
 {
-    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers;
-    private readonly ILogger _logger;
-
-
+    private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers = new();
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    
     /// <summary>
     /// Gets the logger instance for derived classes.
     /// </summary>
     protected ILogger Logger => _logger;
-    private readonly Lock _lock = new();
+
     private long _totalAllocatedBytes;
     private long _peakAllocatedBytes;
     private int _allocationCount;
@@ -36,7 +35,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
 
     /// <inheritdoc/>
-    public abstract DotCompute.Abstractions.Memory.MemoryStatistics Statistics { get; }
+    public abstract MemoryStatistics Statistics { get; }
 
 
     /// <inheritdoc/>
@@ -49,12 +48,6 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
     /// <inheritdoc/>
     public abstract long CurrentAllocatedMemory { get; }
-
-    protected BaseMemoryManager(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeBuffers = new ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>>();
-    }
 
     /// <summary>
     /// Gets the total allocated bytes across all buffers.
@@ -218,7 +211,7 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    public virtual async ValueTask<IUnifiedMemoryBuffer> AllocateAsync<T>(int count) where T : unmanaged
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
@@ -359,12 +352,12 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
     /// <summary>
     /// Gets memory statistics for this manager.
     /// </summary>
-    public virtual DotCompute.Abstractions.Memory.MemoryStatistics GetStatistics()
+    public virtual MemoryStatistics GetStatistics()
     {
         CleanupUnusedBuffers();
 
 
-        return new DotCompute.Abstractions.Memory.MemoryStatistics
+        return new MemoryStatistics
         {
             TotalAllocated = TotalAllocatedBytes,
             CurrentUsed = TotalAllocatedBytes,
@@ -455,53 +448,6 @@ public abstract class BaseMemoryManager : IUnifiedMemoryManager, IAsyncDisposabl
 
 
         GC.SuppressFinalize(this);
-    }
-
-    // Device-specific operations (default implementations throw NotImplementedException)
-
-    public virtual DeviceMemory AllocateDevice(long sizeInBytes)
-    {
-        throw new NotImplementedException($"AllocateDevice not implemented in {GetType().Name}");
-    }
-
-    public virtual void FreeDevice(DeviceMemory deviceMemory)
-    {
-        throw new NotImplementedException($"FreeDevice not implemented in {GetType().Name}");
-    }
-
-    public virtual void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
-    {
-        throw new NotImplementedException($"MemsetDevice not implemented in {GetType().Name}");
-    }
-
-    public virtual ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException($"MemsetDeviceAsync not implemented in {GetType().Name}");
-    }
-
-    public virtual void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
-    {
-        throw new NotImplementedException($"CopyHostToDevice not implemented in {GetType().Name}");
-    }
-
-    public virtual void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
-    {
-        throw new NotImplementedException($"CopyDeviceToHost not implemented in {GetType().Name}");
-    }
-
-    public virtual ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException($"CopyHostToDeviceAsync not implemented in {GetType().Name}");
-    }
-
-    public virtual ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException($"CopyDeviceToHostAsync not implemented in {GetType().Name}");
-    }
-
-    public virtual void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
-    {
-        throw new NotImplementedException($"CopyDeviceToDevice not implemented in {GetType().Name}");
     }
 }
 

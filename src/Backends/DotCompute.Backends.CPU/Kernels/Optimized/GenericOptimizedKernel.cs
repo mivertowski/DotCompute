@@ -18,22 +18,16 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// implementations for vector operations. Performance may be suboptimal compared
 /// to specialized kernel implementations.
 /// </remarks>
-internal class GenericOptimizedKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="GenericOptimizedKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="kernelInfo">The kernel information containing source code and metadata.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    private readonly KernelInfo _kernelInfo;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GenericOptimizedKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="kernelInfo">The kernel information containing source code and metadata.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
-        : base(name, options, logger)
-    {
-        _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
-    }
+    private readonly KernelInfo _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
 
     /// <summary>
     /// Executes the generic kernel asynchronously by analyzing the source and inferring execution patterns.

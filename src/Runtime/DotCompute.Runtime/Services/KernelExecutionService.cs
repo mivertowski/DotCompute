@@ -13,14 +13,19 @@ namespace DotCompute.Runtime.Services;
 /// Production-grade kernel execution service that bridges generated kernel code with runtime infrastructure.
 /// Provides automatic backend selection, caching, and optimization.
 /// </summary>
-public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComputeOrchestrator, IDisposable
+public class KernelExecutionService(
+    AcceleratorRuntime runtime,
+    ILogger<KernelExecutionService> logger,
+    IUnifiedKernelCompiler compiler,
+    IKernelCache cache,
+    IKernelProfiler profiler) : Abstractions.Interfaces.IComputeOrchestrator, IDisposable
 {
-    private readonly AcceleratorRuntime _runtime;
-    private readonly ILogger<KernelExecutionService> _logger;
-    private readonly IUnifiedKernelCompiler _compiler;
-    private readonly IKernelCache _cache;
-    private readonly IKernelProfiler _profiler;
-    private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry;
+    private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+    private readonly ILogger<KernelExecutionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IUnifiedKernelCompiler _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+    private readonly IKernelCache _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    private readonly IKernelProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
+    private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry = [];
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
     private bool _disposed;
 
@@ -105,22 +110,6 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
 
     #endregion
 
-
-    public KernelExecutionService(
-        AcceleratorRuntime runtime,
-        ILogger<KernelExecutionService> logger,
-        IUnifiedKernelCompiler compiler,
-        IKernelCache cache,
-        IKernelProfiler profiler)
-    {
-        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
-        _kernelRegistry = [];
-    }
-
     /// <summary>
     /// Registers kernels from the generated kernel registry.
     /// This method should be called during application startup.
@@ -142,12 +131,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     {
         try
         {
-            var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-            if (accelerator == null)
-            {
-                throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-            }
-
+            var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
             return await ExecuteAsync<T>(kernelName, accelerator, args);
         }
         catch (Exception ex)
@@ -170,12 +154,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
             return await ExecuteAsync<T>(kernelName, args);
         }
 
-        var accelerator = accelerators.OrderBy(GetAcceleratorLoad).FirstOrDefault();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
-        }
-
+        var accelerator = accelerators.OrderBy(GetAcceleratorLoad).FirstOrDefault() ?? throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
         return await ExecuteAsync<T>(kernelName, accelerator, args);
     }
 
@@ -234,11 +213,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     /// <inheritdoc />
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
-        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Combine unified buffers with scalar arguments
         var allArgs = buffers.Cast<object>().Concat(scalarArgs).ToArray();
@@ -425,7 +400,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
                     break;
                 case Array array:
                     // Convert arrays to unified buffers
-                    var unifiedBuffer = await ConvertArrayToUnifiedBuffer(array, accelerator);
+                    var unifiedBuffer = await ConvertArrayToUnifiedBufferAsync(array, accelerator);
                     deviceBuffers.Add(unifiedBuffer);
                     break;
                 default:
@@ -441,7 +416,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
         };
     }
 
-    private async Task<IUnifiedMemoryBuffer> ConvertArrayToUnifiedBuffer(Array array, IAccelerator accelerator)
+    private async Task<IUnifiedMemoryBuffer> ConvertArrayToUnifiedBufferAsync(Array array, IAccelerator accelerator)
     {
         try
         {
@@ -451,15 +426,15 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
             // Handle different array types by creating proper unified buffers
             return array switch
             {
-                float[] floatArray => await CreateUnifiedBufferAsync<float>(floatArray, memoryManager),
-                double[] doubleArray => await CreateUnifiedBufferAsync<double>(doubleArray, memoryManager),
-                int[] intArray => await CreateUnifiedBufferAsync<int>(intArray, memoryManager),
-                byte[] byteArray => await CreateUnifiedBufferAsync<byte>(byteArray, memoryManager),
-                uint[] uintArray => await CreateUnifiedBufferAsync<uint>(uintArray, memoryManager),
-                long[] longArray => await CreateUnifiedBufferAsync<long>(longArray, memoryManager),
-                ulong[] ulongArray => await CreateUnifiedBufferAsync<ulong>(ulongArray, memoryManager),
-                short[] shortArray => await CreateUnifiedBufferAsync<short>(shortArray, memoryManager),
-                ushort[] ushortArray => await CreateUnifiedBufferAsync<ushort>(ushortArray, memoryManager),
+                float[] floatArray => await CreateUnifiedBufferAsync(floatArray, memoryManager),
+                double[] doubleArray => await CreateUnifiedBufferAsync(doubleArray, memoryManager),
+                int[] intArray => await CreateUnifiedBufferAsync(intArray, memoryManager),
+                byte[] byteArray => await CreateUnifiedBufferAsync(byteArray, memoryManager),
+                uint[] uintArray => await CreateUnifiedBufferAsync(uintArray, memoryManager),
+                long[] longArray => await CreateUnifiedBufferAsync(longArray, memoryManager),
+                ulong[] ulongArray => await CreateUnifiedBufferAsync(ulongArray, memoryManager),
+                short[] shortArray => await CreateUnifiedBufferAsync(shortArray, memoryManager),
+                ushort[] ushortArray => await CreateUnifiedBufferAsync(ushortArray, memoryManager),
                 _ => throw new NotSupportedException($"Array type {array.GetType()} is not supported for conversion to UnifiedBuffer")
             };
         }
@@ -587,11 +562,9 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     }
 
     private double GetAcceleratorLoad(IAccelerator accelerator)
-    {
         // Placeholder - would integrate with performance monitoring
         // to get actual load metrics
-        return 0.0;
-    }
+        => 0.0;
 
     public void Dispose()
     {
@@ -635,15 +608,10 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var accelerator = !string.IsNullOrEmpty(executionParameters.PreferredBackend)
+        var accelerator = (!string.IsNullOrEmpty(executionParameters.PreferredBackend)
             ? _runtime.GetAccelerators()
                 .FirstOrDefault(a => a.Info.DeviceType.Equals(executionParameters.PreferredBackend, StringComparison.OrdinalIgnoreCase))
-            : await GetOptimalAcceleratorAsync(kernelName);
-
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+            : await GetOptimalAcceleratorAsync(kernelName)) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Execute kernel and return as object
         var result = await ExecuteAsync<object>(kernelName, accelerator, executionParameters.Arguments);
@@ -655,11 +623,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Execute kernel and return as object
         var result = await ExecuteAsync<object>(kernelName, accelerator, args);
@@ -751,23 +715,16 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
 /// Mock implementation of IUnifiedMemoryBuffer for testing and integration purposes.
 /// </summary>
 /// <typeparam name="T">The element type</typeparam>
-internal class MockUnifiedBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
+internal class MockUnifiedBuffer<T>(T[] data) : IUnifiedMemoryBuffer where T : unmanaged
 {
-    private readonly T[] _data;
+    private readonly T[] _data = data ?? throw new ArgumentNullException(nameof(data));
 
-    public MockUnifiedBuffer(T[] data)
-    {
-        _data = data ?? throw new ArgumentNullException(nameof(data));
-        Length = data.Length;
-        SizeInBytes = data.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-    }
-
-    public int Length { get; }
-    public long SizeInBytes { get; }
+    public int Length { get; } = data.Length;
+    public long SizeInBytes { get; } = data.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
     public static IAccelerator Accelerator => null!;
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => Abstractions.Memory.MemoryOptions.None;
+    public Abstractions.Memory.MemoryOptions Options => Abstractions.Memory.MemoryOptions.None;
     public bool IsDisposed => false;
-    public DotCompute.Abstractions.Memory.BufferState State => Abstractions.Memory.BufferState.Synchronized;
+    public Abstractions.Memory.BufferState State => Abstractions.Memory.BufferState.Synchronized;
 
     public T[] GetData() => _data;
 
@@ -795,15 +752,9 @@ internal class MockUnifiedBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
-    {
-        return CopyFromAsync(source, offset, cancellationToken);
-    }
+    public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged => CopyFromAsync(source, offset, cancellationToken);
 
-    public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
-    {
-        return CopyToAsync(destination, offset, cancellationToken);
-    }
+    public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged => CopyToAsync(destination, offset, cancellationToken);
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

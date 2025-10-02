@@ -14,15 +14,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
     public static partial class CudaRuntimeExtendedApi
     {
         private const string CUDA_LIBRARY = "cudart";
-        private const string CUDA_DRIVER_LIBRARY = "cuda";
-        private const string NVRTC_LIBRARY = "nvrtc";
-        private const string CUBLAS_LIBRARY = "cublas";
-        private const string CUDNN_LIBRARY = "cudnn";
-        private const string CUFFT_LIBRARY = "cufft";
-        private const string CUSPARSE_LIBRARY = "cusparse";
-        private const string CURAND_LIBRARY = "curand";
-        private const string CUSOLVER_LIBRARY = "cusolver";
-        private const string NCCL_LIBRARY = "nccl";
 
         #region Texture and Surface Memory
 
@@ -317,7 +308,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaSignalExternalSemaphoresAsync(
+        internal static extern CudaError cudaSignalExternalSemaphores(
             nint extSemArray,
             ref CudaExternalSemaphoreSignalParams paramsArray,
             uint numExtSems,
@@ -325,7 +316,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
 
         [DllImport(CUDA_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-        internal static extern CudaError cudaWaitExternalSemaphoresAsync(
+        internal static extern CudaError cudaWaitExternalSemaphores(
             nint extSemArray,
             ref CudaExternalSemaphoreWaitParams paramsArray,
             uint numExtSems,

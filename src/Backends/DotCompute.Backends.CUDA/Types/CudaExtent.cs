@@ -8,36 +8,29 @@ namespace DotCompute.Backends.CUDA.Types;
 /// <summary>
 /// Represents the extent (dimensions) of a CUDA array or texture.
 /// </summary>
+/// <remarks>
+/// Initializes a new instance of the <see cref="CudaExtent"/> struct.
+/// </remarks>
+/// <param name="width">The width in elements.</param>
+/// <param name="height">The height in elements.</param>
+/// <param name="depth">The depth in elements.</param>
 [StructLayout(LayoutKind.Sequential)]
-public struct CudaExtent : IEquatable<CudaExtent>
+public struct CudaExtent(ulong width, ulong height = 0, ulong depth = 0) : IEquatable<CudaExtent>
 {
     /// <summary>
     /// Gets or sets the width in elements.
     /// </summary>
-    public ulong Width { get; set; }
+    public ulong Width { get; set; } = width;
 
     /// <summary>
     /// Gets or sets the height in elements.
     /// </summary>
-    public ulong Height { get; set; }
+    public ulong Height { get; set; } = height;
 
     /// <summary>
     /// Gets or sets the depth in elements.
     /// </summary>
-    public ulong Depth { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CudaExtent"/> struct.
-    /// </summary>
-    /// <param name="width">The width in elements.</param>
-    /// <param name="height">The height in elements.</param>
-    /// <param name="depth">The depth in elements.</param>
-    public CudaExtent(ulong width, ulong height = 0, ulong depth = 0)
-    {
-        Width = width;
-        Height = height;
-        Depth = depth;
-    }
+    public ulong Depth { get; set; } = depth;
 
     /// <summary>
     /// Creates a 1D extent.

@@ -82,10 +82,7 @@ public sealed class PluginStateManager : IDisposable
     /// <summary>
     /// Gets all state snapshots for monitoring
     /// </summary>
-    public IReadOnlyDictionary<string, PluginStateSnapshot> GetAllSnapshots()
-    {
-        return _stateSnapshots.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public IReadOnlyDictionary<string, PluginStateSnapshot> GetAllSnapshots() => _stateSnapshots.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Validates state snapshot integrity

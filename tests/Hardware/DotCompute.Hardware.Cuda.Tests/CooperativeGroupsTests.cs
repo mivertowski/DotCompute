@@ -9,18 +9,10 @@ namespace DotCompute.Hardware.Cuda.Tests;
 /// <summary>
 /// Tests for CUDA cooperative groups functionality requiring CUDA 13.0+
 /// </summary>
-public class CooperativeGroupsTests : IDisposable
+public class CooperativeGroupsTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly ITestOutputHelper _output;
-    private readonly ILogger<CooperativeGroupsTests> _logger;
-    private readonly CudaAcceleratorFactory _factory;
-
-    public CooperativeGroupsTests(ITestOutputHelper output)
-    {
-        _output = output;
-        _logger = new XUnitLogger<CooperativeGroupsTests>(output);
-        _factory = new CudaAcceleratorFactory();
-    }
+    private readonly ITestOutputHelper _output = output;
+    private readonly CudaAcceleratorFactory _factory = new();
 
     [Fact]
     [Trait("Category", "HardwareRequired")]
@@ -89,7 +81,7 @@ extern ""C"" __global__ void cooperativeReduction(float* input, float* output, i
             Abstractions.Types.OptimizationLevel.O3
         );
 
-        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
         // Test data
         const int size = 1024;
@@ -208,7 +200,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
             generateDebugInfo: false  // Standard optimization without debug info
         );
 
-        var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+        var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
         // Test with simple array
         const int size = 1024;
@@ -266,20 +258,13 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
     }
 
     public void Dispose()
-    {
         // Factory will dispose of created accelerators
-        _factory?.Dispose();
-    }
+        => _factory?.Dispose();
 
     // Test logger implementation
-    private class XUnitLogger<T> : ILogger<T>
+    private class XUnitLogger<T>(ITestOutputHelper output) : ILogger<T>
     {
-        private readonly ITestOutputHelper _output;
-
-        public XUnitLogger(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        private readonly ITestOutputHelper _output = output;
 
         IDisposable ILogger.BeginScope<TState>(TState state) => null!;
         public bool IsEnabled(LogLevel logLevel) => true;

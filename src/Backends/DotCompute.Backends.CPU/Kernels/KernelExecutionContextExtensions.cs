@@ -48,7 +48,7 @@ internal sealed class ExtendedKernelExecutionContext
     /// </summary>
     public void SetBuffer<T>(int index, Memory<T> buffer) where T : unmanaged
     {
-        var byteSpan = global::System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(buffer.Span);
+        var byteSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(buffer.Span);
         var byteBuffer = new Memory<byte>(byteSpan.ToArray());
         _buffers[index] = byteBuffer;
     }
@@ -63,7 +63,7 @@ internal sealed class ExtendedKernelExecutionContext
             return Memory<T>.Empty;
         }
 
-        var span = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(buffer.Span);
+        var span = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(buffer.Span);
         return new Memory<T>(span.ToArray());
     }
 

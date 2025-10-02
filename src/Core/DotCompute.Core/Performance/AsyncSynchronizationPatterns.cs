@@ -72,10 +72,7 @@ public static class AsyncSynchronizationPatterns
     public static AsyncResourcePool<TResource> CreateResourcePool<TResource>(
         Func<TResource> factory,
         int maxResources = 10,
-        bool fairScheduling = true) where TResource : class
-    {
-        return new AsyncResourcePool<TResource>(factory, maxResources, fairScheduling);
-    }
+        bool fairScheduling = true) where TResource : class => new(factory, maxResources, fairScheduling);
 
     /// <summary>
     /// Creates an async barrier for coordinating parallel algorithm phases.
@@ -83,10 +80,7 @@ public static class AsyncSynchronizationPatterns
     /// <param name="participantCount">Number of participants.</param>
     /// <param name="postPhaseAction">Optional action to run after each phase.</param>
     /// <returns>Async barrier.</returns>
-    public static AsyncBarrier CreateBarrier(int participantCount, Action? postPhaseAction = null)
-    {
-        return new AsyncBarrier(participantCount, postPhaseAction);
-    }
+    public static AsyncBarrier CreateBarrier(int participantCount, Action? postPhaseAction = null) => new(participantCount, postPhaseAction);
 }
 
 /// <summary>
@@ -198,7 +192,7 @@ public sealed class AsyncChannel<T> : IDisposable
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(AsyncChannel<T>));
+            throw new ObjectDisposedException(nameof(AsyncChannel<>));
         }
 
     }
@@ -333,7 +327,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(AsyncWorkStealingCoordinator<T>));
+            throw new ObjectDisposedException(nameof(AsyncWorkStealingCoordinator<>));
         }
 
     }
@@ -401,8 +395,7 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         {
             await _semaphore.WaitAsync(timeoutCts.Token).ConfigureAwait(false);
 
-            TResource? resource;
-            if (!_resources.TryPop(out resource))
+            if (!_resources.TryPop(out var resource))
             {
                 resource = _factory();
             }
@@ -442,14 +435,17 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
     /// <summary>
     /// Gets current pool statistics.
     /// </summary>
-    public PoolStatistics GetStatistics()
+    public PoolStatistics Statistics
     {
-        return new PoolStatistics
+        get
         {
-            AvailableResources = _resources.Count,
-            TotalResources = _maxResources - _semaphore.CurrentCount,
-            WaitingRequests = _waitQueue?.Count ?? 0
-        };
+            return new PoolStatistics
+            {
+                AvailableResources = _resources.Count,
+                TotalResources = _maxResources - _semaphore.CurrentCount,
+                WaitingRequests = _waitQueue?.Count ?? 0
+            };
+        }
     }
 
     private void ThrowIfDisposed()
@@ -457,7 +453,7 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(AsyncResourcePool<TResource>));
+            throw new ObjectDisposedException(nameof(AsyncResourcePool<>));
         }
 
     }
@@ -527,10 +523,7 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// </summary>
     public static implicit operator TResource(PooledResource<TResource> pooled) => pooled._resource;
 
-    public void Dispose()
-    {
-        _pool?.Return(_resource);
-    }
+    public void Dispose() => _pool?.Return(_resource);
 }
 
 /// <summary>

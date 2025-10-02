@@ -5,7 +5,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 
 namespace DotCompute.Algorithms.Management.Loading;
 
@@ -13,23 +13,16 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// Enhanced plugin assembly load context with isolation support.
 /// Provides isolated execution environments for algorithm plugins to prevent conflicts and enhance security.
 /// </summary>
-public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginAssemblyLoadContext"/> class.
+/// </remarks>
+/// <param name="name">The name of the load context for identification.</param>
+/// <param name="pluginPath">The file system path to the plugin assembly.</param>
+/// <param name="enableIsolation">Whether to enable assembly isolation from the default context.</param>
+public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation) : AssemblyLoadContext(name, isCollectible: true)
 {
-    private readonly AssemblyDependencyResolver _resolver;
-    private readonly bool _enableIsolation;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginAssemblyLoadContext"/> class.
-    /// </summary>
-    /// <param name="name">The name of the load context for identification.</param>
-    /// <param name="pluginPath">The file system path to the plugin assembly.</param>
-    /// <param name="enableIsolation">Whether to enable assembly isolation from the default context.</param>
-    public PluginAssemblyLoadContext(string name, string pluginPath, bool enableIsolation)
-        : base(name, isCollectible: true)
-    {
-        _resolver = new AssemblyDependencyResolver(pluginPath);
-        _enableIsolation = enableIsolation;
-    }
+    private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
+    private readonly bool _enableIsolation = enableIsolation;
 
     /// <summary>
     /// Loads an assembly given its name.

@@ -31,14 +31,12 @@ internal sealed class CpuKernelOptimizer : IDisposable
     // Optimization thresholds and constants
     private const int MinWorkItemsForVectorization = 64;
     private const int MinWorkItemsForParallelization = 16;
-    private const double VectorizationSpeedupThreshold = 1.2;
-    private const double ParallelizationSpeedupThreshold = 1.5;
 
     public CpuKernelOptimizer(ILogger logger, CpuThreadPool threadPool)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
-        _profileCache = new Dictionary<string, OptimizationProfile>();
+        _profileCache = [];
         _performanceCounter = new PerformanceCounter();
 
         _logger.LogDebug("CpuKernelOptimizer initialized");
@@ -254,7 +252,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
     // Private analysis methods
 
-    private Task<KernelAnalysis> AnalyzeKernelAsync(KernelDefinition definition, WorkDimensions workDimensions)
+    private static Task<KernelAnalysis> AnalyzeKernelAsync(KernelDefinition definition, WorkDimensions workDimensions)
     {
         var canVectorize = CanVectorize(definition);
         var optimalVectorWidth = DetermineOptimalVectorWidth(definition);
@@ -421,10 +419,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
                definition.Name.Contains("Vector", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static int DetermineOptimalVectorWidth(KernelDefinition definition)
-    {
-        return Vector<float>.Count; // Use the platform's preferred vector width
-    }
+    private static int DetermineOptimalVectorWidth(KernelDefinition definition) => Vector<float>.Count; // Use the platform's preferred vector width
 
     private static MemoryAccessPattern AnalyzeMemoryAccessPattern(KernelDefinition definition)
     {
@@ -447,10 +442,8 @@ internal sealed class CpuKernelOptimizer : IDisposable
     }
 
     private static double EstimateComputeIntensity(KernelDefinition definition)
-    {
         // Simplified estimation - in practice, this would analyze operations per memory access
-        return 1.0; // Default moderate compute intensity
-    }
+        => 1.0; // Default moderate compute intensity
 
     private static double EstimateThreadingOverhead(WorkDimensions workDimensions)
     {
@@ -472,10 +465,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         return 0.1;
     }
 
-    private static long GetTotalWorkItems(WorkDimensions dimensions)
-    {
-        return dimensions.X * dimensions.Y * dimensions.Z;
-    }
+    private static long GetTotalWorkItems(WorkDimensions dimensions) => dimensions.X * dimensions.Y * dimensions.Z;
 
     private static SimdSummary CreateSimdSummary()
     {
@@ -616,22 +606,16 @@ internal sealed class CpuKernelOptimizer : IDisposable
     // Dynamic optimization methods
 
     private static Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
-    {
         // Simplified degradation detection - compare against historical performance
-        return Task.FromResult(currentStats.AverageExecutionTimeMs > 100); // Placeholder threshold
-    }
+        => Task.FromResult(currentStats.AverageExecutionTimeMs > 100); // Placeholder threshold
 
     private static Task<bool> OptimizeThreadPoolConfigurationAsync(KernelExecutionPlan plan)
-    {
         // Adjust thread pool settings based on current workload
-        return Task.FromResult(false); // Placeholder
-    }
+        => Task.FromResult(false); // Placeholder
 
     private static Task<bool> OptimizeVectorizationSettingsAsync(KernelExecutionPlan plan, ExecutionStatistics stats)
-    {
         // Adjust vectorization parameters based on performance feedback
-        return Task.FromResult(false); // Placeholder
-    }
+        => Task.FromResult(false); // Placeholder
 
     // Utility methods for analysis
 
@@ -670,10 +654,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         return Math.Max(1, optimalThreads);
     }
 
-    private static int DetermineVectorizationFactor(KernelAnalysis analysis)
-    {
-        return analysis.CanVectorize ? analysis.OptimalVectorWidth : 1;
-    }
+    private static int DetermineVectorizationFactor(KernelAnalysis analysis) => analysis.CanVectorize ? analysis.OptimalVectorWidth : 1;
 
     private static List<string> DetermineMemoryOptimizations(KernelAnalysis analysis, OptimizationLevel level)
     {
@@ -709,27 +690,18 @@ internal sealed class CpuKernelOptimizer : IDisposable
     }
 
     private static double EstimateVectorizationSpeedup(KernelDefinition definition)
-    {
         // Simplified estimation based on kernel characteristics
-        return Vector<float>.Count * 0.8; // Assume 80% of theoretical speedup
-    }
+        => Vector<float>.Count * 0.8; // Assume 80% of theoretical speedup
 
-    private static double EstimateParallelizationSpeedup(int optimalThreads, int currentThreads)
-    {
-        return Math.Min(optimalThreads / (double)currentThreads, Environment.ProcessorCount);
-    }
+    private static double EstimateParallelizationSpeedup(int optimalThreads, int currentThreads) => Math.Min(optimalThreads / (double)currentThreads, Environment.ProcessorCount);
 
     private static double CalculateVectorizationEfficiency(ExecutionStatistics statistics)
-    {
         // Simplified efficiency calculation
-        return statistics.UseVectorization ? 0.8 : 0.0;
-    }
+        => statistics.UseVectorization ? 0.8 : 0.0;
 
     private static double EstimateCacheUtilization(KernelDefinition definition, ExecutionStatistics statistics)
-    {
         // Simplified cache utilization estimation
-        return 0.7; // Default moderate cache utilization
-    }
+        => 0.7; // Default moderate cache utilization
 
     private static void GenerateOptimizationSuggestions(OptimizationRecommendations recommendations)
     {
@@ -739,14 +711,11 @@ internal sealed class CpuKernelOptimizer : IDisposable
         // Limit to top 5 suggestions
         if (recommendations.Suggestions.Count > 5)
         {
-            recommendations.Suggestions = recommendations.Suggestions.Take(5).ToList();
+            recommendations.Suggestions = [.. recommendations.Suggestions.Take(5)];
         }
     }
 
-    private static string GenerateCacheKey(KernelDefinition definition, WorkDimensions workDimensions, OptimizationLevel level)
-    {
-        return $"{definition.Name}_{workDimensions.X}x{workDimensions.Y}x{workDimensions.Z}_{level}";
-    }
+    private static string GenerateCacheKey(KernelDefinition definition, WorkDimensions workDimensions, OptimizationLevel level) => $"{definition.Name}_{workDimensions.X}x{workDimensions.Y}x{workDimensions.Z}_{level}";
 
     // Helper methods for missing functionality
     private static ComputeIntensity ConvertToComputeIntensity(double intensity)
@@ -844,7 +813,7 @@ public class OptimizationRecommendations
     public required string KernelName { get; set; }
     public DateTimeOffset AnalysisTime { get; set; }
     public required ExecutionStatistics CurrentPerformance { get; set; }
-    public List<OptimizationSuggestion> Suggestions { get; set; } = new();
+    public List<OptimizationSuggestion> Suggestions { get; set; } = [];
     public string? ErrorMessage { get; set; }
 }
 
@@ -864,7 +833,7 @@ public class BenchmarkResults
     public DateTimeOffset BenchmarkTime { get; set; }
     public PerformanceMetrics? ScalarPerformance { get; set; }
     public PerformanceMetrics? VectorizedPerformance { get; set; }
-    public Dictionary<int, PerformanceMetrics> ParallelizationResults { get; set; } = new();
+    public Dictionary<int, PerformanceMetrics> ParallelizationResults { get; set; } = [];
     public OptimalConfiguration? OptimalConfiguration { get; set; }
     public string? ErrorMessage { get; set; }
 }

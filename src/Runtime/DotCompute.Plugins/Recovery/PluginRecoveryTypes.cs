@@ -256,11 +256,11 @@ namespace DotCompute.Plugins.Recovery
     /// <summary>
     /// Plugin health state tracker
     /// </summary>
-    public sealed class PluginHealthState
+    public sealed class PluginHealthState(string pluginId, PluginRecoveryConfiguration config)
     {
-        private readonly string _pluginId;
-        private readonly PluginRecoveryConfiguration _config;
-        private readonly List<Exception> _recentErrors;
+        private readonly string _pluginId = pluginId;
+        private readonly PluginRecoveryConfiguration _config = config;
+        private readonly List<Exception> _recentErrors = [];
         private readonly object _lock = new();
 
         public string PluginId => _pluginId;
@@ -271,13 +271,6 @@ namespace DotCompute.Plugins.Recovery
         public DateTimeOffset LastError { get; private set; } = DateTimeOffset.MinValue;
         public DateTimeOffset LastRestart { get; private set; } = DateTimeOffset.MinValue;
         public DateTimeOffset LastSuccessfulOperation { get; private set; } = DateTimeOffset.UtcNow;
-
-        public PluginHealthState(string pluginId, PluginRecoveryConfiguration config)
-        {
-            _pluginId = pluginId;
-            _config = config;
-            _recentErrors = [];
-        }
 
         public void RecordError(Exception error)
         {
@@ -365,7 +358,7 @@ namespace DotCompute.Plugins.Recovery
         {
             lock (_lock)
             {
-                return new List<Exception>(_recentErrors);
+                return [.. _recentErrors];
             }
         }
 
@@ -568,7 +561,7 @@ namespace DotCompute.Plugins.Recovery
         /// Gets critical plugins that need immediate attention
         /// </summary>
         public List<PluginHealthInfo> GetCriticalPlugins()
-            => PluginHealths.Where(p => !p.IsHealthy && p.ConsecutiveFailures > 5).ToList();
+            => [.. PluginHealths.Where(p => !p.IsHealthy && p.ConsecutiveFailures > 5)];
 
         /// <summary>
         /// Gets summary statistics

@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {
@@ -171,7 +170,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             }
             
             // Compute Padé approximation
-            var result = await ComputePadeApproximation(scaledMatrix, accelerator, cancellationToken).ConfigureAwait(false);
+            var result = await ComputePadeApproximationAsync(scaledMatrix, accelerator, cancellationToken).ConfigureAwait(false);
             
             // Square the result s times to undo scaling
             for (var i = 0; i < s; i++)
@@ -295,10 +294,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <param name="accelerator">Compute accelerator for GPU acceleration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The matrix square root.</returns>
-        public static async Task<Matrix> MatrixSquareRootAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default)
-        {
-            return await MatrixPowerAsync(matrix, 0.5f, accelerator, cancellationToken).ConfigureAwait(false);
-        }
+        public static async Task<Matrix> MatrixSquareRootAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default) => await MatrixPowerAsync(matrix, 0.5f, accelerator, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Computes the matrix sign function using the Newton iteration.
@@ -351,7 +347,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         }
 
         // Private helper methods
-        private static async Task<Matrix> ComputePadeApproximation(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
+        private static async Task<Matrix> ComputePadeApproximationAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
         {
             var n = matrix.Rows;
             var identity = Matrix.Identity(n);
@@ -368,7 +364,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             }
             
             // Numerator coefficients for (6,6) Padé approximation
-            float[] c = { 1.0f, 1.0f, 0.5f, 1.0f/6.0f, 1.0f/24.0f, 1.0f/120.0f, 1.0f/720.0f };
+            float[] c = [1.0f, 1.0f, 0.5f, 1.0f/6.0f, 1.0f/24.0f, 1.0f/120.0f, 1.0f/720.0f];
             
             // Compute numerator
             var numerator = new Matrix(n, n);

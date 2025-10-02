@@ -308,10 +308,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
     /// <summary>
     /// Gets effectiveness metrics for all recovery strategies
     /// </summary>
-    public Dictionary<string, StrategyEffectiveness> GetStrategyEffectiveness()
-    {
-        return _strategyMetrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public Dictionary<string, StrategyEffectiveness> GetStrategyEffectiveness() => _strategyMetrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Gets the most effective strategy for a specific plugin based on historical data

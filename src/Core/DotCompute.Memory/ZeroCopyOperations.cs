@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Buffers;
-using global::System.IO.MemoryMappedFiles;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Buffers;
+using System.IO.MemoryMappedFiles;
 
 namespace DotCompute.Memory;
 
@@ -29,16 +29,15 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length)
-    {
+    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length) =>
 #if DEBUG
-        return source.Slice(offset, length);
+        source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset), 
             length);
 #endif
-    }
+
 
     /// <summary>
     /// Creates a zero-copy read-only slice without bounds checking in release builds.
@@ -49,16 +48,15 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced read-only span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length)
-    {
+    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length) =>
 #if DEBUG
-        return source.Slice(offset, length);
+        source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset), 
             length);
 #endif
-    }
+
 
     /// <summary>
     /// Reinterprets a span as a different type without copying.
@@ -72,10 +70,7 @@ public static class ZeroCopyOperations
 
         where TFrom : unmanaged
 
-        where TTo : unmanaged
-    {
-        return MemoryMarshal.Cast<TFrom, TTo>(source);
-    }
+        where TTo : unmanaged => MemoryMarshal.Cast<TFrom, TTo>(source);
 
     /// <summary>
     /// Reinterprets a read-only span as a different type without copying.
@@ -89,10 +84,7 @@ public static class ZeroCopyOperations
 
         where TFrom : unmanaged
 
-        where TTo : unmanaged
-    {
-        return MemoryMarshal.Cast<TFrom, TTo>(source);
-    }
+        where TTo : unmanaged => MemoryMarshal.Cast<TFrom, TTo>(source);
 
     /// <summary>
     /// Gets a reference to the first element of a span for unsafe operations.
@@ -101,10 +93,7 @@ public static class ZeroCopyOperations
     /// <param name="span">Source span.</param>
     /// <returns>Reference to the first element.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetReference<T>(this Span<T> span)
-    {
-        return ref MemoryMarshal.GetReference(span);
-    }
+    public static ref T GetReference<T>(this Span<T> span) => ref MemoryMarshal.GetReference(span);
 
     /// <summary>
     /// Gets a read-only reference to the first element of a span.
@@ -113,10 +102,7 @@ public static class ZeroCopyOperations
     /// <param name="span">Source span.</param>
     /// <returns>Read-only reference to the first element.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref readonly T GetReference<T>(this ReadOnlySpan<T> span)
-    {
-        return ref MemoryMarshal.GetReference(span);
-    }
+    public static ref readonly T GetReference<T>(this ReadOnlySpan<T> span) => ref MemoryMarshal.GetReference(span);
 
     /// <summary>
     /// Creates a span from a pointer and length with proper lifetime management.
@@ -126,10 +112,7 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Span wrapping the pointer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe Span<T> CreateSpan<T>(void* pointer, int length) where T : unmanaged
-    {
-        return new Span<T>(pointer, length);
-    }
+    public static unsafe Span<T> CreateSpan<T>(void* pointer, int length) where T : unmanaged => new(pointer, length);
 
     /// <summary>
     /// Creates a read-only span from a pointer and length.
@@ -139,10 +122,7 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Read-only span wrapping the pointer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe ReadOnlySpan<T> CreateReadOnlySpan<T>(void* pointer, int length) where T : unmanaged
-    {
-        return new ReadOnlySpan<T>(pointer, length);
-    }
+    public static unsafe ReadOnlySpan<T> CreateReadOnlySpan<T>(void* pointer, int length) where T : unmanaged => new(pointer, length);
 
     /// <summary>
     /// Copies data between spans using the fastest available method.
@@ -294,10 +274,7 @@ public static class MemoryMappedOperations
     public static MemoryMappedSpan<T> CreateMemoryMappedSpan<T>(
         string filePath,
 
-        MemoryMappedFileAccess access = MemoryMappedFileAccess.Read) where T : unmanaged
-    {
-        return new MemoryMappedSpan<T>(filePath, access);
-    }
+        MemoryMappedFileAccess access = MemoryMappedFileAccess.Read) where T : unmanaged => new(filePath, access);
 }
 
 /// <summary>
@@ -398,10 +375,7 @@ public static class PinnedMemoryOperations
     /// <typeparam name="T">Element type.</typeparam>
     /// <param name="span">Span to pin.</param>
     /// <returns>Pinned memory handle.</returns>
-    public static PinnedMemoryHandle<T> Pin<T>(this Span<T> span) where T : unmanaged
-    {
-        return new PinnedMemoryHandle<T>(span);
-    }
+    public static PinnedMemoryHandle<T> Pin<T>(this Span<T> span) where T : unmanaged => new(span);
 
     /// <summary>
     /// Creates a pinned memory handle for a read-only span.
@@ -409,10 +383,7 @@ public static class PinnedMemoryOperations
     /// <typeparam name="T">Element type.</typeparam>
     /// <param name="span">Span to pin.</param>
     /// <returns>Pinned memory handle.</returns>
-    public static PinnedMemoryHandle<T> Pin<T>(this ReadOnlySpan<T> span) where T : unmanaged
-    {
-        return new PinnedMemoryHandle<T>(span);
-    }
+    public static PinnedMemoryHandle<T> Pin<T>(this ReadOnlySpan<T> span) where T : unmanaged => new(span);
 }
 
 /// <summary>
@@ -441,10 +412,7 @@ public readonly struct PinnedMemoryHandle<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the pinned pointer as IntPtr.
     /// </summary>
-    public unsafe IntPtr IntPtr => new IntPtr(_handle.Pointer);
+    public unsafe IntPtr IntPtr => new(_handle.Pointer);
 
-    public void Dispose()
-    {
-        _handle.Dispose();
-    }
+    public void Dispose() => _handle.Dispose();
 }

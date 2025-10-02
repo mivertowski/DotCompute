@@ -19,7 +19,6 @@ public sealed class MetricsCollector : IDisposable
     private readonly ConcurrentQueue<MemoryOperation> _memoryOperations;
     private readonly ConcurrentQueue<PerformanceSnapshot> _performanceSnapshots;
     private readonly Timer _collectionTimer;
-    private readonly object _lockObject = new();
     private volatile bool _disposed;
 
     // Performance counters

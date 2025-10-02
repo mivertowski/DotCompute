@@ -376,8 +376,8 @@ public sealed class MemoryStatistics
 /// </summary>
 public sealed class MemoryPool : IDisposable
 {
-    private readonly Microsoft.Extensions.Logging.ILogger _logger;
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<long, System.Collections.Generic.Queue<IntPtr>> _pools = new();
+    private readonly ILogger _logger;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<long, Queue<nint>> _pools = new();
     private readonly Timer _cleanupTimer;
     private readonly MemoryStatistics _poolStatistics = new();
     private bool _disposed;
@@ -391,7 +391,7 @@ public sealed class MemoryPool : IDisposable
     /// Creates a new memory pool with periodic cleanup.
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
-    public MemoryPool(Microsoft.Extensions.Logging.ILogger logger)
+    public MemoryPool(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cleanupTimer = new Timer(PerformCleanup, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
@@ -406,7 +406,7 @@ public sealed class MemoryPool : IDisposable
     /// <param name="options">Memory options (currently unused).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A pooled buffer handle, or null if none available.</returns>
-    public ValueTask<IntPtr?> TryGetBufferAsync(long size, DotCompute.Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken)
+    public ValueTask<IntPtr?> TryGetBufferAsync(long size, Abstractions.Memory.MemoryOptions options, CancellationToken cancellationToken)
     {
         if (_disposed)
         {
@@ -448,7 +448,7 @@ public sealed class MemoryPool : IDisposable
         }
 
         var poolSize = RoundToPowerOfTwo(size);
-        var queue = _pools.GetOrAdd(poolSize, _ => new System.Collections.Generic.Queue<IntPtr>());
+        var queue = _pools.GetOrAdd(poolSize, _ => new Queue<nint>());
 
         lock (queue)
         {

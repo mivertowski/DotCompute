@@ -13,7 +13,7 @@ using System.Diagnostics;
 using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
 using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics;
-using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
 using KernelChainValidationResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainValidationResult;
 
 namespace DotCompute.Core.Pipelines
@@ -22,18 +22,33 @@ namespace DotCompute.Core.Pipelines
     /// Implementation of the fluent kernel chain builder that leverages existing DotCompute pipeline infrastructure.
     /// This class provides the core functionality for building and executing kernel chains with method chaining syntax.
     /// </summary>
-    public sealed class KernelChainBuilder : IKernelChainBuilder
+    /// <remarks>
+    /// Initializes a new instance of the KernelChainBuilder class.
+    /// </remarks>
+    /// <param name="orchestrator">The compute orchestrator for kernel execution</param>
+    /// <param name="kernelResolver">Optional kernel resolver for name-to-kernel mapping</param>
+    /// <param name="profiler">Optional profiler for performance monitoring</param>
+    /// <param name="validator">Optional validator for chain validation</param>
+    /// <param name="cacheService">Optional cache service for result caching</param>
+    /// <param name="logger">Optional logger for diagnostic information</param>
+    public sealed class KernelChainBuilder(
+        IComputeOrchestrator orchestrator,
+        IKernelResolver? kernelResolver = null,
+        IKernelChainProfiler? profiler = null,
+        IKernelChainValidator? validator = null,
+        IKernelChainCacheService? cacheService = null,
+        ILogger<KernelChainBuilder>? logger = null) : IKernelChainBuilder
     {
-        private readonly IComputeOrchestrator _orchestrator;
-        private readonly IKernelResolver? _kernelResolver;
-        private readonly IKernelChainProfiler? _profiler;
-        private readonly IKernelChainValidator? _validator;
-        private readonly IKernelChainCacheService? _cacheService;
-        private readonly ILogger<KernelChainBuilder>? _logger;
+        private readonly IComputeOrchestrator _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        private readonly IKernelResolver? _kernelResolver = kernelResolver;
+        private readonly IKernelChainProfiler? _profiler = profiler;
+        private readonly IKernelChainValidator? _validator = validator;
+        private readonly IKernelChainCacheService? _cacheService = cacheService;
+        private readonly ILogger<KernelChainBuilder>? _logger = logger;
 
-        private readonly List<KernelChainStep> _steps;
-        private readonly Dictionary<string, object> _context;
-        private readonly List<Func<Exception, ErrorHandlingStrategy>> _errorHandlers;
+        private readonly List<KernelChainStep> _steps = [];
+        private readonly Dictionary<string, object> _context = [];
+        private readonly List<Func<Exception, ErrorHandlingStrategy>> _errorHandlers = [];
 
         private string? _preferredBackend;
         private IAccelerator? _preferredAccelerator;
@@ -42,35 +57,6 @@ namespace DotCompute.Core.Pipelines
         private TimeSpan? _timeout;
         private bool _validationEnabled = true;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the KernelChainBuilder class.
-        /// </summary>
-        /// <param name="orchestrator">The compute orchestrator for kernel execution</param>
-        /// <param name="kernelResolver">Optional kernel resolver for name-to-kernel mapping</param>
-        /// <param name="profiler">Optional profiler for performance monitoring</param>
-        /// <param name="validator">Optional validator for chain validation</param>
-        /// <param name="cacheService">Optional cache service for result caching</param>
-        /// <param name="logger">Optional logger for diagnostic information</param>
-        public KernelChainBuilder(
-            IComputeOrchestrator orchestrator,
-            IKernelResolver? kernelResolver = null,
-            IKernelChainProfiler? profiler = null,
-            IKernelChainValidator? validator = null,
-            IKernelChainCacheService? cacheService = null,
-            ILogger<KernelChainBuilder>? logger = null)
-        {
-            _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
-            _kernelResolver = kernelResolver;
-            _profiler = profiler;
-            _validator = validator;
-            _cacheService = cacheService;
-            _logger = logger;
-
-            _steps = [];
-            _context = [];
-            _errorHandlers = [];
-        }
 
         /// <inheritdoc/>
         public IKernelChainBuilder Kernel(string kernelName, params object[] args)
@@ -93,10 +79,7 @@ namespace DotCompute.Core.Pipelines
         }
 
         /// <inheritdoc/>
-        public IKernelChainBuilder Then(string kernelName, params object[] args)
-        {
-            return Kernel(kernelName, args);
-        }
+        public IKernelChainBuilder Then(string kernelName, params object[] args) => Kernel(kernelName, args);
 
         /// <inheritdoc/>
         public IKernelChainBuilder Parallel(params (string kernelName, object[] args)[] kernels)
@@ -115,14 +98,14 @@ namespace DotCompute.Core.Pipelines
                 Type = KernelChainStepType.Parallel,
                 StepId = Guid.NewGuid().ToString(),
                 ExecutionOrder = _steps.Count,
-                ParallelKernels = kernels.Select((k, i) => new KernelChainStep
+                ParallelKernels = [.. kernels.Select((k, i) => new KernelChainStep
                 {
                     Type = KernelChainStepType.Sequential,
                     KernelName = k.kernelName,
                     Arguments = k.args,
                     StepId = Guid.NewGuid().ToString(),
                     ExecutionOrder = i
-                }).ToList()
+                })]
             };
 
             _steps.Add(parallelStep);
@@ -672,10 +655,8 @@ namespace DotCompute.Core.Pipelines
         /// Gets a fallback value for a failed step.
         /// </summary>
         private static object? GetFallbackValue(KernelChainStep step)
-        {
             // This could be enhanced to support configurable fallback values
-            return null;
-        }
+            => null;
 
         /// <summary>
         /// Determines the backend used for execution.
@@ -721,7 +702,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts Results KernelChainValidationResult to Interfaces KernelChainValidationResult
         /// </summary>
-        private static KernelChainValidationResult ConvertToInterfacesKernelChainValidationResult(DotCompute.Abstractions.Pipelines.Results.KernelChainValidationResult resultsValidation)
+        private static KernelChainValidationResult ConvertToInterfacesKernelChainValidationResult(AbstractionsMemory.Pipelines.Results.KernelChainValidationResult resultsValidation)
         {
             return new KernelChainValidationResult
             {

@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Security.Cryptography;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Security.Configuration;
@@ -36,7 +36,6 @@ public sealed class MemorySanitizer : IDisposable
     private const byte ALLOCATED_PATTERN = 0xAA;
     private const byte FREED_PATTERN = 0xDD;
     private const byte GUARD_PATTERN = 0xCC;
-    private const byte CANARY_PATTERN = 0x55;
 
     // Statistics
     private readonly SanitizerStatistics _statistics = new();

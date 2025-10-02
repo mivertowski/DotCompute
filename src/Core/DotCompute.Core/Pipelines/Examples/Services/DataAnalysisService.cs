@@ -14,8 +14,5 @@ public class DataAnalysisService
     /// </summary>
     /// <param name="data">Raw data to analyze</param>
     /// <returns>Analyzed data results</returns>
-    public static async Task<float[]> AnalyzeDataAsync(float[] data)
-    {
-        return await KernelChainExamples.ParallelDataProcessingExample(data);
-    }
+    public static async Task<float[]> AnalyzeDataAsync(float[] data) => await KernelChainExamples.ParallelDataProcessingExampleAsync(data);
 }

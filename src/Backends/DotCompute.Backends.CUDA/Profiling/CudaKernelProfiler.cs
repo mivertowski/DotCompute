@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Monitoring;
@@ -161,7 +161,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                     AchievedOccupancy = occupancy.TheoreticalOccupancy,
                     MemoryThroughputGBps = throughput.MemoryBandwidth,
                     ComputeThroughputGFLOPS = throughput.ComputePerformance,
-                    Bottleneck = new DotCompute.Abstractions.Interfaces.Kernels.BottleneckAnalysis
+                    Bottleneck = new Abstractions.Interfaces.Kernels.BottleneckAnalysis
                     {
                         Type = bottlenecks.PrimaryBottleneck switch
                         {

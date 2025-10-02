@@ -19,29 +19,18 @@ namespace DotCompute.Core.Debugging;
 /// Handles cross-backend kernel validation and verification.
 /// Provides comprehensive validation logic for ensuring kernel consistency across different backends.
 /// </summary>
-internal sealed class KernelDebugValidator : IDisposable
+internal sealed class KernelDebugValidator(
+    ILogger<KernelDebugValidator> logger,
+    ConcurrentDictionary<string, IAccelerator> accelerators,
+    KernelDebugProfiler profiler) : IDisposable
 {
-    private readonly ILogger<KernelDebugValidator> _logger;
-    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
-    private readonly KernelDebugProfiler _profiler;
-    private DebugServiceOptions _options;
+    private readonly ILogger<KernelDebugValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = accelerators ?? throw new ArgumentNullException(nameof(accelerators));
+    private readonly KernelDebugProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
+    private DebugServiceOptions _options = new();
     private bool _disposed;
 
-    public KernelDebugValidator(
-        ILogger<KernelDebugValidator> logger,
-        ConcurrentDictionary<string, IAccelerator> accelerators,
-        KernelDebugProfiler profiler)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerators = accelerators ?? throw new ArgumentNullException(nameof(accelerators));
-        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
-        _options = new DebugServiceOptions();
-    }
-
-    public void Configure(DebugServiceOptions options)
-    {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
+    public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
 
     public async Task<KernelValidationResult> ValidateKernelAsync(
         string kernelName,
@@ -77,17 +66,14 @@ internal sealed class KernelDebugValidator : IDisposable
                 {
                     KernelName = kernelName,
                     IsValid = false,
-                    BackendsTested = availableAccelerators.Keys.ToArray(),
+                    BackendsTested = [.. availableAccelerators.Keys],
                     Issues =
                     [
                         new()
                         {
-                            Severity = ValidationSeverity.Error,
+                            Severity = DebugValidationSeverity.Error,
                             Message = "No backends successfully executed the kernel",
-                            Details = new Dictionary<string, object>
-                            {
-                                ["errors"] = results.Where(r => !r.Success).ToDictionary(r => r.BackendType, r => r.ErrorMessage ?? "Unknown error")
-                            }
+                            Details = string.Join("; ", results.Select(r => $"{r.BackendType}: {r.ErrorMessage}"))
                         }
                     ],
                     ExecutionTime = stopwatch.Elapsed
@@ -111,7 +97,7 @@ internal sealed class KernelDebugValidator : IDisposable
                         {
                             Severity = DebugValidationSeverity.Error,
                             Message = $"Results differ between {successfulResults[i].BackendType} and {successfulResults[j].BackendType}",
-                            Details = new Dictionary<string, object> { ["Difference"] = comparison.Difference, ["Tolerance"] = tolerance }
+                            Details = $"Difference: {comparison.Difference:F6}, Tolerance: {tolerance:F6}"
                         });
                     }
                 }
@@ -128,14 +114,15 @@ internal sealed class KernelDebugValidator : IDisposable
                 KernelName = kernelName,
                 IsValid = isValid,
                 BackendsTested = successfulResults.Select(r => r.BackendType).ToArray(),
-                Results = successfulResults.ToDictionary(r => r.BackendType, r => (object)r),
+                Results = successfulResults,
+                Comparisons = comparisonResults,
                 Issues = issues,
                 ExecutionTime = stopwatch.Elapsed
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during kernel validation");
+            _logger.LogErrorMessage(ex, "Error during kernel validation");
             return new KernelValidationResult
             {
                 KernelName = kernelName,
@@ -145,13 +132,9 @@ internal sealed class KernelDebugValidator : IDisposable
                 [
                     new()
                     {
-                        Severity = ValidationSeverity.Error,
+                        Severity = DebugValidationSeverity.Error,
                         Message = "Validation failed with exception",
-                        Details = new Dictionary<string, object>
-                        {
-                            ["exception"] = ex.Message,
-                            ["stackTrace"] = ex.StackTrace ?? "No stack trace available"
-                        }
+                        Details = ex.Message
                     }
                 ],
                 ExecutionTime = stopwatch.Elapsed
@@ -197,14 +180,13 @@ internal sealed class KernelDebugValidator : IDisposable
             var result = await _profiler.ExecuteWithProfilingAsync(kernelName, backendType, inputs, accelerator);
 
             stopwatch.Stop();
-            // ExecutionTime is init-only, create new result with correct time
-            result = result with { ExecutionTime = stopwatch.Elapsed };
+            result.ExecutionTime = stopwatch.Elapsed;
             return result;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error executing kernel {kernelName} on {backendType}", kernelName, backendType);
+            _logger.LogErrorMessage(ex, "Error executing kernel {kernelName} on {backendType}", kernelName, backendType);
 
             return new KernelExecutionResult
             {
@@ -326,14 +308,9 @@ internal sealed class KernelDebugValidator : IDisposable
         {
             issues.Add(new DebugValidationIssue
             {
-                Severity = ValidationSeverity.Warning,
+                Severity = DebugValidationSeverity.Warning,
                 Message = "Significant performance variation detected across backends",
-                Details = new Dictionary<string, object>
-                {
-                    ["averageMs"] = average,
-                    ["maxDeviationMs"] = maxDeviation,
-                    ["summary"] = $"Average: {average:F2}ms, Max deviation: {maxDeviation:F2}ms"
-                }
+                Details = $"Average: {average:F2}ms, Max deviation: {maxDeviation:F2}ms"
             });
         }
 
@@ -367,7 +344,6 @@ internal sealed class KernelDebugValidator : IDisposable
 
     private async Task<IAccelerator?> GetOrCreateAcceleratorAsync(string backendType)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (_accelerators.TryGetValue(backendType, out var existing))
         {
             return existing;
@@ -382,7 +358,7 @@ internal sealed class KernelDebugValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to create accelerator for backend {backendType}");
+            _logger.LogErrorMessage(ex, "Failed to create accelerator for backend {backendType}", backendType);
             return null;
         }
     }

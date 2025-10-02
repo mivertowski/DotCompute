@@ -75,10 +75,7 @@ internal abstract class TransferOperation
     /// Validates that the operation can be executed with the current configuration.
     /// </summary>
     /// <returns>True if the operation is valid and can be executed; otherwise, false.</returns>
-    public virtual bool Validate()
-    {
-        return true;
-    }
+    public virtual bool Validate() => true;
 
     /// <summary>
     /// Estimates the resource requirements for this operation.

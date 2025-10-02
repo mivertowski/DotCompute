@@ -404,17 +404,11 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 /// <summary>
 /// Unmanaged memory manager for CPU memory buffers.
 /// </summary>
-internal unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where T : unmanaged
+internal unsafe class UnmanagedMemoryManager<T>(T* pointer, int length) : MemoryManager<T> where T : unmanaged
 {
-    private readonly T* _pointer;
-    private readonly int _length;
+    private readonly T* _pointer = pointer;
+    private readonly int _length = length;
     private bool _disposed;
-
-    public UnmanagedMemoryManager(T* pointer, int length)
-    {
-        _pointer = pointer;
-        _length = length;
-    }
 
     public override Span<T> GetSpan()
     {

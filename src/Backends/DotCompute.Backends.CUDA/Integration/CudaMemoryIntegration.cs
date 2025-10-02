@@ -34,7 +34,7 @@ public sealed class CudaMemoryIntegration : IDisposable
 
         _memoryManager = new CudaMemoryManager(context, logger);
         _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
-        _bufferRegistry = new Dictionary<IntPtr, CudaBufferInfo>();
+        _bufferRegistry = [];
 
         // Set up memory monitoring
         _memoryMonitorTimer = new Timer(MonitorMemory, null,

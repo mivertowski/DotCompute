@@ -11,18 +11,11 @@ namespace DotCompute.Runtime.DependencyInjection.Scopes;
 /// <summary>
 /// Scoped service provider wrapper for plugins.
 /// </summary>
-internal sealed class PluginScopedServiceProvider : IServiceProvider
+internal sealed class PluginScopedServiceProvider(IServiceScope scope, Assembly pluginAssembly, ILogger logger) : IServiceProvider
 {
-    private readonly IServiceScope _scope;
-    private readonly Assembly _pluginAssembly;
-    private readonly ILogger _logger;
-
-    public PluginScopedServiceProvider(IServiceScope scope, Assembly pluginAssembly, ILogger logger)
-    {
-        _scope = scope ?? throw new ArgumentNullException(nameof(scope));
-        _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IServiceScope _scope = scope ?? throw new ArgumentNullException(nameof(scope));
+    private readonly Assembly _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public object? GetService(Type serviceType)
     {

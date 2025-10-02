@@ -54,7 +54,7 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(PinnedMemoryManager<T>));
+            throw new ObjectDisposedException(nameof(PinnedMemoryManager<>));
         }
 
 
@@ -71,7 +71,7 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
         if (_disposed)
         {
 
-            throw new ObjectDisposedException(nameof(PinnedMemoryManager<T>));
+            throw new ObjectDisposedException(nameof(PinnedMemoryManager<>));
         }
 
 

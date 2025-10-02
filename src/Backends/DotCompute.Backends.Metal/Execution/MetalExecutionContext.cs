@@ -814,19 +814,11 @@ public sealed class MetalHealthCheckResult
 /// <summary>
 /// Performance metrics collector
 /// </summary>
-internal sealed class MetalPerformanceCollector : IDisposable
+internal sealed class MetalPerformanceCollector(ILogger logger, MetalExecutionContextOptions options) : IDisposable
 {
-    private readonly ILogger _logger;
-    private readonly MetalExecutionContextOptions _options;
-    private readonly ConcurrentDictionary<string, object> _metrics;
+    private readonly MetalExecutionContextOptions _options = options;
+    private readonly ConcurrentDictionary<string, object> _metrics = new();
     private volatile bool _disposed;
-
-    public MetalPerformanceCollector(ILogger logger, MetalExecutionContextOptions options)
-    {
-        _logger = logger;
-        _options = options;
-        _metrics = new ConcurrentDictionary<string, object>();
-    }
 
     public void RecordOperation(string operationId, double durationMs, bool success)
     {
@@ -865,10 +857,7 @@ internal sealed class MetalPerformanceCollector : IDisposable
         _ = _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
     }
 
-    public Dictionary<string, object> GetMetrics()
-    {
-        return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public Dictionary<string, object> GetMetrics() => _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     public static void PerformMaintenance()
     {

@@ -44,10 +44,7 @@ public sealed class CudaKernelCache : IDisposable
     /// <param name="key">The cache key.</param>
     /// <param name="kernel">The cached kernel if found.</param>
     /// <returns>True if found; otherwise, false.</returns>
-    public bool TryGetKernel(string key, out ICompiledKernel? kernel)
-    {
-        return _cache.TryGetValue(key, out kernel);
-    }
+    public bool TryGetKernel(string key, out ICompiledKernel? kernel) => _cache.TryGetValue(key, out kernel);
 
     /// <summary>
     /// Adds or updates a kernel in the cache.
@@ -69,18 +66,12 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     /// <param name="key">The cache key.</param>
     /// <returns>True if removed; otherwise, false.</returns>
-    public bool RemoveKernel(string key)
-    {
-        return _cache.TryRemove(key, out _);
-    }
+    public bool RemoveKernel(string key) => _cache.TryRemove(key, out _);
 
     /// <summary>
     /// Clears all cached kernels.
     /// </summary>
-    public void Clear()
-    {
-        _cache.Clear();
-    }
+    public void Clear() => _cache.Clear();
 
     /// <summary>
     /// Gets the number of cached kernels.
@@ -119,29 +110,16 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     /// <param name="profile">Workload profile for optimization.</param>
     public void OptimizeForWorkload(object profile)
-    {
         // Basic implementation - could be enhanced with workload-specific optimization
-        _logger?.LogDebug("Optimizing cache for workload profile");
-
-        // In a full implementation, this would:
-        // - Analyze workload patterns
-        // - Evict less-used kernels
-        // - Pre-compile frequently used kernels
-        // - Adjust cache size based on workload
-    }
+        => _logger?.LogDebug("Optimizing cache for workload profile");// In a full implementation, this would:// - Analyze workload patterns// - Evict less-used kernels// - Pre-compile frequently used kernels// - Adjust cache size based on workload
 
     /// <summary>
     /// Performs cleanup of unused kernels from the cache.
     /// </summary>
     public void Cleanup()
-    {
         // Basic cleanup - remove old or unused entries
         // In a full implementation, this would use LRU or other eviction strategies
-        _logger?.LogDebug("Performing cache cleanup. Current size: {Count}", Count);
-
-        // For now, we'll keep all entries as we don't have access tracking
-        // A full implementation would track access times and remove stale entries
-    }
+        => _logger?.LogDebug("Performing cache cleanup. Current size: {Count}", Count);// For now, we'll keep all entries as we don't have access tracking// A full implementation would track access times and remove stale entries
 
     /// <summary>
     /// Disposes the cache and releases resources.

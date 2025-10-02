@@ -11,10 +11,6 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ResourceTracker : IAsyncDisposable
 {
-    private readonly ILogger _logger;
-    private readonly Dictionary<string, DeviceResourceUsage> _deviceUsage;
-    private bool _disposed;
-
     public ResourceTracker(ILogger logger)
     {
         _logger = logger;

@@ -198,10 +198,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "Map method returns a disposable object for caller to manage")]
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost()
     {
@@ -523,10 +520,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     /// <summary>
     /// Resets the operation counter.
     /// </summary>
-    public void ResetOperationCount()
-    {
-        _operationCount = 0;
-    }
+    public void ResetOperationCount() => _operationCount = 0;
 
     /// <summary>
     /// Simulates a memory corruption for testing error handling.
@@ -599,10 +593,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     #endregion
 
@@ -964,10 +955,7 @@ public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanage
         return ValueTask.CompletedTask;
     }
 
-    public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
-    {
-        return destination.CopyFromAsync(_memory, cancellationToken);
-    }
+    public override ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => destination.CopyFromAsync(_memory, cancellationToken);
 
     public override ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {

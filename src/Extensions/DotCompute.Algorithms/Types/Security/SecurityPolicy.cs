@@ -10,20 +10,15 @@ namespace DotCompute.Algorithms.Types.Security;
 /// <summary>
 /// Security policy for algorithm plugin loading and execution.
 /// </summary>
-public class SecurityPolicy
+/// <remarks>
+/// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
+/// </remarks>
+/// <param name="logger">Optional logger for diagnostics.</param>
+public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
 {
-    private readonly ILogger<SecurityPolicy>? _logger;
+    private readonly ILogger<SecurityPolicy>? _logger = logger;
     private readonly Dictionary<string, ISecurityRule> _securityRules = [];
     private readonly HashSet<string> _trustedPublishers = [];
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
-    /// </summary>
-    /// <param name="logger">Optional logger for diagnostics.</param>
-    public SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// Gets or sets whether digital signatures are required.
@@ -360,18 +355,13 @@ public interface ISecurityRule
 /// <summary>
 /// Security rule that checks file size limits.
 /// </summary>
-public class FileSizeSecurityRule : ISecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
+/// </remarks>
+/// <param name="maxSizeBytes">Maximum allowed file size in bytes.</param>
+public class FileSizeSecurityRule(long maxSizeBytes) : ISecurityRule
 {
-    private readonly long _maxSizeBytes;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
-    /// </summary>
-    /// <param name="maxSizeBytes">Maximum allowed file size in bytes.</param>
-    public FileSizeSecurityRule(long maxSizeBytes)
-    {
-        _maxSizeBytes = maxSizeBytes;
-    }
+    private readonly long _maxSizeBytes = maxSizeBytes;
 
     /// <inheritdoc/>
     public SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)

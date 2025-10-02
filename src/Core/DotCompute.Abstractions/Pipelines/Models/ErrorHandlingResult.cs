@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Pipelines.Models;
@@ -191,20 +190,14 @@ public sealed class ErrorHandlingResult
     /// Adds a recovery suggestion to the result.
     /// </summary>
     /// <param name="suggestion">The recovery suggestion to add</param>
-    public void AddRecoverySuggestion(string suggestion)
-    {
-        RecoverySuggestions.Add(suggestion);
-    }
+    public void AddRecoverySuggestion(string suggestion) => RecoverySuggestions.Add(suggestion);
 
     /// <summary>
     /// Adds metadata to the error handling result.
     /// </summary>
     /// <param name="key">The metadata key</param>
     /// <param name="value">The metadata value</param>
-    public void AddMetadata(string key, object value)
-    {
-        Metadata[key] = value;
-    }
+    public void AddMetadata(string key, object value) => Metadata[key] = value;
 }
 
 /// <summary>

@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.ComponentModel;
 using DotCompute.Abstractions.Execution;
-using DotCompute.Abstractions.Memory;
 
 #pragma warning disable CS0246 // Type or namespace name not found (incomplete pipeline types)
 
@@ -65,7 +63,7 @@ public class PipelineStageOptions
     public MemoryAllocationHints? MemoryHints { get; set; }
     
     /// <summary>Custom metadata for stage configuration.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
     
     /// <summary>Whether to enable detailed profiling for this stage.</summary>
     public bool EnableProfiling { get; set; } = false;
@@ -217,7 +215,7 @@ public enum ErrorHandlingStrategy
 public class ResourceAllocationPreferences
 {
     /// <summary>Preferred compute backends in order of preference.</summary>
-    public List<string> PreferredBackends { get; set; } = new();
+    public List<string> PreferredBackends { get; set; } = [];
     
     /// <summary>Maximum memory usage for the pipeline.</summary>
     public long? MaxMemoryUsage { get; set; }
@@ -449,13 +447,13 @@ public class PipelineEvent
     public string Message { get; set; } = string.Empty;
 
     /// <summary>Additional event data.</summary>
-    public Dictionary<string, object> Data { get; set; } = new();
+    public Dictionary<string, object> Data { get; set; } = [];
 
     /// <summary>Stage identifier associated with the event (if applicable).</summary>
     public string? StageId { get; set; }
 
     /// <summary>Additional event metadata.</summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -485,7 +483,7 @@ public class PipelineExecutionCompletedEvent : PipelineEvent
     public string? ResultSummary { get; set; }
     
     /// <summary>Any exceptions that occurred.</summary>
-    public List<Exception> Exceptions { get; set; } = new();
+    public List<Exception> Exceptions { get; set; } = [];
 }
 
 /// <summary>
@@ -694,10 +692,10 @@ public class OptimizationConstraints
     public int? MaxCpuCores { get; set; }
     
     /// <summary>Backends that are not allowed for execution.</summary>
-    public HashSet<string> DisallowedBackends { get; set; } = new();
+    public HashSet<string> DisallowedBackends { get; set; } = [];
     
     /// <summary>Backends that must be used if available.</summary>
-    public HashSet<string> RequiredBackends { get; set; } = new();
+    public HashSet<string> RequiredBackends { get; set; } = [];
     
     /// <summary>Whether optimization can modify pipeline structure.</summary>
     public bool AllowStructuralChanges { get; set; } = true;
@@ -728,25 +726,16 @@ public abstract class CachePolicy
 /// <summary>
 /// LRU (Least Recently Used) cache policy implementation.
 /// </summary>
-public class LRUCachePolicy : CachePolicy
+public class LRUCachePolicy(int maxSize, TimeSpan? maxAge = null) : CachePolicy
 {
     /// <summary>Maximum number of items to keep in cache.</summary>
-    public int MaxSize { get; }
-    
+    public int MaxSize { get; } = maxSize;
+
     /// <summary>Maximum age for cached items.</summary>
-    public TimeSpan? MaxAge { get; }
-    
-    public LRUCachePolicy(int maxSize, TimeSpan? maxAge = null)
-    {
-        MaxSize = maxSize;
-        MaxAge = maxAge;
-    }
-    
-    public override bool ShouldEvict(ICacheEntry entry)
-    {
-        return MaxAge.HasValue && DateTimeOffset.UtcNow - entry.CreatedAt > MaxAge.Value;
-    }
-    
+    public TimeSpan? MaxAge { get; } = maxAge;
+
+    public override bool ShouldEvict(ICacheEntry entry) => MaxAge.HasValue && DateTimeOffset.UtcNow - entry.CreatedAt > MaxAge.Value;
+
     public override int GetEvictionPriority(ICacheEntry entry)
     {
         var timeSinceAccess = DateTimeOffset.UtcNow - entry.LastAccessedAt;
@@ -757,21 +746,13 @@ public class LRUCachePolicy : CachePolicy
 /// <summary>
 /// Time-to-live cache policy implementation.
 /// </summary>
-public class TTLCachePolicy : CachePolicy
+public class TTLCachePolicy(TimeSpan timeToLive) : CachePolicy
 {
     /// <summary>Time-to-live for cached items.</summary>
-    public TimeSpan TimeToLive { get; }
-    
-    public TTLCachePolicy(TimeSpan timeToLive)
-    {
-        TimeToLive = timeToLive;
-    }
-    
-    public override bool ShouldEvict(ICacheEntry entry)
-    {
-        return DateTimeOffset.UtcNow - entry.CreatedAt > TimeToLive;
-    }
-    
+    public TimeSpan TimeToLive { get; } = timeToLive;
+
+    public override bool ShouldEvict(ICacheEntry entry) => DateTimeOffset.UtcNow - entry.CreatedAt > TimeToLive;
+
     public override int GetEvictionPriority(ICacheEntry entry)
     {
         var timeUntilExpiry = TimeToLive - (DateTimeOffset.UtcNow - entry.CreatedAt);

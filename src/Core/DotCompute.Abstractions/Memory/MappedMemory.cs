@@ -7,15 +7,18 @@ namespace DotCompute.Abstractions.Memory
     /// Represents a mapped memory region that provides direct access to buffer memory.
     /// </summary>
     /// <typeparam name="T">The element type of the mapped memory.</typeparam>
-    public sealed class MappedMemory<T> : IDisposable where T : unmanaged
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="MappedMemory{T}"/> class.
+    /// </remarks>
+    public sealed class MappedMemory<T>(Memory<T> memory, Action? unmapAction = null) : IDisposable where T : unmanaged
     {
-        private readonly Action? _unmapAction;
+        private readonly Action? _unmapAction = unmapAction;
         private bool _disposed;
 
         /// <summary>
         /// Gets the memory span for the mapped region.
         /// </summary>
-        public Memory<T> Memory { get; }
+        public Memory<T> Memory { get; } = memory;
 
         /// <summary>
         /// Gets the span for the mapped region.
@@ -31,15 +34,6 @@ namespace DotCompute.Abstractions.Memory
         /// Gets whether this mapped memory is valid.
         /// </summary>
         public bool IsValid => !_disposed && Memory.Length > 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MappedMemory{T}"/> class.
-        /// </summary>
-        public MappedMemory(Memory<T> memory, Action? unmapAction = null)
-        {
-            Memory = memory;
-            _unmapAction = unmapAction;
-        }
 
         /// <summary>
         /// Creates an invalid mapped memory instance.

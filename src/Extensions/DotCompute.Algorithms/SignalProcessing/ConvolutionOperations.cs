@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 // using DotCompute.Core.Types; // Commented out missing namespace
@@ -13,49 +11,39 @@ using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument
 namespace DotCompute.Algorithms.SignalProcessing
 {
 
-/// <summary>
-/// Provides GPU-accelerated convolution operations for signal processing and deep learning.
-/// Supports 1D, 2D, and 3D convolutions with various optimization strategies.
-/// </summary>
-public sealed class ConvolutionOperations : IDisposable
-{
-    private readonly KernelManager _kernelManager;
-    private readonly IAccelerator _accelerator;
-    private readonly ILogger<ConvolutionOperations>? _logger;
-    private readonly ConvolutionStrategy _defaultStrategy;
-    private bool _disposed;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConvolutionOperations"/> class.
+    /// Provides GPU-accelerated convolution operations for signal processing and deep learning.
+    /// Supports 1D, 2D, and 3D convolutions with various optimization strategies.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ConvolutionOperations"/> class.
+    /// </remarks>
     /// <param name="kernelManager">The kernel manager for GPU operations.</param>
     /// <param name="accelerator">The GPU accelerator to use.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <param name="defaultStrategy">Default optimization strategy.</param>
-    public ConvolutionOperations(
-        KernelManager kernelManager,
-        IAccelerator accelerator,
-        ILogger<ConvolutionOperations>? logger = null,
-        ConvolutionStrategy defaultStrategy = ConvolutionStrategy.Auto)
-    {
-        _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        _logger = logger;
-        _defaultStrategy = defaultStrategy;
-    }
+    public sealed class ConvolutionOperations(
+    KernelManager kernelManager,
+    IAccelerator accelerator,
+    ILogger<ConvolutionOperations>? logger = null,
+    ConvolutionStrategy defaultStrategy = ConvolutionStrategy.Auto) : IDisposable
+{
+    private readonly KernelManager _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        private bool _disposed;
 
-    #region 1D Convolution
+        #region 1D Convolution
 
-    /// <summary>
-    /// Performs 1D convolution using GPU acceleration.
-    /// </summary>
-    /// <param name="signal">Input signal data.</param>
-    /// <param name="kernel">Convolution kernel.</param>
-    /// <param name="padding">Padding strategy.</param>
-    /// <param name="strategy">Optimization strategy to use.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Convolution result.</returns>
-    public async ValueTask<float[]> Convolve1DAsync(
+        /// <summary>
+        /// Performs 1D convolution using GPU acceleration.
+        /// </summary>
+        /// <param name="signal">Input signal data.</param>
+        /// <param name="kernel">Convolution kernel.</param>
+        /// <param name="padding">Padding strategy.</param>
+        /// <param name="strategy">Optimization strategy to use.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Convolution result.</returns>
+        public async ValueTask<float[]> Convolve1DAsync(
         float[] signal,
         float[] kernel,
         PaddingMode padding = PaddingMode.Valid,
@@ -551,7 +539,7 @@ public sealed class ConvolutionOperations : IDisposable
         return result;
     }
 
-    private async ValueTask<float[]> FFTConvolve1DAsync(
+    private static async ValueTask<float[]> FFTConvolve1DAsync(
         float[] signal,
         float[] kernel,
         PaddingMode padding,
@@ -568,17 +556,15 @@ public sealed class ConvolutionOperations : IDisposable
         return ApplyPadding1D(cpuResult, signal.Length, kernel.Length, padding);
     }
 
-    private async ValueTask<float[]> AutoConvolve1DAsync(
-        float[] signal,
-        float[] kernel,
-        PaddingMode padding,
-        CancellationToken cancellationToken)
-    {
-        // Choose best strategy based on sizes
-        return kernel.Length <= 64 ? await DirectConvolve1DAsync(signal, kernel, padding, cancellationToken) : await FFTConvolve1DAsync(signal, kernel, padding, cancellationToken);
-    }
+        private async ValueTask<float[]> AutoConvolve1DAsync(
+            float[] signal,
+            float[] kernel,
+            PaddingMode padding,
+            CancellationToken cancellationToken)
+            // Choose best strategy based on sizes
+            => kernel.Length <= 64 ? await DirectConvolve1DAsync(signal, kernel, padding, cancellationToken) : await FFTConvolve1DAsync(signal, kernel, padding, cancellationToken);
 
-    private async ValueTask<float[]> DirectConvolve2DAsync(
+        private async ValueTask<float[]> DirectConvolve2DAsync(
         float[] input,
         float[] kernel,
         int inputWidth,
@@ -896,13 +882,11 @@ public sealed class ConvolutionOperations : IDisposable
         };
     }
 
-    private static bool IsWinogradSuitable(int kernelWidth, int kernelHeight)
-    {
-        // Winograd is efficient for 3x3 and 5x5 kernels
-        return (kernelWidth == 3 && kernelHeight == 3) || (kernelWidth == 5 && kernelHeight == 5);
-    }
+        private static bool IsWinogradSuitable(int kernelWidth, int kernelHeight)
+            // Winograd is efficient for 3x3 and 5x5 kernels
+            => (kernelWidth == 3 && kernelHeight == 3) || (kernelWidth == 5 && kernelHeight == 5);
 
-    private static int CalculateOutputLength(int inputLength, int kernelLength, PaddingMode padding, int stride)
+        private static int CalculateOutputLength(int inputLength, int kernelLength, PaddingMode padding, int stride)
     {
         var effectiveInputLength = padding switch
         {
@@ -1000,15 +984,10 @@ public sealed class ConvolutionOperations : IDisposable
     /// <summary>
     /// Mock compiled kernel for testing purposes.
     /// </summary>
-    private class MockCompiledKernel
-    {
-        public string Name { get; }
-
-        public MockCompiledKernel(string name)
+    private class MockCompiledKernel(string name)
         {
-            Name = name;
+            public string Name { get; } = name;
         }
-    }
 }
 
 /// <summary>

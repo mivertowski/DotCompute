@@ -576,7 +576,11 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
     /// <summary>
     /// Enhanced test implementation of BaseAccelerator for execution testing.
     /// </summary>
-    private sealed class TestAccelerator : BaseAccelerator
+    private sealed class TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info ?? throw new ArgumentNullException(nameof(info)),
+              info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
+              memory ?? throw new ArgumentNullException(nameof(memory)),
+              new AcceleratorContext(IntPtr.Zero, 0),
+              logger ?? throw new ArgumentNullException(nameof(logger)))
     {
         // Basic tracking
         public bool CompileKernelCoreCalled { get; private set; }
@@ -617,15 +621,6 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
         private readonly List<TimeSpan> _compilationTimes = [];
         private int _activeCompilations;
         private int _activeSyncs;
-
-        public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info ?? throw new ArgumentNullException(nameof(info)),
-                  info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
-                  memory ?? throw new ArgumentNullException(nameof(memory)),
-                  new AcceleratorContext(IntPtr.Zero, 0),
-                  logger ?? throw new ArgumentNullException(nameof(logger)))
-        {
-        }
 
         protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition,
@@ -732,9 +727,6 @@ public sealed class BaseAcceleratorExecutionTests : IDisposable
             }
         }
 
-        protected override async ValueTask DisposeCoreAsync()
-        {
-            await base.DisposeCoreAsync();
-        }
+        protected override async ValueTask DisposeCoreAsync() => await base.DisposeCoreAsync();
     }
 }

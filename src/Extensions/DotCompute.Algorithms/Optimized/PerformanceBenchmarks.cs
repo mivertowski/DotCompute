@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Algorithms.LinearAlgebra;
 
@@ -18,7 +18,6 @@ public static class PerformanceBenchmarks
     // Benchmark configuration
     private const int WARMUP_ITERATIONS = 3;
     private const int MEASUREMENT_ITERATIONS = 10;
-    private const double TARGET_CONFIDENCE = 0.95;
     private const double MAX_COEFFICIENT_OF_VARIATION = 0.05; // 5% max variation
 
 
@@ -168,7 +167,7 @@ public static class PerformanceBenchmarks
 
             // Benchmark naive implementation as baseline
 
-            var naiveResult = BenchmarkFunction<Matrix>(
+            var naiveResult = BenchmarkFunction(
                 "Naive Matrix Multiply",
                 () => NaiveMatrixMultiply(matrixA, matrixB),
                 flopCount, bytesProcessed);
@@ -179,14 +178,14 @@ public static class PerformanceBenchmarks
 
             // Benchmark optimized implementations
 
-            var optimizedResult = BenchmarkFunction<Matrix>(
+            var optimizedResult = BenchmarkFunction(
                 "Optimized Matrix Multiply",
                 () => MatrixOptimizations.OptimizedMultiply(matrixA, matrixB),
                 flopCount, bytesProcessed, baselineTime);
             report.Add(optimizedResult);
 
 
-            var simdResult = BenchmarkFunction<Matrix>(
+            var simdResult = BenchmarkFunction(
                 "SIMD Matrix Multiply",
                 () => { var result = new Matrix(size, size); MatrixOptimizations.SimdMultiply(matrixA, matrixB, result); return result; },
                 flopCount, bytesProcessed, baselineTime);
@@ -195,7 +194,7 @@ public static class PerformanceBenchmarks
 
             if (size >= 128)
             {
-                var blockedResult = BenchmarkFunction<Matrix>(
+                var blockedResult = BenchmarkFunction(
                     "Blocked Matrix Multiply",
                     () => { var result = new Matrix(size, size); MatrixOptimizations.BlockedMultiply(matrixA, matrixB, result); return result; },
                     flopCount, bytesProcessed, baselineTime);
@@ -205,7 +204,7 @@ public static class PerformanceBenchmarks
 
             if (IsPowerOfTwo(size) && size >= 256)
             {
-                var strassenResult = BenchmarkFunction<Matrix>(
+                var strassenResult = BenchmarkFunction(
                     "Strassen Matrix Multiply",
                     () => { var result = new Matrix(size, size); MatrixOptimizations.StrassenMultiply(matrixA, matrixB, result); return result; },
                     flopCount, bytesProcessed, baselineTime);
@@ -243,7 +242,7 @@ public static class PerformanceBenchmarks
 
             // Benchmark naive DFT as baseline
 
-            var naiveResult = BenchmarkFunction<Complex[]>(
+            var naiveResult = BenchmarkFunction(
                 "Naive DFT",
                 () => { var data = complexData.ToArray(); NaiveDFT(data); return data; },
                 flopCount, bytesProcessed);
@@ -254,7 +253,7 @@ public static class PerformanceBenchmarks
 
             // Benchmark optimized FFT
 
-            var optimizedResult = BenchmarkFunction<Complex[]>(
+            var optimizedResult = BenchmarkFunction(
                 "Optimized FFT",
                 () => { var data = complexData.ToArray(); /* FFTOptimizations.OptimizedFFT(data); */ return data; },
                 flopCount, bytesProcessed, baselineTime);
@@ -268,7 +267,7 @@ public static class PerformanceBenchmarks
                 var realFlopCount = flopCount / 2; // Real FFT is more efficient
 
 
-                var realFFTResult = BenchmarkFunction<float[]>(
+                var realFFTResult = BenchmarkFunction(
                     "Real FFT",
                     () => realData,
                     realFlopCount, bytesProcessed / 2, baselineTime);
@@ -310,14 +309,14 @@ public static class PerformanceBenchmarks
             var dotBytesProcessed = 2L * size * sizeof(float);
 
 
-            var naiveDotResult = BenchmarkFunction<float>(
+            var naiveDotResult = BenchmarkFunction(
                 "Naive DOT",
                 () => NaiveDotProduct(vectorX, vectorY),
                 dotFlopCount, dotBytesProcessed);
             report.Add(naiveDotResult);
 
 
-            var optimizedDotResult = BenchmarkFunction<float>(
+            var optimizedDotResult = BenchmarkFunction(
                 "Optimized DOT",
                 () => BLASOptimizations.OptimizedDot(vectorX, vectorY),
                 dotFlopCount, dotBytesProcessed, naiveDotResult.MeanTime.TotalSeconds);
@@ -329,14 +328,14 @@ public static class PerformanceBenchmarks
             var axpyBytesProcessed = 3L * size * sizeof(float);
 
 
-            var naiveAxpyResult = BenchmarkFunction<float[]>(
+            var naiveAxpyResult = BenchmarkFunction(
                 "Naive AXPY",
                 () => { var y = vectorY.ToArray(); NaiveAxpy(2.0f, vectorX, y); return y; },
                 axpyFlopCount, axpyBytesProcessed);
             report.Add(naiveAxpyResult);
 
 
-            var optimizedAxpyResult = BenchmarkFunction<float[]>(
+            var optimizedAxpyResult = BenchmarkFunction(
                 "Optimized AXPY",
                 () => { var y = vectorY.ToArray(); BLASOptimizations.OptimizedAxpy(2.0f, vectorX, y); return y; },
                 axpyFlopCount, axpyBytesProcessed, naiveAxpyResult.MeanTime.TotalSeconds);
@@ -350,14 +349,14 @@ public static class PerformanceBenchmarks
                 var gemvBytesProcessed = (size * size + 2L * size) * sizeof(float);
 
 
-                var naiveGemvResult = BenchmarkFunction<float[]>(
+                var naiveGemvResult = BenchmarkFunction(
                     "Naive GEMV",
                     () => NaiveGemv(matrix, vectorX),
                     gemvFlopCount, gemvBytesProcessed);
                 report.Add(naiveGemvResult);
 
 
-                var optimizedGemvResult = BenchmarkFunction<float[]>(
+                var optimizedGemvResult = BenchmarkFunction(
                     "Optimized GEMV",
                     () => OptimizedGemv(matrix, vectorX),
                     gemvFlopCount, gemvBytesProcessed, naiveGemvResult.MeanTime.TotalSeconds);
@@ -395,14 +394,14 @@ public static class PerformanceBenchmarks
 
             // Parallel reduction
 
-            var sequentialReductionResult = BenchmarkFunction<float>(
+            var sequentialReductionResult = BenchmarkFunction(
                 "Sequential Reduction",
                 array.Sum,
                 reductionFlopCount, reductionBytesProcessed);
             report.Add(sequentialReductionResult);
 
 
-            var parallelReductionResult = BenchmarkFunction<float>(
+            var parallelReductionResult = BenchmarkFunction(
                 "Parallel Reduction",
                 () => ParallelOptimizations.ParallelReduce(array, 0.0f, (a, b) => a + b),
                 reductionFlopCount, reductionBytesProcessed, sequentialReductionResult.MeanTime.TotalSeconds);
@@ -414,14 +413,14 @@ public static class PerformanceBenchmarks
             var scanBytesProcessed = 2L * size * sizeof(float);
 
 
-            var sequentialScanResult = BenchmarkFunction<float[]>(
+            var sequentialScanResult = BenchmarkFunction(
                 "Sequential Scan",
                 () => SequentialScan(array),
                 scanFlopCount, scanBytesProcessed);
             report.Add(sequentialScanResult);
 
 
-            var parallelScanResult = BenchmarkFunction<float[]>(
+            var parallelScanResult = BenchmarkFunction(
                 "Parallel Scan",
                 () => ParallelOptimizations.ParallelScan(array, 0.0f, (a, b) => a + b),
                 scanFlopCount, scanBytesProcessed, sequentialScanResult.MeanTime.TotalSeconds);
@@ -436,14 +435,14 @@ public static class PerformanceBenchmarks
                 var sortBytesProcessed = (long)(size * sizeof(float) * Math.Log2(size));
 
 
-                var sequentialSortResult = BenchmarkFunction<float[]>(
+                var sequentialSortResult = BenchmarkFunction(
                     "Sequential Sort",
                     () => { var copy = sortArray.ToArray(); Array.Sort(copy); return copy; },
                     sortFlopCount, sortBytesProcessed);
                 report.Add(sequentialSortResult);
 
 
-                var parallelSortResult = BenchmarkFunction<float[]>(
+                var parallelSortResult = BenchmarkFunction(
                     "Parallel Sort",
                     () => { var copy = sortArray.ToArray(); ParallelOptimizations.ParallelSort(copy, Comparer<float>.Default); return copy; },
                     sortFlopCount, sortBytesProcessed, sequentialSortResult.MeanTime.TotalSeconds);

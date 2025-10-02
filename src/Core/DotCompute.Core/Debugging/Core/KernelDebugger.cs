@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Performance;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Sockets;
@@ -16,21 +15,12 @@ namespace DotCompute.Core.Debugging.Core;
 /// <summary>
 /// Core kernel debugging functionality for cross-backend validation and analysis.
 /// </summary>
-public sealed partial class KernelDebugger : IDisposable
+public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null) : IDisposable
 {
-    private readonly ILogger<KernelDebugger> _logger;
-    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
-    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory;
-    private readonly DebugServiceOptions _options;
+    private readonly ILogger<KernelDebugger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
+    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = new();
     private bool _disposed;
-
-    public KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerators = new ConcurrentDictionary<string, IAccelerator>();
-        _executionHistory = new ConcurrentQueue<KernelExecutionResult>();
-        _options = options ?? new DebugServiceOptions();
-    }
 
     /// <summary>
     /// Adds an accelerator for cross-backend debugging.
@@ -63,7 +53,7 @@ public sealed partial class KernelDebugger : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_accelerators.TryRemove(name, out _))
+        if (_accelerators.TryRemove(name, out var accelerator))
         {
             LogAcceleratorRemoved(name);
             return true;
@@ -332,7 +322,7 @@ public sealed partial class KernelDebugger : IDisposable
     /// <summary>
     /// Safely executes a kernel with error handling.
     /// </summary>
-    private Task<object?> ExecuteKernelSafelyAsync(
+    private static async Task<object?> ExecuteKernelSafelyAsync(
         IKernel kernel,
         IAccelerator accelerator,
         object[] inputs,
@@ -342,10 +332,8 @@ public sealed partial class KernelDebugger : IDisposable
         using var timeoutCts = new CancellationTokenSource(_options.ExecutionTimeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-        // Execute kernel through accelerator
-        // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
-        // This would typically be done through IComputeOrchestrator or IKernelExecutor
-        return Task.FromException<object?>(new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator"));
+        // Execute kernel
+        return await kernel.ExecuteAsync(accelerator, inputs, combinedCts.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -394,7 +382,7 @@ public sealed partial class KernelDebugger : IDisposable
             issues.Add(new DebugValidationIssue
             {
                 Severity = DebugValidationSeverity.Warning,
-                Message = $"Performance anomaly detected on {slowResult.BackendType}: {maxTime:F2}ms vs avg {averageTime:F2}ms",
+                Message = $"Performance anomaly detected on {slowResult.AcceleratorName}: {maxTime:F2}ms vs avg {averageTime:F2}ms",
                 Context = "Performance consistency check"
             });
         }
@@ -407,47 +395,41 @@ public sealed partial class KernelDebugger : IDisposable
     /// </summary>
     private static InputValidationResult ValidateInputs(IKernel kernel, object[] inputs)
     {
+        var result = new InputValidationResult { IsValid = true };
         var issues = new List<string>();
-        var isValid = true;
 
         // Basic validation
         if (inputs == null || inputs.Length == 0)
         {
             issues.Add("No inputs provided");
-            isValid = false;
+            result.IsValid = false;
         }
 
         // Check for null inputs
-        if (inputs != null)
+        for (var i = 0; i < inputs.Length; i++)
         {
-            for (var i = 0; i < inputs.Length; i++)
+            if (inputs[i] == null)
             {
-                if (inputs[i] == null)
-                {
-                    issues.Add($"Input at index {i} is null");
-                    isValid = false;
-                }
+                issues.Add($"Input at index {i} is null");
+                result.IsValid = false;
             }
         }
 
-        return new InputValidationResult
-        {
-            IsValid = isValid,
-            Issues = issues
-        };
+        result.Issues = issues;
+        return result;
     }
 
     /// <summary>
     /// Analyzes performance metrics.
     /// </summary>
-    private PerformanceMetrics AnalyzePerformance(KernelDebugInfo debugInfo)
+    private static PerformanceMetrics AnalyzePerformance(KernelDebugInfo debugInfo)
     {
         return new PerformanceMetrics
         {
-            ExecutionTimeMs = (long)debugInfo.ExecutionTime.TotalMilliseconds,
-            MemoryUsageBytes = debugInfo.MemoryAllocated,
-            OperationsPerSecond = (long)CalculateThroughput(debugInfo),
-            Operation = "Kernel Debug Analysis"
+            ExecutionTimeMs = debugInfo.ExecutionTime.TotalMilliseconds,
+            MemoryAllocatedBytes = debugInfo.MemoryAllocated,
+            ThroughputOpsPerSec = CalculateThroughput(debugInfo),
+            EfficiencyScore = CalculateEfficiencyScore(debugInfo)
         };
     }
 

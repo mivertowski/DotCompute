@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="app">The host application</param>
     /// <returns>Async task for configuration completion</returns>
-    public static Task ConfigureKernelChainApplication(this IHost app)
+    public static Task ConfigureKernelChainApplicationAsync(this IHost app)
     {
         // Initialize DotCompute runtime with kernel chaining support
         // await app.Services.InitializeDotComputeWithKernelChainingAsync();

@@ -3,9 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Algorithms.Optimized;
 
@@ -18,15 +18,8 @@ public static class MemoryOptimizations
     // Cache hierarchy parameters for modern CPUs
     private const int L1_CACHE_SIZE = 32 * 1024;      // 32KB L1 cache
     private const int L2_CACHE_SIZE = 256 * 1024;     // 256KB L2 cache  
-    private const int L3_CACHE_SIZE = 8 * 1024 * 1024; // 8MB L3 cache
     private const int CACHE_LINE_SIZE = 64;            // 64-byte cache line
-    private const int PAGE_SIZE = 4096;                // 4KB memory page
-
-    // Prefetch distances (empirically determined)
-
-    private const int PREFETCH_DISTANCE_L1 = 64;
     private const int PREFETCH_DISTANCE_L2 = 512;
-    private const int PREFETCH_DISTANCE_L3 = 4096;
 
 
     /// <summary>
@@ -160,33 +153,19 @@ public static class MemoryOptimizations
     /// High-performance memory pool with cache-aligned allocation and reuse.
     /// </summary>
     /// <typeparam name="T">Element type</typeparam>
-    public sealed class OptimizedMemoryPool<T> : IDisposable where T : unmanaged
+    public sealed class OptimizedMemoryPool<T>(int maxBuffers = 100) : IDisposable where T : unmanaged
     {
         private readonly ConcurrentStack<PooledBuffer> _availableBuffers = new();
         private readonly ConcurrentBag<PooledBuffer> _allBuffers = [];
-        private readonly int _maxBuffers;
-        private readonly NumaAllocator _allocator;
+        private readonly int _maxBuffers = maxBuffers;
+        private readonly NumaAllocator _allocator = new();
         private bool _disposed;
 
 
-        private readonly struct PooledBuffer
+        private readonly struct PooledBuffer(Memory<T> buffer, int size)
         {
-            public readonly Memory<T> Buffer;
-            public readonly int Size;
-
-
-            public PooledBuffer(Memory<T> buffer, int size)
-            {
-                Buffer = buffer;
-                Size = size;
-            }
-        }
-
-
-        public OptimizedMemoryPool(int maxBuffers = 100)
-        {
-            _maxBuffers = maxBuffers;
-            _allocator = new NumaAllocator();
+            public readonly Memory<T> Buffer = buffer;
+            public readonly int Size = size;
         }
 
 
@@ -199,7 +178,7 @@ public static class MemoryOptimizations
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(OptimizedMemoryPool<T>));
+                throw new ObjectDisposedException(nameof(OptimizedMemoryPool<>));
             }
 
             // Try to find a suitable buffer from the pool

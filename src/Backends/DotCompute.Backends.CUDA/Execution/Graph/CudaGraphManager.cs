@@ -26,24 +26,14 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Manages CUDA graph creation, execution, and optimization
     /// </summary>
-    public sealed class CudaGraphManager : IDisposable
+    public sealed class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
     {
-        private readonly ILogger<CudaGraphManager> _logger;
-        private readonly CudaContext _context;
-        private readonly ConcurrentDictionary<string, CudaGraph> _graphs;
-        private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables;
-        private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics;
+        private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
+        private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables = new();
+        private readonly ConcurrentDictionary<string, Types.GraphStatistics> _statistics = new();
         private readonly object _captureLock = new();
         private bool _disposed;
-
-        public CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _graphs = new ConcurrentDictionary<string, CudaGraph>();
-            _executables = new ConcurrentDictionary<string, CudaGraphExecutable>();
-            _statistics = new ConcurrentDictionary<string, Types.GraphStatistics>();
-        }
 
         /// <summary>
         /// Create a new CUDA graph
@@ -948,26 +938,18 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Graph capture context for RAII pattern
     /// </summary>
-    public sealed class GraphCaptureContext : IDisposable
+    public sealed class GraphCaptureContext(
+        IntPtr stream,
+        string graphName,
+        CudaGraphCaptureMode mode,
+        Func<IntPtr, string, CudaGraph> endCapture) : IDisposable
     {
-        private readonly IntPtr _stream;
-        private readonly string _graphName;
-        private readonly Func<IntPtr, string, CudaGraph> _endCapture;
+        private readonly IntPtr _stream = stream;
+        private readonly string _graphName = graphName;
+        private readonly Func<IntPtr, string, CudaGraph> _endCapture = endCapture;
         private bool _disposed;
 
-        public GraphCaptureContext(
-            IntPtr stream,
-            string graphName,
-            CudaGraphCaptureMode mode,
-            Func<IntPtr, string, CudaGraph> endCapture)
-        {
-            _stream = stream;
-            _graphName = graphName;
-            _endCapture = endCapture;
-            Mode = mode;
-        }
-
-        public CudaGraphCaptureMode Mode { get; }
+        public CudaGraphCaptureMode Mode { get; } = mode;
 
         public CudaGraph EndCapture()
         {

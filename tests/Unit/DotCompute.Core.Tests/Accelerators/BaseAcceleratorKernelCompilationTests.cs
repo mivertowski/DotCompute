@@ -182,7 +182,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         // Assert
         _ = results.Should().HaveCount(3);
-        results.Should().OnlyContain(r => !string.IsNullOrEmpty(r.Name));
+        _ = results.Should().OnlyContain(r => !string.IsNullOrEmpty(r.Name));
         _ = results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
         _ = _accelerator.CompilationCount.Should().Be(3);
     }

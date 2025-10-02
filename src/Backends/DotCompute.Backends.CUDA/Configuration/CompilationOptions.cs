@@ -3,7 +3,7 @@ namespace DotCompute.Backends.CUDA.Configuration
     /// <summary>
     /// CUDA-specific compilation options extending the base compilation options.
     /// </summary>
-    public class CudaCompilationOptions : DotCompute.Abstractions.CompilationOptions
+    public class CudaCompilationOptions : Abstractions.CompilationOptions
     {
         /// <summary>
         /// Gets or sets the CUDA target architecture (e.g., "sm_70", "sm_80", "sm_90").

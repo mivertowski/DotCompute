@@ -252,10 +252,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask FillAsync(TView value, CancellationToken cancellationToken = default)
-    {
-        await FillAsync(value, 0, _viewLength, cancellationToken).ConfigureAwait(false);
-    }
+    public async ValueTask FillAsync(TView value, CancellationToken cancellationToken = default) => await FillAsync(value, 0, _viewLength, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async ValueTask FillAsync(TView value, int offset, int count, CancellationToken cancellationToken = default)
@@ -281,7 +278,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<TView> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -289,7 +286,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<TView> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -300,7 +297,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask<MappedMemory<TView>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<TView>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -325,14 +322,14 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnHostAsync(context, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.EnsureOnDeviceAsync(context, cancellationToken);
@@ -346,7 +343,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
         return _parentBuffer.SynchronizeAsync(context, cancellationToken);
@@ -402,10 +399,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     /// <summary>
     /// Disposes the view. This doesn't dispose the parent buffer, just invalidates this view.
     /// </summary>
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 
     /// <summary>
     /// Asynchronously disposes the view. This doesn't dispose the parent buffer, just invalidates this view.

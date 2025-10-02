@@ -172,9 +172,9 @@ internal sealed class CryptographicProviders : IDisposable
 
         var result = new SignatureResult
         {
-            KeyId = keyContainer.Identifier,
-            Algorithm = hashAlgorithm,
-            Timestamp = DateTimeOffset.UtcNow
+            KeyIdentifier = keyContainer.Identifier,
+            HashAlgorithm = hashAlgorithm,
+            OperationTime = DateTimeOffset.UtcNow
         };
 
         try
@@ -184,24 +184,14 @@ internal sealed class CryptographicProviders : IDisposable
             // Validate hash algorithm
             if (!ApprovedHashAlgorithms.Contains(hashAlgorithm))
             {
-                return new SignatureResult
-                {
-                    Success = false,
-                    ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}",
-                    Algorithm = hashAlgorithm,
-                    KeyId = keyContainer.Identifier
-                };
+                result.ErrorMessage = $"Hash algorithm not approved: {hashAlgorithm}";
+                return result;
             }
 
             if (keyContainer.KeyType is not KeyType.RSA and not KeyType.ECDSA)
             {
-                return new SignatureResult
-                {
-                    Success = false,
-                    ErrorMessage = $"Key type not suitable for signing: {keyContainer.KeyType}",
-                    Algorithm = hashAlgorithm,
-                    KeyId = keyContainer.Identifier
-                };
+                result.ErrorMessage = $"Key type not suitable for signing: {keyContainer.KeyType}";
+                return result;
             }
 
             // Perform signing based on key type
@@ -212,7 +202,7 @@ internal sealed class CryptographicProviders : IDisposable
                 _ => throw new NotSupportedException($"Key type not supported for signing: {keyContainer.KeyType}")
             };
 
-            result.Success = true;
+            result.IsSuccessful = true;
 
             _logger.LogDebugMessage($"Data signing completed successfully: HashAlgorithm={hashAlgorithm}");
             return result;
@@ -220,13 +210,8 @@ internal sealed class CryptographicProviders : IDisposable
         catch (Exception ex)
         {
             _logger.LogErrorMessage(ex, $"Signing failed: HashAlgorithm={hashAlgorithm}");
-            return new SignatureResult
-            {
-                Success = false,
-                ErrorMessage = ex.Message,
-                Algorithm = hashAlgorithm,
-                KeyId = keyContainer.Identifier
-            };
+            result.ErrorMessage = ex.Message;
+            return result;
         }
     }
 
@@ -245,8 +230,8 @@ internal sealed class CryptographicProviders : IDisposable
 
         var result = new SignatureVerificationResult
         {
-            KeyId = keyContainer.Identifier,
-            Algorithm = hashAlgorithm,
+            KeyIdentifier = keyContainer.Identifier,
+            HashAlgorithm = hashAlgorithm,
             OperationTime = DateTimeOffset.UtcNow
         };
 
@@ -270,7 +255,7 @@ internal sealed class CryptographicProviders : IDisposable
             };
 
             result.IsValid = isValid;
-            result.Success = true;
+            result.IsSuccessful = true;
 
             _logger.LogDebugMessage($"Signature verification completed: Valid={isValid}");
             return result;
@@ -286,7 +271,7 @@ internal sealed class CryptographicProviders : IDisposable
     /// <summary>
     /// Validates if a cryptographic algorithm is approved for use.
     /// </summary>
-    public AlgorithmValidationResult ValidateAlgorithm(string algorithm, int keySize, string context)
+    public static AlgorithmValidationResult ValidateAlgorithm(string algorithm, int keySize, string context)
     {
         var result = new AlgorithmValidationResult
         {
@@ -343,16 +328,17 @@ internal sealed class CryptographicProviders : IDisposable
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
-        using var aes = new AesGcm(keyContainer.GetKeyBytes(), AesGcm.TagByteSizes.MaxSize);
+        using var aes = Aes.Create();
+        aes.Key = keyContainer.KeyMaterial.ToArray();
+        aes.Mode = CipherMode.GCM;
 
-        var tag = new byte[AesGcm.TagByteSizes.MaxSize];
+        var tag = new byte[16]; // GCM tag size
         var ciphertext = new byte[data.Length];
 
-        aes.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+        aes.EncryptGcm(data.Span, ciphertext, tag, nonce, associatedData?.Span ?? ReadOnlySpan<byte>.Empty);
 
         result.EncryptedData = ciphertext;
-        result.AuthenticationTag = tag;
+        result.Tag = tag;
         return result;
     }
 
@@ -362,9 +348,8 @@ internal sealed class CryptographicProviders : IDisposable
         byte[] nonce,
         EncryptionResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var aes = Aes.Create();
-        aes.Key = keyContainer.GetKeyBytes();
+        aes.Key = keyContainer.KeyMaterial.ToArray();
         aes.IV = nonce;
         aes.Mode = CipherMode.CBC;
         aes.Padding = PaddingMode.PKCS7;
@@ -382,12 +367,9 @@ internal sealed class CryptographicProviders : IDisposable
         byte[] nonce,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
-    {
-        await Task.CompletedTask.ConfigureAwait(false);
         // ChaCha20Poly1305 implementation would go here
         // For now, throw not implemented as .NET Core doesn't have built-in ChaCha20
-        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
-    }
+        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
 
     private async Task<DecryptionResult> DecryptAesGcmAsync(
         ReadOnlyMemory<byte> encryptedData,
@@ -397,22 +379,22 @@ internal sealed class CryptographicProviders : IDisposable
         ReadOnlyMemory<byte>? associatedData,
         DecryptionResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (!tag.HasValue)
         {
             result.ErrorMessage = "Tag is required for AES-GCM decryption";
             return result;
         }
 
-        using var aes = new AesGcm(keyContainer.GetKeyBytes(), tag.Value.Length);
+        using var aes = Aes.Create();
+        aes.Key = keyContainer.KeyMaterial.ToArray();
+        aes.Mode = CipherMode.GCM;
 
         var plaintext = new byte[encryptedData.Length];
 
         try
         {
-            aes.Decrypt(nonce.Span, encryptedData.Span, tag.Value.Span, plaintext, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
+            aes.DecryptGcm(encryptedData.Span, plaintext, tag.Value.Span, nonce.Span, associatedData?.Span ?? ReadOnlySpan<byte>.Empty);
             result.DecryptedData = plaintext;
-            result.IsSuccessful = true;
         }
         catch (CryptographicException ex)
         {
@@ -428,9 +410,8 @@ internal sealed class CryptographicProviders : IDisposable
         ReadOnlyMemory<byte> nonce,
         DecryptionResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var aes = Aes.Create();
-        aes.Key = keyContainer.GetKeyBytes();
+        aes.Key = keyContainer.KeyMaterial.ToArray();
         aes.IV = nonce.ToArray();
         aes.Mode = CipherMode.CBC;
         aes.Padding = PaddingMode.PKCS7;
@@ -449,11 +430,8 @@ internal sealed class CryptographicProviders : IDisposable
         ReadOnlyMemory<byte>? tag,
         ReadOnlyMemory<byte>? associatedData,
         DecryptionResult result)
-    {
-        await Task.CompletedTask.ConfigureAwait(false);
         // ChaCha20Poly1305 implementation would go here
-        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
-    }
+        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
 
     private static async Task<SignatureResult> SignWithRsaAsync(
         ReadOnlyMemory<byte> data,
@@ -461,9 +439,8 @@ internal sealed class CryptographicProviders : IDisposable
         string hashAlgorithm,
         SignatureResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var rsa = RSA.Create();
-        rsa.ImportPkcs8PrivateKey(keyContainer.GetKeyBytes(), out _);
+        rsa.ImportPkcs8PrivateKey(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
         var signature = rsa.SignData(data.ToArray(), hashName, RSASignaturePadding.Pkcs1);
@@ -478,9 +455,8 @@ internal sealed class CryptographicProviders : IDisposable
         string hashAlgorithm,
         SignatureResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var ecdsa = ECDsa.Create();
-        ecdsa.ImportPkcs8PrivateKey(keyContainer.GetKeyBytes(), out _);
+        ecdsa.ImportPkcs8PrivateKey(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
         var signature = ecdsa.SignData(data.ToArray(), hashName);
@@ -495,9 +471,8 @@ internal sealed class CryptographicProviders : IDisposable
         SecureKeyContainer keyContainer,
         string hashAlgorithm)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var rsa = RSA.Create();
-        rsa.ImportSubjectPublicKeyInfo(keyContainer.GetKeyBytes(), out _);
+        rsa.ImportSubjectPublicKeyInfo(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
         return rsa.VerifyData(data.ToArray(), signature.ToArray(), hashName, RSASignaturePadding.Pkcs1);
@@ -509,9 +484,8 @@ internal sealed class CryptographicProviders : IDisposable
         SecureKeyContainer keyContainer,
         string hashAlgorithm)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         using var ecdsa = ECDsa.Create();
-        ecdsa.ImportSubjectPublicKeyInfo(keyContainer.GetKeyBytes(), out _);
+        ecdsa.ImportSubjectPublicKeyInfo(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
         return ecdsa.VerifyData(data.ToArray(), signature.ToArray(), hashName);

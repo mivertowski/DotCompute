@@ -179,18 +179,11 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
     /// <summary>
     /// Represents a lock on pipeline memory.
     /// </summary>
-    public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> where T : unmanaged
+    public readonly struct MemoryLock<T>(IPipelineMemory<T> memory, MemoryLockMode mode, Action? unlockAction) : IDisposable, IEquatable<MemoryLock<T>> where T : unmanaged
     {
-        private readonly IPipelineMemory<T> _memory;
-        private readonly MemoryLockMode _mode;
-        private readonly Action? _unlockAction;
-
-        public MemoryLock(IPipelineMemory<T> memory, MemoryLockMode mode, Action? unlockAction)
-        {
-            _memory = memory;
-            _mode = mode;
-            _unlockAction = unlockAction;
-        }
+        private readonly IPipelineMemory<T> _memory = memory;
+        private readonly MemoryLockMode _mode = mode;
+        private readonly Action? _unlockAction = unlockAction;
 
         /// <summary>
         /// Gets the locked memory.

@@ -9,12 +9,15 @@ namespace DotCompute.Core.Recovery;
 /// <summary>
 /// Represents the state of a circuit breaker for a specific service
 /// </summary>
-public class ServiceCircuitState
+/// <remarks>
+/// Creates a new service circuit state
+/// </remarks>
+public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration config, ILogger logger)
 {
     /// <summary>
     /// Service identifier
     /// </summary>
-    public string ServiceName { get; set; } = string.Empty;
+    public string ServiceName { get; set; } = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
 
     /// <summary>
     /// Current circuit state
@@ -106,19 +109,8 @@ public class ServiceCircuitState
     /// </summary>
     public Dictionary<string, object> Metrics { get; set; } = [];
 
-    private readonly CircuitBreakerConfiguration _config;
-    private readonly ILogger _logger;
-
-
-    /// <summary>
-    /// Creates a new service circuit state
-    /// </summary>
-    public ServiceCircuitState(string serviceName, CircuitBreakerConfiguration config, ILogger logger)
-    {
-        ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly CircuitBreakerConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Records a successful operation
@@ -309,7 +301,6 @@ public class ServiceCircuitState
 
     public void Dispose()
         // Clean up any resources if needed
-
 
 
 

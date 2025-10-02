@@ -36,7 +36,7 @@ public class ExecutionPerformanceTrend
     /// <summary>
     /// Gets or sets additional trend data points.
     /// </summary>
-    public Dictionary<string, TrendDirection> CustomTrends { get; set; } = new();
+    public Dictionary<string, TrendDirection> CustomTrends { get; set; } = [];
 }
 
 /// <summary>

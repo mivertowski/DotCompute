@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -13,43 +13,33 @@ namespace DotCompute.Core.Memory
     /// P2P-optimized buffer that supports direct GPU-to-GPU transfers and host-mediated fallbacks.
     /// Implements type-aware transfer pipelines with proper error handling and synchronization.
     /// </summary>
-    public sealed partial class P2PBuffer<T> : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
+    /// <remarks>
+    /// Initializes a new instance of the P2PBuffer class with the specified configuration.
+    /// </remarks>
+    /// <param name="underlyingBuffer">The underlying memory buffer that provides storage.</param>
+    /// <param name="accelerator">The accelerator device that owns this buffer.</param>
+    /// <param name="length">The number of elements in the buffer.</param>
+    /// <param name="supportsDirectP2P">Whether this buffer supports direct peer-to-peer transfers.</param>
+    /// <param name="logger">The logger for monitoring transfer operations.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
+    public sealed partial class P2PBuffer<T>(
+        IUnifiedMemoryBuffer underlyingBuffer,
+        IAccelerator accelerator,
+        int length,
+        bool supportsDirectP2P,
+        ILogger logger) : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
     {
-        private readonly IUnifiedMemoryBuffer _underlyingBuffer;
-        private readonly IAccelerator _accelerator;
-        private readonly bool _supportsDirectP2P;
-        private readonly ILogger _logger;
+        private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
+        private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        private readonly bool _supportsDirectP2P = supportsDirectP2P;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly object _syncLock = new();
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the P2PBuffer class with the specified configuration.
-        /// </summary>
-        /// <param name="underlyingBuffer">The underlying memory buffer that provides storage.</param>
-        /// <param name="accelerator">The accelerator device that owns this buffer.</param>
-        /// <param name="length">The number of elements in the buffer.</param>
-        /// <param name="supportsDirectP2P">Whether this buffer supports direct peer-to-peer transfers.</param>
-        /// <param name="logger">The logger for monitoring transfer operations.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any required parameter is null.</exception>
-        public P2PBuffer(
-            IUnifiedMemoryBuffer underlyingBuffer,
-            IAccelerator accelerator,
-            int length,
-            bool supportsDirectP2P,
-            ILogger logger)
-        {
-            _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
-            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-            _supportsDirectP2P = supportsDirectP2P;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            Length = length;
-        }
-
-        /// <summary>
         /// Gets the number of elements in the buffer.
         /// </summary>
-        public int Length { get; }
+        public int Length { get; } = length;
 
         /// <summary>
         /// Gets the total size of the buffer in bytes.
@@ -617,7 +607,7 @@ namespace DotCompute.Core.Memory
             try
             {
                 var copyStrategy = DetermineP2PCopyStrategy(_accelerator, destination._accelerator);
-                var elementSize = Unsafe.SizeOf<T>();
+                var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
                 var transferSize = count * elementSize;
                 var sourceOffsetBytes = sourceOffset * elementSize;
                 var destOffsetBytes = destinationOffset * elementSize;
@@ -931,7 +921,6 @@ namespace DotCompute.Core.Memory
             int count,
             CancellationToken cancellationToken)
             // Fallback to host-mediated transfer for generic range copy
-
 
 
             => await HostMediatedRangeCopyAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);

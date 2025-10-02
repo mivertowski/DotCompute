@@ -17,16 +17,14 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// It automatically falls back to scalar operations for elements that don't fit into
 /// vector lanes. The implementation uses <see cref="Vector{T}"/> for hardware acceleration.
 /// </remarks>
-internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedVectorAddKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class OptimizedVectorAddKernel(string name, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedVectorAddKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public OptimizedVectorAddKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
 
     /// <summary>
     /// Executes the vector addition kernel asynchronously.
@@ -57,7 +55,7 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
 
         var elementCount = (int)(bufferA.SizeInBytes / sizeof(float));
 
-        await Task.Run(() => ExecuteVectorAddOptimized(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
+        await Task.Run(() => ExecuteVectorAddOptimizedAsync(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
     }
 
     /// <summary>
@@ -67,12 +65,10 @@ internal class OptimizedVectorAddKernel : Base.OptimizedKernelBase
     /// <param name="bufferB">The second input vector buffer.</param>
     /// <param name="bufferResult">The output vector buffer.</param>
     /// <param name="elementCount">The number of elements to process.</param>
-    private static async Task ExecuteVectorAddOptimized(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
-    {
+    private static async Task ExecuteVectorAddOptimizedAsync(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
         // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
         // This could be optimized further by exposing unsafe pointers through IUnifiedMemoryBuffer
-        await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
-    }
+        => await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
 
     /// <summary>
     /// Executes the vector addition using generic memory buffer operations with SIMD optimization.

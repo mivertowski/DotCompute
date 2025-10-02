@@ -9,36 +9,30 @@ using Microsoft.Extensions.Logging;
 namespace DotCompute.Algorithms.Types.Security
 {
 
-/// <summary>
-/// Manages Code Access Security (CAS) for plugin execution.
-/// </summary>
-public class CodeAccessSecurityManager : IDisposable
-{
-    private readonly ILogger<CodeAccessSecurityManager>? _logger;
-    private readonly CodeAccessSecurityOptions _options;
-    private readonly Dictionary<string, object> _permissionSets = new(); // Mock PermissionSet
-    private bool _disposed;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="CodeAccessSecurityManager"/> class.
+    /// Manages Code Access Security (CAS) for plugin execution.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CodeAccessSecurityManager"/> class.
+    /// </remarks>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <param name="options">CAS options.</param>
-    public CodeAccessSecurityManager(
-        ILogger<CodeAccessSecurityManager>? logger = null,
-        CodeAccessSecurityOptions? options = null)
-    {
-        _logger = logger;
-        _options = options ?? new CodeAccessSecurityOptions();
-    }
+    public class CodeAccessSecurityManager(
+    ILogger<CodeAccessSecurityManager>? logger = null,
+    CodeAccessSecurityOptions? options = null) : IDisposable
+{
+    private readonly ILogger<CodeAccessSecurityManager>? _logger = logger;
+    private readonly CodeAccessSecurityOptions _options = options ?? new CodeAccessSecurityOptions();
+    private readonly Dictionary<string, object> _permissionSets = []; // Mock PermissionSet
+    private bool _disposed;
 
-    /// <summary>
-    /// Creates a restricted permission set for an assembly.
-    /// </summary>
-    /// <param name="assemblyPath">Path to the assembly.</param>
-    /// <param name="securityZone">Security zone for the assembly.</param>
-    /// <returns>The created permission set.</returns>
-    public object CreateRestrictedPermissionSet(string assemblyPath, SecurityZone securityZone)
+        /// <summary>
+        /// Creates a restricted permission set for an assembly.
+        /// </summary>
+        /// <param name="assemblyPath">Path to the assembly.</param>
+        /// <param name="securityZone">Security zone for the assembly.</param>
+        /// <returns>The created permission set.</returns>
+        public object CreateRestrictedPermissionSet(string assemblyPath, SecurityZone securityZone)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
@@ -234,29 +228,23 @@ public class CodeAccessSecurityManager : IDisposable
         permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
     }
 
-    private void AddInternetPermissions(PermissionSet permissionSet)
-    {
-        // Low trust for internet zone
-        permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-    }
+        private void AddInternetPermissions(PermissionSet permissionSet)
+            // Low trust for internet zone
+            => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
 
-    private void AddRestrictedSitesPermissions(PermissionSet permissionSet)
-    {
-        // Minimal trust for restricted sites
-        permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-    }
+        private void AddRestrictedSitesPermissions(PermissionSet permissionSet)
+            // Minimal trust for restricted sites
+            => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
 
-    private void AddMinimalPermissions(PermissionSet permissionSet)
-    {
-        // Bare minimum permissions
-        permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-    }
+        private void AddMinimalPermissions(PermissionSet permissionSet)
+            // Bare minimum permissions
+            => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
 
-    #endregion
+        #endregion
 
-    #region Permission Check Methods
+        #region Permission Check Methods
 
-    private bool CheckFileReadPermission(PermissionSet permissionSet, string? target)
+        private bool CheckFileReadPermission(PermissionSet permissionSet, string? target)
     {
         if (!_options.EnableFileSystemRestrictions) return true;
         
@@ -326,30 +314,24 @@ public class CodeAccessSecurityManager : IDisposable
         }
     }
 
-    private bool CheckRegistryPermission(PermissionSet permissionSet)
-    {
-        // Simplified registry permission check
-        return false; // Restrict registry access by default
-    }
+        private static bool CheckRegistryPermission(PermissionSet permissionSet)
+            // Simplified registry permission check
+            => false; // Restrict registry access by default
 
-    private bool CheckEnvironmentPermission(PermissionSet permissionSet)
-    {
-        // Simplified environment permission check
-        return false; // Restrict environment access by default
-    }
+        private static bool CheckEnvironmentPermission(PermissionSet permissionSet)
+            // Simplified environment permission check
+            => false; // Restrict environment access by default
 
-    private bool CheckUIPermission(PermissionSet permissionSet)
-    {
-        // Simplified UI permission check
-        return true; // Allow basic UI operations
-    }
+        private static bool CheckUIPermission(PermissionSet permissionSet)
+            // Simplified UI permission check
+            => true; // Allow basic UI operations
 
-    #endregion
+        #endregion
 
-    /// <summary>
-    /// Disposes the CAS manager resources.
-    /// </summary>
-    public void Dispose()
+        /// <summary>
+        /// Disposes the CAS manager resources.
+        /// </summary>
+        public void Dispose()
     {
         if (!_disposed)
         {
@@ -402,10 +384,10 @@ public class CodeAccessSecurityOptions
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; } = new();
+    public List<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = new();
+    public List<string> AllowedNetworkEndpoints { get; } = [];
 }}

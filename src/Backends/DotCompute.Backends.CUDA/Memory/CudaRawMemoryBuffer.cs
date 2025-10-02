@@ -11,25 +11,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Raw untyped CUDA memory buffer for byte-level operations.
     /// </summary>
-    public sealed class CudaRawMemoryBuffer : IUnifiedMemoryBuffer, IDisposable, IAsyncDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaRawMemoryBuffer"/> class.
+    /// </remarks>
+    /// <param name="devicePtr">The device memory pointer.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="ownsMemory">Whether this buffer owns the memory.</param>
+    public sealed class CudaRawMemoryBuffer(IntPtr devicePtr, long sizeInBytes, bool ownsMemory = true) : IUnifiedMemoryBuffer, IDisposable, IAsyncDisposable
     {
-        private readonly IntPtr _devicePtr;
-        private readonly long _sizeInBytes;
-        private readonly bool _ownsMemory;
+        private readonly IntPtr _devicePtr = devicePtr;
+        private readonly long _sizeInBytes = sizeInBytes;
+        private readonly bool _ownsMemory = ownsMemory;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaRawMemoryBuffer"/> class.
-        /// </summary>
-        /// <param name="devicePtr">The device memory pointer.</param>
-        /// <param name="sizeInBytes">The size in bytes.</param>
-        /// <param name="ownsMemory">Whether this buffer owns the memory.</param>
-        public CudaRawMemoryBuffer(IntPtr devicePtr, long sizeInBytes, bool ownsMemory = true)
-        {
-            _devicePtr = devicePtr;
-            _sizeInBytes = sizeInBytes;
-            _ownsMemory = ownsMemory;
-        }
 
         /// <inheritdoc/>
         public IntPtr DevicePointer => _devicePtr;
@@ -171,7 +164,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Prefetch(int deviceId = -1)
         {
             var device = deviceId >= 0 ? deviceId : -1; // -1 represents CPU
-            var result = CudaRuntime.cudaMemPrefetchAsync(_devicePtr, (nuint)_sizeInBytes, device, IntPtr.Zero);
+            var result = CudaRuntime.cudaMemPrefetch(_devicePtr, (nuint)_sizeInBytes, device, IntPtr.Zero);
 
             // Prefetch is optional, so we don't throw on error
 
@@ -182,10 +175,8 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         private static void EnsureOnHost()
-        {
             // For unified memory, ensure data is accessible on host
-            Synchronize();
-        }
+            => Synchronize();
 
         /// <inheritdoc/>
         public async ValueTask CopyFromAsync<TSource>(
@@ -280,9 +271,6 @@ namespace DotCompute.Backends.CUDA.Memory
             return ValueTask.CompletedTask;
         }
 
-        private void ThrowIfDisposed()
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-        }
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }

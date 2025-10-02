@@ -11,26 +11,18 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// <summary>
 /// Provides a typed view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTyped<T>(
+    CpuMemoryBuffer parentBuffer,
+    int elementCount,
+    CpuMemoryManager memoryManager,
+    ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
-    private readonly CpuMemoryBuffer _parentBuffer;
-    private readonly int _elementCount;
-    private readonly CpuMemoryManager _memoryManager;
-    private readonly ILogger? _logger;
+    private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+    private readonly int _elementCount = elementCount;
+    private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger? _logger = logger;
     private bool _isDisposed;
-
-    public CpuMemoryBufferTyped(
-        CpuMemoryBuffer parentBuffer,
-        int elementCount,
-        CpuMemoryManager memoryManager,
-        ILogger? logger)
-    {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        _elementCount = elementCount;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger;
-    }
 
     public long SizeInBytes => _elementCount * Unsafe.SizeOf<T>();
     public int Count => _elementCount;
@@ -113,10 +105,7 @@ public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposab
         });
     }
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();
@@ -294,10 +283,7 @@ public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposab
     /// <param name="offset">The element offset.</param>
     /// <param name="length">The number of elements in the view.</param>
     /// <returns>A view of this buffer.</returns>
-    public IUnifiedMemoryBuffer<T> CreateView(int offset, int length)
-    {
-        return Slice(offset, length);
-    }
+    public IUnifiedMemoryBuffer<T> CreateView(int offset, int length) => Slice(offset, length);
 
     public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
     {
@@ -373,29 +359,20 @@ public sealed class CpuMemoryBufferTyped<T> : IUnifiedMemoryBuffer<T>, IDisposab
 /// <summary>
 /// Provides a typed slice view of a CpuMemoryBuffer for strongly-typed element access.
 /// </summary>
-public sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, IDisposable
+public sealed class CpuMemoryBufferTypedSlice<T>(
+    CpuMemoryBuffer parentBuffer,
+    int byteOffset,
+    int elementCount,
+    CpuMemoryManager memoryManager,
+    ILogger? logger) : IUnifiedMemoryBuffer<T>, IDisposable
     where T : unmanaged
 {
-    private readonly CpuMemoryBuffer _parentBuffer;
-    private readonly int _byteOffset;
-    private readonly int _elementCount;
-    private readonly CpuMemoryManager _memoryManager;
-    private readonly ILogger? _logger;
+    private readonly CpuMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+    private readonly int _byteOffset = byteOffset;
+    private readonly int _elementCount = elementCount;
+    private readonly CpuMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger? _logger = logger;
     private bool _isDisposed;
-
-    public CpuMemoryBufferTypedSlice(
-        CpuMemoryBuffer parentBuffer,
-        int byteOffset,
-        int elementCount,
-        CpuMemoryManager memoryManager,
-        ILogger? logger)
-    {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        _byteOffset = byteOffset;
-        _elementCount = elementCount;
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger;
-    }
 
     public long SizeInBytes => _elementCount * Unsafe.SizeOf<T>();
     public int Count => _elementCount;
@@ -477,10 +454,7 @@ public sealed class CpuMemoryBufferTypedSlice<T> : IUnifiedMemoryBuffer<T>, IDis
         });
     }
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost() => _parentBuffer.EnsureOnHost();
     public void EnsureOnDevice() => _parentBuffer.EnsureOnDevice();

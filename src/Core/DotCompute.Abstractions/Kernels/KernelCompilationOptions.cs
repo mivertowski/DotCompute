@@ -15,8 +15,7 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to generate debug information
     /// </summary>
-    public bool GenerateDebugInfo { get; set; }
-
+    public bool GenerateDebugInfo { get; set; } = false;
 
     /// <summary>
     /// Gets or sets whether to enable fast math optimizations
@@ -61,14 +60,12 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to use PTX intermediate representation (CUDA only)
     /// </summary>
-    public bool UsePtx { get; set; }
-
+    public bool UsePtx { get; set; } = false;
 
     /// <summary>
     /// Gets or sets whether to generate relocatable device code
     /// </summary>
-    public bool GenerateRelocatableCode { get; set; }
-
+    public bool GenerateRelocatableCode { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the maximum register count per thread
@@ -78,14 +75,12 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to enable line-info generation
     /// </summary>
-    public bool GenerateLineInfo { get; set; }
-
+    public bool GenerateLineInfo { get; set; } = false;
 
     /// <summary>
     /// Gets or sets whether to enable verbose compilation output
     /// </summary>
-    public bool VerboseOutput { get; set; }
-
+    public bool VerboseOutput { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the preferred cache configuration
@@ -115,8 +110,7 @@ public sealed class KernelCompilationOptions
     /// <summary>
     /// Gets or sets whether to treat warnings as errors
     /// </summary>
-    public bool WarningsAsErrors { get; set; }
-
+    public bool WarningsAsErrors { get; set; } = false;
 
     /// <summary>
     /// Creates a new instance of KernelCompilationOptions with default values
@@ -136,9 +130,9 @@ public sealed class KernelCompilationOptions
             EnableFastMath = EnableFastMath,
             FloatingPointMode = FloatingPointMode,
             TargetArchitecture = TargetArchitecture,
-            CompilerFlags = new List<string>(CompilerFlags),
+            CompilerFlags = [.. CompilerFlags],
             Definitions = new Dictionary<string, string>(Definitions),
-            IncludeDirectories = new List<string>(IncludeDirectories),
+            IncludeDirectories = [.. IncludeDirectories],
             EnableCaching = EnableCaching,
             CacheTimeout = CacheTimeout,
             UsePtx = UsePtx,

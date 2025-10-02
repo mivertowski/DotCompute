@@ -37,24 +37,17 @@ public interface IAsyncPolicy<T>
 /// <summary>
 /// Simple implementation of retry policy for Metal operations.
 /// </summary>
-public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
+/// <remarks>
+/// Initializes a new instance of the <see cref="SimpleRetryPolicy"/> class.
+/// </remarks>
+/// <param name="maxRetries">Maximum number of retries.</param>
+/// <param name="delay">Delay between retries.</param>
+/// <param name="logger">Logger for diagnostics.</param>
+public sealed class SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = default, ILogger? logger = null) : IAsyncPolicy, IAsyncPolicy<object>
 {
-    private readonly int _maxRetries;
-    private readonly TimeSpan _delay;
-    private readonly ILogger? _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SimpleRetryPolicy"/> class.
-    /// </summary>
-    /// <param name="maxRetries">Maximum number of retries.</param>
-    /// <param name="delay">Delay between retries.</param>
-    /// <param name="logger">Logger for diagnostics.</param>
-    public SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = default, ILogger? logger = null)
-    {
-        _maxRetries = maxRetries;
-        _delay = delay == default ? TimeSpan.FromMilliseconds(100) : delay;
-        _logger = logger;
-    }
+    private readonly int _maxRetries = maxRetries;
+    private readonly TimeSpan _delay = delay == default ? TimeSpan.FromMilliseconds(100) : delay;
+    private readonly ILogger? _logger = logger;
 
     /// <inheritdoc/>
     public async Task ExecuteAsync(Func<Task> action, CancellationToken cancellationToken = default)
@@ -120,24 +113,17 @@ public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
 /// Generic implementation of retry policy for Metal operations.
 /// </summary>
 /// <typeparam name="T">The return type.</typeparam>
-public sealed class SimpleRetryPolicy<T> : IAsyncPolicy<T>
+/// <remarks>
+/// Initializes a new instance of the <see cref="SimpleRetryPolicy{T}"/> class.
+/// </remarks>
+/// <param name="maxRetries">Maximum number of retries.</param>
+/// <param name="delay">Delay between retries.</param>
+/// <param name="logger">Logger for diagnostics.</param>
+public sealed class SimpleRetryPolicy<T>(int maxRetries = 3, TimeSpan delay = default, ILogger? logger = null) : IAsyncPolicy<T>
 {
-    private readonly int _maxRetries;
-    private readonly TimeSpan _delay;
-    private readonly ILogger? _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SimpleRetryPolicy{T}"/> class.
-    /// </summary>
-    /// <param name="maxRetries">Maximum number of retries.</param>
-    /// <param name="delay">Delay between retries.</param>
-    /// <param name="logger">Logger for diagnostics.</param>
-    public SimpleRetryPolicy(int maxRetries = 3, TimeSpan delay = default, ILogger? logger = null)
-    {
-        _maxRetries = maxRetries;
-        _delay = delay == default ? TimeSpan.FromMilliseconds(100) : delay;
-        _logger = logger;
-    }
+    private readonly int _maxRetries = maxRetries;
+    private readonly TimeSpan _delay = delay == default ? TimeSpan.FromMilliseconds(100) : delay;
+    private readonly ILogger? _logger = logger;
 
     /// <inheritdoc/>
     public async Task<T> ExecuteAsync(Func<Task<T>> function, CancellationToken cancellationToken = default)

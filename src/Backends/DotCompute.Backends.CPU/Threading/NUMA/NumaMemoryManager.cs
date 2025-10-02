@@ -10,23 +10,17 @@ namespace DotCompute.Backends.CPU.Threading.NUMA;
 /// <summary>
 /// NUMA-aware memory allocation and management.
 /// </summary>
-public sealed class NumaMemoryManager : IDisposable
+/// <remarks>
+/// Initializes a new instance of the NumaMemoryManager class.
+/// </remarks>
+/// <param name="topology">NUMA topology information.</param>
+public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
 {
-    private readonly NumaTopology _topology;
-    private readonly ConcurrentDictionary<IntPtr, AllocationInfo> _allocations;
+    private readonly NumaTopology _topology = topology ?? throw new ArgumentNullException(nameof(topology));
+    private readonly ConcurrentDictionary<IntPtr, AllocationInfo> _allocations = new();
     private readonly object _lock = new();
     private long _totalAllocatedBytes;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the NumaMemoryManager class.
-    /// </summary>
-    /// <param name="topology">NUMA topology information.</param>
-    public NumaMemoryManager(NumaTopology topology)
-    {
-        _topology = topology ?? throw new ArgumentNullException(nameof(topology));
-        _allocations = new ConcurrentDictionary<IntPtr, AllocationInfo>();
-    }
 
     /// <summary>
     /// Gets the total number of bytes allocated.
@@ -168,7 +162,7 @@ public sealed class NumaMemoryManager : IDisposable
 
         if (nodeIds == null || nodeIds.Length == 0)
         {
-            nodeIds = Enumerable.Range(0, _topology.NodeCount).ToArray();
+            nodeIds = [.. Enumerable.Range(0, _topology.NodeCount)];
         }
 
         // Validate node IDs
@@ -420,11 +414,9 @@ public sealed class NumaMemoryManager : IDisposable
     }
 
     private double CalculateFragmentation()
-    {
         // Simplified fragmentation calculation
         // In a real implementation, this would analyze actual memory layout
-        return Math.Min(0.1 * _allocations.Count / 100.0, 1.0);
-    }
+        => Math.Min(0.1 * _allocations.Count / 100.0, 1.0);
 
     private void ThrowIfDisposed()
     {

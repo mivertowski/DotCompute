@@ -1,15 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Debugging.Services;
-using DotCompute.Core.Debugging.Types;
 
 namespace DotCompute.Core.Debugging;
 
@@ -26,7 +21,7 @@ namespace DotCompute.Core.Debugging;
 /// </summary>
 public class KernelDebugService : IKernelDebugService, IDisposable
 {
-    private readonly KernelDebugOrchestrator _orchestrator;
+    private readonly CoreKernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
     private bool _disposed;
 
@@ -37,10 +32,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // Create the orchestrator with specialized components
-        // Use NullLoggerFactory to create the required logger type
-        var loggerFactory = NullLoggerFactory.Instance;
-        var orchestratorLogger = loggerFactory.CreateLogger<KernelDebugOrchestrator>();
-        _orchestrator = new KernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
+        var orchestratorLogger = logger.CreateLogger<CoreKernelDebugOrchestrator>();
+        _orchestrator = new CoreKernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
 
         _logger.LogInformation("KernelDebugService initialized with modular architecture");
     }
@@ -136,19 +129,18 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
     // Additional convenience methods that leverage the modular architecture
 
-    // TODO: Implement comprehensive debug report
-    // /// <summary>
-    // /// Generates a comprehensive debug report combining all analysis types.
-    // /// </summary>
-    // public async Task<ComprehensiveDebugReport> RunComprehensiveDebugAsync(
-    //     string kernelName,
-    //     object[] inputs,
-    //     float tolerance = 1e-6f,
-    //     int determinismIterations = 5)
-    // {
-    //     ObjectDisposedException.ThrowIf(_disposed, this);
-    //     return await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs, tolerance, determinismIterations);
-    // }
+    /// <summary>
+    /// Generates a comprehensive debug report combining all analysis types.
+    /// </summary>
+    public async Task<ComprehensiveDebugReport> RunComprehensiveDebugAsync(
+        string kernelName,
+        object[] inputs,
+        float tolerance = 1e-6f,
+        int determinismIterations = 5)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.RunComprehensiveDebugAsync(kernelName, inputs, tolerance, determinismIterations);
+    }
 
     /// <summary>
     /// Generates a detailed textual report from validation results.
@@ -156,13 +148,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<string> GenerateDetailedReportAsync(KernelValidationResult validationResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        // TODO: Implement GenerateDetailedReportAsync in KernelDebugOrchestrator
-        await Task.CompletedTask;
-        return $"Debug Report for {validationResult.KernelName}:\n" +
-               $"Status: {(validationResult.IsValid ? "VALID" : "INVALID")}\n" +
-               $"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms\n" +
-               $"Backends Tested: {string.Join(", ", validationResult.BackendsTested)}\n" +
-               $"Issues Found: {validationResult.Issues.Count}";
+        return await _orchestrator.GenerateDetailedReportAsync(validationResult);
     }
 
     /// <summary>
@@ -171,14 +157,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<string> ExportReportAsync(object report, ReportFormat format)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        // TODO: Implement ExportReportAsync in KernelDebugOrchestrator
-        await Task.CompletedTask;
-        return format switch
-        {
-            ReportFormat.Json => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
-            ReportFormat.PlainText => report.ToString() ?? "No data available",
-            _ => throw new ArgumentException($"Unsupported report format: {format}")
-        };
+        return await _orchestrator.ExportReportAsync(report, format);
     }
 
     /// <summary>
@@ -187,28 +166,20 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public async Task<PerformanceReport> GeneratePerformanceReportAsync(string kernelName, TimeSpan? timeWindow = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        // TODO: Implement GeneratePerformanceReportAsync in KernelDebugOrchestrator
-        await Task.CompletedTask;
-        return new PerformanceReport
-        {
-            KernelName = kernelName,
-            TimeWindow = timeWindow ?? TimeSpan.FromHours(1),
-            Summary = $"Performance report for {kernelName} - not yet implemented"
-        };
+        return await _orchestrator.GeneratePerformanceReportAsync(kernelName, timeWindow);
     }
 
-    // TODO: Implement resource utilization analysis
-    // /// <summary>
-    // /// Analyzes resource utilization (CPU, memory, GPU) for a kernel.
-    // /// </summary>
-    // public async Task<ResourceUtilizationReport> AnalyzeResourceUtilizationAsync(
-    //     string kernelName,
-    //     object[] inputs,
-    //     TimeSpan? analysisWindow = null)
-    // {
-    //     ObjectDisposedException.ThrowIf(_disposed, this);
-    //     return await _orchestrator.AnalyzeResourceUtilizationAsync(kernelName, inputs, analysisWindow);
-    // }
+    /// <summary>
+    /// Analyzes resource utilization (CPU, memory, GPU) for a kernel.
+    /// </summary>
+    public async Task<ResourceUtilizationReport> AnalyzeResourceUtilizationAsync(
+        string kernelName,
+        object[] inputs,
+        TimeSpan? analysisWindow = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return await _orchestrator.AnalyzeResourceUtilizationAsync(kernelName, inputs, analysisWindow);
+    }
 
     /// <summary>
     /// Adds an accelerator for use in debugging operations.
@@ -216,7 +187,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public void AddAccelerator(string name, IAccelerator accelerator)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _orchestrator.RegisterAccelerator(name, accelerator);
+        _orchestrator.AddAccelerator(name, accelerator);
     }
 
     /// <summary>
@@ -225,18 +196,17 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     public bool RemoveAccelerator(string name)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _orchestrator.UnregisterAccelerator(name);
+        return _orchestrator.RemoveAccelerator(name);
     }
 
-    // TODO: Implement debug service statistics
-    // /// <summary>
-    // /// Gets current debug service statistics.
-    // /// </summary>
-    // public DebugServiceStatistics GetStatistics()
-    // {
-    //     ObjectDisposedException.ThrowIf(_disposed, this);
-    //     return _orchestrator.GetStatistics();
-    // }
+    /// <summary>
+    /// Gets current debug service statistics.
+    /// </summary>
+    public DebugServiceStatistics GetStatistics()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _orchestrator.GetStatistics();
+    }
 
     public void Dispose()
     {

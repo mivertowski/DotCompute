@@ -12,17 +12,10 @@ namespace DotCompute.Core.Debugging.Services;
 /// <summary>
 /// Generates comprehensive debug reports and documentation.
 /// </summary>
-public sealed partial class DebugReportGenerator : IDisposable
+public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? options = null) : IDisposable
 {
-    private readonly ILogger<DebugReportGenerator> _logger;
-    private readonly DebugServiceOptions _options;
+    private readonly ILogger<DebugReportGenerator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _disposed;
-
-    public DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? options = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? DebugServiceOptions.Development;
-    }
 
     /// <summary>
     /// Generates a comprehensive debug report.
@@ -179,7 +172,7 @@ public sealed partial class DebugReportGenerator : IDisposable
     /// <summary>
     /// Generates report content based on format.
     /// </summary>
-    private string GenerateReportContent(DebugData debugData, ReportFormat format)
+    private static string GenerateReportContent(DebugData debugData, ReportFormat format)
     {
         return format switch
         {
@@ -210,8 +203,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         if (debugData.PerformanceAnalysis != null)
         {
             _ = summary.AppendLine($"Performance Analysis: {debugData.PerformanceAnalysis.DataPoints} data points");
-            _ = summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
-            // Success rate not available in PerformanceAnalysis
+            _ = summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
+            _ = summary.AppendLine($"Success Rate: {debugData.PerformanceAnalysis.SuccessRate:F1}%");
         }
 
         if (debugData.DeterminismResult != null)
@@ -246,12 +239,15 @@ public sealed partial class DebugReportGenerator : IDisposable
         // Add performance recommendations
         if (debugData.PerformanceAnalysis != null)
         {
-            if (debugData.PerformanceAnalysis.AverageExecutionTimeMs > 1000) // > 1 second
+            if (debugData.PerformanceAnalysis.AverageExecutionTime > 1000) // > 1 second
             {
                 recommendations.Add("Consider optimizing for better performance (current average > 1s).");
             }
 
-            // Success rate check removed - not available in PerformanceAnalysis
+            if (debugData.PerformanceAnalysis.SuccessRate < 95)
+            {
+                recommendations.Add("Low success rate detected. Investigate and fix reliability issues.");
+            }
         }
 
         // Add determinism recommendations
@@ -297,8 +293,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         {
             _ = md.AppendLine("## Performance Analysis");
             _ = md.AppendLine($"- **Data Points:** {debugData.PerformanceAnalysis.DataPoints}");
-            _ = md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
-            // Success rate not available in PerformanceAnalysis
+            _ = md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
+            _ = md.AppendLine($"- **Success Rate:** {debugData.PerformanceAnalysis.SuccessRate:F1}%");
             _ = md.AppendLine();
         }
 
@@ -318,12 +314,12 @@ public sealed partial class DebugReportGenerator : IDisposable
         _ = md.AppendLine("## Execution Results");
         foreach (var execResult in result.ExecutionResults)
         {
-            _ = md.AppendLine($"- **{execResult.BackendType}** execution:");
+            _ = md.AppendLine($"- **{execResult.AcceleratorName}** ({execResult.AcceleratorType}):");
             _ = md.AppendLine($"  - Success: {(execResult.Success ? "✅" : "❌")}");
             _ = md.AppendLine($"  - Execution Time: {execResult.ExecutionTime.TotalMilliseconds:F2} ms");
-            if (!execResult.Success && !string.IsNullOrEmpty(execResult.ErrorMessage))
+            if (execResult.Error != null)
             {
-                _ = md.AppendLine($"  - Error: {execResult.ErrorMessage}");
+                _ = md.AppendLine($"  - Error: {execResult.Error.Message}");
             }
         }
 
@@ -355,10 +351,10 @@ public sealed partial class DebugReportGenerator : IDisposable
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Execution Time Statistics");
-        _ = md.AppendLine($"- **Average:** {performance.AverageExecutionTimeMs:F2} ms");
-        _ = md.AppendLine($"- **Median:** {performance.AverageExecutionTimeMs:F2} ms"); // Median not available, using average
-        _ = md.AppendLine($"- **Minimum:** {performance.MinExecutionTimeMs:F2} ms");
-        _ = md.AppendLine($"- **Maximum:** {performance.MaxExecutionTimeMs:F2} ms");
+        _ = md.AppendLine($"- **Average:** {performance.AverageExecutionTime:F2} ms");
+        _ = md.AppendLine($"- **Median:** {performance.MedianExecutionTime:F2} ms");
+        _ = md.AppendLine($"- **Minimum:** {performance.MinExecutionTime:F2} ms");
+        _ = md.AppendLine($"- **Maximum:** {performance.MaxExecutionTime:F2} ms");
         _ = md.AppendLine($"- **Standard Deviation:** {performance.ExecutionTimeStdDev:F2} ms");
         _ = md.AppendLine();
 
@@ -368,8 +364,8 @@ public sealed partial class DebugReportGenerator : IDisposable
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Reliability");
-        _ = md.AppendLine($"- **Data Points:** {performance.DataPointCount}");
-        _ = md.AppendLine($"- **Analysis Range:** {performance.AnalysisTimeRange.TotalSeconds:F1} seconds");
+        _ = md.AppendLine($"- **Success Rate:** {performance.SuccessRate:F1}%");
+        _ = md.AppendLine($"- **Total Executions:** {performance.TotalExecutions}");
 
         return md.ToString();
     }
@@ -440,80 +436,36 @@ public sealed partial class DebugReportGenerator : IDisposable
     #region Other Format Generators (HTML, JSON, PlainText)
 
     private static string GenerateHtmlReport(DebugData debugData)
-    {
         // HTML generation implementation
-        return $"<html><body><h1>Debug Report: {debugData.KernelName}</h1></body></html>";
-    }
+        => $"<html><body><h1>Debug Report: {debugData.KernelName}</h1></body></html>";
 
-    private static string GenerateJsonReport(DebugData debugData)
-    {
-        return JsonSerializer.Serialize(debugData, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static string GenerateJsonReport(DebugData debugData) => JsonSerializer.Serialize(debugData, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextReport(DebugData debugData)
-    {
-        return $"Debug Report for {debugData.KernelName}\nGenerated: {DateTime.UtcNow}";
-    }
+    private static string GeneratePlainTextReport(DebugData debugData) => $"Debug Report for {debugData.KernelName}\nGenerated: {DateTime.UtcNow}";
 
-    private static string GenerateHtmlCrossValidationReport(CrossValidationResult result)
-    {
-        return $"<html><body><h1>Cross-Validation: {result.KernelName}</h1></body></html>";
-    }
+    private static string GenerateHtmlCrossValidationReport(CrossValidationResult result) => $"<html><body><h1>Cross-Validation: {result.KernelName}</h1></body></html>";
 
-    private static string GenerateJsonCrossValidationReport(CrossValidationResult result)
-    {
-        return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static string GenerateJsonCrossValidationReport(CrossValidationResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextCrossValidationReport(CrossValidationResult result)
-    {
-        return $"Cross-Validation Report for {result.KernelName}\nStatus: {(result.IsValid ? "PASSED" : "FAILED")}";
-    }
+    private static string GeneratePlainTextCrossValidationReport(CrossValidationResult result) => $"Cross-Validation Report for {result.KernelName}\nStatus: {(result.IsValid ? "PASSED" : "FAILED")}";
 
-    private static string GenerateHtmlPerformanceReport(PerformanceAnalysis performance)
-    {
-        return $"<html><body><h1>Performance Analysis: {performance.KernelName}</h1></body></html>";
-    }
+    private static string GenerateHtmlPerformanceReport(PerformanceAnalysis performance) => $"<html><body><h1>Performance Analysis: {performance.KernelName}</h1></body></html>";
 
-    private static string GenerateJsonPerformanceReport(PerformanceAnalysis performance)
-    {
-        return JsonSerializer.Serialize(performance, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static string GenerateJsonPerformanceReport(PerformanceAnalysis performance) => JsonSerializer.Serialize(performance, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextPerformanceReport(PerformanceAnalysis performance)
-    {
-        return $"Performance Analysis for {performance.KernelName}\nData Points: {performance.DataPoints}";
-    }
+    private static string GeneratePlainTextPerformanceReport(PerformanceAnalysis performance) => $"Performance Analysis for {performance.KernelName}\nData Points: {performance.DataPoints}";
 
-    private static string GenerateHtmlDeterminismReport(DeterminismTestResult result)
-    {
-        return $"<html><body><h1>Determinism Test: {result.KernelName}</h1></body></html>";
-    }
+    private static string GenerateHtmlDeterminismReport(DeterminismTestResult result) => $"<html><body><h1>Determinism Test: {result.KernelName}</h1></body></html>";
 
-    private static string GenerateJsonDeterminismReport(DeterminismTestResult result)
-    {
-        return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static string GenerateJsonDeterminismReport(DeterminismTestResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextDeterminismReport(DeterminismTestResult result)
-    {
-        return $"Determinism Test for {result.KernelName}\nStatus: {(result.IsDeterministic ? "DETERMINISTIC" : "NON-DETERMINISTIC")}";
-    }
+    private static string GeneratePlainTextDeterminismReport(DeterminismTestResult result) => $"Determinism Test for {result.KernelName}\nStatus: {(result.IsDeterministic ? "DETERMINISTIC" : "NON-DETERMINISTIC")}";
 
-    private static string GenerateHtmlMemoryReport(MemoryPatternAnalysis analysis)
-    {
-        return $"<html><body><h1>Memory Analysis: {analysis.KernelName}</h1></body></html>";
-    }
+    private static string GenerateHtmlMemoryReport(MemoryPatternAnalysis analysis) => $"<html><body><h1>Memory Analysis: {analysis.KernelName}</h1></body></html>";
 
-    private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis)
-    {
-        return JsonSerializer.Serialize(analysis, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis) => JsonSerializer.Serialize(analysis, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis)
-    {
-        return $"Memory Analysis for {analysis.KernelName}\nStatus: {(analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}";
-    }
+    private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis) => $"Memory Analysis for {analysis.KernelName}\nStatus: {(analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}";
 
     #endregion
 
@@ -527,28 +479,28 @@ public sealed partial class DebugReportGenerator : IDisposable
 
     #region Logger Messages
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting report generation for {KernelName} in {Format} format")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting report generation for {KernelName} in {Format} format")]
     private partial void LogReportGenerationStarted(string kernelName, string format);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Report generated for {KernelName}: {ContentLength} characters")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Report generated for {KernelName}: {ContentLength} characters")]
     private partial void LogReportGenerated(string kernelName, int contentLength);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting cross-validation report for {KernelName}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting cross-validation report for {KernelName}")]
     private partial void LogCrossValidationReportStarted(string kernelName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting performance report for {KernelName}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting performance report for {KernelName}")]
     private partial void LogPerformanceReportStarted(string kernelName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting determinism report for {KernelName}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting determinism report for {KernelName}")]
     private partial void LogDeterminismReportStarted(string kernelName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting memory analysis report for {KernelName}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting memory analysis report for {KernelName}")]
     private partial void LogMemoryReportStarted(string kernelName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Report saved for {KernelName} to {FilePath}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Report saved for {KernelName} to {FilePath}")]
     private partial void LogReportSaved(string kernelName, string filePath);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to save report for {KernelName} to {FilePath}: {Error}")]
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Failed to save report for {KernelName} to {FilePath}: {Error}")]
     private partial void LogReportSaveFailed(string kernelName, string filePath, string error);
 
     #endregion

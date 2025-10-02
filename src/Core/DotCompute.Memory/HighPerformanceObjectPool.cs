@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 
@@ -192,10 +192,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
     /// <summary>
     /// Forces pool maintenance (cleanup, resizing, etc.).
     /// </summary>
-    public void TriggerMaintenance()
-    {
-        PerformMaintenance(null);
-    }
+    public void TriggerMaintenance() => PerformMaintenance(null);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private T ValidateAndPrepareItem(T item)
@@ -420,17 +417,11 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
 /// Thread-local pool for high-frequency operations.
 /// </summary>
 /// <typeparam name="T">The type of objects to pool.</typeparam>
-internal sealed class LocalPool<T> where T : class
+internal sealed class LocalPool<T>(int capacity) where T : class
 {
-    private readonly T?[] _items;
+    private readonly T?[] _items = new T[capacity];
     private int _count;
-    private readonly int _capacity;
-
-    public LocalPool(int capacity)
-    {
-        _capacity = capacity;
-        _items = new T[capacity];
-    }
+    private readonly int _capacity = capacity;
 
     public int Count => _count;
 

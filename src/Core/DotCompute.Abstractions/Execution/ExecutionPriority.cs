@@ -106,18 +106,12 @@ public static class ExecutionPriorityExtensions
     /// <param name="priority">The current priority.</param>
     /// <param name="other">The other priority to compare against.</param>
     /// <returns>True if this priority is higher than the other.</returns>
-    public static bool IsHigherThan(this ExecutionPriority priority, ExecutionPriority other)
-    {
-        return priority > other;
-    }
+    public static bool IsHigherThan(this ExecutionPriority priority, ExecutionPriority other) => priority > other;
 
     /// <summary>
     /// Determines if this priority is real-time or critical.
     /// </summary>
     /// <param name="priority">The execution priority.</param>
     /// <returns>True if the priority is real-time or critical.</returns>
-    public static bool IsUrgent(this ExecutionPriority priority)
-    {
-        return priority >= ExecutionPriority.Critical;
-    }
+    public static bool IsUrgent(this ExecutionPriority priority) => priority >= ExecutionPriority.Critical;
 }

@@ -21,7 +21,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     private readonly AcceleratorInfo _info;
     private readonly Mock<IUnifiedMemoryManager> _memoryManagerMock;
     private readonly Mock<ICompiledKernel> _compiledKernelMock;
-    private readonly List<Action> _disposeActions = new();
+    private readonly List<Action> _disposeActions = [];
     private bool _disposed;
 
     /// <inheritdoc/>
@@ -188,7 +188,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
 
         // Setup memory statistics
         _ = mock.Setup(m => m.Statistics)
-            .Returns(() => new DotCompute.Memory.MemoryStatistics());
+            .Returns(() => new Memory.MemoryStatistics());
 
         // Setup memory properties
         _ = mock.Setup(m => m.TotalAvailableMemory)
@@ -416,10 +416,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     /// <summary>
     /// Registers an action to be executed during disposal for cleanup testing.
     /// </summary>
-    public void RegisterDisposeAction(Action action)
-    {
-        _disposeActions.Add(action);
-    }
+    public void RegisterDisposeAction(Action action) => _disposeActions.Add(action);
 
     #endregion
 }
@@ -434,11 +431,11 @@ public static class MockAcceleratorFactory
     /// </summary>
     public static List<IAccelerator> CreateStandardCollection()
     {
-        return new List<IAccelerator>
-        {
+        return
+        [
             ConsolidatedMockAccelerator.CreateCpuMock(),
             ConsolidatedMockAccelerator.CreateGpuMock()
-        };
+        ];
     }
 
     /// <summary>
@@ -446,12 +443,12 @@ public static class MockAcceleratorFactory
     /// </summary>
     public static List<IAccelerator> CreateComprehensiveCollection()
     {
-        return new List<IAccelerator>
-        {
+        return
+        [
             ConsolidatedMockAccelerator.CreateCpuMock(),
             ConsolidatedMockAccelerator.CreateGpuMock(),
             ConsolidatedMockAccelerator.CreateMetalMock()
-        };
+        ];
     }
 
     /// <summary>
@@ -460,11 +457,11 @@ public static class MockAcceleratorFactory
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "Factory method returns objects for caller to manage")]
     public static List<IAccelerator> CreateFailureTestCollection()
     {
-        return new List<IAccelerator>
-        {
+        return
+        [
             ConsolidatedMockAccelerator.CreateCpuMock(),
             ConsolidatedMockAccelerator.CreateGpuMock().SimulateCompilationFailure()
-        };
+        ];
     }
 
     /// <summary>
@@ -472,9 +469,9 @@ public static class MockAcceleratorFactory
     /// </summary>
     public static List<IAccelerator> CreateCpuOnlyCollection()
     {
-        return new List<IAccelerator>
-        {
+        return
+        [
             ConsolidatedMockAccelerator.CreateCpuMock()
-        };
+        ];
     }
 }

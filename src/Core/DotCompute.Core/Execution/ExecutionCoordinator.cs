@@ -11,21 +11,13 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Coordinates execution across multiple devices with synchronization primitives.
     /// </summary>
-    public sealed class ExecutionCoordinator : IAsyncDisposable
+    public sealed class ExecutionCoordinator(ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<string, ExecutionEvent> _events;
-        private readonly ConcurrentDictionary<string, ExecutionBarrier> _barriers;
-        private readonly SemaphoreSlim _coordinationSemaphore;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, ExecutionEvent> _events = new();
+        private readonly ConcurrentDictionary<string, ExecutionBarrier> _barriers = new();
+        private readonly SemaphoreSlim _coordinationSemaphore = new(1);
         private bool _disposed;
-
-        public ExecutionCoordinator(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _events = new ConcurrentDictionary<string, ExecutionEvent>();
-            _barriers = new ConcurrentDictionary<string, ExecutionBarrier>();
-            _coordinationSemaphore = new SemaphoreSlim(1);
-        }
 
         /// <summary>
         /// Creates a synchronization event.
@@ -188,22 +180,15 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Represents a synchronization event for device coordination.
     /// </summary>
-    public sealed class ExecutionEvent : IAsyncDisposable
+    public sealed class ExecutionEvent(string name, ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly SemaphoreSlim _semaphore;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly SemaphoreSlim _semaphore = new(0);
         private volatile bool _isSignaled;
         private bool _disposed;
 
-        public ExecutionEvent(string name, ILogger logger)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _semaphore = new SemaphoreSlim(0);
-        }
-
         /// <summary>Gets the event name.</summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>Gets whether the event has been signaled.</summary>
         public bool IsSignaled => _isSignaled;
@@ -293,25 +278,17 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Represents a synchronization barrier for coordinating multiple devices.
     /// </summary>
-    public sealed class ExecutionBarrier : IAsyncDisposable
+    public sealed class ExecutionBarrier(string name, int participantCount, ILogger logger) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly int _participantCount;
-        private readonly SemaphoreSlim _entrySemaphore;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly int _participantCount = participantCount;
+        private readonly SemaphoreSlim _entrySemaphore = new(0);
         private volatile int _participantsEntered;
         private volatile bool _isComplete;
         private bool _disposed;
 
-        public ExecutionBarrier(string name, int participantCount, ILogger logger)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            _participantCount = participantCount;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _entrySemaphore = new SemaphoreSlim(0);
-        }
-
         /// <summary>Gets the barrier name.</summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>Gets the number of participants required.</summary>
         public int ParticipantCount => _participantCount;

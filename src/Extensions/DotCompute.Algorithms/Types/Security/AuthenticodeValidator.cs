@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Types.Security;
@@ -10,19 +10,14 @@ namespace DotCompute.Algorithms.Types.Security;
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies.
 /// </summary>
-public class AuthenticodeValidator : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
+/// </remarks>
+/// <param name="logger">Optional logger for diagnostics.</param>
+public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null) : IDisposable
 {
-    private readonly ILogger<AuthenticodeValidator>? _logger;
+    private readonly ILogger<AuthenticodeValidator>? _logger = logger;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
-    /// </summary>
-    /// <param name="logger">Optional logger for diagnostics.</param>
-    public AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null)
-    {
-        _logger = logger;
-    }
 
     /// <summary>
     /// Validates the Authenticode signature of an assembly.
@@ -203,7 +198,7 @@ public class AuthenticodeValidationResult
     /// <summary>
     /// Gets or sets the certificate information.
     /// </summary>
-    public System.Security.Cryptography.X509Certificates.X509Certificate2? CertificateInfo { get; set; }
+    public X509Certificate2? CertificateInfo { get; set; }
 
     /// <summary>
     /// Gets or sets the error message if validation failed.

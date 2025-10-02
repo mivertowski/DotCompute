@@ -8,16 +8,10 @@ namespace DotCompute.Abstractions.Interfaces.Recovery;
 /// <summary>
 /// Base recovery strategy implementation with common functionality
 /// </summary>
-public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContext>
+public abstract class BaseRecoveryStrategy<TContext>(ILogger logger) : IRecoveryStrategy<TContext>
 {
-    protected readonly ILogger Logger;
-    protected readonly RecoveryMetrics Metrics;
-
-    protected BaseRecoveryStrategy(ILogger logger)
-    {
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        Metrics = new RecoveryMetrics();
-    }
+    protected readonly ILogger Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    protected readonly RecoveryMetrics Metrics = new();
 
     public abstract RecoveryCapability Capability { get; }
     public abstract int Priority { get; }

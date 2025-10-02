@@ -14,24 +14,18 @@ namespace DotCompute.Core.Execution.Optimization
     /// This optimizer applies optimizations that are common across different execution strategies,
     /// such as memory optimization, performance-based adjustments, and device-specific optimizations.
     /// </remarks>
-    public sealed class ExecutionPlanOptimizer
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExecutionPlanOptimizer"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for diagnostic information.</param>
+    /// <param name="performanceMonitor">The performance monitor for gathering metrics.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="logger"/> or <paramref name="performanceMonitor"/> is null.
+    /// </exception>
+    public sealed class ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
     {
-        private readonly ILogger _logger;
-        private readonly PerformanceMonitor _performanceMonitor;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionPlanOptimizer"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <param name="performanceMonitor">The performance monitor for gathering metrics.</param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="logger"/> or <paramref name="performanceMonitor"/> is null.
-        /// </exception>
-        public ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
-        }
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
 
         /// <summary>
         /// Applies cross-cutting optimizations to any execution plan.
@@ -97,7 +91,7 @@ namespace DotCompute.Core.Execution.Optimization
             // Apply optimizations based on performance monitoring data
             var metrics = _performanceMonitor.GetCurrentMetrics();
 
-            if (metrics.MetricsByStrategy.TryGetValue((DotCompute.Abstractions.Types.ExecutionStrategyType)(int)plan.StrategyType, out var strategyMetrics))
+            if (metrics.MetricsByStrategy.TryGetValue((AbstractionsMemory.Types.ExecutionStrategyType)(int)plan.StrategyType, out var strategyMetrics))
             {
                 if (strategyMetrics.AverageEfficiencyPercentage < 60)
                 {

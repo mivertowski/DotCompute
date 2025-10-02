@@ -13,19 +13,14 @@ namespace DotCompute.Core.Execution.Optimization
     /// This optimizer provides strategy-specific optimizations for data parallel, model parallel,
     /// and pipeline execution plans, focusing on performance improvements specific to each execution pattern.
     /// </remarks>
-    public sealed class ExecutionOptimizer
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ExecutionOptimizer"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for diagnostic information.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public sealed class ExecutionOptimizer(ILogger logger)
     {
-        private readonly ILogger _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExecutionOptimizer"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public ExecutionOptimizer(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         /// Optimizes data parallel execution plan for improved performance across devices.

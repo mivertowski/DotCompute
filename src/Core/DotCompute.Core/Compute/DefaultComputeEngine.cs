@@ -16,22 +16,13 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// Simple implementation of IKernelSource for testing.
     /// </summary>
-    internal class KernelSource : IKernelSource
+    internal class KernelSource(string name, string code, KernelLanguage language, string entryPoint, string[]? dependencies = null) : IKernelSource
     {
-        public KernelSource(string name, string code, KernelLanguage language, string entryPoint, string[]? dependencies = null)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Code = code ?? throw new ArgumentNullException(nameof(code));
-            Language = language;
-            EntryPoint = entryPoint ?? "main";
-            Dependencies = dependencies ?? [];
-        }
-
-        public string Name { get; }
-        public string Code { get; }
-        public KernelLanguage Language { get; }
-        public string EntryPoint { get; }
-        public string[] Dependencies { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+        public string Code { get; } = code ?? throw new ArgumentNullException(nameof(code));
+        public KernelLanguage Language { get; } = language;
+        public string EntryPoint { get; } = entryPoint ?? "main";
+        public string[] Dependencies { get; } = dependencies ?? [];
     }
 
     /// <summary>
@@ -43,29 +34,20 @@ namespace DotCompute.Core.Compute
     /// It automatically detects available backends and provides a unified interface for
     /// compute operations across different hardware platforms.
     /// </remarks>
-    public class DefaultComputeEngine : IComputeEngine
+    /// <remarks>
+    /// Initializes a new instance of the DefaultComputeEngine class.
+    /// </remarks>
+    /// <param name="acceleratorManager">The accelerator manager for device discovery and selection.</param>
+    /// <param name="logger">The logger instance for diagnostics and monitoring.</param>
+    /// <exception cref="ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
+    public class DefaultComputeEngine(
+        IAcceleratorManager acceleratorManager,
+        ILogger<DefaultComputeEngine> logger) : IComputeEngine
     {
-        private readonly IAcceleratorManager _acceleratorManager;
-        private readonly ILogger<DefaultComputeEngine> _logger;
-        private readonly List<ComputeBackendType> _availableBackends;
+        private readonly IAcceleratorManager _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
+        private readonly ILogger<DefaultComputeEngine> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly List<ComputeBackendType> _availableBackends = [];
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the DefaultComputeEngine class.
-        /// </summary>
-        /// <param name="acceleratorManager">The accelerator manager for device discovery and selection.</param>
-        /// <param name="logger">The logger instance for diagnostics and monitoring.</param>
-        /// <exception cref="ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
-        public DefaultComputeEngine(
-            IAcceleratorManager acceleratorManager,
-            ILogger<DefaultComputeEngine> logger)
-        {
-            _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            // Initialize backends on first use (lazy initialization)
-            _availableBackends = [];
-        }
 
         /// <summary>
         /// Gets the array of available compute backends on this system.
@@ -124,11 +106,7 @@ namespace DotCompute.Core.Compute
                 RequiredFeatures = null
             };
 
-            var accelerator = _acceleratorManager.SelectBest(criteria) ?? _acceleratorManager.Default;
-            if (accelerator == null)
-            {
-                throw new InvalidOperationException("No accelerators available for kernel compilation");
-            }
+            var accelerator = (_acceleratorManager.SelectBest(criteria) ?? _acceleratorManager.Default) ?? throw new InvalidOperationException("No accelerators available for kernel compilation");
 
             // Create a simple kernel source implementation
             var kernelSourceImpl = new KernelSource(

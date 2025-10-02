@@ -59,7 +59,7 @@ public class SimdOperationsTests
     }
 
 
-    [SkippableFactAttribute]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_SSE_Detection_ReturnsCorrectValues()
     {
@@ -75,7 +75,7 @@ public class SimdOperationsTests
     }
 
 
-    [SkippableFactAttribute]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_AVX_Detection_ReturnsCorrectValues()
     {
@@ -89,7 +89,7 @@ public class SimdOperationsTests
     }
 
 
-    [SkippableFactAttribute]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void X86SimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
     {
@@ -131,7 +131,7 @@ public class SimdOperationsTests
     }
 
 
-    [SkippableFactAttribute]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void ArmSimdInfo_NEON_Detection_ReturnsCorrectValues()
     {
@@ -143,7 +143,7 @@ public class SimdOperationsTests
     }
 
 
-    [SkippableFactAttribute]
+    [SkippableFact]
     [Trait("Category", TestCategories.RequiresSIMD)]
     public void ArmSimdInfo_AdditionalInstructions_Detection_ReturnsCorrectValues()
     {
@@ -151,7 +151,7 @@ public class SimdOperationsTests
 
         // Act & Assert
         _ = ArmSimdInfo.HasCrc32.Should().Be(Crc32.IsSupported);
-        _ = ArmSimdInfo.HasAes.Should().Be(global::System.Runtime.Intrinsics.Arm.Aes.IsSupported);
+        _ = ArmSimdInfo.HasAes.Should().Be(System.Runtime.Intrinsics.Arm.Aes.IsSupported);
         _ = ArmSimdInfo.HasSha1.Should().Be(Sha1.IsSupported);
         _ = ArmSimdInfo.HasSha256.Should().Be(Sha256.IsSupported);
         _ = ArmSimdInfo.HasDp.Should().Be(Dp.IsSupported);

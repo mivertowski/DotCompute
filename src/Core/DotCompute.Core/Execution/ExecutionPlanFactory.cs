@@ -19,24 +19,17 @@ namespace DotCompute.Core.Execution
     /// Factory for creating optimal execution plans based on workload characteristics and available resources.
     /// Provides methods to create single optimal plans or multiple plan alternatives for comparison.
     /// </summary>
-    public sealed class ExecutionPlanFactory
+    /// <remarks>
+    /// Initializes a new instance of the ExecutionPlanFactory class.
+    /// </remarks>
+    /// <param name="logger">Logger for factory operations</param>
+    /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
+    public sealed class ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
     {
-        private readonly ExecutionPlanGenerator _generator;
-        private readonly ExecutionPlanOptimizer _optimizer;
-        private readonly ILogger _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the ExecutionPlanFactory class.
-        /// </summary>
-        /// <param name="logger">Logger for factory operations</param>
-        /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
-        public ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _generator = new ExecutionPlanGenerator(logger, performanceMonitor);
-            _optimizer = new ExecutionPlanOptimizer(logger, performanceMonitor);
-        }
+        private readonly ExecutionPlanGenerator _generator = new(logger, performanceMonitor);
+        private readonly ExecutionPlanOptimizer _optimizer = new(logger, performanceMonitor);
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         /// Creates an optimal execution plan based on workload characteristics and available resources.
@@ -63,10 +56,10 @@ namespace DotCompute.Core.Execution
             _logger.LogInfoMessage($"Creating optimal execution plan for workload {workload.WorkloadType} with {availableDevices.Length} devices");
 
             // Analyze workload characteristics
-            var workloadAnalysis = AnalyzeWorkloadAsync(workload, cancellationToken);
+            var workloadAnalysis = AnalyzeWorkload(workload, cancellationToken);
 
             // Recommend optimal strategy
-            var strategyRecommendation = RecommendExecutionStrategyAsync(
+            var strategyRecommendation = RecommendExecutionStrategy(
                 workloadAnalysis, availableDevices, constraints, cancellationToken);
 
             // Generate plan based on recommended strategy
@@ -99,7 +92,7 @@ namespace DotCompute.Core.Execution
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var alternatives = new List<ExecutionPlan<T>>();
-            var strategies = GetViableStrategies<T>(workload, availableDevices, constraints);
+            var strategies = GetViableStrategies(workload, availableDevices, constraints);
 
             foreach (var strategy in strategies)
             {
@@ -134,7 +127,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Analyzes workload characteristics to inform execution strategy selection.
         /// </summary>
-        private WorkloadAnalysis AnalyzeWorkloadAsync<T>(ExecutionWorkload<T> workload,
+        private WorkloadAnalysis AnalyzeWorkload<T>(ExecutionWorkload<T> workload,
             CancellationToken cancellationToken) where T : unmanaged
         {
             var analysis = new WorkloadAnalysis
@@ -154,7 +147,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Recommends the optimal execution strategy based on workload analysis and constraints.
         /// </summary>
-        private static ExecutionStrategyType RecommendExecutionStrategyAsync(WorkloadAnalysis workloadAnalysis,
+        private static ExecutionStrategyType RecommendExecutionStrategy(WorkloadAnalysis workloadAnalysis,
             IAccelerator[] availableDevices,
             ExecutionConstraints constraints,
             CancellationToken cancellationToken)
@@ -206,18 +199,18 @@ namespace DotCompute.Core.Execution
         {
             return strategy switch
             {
-                ExecutionStrategyType.DataParallel => await GenerateDataParallelPlan(workload, availableDevices, constraints, cancellationToken),
-                ExecutionStrategyType.ModelParallel => await GenerateModelParallelPlan(workload, availableDevices, constraints, cancellationToken),
-                ExecutionStrategyType.PipelineParallel => await GeneratePipelinePlan(workload, availableDevices, constraints, cancellationToken),
-                ExecutionStrategyType.WorkStealing => await GenerateWorkStealingPlan(workload, availableDevices, constraints, cancellationToken),
-                _ => await GenerateSingleDevicePlan(workload, availableDevices, constraints, cancellationToken)
+                ExecutionStrategyType.DataParallel => await GenerateDataParallelPlanAsync(workload, availableDevices, constraints, cancellationToken),
+                ExecutionStrategyType.ModelParallel => await GenerateModelParallelPlanAsync(workload, availableDevices, constraints, cancellationToken),
+                ExecutionStrategyType.PipelineParallel => await GeneratePipelinePlanAsync(workload, availableDevices, constraints, cancellationToken),
+                ExecutionStrategyType.WorkStealing => await GenerateWorkStealingPlanAsync(workload, availableDevices, constraints, cancellationToken),
+                _ => await GenerateSingleDevicePlanAsync(workload, availableDevices, constraints, cancellationToken)
             };
         }
 
         /// <summary>
         /// Generates a data parallel execution plan.
         /// </summary>
-        private async ValueTask<ExecutionPlan<T>> GenerateDataParallelPlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GenerateDataParallelPlanAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,
             ExecutionConstraints constraints,
@@ -247,7 +240,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Generates a model parallel execution plan.
         /// </summary>
-        private async ValueTask<ExecutionPlan<T>> GenerateModelParallelPlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GenerateModelParallelPlanAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,
             ExecutionConstraints constraints,
@@ -269,7 +262,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Generates a pipeline execution plan.
         /// </summary>
-        private async ValueTask<ExecutionPlan<T>> GeneratePipelinePlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GeneratePipelinePlanAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,
             ExecutionConstraints constraints,
@@ -293,7 +286,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Generates a work stealing execution plan.
         /// </summary>
-        private async ValueTask<ExecutionPlan<T>> GenerateWorkStealingPlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GenerateWorkStealingPlanAsync<T>(
             ExecutionWorkload<T> workload,
             IAccelerator[] availableDevices,
             ExecutionConstraints constraints,
@@ -301,12 +294,12 @@ namespace DotCompute.Core.Execution
             // Work stealing plans would be implemented similar to data parallel
             // but with different load balancing and synchronization strategies
 
-            => await GenerateDataParallelPlan(workload, availableDevices, constraints, cancellationToken);
+            => await GenerateDataParallelPlanAsync(workload, availableDevices, constraints, cancellationToken);
 
         /// <summary>
         /// Generates a single device execution plan.
         /// </summary>
-        private async ValueTask<ExecutionPlan<T>> GenerateSingleDevicePlan<T>(
+        private async ValueTask<ExecutionPlan<T>> GenerateSingleDevicePlanAsync<T>(
         ExecutionWorkload<T> workload,
         IAccelerator[] availableDevices,
         ExecutionConstraints constraints,

@@ -17,19 +17,14 @@ namespace DotCompute.Core.Execution.Analysis
     /// This analyzer identifies various types of dependencies including data hazards,
     /// structural dependencies, and control flow dependencies to enable safe parallel execution.
     /// </remarks>
-    public sealed class DependencyAnalyzer
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DependencyAnalyzer"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance for diagnostic information.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public sealed class DependencyAnalyzer(ILogger logger)
     {
-        private readonly ILogger _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DependencyAnalyzer"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance for diagnostic information.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-        public DependencyAnalyzer(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         /// Analyzes data dependencies for parallel execution between input and output buffers.

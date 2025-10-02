@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
@@ -125,7 +125,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // Use pinned memory for better streaming performance
-            var options = MemoryOptions.HostVisible;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
 
             try
             {
@@ -168,7 +168,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // For very large allocations, use memory mapping strategy
-            var options = MemoryOptions.HostVisible | MemoryOptions.Cached;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible | DotCompute.Abstractions.Memory.MemoryOptions.Cached;
 
             try
             {
@@ -351,9 +351,9 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Determines optimal memory options based on buffer size and device capabilities.
         /// </summary>
-        private DotCompute.Abstractions.Memory.MemoryOptions DetermineOptimalMemoryOptions(long sizeInBytes)
+        private MemoryOptions DetermineOptimalMemoryOptions(long sizeInBytes)
         {
-            var options = MemoryOptions.None;
+            var options = DotCompute.Abstractions.Memory.MemoryOptions.None;
 
             // For P2P-capable devices, prefer device-only memory for large buffers
             if (_deviceCapabilities.SupportsP2P && sizeInBytes > 1024 * 1024) // > 1MB
@@ -365,13 +365,13 @@ namespace DotCompute.Core.Memory
             // For smaller buffers or non-P2P devices, use host-visible memory
             if (sizeInBytes <= 64 * 1024 || !_deviceCapabilities.SupportsP2P) // <= 64KB
             {
-                options |= MemoryOptions.HostVisible;
+                options |= DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
             }
 
             // Enable caching for frequently accessed data
             if (sizeInBytes <= 16 * 1024 * 1024) // <= 16MB
             {
-                options |= MemoryOptions.Cached;
+                options |= DotCompute.Abstractions.Memory.MemoryOptions.Cached;
             }
 
             return options;
@@ -503,22 +503,15 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// Wrapper for memory buffers that automatically returns to pool on disposal.
     /// </summary>
-    internal sealed class PooledMemoryBuffer : IUnifiedMemoryBuffer
+    internal sealed class PooledMemoryBuffer(IUnifiedMemoryBuffer underlyingBuffer, DeviceBufferPool pool, long originalSize) : IUnifiedMemoryBuffer
     {
-        private readonly IUnifiedMemoryBuffer _underlyingBuffer;
-        private readonly DeviceBufferPool _pool;
-        private readonly long _originalSize;
+        private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer;
+        private readonly DeviceBufferPool _pool = pool;
+        private readonly long _originalSize = originalSize;
         private bool _disposed;
 
-        public PooledMemoryBuffer(IUnifiedMemoryBuffer underlyingBuffer, DeviceBufferPool pool, long originalSize)
-        {
-            _underlyingBuffer = underlyingBuffer;
-            _pool = pool;
-            _originalSize = originalSize;
-        }
-
         public long SizeInBytes => _underlyingBuffer.SizeInBytes;
-        public DotCompute.Abstractions.Memory.MemoryOptions Options => _underlyingBuffer.Options;
+        public MemoryOptions Options => _underlyingBuffer.Options;
         public bool IsDisposed => _disposed;
         public BufferState State => _underlyingBuffer.State;
 

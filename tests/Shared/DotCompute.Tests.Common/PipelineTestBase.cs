@@ -52,10 +52,7 @@ public abstract class PipelineTestBase : IDisposable
     /// Creates a new kernel chain builder for testing pipeline functionality.
     /// </summary>
     /// <returns>Configured kernel chain builder instance</returns>
-    protected IKernelChainBuilder CreatePipelineBuilder()
-    {
-        return Services.GetRequiredService<IKernelChainBuilder>();
-    }
+    protected IKernelChainBuilder CreatePipelineBuilder() => Services.GetRequiredService<IKernelChainBuilder>();
 
     /// <summary>
     /// Asserts that pipeline execution produces expected results with proper validation.
@@ -111,10 +108,7 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="size">Number of elements to generate</param>
     /// <param name="pattern">Data pattern type for generation</param>
     /// <returns>Generated test data array</returns>
-    protected T[] GenerateTestData<T>(int size, DataPattern pattern = DataPattern.Random) where T : struct
-    {
-        return DataGenerator.GenerateNumericData<T>(size, pattern);
-    }
+    protected T[] GenerateTestData<T>(int size, DataPattern pattern = DataPattern.Random) where T : struct => DataGenerator.GenerateNumericData<T>(size, pattern);
 
     /// <summary>
     /// Measures execution time for a pipeline operation with high precision.

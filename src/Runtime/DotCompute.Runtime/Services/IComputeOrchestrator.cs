@@ -11,7 +11,7 @@ namespace DotCompute.Runtime.Services
     /// Use DotCompute.Abstractions.Interfaces.IComputeOrchestrator instead.
     /// </summary>
     [Obsolete("Use DotCompute.Abstractions.Interfaces.IComputeOrchestrator instead")]
-    public interface IComputeOrchestrator : DotCompute.Abstractions.Interfaces.IComputeOrchestrator
+    public interface IComputeOrchestrator : Abstractions.Interfaces.IComputeOrchestrator
     {
     }
 }

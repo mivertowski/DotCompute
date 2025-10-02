@@ -6,10 +6,7 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Execution;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
-using DotCompute.Algorithms.Management.Validation;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types.Models;
-using NuGetValidationResult = DotCompute.Algorithms.Types.Models.NuGetValidationResult;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Core;
@@ -58,8 +55,8 @@ public sealed class AlgorithmPluginManagerCore : IAlgorithmPluginManagerCore
         DiscoveryService = new PluginDiscoveryService(discoveryLogger, LifecycleManager, securityValidator, pluginOptions);
 
         // Create NuGet service
-        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Loading.NuGetPluginService>.Instance;
-        NuGetService = new Loading.NuGetPluginService(nugetLogger);
+        var nugetLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginService>.Instance;
+        NuGetService = new NuGetPluginService(nugetLogger);
 
         // Create executor
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginExecutor>.Instance;

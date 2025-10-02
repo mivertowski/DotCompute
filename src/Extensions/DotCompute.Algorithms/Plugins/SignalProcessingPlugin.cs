@@ -3,27 +3,23 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types.SignalProcessing;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Plugins
 {
 
-/// <summary>
-/// Plugin for signal processing operations.
-/// </summary>
-public sealed class SignalProcessingPlugin : AlgorithmPluginBase
-{
     /// <summary>
-    /// Initializes a new instance of the <see cref="SignalProcessingPlugin"/> class.
+    /// Plugin for signal processing operations.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SignalProcessingPlugin"/> class.
+    /// </remarks>
     /// <param name="logger">The logger instance.</param>
-    public SignalProcessingPlugin(ILogger<SignalProcessingPlugin> logger) : base(logger)
-    {
-    }
+    public sealed class SignalProcessingPlugin(ILogger<SignalProcessingPlugin> logger) : AlgorithmPluginBase(logger)
+{
 
-    /// <inheritdoc/>
-    public override string Id => "com.dotcompute.algorithms.dsp";
+        /// <inheritdoc/>
+        public override string Id => "com.dotcompute.algorithms.dsp";
 
     /// <inheritdoc/>
     public override string Name => "Digital Signal Processing";

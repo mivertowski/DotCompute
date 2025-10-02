@@ -11,20 +11,13 @@ namespace DotCompute.Core.Security;
 /// Handles critical security event alerts and attack pattern analysis.
 /// Provides real-time security monitoring and incident response.
 /// </summary>
-public sealed class SecurityAlertManager
+public sealed class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
+    SecurityLoggingConfiguration configuration,
+    Dictionary<string, object> sessionMetadata)
 {
-    private readonly ILogger _logger;
-    private readonly SecurityLoggingConfiguration _configuration;
-    private readonly Dictionary<string, object> _sessionMetadata;
-
-    public SecurityAlertManager(ILogger<SecurityAlertManager> logger,
-        SecurityLoggingConfiguration configuration,
-        Dictionary<string, object> sessionMetadata)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _sessionMetadata = sessionMetadata ?? throw new ArgumentNullException(nameof(sessionMetadata));
-    }
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SecurityLoggingConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    private readonly Dictionary<string, object> _sessionMetadata = sessionMetadata ?? throw new ArgumentNullException(nameof(sessionMetadata));
 
     /// <summary>
     /// Handles critical security events with immediate alerting.
@@ -36,8 +29,7 @@ public sealed class SecurityAlertManager
             return;
         }
 
-        _logger.LogCritical("Critical security event detected: {EventType} - {Message}",
-
+        _logger.LogCritical("Critical security event detected: {EventType} - {Message}", 
             entry.EventType, entry.Message);
 
         // Analyze for attack patterns
@@ -54,8 +46,7 @@ public sealed class SecurityAlertManager
         {
             if (OperatingSystem.IsWindows())
             {
-                EventLog.WriteEntry("DotCompute.Security",
-
+                EventLog.WriteEntry("DotCompute.Security", 
                     $"Critical security event: {entry.EventType} - {entry.Message}",
                     EventLogEntryType.Error);
             }
@@ -81,11 +72,9 @@ public sealed class SecurityAlertManager
             // - User behavior analysis
             // - Threat intelligence correlation
             // For now, this is a placeholder for the actual implementation
-
-
+            
             var patterns = new List<string>();
-
-
+            
             switch (violationType)
             {
                 case SecurityViolationType.InputValidation:
@@ -169,8 +158,7 @@ public sealed class SecurityAlertManager
             // - SIEM integration
             // - Slack/Teams notifications
             // For now, this is a placeholder for the actual implementation
-
-
+            
             var alertMessage = $"CRITICAL SECURITY ALERT\n" +
                               $"Event Type: {entry.EventType}\n" +
                               $"Level: {entry.Level}\n" +
@@ -197,8 +185,7 @@ public sealed class SecurityAlertManager
         _sessionMetadata["UserId"] = Environment.UserName;
         _sessionMetadata["OSVersion"] = Environment.OSVersion.ToString();
         _sessionMetadata["RuntimeVersion"] = Environment.Version.ToString();
-
-
+        
         if (OperatingSystem.IsWindows())
         {
             _sessionMetadata["Platform"] = "Windows";
@@ -230,7 +217,7 @@ public sealed class SecurityAlertManager
             {
                 CheckTime = DateTimeOffset.UtcNow,
                 IsHealthy = true,
-                Issues = new List<string>()
+                Issues = []
             };
 
             // Check audit log file integrity
@@ -274,8 +261,7 @@ public sealed class SecurityAlertManager
             // - Geographic anomaly detection
             // - Time-based anomaly detection
             // - Behavioral analysis
-
-
+            
             var suspiciousIndicators = new List<string>();
 
             // Check for rapid successive failures
@@ -285,8 +271,7 @@ public sealed class SecurityAlertManager
             }
 
             // Check for access to sensitive resources
-            if (entry.EventType == SecurityEventType.AccessDenied &&
-
+            if (entry.EventType == SecurityEventType.AccessDenied && 
                 !string.IsNullOrEmpty(entry.ResourceId) &&
                 entry.ResourceId.Contains("admin", StringComparison.OrdinalIgnoreCase))
             {
@@ -314,6 +299,6 @@ public sealed class SecurityHealthStatus
 {
     public DateTimeOffset CheckTime { get; init; }
     public bool IsHealthy { get; set; }
-    public List<string> Issues { get; init; } = new();
-    public Dictionary<string, object> Details { get; init; } = new();
+    public List<string> Issues { get; init; } = [];
+    public Dictionary<string, object> Details { get; init; } = [];
 }

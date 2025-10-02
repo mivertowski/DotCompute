@@ -53,14 +53,14 @@ namespace DotCompute.Backends.CUDA
             services.TryAddSingleton<CudaBackendFactory>();
 
             // Register multiple CUDA accelerators (one per device)
-            _ = services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
+            _ = services.AddSingleton(provider =>
             {
                 var factory = provider.GetRequiredService<CudaBackendFactory>();
                 return factory.CreateAccelerators();
             });
 
             // Register a default CUDA accelerator as the primary CudaAccelerator
-            _ = services.AddSingleton<CudaAccelerator>(provider =>
+            _ = services.AddSingleton(provider =>
             {
                 var factory = provider.GetRequiredService<CudaBackendFactory>();
                 var defaultAccelerator = factory.CreateDefaultAccelerator();
@@ -310,21 +310,21 @@ namespace DotCompute.Backends.CUDA
             services.TryAddSingleton<CudaBackendFactory>();
 
             // Register multiple CUDA accelerators (one per device)
-            _ = services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
+            _ = services.AddSingleton(provider =>
             {
                 var factory = provider.GetRequiredService<CudaBackendFactory>();
                 return factory.CreateAccelerators();
             });
 
             // Register a default CUDA accelerator
-            _ = services.AddSingleton<IAccelerator>(provider =>
+            _ = services.AddSingleton(provider =>
             {
                 var factory = provider.GetRequiredService<CudaBackendFactory>();
                 var defaultAccelerator = factory.CreateDefaultAccelerator();
 
                 return defaultAccelerator == null
                     ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
-                    : (IAccelerator)new Plugins.Core.NamedAcceleratorWrapper("cuda", defaultAccelerator);
+                    : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
             });
 
             return services;
@@ -341,7 +341,7 @@ namespace DotCompute.Backends.CUDA
             {
                 var logger = provider.GetService<ILogger<CudaAccelerator>>();
                 var accelerator = new CudaAccelerator(deviceId, logger);
-                return new Plugins.Core.NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
+                return new NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
             });
 
             return services;

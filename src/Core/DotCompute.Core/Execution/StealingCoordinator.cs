@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Execution.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution
@@ -11,11 +10,6 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public class StealingCoordinator
     {
-        private readonly int _deviceCount;
-        private readonly ILogger _logger;
-        private readonly int[,] _successfulSteals;
-        private readonly int[,] _failedSteals;
-        private readonly Lock _statsLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StealingCoordinator"/> class.
@@ -36,7 +30,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="thiefIndex">Index of the thief.</param>
         /// <param name="victimIndex">Index of the victim.</param>
-        public void RecordSuccessfulSteal(int thiefIndex, int victimIndex)
+        public static void RecordSuccessfulSteal(int thiefIndex, int victimIndex)
         {
             lock (_statsLock)
             {

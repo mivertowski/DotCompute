@@ -7,7 +7,6 @@ using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Resolver;
@@ -64,7 +63,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
             else
             {
                 // Remove stale cache entry
-                _resolutionCache.TryRemove(cacheKey, out _);
+                _ = _resolutionCache.TryRemove(cacheKey, out _);
             }
         }
 
@@ -83,7 +82,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         var bestPlugin = scoredCandidates.OrderByDescending(sc => sc.Score).First();
 
         // Cache the result
-        _resolutionCache.TryAdd(cacheKey, new DependencyResolutionCache
+        _ = _resolutionCache.TryAdd(cacheKey, new DependencyResolutionCache
         {
             PluginId = bestPlugin.Plugin.Id,
             Requirements = requirements,
@@ -363,7 +362,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Checks if a plugin meets the specified requirements.
     /// </summary>
-    private bool MeetsRequirements(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
+    private static bool MeetsRequirements(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
     {
         // Check accelerator support
         if (requirements.PreferredAcceleratorType.HasValue &&
@@ -391,10 +390,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Calculates compatibility score for plugin chaining.
     /// </summary>
-    private double CalculateCompatibilityScore(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements)
-    {
-        return CalculatePluginScore(plugin, requirements);
-    }
+    private double CalculateCompatibilityScore(IAlgorithmPlugin plugin, PluginDependencyRequirements requirements) => CalculatePluginScore(plugin, requirements);
 
     /// <summary>
     /// Gets the category for a plugin.
@@ -438,7 +434,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Analyzes plugin interface dependencies.
     /// </summary>
-    private void AnalyzePluginInterfaces(IAlgorithmPlugin plugin, DependencyAnalysisResult result)
+    private static void AnalyzePluginInterfaces(IAlgorithmPlugin plugin, DependencyAnalysisResult result)
     {
         var interfaces = plugin.GetType().GetInterfaces();
         foreach (var iface in interfaces)
@@ -453,7 +449,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Analyzes resource dependencies.
     /// </summary>
-    private void AnalyzeResourceDependencies(IAlgorithmPlugin plugin, DependencyAnalysisResult result)
+    private static void AnalyzeResourceDependencies(IAlgorithmPlugin plugin, DependencyAnalysisResult result)
     {
         // Check for required accelerator types
         if (plugin.SupportedAcceleratorTypes != null)
@@ -472,7 +468,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     {
         try
         {
-            Assembly.Load(assemblyName);
+            _ = Assembly.Load(assemblyName);
             return true;
         }
         catch
@@ -513,19 +509,15 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// Calculates cache hit rate.
     /// </summary>
     private double CalculateCacheHitRate()
-    {
         // This would be tracked by actual cache hit/miss statistics in a real implementation
-        return _resolutionCache.Count > 0 ? 0.75 : 0.0; // Placeholder
-    }
+        => _resolutionCache.Count > 0 ? 0.75 : 0.0; // Placeholder
 
     /// <summary>
     /// Calculates average resolution time.
     /// </summary>
-    private TimeSpan CalculateAverageResolutionTime()
-    {
+    private static TimeSpan CalculateAverageResolutionTime()
         // This would be tracked by actual timing statistics in a real implementation
-        return TimeSpan.FromMilliseconds(50); // Placeholder
-    }
+        => TimeSpan.FromMilliseconds(50); // Placeholder
 
     /// <summary>
     /// Gets the most requested plugins.
@@ -558,7 +550,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
 
             foreach (var key in expiredKeys)
             {
-                _resolutionCache.TryRemove(key, out _);
+                _ = _resolutionCache.TryRemove(key, out _);
             }
 
             if (expiredKeys.Count > 0)

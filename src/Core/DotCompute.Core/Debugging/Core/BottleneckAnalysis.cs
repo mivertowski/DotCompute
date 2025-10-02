@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -12,7 +11,7 @@ namespace DotCompute.Core.Debugging.Core;
 public class BottleneckAnalysis
 {
     public required string KernelName { get; set; }
-    public List<Bottleneck> Bottlenecks { get; set; } = new();
+    public List<Bottleneck> Bottlenecks { get; set; } = [];
     public DateTime AnalysisTime { get; set; }
 }
 

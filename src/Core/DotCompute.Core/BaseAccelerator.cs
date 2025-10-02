@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -125,7 +125,6 @@ public abstract class BaseAccelerator : IAccelerator
         // Default implementation - derived classes can override
 
 
-
         => null;
 
 
@@ -228,7 +227,6 @@ public abstract class BaseAccelerator : IAccelerator
     /// </summary>
     protected virtual ValueTask DisposeCoreAsync()
         // Default implementation - derived classes can override
-
 
 
         => ValueTask.CompletedTask;
@@ -377,6 +375,7 @@ public abstract class BaseCompiledKernel : AbstractionsICompiledKernel
 
     /// <summary>
     /// Executes the kernel with given arguments.
+    /// Derived classes must implement this to provide their specific execution logic.
     /// </summary>
     /// <param name="arguments">The kernel arguments for execution.</param>
     /// <param name="cancellationToken">A cancellation token for the operation.</param>
@@ -384,5 +383,4 @@ public abstract class BaseCompiledKernel : AbstractionsICompiledKernel
     /// <exception cref="ArgumentNullException">Thrown when arguments is null.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the accelerator has been disposed.</exception>
     public abstract ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default);
-
 }

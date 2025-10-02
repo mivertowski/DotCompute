@@ -28,26 +28,21 @@ public sealed class TimeSeriesMetric
 /// Represents a timestamped value for metrics.
 /// </summary>
 /// <typeparam name="T">The type of the value.</typeparam>
-public readonly struct TimestampedValue<T>
+/// <remarks>
+/// Initializes a new instance of the TimestampedValue struct.
+/// </remarks>
+/// <param name="timestamp">The timestamp.</param>
+/// <param name="value">The value.</param>
+public readonly struct TimestampedValue<T>(DateTimeOffset timestamp, T value)
 {
-    /// <summary>
-    /// Initializes a new instance of the TimestampedValue struct.
-    /// </summary>
-    /// <param name="timestamp">The timestamp.</param>
-    /// <param name="value">The value.</param>
-    public TimestampedValue(DateTimeOffset timestamp, T value)
-    {
-        Timestamp = timestamp;
-        Value = value;
-    }
 
     /// <summary>
     /// Gets the timestamp.
     /// </summary>
-    public DateTimeOffset Timestamp { get; }
+    public DateTimeOffset Timestamp { get; } = timestamp;
 
     /// <summary>
     /// Gets the value.
     /// </summary>
-    public T Value { get; }
+    public T Value { get; } = value;
 }

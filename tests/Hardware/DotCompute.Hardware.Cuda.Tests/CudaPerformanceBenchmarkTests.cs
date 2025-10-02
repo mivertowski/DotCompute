@@ -20,7 +20,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
     [Trait("Category", "Performance")]
-    public class CudaPerformanceBenchmarkTests : CudaTestBase
+    public class CudaPerformanceBenchmarkTests(ITestOutputHelper output) : CudaTestBase(output)
     {
         private const string MemoryBandwidthKernel = @"
             __global__ void memoryBandwidthTest(float4* input, float4* output, int n) {
@@ -87,8 +87,6 @@ namespace DotCompute.Hardware.Cuda.Tests
                 }
             }";
 
-        public CudaPerformanceBenchmarkTests(ITestOutputHelper output) : base(output) { }
-
         [SkippableFact]
         public async Task Memory_Bandwidth_Benchmark_Should_Achieve_Expected_Performance()
         {
@@ -120,7 +118,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -214,7 +212,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)
@@ -319,7 +317,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var gridDim = (matrixSize + 15) / 16; // 16x16 blocks
-            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridDim, gridDim),
                 BlockSize = new Dim3(16, 16)
@@ -496,7 +494,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef);
             const int blockSize = 256;
             var gridSize = (elementCount + blockSize - 1) / blockSize;
-            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(gridSize),
                 BlockSize = new Dim3(blockSize)

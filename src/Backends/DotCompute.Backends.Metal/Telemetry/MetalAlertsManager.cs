@@ -90,13 +90,13 @@ public sealed class MetalAlertsManager : IDisposable
                     ["last_failure_size_bytes"] = sizeBytes,
                     ["total_failed_bytes"] = recentFailures.Sum(e => (long)(e.Properties?.GetValueOrDefault("size_bytes") ?? 0L))
                 },
-                RecommendedActions = new[]
-                {
+                RecommendedActions =
+                [
                     "Check available system memory",
                     "Reduce allocation sizes",
                     "Implement memory pooling",
                     "Check for memory leaks"
-                }
+                ]
             });
         }
     }
@@ -143,13 +143,13 @@ public sealed class MetalAlertsManager : IDisposable
                     ["window_minutes"] = 10,
                     ["average_duration_ms"] = recentFailures.Average(e => (double)(e.Properties?.GetValueOrDefault("duration_ms") ?? 0.0))
                 },
-                RecommendedActions = new[]
-                {
+                RecommendedActions =
+                [
                     $"Review kernel '{kernelName}' implementation",
                     "Check kernel compilation errors",
                     "Verify input data validity",
                     "Monitor GPU device health"
-                }
+                ]
             });
         }
     }
@@ -206,13 +206,13 @@ public sealed class MetalAlertsManager : IDisposable
                     ["threshold_ms"] = _options.SlowOperationThresholdMs,
                     ["window_minutes"] = 15
                 },
-                RecommendedActions = new[]
-                {
+                RecommendedActions =
+                [
                     "Profile the operation for bottlenecks",
                     "Check system resource utilization",
                     "Consider operation optimization",
                     "Verify GPU is not thermal throttling"
-                }
+                ]
             });
         }
     }
@@ -269,13 +269,13 @@ public sealed class MetalAlertsManager : IDisposable
                     ["threshold_percentage"] = _options.HighGpuUtilizationThreshold,
                     ["duration_minutes"] = 5
                 },
-                RecommendedActions = new[]
-                {
+                RecommendedActions =
+                [
                     "Monitor for thermal throttling",
                     "Check for resource contention",
                     "Consider workload distribution",
                     "Verify adequate cooling"
-                }
+                ]
             });
         }
     }
@@ -320,13 +320,13 @@ public sealed class MetalAlertsManager : IDisposable
                 ["utilization_percentage"] = utilizationPercentage,
                 ["threshold_percentage"] = _options.HighMemoryUtilizationThreshold
             },
-            RecommendedActions = new[]
-            {
+            RecommendedActions =
+            [
                 "Free unused memory",
                 "Implement memory pooling",
                 "Reduce allocation sizes",
                 "Check for memory leaks"
-            }
+            ]
         });
     }
 
@@ -409,14 +409,14 @@ public sealed class MetalAlertsManager : IDisposable
                 ["pressure_level"] = level.ToString(),
                 ["pressure_percentage"] = percentage
             },
-            RecommendedActions = new[]
-            {
+            RecommendedActions =
+            [
                 "Trigger garbage collection",
                 "Free cached resources",
                 "Reduce active allocations",
                 "Monitor for memory leaks",
                 "Consider increasing available memory"
-            }
+            ]
         });
     }
 
@@ -475,10 +475,7 @@ public sealed class MetalAlertsManager : IDisposable
     /// <summary>
     /// Gets all currently active alerts
     /// </summary>
-    public List<Alert> GetActivAlerts()
-    {
-        return _activeAlerts.Values.ToList();
-    }
+    public List<Alert> GetActivAlerts() => [.. _activeAlerts.Values];
 
     /// <summary>
     /// Evaluates active alerts against current telemetry data
@@ -599,7 +596,7 @@ public sealed class MetalAlertsManager : IDisposable
 
             if (_options.EnableNotifications)
             {
-                _ = Task.Run(() => SendNotification(alert));
+                _ = Task.Run(() => SendNotificationAsync(alert));
             }
         }
     }
@@ -651,13 +648,13 @@ public sealed class MetalAlertsManager : IDisposable
         };
     }
 
-    private async Task SendNotification(Alert alert)
+    private async Task SendNotificationAsync(Alert alert)
     {
         try
         {
             foreach (var endpoint in _options.NotificationEndpoints)
             {
-                await SendNotificationToEndpoint(endpoint, alert);
+                await SendNotificationToEndpointAsync(endpoint, alert);
             }
         }
         catch (Exception ex)
@@ -666,7 +663,7 @@ public sealed class MetalAlertsManager : IDisposable
         }
     }
 
-    private async Task SendNotificationToEndpoint(string endpoint, Alert alert)
+    private async Task SendNotificationToEndpointAsync(string endpoint, Alert alert)
     {
         // Placeholder for notification sending
         // Would implement integrations with:
@@ -685,27 +682,27 @@ public sealed class MetalAlertsManager : IDisposable
     {
         return resourceType switch
         {
-            ResourceType.Memory => new[]
-            {
+            ResourceType.Memory =>
+            [
                 "Implement memory pooling",
                 "Reduce allocation sizes",
 
                 "Free unused resources",
                 "Check for memory leaks"
-            },
-            ResourceType.GPU => new[]
-            {
+            ],
+            ResourceType.GPU =>
+            [
                 "Optimize kernel execution",
                 "Reduce parallel workload",
                 "Check for thermal throttling",
                 "Balance workload distribution"
-            },
-            _ => new[]
-            {
+            ],
+            _ =>
+            [
                 "Monitor resource usage patterns",
                 "Optimize resource allocation",
                 "Consider scaling resources"
-            }
+            ]
         };
     }
 
@@ -713,34 +710,34 @@ public sealed class MetalAlertsManager : IDisposable
     {
         return error switch
         {
-            MetalError.OutOfMemory => new[]
-            {
+            MetalError.OutOfMemory =>
+            [
                 "Reduce memory allocation sizes",
                 "Implement memory pooling",
                 "Free unused resources",
                 "Check available system memory"
-            },
-            MetalError.DeviceLost => new[]
-            {
+            ],
+            MetalError.DeviceLost =>
+            [
                 "Check GPU driver status",
                 "Monitor system stability",
                 "Verify hardware health",
                 "Restart application if necessary"
-            },
-            MetalError.CompilationError => new[]
-            {
+            ],
+            MetalError.CompilationError =>
+            [
                 "Review shader source code",
                 "Check Metal language version compatibility",
                 "Verify function signatures",
                 "Update Metal development tools"
-            },
-            _ => new[]
-            {
+            ],
+            _ =>
+            [
                 "Review operation parameters",
                 "Check system logs for details",
                 "Monitor for patterns",
                 "Consider retry logic"
-            }
+            ]
         };
     }
 

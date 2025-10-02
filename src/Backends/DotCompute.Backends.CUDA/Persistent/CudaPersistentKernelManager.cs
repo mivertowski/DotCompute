@@ -236,12 +236,7 @@ namespace DotCompute.Backends.CUDA.Persistent
                 throw new InvalidOperationException($"Kernel {kernelId} not found");
             }
 
-            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float>;
-            if (waveBuffer == null)
-            {
-                throw new InvalidOperationException("Kernel does not have a wave buffer");
-            }
-
+            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float> ?? throw new InvalidOperationException("Kernel does not have a wave buffer");
             await waveBuffer.CopyToSliceAsync(timeSlice, newData);
             _logger.LogDebugMessage($"Updated wave data for kernel {kernelId} at slice {timeSlice}");
         }
@@ -259,12 +254,7 @@ namespace DotCompute.Backends.CUDA.Persistent
                 throw new InvalidOperationException($"Kernel {kernelId} not found");
             }
 
-            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float>;
-            if (waveBuffer == null)
-            {
-                throw new InvalidOperationException("Kernel does not have a wave buffer");
-            }
-
+            var waveBuffer = state.WaveBuffer as IWaveRingBuffer<float> ?? throw new InvalidOperationException("Kernel does not have a wave buffer");
             var data = new float[waveBuffer.ElementsPerSlice];
             await waveBuffer.CopyFromSliceAsync(timeSlice, data);
 
@@ -296,33 +286,22 @@ namespace DotCompute.Backends.CUDA.Persistent
             _disposed = true;
         }
 
-        internal sealed class PersistentKernelState : IDisposable
+        internal sealed class PersistentKernelState(
+            string kernelId,
+            ICompiledKernel kernel,
+            object waveBuffer,
+            IUnifiedMemoryBuffer<int> controlBuffer,
+            IntPtr streamHandle,
+            Task launchTask,
+            PersistentKernelConfig config) : IDisposable
         {
-            public string KernelId { get; }
-            public ICompiledKernel Kernel { get; }
-            public object WaveBuffer { get; }
-            public IUnifiedMemoryBuffer<int> ControlBuffer { get; }
-            public IntPtr StreamHandle { get; }
-            public Task LaunchTask { get; }
-            public PersistentKernelConfig Config { get; }
-
-            public PersistentKernelState(
-                string kernelId,
-                ICompiledKernel kernel,
-                object waveBuffer,
-                IUnifiedMemoryBuffer<int> controlBuffer,
-                IntPtr streamHandle,
-                Task launchTask,
-                PersistentKernelConfig config)
-            {
-                KernelId = kernelId;
-                Kernel = kernel;
-                WaveBuffer = waveBuffer;
-                ControlBuffer = controlBuffer;
-                StreamHandle = streamHandle;
-                LaunchTask = launchTask;
-                Config = config;
-            }
+            public string KernelId { get; } = kernelId;
+            public ICompiledKernel Kernel { get; } = kernel;
+            public object WaveBuffer { get; } = waveBuffer;
+            public IUnifiedMemoryBuffer<int> ControlBuffer { get; } = controlBuffer;
+            public IntPtr StreamHandle { get; } = streamHandle;
+            public Task LaunchTask { get; } = launchTask;
+            public PersistentKernelConfig Config { get; } = config;
 
             public void Dispose()
             {
@@ -348,23 +327,15 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// <summary>
     /// Implementation of persistent kernel handle.
     /// </summary>
-    internal sealed class PersistentKernelHandle : IPersistentKernelHandle
+    internal sealed class PersistentKernelHandle(
+        CudaPersistentKernelManager manager,
+        string kernelId,
+        CudaPersistentKernelManager.PersistentKernelState state) : IPersistentKernelHandle
     {
-        private readonly CudaPersistentKernelManager _manager;
-        private readonly string _kernelId;
-        private readonly CudaPersistentKernelManager.PersistentKernelState _state;
+        private readonly CudaPersistentKernelManager _manager = manager;
+        private readonly string _kernelId = kernelId;
 
         public string KernelId => _kernelId;
-
-        public PersistentKernelHandle(
-            CudaPersistentKernelManager manager,
-            string kernelId,
-            CudaPersistentKernelManager.PersistentKernelState state)
-        {
-            _manager = manager;
-            _kernelId = kernelId;
-            _state = state;
-        }
 
         public Task StopAsync(CancellationToken cancellationToken = default)
             => _manager.StopKernelAsync(_kernelId, cancellationToken);

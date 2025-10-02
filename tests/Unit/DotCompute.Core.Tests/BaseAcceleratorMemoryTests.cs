@@ -101,7 +101,7 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         const long totalMemory = 1024 * 1024 * 1024; // 1GB
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
         _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
         _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
         _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
@@ -162,7 +162,7 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
         var allocationSize = 0L;
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
         _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
         _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
         _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
@@ -351,24 +351,16 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
     /// <summary>
     /// Simplified test implementation of BaseAccelerator for memory testing.
     /// </summary>
-    private sealed class TestAccelerator : BaseAccelerator
+    private sealed class TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info ?? throw new ArgumentNullException(nameof(info)),
+              info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
+              memory ?? throw new ArgumentNullException(nameof(memory)),
+              new AcceleratorContext(IntPtr.Zero, 0),
+              logger ?? throw new ArgumentNullException(nameof(logger)))
     {
         public bool EnableMetricsTracking { get; set; }
         public bool EnableResourceTracking { get; set; }
 
-        public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info ?? throw new ArgumentNullException(nameof(info)),
-                  info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
-                  memory ?? throw new ArgumentNullException(nameof(memory)),
-                  new AcceleratorContext(IntPtr.Zero, 0),
-                  logger ?? throw new ArgumentNullException(nameof(logger)))
-        {
-        }
-
-        protected override object? InitializeCore()
-        {
-            return base.InitializeCore();
-        }
+        protected override object? InitializeCore() => base.InitializeCore();
 
         protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition,
@@ -386,14 +378,8 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
             return mockKernel.Object;
         }
 
-        protected override async ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
-        {
-            await Task.Delay(1, cancellationToken);
-        }
+        protected override async ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken) => await Task.Delay(1, cancellationToken);
 
-        protected override async ValueTask DisposeCoreAsync()
-        {
-            await base.DisposeCoreAsync();
-        }
+        protected override async ValueTask DisposeCoreAsync() => await base.DisposeCoreAsync();
     }
 }

@@ -8,15 +8,8 @@ namespace DotCompute.Runtime.DependencyInjection.Validation;
 /// <summary>
 /// Default plugin validator implementation.
 /// </summary>
-internal sealed class PluginValidator : IPluginValidator
+internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
 {
-    private readonly ILogger<PluginValidator> _logger;
-
-    public PluginValidator(ILogger<PluginValidator> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
     public async Task<PluginValidationResult> ValidateAsync(object plugin)
     {
         await Task.CompletedTask;

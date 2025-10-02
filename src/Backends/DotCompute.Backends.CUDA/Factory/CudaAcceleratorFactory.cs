@@ -725,7 +725,7 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 // Initialize memory adapter with lazy loading to avoid multiple instances
 
-                _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new Memory.CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
+                _memoryAdapter = new Lazy<IUnifiedMemoryManager>(() => new CudaAsyncMemoryManagerAdapter(UnifiedMemoryManager));
             }
 
             // IAccelerator interface implementation

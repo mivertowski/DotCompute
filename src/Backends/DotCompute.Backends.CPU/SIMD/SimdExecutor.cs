@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels.Simd;
@@ -200,17 +200,11 @@ public sealed class SimdExecutor : IDisposable
 /// <summary>
 /// Execution context for thread-local optimizations
 /// </summary>
-public sealed class ExecutionContext
+public sealed class ExecutionContext(SimdSummary capabilities)
 {
-    public SimdSummary Capabilities { get; }
+    public SimdSummary Capabilities { get; } = capabilities;
     public long ThreadExecutions { get; set; }
-    public DateTimeOffset LastExecution { get; set; }
-
-    public ExecutionContext(SimdSummary capabilities)
-    {
-        Capabilities = capabilities;
-        LastExecution = DateTimeOffset.UtcNow;
-    }
+    public DateTimeOffset LastExecution { get; set; } = DateTimeOffset.UtcNow;
 }
 
 /// <summary>

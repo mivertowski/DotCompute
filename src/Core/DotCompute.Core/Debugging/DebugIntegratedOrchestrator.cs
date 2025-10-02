@@ -15,25 +15,17 @@ namespace DotCompute.Core.Debugging;
 /// Enhanced compute orchestrator with integrated debugging capabilities.
 /// Provides transparent debugging and validation without affecting normal execution flow.
 /// </summary>
-public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
+public class DebugIntegratedOrchestrator(
+    IComputeOrchestrator baseOrchestrator,
+    IKernelDebugService debugService,
+    ILogger<DebugIntegratedOrchestrator> logger,
+    DebugExecutionOptions? options = null) : IComputeOrchestrator, IDisposable
 {
-    private readonly IComputeOrchestrator _baseOrchestrator;
-    private readonly IKernelDebugService _debugService;
-    private readonly ILogger<DebugIntegratedOrchestrator> _logger;
-    private readonly DebugExecutionOptions _options;
+    private readonly IComputeOrchestrator _baseOrchestrator = baseOrchestrator ?? throw new ArgumentNullException(nameof(baseOrchestrator));
+    private readonly IKernelDebugService _debugService = debugService ?? throw new ArgumentNullException(nameof(debugService));
+    private readonly ILogger<DebugIntegratedOrchestrator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DebugExecutionOptions _options = options ?? new DebugExecutionOptions();
     private bool _disposed;
-
-    public DebugIntegratedOrchestrator(
-        IComputeOrchestrator baseOrchestrator,
-        IKernelDebugService debugService,
-        ILogger<DebugIntegratedOrchestrator> logger,
-        DebugExecutionOptions? options = null)
-    {
-        _baseOrchestrator = baseOrchestrator ?? throw new ArgumentNullException(nameof(baseOrchestrator));
-        _debugService = debugService ?? throw new ArgumentNullException(nameof(debugService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? new DebugExecutionOptions();
-    }
 
     public async Task<T> ExecuteAsync<T>(string kernelName, params object[] args)
     {
@@ -123,7 +115,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             ValidationResult? preValidation = null;
             if (_options.ValidateBeforeExecution)
             {
-                preValidation = await ValidateKernelPreExecution(kernelName, args);
+                preValidation = await ValidateKernelPreExecutionAsync(kernelName, args);
                 if (preValidation.HasCriticalIssues)
                 {
                     _logger.LogError("Pre-execution validation failed for {KernelName}: {Issues}",
@@ -153,7 +145,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 {
                     try
                     {
-                        await ValidateKernelPostExecution(kernelName, args, result, executionId).ConfigureAwait(false);
+                        await ValidateKernelPostExecutionAsync(kernelName, args, result, executionId).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -172,7 +164,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                     {
                         try
                         {
-                            await PerformCrossBackendValidation(kernelName, args, executionId).ConfigureAwait(false);
+                            await PerformCrossBackendValidationAsync(kernelName, args, executionId).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -185,7 +177,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
             // Performance monitoring (if enabled)
             if (_options.EnablePerformanceMonitoring)
             {
-                await LogPerformanceMetrics(kernelName, executionTime, args.Length, executionId);
+                await LogPerformanceMetricsAsync(kernelName, executionTime, args.Length, executionId);
             }
 
             return result;
@@ -201,7 +193,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
                 {
                     try
                     {
-                        await AnalyzeExecutionError(kernelName, args, ex, executionId).ConfigureAwait(false);
+                        await AnalyzeExecutionErrorAsync(kernelName, args, ex, executionId).ConfigureAwait(false);
                     }
                     catch (Exception analysisEx)
                     {
@@ -220,7 +212,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
     }
 
-    private async Task<ValidationResult> ValidateKernelPreExecution(string kernelName, object[] args)
+    private async Task<ValidationResult> ValidateKernelPreExecutionAsync(string kernelName, object[] args)
     {
         try
         {
@@ -269,7 +261,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
     }
 
-    private async Task ValidateKernelPostExecution<T>(string kernelName, object[] args, T? result, Guid executionId)
+    private async Task ValidateKernelPostExecutionAsync<T>(string kernelName, object[] args, T? result, Guid executionId)
     {
         try
         {
@@ -301,7 +293,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
     }
 
-    private async Task PerformCrossBackendValidation(string kernelName, object[] args, Guid executionId)
+    private async Task PerformCrossBackendValidationAsync(string kernelName, object[] args, Guid executionId)
     {
         try
         {
@@ -344,7 +336,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
     }
 
-    private async Task LogPerformanceMetrics(string kernelName, TimeSpan executionTime, int argCount, Guid executionId)
+    private async Task LogPerformanceMetricsAsync(string kernelName, TimeSpan executionTime, int argCount, Guid executionId)
     {
         try
         {
@@ -374,7 +366,7 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
         }
     }
 
-    private async Task AnalyzeExecutionError(string kernelName, object[] args, Exception error, Guid executionId)
+    private async Task AnalyzeExecutionErrorAsync(string kernelName, object[] args, Exception error, Guid executionId)
     {
         try
         {
@@ -415,10 +407,8 @@ public class DebugIntegratedOrchestrator : IComputeOrchestrator, IDisposable
     }
 
     private static long EstimateMemoryRequirements(object[] args)
-    {
         // Simplified memory estimation
-        return args.Length * 1024; // 1KB per argument as baseline
-    }
+        => args.Length * 1024; // 1KB per argument as baseline
 
     /// <inheritdoc />
     public async Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
@@ -503,20 +493,17 @@ public class DebugExecutionOptions
     /// <summary>
     /// Whether to validate kernels after execution.
     /// </summary>
-    public bool ValidateAfterExecution { get; set; }
-
+    public bool ValidateAfterExecution { get; set; } = false;
 
     /// <summary>
     /// Whether to fail execution if validation errors occur.
     /// </summary>
-    public bool FailOnValidationErrors { get; set; }
-
+    public bool FailOnValidationErrors { get; set; } = false;
 
     /// <summary>
     /// Whether to enable cross-backend validation.
     /// </summary>
-    public bool EnableCrossBackendValidation { get; set; }
-
+    public bool EnableCrossBackendValidation { get; set; } = false;
 
     /// <summary>
     /// Probability (0-1) of performing cross-backend validation.
@@ -536,14 +523,12 @@ public class DebugExecutionOptions
     /// <summary>
     /// Whether to store performance history for trend analysis.
     /// </summary>
-    public bool StorePerformanceHistory { get; set; }
-
+    public bool StorePerformanceHistory { get; set; } = false;
 
     /// <summary>
     /// Whether to test for deterministic behavior.
     /// </summary>
-    public bool TestDeterminism { get; set; }
-
+    public bool TestDeterminism { get; set; } = false;
 
     /// <summary>
     /// Whether to analyze errors when execution fails.

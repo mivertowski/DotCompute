@@ -84,7 +84,7 @@ public sealed class CudaKernelExecutor : IDisposable
                 config;
 
             // Execute through kernel executor
-            var compiledKernel = kernel as Abstractions.Kernels.CompiledKernel ?? throw new InvalidOperationException("Kernel must be a CompiledKernel");
+            var compiledKernel = kernel as CompiledKernel ?? throw new InvalidOperationException("Kernel must be a CompiledKernel");
             var result = await _kernelExecutor.ExecuteAndWaitAsync(
                 compiledKernel, arguments, executionConfig, cancellationToken).ConfigureAwait(false);
 
@@ -330,12 +330,7 @@ public sealed class CudaKernelExecutor : IDisposable
 
         for (var i = 0; i < arguments.Length; i++)
         {
-            var arg = arguments[i];
-            if (arg == null)
-            {
-                throw new ArgumentException($"Kernel argument at index {i} is null", nameof(arguments));
-            }
-
+            var arg = arguments[i] ?? throw new ArgumentException($"Kernel argument at index {i} is null", nameof(arguments));
             if (string.IsNullOrEmpty(arg.Name))
             {
                 throw new ArgumentException($"Kernel argument at index {i} has no name", nameof(arguments));
@@ -441,17 +436,11 @@ public readonly record struct KernelExecutorStatistics
 /// <summary>
 /// Managed compiled kernel wrapper with metadata.
 /// </summary>
-public sealed class ManagedCompiledKernel : IDisposable
+public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefinition definition) : IDisposable
 {
-    private readonly ICompiledKernel _kernel;
-    private readonly KernelDefinition _definition;
+    private readonly ICompiledKernel _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+    private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private volatile bool _disposed;
-
-    public ManagedCompiledKernel(ICompiledKernel kernel, KernelDefinition definition)
-    {
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-    }
 
     public string Name => _kernel.Name;
     public Guid Id => _kernel.Id;
@@ -492,17 +481,10 @@ public sealed class ManagedCompiledKernel : IDisposable
 /// <summary>
 /// Kernel configuration optimizer for CUDA execution.
 /// </summary>
-internal sealed class KernelConfigurationOptimizer : IDisposable
+internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger logger) : IDisposable
 {
-    private readonly CudaContext _context;
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
-
-    public KernelConfigurationOptimizer(CudaContext context, ILogger logger)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public KernelExecutionConfig OptimizeConfiguration(ICompiledKernel kernel, int[] problemSize)
     {
@@ -550,10 +532,7 @@ internal sealed class KernelConfigurationOptimizer : IDisposable
         }
     }
 
-    private static int CalculateOptimalGridSize(int totalElements, int blockSize)
-    {
-        return (totalElements + blockSize - 1) / blockSize;
-    }
+    private static int CalculateOptimalGridSize(int totalElements, int blockSize) => (totalElements + blockSize - 1) / blockSize;
 
     public void Dispose()
     {

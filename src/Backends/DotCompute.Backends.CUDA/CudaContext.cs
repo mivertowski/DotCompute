@@ -158,9 +158,6 @@ namespace DotCompute.Backends.CUDA
         /// <summary>
         /// Converts this CudaContext to an IAccelerator
         /// </summary>
-        public IAccelerator ToIAccelerator()
-        {
-            return new CudaAccelerator(DeviceId);
-        }
+        public IAccelerator ToIAccelerator() => new CudaAccelerator(DeviceId);
     }
 }

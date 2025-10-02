@@ -184,7 +184,7 @@ namespace DotCompute.Core.Execution.Metrics
 
             // Update strategy metrics
 
-            var abstractionsStrategy = (DotCompute.Abstractions.Types.ExecutionStrategyType)(int)result.Strategy;
+            var abstractionsStrategy = (ExecutionStrategyType)(int)result.Strategy;
             if (!MetricsByStrategy.TryGetValue(abstractionsStrategy, out var strategyMetrics))
             {
                 strategyMetrics = new StrategyMetrics();

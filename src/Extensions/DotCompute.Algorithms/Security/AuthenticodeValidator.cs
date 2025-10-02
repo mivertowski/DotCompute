@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
 
@@ -11,19 +11,14 @@ namespace DotCompute.Algorithms.Security;
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies using Windows APIs.
 /// </summary>
-public sealed class AuthenticodeValidator : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+public sealed class AuthenticodeValidator(ILogger<AuthenticodeValidator> logger) : IDisposable
 {
-    private readonly ILogger<AuthenticodeValidator> _logger;
+    private readonly ILogger<AuthenticodeValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public AuthenticodeValidator(ILogger<AuthenticodeValidator> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Validates the Authenticode signature of an assembly.
@@ -248,12 +243,7 @@ public sealed class AuthenticodeValidator : IDisposable
         try
         {
             // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
-            using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-            if (certificate == null)
-            {
-                throw new InvalidOperationException("Failed to extract certificate");
-            }
-
+            using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath) ?? throw new InvalidOperationException("Failed to extract certificate");
             return new CertificateInfo
             {
                 Subject = certificate.Subject,

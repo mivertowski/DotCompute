@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
-using global::System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics.Arm;
 
 namespace DotCompute.Algorithms.Optimized.Simd;
 

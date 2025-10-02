@@ -3,7 +3,7 @@ namespace DotCompute.Backends.CUDA.Types
     /// <summary>
     /// Flags for CUDA managed memory allocation and behavior.
     /// </summary>
-    [System.Flags]
+    [Flags]
     public enum ManagedMemoryFlags
     {
         /// <summary>

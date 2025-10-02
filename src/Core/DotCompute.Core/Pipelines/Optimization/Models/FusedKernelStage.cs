@@ -25,15 +25,15 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
     public IReadOnlyList<string> Dependencies => _stage1.Dependencies;
     public IReadOnlyDictionary<string, object> Metadata => _stage1.Metadata;
 
-    public async ValueTask<DotCompute.Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(
-        DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context,
+    public async ValueTask<AbstractionsMemory.Models.Pipelines.StageExecutionResult> ExecuteAsync(
+        AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
     {
         // Execute both stages with optimized data flow
         var result1 = await _stage1.ExecuteAsync(context, cancellationToken);
         if (!result1.Success)
         {
-            return new DotCompute.Abstractions.Models.Pipelines.StageExecutionResult
+            return new AbstractionsMemory.Models.Pipelines.StageExecutionResult
             {
                 StageId = Id,
                 Success = result1.Success,
@@ -42,7 +42,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             };
         }
 
-        var intermediateContext = new DotCompute.Core.Pipelines.Models.PipelineExecutionContext();
+        var intermediateContext = new Pipelines.Models.PipelineExecutionContext();
         foreach (var kvp in result1.OutputData ?? context.Inputs)
         {
             intermediateContext.Inputs[kvp.Key] = kvp.Value;
@@ -53,7 +53,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
 
         var result2 = await _stage2.ExecuteAsync(intermediateContext, cancellationToken);
 
-        return new DotCompute.Abstractions.Models.Pipelines.StageExecutionResult
+        return new AbstractionsMemory.Models.Pipelines.StageExecutionResult
         {
             StageId = Id,
             Success = result2.Success,
@@ -62,7 +62,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
         };
     }
 
-    public DotCompute.Abstractions.Models.Pipelines.StageValidationResult Validate()
+    public AbstractionsMemory.Models.Pipelines.StageValidationResult Validate()
     {
         var result1 = _stage1.Validate();
         var result2 = _stage2.Validate();
@@ -90,7 +90,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             warnings.AddRange(result2.Warnings);
         }
 
-        return new DotCompute.Abstractions.Models.Pipelines.StageValidationResult
+        return new AbstractionsMemory.Models.Pipelines.StageValidationResult
         {
             IsValid = errors.Count == 0,
             Errors = errors.Count > 0 ? errors : null,
@@ -100,7 +100,6 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
 
     public IStageMetrics GetMetrics()
         // Combine metrics from both stages
-
 
         => _stage1.GetMetrics(); // Simplified
 
@@ -129,6 +128,5 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
         };
     }
 }
-
 
 // MemoryUsageStats now uses the canonical version from DotCompute.Abstractions.Pipelines.Results

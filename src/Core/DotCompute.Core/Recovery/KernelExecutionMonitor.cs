@@ -10,30 +10,20 @@ namespace DotCompute.Core.Recovery;
 /// <summary>
 /// Implementation of kernel execution monitoring
 /// </summary>
-public class KernelExecutionMonitor : IKernelExecutionMonitor
+public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
 {
-    private readonly ILogger _logger;
-    private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly DateTimeOffset _startTime;
-    private readonly TimeSpan _timeout;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly DateTimeOffset _startTime = DateTimeOffset.UtcNow;
+    private readonly TimeSpan _timeout = timeout;
     private volatile bool _completed;
     private volatile bool _disposed;
 
-    public string KernelId { get; }
-    public string DeviceId { get; }
+    public string KernelId { get; } = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
+    public string DeviceId { get; } = deviceId;
     public TimeSpan ExecutionTime => DateTimeOffset.UtcNow - _startTime;
     public bool IsHanging => !_completed && ExecutionTime > _timeout;
     public bool IsCompleted => _completed;
-
-    public KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown")
-    {
-        KernelId = kernelId ?? throw new ArgumentNullException(nameof(kernelId));
-        DeviceId = deviceId;
-        _timeout = timeout;
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _cancellationTokenSource = new CancellationTokenSource();
-        _startTime = DateTimeOffset.UtcNow;
-    }
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {

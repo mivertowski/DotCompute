@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Performance;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
@@ -15,28 +13,21 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <summary>
     /// Specialized component for GPU optimization strategies including kernel configuration, performance analysis, and fallback mechanisms.
     /// </summary>
-    public sealed class GpuOptimizationStrategies
+    /// <remarks>
+    /// Initializes a new instance of the GpuOptimizationStrategies.
+    /// </remarks>
+    /// <param name="logger">Logger instance.</param>
+    public sealed class GpuOptimizationStrategies(ILogger<GpuOptimizationStrategies> logger)
     {
-        private readonly ILogger<GpuOptimizationStrategies> _logger;
-        private readonly Dictionary<string, LinearAlgebraPerformanceMetrics> _performanceCache;
+        private readonly Dictionary<string, LinearAlgebraPerformanceMetrics> _performanceCache = [];
         private readonly object _cacheLock = new();
-
-        /// <summary>
-        /// Initializes a new instance of the GpuOptimizationStrategies.
-        /// </summary>
-        /// <param name="logger">Logger instance.</param>
-        public GpuOptimizationStrategies(ILogger<GpuOptimizationStrategies> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceCache = new Dictionary<string, LinearAlgebraPerformanceMetrics>();
-        }
 
         /// <summary>
         /// Analyzes matrix properties for optimization decisions.
         /// </summary>
         /// <param name="matrix">Matrix to analyze.</param>
         /// <returns>Matrix properties including sparsity, symmetry, and positive definiteness.</returns>
-        public MatrixProperties AnalyzeMatrixProperties(Matrix matrix)
+        public static MatrixProperties AnalyzeMatrixProperties(Matrix matrix)
         {
             var properties = new MatrixProperties
             {
@@ -55,7 +46,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="a">First matrix.</param>
         /// <param name="b">Second matrix.</param>
         /// <returns>Combined matrix properties.</returns>
-        public MatrixProperties AnalyzeMatrixProperties(Matrix a, Matrix b)
+        public static MatrixProperties AnalyzeMatrixProperties(Matrix a, Matrix b)
         {
             var maxSizeA = a.Rows * a.Columns;
             var maxSizeB = b.Rows * b.Columns;
@@ -81,7 +72,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <param name="accelerator">GPU accelerator.</param>
         /// <returns>Hardware information structure.</returns>
-        public LAHardwareInfo GetHardwareInfo(IAccelerator accelerator)
+        public static LAHardwareInfo GetHardwareInfo(IAccelerator accelerator)
         {
             return new LAHardwareInfo
             {
@@ -99,13 +90,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="properties">Matrix properties.</param>
         /// <param name="hardware">Hardware information.</param>
         /// <returns>Optimized kernel parameters.</returns>
-        public LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
+        public static LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
         {
             // Create a fallback implementation since GetOptimizedParameters doesn't exist
             return new LAKernelParams
             {
-                GlobalWorkSize = new[] { (ulong)properties.Rows, (ulong)properties.Columns },
-                LocalWorkSize = new[] { 16UL, 16UL },
+                GlobalWorkSize = [(ulong)properties.Rows, (ulong)properties.Columns],
+                LocalWorkSize = [16UL, 16UL],
                 WorkGroupSize = Math.Min(hardware.MaxWorkGroupSize, 256)
             };
         }

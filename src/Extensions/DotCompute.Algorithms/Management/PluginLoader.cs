@@ -4,20 +4,15 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Runtime.Loader;
-using global::System.Security.Cryptography;
-using global::System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Management.Services;
-using DotCompute.Algorithms.Management.Types;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 
 namespace DotCompute.Algorithms.Management
 {
@@ -225,8 +220,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 };
 
                 loadedAssembly.Plugins.AddRange(plugins);
-                _loadedAssemblies.TryAdd(assemblyName, loadedAssembly);
-                _loadContexts.TryAdd(assemblyName, loadContext);
+                    _ = _loadedAssemblies.TryAdd(assemblyName, loadedAssembly);
+                    _ = _loadContexts.TryAdd(assemblyName, loadContext);
 
                 LogAssemblyLoadedSuccessfully(plugins.Count, assemblyName);
 
@@ -259,7 +254,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         }
         finally
         {
-            _loadingSemaphore.Release();
+                _ = _loadingSemaphore.Release();
         }
     }
 
@@ -806,7 +801,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     /// <summary>
     /// Creates a default implementation for plugin-specific interfaces.
     /// </summary>
-    private object? CreateDefaultImplementation(Type interfaceType)
+    private static object? CreateDefaultImplementation(Type interfaceType)
     {
         try
         {
@@ -836,7 +831,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
 
             // Unload all assemblies
             var unloadTasks = _loadedAssemblies.Keys.Select(UnloadAssemblyAsync);
-            await Task.WhenAll(unloadTasks).ConfigureAwait(false);
+                _ = await Task.WhenAll(unloadTasks).ConfigureAwait(false);
 
             _loadedAssemblies.Clear();
             _loadContexts.Clear();

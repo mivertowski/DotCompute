@@ -14,7 +14,7 @@ namespace DotCompute.Runtime.Services;
 /// <summary>
 /// Production unified memory service that provides cross-device memory management and coherency.
 /// </summary>
-public sealed class UnifiedMemoryService : Runtime.Services.IUnifiedMemoryService, IDisposable
+public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
 {
     private readonly ILogger<UnifiedMemoryService> _logger;
     private readonly MemoryPoolService? _poolService;
@@ -360,29 +360,19 @@ public sealed class UnifiedMemoryStatistics
 /// <summary>
 /// Base class for unified memory buffers.
 /// </summary>
-internal abstract class UnifiedMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
+internal abstract class UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
+
+    IUnifiedMemoryBuffer? pooledBuffer, UnifiedMemoryService service, ILogger logger) : IUnifiedMemoryBuffer, IDisposable
 {
-    public Guid Id { get; }
-    public long SizeInBytes { get; protected set; }
-    public MemoryOptions Options { get; protected set; }
+    public Guid Id { get; } = id;
+    public long SizeInBytes { get; protected set; } = sizeInBytes;
+    public MemoryOptions Options { get; protected set; } = options;
     public bool IsDisposed { get; protected set; }
     public BufferState State { get; protected set; } = BufferState.Allocated;
-    public IUnifiedMemoryBuffer? PooledBuffer { get; }
+    public IUnifiedMemoryBuffer? PooledBuffer { get; } = pooledBuffer;
 
-    protected readonly UnifiedMemoryService _service;
-    protected readonly ILogger _logger;
-
-    protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
-
-        IUnifiedMemoryBuffer? pooledBuffer, UnifiedMemoryService service, ILogger logger)
-    {
-        Id = id;
-        SizeInBytes = sizeInBytes;
-        Options = options;
-        PooledBuffer = pooledBuffer;
-        _service = service ?? throw new ArgumentNullException(nameof(service));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    protected readonly UnifiedMemoryService _service = service ?? throw new ArgumentNullException(nameof(service));
+    protected readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     protected UnifiedMemoryBuffer(Guid id, long sizeInBytes, MemoryOptions options,
 
@@ -485,8 +475,8 @@ internal sealed class UnifiedMemoryBuffer<T> : UnifiedMemoryBuffer, IUnifiedMemo
     }
 
     // Additional IUnifiedMemoryBuffer<T> methods with simplified implementations TODO
-    public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => CopyFromAsync<T>(source, 0, cancellationToken);
-    public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => CopyToAsync<T>(destination, 0, cancellationToken);
+    public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default) => CopyFromAsync(source, 0, cancellationToken);
+    public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default) => CopyToAsync(destination, 0, cancellationToken);
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public Span<T> AsSpan() => throw new NotSupportedException("Direct span access not supported in unified memory");

@@ -43,20 +43,14 @@ public class Result
     /// Creates a successful result.
     /// </summary>
     /// <returns>A successful result.</returns>
-    public static Result Success()
-    {
-        return new Result(true, string.Empty);
-    }
+    public static Result Success() => new(true, string.Empty);
 
     /// <summary>
     /// Creates a failed result with an error message.
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A failed result.</returns>
-    public static Result Failure(string error)
-    {
-        return new Result(false, error);
-    }
+    public static Result Failure(string error) => new(false, error);
 
     /// <summary>
     /// Creates a failed result with an error message and exception.
@@ -64,20 +58,14 @@ public class Result
     /// <param name="error">The error message.</param>
     /// <param name="exception">The exception that caused the failure.</param>
     /// <returns>A failed result.</returns>
-    public static Result Failure(string error, Exception exception)
-    {
-        return new Result(false, error, exception);
-    }
+    public static Result Failure(string error, Exception exception) => new(false, error, exception);
 
     /// <summary>
     /// Creates a failed result from an exception.
     /// </summary>
     /// <param name="exception">The exception that caused the failure.</param>
     /// <returns>A failed result.</returns>
-    public static Result Failure(Exception exception)
-    {
-        return new Result(false, exception.Message, exception);
-    }
+    public static Result Failure(Exception exception) => new(false, exception.Message, exception);
 
     /// <summary>
     /// Executes an action and returns the result.
@@ -157,10 +145,7 @@ public class Result
     /// Returns a string representation of the result.
     /// </summary>
     /// <returns>A string describing the result state.</returns>
-    public override string ToString()
-    {
-        return IsSuccess ? "Success" : $"Failure: {Error}";
-    }
+    public override string ToString() => IsSuccess ? "Success" : $"Failure: {Error}";
 }
 
 /// <summary>
@@ -189,20 +174,14 @@ public class Result<T> : Result
     /// </summary>
     /// <param name="value">The value returned by the successful operation.</param>
     /// <returns>A successful result containing the value.</returns>
-    public static Result<T> Success(T value)
-    {
-        return new Result<T>(true, value, string.Empty);
-    }
+    public static Result<T> Success(T value) => new(true, value, string.Empty);
 
     /// <summary>
     /// Creates a failed result with an error message.
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A failed result.</returns>
-    public new static Result<T> Failure(string error)
-    {
-        return new Result<T>(false, default!, error);
-    }
+    public new static Result<T> Failure(string error) => new(false, default!, error);
 
     /// <summary>
     /// Creates a failed result with an error message and exception.
@@ -210,20 +189,14 @@ public class Result<T> : Result
     /// <param name="error">The error message.</param>
     /// <param name="exception">The exception that caused the failure.</param>
     /// <returns>A failed result.</returns>
-    public new static Result<T> Failure(string error, Exception exception)
-    {
-        return new Result<T>(false, default!, error, exception);
-    }
+    public new static Result<T> Failure(string error, Exception exception) => new(false, default!, error, exception);
 
     /// <summary>
     /// Creates a failed result from an exception.
     /// </summary>
     /// <param name="exception">The exception that caused the failure.</param>
     /// <returns>A failed result.</returns>
-    public new static Result<T> Failure(Exception exception)
-    {
-        return new Result<T>(false, default!, exception.Message, exception);
-    }
+    public new static Result<T> Failure(Exception exception) => new(false, default!, exception.Message, exception);
 
     /// <summary>
     /// Executes a function and returns the result.
@@ -359,10 +332,7 @@ public class Result<T> : Result
     /// </summary>
     /// <param name="defaultValue">The default value to return on failure.</param>
     /// <returns>The result value if successful, otherwise the default value.</returns>
-    public T GetValueOrDefault(T defaultValue = default!)
-    {
-        return IsSuccess ? Value : defaultValue;
-    }
+    public T GetValueOrDefault(T defaultValue = default!) => IsSuccess ? Value : defaultValue;
 
     /// <summary>
     /// Gets the value if successful, otherwise throws an exception.

@@ -680,7 +680,7 @@ public sealed record DiagnosticIssue
 
 public sealed record ValidationResult
 {
-    public required DotCompute.Abstractions.Validation.ValidationSeverity OverallResult { get; init; }
+    public required ValidationSeverity OverallResult { get; init; }
     public required IReadOnlyList<ValidationIssue> Issues { get; init; }
     public required IReadOnlyList<string> TestedComponents { get; init; }
     public required DateTime ValidationTime { get; init; }
@@ -689,7 +689,7 @@ public sealed record ValidationResult
 public sealed record ValidationIssue
 {
     public required string Component { get; init; }
-    public required DotCompute.Abstractions.Validation.ValidationSeverity Severity { get; init; }
+    public required ValidationSeverity Severity { get; init; }
     public required string Message { get; init; }
     public required string Details { get; init; }
 }

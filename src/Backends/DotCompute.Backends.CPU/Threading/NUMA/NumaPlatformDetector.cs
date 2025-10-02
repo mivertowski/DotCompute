@@ -240,10 +240,7 @@ internal static partial class NumaPlatformDetector
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static long GetWindowsNodeMemorySize(int nodeId)
-    {
-        return NumaInterop.GetNumaNodeMemorySize(nodeId);
-    }
+    private static long GetWindowsNodeMemorySize(int nodeId) => NumaInterop.GetNumaNodeMemorySize(nodeId);
 
     #endregion
 
@@ -426,10 +423,8 @@ internal static partial class NumaPlatformDetector
 
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static int GetMacOSNodeCount()
-    {
         // macOS doesn't have traditional NUMA, simulate based on core types
-        return 2; // Assume efficiency + performance cores
-    }
+        => 2; // Assume efficiency + performance cores
 
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static bool GetMacOSNodeCpuMapping(int nodeId, out ulong cpuMask, out int cpuCount)
@@ -489,10 +484,8 @@ internal static partial class NumaPlatformDetector
 
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static long GetMacOSNodeMemorySize(int nodeId)
-    {
         // macOS doesn't expose per-node memory information
-        return 0;
-    }
+        => 0;
 
     #endregion
 

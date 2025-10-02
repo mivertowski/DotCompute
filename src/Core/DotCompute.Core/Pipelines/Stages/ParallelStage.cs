@@ -198,12 +198,12 @@ namespace DotCompute.Core.Pipelines.Stages
 
             if (_parallelStages.Count == 0)
             {
-                errors.Add(new ValidationIssue("PARALLEL_001", "Parallel stage must contain at least one sub-stage", ValidationSeverity.Error));
+                errors.Add(new ValidationIssue(ValidationSeverity.Error, "Parallel stage must contain at least one sub-stage", "PARALLEL_001"));
             }
 
             if (_maxDegreeOfParallelism <= 0)
             {
-                errors.Add(new ValidationIssue("PARALLEL_002", "Max degree of parallelism must be positive", ValidationSeverity.Error));
+                errors.Add(new ValidationIssue(ValidationSeverity.Error, "Max degree of parallelism must be positive", "PARALLEL_002"));
             }
 
             // Validate all sub-stages
@@ -214,7 +214,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 {
                     foreach (var error in stageValidation.Issues)
                     {
-                        errors.Add(new ValidationIssue("PARALLEL_003", $"Sub-stage '{stage.Name}': {error.Message}", ValidationSeverity.Error));
+                        errors.Add(new ValidationIssue(ValidationSeverity.Error, $"Sub-stage '{stage.Name}': {error.Message}", "PARALLEL_003"));
                     }
                 }
 

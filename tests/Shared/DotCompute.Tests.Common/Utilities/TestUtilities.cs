@@ -21,7 +21,7 @@ public static class TestUtilities
     /// <summary>
     /// Dictionary to store log entries for mock loggers.
     /// </summary>
-    private static readonly ConditionalWeakTable<object, List<LogEntry>> _mockLoggerEntries = new();
+    private static readonly ConditionalWeakTable<object, List<LogEntry>> _mockLoggerEntries = [];
     private static readonly ConcurrentDictionary<string, object> _testCache = new();
 
     #region Performance Testing Utilities
@@ -146,7 +146,7 @@ public static class TestUtilities
             MaxMemoryBytes = maxMemoryBytes,
             MeetsTarget = maxMemoryBytes.HasValue ? peakMemory <= maxMemoryBytes.Value : true,
             AverageMemoryBytes = measurements.Count > 0 ? (long)measurements.Average() : initialMemory,
-            Measurements = measurements.ToArray()
+            Measurements = [.. measurements]
         };
     }
 
@@ -233,11 +233,11 @@ public static class TestUtilities
             TotalOperations = threadCount * operationsPerThread,
             CompletedOperations = completedOperations,
             SuccessfulOperations = results.Count,
-            Exceptions = exceptions.ToArray(),
+            Exceptions = [.. exceptions],
             ExecutionTimeMs = stopwatch.Elapsed.TotalMilliseconds,
             OperationsPerSecond = completedOperations / stopwatch.Elapsed.TotalSeconds,
             Success = exceptions.IsEmpty && completedOperations == threadCount * operationsPerThread,
-            Results = results.Cast<object>().ToArray()
+            Results = [.. results.Cast<object>()]
         };
     }
 
@@ -342,10 +342,7 @@ public static class TestUtilities
     /// <typeparam name="T">The logger type.</typeparam>
     /// <param name="mockLogger">The mock logger to get entries from.</param>
     /// <returns>The list of captured log entries.</returns>
-    public static List<LogEntry> GetLogEntries<T>(Mock<ILogger<T>> mockLogger)
-    {
-        return _mockLoggerEntries.TryGetValue(mockLogger, out var entries) ? entries : new List<LogEntry>();
-    }
+    public static List<LogEntry> GetLogEntries<T>(Mock<ILogger<T>> mockLogger) => _mockLoggerEntries.TryGetValue(mockLogger, out var entries) ? entries : [];
 
     /// <summary>
     /// Creates a mock memory buffer for testing.
@@ -446,10 +443,7 @@ public static class TestUtilities
     /// <summary>
     /// Clears the test cache.
     /// </summary>
-    public static void ClearCache()
-    {
-        _testCache.Clear();
-    }
+    public static void ClearCache() => _testCache.Clear();
 
     #endregion
 

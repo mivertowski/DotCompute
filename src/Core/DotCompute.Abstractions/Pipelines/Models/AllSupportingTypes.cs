@@ -70,7 +70,7 @@ public sealed class ParallelKernelConfig
     public object[]? Parameters { get; init; }
     public object[]? Arguments { get; init; }
     public int[]? GlobalWorkSize { get; init; }
-    public DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority Priority { get; init; } = ExecutionPriority.Normal;
+    public ExecutionPriority Priority { get; init; } = DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority.Normal;
 }
 
 public sealed class AffinityRule
@@ -91,8 +91,7 @@ public sealed class FusionCriteria
 public sealed class MemoryConstraints
 {
     public long MaxMemoryUsage { get; set; } = long.MaxValue;
-    public bool PreferMemoryEfficiency { get; set; }
-
+    public bool PreferMemoryEfficiency { get; set; } = false;
     public int MemoryAlignment { get; set; } = 64;
 
     public MemoryConstraints Clone()
@@ -123,10 +122,8 @@ public sealed class LoopOptimizations
 
 public sealed class DataLayoutPreferences
 {
-    public bool PreferStructureOfArrays { get; set; }
-
-    public bool PreferArrayOfStructures { get; set; }
-
+    public bool PreferStructureOfArrays { get; set; } = false;
+    public bool PreferArrayOfStructures { get; set; } = false;
     public bool AllowReordering { get; set; } = true;
     public int PreferredAlignment { get; set; } = 64;
 }
@@ -142,8 +139,7 @@ public sealed class OptimizationValidationResult
 public sealed class OptimizationImpactEstimate
 {
     public double EstimatedSpeedup { get; set; } = 1.0;
-    public double EstimatedMemoryReduction { get; set; }
-
+    public double EstimatedMemoryReduction { get; set; } = 0.0;
     public double ConfidenceLevel { get; set; } = 0.5;
     public TimeSpan EstimatedOptimizationTime { get; set; }
 }
@@ -174,6 +170,5 @@ public interface IOptimizationStrategy
     public Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
     public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
 }
-
 
 // IKernelPipeline is defined in DotCompute.Abstractions.Interfaces.Pipelines namespace

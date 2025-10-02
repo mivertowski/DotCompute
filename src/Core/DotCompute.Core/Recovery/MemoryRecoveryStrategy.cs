@@ -440,9 +440,11 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
 
         // System memory defragmentation
         await Task.Run(() =>
+        {
             // Platform-specific system memory operations would go here
             // For now, we'll just do additional GC
-            GC.Collect(2, GCCollectionMode.Aggressive), cancellationToken);
+            GC.Collect(2, GCCollectionMode.Aggressive);
+        }, cancellationToken);
     }
 
     private async Task DefragmentGpuMemoryAsync(string poolId, CancellationToken cancellationToken)
@@ -551,7 +553,6 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         }
     }
 }
-
 
 
 

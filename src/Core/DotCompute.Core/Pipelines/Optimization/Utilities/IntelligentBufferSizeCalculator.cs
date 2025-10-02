@@ -75,41 +75,33 @@ public static class IntelligentBufferSizeCalculator
     /// Calculates optimal buffer size for compute-intensive workloads
     /// </summary>
     private static long CalculateComputeOptimalSize(long totalDataSize, long availableMemory)
-    {
         // For compute workloads, prioritize fitting working set in cache
         // Use 25% of available memory to leave room for intermediate results
-        return Math.Min(totalDataSize, availableMemory / 4);
-    }
+        => Math.Min(totalDataSize, availableMemory / 4);
 
     /// <summary>
     /// Calculates optimal buffer size for memory-intensive workloads
     /// </summary>
     private static long CalculateMemoryOptimalSize(long totalDataSize, long availableMemory)
-    {
         // For memory workloads, use larger buffers to improve throughput
         // Use 60% of available memory
-        return Math.Min(totalDataSize, (availableMemory * 6) / 10);
-    }
+        => Math.Min(totalDataSize, (availableMemory * 6) / 10);
 
     /// <summary>
     /// Calculates optimal buffer size for I/O-intensive workloads
     /// </summary>
     private static long CalculateIOOptimalSize(long totalDataSize, long availableMemory)
-    {
         // For I/O workloads, use smaller buffers for better responsiveness
         // Use 20% of available memory
-        return Math.Min(totalDataSize, availableMemory / 5);
-    }
+        => Math.Min(totalDataSize, availableMemory / 5);
 
     /// <summary>
     /// Calculates default optimal buffer size
     /// </summary>
     private static long CalculateDefaultOptimalSize(long totalDataSize, long availableMemory)
-    {
         // Default strategy - balanced approach
         // Use 33% of available memory
-        return Math.Min(totalDataSize, availableMemory / 3);
-    }
+        => Math.Min(totalDataSize, availableMemory / 3);
 
     /// <summary>
     /// Aligns size to cache line boundary (64 bytes)

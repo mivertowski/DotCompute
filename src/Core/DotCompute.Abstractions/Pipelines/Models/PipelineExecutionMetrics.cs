@@ -222,10 +222,7 @@ public sealed class PipelineExecutionMetrics
     /// </summary>
     /// <param name="name">Name of the metric</param>
     /// <param name="value">Value of the metric</param>
-    public void AddCustomMetric(string name, object value)
-    {
-        CustomMetrics[name] = value;
-    }
+    public void AddCustomMetric(string name, object value) => CustomMetrics[name] = value;
 
     /// <summary>
     /// Gets a custom metric value.
@@ -233,10 +230,7 @@ public sealed class PipelineExecutionMetrics
     /// <typeparam name="T">Type of the metric value</typeparam>
     /// <param name="name">Name of the metric</param>
     /// <returns>The metric value, or default if not found</returns>
-    public T? GetCustomMetric<T>(string name)
-    {
-        return CustomMetrics.TryGetValue(name, out var value) && value is T typedValue ? typedValue : default;
-    }
+    public T? GetCustomMetric<T>(string name) => CustomMetrics.TryGetValue(name, out var value) && value is T typedValue ? typedValue : default;
 
     /// <summary>
     /// Calculates the average stage execution time.
@@ -284,10 +278,7 @@ public sealed class PipelineExecutionMetrics
     /// Calculates the efficiency ratio (successful stages / total stages).
     /// </summary>
     /// <returns>Efficiency ratio between 0 and 1</returns>
-    public double GetEfficiencyRatio()
-    {
-        return TotalStages > 0 ? (double)CompletedStages / TotalStages : 0.0;
-    }
+    public double GetEfficiencyRatio() => TotalStages > 0 ? (double)CompletedStages / TotalStages : 0.0;
 }
 
 /// <summary>

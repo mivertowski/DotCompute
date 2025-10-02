@@ -12,11 +12,16 @@ namespace DotCompute.Core.Compute.Kernels
     /// Simple optimized kernel for the high-performance provider.
     /// Provides basic kernel execution capabilities with logging and resource management.
     /// </summary>
-    internal class SimpleOptimizedKernel : ICompiledKernel
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SimpleOptimizedKernel"/> class.
+    /// </remarks>
+    /// <param name="name">Name of the kernel.</param>
+    /// <param name="kernelInfo">Parsed kernel information.</param>
+    /// <param name="options">Compilation options.</param>
+    /// <param name="logger">Logger instance.</param>
+    internal class SimpleOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger) : ICompiledKernel
     {
-        private readonly KernelInfo _kernelInfo;
-        private readonly CompilationOptions _options;
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = logger;
         private bool _disposed;
 
         /// <summary>
@@ -25,24 +30,9 @@ namespace DotCompute.Core.Compute.Kernels
         public Guid Id { get; } = Guid.NewGuid();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleOptimizedKernel"/> class.
-        /// </summary>
-        /// <param name="name">Name of the kernel.</param>
-        /// <param name="kernelInfo">Parsed kernel information.</param>
-        /// <param name="options">Compilation options.</param>
-        /// <param name="logger">Logger instance.</param>
-        public SimpleOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
-        {
-            Name = name;
-            _kernelInfo = kernelInfo;
-            _options = options;
-            _logger = logger;
-        }
-
-        /// <summary>
         /// Gets the kernel name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name;
 
         /// <summary>
         /// Executes the kernel with the provided arguments.
@@ -78,9 +68,6 @@ namespace DotCompute.Core.Compute.Kernels
         /// <summary>
         /// Disposes the kernel and releases associated resources.
         /// </summary>
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() => _disposed = true;
     }
 }

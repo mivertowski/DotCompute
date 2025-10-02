@@ -181,8 +181,8 @@ internal static class NumaInterop
     /// Gets the highest NUMA node number on Windows.
     /// </summary>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    internal static int GetNumaHighestNodeNumber() =>
-        GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
+    internal static int GetNumaHighestNodeNumber()
+        => GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
 
     /// <summary>
     /// Gets NUMA node memory size on Windows.

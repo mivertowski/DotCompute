@@ -75,7 +75,7 @@ public static class ServiceCollectionExtensions
         // Register the production kernel execution service
 
         _ = services.AddSingleton<KernelExecutionService>();
-        _ = services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider =>
+        _ = services.AddSingleton<Abstractions.Interfaces.IComputeOrchestrator>(provider =>
 
             provider.GetRequiredService<KernelExecutionService>());
 
@@ -161,7 +161,7 @@ public static class ServiceCollectionExtensions
 
         // Log successful initialization
 
-        var logger = serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger<AcceleratorRuntime>>();
+        var logger = serviceProvider.GetService<ILogger<AcceleratorRuntime>>();
         logger?.LogInformation("DotCompute runtime initialized successfully with {KernelCount} kernels", kernelCount);
     }
 
@@ -187,7 +187,7 @@ public static class ServiceCollectionExtensions
         _ = services.AddTransient<IKernelChainBuilder>(provider =>
 
         {
-            var orchestrator = provider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
+            var orchestrator = provider.GetRequiredService<Abstractions.Interfaces.IComputeOrchestrator>();
             var kernelResolver = provider.GetService<IKernelResolver>();
             var profiler = provider.GetService<IKernelChainProfiler>();
             var validator = provider.GetService<IKernelChainValidator>();

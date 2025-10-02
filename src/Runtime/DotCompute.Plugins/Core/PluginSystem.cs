@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using DotCompute.Plugins.Exceptions.Loading;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -30,7 +30,7 @@ public class PluginSystem : IDisposable
     /// Initializes a new instance of the <see cref="PluginSystem"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    /// <exception cref="System.ArgumentNullException">logger</exception>
+    /// <exception cref="ArgumentNullException">logger</exception>
     public PluginSystem(ILogger<PluginSystem> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -42,7 +42,7 @@ public class PluginSystem : IDisposable
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="serviceProvider">The service provider.</param>
-    /// <exception cref="System.ArgumentNullException">logger</exception>
+    /// <exception cref="ArgumentNullException">logger</exception>
     public PluginSystem(ILogger<PluginSystem> logger, IServiceProvider serviceProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -177,7 +177,7 @@ public class PluginSystem : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Check if dynamic code compilation is available
-        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        if (!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             _logger.LogWarningMessage($"Plugin loading from assembly path is not supported in AOT scenarios. ");
             return ValueTask.FromResult<IBackendPlugin?>(null);
@@ -366,7 +366,7 @@ public class PluginSystem : IDisposable
     [RequiresUnreferencedCode("Plugin type discovery requires runtime type enumeration and is not AOT-compatible")]
     public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
     {
-        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        if (!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             return [];
         }
@@ -384,7 +384,7 @@ public class PluginSystem : IDisposable
     [RequiresUnreferencedCode("Plugin type discovery requires runtime type information and is not AOT-compatible")]
     private Task<string?> DiscoverPluginTypeAsync(string assemblyPath)
     {
-        if (!global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+        if (!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
         {
             _logger?.LogWarning("Plugin type discovery is not supported in AOT scenarios for assembly {Path}", assemblyPath);
             return Task.FromResult<string?>(null);
@@ -426,7 +426,7 @@ public class PluginSystem : IDisposable
             }
 
             // Fall back to Activator.CreateInstance if dynamic code is available
-            if (global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+            if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
             {
                 return Activator.CreateInstance(pluginType) as IBackendPlugin;
             }
@@ -493,7 +493,7 @@ public class PluginAssemblyLoadContext(string pluginPath) : AssemblyLoadContext(
     private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
 
     /// <summary>
-    /// When overridden in a derived class, allows an assembly to be resolved based on its <see cref="System.Reflection.AssemblyName" />.
+    /// When overridden in a derived class, allows an assembly to be resolved based on its <see cref="AssemblyName" />.
     /// </summary>
     /// <param name="assemblyName">The object that describes the assembly to be resolved.</param>
     /// <returns>

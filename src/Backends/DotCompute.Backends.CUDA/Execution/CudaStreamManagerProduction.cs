@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -31,7 +31,6 @@ public sealed class CudaStreamManagerProduction : IDisposable
     private readonly ConcurrentDictionary<string, StreamInfo> _namedStreams;
     private readonly ConcurrentBag<IntPtr> _streamPool;
     private readonly ConcurrentDictionary<IntPtr, StreamCallbackInfo> _streamCallbacks;
-    private readonly Lock _streamLock = new();
     private readonly int _maxPoolSize;
     private volatile bool _disposed;
 
@@ -368,7 +367,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         try
         {
             // Add callback to stream
-            var callbackPtr = Marshal.GetFunctionPointerForDelegate<StreamCallbackDelegate>(StreamCallbackThunk);
+            var callbackPtr = Marshal.GetFunctionPointerForDelegate(StreamCallbackThunk);
             var result = CudaRuntime.cudaStreamAddCallback(
                 stream,
                 callbackPtr,

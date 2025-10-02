@@ -316,10 +316,7 @@ internal sealed class CudaCompilationCache : IDisposable
     /// <summary>
     /// Checks if a cache entry has expired.
     /// </summary>
-    private static bool IsCacheEntryExpired(KernelCacheMetadata metadata)
-    {
-        return DateTime.UtcNow - metadata.CompileTime > _cacheExpirationTime;
-    }
+    private static bool IsCacheEntryExpired(KernelCacheMetadata metadata) => DateTime.UtcNow - metadata.CompileTime > _cacheExpirationTime;
 
     /// <summary>
     /// Sanitizes a filename for safe disk storage.
@@ -327,7 +324,7 @@ internal sealed class CudaCompilationCache : IDisposable
     private static string SanitizeFileName(string fileName)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        return new string(fileName.Where(c => !invalidChars.Contains(c)).ToArray());
+        return new string([.. fileName.Where(c => !invalidChars.Contains(c))]);
     }
 
     /// <summary>

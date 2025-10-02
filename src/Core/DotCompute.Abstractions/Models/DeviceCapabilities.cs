@@ -71,8 +71,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the supported data types
     /// </summary>
-    public DataTypeSupport SupportedDataTypes { get; set; }
-
+    public DataTypeSupport SupportedDataTypes { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the clock frequency in MHz
@@ -112,20 +111,17 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the maximum block dimensions
     /// </summary>
-    public Dim3 MaxBlockDimensions { get; set; }
-
+    public Dim3 MaxBlockDimensions { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the maximum grid dimensions
     /// </summary>
-    public Dim3 MaxGridDimensions { get; set; }
-
+    public Dim3 MaxGridDimensions { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the available device features
     /// </summary>
-    public DeviceFeatures Features { get; set; }
-
+    public DeviceFeatures Features { get; set; } = new();
 
     /// <summary>
     /// Gets or sets whether the device supports async operations
@@ -162,10 +158,7 @@ public sealed class DeviceCapabilities
     /// </summary>
     /// <param name="feature">The feature to check</param>
     /// <returns>True if the feature is supported, false otherwise</returns>
-    public bool SupportsFeature(DeviceFeature feature)
-    {
-        return Features.HasFlag((DeviceFeatures)feature);
-    }
+    public bool SupportsFeature(DeviceFeature feature) => Features.HasFlag((DeviceFeatures)feature);
 
     /// <summary>
     /// Gets the maximum theoretical memory bandwidth in GB/s

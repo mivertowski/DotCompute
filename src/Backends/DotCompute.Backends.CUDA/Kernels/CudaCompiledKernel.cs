@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -50,7 +50,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             string name,
             string entryPoint,
             byte[] ptxData,
-            Abstractions.CompilationOptions? options,
+            CompilationOptions? options,
             ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -112,12 +112,11 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     // CRITICAL FIX: Enhanced module loading for CUDA 13.0 compatibility
                     // Try progressive fallback strategy for optimal compatibility
-                    CudaError result;
                     var loadingStrategy = "unknown";
 
                     // Strategy 1: JIT options with fallback configurations
 
-                    if (TryLoadModuleWithJitOptions(ptxPtr, out result))
+                    if (TryLoadModuleWithJitOptions(ptxPtr, out var result))
                     {
                         loadingStrategy = "JIT optimized";
                     }
@@ -361,10 +360,10 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                 var jitOptionValues = new List<IntPtr>
                 {
-                    new IntPtr(config.OptimizationLevel),
-                    new IntPtr(config.GenerateDebugInfo),
-                    new IntPtr(config.GenerateLineInfo),
-                    new IntPtr(config.LogVerbose)
+                    new(config.OptimizationLevel),
+                    new(config.GenerateDebugInfo),
+                    new(config.GenerateLineInfo),
+                    new(config.LogVerbose)
                 };
 
                 // Add max registers option if specified

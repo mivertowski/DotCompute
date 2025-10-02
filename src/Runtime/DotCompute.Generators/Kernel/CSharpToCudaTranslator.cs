@@ -15,26 +15,15 @@ namespace DotCompute.Generators.Kernel;
 /// Handles complex patterns, optimizations, and various memory access patterns.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or dependency injection")]
-internal sealed class CSharpToCudaTranslator
+internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, KernelMethodInfo kernelInfo)
 {
-    private readonly SemanticModel _semanticModel;
-    private readonly KernelMethodInfo _kernelInfo;
-    private readonly StringBuilder _output;
-    private readonly Dictionary<string, string> _variableMapping;
-    private readonly HashSet<string> _sharedMemoryVariables;
-    private readonly HashSet<string> _constantMemoryVariables;
-    private int _indentLevel;
-
-    public CSharpToCudaTranslator(SemanticModel semanticModel, KernelMethodInfo kernelInfo)
-    {
-        _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
-        _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
-        _output = new StringBuilder();
-        _variableMapping = [];
-        _sharedMemoryVariables = [];
-        _constantMemoryVariables = [];
-        _indentLevel = 0;
-    }
+    private readonly SemanticModel _semanticModel = semanticModel ?? throw new ArgumentNullException(nameof(semanticModel));
+    private readonly KernelMethodInfo _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
+    private readonly StringBuilder _output = new();
+    private readonly Dictionary<string, string> _variableMapping = [];
+    private readonly HashSet<string> _sharedMemoryVariables = [];
+    private readonly HashSet<string> _constantMemoryVariables = [];
+    private int _indentLevel = 0;
 
     /// <summary>
     /// Translates the C# method body to CUDA C code.
@@ -100,10 +89,8 @@ internal sealed class CSharpToCudaTranslator
     }
 
     private static bool IsConstantMemoryCandidate(ISymbol variable)
-    {
         // Heuristics for constant memory usage
-        return variable.IsStatic || variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0;
-    }
+        => variable.IsStatic || variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0;
 
     private void TranslateBlockStatement(BlockSyntax block)
     {

@@ -11,38 +11,27 @@ namespace DotCompute.Core.Kernels;
 /// Unified implementation of generated kernel that consolidates all functionality
 /// from different kernel implementations across the codebase.
 /// </summary>
-public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
+/// <remarks>
+/// Initializes a new instance of the <see cref="UnifiedGeneratedKernel"/> class.
+/// </remarks>
+public sealed class UnifiedGeneratedKernel(
+    string name,
+    string sourceCode,
+    string language = "C",
+    string targetBackend = "CPU",
+    string entryPoint = "main") : IFullGeneratedKernel
 {
     private readonly Dictionary<string, object> _metadata = [];
     private readonly List<IKernelParameter> _parameters = [];
     private readonly List<string> _optimizations = [];
     private bool _disposed;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UnifiedGeneratedKernel"/> class.
-    /// </summary>
-    public UnifiedGeneratedKernel(
-        string name,
-        string sourceCode,
-        string language = "C",
-        string targetBackend = "CPU",
-        string entryPoint = "main")
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        SourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
-        Language = language;
-        TargetBackend = targetBackend;
-        EntryPoint = entryPoint;
-        CompiledAt = DateTimeOffset.UtcNow;
-        Version = new Version(1, 0, 0, 0);
-    }
-
     // IGeneratedKernel properties
-    public string Name { get; }
-    public string SourceCode { get; }
-    public string Language { get; }
-    public string TargetBackend { get; }
-    public string EntryPoint { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    public string SourceCode { get; } = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
+    public string Language { get; } = language;
+    public string TargetBackend { get; } = targetBackend;
+    public string EntryPoint { get; } = entryPoint;
     public IReadOnlyDictionary<string, object> Metadata => _metadata;
 
     // IExecutableGeneratedKernel properties
@@ -57,8 +46,8 @@ public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
 
     // IFullGeneratedKernel properties
     public IGpuMemoryManager? MemoryManager { get; private set; }
-    public DateTimeOffset CompiledAt { get; }
-    public Version Version { get; }
+    public DateTimeOffset CompiledAt { get; } = DateTimeOffset.UtcNow;
+    public Version Version { get; } = new Version(1, 0, 0, 0);
 
     /// <summary>
     /// Sets the compiled kernel instance.
@@ -222,27 +211,18 @@ public sealed class UnifiedGeneratedKernel : IFullGeneratedKernel
 /// <summary>
 /// Implementation of IKernelParameter for unified kernel parameters.
 /// </summary>
-public sealed class UnifiedKernelParameter : IKernelParameter
+public sealed class UnifiedKernelParameter(
+    string name,
+    Type type,
+    bool isPointer = false,
+    bool isInput = true,
+    bool isOutput = false) : IKernelParameter
 {
-    public UnifiedKernelParameter(
-        string name,
-        Type type,
-        bool isPointer = false,
-        bool isInput = true,
-        bool isOutput = false)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type ?? throw new ArgumentNullException(nameof(type));
-        IsPointer = isPointer;
-        IsInput = isInput;
-        IsOutput = isOutput;
-    }
-
-    public string Name { get; }
-    public Type Type { get; }
-    public bool IsPointer { get; }
-    public bool IsInput { get; }
-    public bool IsOutput { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
+    public Type Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
+    public bool IsPointer { get; } = isPointer;
+    public bool IsInput { get; } = isInput;
+    public bool IsOutput { get; } = isOutput;
 
     public override string ToString() => $"{Type.Name} {Name}{(IsPointer ? "*" : "")}{(IsOutput ? " [out]" : "")}{(IsInput ? " [in]" : "")}";
 }
@@ -260,10 +240,7 @@ public static class UnifiedGeneratedKernelFactory
         string sourceCode,
         string language = "C",
         string targetBackend = "CPU",
-        string entryPoint = "main")
-    {
-        return new UnifiedGeneratedKernel(name, sourceCode, language, targetBackend, entryPoint);
-    }
+        string entryPoint = "main") => new(name, sourceCode, language, targetBackend, entryPoint);
 
     /// <summary>
     /// Creates a GPU kernel instance.
@@ -271,10 +248,7 @@ public static class UnifiedGeneratedKernelFactory
     public static UnifiedGeneratedKernel CreateGpuKernel(
         string name,
         string cudaSourceCode,
-        string entryPoint = "kernel_main")
-    {
-        return new UnifiedGeneratedKernel(name, cudaSourceCode, "CUDA", "CUDA", entryPoint);
-    }
+        string entryPoint = "kernel_main") => new(name, cudaSourceCode, "CUDA", "CUDA", entryPoint);
 
     /// <summary>
     /// Creates a CPU kernel instance.
@@ -282,10 +256,7 @@ public static class UnifiedGeneratedKernelFactory
     public static UnifiedGeneratedKernel CreateCpuKernel(
         string name,
         string cSourceCode,
-        string entryPoint = "main")
-    {
-        return new UnifiedGeneratedKernel(name, cSourceCode, "C", "CPU", entryPoint);
-    }
+        string entryPoint = "main") => new(name, cSourceCode, "C", "CPU", entryPoint);
 
     /// <summary>
     /// Creates a parameter for the kernel.
@@ -294,16 +265,10 @@ public static class UnifiedGeneratedKernelFactory
         string name,
         bool isPointer = false,
         bool isInput = true,
-        bool isOutput = false)
-    {
-        return new UnifiedKernelParameter(name, typeof(T), isPointer, isInput, isOutput);
-    }
+        bool isOutput = false) => new(name, typeof(T), isPointer, isInput, isOutput);
 
     /// <summary>
     /// Creates multiple parameters from type specifications.
     /// </summary>
-    public static IEnumerable<UnifiedKernelParameter> CreateParameters(params (string name, Type type, bool isPointer, bool isInput, bool isOutput)[] paramSpecs)
-    {
-        return paramSpecs.Select(spec => new UnifiedKernelParameter(spec.name, spec.type, spec.isPointer, spec.isInput, spec.isOutput));
-    }
+    public static IEnumerable<UnifiedKernelParameter> CreateParameters(params (string name, Type type, bool isPointer, bool isInput, bool isOutput)[] paramSpecs) => paramSpecs.Select(spec => new UnifiedKernelParameter(spec.name, spec.type, spec.isPointer, spec.isInput, spec.isOutput));
 }

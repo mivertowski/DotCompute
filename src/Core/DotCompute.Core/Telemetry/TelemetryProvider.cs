@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
@@ -12,7 +12,7 @@ namespace DotCompute.Core.Telemetry;
 /// Production-grade telemetry provider with OpenTelemetry integration for comprehensive observability.
 /// Provides distributed tracing, metrics collection, and performance profiling for DotCompute operations.
 /// </summary>
-public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Telemetry.Providers.TelemetryProvider
+public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.Providers.TelemetryProvider
 {
     private static readonly ActivitySource ActivitySource = new("DotCompute.Core", "1.0.0");
     private static readonly Meter Meter = new("DotCompute.Core", "1.0.0");
@@ -81,14 +81,14 @@ public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Teleme
             description: "Memory transfer duration in seconds");
 
 
-        _memoryUsageGauge = Meter.CreateObservableGauge<long>(
+        _memoryUsageGauge = Meter.CreateObservableGauge(
             "dotcompute_memory_usage_bytes",
             observeValue: () => _metricsCollector.GetCurrentMemoryUsage(),
             unit: "bytes",
             description: "Current memory usage in bytes");
 
 
-        _deviceUtilizationGauge = Meter.CreateObservableGauge<double>(
+        _deviceUtilizationGauge = Meter.CreateObservableGauge(
             "dotcompute_device_utilization_ratio",
             observeValue: () => _metricsCollector.GetDeviceUtilization(),
             description: "Device utilization ratio (0.0 to 1.0)");
@@ -274,7 +274,7 @@ public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Teleme
     /// <summary>
     /// Exports telemetry data to configured external systems (Prometheus, ELK, etc.).
     /// </summary>
-    public override async Task ExportTelemetryAsync(DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat format = AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus,
+    public override async Task ExportTelemetryAsync(AbstractionsMemory.Telemetry.Types.TelemetryExportFormat format = AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -308,12 +308,12 @@ public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Teleme
     /// <summary>
     /// Gets current system health metrics for monitoring and alerting.
     /// </summary>
-    public override DotCompute.Abstractions.Telemetry.Types.SystemHealthMetrics GetSystemHealth()
+    public override AbstractionsMemory.Telemetry.Types.SystemHealthMetrics GetSystemHealth()
     {
         ThrowIfDisposed();
 
 
-        return new DotCompute.Abstractions.Telemetry.Types.SystemHealthMetrics
+        return new AbstractionsMemory.Telemetry.Types.SystemHealthMetrics
         {
             CpuUtilization = Environment.ProcessorCount > 0 ? _metricsCollector.GetDeviceUtilization() / Environment.ProcessorCount : 0,
             MemoryUtilization = Math.Min(100.0, _metricsCollector.GetCurrentMemoryUsage() / (1024.0 * 1024.0 * 1024.0) * 10), // Rough estimate

@@ -9,21 +9,18 @@ using Microsoft.Extensions.Logging;
 namespace DotCompute.Algorithms.Plugins
 {
 
-/// <summary>
-/// Plugin for Fast Fourier Transform operations.
-/// </summary>
-public sealed class FFTPlugin : AlgorithmPluginBase
-{
     /// <summary>
-    /// Initializes a new instance of the <see cref="FFTPlugin"/> class.
+    /// Plugin for Fast Fourier Transform operations.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="FFTPlugin"/> class.
+    /// </remarks>
     /// <param name="logger">The logger instance.</param>
-    public FFTPlugin(ILogger<FFTPlugin> logger) : base(logger)
-    {
-    }
+    public sealed class FFTPlugin(ILogger<FFTPlugin> logger) : AlgorithmPluginBase(logger)
+{
 
-    /// <inheritdoc/>
-    public override string Id => "com.dotcompute.algorithms.fft";
+        /// <inheritdoc/>
+        public override string Id => "com.dotcompute.algorithms.fft";
 
     /// <inheritdoc/>
     public override string Name => "Fast Fourier Transform";

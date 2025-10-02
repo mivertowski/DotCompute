@@ -44,7 +44,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
                 var cudaContext = typeof(CudaAccelerator)
                     .GetProperty("CudaContext", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    ?.GetValue(_accelerator) as DotCompute.Backends.CUDA.CudaContext;
+                    ?.GetValue(_accelerator) as CudaContext;
 
 
                 var compilerLogger = _logger ?? (ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
@@ -281,7 +281,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Act - First session
             var compiled1 = null as object; // ICompiledKernel
-            var ctx1 = _accelerator!.GetType().GetProperty("CudaContext", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_accelerator) as DotCompute.Backends.CUDA.CudaContext;
+            var ctx1 = _accelerator!.GetType().GetProperty("CudaContext", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_accelerator) as CudaContext;
             using (var compiler1 = new CudaKernelCompiler(ctx1!, _logger!))
             {
                 compiled1 = await compiler1.CompileAsync(kernel);
@@ -292,7 +292,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var compiled2 = null as object; // ICompiledKernel
             var perf = new PerformanceMeasurement("Cross-session Load", Output);
             perf.Start();
-            var ctx2 = _accelerator!.GetType().GetProperty("CudaContext", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_accelerator) as DotCompute.Backends.CUDA.CudaContext;
+            var ctx2 = _accelerator!.GetType().GetProperty("CudaContext", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(_accelerator) as CudaContext;
             using (var compiler2 = new CudaKernelCompiler(ctx2!, _logger!))
             {
                 compiled2 = await compiler2.CompileAsync(kernel);
@@ -408,13 +408,13 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // Language determined by backend
             };
 
-            var optionsDebug = new DotCompute.Abstractions.CompilationOptions
+            var optionsDebug = new CompilationOptions
             {
                 OptimizationLevel = OptimizationLevel.None,
                 GenerateDebugInfo = true
             };
 
-            var optionsRelease = new DotCompute.Abstractions.CompilationOptions
+            var optionsRelease = new CompilationOptions
             {
                 OptimizationLevel = OptimizationLevel.O3,
                 GenerateDebugInfo = false
@@ -470,7 +470,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             firstPassPerf.Start();
 
 
-            var firstPassResults = new List<DotCompute.Abstractions.ICompiledKernel>();
+            var firstPassResults = new List<ICompiledKernel>();
             foreach (var kernel in kernelLibrary)
             {
                 firstPassResults.Add(await _compiler.CompileAsync(kernel));
@@ -486,7 +486,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             secondPassPerf.Start();
 
 
-            var secondPassResults = new List<DotCompute.Abstractions.ICompiledKernel>();
+            var secondPassResults = new List<ICompiledKernel>();
             foreach (var kernel in kernelLibrary)
             {
                 secondPassResults.Add(await _compiler.CompileAsync(kernel));

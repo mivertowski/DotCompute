@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution.Graph;
 using DotCompute.Backends.CUDA.Native;
@@ -37,7 +37,6 @@ namespace DotCompute.Backends.CUDA.Execution
 
         // Graph configuration constants
         private const int MaxGraphInstances = 100;
-        private const int MaxNodesPerGraph = 1000;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CudaGraphSupport"/> class.
@@ -81,7 +80,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public async Task<string> CreateGraphAsync(
             string graphId,
             IEnumerable<CudaKernelOperation> operations,
-            DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions? options = null,
+            CUDA.Types.CudaGraphOptimizationOptions? options = null,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -97,7 +96,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     Id = graphId,
                     Operations = [.. operations],
                     CreatedAt = DateTimeOffset.UtcNow,
-                    Options = options ?? new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions()
+                    Options = options ?? new CUDA.Types.CudaGraphOptimizationOptions()
                 };
 
                 // Build the graph
@@ -189,7 +188,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <returns>A task that represents the asynchronous execution operation, returning the execution results.</returns>
         /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the graph instance is not valid.</exception>
-        public Task<DotCompute.Backends.CUDA.Types.CudaGraphExecutionResult> ExecuteGraphAsync(
+        public Task<CUDA.Types.CudaGraphExecutionResult> ExecuteGraphAsync(
             CudaGraphInstance instance,
             IntPtr stream = default,
             CancellationToken cancellationToken = default)
@@ -232,7 +231,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 instance.LastExecutedAt = endTime;
                 instance.TotalGpuTime += gpuTime;
 
-                return Task.FromResult(new DotCompute.Backends.CUDA.Types.CudaGraphExecutionResult
+                return Task.FromResult(new CUDA.Types.CudaGraphExecutionResult
                 {
                     Success = true,
                     InstanceId = instance.Id,
@@ -246,7 +245,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 _logger.LogErrorMessage("");
 
-                return Task.FromResult(new DotCompute.Backends.CUDA.Types.CudaGraphExecutionResult
+                return Task.FromResult(new CUDA.Types.CudaGraphExecutionResult
                 {
                     Success = false,
                     InstanceId = instance.Id,
@@ -271,7 +270,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
         public async Task<bool> UpdateGraphAsync(
             CudaGraphInstance instance,
-            DotCompute.Backends.CUDA.Types.CudaGraphUpdateParameters updateParams,
+            CUDA.Types.CudaGraphUpdateParameters updateParams,
             CancellationToken cancellationToken = default)
         {
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
@@ -327,7 +326,7 @@ namespace DotCompute.Backends.CUDA.Execution
         public async Task<string> CaptureGraphAsync(
             string graphId,
             Func<IntPtr, Task> operations,
-            DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode mode = CUDA.Types.CudaGraphCaptureMode.Global,
+            CUDA.Types.CudaGraphCaptureMode mode = CUDA.Types.CudaGraphCaptureMode.Global,
             CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -359,7 +358,7 @@ namespace DotCompute.Backends.CUDA.Execution
                         Handle = capturedGraph,
                         CreatedAt = DateTimeOffset.UtcNow,
                         IsCaptured = true,
-                        Options = new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions { EnableOptimization = true }
+                        Options = new CUDA.Types.CudaGraphOptimizationOptions { EnableOptimization = true }
                     };
 
                     // Verify node count - NodeCount is computed from the nodes collection
@@ -431,7 +430,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 LaunchConfig = fusionOptions.GetLaunchConfigForKernel(kernel)
             });
 
-            var graphOptions = new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions
+            var graphOptions = new CUDA.Types.CudaGraphOptimizationOptions
             {
                 EnableOptimization = true,
                 EnableKernelFusion = true,
@@ -449,7 +448,7 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <param name="graphId">The identifier of the graph for which to retrieve statistics.</param>
         /// <returns>A CudaGraphStatistics object containing performance metrics.</returns>
         /// <exception cref="ObjectDisposedException">Thrown if the object has been disposed.</exception>
-        public DotCompute.Backends.CUDA.Types.CudaGraphStatistics GetGraphStatistics(string graphId)
+        public CUDA.Types.CudaGraphStatistics GetGraphStatistics(string graphId)
         {
             ThrowIfDisposed();
 
@@ -461,7 +460,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var totalGpuTime = instances.Sum(i => i.TotalGpuTime);
             var avgExecutionTime = totalExecutions > 0 ? totalGpuTime / totalExecutions : 0;
 
-            return new DotCompute.Backends.CUDA.Types.CudaGraphStatistics
+            return new CUDA.Types.CudaGraphStatistics
             {
                 GraphId = graphId,
                 InstanceCount = instances.Count,
@@ -565,7 +564,7 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
 
-            var nodeParams = new DotCompute.Backends.CUDA.Types.Native.CudaKernelNodeParams
+            var nodeParams = new CudaKernelNodeParams
             {
                 func = operation.Kernel.FunctionHandle,
                 gridDimX = operation.LaunchConfig.GridX,
@@ -594,7 +593,7 @@ namespace DotCompute.Backends.CUDA.Execution
             return nodeHandle;
         }
 
-        private static IntPtr PrepareCudaKernelArguments(DotCompute.Backends.CUDA.Types.CudaKernelArguments arguments)
+        private static IntPtr PrepareCudaKernelArguments(CUDA.Types.CudaKernelArguments arguments)
         {
             // Convert arguments to format suitable for graph nodes
             // This is a simplified version - production would need more sophisticated handling
@@ -758,7 +757,7 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 // Configure for tensor core usage
                 op.UseTensorCores = true;
-                op.TensorCoreConfig = new DotCompute.Backends.CUDA.Types.TensorCoreConfig
+                op.TensorCoreConfig = new CUDA.Types.TensorCoreConfig
                 {
                     DataType = "TF32",
                     Precision = "High"
@@ -791,9 +790,9 @@ namespace DotCompute.Backends.CUDA.Execution
             }
         }
 
-        private static List<DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate> IdentifyFusionCandidates(CudaGraph graph)
+        private static List<Optimization.KernelFusionCandidate> IdentifyFusionCandidates(CudaGraph graph)
         {
-            var candidates = new List<DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate>();
+            var candidates = new List<Optimization.KernelFusionCandidate>();
 
             // Identify adjacent kernels that can be fused
             for (var i = 0; i < graph.Operations.Count - 1; i++)
@@ -804,7 +803,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 // Check if kernels can be fused (element-wise operations are good candidates)
                 if (CanFuseKernels(current, next))
                 {
-                    candidates.Add(new DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate
+                    candidates.Add(new Optimization.KernelFusionCandidate
                     {
                         FirstKernel = current,
                         SecondKernel = next,
@@ -833,7 +832,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             => 0.2; // 20% estimated improvement
 
-        private static async Task FuseKernelNodesAsync(CudaGraph graph, List<DotCompute.Backends.CUDA.Execution.Optimization.KernelFusionCandidate> candidates, CancellationToken cancellationToken)
+        private static async Task FuseKernelNodesAsync(CudaGraph graph, List<Optimization.KernelFusionCandidate> candidates, CancellationToken cancellationToken)
         {
             // Apply kernel fusion using CUDA graph API
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);

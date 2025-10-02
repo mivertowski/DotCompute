@@ -399,10 +399,7 @@ public struct FinancialTransaction : IEquatable<FinancialTransaction>
     /// <summary>
     /// Returns the hash code for this transaction.
     /// </summary>
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(Id, Timestamp, Price, Volume, Symbol, Type);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(Id, Timestamp, Price, Volume, Symbol, Type);
     /// <summary>
     /// Determines whether two transactions are equal.
     /// </summary>

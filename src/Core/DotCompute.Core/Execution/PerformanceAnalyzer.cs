@@ -14,8 +14,6 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class PerformanceAnalyzer
 {
-    private readonly ILogger _logger;
-
     public PerformanceAnalyzer(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -41,12 +41,12 @@ public class PerformanceSnapshot
     /// <summary>
     /// Gets or sets the device-specific metrics.
     /// </summary>
-    public Dictionary<string, double> DeviceMetrics { get; set; } = new();
+    public Dictionary<string, double> DeviceMetrics { get; set; } = [];
 
     /// <summary>
     /// Gets or sets additional performance counters.
     /// </summary>
-    public Dictionary<string, long> Counters { get; set; } = new();
+    public Dictionary<string, long> Counters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets memory usage statistics.

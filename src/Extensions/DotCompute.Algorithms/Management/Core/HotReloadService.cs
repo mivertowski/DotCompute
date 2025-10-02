@@ -11,29 +11,22 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Service responsible for hot reload functionality.
 /// </summary>
-public sealed partial class HotReloadService : IHotReloadService, IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="HotReloadService"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="lifecycleManager">The plugin lifecycle manager.</param>
+/// <param name="options">Configuration options.</param>
+public sealed partial class HotReloadService(
+    ILogger<HotReloadService> logger,
+    IPluginLifecycleManager lifecycleManager,
+    AlgorithmPluginManagerOptions options) : IHotReloadService, IDisposable
 {
-    private readonly ILogger<HotReloadService> _logger;
-    private readonly IPluginLifecycleManager _lifecycleManager;
-    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ILogger<HotReloadService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="HotReloadService"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="lifecycleManager">The plugin lifecycle manager.</param>
-    /// <param name="options">Configuration options.</param>
-    public HotReloadService(
-        ILogger<HotReloadService> logger,
-        IPluginLifecycleManager lifecycleManager,
-        AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
 
     /// <inheritdoc/>
     public void SetupHotReload(string assemblyPath)
@@ -131,7 +124,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     {
         try
         {
-            await OnAssemblyChanged(sender, e).ConfigureAwait(false);
+            await OnAssemblyChangedAsync(sender, e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -142,7 +135,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     /// <summary>
     /// Handles assembly file changes for hot reload.
     /// </summary>
-    private async Task OnAssemblyChanged(object sender, FileSystemEventArgs e)
+    private async Task OnAssemblyChangedAsync(object sender, FileSystemEventArgs e)
     {
         try
         {
@@ -198,7 +191,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     {
         try
         {
-            await OnFileWatcherError(sender, e).ConfigureAwait(false);
+            await OnFileWatcherErrorAsync(sender, e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -209,7 +202,7 @@ public sealed partial class HotReloadService : IHotReloadService, IDisposable
     /// <summary>
     /// Handles file watcher errors.
     /// </summary>
-    private async Task OnFileWatcherError(object sender, ErrorEventArgs e)
+    private async Task OnFileWatcherErrorAsync(object sender, ErrorEventArgs e)
     {
         _logger.LogErrorMessage(e.GetException(), "File watcher error occurred");
 

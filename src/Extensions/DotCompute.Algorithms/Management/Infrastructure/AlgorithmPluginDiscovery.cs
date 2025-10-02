@@ -11,10 +11,12 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Handles discovery of algorithm plugins from directories and file system monitoring.
 /// Manages file watchers for hot reload functionality and plugin file detection.
 /// </summary>
-public sealed partial class AlgorithmPluginDiscovery : IDisposable
+public sealed partial class AlgorithmPluginDiscovery(
+    ILogger<AlgorithmPluginDiscovery> logger,
+    AlgorithmPluginManagerOptions options) : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginDiscovery> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ILogger<AlgorithmPluginDiscovery> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, FileSystemWatcher> _watchers = new();
     private bool _disposed;
 
@@ -27,14 +29,6 @@ public sealed partial class AlgorithmPluginDiscovery : IDisposable
     /// Event raised when file watcher encounters an error.
     /// </summary>
     public event EventHandler<FileWatcherErrorEventArgs>? WatcherError;
-
-    public AlgorithmPluginDiscovery(
-        ILogger<AlgorithmPluginDiscovery> logger,
-        AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
 
     /// <summary>
     /// Discovers plugins in the specified directory.
@@ -168,7 +162,7 @@ public sealed partial class AlgorithmPluginDiscovery : IDisposable
             // Also watch for .pdb files (debug symbols) and .json manifest files
             SetupAdditionalFileWatchers(assemblyPath);
 
-            _watchers.TryAdd(assemblyPath, watcher);
+            _ = _watchers.TryAdd(assemblyPath, watcher);
             LogHotReloadSetup(assemblyPath);
         }
         catch (Exception ex)
@@ -211,10 +205,7 @@ public sealed partial class AlgorithmPluginDiscovery : IDisposable
     /// Gets the file extensions that are monitored for plugins.
     /// </summary>
     /// <returns>Array of file extensions.</returns>
-    public static string[] GetMonitoredExtensions()
-    {
-        return [".dll", ".exe", ".pdb", ".json"];
-    }
+    public static string[] GetMonitoredExtensions() => [".dll", ".exe", ".pdb", ".json"];
 
     /// <summary>
     /// Checks if a file is a potential plugin assembly.
@@ -296,7 +287,7 @@ public sealed partial class AlgorithmPluginDiscovery : IDisposable
 
             watcher.Changed += OnFileChanged;
             watcher.Error += OnWatcherError;
-            _watchers.TryAdd(filePath, watcher);
+            _ = _watchers.TryAdd(filePath, watcher);
         }
         catch (Exception ex)
         {

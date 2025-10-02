@@ -23,7 +23,6 @@ namespace DotCompute.Backends.CUDA.P2P
         private readonly ConcurrentDictionary<int, CudaDeviceInfo> _devices;
         private readonly SemaphoreSlim _connectionSemaphore;
         private readonly Timer _monitoringTimer;
-        private readonly object _lockObject = new();
         private bool _disposed;
 
         public CudaP2PManager(ILogger<CudaP2PManager> logger)
@@ -264,7 +263,7 @@ namespace DotCompute.Backends.CUDA.P2P
                     // Asynchronous transfer
                     var srcCudaAsync = sourceBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Source buffer must be CudaMemoryBuffer");
                     var dstCudaAsync = destinationBuffer as CudaMemoryBuffer ?? throw new ArgumentException("Destination buffer must be CudaMemoryBuffer");
-                    result = CudaRuntime.cudaMemcpyAsync(
+                    result = CudaRuntime.cudaMemcpy(
                         dstCudaAsync.DevicePointer,
                         srcCudaAsync.DevicePointer,
                         (nuint)sizeBytes,

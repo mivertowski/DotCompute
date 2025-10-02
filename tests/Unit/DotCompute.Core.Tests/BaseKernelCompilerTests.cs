@@ -1256,17 +1256,13 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     /// <summary>
     /// Test implementation of BaseKernelCompiler for comprehensive testing.
     /// </summary>
-    private sealed class TestKernelCompiler : BaseKernelCompiler, IDisposable
+    private sealed class TestKernelCompiler(ILogger logger) : BaseKernelCompiler(logger), IDisposable
     {
         private int _compileCallCount;
         private int _optimizeCallCount;
         private int _logMetricsCallCount;
         private int _concurrentCompilations;
         private int _maxConcurrentCompilations;
-
-        public TestKernelCompiler(ILogger logger) : base(logger)
-        {
-        }
 
         protected override string CompilerName => "TestCompiler";
 
@@ -1361,7 +1357,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
             }
         }
 
-        protected override ValueTask<AbstractionsCompiledKernel> OptimizeKernelCore(
+        protected override ValueTask<AbstractionsCompiledKernel> OptimizeKernelCoreAsync(
             AbstractionsCompiledKernel kernel,
             OptimizationLevel level,
             CancellationToken cancellationToken)

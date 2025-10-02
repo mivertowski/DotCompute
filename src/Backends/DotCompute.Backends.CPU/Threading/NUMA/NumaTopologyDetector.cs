@@ -58,10 +58,8 @@ public static partial class NumaTopologyDetector
     /// </summary>
     /// <returns>Newly discovered topology.</returns>
     public static NumaTopology RediscoverTopology()
-    {
         // Clear the cached topology and discover again
-        return DiscoverTopology();
-    }
+        => DiscoverTopology();
 
     #region Windows Discovery
 
@@ -191,29 +189,21 @@ public static partial class NumaTopologyDetector
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static HugePagesInfo GetWindowsHugePagesInfo(int nodeId)
-    {
         // Windows huge pages detection would go here
-        return new HugePagesInfo { SupportedSizes = new List<HugePageSize>() };
-    }
+        => new()
+        { SupportedSizes = new List<HugePageSize>() };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static CacheHierarchy GetWindowsCacheInfo(int nodeId)
-    {
         // Windows cache hierarchy detection would go here
-        return new CacheHierarchy { Levels = new List<CacheLevel>() };
-    }
+        => new()
+        { Levels = new List<CacheLevel>() };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static int GetWindowsNodeDistance(int fromNode, int toNode)
-    {
-        return fromNode == toNode ? NumaConstants.Distances.Local : NumaConstants.Distances.Remote;
-    }
+    private static int GetWindowsNodeDistance(int fromNode, int toNode) => fromNode == toNode ? NumaConstants.Distances.Local : NumaConstants.Distances.Remote;
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static int GetWindowsCacheLineSize()
-    {
-        return NumaConstants.Sizes.CacheLineSize; // Windows detection would go here
-    }
+    private static int GetWindowsCacheLineSize() => NumaConstants.Sizes.CacheLineSize; // Windows detection would go here
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static ulong GetProcessorMaskFromWmi(ManagementObject node)
@@ -415,10 +405,7 @@ public static partial class NumaTopologyDetector
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
-    private static HugePagesInfo GetLinuxHugePagesInfo(int nodeId)
-    {
-        return GetLinuxHugePagesSysfs($"/sys/devices/system/node/node{nodeId}");
-    }
+    private static HugePagesInfo GetLinuxHugePagesInfo(int nodeId) => GetLinuxHugePagesSysfs($"/sys/devices/system/node/node{nodeId}");
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static HugePagesInfo GetLinuxHugePagesSysfs(string nodeDir)
@@ -462,10 +449,7 @@ public static partial class NumaTopologyDetector
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
-    private static CacheHierarchy GetLinuxCacheInfo(int nodeId)
-    {
-        return GetLinuxCacheInfoSysfs(nodeId);
-    }
+    private static CacheHierarchy GetLinuxCacheInfo(int nodeId) => GetLinuxCacheInfoSysfs(nodeId);
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static CacheHierarchy GetLinuxCacheInfoSysfs(int nodeId)
@@ -680,10 +664,7 @@ public static partial class NumaTopologyDetector
         return matrix;
     }
 
-    private static int[][] EstimateDistanceMatrix(int nodeCount)
-    {
-        return CreateDistanceMatrix(nodeCount);
-    }
+    private static int[][] EstimateDistanceMatrix(int nodeCount) => CreateDistanceMatrix(nodeCount);
 
     private static int ReadIntFromFile(string filePath)
     {

@@ -356,50 +356,32 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// <summary>
         /// Registers a memory allocation with the state manager.
         /// </summary>
-        public void RegisterMemoryAllocation(IntPtr ptr, ulong size, MemoryType type, string? tag = null)
-        {
-            _stateManager.RegisterMemoryAllocation(ptr, size, type, tag);
-        }
+        public void RegisterMemoryAllocation(IntPtr ptr, ulong size, MemoryType type, string? tag = null) => _stateManager.RegisterMemoryAllocation(ptr, size, type, tag);
 
         /// <summary>
         /// Unregisters a memory allocation from the state manager.
         /// </summary>
-        public void UnregisterMemoryAllocation(IntPtr ptr)
-        {
-            _stateManager.UnregisterMemoryAllocation(ptr);
-        }
+        public void UnregisterMemoryAllocation(IntPtr ptr) => _stateManager.UnregisterMemoryAllocation(ptr);
 
         /// <summary>
         /// Registers a CUDA stream with the state manager.
         /// </summary>
-        public void RegisterStream(IntPtr stream, StreamPriority priority = StreamPriority.Default)
-        {
-            _stateManager.RegisterStream(stream, priority);
-        }
+        public void RegisterStream(IntPtr stream, StreamPriority priority = StreamPriority.Default) => _stateManager.RegisterStream(stream, priority);
 
         /// <summary>
         /// Unregisters a CUDA stream from the state manager.
         /// </summary>
-        public void UnregisterStream(IntPtr stream)
-        {
-            _stateManager.UnregisterStream(stream);
-        }
+        public void UnregisterStream(IntPtr stream) => _stateManager.UnregisterStream(stream);
 
         /// <summary>
         /// Registers a compiled kernel with the state manager.
         /// </summary>
-        public void RegisterKernel(string name, byte[] ptxCode, byte[]? cubinCode = null)
-        {
-            _stateManager.RegisterKernel(name, ptxCode, cubinCode);
-        }
+        public void RegisterKernel(string name, byte[] ptxCode, byte[]? cubinCode = null) => _stateManager.RegisterKernel(name, ptxCode, cubinCode);
 
         /// <summary>
         /// Creates a snapshot of the current context state.
         /// </summary>
-        public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default)
-        {
-            return await _stateManager.CreateSnapshotAsync(cancellationToken);
-        }
+        public async Task<ContextSnapshot> CreateContextSnapshotAsync(CancellationToken cancellationToken = default) => await _stateManager.CreateSnapshotAsync(cancellationToken);
 
         public void Dispose()
         {

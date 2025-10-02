@@ -622,7 +622,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                     _ = nodeEdges.Add(i - 1);
 
 
-                edges[i] = nodeEdges.ToArray();
+                edges[i] = [.. nodeEdges];
             }
 
 

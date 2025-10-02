@@ -9,35 +9,29 @@ namespace DotCompute.Generators.Models
     /// <summary>
     /// Represents a parameter for a kernel method, including its name, type, and buffer status.
     /// </summary>
-    public class KernelParameter
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="KernelParameter"/> class.
+    /// </remarks>
+    /// <param name="name">The parameter name.</param>
+    /// <param name="type">The parameter type as a string representation.</param>
+    /// <param name="isBuffer">Indicates whether this parameter represents a buffer.</param>
+    public class KernelParameter(string name, string type, bool isBuffer)
     {
         /// <summary>
         /// Gets the parameter name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>
         /// Gets the parameter type as a string representation.
         /// </summary>
-        public string Type { get; }
+        public string Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
 
         /// <summary>
         /// Gets a value indicating whether this parameter represents a buffer (array, span, or pointer).
         /// </summary>
-        public bool IsBuffer { get; }
+        public bool IsBuffer { get; } = isBuffer;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KernelParameter"/> class.
-        /// </summary>
-        /// <param name="name">The parameter name.</param>
-        /// <param name="type">The parameter type as a string representation.</param>
-        /// <param name="isBuffer">Indicates whether this parameter represents a buffer.</param>
-        public KernelParameter(string name, string type, bool isBuffer)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Type = type ?? throw new ArgumentNullException(nameof(type));
-            IsBuffer = isBuffer;
-        }
         /// <summary>
         /// Validates the kernel parameter.
         /// </summary>

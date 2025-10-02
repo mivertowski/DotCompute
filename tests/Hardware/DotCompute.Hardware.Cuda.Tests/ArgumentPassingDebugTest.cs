@@ -7,10 +7,8 @@ using DotCompute.Tests.Common.Specialized;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 
-public class ArgumentPassingDebugTest : CudaTestBase
+public class ArgumentPassingDebugTest(ITestOutputHelper output) : CudaTestBase(output)
 {
-    public ArgumentPassingDebugTest(ITestOutputHelper output) : base(output) { }
-
     [SkippableFact]
     public async Task Simple_Argument_Passing_Should_Work()
     {

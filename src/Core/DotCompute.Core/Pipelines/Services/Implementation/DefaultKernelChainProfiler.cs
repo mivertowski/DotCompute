@@ -9,18 +9,12 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// <summary>
     /// Default implementation of kernel chain profiling service.
     /// </summary>
-    public sealed class DefaultKernelChainProfiler : IKernelChainProfiler
+    public sealed class DefaultKernelChainProfiler(ILogger<DefaultKernelChainProfiler>? logger = null) : IKernelChainProfiler
     {
-        private readonly ILogger<DefaultKernelChainProfiler>? _logger;
-        private readonly ConcurrentDictionary<string, KernelChainProfilingResult> _profiles;
+        private readonly ILogger<DefaultKernelChainProfiler>? _logger = logger;
+        private readonly ConcurrentDictionary<string, KernelChainProfilingResult> _profiles = new();
         private volatile string? _currentProfile;
         private DateTime _startTime;
-
-        public DefaultKernelChainProfiler(ILogger<DefaultKernelChainProfiler>? logger = null)
-        {
-            _logger = logger;
-            _profiles = new ConcurrentDictionary<string, KernelChainProfilingResult>();
-        }
 
         public async Task StartProfilingAsync(string profileName, CancellationToken cancellationToken = default)
         {

@@ -10,17 +10,10 @@ namespace DotCompute.Backends.CUDA.Integration.Components.ErrorHandling;
 /// <summary>
 /// Error recovery strategies implementation.
 /// </summary>
-internal sealed class ErrorRecoveryStrategies : IDisposable
+internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logger) : IDisposable
 {
-    private readonly CudaContext _context;
-    private readonly ILogger _logger;
+    private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
     private volatile bool _disposed;
-
-    public ErrorRecoveryStrategies(CudaContext context, ILogger logger)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public ErrorRecoveryResult AttemptRecovery(CudaError error, string operation, string? context)
     {

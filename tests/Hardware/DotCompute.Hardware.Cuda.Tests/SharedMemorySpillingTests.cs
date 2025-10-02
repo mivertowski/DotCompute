@@ -53,7 +53,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelNoSpilling = await accelerator.CompileKernelAsync(
                 kernelDefNoSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             // Test with spilling enabled
             var optionsWithSpilling = CudaTestHelpers.CreateTestCompilationOptions(
@@ -68,7 +68,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelWithSpilling = await accelerator.CompileKernelAsync(
                 kernelDefWithSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             Output.WriteLine("Successfully compiled kernel with both spilling configurations");
 
@@ -119,7 +119,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelNoSpilling = await accelerator.CompileKernelAsync(
                 kernelDefNoSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             // Compile with spilling
             var kernelDefWithSpilling = CudaTestHelpers.CreateTestKernelDefinition(
@@ -129,7 +129,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelWithSpilling = await accelerator.CompileKernelAsync(
                 kernelDefWithSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             // Check if occupancy improves with spilling (this is theoretical as we need profiling)
             Output.WriteLine("Kernel compiled with and without register spilling");
@@ -169,7 +169,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelNoSpilling = await accelerator.CompileKernelAsync(
                 kernelDefNoSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             var swNoSpilling = Stopwatch.StartNew();
             for (var i = 0; i < iterations; i++)
@@ -193,7 +193,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelWithSpilling = await accelerator.CompileKernelAsync(
                 kernelDefWithSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             var swWithSpilling = Stopwatch.StartNew();
             for (var i = 0; i < iterations; i++)
@@ -249,7 +249,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelNoSpilling = await accelerator.CompileKernelAsync(
                 kernelDefNoSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             var kernelDefWithSpilling = CudaTestHelpers.CreateTestKernelDefinition(
                 "registerIntensive",
@@ -258,7 +258,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var kernelWithSpilling = await accelerator.CompileKernelAsync(
                 kernelDefWithSpilling,
-                new DotCompute.Abstractions.CompilationOptions());
+                new Abstractions.CompilationOptions());
 
             // In a real scenario, we would query occupancy using the profiler
             Output.WriteLine("Occupancy Analysis:");

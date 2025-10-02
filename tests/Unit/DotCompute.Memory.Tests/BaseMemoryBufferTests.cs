@@ -11,14 +11,9 @@ namespace DotCompute.Memory.Tests;
 /// Comprehensive tests for BaseMemoryBuffer covering 90%+ code coverage with all scenarios:
 /// Memory Allocation, Copy Operations, Buffer Types, Error Scenarios, Performance, Memory Patterns.
 /// </summary>
-public class BaseMemoryBufferTests
+public class BaseMemoryBufferTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public BaseMemoryBufferTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
     #region Memory Allocation Tests
 
     [Theory]

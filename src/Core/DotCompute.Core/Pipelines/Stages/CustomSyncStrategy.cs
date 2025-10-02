@@ -27,10 +27,7 @@ public abstract class CustomSyncStrategy
     /// <param name="participantCount">The number of parallel participants that will use this strategy.</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task representing the initialization operation.</returns>
-    public virtual Task InitializeAsync(int participantCount, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task InitializeAsync(int participantCount, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     /// <summary>
     /// Synchronizes execution at a coordination point for the specified participant.
@@ -76,30 +73,21 @@ public abstract class CustomSyncStrategy
     /// <param name="participantId">The unique identifier for the participant.</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task representing the completion operation.</returns>
-    public virtual Task CompleteAsync(int participantId, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task CompleteAsync(int participantId, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     /// <summary>
     /// Resets the synchronization strategy to its initial state for reuse.
     /// </summary>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task representing the reset operation.</returns>
-    public virtual Task ResetAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task ResetAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     /// <summary>
     /// Performs cleanup and releases any resources held by the strategy.
     /// </summary>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task representing the cleanup operation.</returns>
-    public virtual Task DisposeAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task DisposeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 /// <summary>
@@ -131,7 +119,10 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
         }
 
 
-        return Task.Run(() => _barrier.SignalAndWait(cancellationToken), cancellationToken);
+        return Task.Run(() =>
+        {
+            _barrier.SignalAndWait(cancellationToken);
+        }, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -146,19 +137,14 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
 /// <summary>
 /// A countdown-based synchronization strategy that waits for a specified number of participants.
 /// </summary>
-public sealed class CountdownSyncStrategy : CustomSyncStrategy
+/// <remarks>
+/// Initializes a new instance of the <see cref="CountdownSyncStrategy"/> class.
+/// </remarks>
+/// <param name="requiredCount">The number of participants required to proceed. If 0, uses all participants.</param>
+public sealed class CountdownSyncStrategy(int requiredCount = 0) : CustomSyncStrategy
 {
     private CountdownEvent? _countdown;
-    private readonly int _requiredCount;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CountdownSyncStrategy"/> class.
-    /// </summary>
-    /// <param name="requiredCount">The number of participants required to proceed. If 0, uses all participants.</param>
-    public CountdownSyncStrategy(int requiredCount = 0)
-    {
-        _requiredCount = requiredCount;
-    }
+    private readonly int _requiredCount = requiredCount;
 
     /// <inheritdoc />
     public override string Name => $"Countdown({_requiredCount})";
@@ -220,8 +206,5 @@ public sealed class NoOpSyncStrategy : CustomSyncStrategy
     public override bool SupportsTimeout => false;
 
     /// <inheritdoc />
-    public override Task SynchronizeAsync(int participantId, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public override Task SynchronizeAsync(int participantId, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

@@ -10,19 +10,14 @@ namespace DotCompute.Generators.Backend.CPU;
 /// <summary>
 /// Generates platform-agnostic SIMD code using global::System.Numerics.Vector.
 /// </summary>
-public class PlatformSimdCodeGenerator : CpuCodeGeneratorBase
+public class PlatformSimdCodeGenerator(
+    string methodName,
+    IReadOnlyList<KernelParameter> parameters,
+    MethodDeclarationSyntax methodSyntax,
+    VectorizationInfo vectorizationInfo) : CpuCodeGeneratorBase(methodName, parameters, methodSyntax, vectorizationInfo)
 {
+
     #region Constructor
-
-
-    public PlatformSimdCodeGenerator(
-        string methodName,
-        IReadOnlyList<KernelParameter> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        VectorizationInfo vectorizationInfo)
-        : base(methodName, parameters, methodSyntax, vectorizationInfo)
-    {
-    }
 
     #endregion
 

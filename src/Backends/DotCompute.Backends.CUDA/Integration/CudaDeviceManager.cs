@@ -22,7 +22,7 @@ public sealed class CudaDeviceManager : IDisposable
     public CudaDeviceManager(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _availableDevices = new Dictionary<int, CudaDeviceInfo>();
+        _availableDevices = [];
 
         // Initialize device discovery
         DiscoverDevices();
@@ -376,10 +376,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// <summary>
     /// Creates an IAccelerator wrapper for the given context
     /// </summary>
-    public IAccelerator CreateAcceleratorWrapper(CudaContext context)
-    {
-        return new CudaAccelerator(context.DeviceId);
-    }
+    public static IAccelerator CreateAcceleratorWrapper(CudaContext context) => new CudaAccelerator(context.DeviceId);
 }
 
 /// <summary>

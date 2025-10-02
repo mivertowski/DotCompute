@@ -258,12 +258,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             // No timing events available, create a new one
-            var newEvent = CreateTimingEvent();
-            if (newEvent == null)
-            {
-                throw new InvalidOperationException("Failed to create new timing event for pool");
-            }
-
+            var newEvent = CreateTimingEvent() ?? throw new InvalidOperationException("Failed to create new timing event for pool");
             _logger.LogTrace("Created new timing event {Event} for pool", newEvent.Handle);
             return newEvent;
         }
@@ -277,12 +272,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             // No sync events available, create a new one
-            var newEvent = CreateSyncEvent();
-            if (newEvent == null)
-            {
-                throw new InvalidOperationException("Failed to create new sync event for pool");
-            }
-
+            var newEvent = CreateSyncEvent() ?? throw new InvalidOperationException("Failed to create new sync event for pool");
             _logger.LogTrace("Created new sync event {Event} for pool", newEvent.Handle);
             return newEvent;
         }

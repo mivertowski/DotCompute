@@ -176,10 +176,7 @@ namespace DotCompute.Core.Memory.P2P
             IAccelerator sourceDevice,
             IAccelerator targetDevice,
             P2PBenchmarkOptions? options = null,
-            CancellationToken cancellationToken = default)
-        {
-            return await _capabilityValidator.ExecuteP2PBenchmarkAsync(sourceDevice, targetDevice, options, cancellationToken);
-        }
+            CancellationToken cancellationToken = default) => await _capabilityValidator.ExecuteP2PBenchmarkAsync(sourceDevice, targetDevice, options, cancellationToken);
 
         /// <summary>
         /// Executes a comprehensive multi-GPU P2P benchmark suite.
@@ -187,18 +184,12 @@ namespace DotCompute.Core.Memory.P2P
         public async Task<P2PMultiGpuBenchmarkResult> ExecuteMultiGpuBenchmarkAsync(
             IAccelerator[] devices,
             P2PMultiGpuBenchmarkOptions? options = null,
-            CancellationToken cancellationToken = default)
-        {
-            return await _capabilityValidator.ExecuteMultiGpuBenchmarkAsync(devices, options, cancellationToken);
-        }
+            CancellationToken cancellationToken = default) => await _capabilityValidator.ExecuteMultiGpuBenchmarkAsync(devices, options, cancellationToken);
 
         /// <summary>
         /// Gets comprehensive validation and benchmark statistics.
         /// </summary>
-        public P2PValidationStatistics GetValidationStatistics()
-        {
-            return P2PErrorAnalyzer.CreateStatisticsSnapshot(_statistics);
-        }
+        public P2PValidationStatistics GetValidationStatistics() => P2PErrorAnalyzer.CreateStatisticsSnapshot(_statistics);
 
         public async ValueTask DisposeAsync()
         {

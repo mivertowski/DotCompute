@@ -2,9 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Algorithms.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
@@ -14,24 +11,15 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <summary>
     /// Specialized component for GPU-accelerated vector operations including arithmetic, norms, and transformations.
     /// </summary>
-    public sealed class GpuVectorOperations : IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the GpuVectorOperations.
+    /// </remarks>
+    /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
+    /// <param name="logger">Logger instance.</param>
+    public sealed class GpuVectorOperations(KernelManager kernelManager, ILogger<GpuVectorOperations> logger) : IDisposable
     {
-        private readonly KernelManager _kernelManager;
-        private readonly ILogger<GpuVectorOperations> _logger;
-        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
+        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the GpuVectorOperations.
-        /// </summary>
-        /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
-        /// <param name="logger">Logger instance.</param>
-        public GpuVectorOperations(KernelManager kernelManager, ILogger<GpuVectorOperations> logger)
-        {
-            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _kernelCache = [];
-        }
 
         /// <summary>
         /// Computes dot product of two vectors using GPU acceleration.
@@ -179,7 +167,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="accelerator">GPU accelerator.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Normalized vector.</returns>
-        public async Task<Matrix> NormalizeAsync(Matrix vector, IAccelerator accelerator, CancellationToken cancellationToken = default)
+        public static async Task<Matrix> NormalizeAsync(Matrix vector, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             if (vector.Columns != 1)
             {

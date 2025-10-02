@@ -238,10 +238,7 @@ public sealed class PerformanceTrend
     /// </summary>
     /// <param name="threshold">The threshold for significance (default 0.1 for 10%)</param>
     /// <returns>True if the change is significant; otherwise, false.</returns>
-    public bool IsSignificantChange(double threshold = 0.1)
-    {
-        return Math.Abs(PercentChange) > threshold && Confidence > 0.7;
-    }
+    public bool IsSignificantChange(double threshold = 0.1) => Math.Abs(PercentChange) > threshold && Confidence > 0.7;
 
     /// <summary>
     /// Compares this trend with another trend for the same metric.

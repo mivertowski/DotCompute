@@ -342,16 +342,14 @@ internal sealed class CpuKernelValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ValidateMemoryAccessAsync(KernelDefinition definition, CpuValidationResult result)
-    {
+    private static Task ValidateMemoryAccessAsync(KernelDefinition definition, CpuValidationResult result)
         // Validate memory access patterns
         // NOTE: KernelDefinition.Parameters property doesn't exist in current API
         // Parameter validation is handled by the kernel compiler and metadata
         // This validation would require extracting parameter info from metadata if needed
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
-    private Task ValidateVectorizationCompatibilityAsync(KernelDefinition definition, CpuValidationResult result)
+    private static Task ValidateVectorizationCompatibilityAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Check if vectorization is requested but not supported
         if (definition.Metadata?.ContainsKey("UseVectorization") == true &&
@@ -681,7 +679,7 @@ internal sealed class CpuKernelValidator : IDisposable
             CoreCount = Environment.ProcessorCount,
             IsHardwareAccelerated = Vector.IsHardwareAccelerated,
             VectorWidth = Vector<float>.Count,
-            SupportedInstructionSets = new HashSet<string>()
+            SupportedInstructionSets = []
         };
 
         // Detect available instruction sets (simplified)
@@ -709,10 +707,7 @@ internal sealed class CpuKernelValidator : IDisposable
         return TimeSpan.FromMilliseconds(totalWorkItems * estimatedTimePerWorkItem);
     }
 
-    private static bool IsTypeCompatible(Type argumentType, Type parameterType)
-    {
-        return argumentType == parameterType || argumentType.IsAssignableTo(parameterType);
-    }
+    private static bool IsTypeCompatible(Type argumentType, Type parameterType) => argumentType == parameterType || argumentType.IsAssignableTo(parameterType);
 
     private static void ValidateNumericRange(object argument, KernelParameter parameter, int index, ArgumentValidationResult result)
     {
@@ -755,7 +750,7 @@ public class CpuCapabilities
     public int CoreCount { get; set; }
     public bool IsHardwareAccelerated { get; set; }
     public int VectorWidth { get; set; }
-    public HashSet<string> SupportedInstructionSets { get; set; } = new();
+    public HashSet<string> SupportedInstructionSets { get; set; } = [];
 }
 
 public class CpuValidationResult
@@ -763,8 +758,8 @@ public class CpuValidationResult
     public required string KernelName { get; set; }
     public DateTimeOffset ValidationTime { get; set; }
     public bool IsValid { get; set; }
-    public List<ValidationIssue> Issues { get; set; } = new();
-    public List<ValidationWarning> Warnings { get; set; } = new();
+    public List<ValidationIssue> Issues { get; set; } = [];
+    public List<ValidationWarning> Warnings { get; set; } = [];
 }
 
 public class ExecutionPlanValidationResult
@@ -772,7 +767,7 @@ public class ExecutionPlanValidationResult
     public required string KernelName { get; set; }
     public DateTimeOffset ValidationTime { get; set; }
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = new();
+    public List<string> Issues { get; set; } = [];
 }
 
 public class ArgumentValidationResult
@@ -780,7 +775,7 @@ public class ArgumentValidationResult
     public required string KernelName { get; set; }
     public DateTimeOffset ValidationTime { get; set; }
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = new();
+    public List<string> Issues { get; set; } = [];
 }
 
 public class RuntimeValidationResult
@@ -788,7 +783,7 @@ public class RuntimeValidationResult
     public required string KernelName { get; set; }
     public DateTimeOffset ValidationTime { get; set; }
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = new();
+    public List<string> Issues { get; set; } = [];
 }
 
 public class ValidationWarning

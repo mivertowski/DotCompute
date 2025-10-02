@@ -6,12 +6,15 @@ namespace DotCompute.Plugins.Recovery;
 /// <summary>
 /// Context information for plugin recovery operations
 /// </summary>
-public sealed class PluginRecoveryContext
+/// <remarks>
+/// Creates a new recovery context
+/// </remarks>
+public sealed class PluginRecoveryContext(string pluginId)
 {
     /// <summary>
     /// Gets or sets the plugin identifier
     /// </summary>
-    public string PluginId { get; set; } = string.Empty;
+    public string PluginId { get; set; } = pluginId;
 
     /// <summary>
     /// Gets or sets the failure exception that triggered recovery
@@ -46,7 +49,7 @@ public sealed class PluginRecoveryContext
     /// <summary>
     /// Gets or sets additional metadata for recovery
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether this is a critical recovery operation
@@ -77,14 +80,6 @@ public sealed class PluginRecoveryContext
     /// Gets or sets the path to the plugin
     /// </summary>
     public string? PluginPath { get; set; }
-
-    /// <summary>
-    /// Creates a new recovery context
-    /// </summary>
-    public PluginRecoveryContext(string pluginId)
-    {
-        PluginId = pluginId;
-    }
 
     /// <summary>
     /// Creates a new recovery context with plugin instance

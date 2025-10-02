@@ -19,17 +19,13 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         public int GridSizeZ { get; set; } = 1;
     }
 
-    public class CudaGraph
+    public class CudaGraph(string name)
     {
-        public string Name { get; }
-        public CudaGraph(string name) => Name = name;
+        public string Name { get; } = name;
     }
 
-    public class CudaGraphExecutable
+    public class CudaGraphExecutable(CudaGraphTestWrapper wrapper)
     {
-        private readonly CudaGraphTestWrapper _wrapper;
-        public CudaGraphExecutable(CudaGraphTestWrapper wrapper) => _wrapper = wrapper;
-
         public static void UpdateKernelNode(object node, params object[] arguments) { }
         public static async ValueTask LaunchAsync(object? stream = null) => await Task.Delay(1).ConfigureAwait(false);
         public static async ValueTask LaunchAsync(params object[] arguments) => await Task.Delay(1).ConfigureAwait(false);
@@ -39,27 +35,18 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
     /// Test wrapper for CUDA graph operations to provide simplified API for testing.
     /// This wrapper bridges the gap between the test expectations and actual CUDA graph implementation.
     /// </summary>
-    public class CudaGraphTestWrapper
+    public class CudaGraphTestWrapper(object? graphObject)
     {
-        private readonly CudaGraph _graph;
-        private readonly object _graphObject;
-
-        public CudaGraphTestWrapper(object? graphObject)
-        {
-            _graphObject = graphObject ?? throw new ArgumentNullException(nameof(graphObject));
-            _graph = graphObject as CudaGraph ?? new CudaGraph("TestGraph");
-        }
+        private readonly object _graphObject = graphObject ?? throw new ArgumentNullException(nameof(graphObject));
 
         /// <summary>
         /// Adds a kernel node to the graph.
         /// </summary>
         public static object AddKernel(ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
-        {
             // Store kernel information for later execution
             // In a real implementation, this would add a kernel node to the CUDA graph
             // For testing purposes, we'll return a mock node object
-            return new GraphNode { NodeType = "Kernel", Kernel = kernel };
-        }
+            => new GraphNode { NodeType = "Kernel", Kernel = kernel };
 
         /// <summary>
         /// Adds a memory copy operation to the graph.
@@ -74,18 +61,13 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// Adds a memory set operation to the graph.
         /// </summary>
         public static object AddMemset<T>(IUnifiedMemoryBuffer<T> buffer, T value) where T : unmanaged
-        {
             // Store memory set information for later execution
-            return new GraphNode { NodeType = "Memset" };
-        }
+            => new GraphNode { NodeType = "Memset" };
 
         /// <summary>
         /// Instantiates the graph for execution.
         /// </summary>
-        public CudaGraphExecutable Instantiate()
-        {
-            return new CudaGraphExecutable(this);
-        }
+        public CudaGraphExecutable Instantiate() => new(this);
 
         /// <summary>
         /// Gets the underlying graph object for advanced operations.
@@ -112,18 +94,12 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Wraps a graph object in a test wrapper for simplified API.
         /// </summary>
-        public static CudaGraphTestWrapper AsTestWrapper(this object? graphObject)
-        {
-            return new CudaGraphTestWrapper(graphObject);
-        }
+        public static CudaGraphTestWrapper AsTestWrapper(this object? graphObject) => new(graphObject);
 
         /// <summary>
         /// Adds a kernel to the graph using test wrapper.
         /// </summary>
-        public static object AddKernel(this object graphObject, ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments)
-        {
-            return CudaGraphTestWrapper.AddKernel(kernel, config, arguments);
-        }
+        public static object AddKernel(this object graphObject, ICompiledKernel kernel, LaunchConfiguration config, params object[] arguments) => CudaGraphTestWrapper.AddKernel(kernel, config, arguments);
 
         /// <summary>
         /// Adds a dependency between two graph nodes.
@@ -136,10 +112,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
         /// <summary>
         /// Adds a memory copy to the graph using test wrapper.
         /// </summary>
-        public static void AddMemoryCopy<T>(this object graphObject, IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged
-        {
-            CudaGraphTestWrapper.AddMemoryCopy(source, destination, count);
-        }
+        public static void AddMemoryCopy<T>(this object graphObject, IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, long count = 0) where T : unmanaged => CudaGraphTestWrapper.AddMemoryCopy(source, destination, count);
 
         /// <summary>
         /// Instantiates the graph using test wrapper.

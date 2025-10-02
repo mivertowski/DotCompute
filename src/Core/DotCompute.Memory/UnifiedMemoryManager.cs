@@ -74,12 +74,12 @@ public class UnifiedMemoryManager : BaseMemoryManager
         "No accelerator associated with this memory manager. Use CPU-specific operations.");
 
     /// <inheritdoc />
-    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics
+    public override Abstractions.Memory.MemoryStatistics Statistics
     {
         get
         {
             var snapshot = _statistics.CreateSnapshot();
-            return new DotCompute.Abstractions.Memory.MemoryStatistics
+            return new Abstractions.Memory.MemoryStatistics
             {
                 TotalAllocated = snapshot.TotalBytesAllocated,
                 CurrentUsage = snapshot.CurrentlyAllocatedBytes,
@@ -215,11 +215,9 @@ public class UnifiedMemoryManager : BaseMemoryManager
 
     /// <inheritdoc />
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
-    {
         // For non-generic buffer views, we need type information which isn't available here
         // This is a design limitation - non-generic views should be discouraged
-        throw new NotSupportedException("Non-generic buffer views are not supported. Use the generic CreateView<T> method instead.");
-    }
+        => throw new NotSupportedException("Non-generic buffer views are not supported. Use the generic CreateView<T> method instead.");
 
     /// <inheritdoc />
     public override async ValueTask CopyAsync<T>(

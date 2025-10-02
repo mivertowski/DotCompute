@@ -12,26 +12,19 @@ namespace DotCompute.Core.Execution.Memory
     /// Device-specific buffer pool for efficient memory management.
     /// Manages a pool of reusable memory buffers for a single device to reduce allocation overhead.
     /// </summary>
-    public sealed class DeviceBufferPool : IAsyncDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DeviceBufferPool"/> class.
+    /// </remarks>
+    /// <param name="deviceId">The unique identifier of the device this pool manages.</param>
+    /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
+    public sealed class DeviceBufferPool(string deviceId) : IAsyncDisposable
     {
-        private readonly string _deviceId;
-        private readonly ConcurrentQueue<AbstractionsMemory.IUnifiedMemoryBuffer> _availableBuffers;
-        private readonly ConcurrentDictionary<long, int> _allocationSizes;
+        private readonly string _deviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
+        private readonly ConcurrentQueue<IUnifiedMemoryBuffer> _availableBuffers = new();
+        private readonly ConcurrentDictionary<long, int> _allocationSizes = new();
         private long _totalAllocated;
         private long _totalAvailable;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DeviceBufferPool"/> class.
-        /// </summary>
-        /// <param name="deviceId">The unique identifier of the device this pool manages.</param>
-        /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
-        public DeviceBufferPool(string deviceId)
-        {
-            _deviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
-            _availableBuffers = new ConcurrentQueue<AbstractionsMemory.IUnifiedMemoryBuffer>();
-            _allocationSizes = new ConcurrentDictionary<long, int>();
-        }
 
         /// <summary>
         /// Gets the device ID this pool manages.
@@ -87,7 +80,7 @@ namespace DotCompute.Core.Execution.Memory
         /// If the pool has been disposed, the buffer is disposed immediately.
         /// </summary>
         /// <param name="buffer">The buffer to return to the pool.</param>
-        public void ReturnBuffer(AbstractionsMemory.IUnifiedMemoryBuffer buffer)
+        public void ReturnBuffer(IUnifiedMemoryBuffer buffer)
         {
             if (_disposed || buffer == null)
             {

@@ -7,7 +7,7 @@ using DotCompute.Runtime.Logging;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Memory;
 
@@ -23,14 +23,14 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
     public BufferState State { get; private set; } = BufferState.Allocated;
 
     private readonly ILogger _logger;
-    private readonly DotCompute.Runtime.Services.Statistics.MemoryStatistics _statistics;
+    private readonly Statistics.MemoryStatistics _statistics;
     private readonly IntPtr _nativeHandle;
     private readonly GCHandle _pinnedHandle;
     private readonly bool _fromPool;
     private readonly object _disposeLock = new();
 
     public ProductionMemoryBuffer(long id, long sizeInBytes, MemoryOptions options, ILogger logger,
-        IntPtr? pooledHandle, DotCompute.Runtime.Services.Statistics.MemoryStatistics statistics)
+        IntPtr? pooledHandle, Statistics.MemoryStatistics statistics)
     {
         Id = id;
         SizeInBytes = sizeInBytes;

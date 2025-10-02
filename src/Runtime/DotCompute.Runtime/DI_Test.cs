@@ -54,7 +54,7 @@ public static class DICompilationTest
 
         // Test that core services can be resolved
         var runtime = serviceProvider.GetService<AcceleratorRuntime>();
-        var factory = serviceProvider.GetService<Runtime.Interfaces.IUnifiedAcceleratorFactory>();
+        var factory = serviceProvider.GetService<Interfaces.IUnifiedAcceleratorFactory>();
         var memoryService = serviceProvider.GetService<IMemoryPoolService>();
         var kernelService = serviceProvider.GetService<IKernelCompilerService>();
 
@@ -86,7 +86,7 @@ public static class ConfigurationTest
             ValidateCapabilities = true,
             EnableDebugLogging = false,
             EnableGracefulDegradation = true,
-            AcceleratorLifetime = (DotCompute.Runtime.Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton
+            AcceleratorLifetime = (Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton
         };
 
         // Test plugin options
@@ -101,7 +101,7 @@ public static class ConfigurationTest
             ValidateSignatures = false,
             TrustedPublishers = [],
             EnableDependencyInjection = true,
-            PluginLifetime = (DotCompute.Runtime.Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped
+            PluginLifetime = (Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped
         };
 
         // Test advanced memory options

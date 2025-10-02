@@ -49,14 +49,12 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets whether to preserve debugging information after optimization.
     /// </summary>
-    public bool PreserveDebugInfo { get; set; }
-
+    public bool PreserveDebugInfo { get; set; } = false;
 
     /// <summary>
     /// Gets or sets whether to enable aggressive optimizations that may affect numerical precision.
     /// </summary>
-    public bool AllowPrecisionLoss { get; set; }
-
+    public bool AllowPrecisionLoss { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the parallel degree for optimization operations.
@@ -130,7 +128,7 @@ public sealed class PipelineOptimizationSettings
             OptimizationTypes = OptimizationTypes,
             MaxOptimizationTime = MaxOptimizationTime,
             ValidateOptimizations = ValidateOptimizations,
-            TargetBackends = new List<string>(TargetBackends),
+            TargetBackends = [.. TargetBackends],
             MemoryConstraints = MemoryConstraints?.Clone(),
             PerformanceTargets = PerformanceTargets?.Clone(),
             PreserveDebugInfo = PreserveDebugInfo,

@@ -300,10 +300,7 @@ public sealed class MetalCommandEncoder : IDisposable
     /// <summary>
     /// Gets detailed information about all encoded commands
     /// </summary>
-    public IReadOnlyList<MetalEncoderCommand> GetCommandHistory()
-    {
-        return _commands.AsReadOnly();
-    }
+    public IReadOnlyList<MetalEncoderCommand> GetCommandHistory() => _commands.AsReadOnly();
 
     private static void ValidateDispatchSize(MetalDispatchSize size, string paramName)
     {
@@ -376,16 +373,10 @@ public sealed class MetalCommandEncoder : IDisposable
 /// <summary>
 /// Factory for creating Metal command encoders
 /// </summary>
-public sealed class MetalCommandEncoderFactory
+public sealed class MetalCommandEncoderFactory(ILogger<MetalCommandEncoder> logger)
 {
-    private readonly ILogger<MetalCommandEncoder> _logger;
-    private readonly ConcurrentDictionary<IntPtr, int> _activeEncoders;
-
-    public MetalCommandEncoderFactory(ILogger<MetalCommandEncoder> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _activeEncoders = new ConcurrentDictionary<IntPtr, int>();
-    }
+    private readonly ILogger<MetalCommandEncoder> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<IntPtr, int> _activeEncoders = new();
 
     /// <summary>
     /// Creates a new command encoder for the specified command buffer
@@ -400,10 +391,7 @@ public sealed class MetalCommandEncoderFactory
     /// <summary>
     /// Gets the number of active encoders for a command buffer
     /// </summary>
-    public int GetActiveEncoderCount(IntPtr commandBuffer)
-    {
-        return _activeEncoders.TryGetValue(commandBuffer, out var count) ? count : 0;
-    }
+    public int GetActiveEncoderCount(IntPtr commandBuffer) => _activeEncoders.TryGetValue(commandBuffer, out var count) ? count : 0;
 
     internal void NotifyEncoderDisposed(IntPtr commandBuffer)
     {
@@ -420,18 +408,11 @@ public sealed class MetalCommandEncoderFactory
 /// <summary>
 /// Represents a dispatch size for Metal compute operations
 /// </summary>
-public readonly struct MetalDispatchSize : IEquatable<MetalDispatchSize>
+public readonly struct MetalDispatchSize(int width, int height, int depth) : IEquatable<MetalDispatchSize>
 {
-    public MetalDispatchSize(int width, int height, int depth)
-    {
-        Width = width;
-        Height = height;
-        Depth = depth;
-    }
-
-    public int Width { get; }
-    public int Height { get; }
-    public int Depth { get; }
+    public int Width { get; } = width;
+    public int Height { get; } = height;
+    public int Depth { get; } = depth;
 
     public long TotalThreads => (long)Width * Height * Depth;
 

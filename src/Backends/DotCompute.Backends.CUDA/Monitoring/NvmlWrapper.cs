@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for NVIDIA Management Library (NVML) for GPU monitoring.
     /// </summary>
-    public sealed class NvmlWrapper : IDisposable
+    public sealed class NvmlWrapper(ILogger logger) : IDisposable
     {
 #if WINDOWS
         private const string NVML_LIBRARY = "nvml.dll";
@@ -19,14 +19,9 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private const string NVML_LIBRARY = "libnvidia-ml.so.1";
 #endif
 
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private bool _initialized;
         private bool _disposed;
-
-        public NvmlWrapper(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Initializes NVML library.

@@ -50,31 +50,24 @@ public enum MetalCommandEncoderType
 /// <summary>
 /// Represents Metal threadgroup and thread dimensions.
 /// </summary>
-public struct MTLSize
+/// <remarks>
+/// Initializes a new instance of the <see cref="MTLSize"/> struct.
+/// </remarks>
+/// <param name="width">The width dimension.</param>
+/// <param name="height">The height dimension.</param>
+/// <param name="depth">The depth dimension.</param>
+public struct MTLSize(uint width, uint height, uint depth)
 {
     /// <summary>Width dimension.</summary>
-    public uint width;
+    public uint width = width;
 
 
     /// <summary>Height dimension.</summary>
-    public uint height;
+    public uint height = height;
 
 
     /// <summary>Depth dimension.</summary>
-    public uint depth;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MTLSize"/> struct.
-    /// </summary>
-    /// <param name="width">The width dimension.</param>
-    /// <param name="height">The height dimension.</param>
-    /// <param name="depth">The depth dimension.</param>
-    public MTLSize(uint width, uint height, uint depth)
-    {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
-    }
+    public uint depth = depth;
 
     /// <summary>
     /// Creates a 1D MTLSize.

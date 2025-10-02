@@ -3,8 +3,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Abstractions.Analysis;
 
 /// <summary>
@@ -35,6 +33,30 @@ public enum ComplexityClass
 
     /// <summary>O(n!) - Factorial time.</summary>
     Factorial
+}
+
+/// <summary>
+/// Types of memory access patterns.
+/// </summary>
+public enum MemoryAccessPattern
+{
+    /// <summary>Sequential access pattern.</summary>
+    Sequential,
+
+    /// <summary>Random access pattern.</summary>
+    Random,
+
+    /// <summary>Strided access pattern.</summary>
+    Strided,
+
+    /// <summary>Coalesced access pattern (GPU).</summary>
+    Coalesced,
+
+    /// <summary>Broadcast access pattern.</summary>
+    Broadcast,
+
+    /// <summary>Gather/scatter access pattern.</summary>
+    GatherScatter
 }
 
 /// <summary>

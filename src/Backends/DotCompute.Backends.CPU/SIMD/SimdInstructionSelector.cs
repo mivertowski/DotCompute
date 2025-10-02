@@ -11,19 +11,12 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// Intelligent instruction set selection based on workload characteristics
 /// </summary>
-public sealed class SimdInstructionSelector : IDisposable
+public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger logger) : IDisposable
 {
-    private readonly SimdSummary _capabilities;
-    private readonly ILogger _logger;
-    private readonly ExecutorConfiguration _config;
+    private readonly SimdSummary _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ExecutorConfiguration _config = ExecutorConfiguration.Default;
     private volatile bool _disposed;
-
-    public SimdInstructionSelector(SimdSummary capabilities, ILogger logger)
-    {
-        _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _config = ExecutorConfiguration.Default;
-    }
 
     /// <summary>
     /// Determines the optimal SIMD execution strategy based on workload characteristics

@@ -23,9 +23,6 @@ namespace DotCompute.Core.Memory.P2P
         private readonly Timer? _syncMonitorTimer;
         private readonly P2PSyncStatistics _statistics;
         private bool _disposed;
-
-        // Synchronization configuration
-        private const int MaxBarrierWaitTimeMs = 30000; // 30 seconds
         private const int SyncMonitorIntervalMs = 5000; // 5 seconds
         private const int MaxConcurrentSyncOperations = 32;
         private const int DefaultBarrierTimeoutMs = 10000; // 10 seconds

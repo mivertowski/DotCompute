@@ -17,26 +17,14 @@ namespace DotCompute.Core.Debugging.Analytics;
 /// Advanced analytics and analysis tools for kernel debugging.
 /// Provides statistical analysis, pattern recognition, and optimization recommendations.
 /// </summary>
-public sealed class KernelDebugAnalyzer : IDisposable
+public sealed class KernelDebugAnalyzer(
+    ILogger<KernelDebugAnalyzer> logger,
+    ConcurrentDictionary<string, IAccelerator> accelerators,
+    KernelDebugProfiler profiler) : IDisposable
 {
-    private readonly ILogger<KernelDebugAnalyzer> _logger;
-    private readonly DebugServiceOptions _options;
-    private readonly ConcurrentDictionary<string, KernelAnalysisProfile> _analysisProfiles;
-    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
-    private readonly KernelDebugProfiler _profiler;
+    private readonly ILogger<KernelDebugAnalyzer> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, KernelAnalysisProfile> _analysisProfiles = new();
     private bool _disposed;
-
-    public KernelDebugAnalyzer(
-        ILogger<KernelDebugAnalyzer> logger,
-        ConcurrentDictionary<string, IAccelerator> accelerators,
-        KernelDebugProfiler profiler)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _accelerators = accelerators ?? throw new ArgumentNullException(nameof(accelerators));
-        _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
-        _options = DebugServiceOptions.Development; // Use default options
-        _analysisProfiles = new ConcurrentDictionary<string, KernelAnalysisProfile>();
-    }
 
     /// <summary>
     /// Enhances a comparison report with statistical analysis.
@@ -144,9 +132,9 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <returns>Advanced performance analysis result.</returns>
     public async Task<AdvancedPerformanceAnalysis> PerformAdvancedPerformanceAnalysisAsync(
         string kernelName,
-        DotCompute.Core.Debugging.Types.PerformanceReport performanceReport,
-        DotCompute.Core.Debugging.Types.MemoryUsageAnalysis memoryAnalysis,
-        DotCompute.Core.Debugging.Core.BottleneckAnalysis bottleneckAnalysis)
+        PerformanceReport performanceReport,
+        MemoryUsageAnalysis memoryAnalysis,
+        Core.BottleneckAnalysis bottleneckAnalysis)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
@@ -313,10 +301,10 @@ public sealed class KernelDebugAnalyzer : IDisposable
             _logger.LogWarning(ex, "Failed to analyze validation performance for kernel {KernelName}", validationResult.KernelName);
             return new ValidationPerformanceInsights
             {
-                BackendPerformanceDistribution = new Dictionary<string, double>(),
+                BackendPerformanceDistribution = [],
                 OptimalBackend = "Unknown",
-                ConfidenceScores = new Dictionary<string, double>(),
-                InputCharacteristics = new Dictionary<string, object>(),
+                ConfidenceScores = [],
+                InputCharacteristics = [],
                 RecommendedValidationStrategy = ValidationStrategy.Standard
             };
         }
@@ -346,11 +334,9 @@ public sealed class KernelDebugAnalyzer : IDisposable
         PerformanceMetrics originalMetrics,
         List<KernelExecutionResult> backendResults,
         PerformanceVariationAnalysis variationAnalysis)
-    {
         // In a real implementation, this would create enhanced metrics
         // For now, return the original metrics
-        return originalMetrics;
-    }
+        => originalMetrics;
 
     /// <summary>
     /// Analyzes trace point patterns to identify execution characteristics.
@@ -374,7 +360,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
             timingIntervals.Add((tracePoints[i].Timestamp - tracePoints[i - 1].Timestamp).TotalMilliseconds);
         }
 
-        var regularity = timingIntervals.Count > 1 ? 1.0 - CalculateCoefficientOfVariation(timingIntervals.ToArray()) : 1.0;
+        var regularity = timingIntervals.Count > 1 ? 1.0 - CalculateCoefficientOfVariation([.. timingIntervals]) : 1.0;
         var patternType = DetermineExecutionPattern(timingIntervals);
 
         return new TracePointPatternAnalysis
@@ -435,7 +421,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
         }
 
         var averageInterval = timingIntervals.Average();
-        var standardDeviation = CalculateStandardDeviation(timingIntervals.ToArray());
+        var standardDeviation = CalculateStandardDeviation([.. timingIntervals]);
 
         for (var i = 0; i < timingIntervals.Count; i++)
         {
@@ -481,7 +467,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Analyzes performance trends for a kernel.
     /// </summary>
-    private static TrendAnalysis AnalyzePerformanceTrends(string kernelName, DotCompute.Core.Debugging.Types.PerformanceReport report)
+    private static TrendAnalysis AnalyzePerformanceTrends(string kernelName, PerformanceReport report)
     {
         // Simplified trend analysis
         var trend = PerformanceTrend.Stable;
@@ -506,7 +492,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Performs regression analysis on backend metrics.
     /// </summary>
-    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics)
+    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified regression analysis
         return new RegressionAnalysis
@@ -523,9 +509,9 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Identifies optimization opportunities based on analysis.
     /// </summary>
     private static List<OptimizationOpportunity> IdentifyOptimizationOpportunities(
-        DotCompute.Core.Debugging.Types.PerformanceReport performanceReport,
+        PerformanceReport performanceReport,
         MemoryUsageAnalysis memoryAnalysis,
-        DotCompute.Core.Debugging.Core.BottleneckAnalysis bottleneckAnalysis)
+        Core.BottleneckAnalysis bottleneckAnalysis)
     {
         var opportunities = new List<OptimizationOpportunity>();
 
@@ -562,7 +548,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Predicts performance scaling characteristics.
     /// </summary>
-    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics)
+    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified scaling predictions
         return new ScalingPredictions
@@ -578,7 +564,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Calculates efficiency scores for different backends.
     /// </summary>
     private static Dictionary<string, double> CalculateEfficiencyScores(
-        Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> backendMetrics,
+        Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics,
         MemoryUsageAnalysis memoryAnalysis)
     {
         var efficiencyScores = new Dictionary<string, double>();
@@ -618,11 +604,9 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Calculates variability score for determinism analysis.
     /// </summary>
     private static double CalculateVariabilityScore(string kernelName, int runCount)
-    {
         // Simplified variability calculation
         // In a real implementation, this would analyze actual execution results
-        return Random.Shared.NextDouble() * 0.1; // 0-10% variability
-    }
+        => Random.Shared.NextDouble() * 0.1; // 0-10% variability
 
     /// <summary>
     /// Identifies non-deterministic components.
@@ -701,10 +685,8 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// Identifies optimal backend for given input characteristics.
     /// </summary>
     private static string IdentifyOptimalBackendForInputs(KernelValidationResult validationResult, object[] inputs)
-    {
         // Simplified backend selection
-        return validationResult.RecommendedBackend ?? validationResult.BackendsTested.FirstOrDefault() ?? "Unknown";
-    }
+        => validationResult.RecommendedBackend ?? validationResult.BackendsTested.FirstOrDefault() ?? "Unknown";
 
     /// <summary>
     /// Calculates validation confidence scores.
@@ -748,7 +730,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// <summary>
     /// Analyzes input characteristics for optimization insights.
     /// </summary>
-    private Dictionary<string, object> AnalyzeInputCharacteristics(object[] inputs)
+    private static Dictionary<string, object> AnalyzeInputCharacteristics(object[] inputs)
     {
         return new Dictionary<string, object>
         {
@@ -795,10 +777,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
         return values.Select(v => Math.Pow(v - mean, 2)).Average();
     }
 
-    private double CalculateStandardDeviation(double[] values)
-    {
-        return Math.Sqrt(CalculateVariance(values));
-    }
+    private static double CalculateStandardDeviation(double[] values) => Math.Sqrt(CalculateVariance(values));
 
     private double CalculateCoefficientOfVariation(double[] values)
     {
@@ -820,7 +799,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
         }
 
 
-        var coefficient = CalculateCoefficientOfVariation(timingIntervals.ToArray());
+        var coefficient = CalculateCoefficientOfVariation([.. timingIntervals]);
         return coefficient < 0.1 ? ExecutionPattern.Regular : ExecutionPattern.Irregular;
     }
 
@@ -865,7 +844,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
         };
     }
 
-    private double CalculateMemoryLeakProbability(long[] memoryReadings)
+    private static double CalculateMemoryLeakProbability(long[] memoryReadings)
     {
         if (memoryReadings.Length < 3)
         {
@@ -932,10 +911,10 @@ public sealed class KernelDebugAnalyzer : IDisposable
     /// </summary>
     /// <param name="backendStats">Dictionary of backend performance statistics.</param>
     /// <returns>Dictionary of performance metrics.</returns>
-    private static Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics> ConvertBackendStatsToMetrics(
+    private static Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> ConvertBackendStatsToMetrics(
         Dictionary<string, BackendPerformanceStats> backendStats)
     {
-        var metrics = new Dictionary<string, DotCompute.Abstractions.Performance.PerformanceMetrics>();
+        var metrics = new Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics>();
 
         foreach (var kvp in backendStats)
         {
@@ -943,7 +922,7 @@ public sealed class KernelDebugAnalyzer : IDisposable
             var stats = kvp.Value;
 
             // Convert BackendPerformanceStats to PerformanceMetrics
-            var performanceMetrics = new DotCompute.Abstractions.Performance.PerformanceMetrics
+            var performanceMetrics = new AbstractionsMemory.Performance.PerformanceMetrics
             {
                 ExecutionTimeMs = (long)stats.AverageExecutionTimeMs,
                 MemoryUsageBytes = (long)stats.AverageMemoryUsage,
@@ -974,9 +953,9 @@ public record AdvancedPerformanceAnalysis
     public string KernelName { get; init; } = string.Empty;
     public TrendAnalysis TrendAnalysis { get; init; } = new();
     public RegressionAnalysis RegressionAnalysis { get; init; } = new();
-    public List<OptimizationOpportunity> OptimizationOpportunities { get; init; } = new();
+    public List<OptimizationOpportunity> OptimizationOpportunities { get; init; } = [];
     public ScalingPredictions ScalingPredictions { get; init; } = new();
-    public Dictionary<string, double> EfficiencyScores { get; init; } = new();
+    public Dictionary<string, double> EfficiencyScores { get; init; } = [];
     public AnalysisQuality AnalysisQuality { get; init; }
     public DateTime GeneratedAt { get; init; }
 }
@@ -987,17 +966,17 @@ public record DeterminismAnalysisResult
     public int RunCount { get; init; }
     public bool IsDeterministic { get; init; }
     public double VariabilityScore { get; init; }
-    public List<string> NonDeterministicComponents { get; init; } = new();
-    public List<string> Recommendations { get; init; } = new();
+    public List<string> NonDeterministicComponents { get; init; } = [];
+    public List<string> Recommendations { get; init; } = [];
     public DateTime AnalysisTimestamp { get; init; }
 }
 
 public record ValidationPerformanceInsights
 {
-    public Dictionary<string, double> BackendPerformanceDistribution { get; init; } = new();
+    public Dictionary<string, double> BackendPerformanceDistribution { get; init; } = [];
     public string OptimalBackend { get; init; } = string.Empty;
-    public Dictionary<string, double> ConfidenceScores { get; init; } = new();
-    public Dictionary<string, object> InputCharacteristics { get; init; } = new();
+    public Dictionary<string, double> ConfidenceScores { get; init; } = [];
+    public Dictionary<string, object> InputCharacteristics { get; init; } = [];
     public ValidationStrategy RecommendedValidationStrategy { get; init; }
 }
 
@@ -1013,7 +992,7 @@ public record TracePointPatternAnalysis
 {
     public ExecutionPattern PatternType { get; init; }
     public double Regularity { get; init; }
-    public List<string> Characteristics { get; init; } = new();
+    public List<string> Characteristics { get; init; } = [];
 }
 
 public record MemoryPatternAnalysis

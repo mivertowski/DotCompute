@@ -167,7 +167,7 @@ public class PipelineErrorTests : PipelineTestBase
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry, true, 3)]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort, false, 1)]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback, true, 3)]
-    public async Task Pipeline_ErrorStrategy_HandlesCorrectly(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy, bool shouldSucceed, int expectedSteps)
+    public async Task Pipeline_ErrorStrategy_HandlesCorrectly(Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy, bool shouldSucceed, int expectedSteps)
     {
         // Arrange
         var data = GenerateTestData<float>(100);

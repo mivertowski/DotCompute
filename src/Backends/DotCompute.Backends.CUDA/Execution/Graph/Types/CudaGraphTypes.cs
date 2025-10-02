@@ -9,22 +9,14 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     /// <summary>
     /// CUDA Graph representation
     /// </summary>
-    public class CudaGraph
+    public class CudaGraph(string name, GraphConfiguration configuration)
     {
-        public CudaGraph(string name, GraphConfiguration configuration)
-        {
-            Name = name;
-            Configuration = configuration;
-            Nodes = [];
-            CreatedAt = DateTime.UtcNow;
-        }
-
-        public string Name { get; }
-        public GraphConfiguration Configuration { get; }
+        public string Name { get; } = name;
+        public GraphConfiguration Configuration { get; } = configuration;
         public IntPtr Handle { get; set; }
-        public List<CudaGraphNode> Nodes { get; set; }
+        public List<CudaGraphNode> Nodes { get; set; } = [];
         public bool IsCaptured { get; set; }
-        public DateTime CreatedAt { get; }
+        public DateTime CreatedAt { get; } = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -33,7 +25,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
     public class CudaGraphExecutable
     {
         public IntPtr Handle { get; set; }
-        public DotCompute.Backends.CUDA.Execution.Graph.CudaGraph Graph { get; set; } = null!;
+        public Graph.CudaGraph Graph { get; set; } = null!;
         public DateTime InstantiatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

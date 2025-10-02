@@ -13,20 +13,14 @@ namespace DotCompute.Runtime.DependencyInjection;
 /// <summary>
 /// Implementation of plugin service provider with DI support
 /// </summary>
-public class PluginServiceProvider : IPluginServiceProvider, IDisposable
+public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger<PluginServiceProvider> logger) : IPluginServiceProvider, IDisposable
 {
-    private readonly IServiceProvider _rootServiceProvider;
-    private readonly ILogger<PluginServiceProvider> _logger;
+    private readonly IServiceProvider _rootServiceProvider = rootServiceProvider ?? throw new ArgumentNullException(nameof(rootServiceProvider));
+    private readonly ILogger<PluginServiceProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, IServiceScope> _pluginScopes = new();
     private readonly ConcurrentDictionary<string, IServiceCollection> _pluginServices = new();
     private readonly ConcurrentDictionary<string, IServiceProvider> _pluginProviders = new();
     private bool _disposed;
-
-    public PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger<PluginServiceProvider> logger)
-    {
-        _rootServiceProvider = rootServiceProvider ?? throw new ArgumentNullException(nameof(rootServiceProvider));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public IServiceScope CreatePluginScope(string pluginId)
     {
@@ -218,16 +212,11 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
 /// <summary>
 /// Implementation of plugin dependency resolver
 /// </summary>
-public class PluginDependencyResolver : IPluginDependencyResolver
+public class PluginDependencyResolver(ILogger<PluginDependencyResolver> logger) : IPluginDependencyResolver
 {
-    private readonly ILogger<PluginDependencyResolver> _logger;
+    private readonly ILogger<PluginDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<Type, ConstructorInfo> _constructorCache = new();
     private readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();
-
-    public PluginDependencyResolver(ILogger<PluginDependencyResolver> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public object[] ResolveConstructorDependencies(Type pluginType, IServiceProvider serviceProvider)
     {
@@ -381,15 +370,12 @@ public class PluginDependencyResolver : IPluginDependencyResolver
         });
     }
 
-    private PropertyInfo[] GetInjectableProperties(Type type)
-    {
-        return _propertyCache.GetOrAdd(type, t => [.. t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any())]);
-    }
+    private PropertyInfo[] GetInjectableProperties(Type type) => _propertyCache.GetOrAdd(type, t => [.. t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Length != 0)]);
 
     private static bool IsOptionalParameter(ParameterInfo parameter)
     {
         return parameter.HasDefaultValue ||
-               parameter.GetCustomAttributes(typeof(OptionalAttribute), false).Any() ||
+               parameter.GetCustomAttributes(typeof(OptionalAttribute), false).Length != 0 ||
                Nullable.GetUnderlyingType(parameter.ParameterType) != null;
     }
 

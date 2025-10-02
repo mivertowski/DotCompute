@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace DotCompute.Abstractions.Memory;
 
@@ -9,22 +9,16 @@ namespace DotCompute.Abstractions.Memory;
 /// Represents a reference to device memory that can be accessed as a span.
 /// </summary>
 /// <typeparam name="T">The unmanaged type stored in memory.</typeparam>
+/// <remarks>
+/// Initializes a new instance of the <see cref="DeviceMemory{T}"/> struct.
+/// </remarks>
+/// <param name="pointer">Pointer to the device memory.</param>
+/// <param name="length">Length in elements.</param>
 [StructLayout(LayoutKind.Sequential)]
-public readonly unsafe struct DeviceMemory<T> where T : unmanaged
+public readonly unsafe struct DeviceMemory<T>(T* pointer, int length) where T : unmanaged
 {
-    private readonly T* _pointer;
-    private readonly int _length;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeviceMemory{T}"/> struct.
-    /// </summary>
-    /// <param name="pointer">Pointer to the device memory.</param>
-    /// <param name="length">Length in elements.</param>
-    public DeviceMemory(T* pointer, int length)
-    {
-        _pointer = pointer;
-        _length = length;
-    }
+    private readonly T* _pointer = pointer;
+    private readonly int _length = length;
 
     /// <summary>
     /// Gets the length of the memory region in elements.

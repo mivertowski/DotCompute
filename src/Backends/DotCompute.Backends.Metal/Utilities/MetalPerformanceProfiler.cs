@@ -9,21 +9,16 @@ namespace DotCompute.Backends.Metal.Utilities;
 /// <summary>
 /// Provides performance profiling capabilities for Metal operations.
 /// </summary>
-public sealed class MetalPerformanceProfiler : IDisposable
+/// <remarks>
+/// Initializes a new instance of the MetalPerformanceProfiler.
+/// </remarks>
+/// <param name="logger">Logger for diagnostics.</param>
+public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> logger) : IDisposable
 {
-    private readonly ILogger<MetalPerformanceProfiler> _logger;
+    private readonly ILogger<MetalPerformanceProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Dictionary<string, MetalOperationMetrics> _metrics = [];
     private readonly object _lock = new();
     private int _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the MetalPerformanceProfiler.
-    /// </summary>
-    /// <param name="logger">Logger for diagnostics.</param>
-    public MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Starts profiling an operation.
@@ -186,19 +181,12 @@ public sealed class MetalPerformanceProfiler : IDisposable
     /// <summary>
     /// Represents a profiling session for a single operation.
     /// </summary>
-    private sealed class ProfilingSession : IDisposable
+    private sealed class ProfilingSession(MetalPerformanceProfiler profiler, string operationName) : IDisposable
     {
-        private readonly MetalPerformanceProfiler _profiler;
-        private readonly string _operationName;
-        private readonly Stopwatch _stopwatch;
+        private readonly MetalPerformanceProfiler _profiler = profiler;
+        private readonly string _operationName = operationName;
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private bool _disposed;
-
-        public ProfilingSession(MetalPerformanceProfiler profiler, string operationName)
-        {
-            _profiler = profiler;
-            _operationName = operationName;
-            _stopwatch = Stopwatch.StartNew();
-        }
 
         public void Dispose()
         {
@@ -217,24 +205,19 @@ public sealed class MetalPerformanceProfiler : IDisposable
 /// <summary>
 /// Represents performance metrics for a specific Metal operation.
 /// </summary>
-public sealed class MetalOperationMetrics
+/// <remarks>
+/// Initializes a new instance of the MetalOperationMetrics class.
+/// </remarks>
+/// <param name="operationName">Name of the operation.</param>
+public sealed class MetalOperationMetrics(string operationName)
 {
     private readonly List<double> _executionTimes = [];
     private readonly object _lock = new();
 
     /// <summary>
-    /// Initializes a new instance of the MetalOperationMetrics class.
-    /// </summary>
-    /// <param name="operationName">Name of the operation.</param>
-    public MetalOperationMetrics(string operationName)
-    {
-        OperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
-    }
-
-    /// <summary>
     /// Gets the name of the operation.
     /// </summary>
-    public string OperationName { get; }
+    public string OperationName { get; } = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
     /// <summary>
     /// Gets the total number of executions.

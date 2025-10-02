@@ -107,7 +107,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             _logger.LogDebugMessage($"Selected {backendSelection.BackendId} for {kernelName} with {backendSelection.ConfidenceScore} confidence using {backendSelection.SelectionStrategy}");
 
             // Phase 3: Pre-execution Optimization
-            await ApplyPreExecutionOptimizations(kernelName, args, backendSelection);
+            await ApplyPreExecutionOptimizationsAsync(kernelName, args, backendSelection);
 
             // Phase 4: Monitored Execution
             var result = await ExecuteWithMonitoringAsync<T>(
@@ -233,13 +233,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Custom constraints based on options
         if (_options.PreferredBackends?.Count > 0)
         {
-            constraints.AllowedBackends = new HashSet<string>(_options.PreferredBackends);
+            constraints.AllowedBackends = [.. _options.PreferredBackends];
         }
 
         return constraints;
     }
 
-    private async Task ApplyPreExecutionOptimizations(
+    private async Task ApplyPreExecutionOptimizationsAsync(
         string kernelName,
 
         object[] args,
@@ -285,12 +285,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         // Start performance profiling
 
-        var profileOptions = new DotCompute.Core.Telemetry.Options.ProfileOptions
+        var profileOptions = new Telemetry.Options.ProfileOptions
         {
             EnableDetailedMetrics = _options.EnableDetailedProfiling,
             SampleIntervalMs = _options.ProfilingSampleIntervalMs
         };
-        _ = _performanceProfiler.CreateProfileAsync(correlationId, profileOptions);
+
+        var profileTask = _performanceProfiler.CreateProfileAsync(correlationId, profileOptions);
 
         // Record execution start metrics
         PerformanceMonitor.ExecutionMetrics.StartExecution();
@@ -309,12 +310,11 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             // Record execution end metrics
 
-
-            var (_, allocatedBytes, _) = PerformanceMonitor.ExecutionMetrics.EndExecution();
+            var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
 
             // Record kernel execution in profiler
 
-            var executionMetrics = new DotCompute.Core.Telemetry.KernelExecutionMetrics
+            var executionMetrics = new KernelExecutionMetrics
             {
                 StartTime = DateTimeOffset.UtcNow - executionStopwatch.Elapsed,
                 EndTime = DateTimeOffset.UtcNow,
@@ -467,7 +467,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         };
     }
 
-    private double EstimateMemoryIntensity(string kernelName, object[] args, KernelPerformanceProfile profile)
+    private static double EstimateMemoryIntensity(string kernelName, object[] args, KernelPerformanceProfile profile)
     {
         if (profile.HistoricalMemoryIntensity.HasValue)
         {
@@ -516,25 +516,21 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         {
             var name when name.Contains("transpose") => MemoryAccessPattern.Strided,
             var name when name.Contains("random") => MemoryAccessPattern.Random,
-            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.ScatterGather,
+            var name when name.Contains("gather") || name.Contains("scatter") => MemoryAccessPattern.Scattered,
             var name when name.Contains("convolution") => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };
     }
 
     private static async Task OptimizeMemoryLayoutAsync(object[] args, string backendId)
-    {
         // Memory layout optimization would be backend-specific
         // This is a placeholder for actual optimization logic
-        await Task.CompletedTask;
-    }
+        => await Task.CompletedTask;
 
     private static async Task ApplyKernelSpecificOptimizationsAsync(
         string kernelName, object[] args, BackendSelection backendSelection)
-    {
         // Kernel-specific optimizations would be implemented here
-        await Task.CompletedTask;
-    }
+        => await Task.CompletedTask;
 
     private bool IsNewCombination(string kernelName, string backendId)
     {
@@ -546,15 +542,10 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     }
 
     private static async Task WarmupBackendAsync(string kernelName, string backendId)
-    {
         // Backend warmup logic would be implemented here
-        await Task.CompletedTask;
-    }
+        => await Task.CompletedTask;
 
-    private static double CalculateThroughput(long operationCount, TimeSpan executionTime)
-    {
-        return executionTime.TotalSeconds > 0 ? operationCount / executionTime.TotalSeconds : 0;
-    }
+    private static double CalculateThroughput(long operationCount, TimeSpan executionTime) => executionTime.TotalSeconds > 0 ? operationCount / executionTime.TotalSeconds : 0;
 
     private static double CalculateMemoryBandwidth(long bytesAccessed, TimeSpan executionTime)
     {
@@ -685,8 +676,7 @@ public class PerformanceOptimizationOptions
     public bool EnableMemoryOptimization { get; set; } = true;
     public bool EnableKernelOptimization { get; set; } = true;
     public bool EnableWarmupOptimization { get; set; } = true;
-    public bool EnableDetailedProfiling { get; set; }
-
+    public bool EnableDetailedProfiling { get; set; } = false;
     public int ProfilingSampleIntervalMs { get; set; } = 100;
     public int MaxWorkloadCacheSize { get; set; } = 1000;
     public double MaxCpuUtilizationThreshold { get; set; } = 0.9;

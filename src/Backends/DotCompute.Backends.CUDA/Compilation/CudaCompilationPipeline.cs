@@ -422,18 +422,12 @@ internal sealed class CudaCompilationPipeline
     /// Gets compilation pipeline statistics and performance metrics.
     /// </summary>
     /// <returns>Pipeline statistics including cache performance and compilation metrics.</returns>
-    public Types.CacheStatistics GetPipelineStatistics()
-    {
-        return _cache.GetCacheStatistics();
-    }
+    public CacheStatistics GetPipelineStatistics() => _cache.GetCacheStatistics();
 
     /// <summary>
     /// Clears the compilation cache and cleans up temporary resources.
     /// </summary>
-    public void ClearCache()
-    {
-        _cache.ClearCache();
-    }
+    public void ClearCache() => _cache.ClearCache();
 
     /// <summary>
     /// Compilation target enumeration for pipeline decision making.

@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -22,11 +22,9 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly ConcurrentDictionary<string, CudaTimingSession> _timingSessions;
         private readonly SemaphoreSlim _eventCreationSemaphore;
         private readonly Timer _maintenanceTimer;
-        private readonly object _lockObject = new();
 
         // Event configuration
         private const int MAX_CONCURRENT_EVENTS = 2000;
-        private const int INITIAL_POOL_SIZE = 100;
         private const int TIMING_EVENT_POOL_SIZE = 50;
         private const int SYNC_EVENT_POOL_SIZE = 50;
 

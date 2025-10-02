@@ -407,29 +407,17 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Internal memory pool for a specific size class.
         /// </summary>
-        private sealed class MemoryPool : IDisposable
+        private sealed class MemoryPool(int blockSize, int maxBlocks, ILogger logger) : IDisposable
         {
-            private readonly ConcurrentBag<MemoryBlock> _availableBlocks;
-            private readonly HashSet<IntPtr> _allBlocks;
-            private readonly SemaphoreSlim _lock;
-            private readonly ILogger _logger;
+            private readonly ConcurrentBag<MemoryBlock> _availableBlocks = [];
+            private readonly HashSet<IntPtr> _allBlocks = [];
+            private readonly SemaphoreSlim _lock = new(1, 1);
 
-
-            public int BlockSize { get; }
-            public int MaxBlocks { get; }
+            public int BlockSize { get; } = blockSize;
+            public int MaxBlocks { get; } = maxBlocks;
             public int AvailableCount => _availableBlocks.Count;
             public int TotalCount => _allBlocks.Count;
             public long TotalBytes => (long)TotalCount * BlockSize;
-
-            public MemoryPool(int blockSize, int maxBlocks, ILogger logger)
-            {
-                BlockSize = blockSize;
-                MaxBlocks = maxBlocks;
-                _logger = logger;
-                _availableBlocks = [];
-                _allBlocks = [];
-                _lock = new SemaphoreSlim(1, 1);
-            }
 
             public Task<MemoryBlock?> TryGetAsync(CancellationToken cancellationToken)
             {
@@ -511,16 +499,10 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Represents a block of device memory.
     /// </summary>
-    internal sealed class MemoryBlock
+    internal sealed class MemoryBlock(IntPtr devicePointer, long size)
     {
-        public IntPtr DevicePointer { get; }
-        public long Size { get; }
-
-        public MemoryBlock(IntPtr devicePointer, long size)
-        {
-            DevicePointer = devicePointer;
-            Size = size;
-        }
+        public IntPtr DevicePointer { get; } = devicePointer;
+        public long Size { get; } = size;
     }
 
     /// <summary>
@@ -536,28 +518,20 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Implementation of pooled memory buffer.
     /// </summary>
-    internal sealed class PooledMemoryBuffer : IPooledMemoryBuffer
+    internal sealed class PooledMemoryBuffer(
+        CudaMemoryPoolManager manager,
+        MemoryBlock block,
+        long requestedSize,
+        int poolSize) : IPooledMemoryBuffer
     {
-        private readonly CudaMemoryPoolManager _manager;
-        private readonly MemoryBlock _block;
-        private readonly int _poolSize;
+        private readonly CudaMemoryPoolManager _manager = manager;
+        private readonly MemoryBlock _block = block;
+        private readonly int _poolSize = poolSize;
         private bool _disposed;
 
         public IntPtr DevicePointer => _block.DevicePointer;
-        public long Size { get; }
+        public long Size { get; } = requestedSize;
         public long ActualSize => _block.Size;
-
-        public PooledMemoryBuffer(
-            CudaMemoryPoolManager manager,
-            MemoryBlock block,
-            long requestedSize,
-            int poolSize)
-        {
-            _manager = manager;
-            _block = block;
-            Size = requestedSize;
-            _poolSize = poolSize;
-        }
 
         public void Dispose()
         {

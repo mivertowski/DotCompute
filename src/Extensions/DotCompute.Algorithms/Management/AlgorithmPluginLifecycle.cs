@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 // Using PluginState from Abstractions project
@@ -83,7 +82,7 @@ namespace DotCompute.Algorithms.Management
             }
             finally
             {
-                _lifecycleSemaphore.Release();
+                _ = _lifecycleSemaphore.Release();
             }
         }
 
@@ -135,7 +134,7 @@ namespace DotCompute.Algorithms.Management
             }
             finally
             {
-                _lifecycleSemaphore.Release();
+                _ = _lifecycleSemaphore.Release();
             }
         }
 
@@ -181,7 +180,7 @@ namespace DotCompute.Algorithms.Management
             }
             finally
             {
-                _lifecycleSemaphore.Release();
+                _ = _lifecycleSemaphore.Release();
             }
         }
 
@@ -206,7 +205,7 @@ namespace DotCompute.Algorithms.Management
                     // Stop the plugin first if running
                     if (state.State == PluginState.Running)
                     {
-                        await StopPluginAsync(plugin, cancellationToken).ConfigureAwait(false);
+                        _ = await StopPluginAsync(plugin, cancellationToken).ConfigureAwait(false);
                     }
 
                     // Dispose if IDisposable
@@ -236,12 +235,12 @@ namespace DotCompute.Algorithms.Management
                 finally
                 {
                     // Remove from tracking after shutdown
-                    _pluginStates.TryRemove(plugin.Id, out _);
+                    _ = _pluginStates.TryRemove(plugin.Id, out _);
                 }
             }
             finally
             {
-                _lifecycleSemaphore.Release();
+                _ = _lifecycleSemaphore.Release();
             }
         }
 
@@ -260,10 +259,7 @@ namespace DotCompute.Algorithms.Management
         /// Gets all plugin states.
         /// </summary>
         /// <returns>A read-only dictionary of plugin states.</returns>
-        public IReadOnlyDictionary<string, PluginLifecycleState> GetAllPluginStates()
-        {
-            return _pluginStates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-        }
+        public IReadOnlyDictionary<string, PluginLifecycleState> GetAllPluginStates() => _pluginStates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         /// <summary>
         /// Performs health checks on all running plugins.
@@ -314,10 +310,7 @@ namespace DotCompute.Algorithms.Management
             });
         }
 
-        private PluginLifecycleState GetOrCreatePluginState(IAlgorithmPlugin plugin)
-        {
-            return _pluginStates.GetOrAdd(plugin.Id, _ => new PluginLifecycleState(plugin.Id));
-        }
+        private PluginLifecycleState GetOrCreatePluginState(IAlgorithmPlugin plugin) => _pluginStates.GetOrAdd(plugin.Id, _ => new PluginLifecycleState(plugin.Id));
 
         #region IHostedService Implementation
 
@@ -441,18 +434,12 @@ namespace DotCompute.Algorithms.Management
     /// <summary>
     /// Represents the lifecycle state of a plugin.
     /// </summary>
-    public sealed class PluginLifecycleState
+    public sealed class PluginLifecycleState(string pluginId)
     {
         private readonly object _stateLock = new();
         private PluginState _state = PluginState.Loading;
 
-        public PluginLifecycleState(string pluginId)
-        {
-            PluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
-            LastActivityTime = DateTime.UtcNow;
-        }
-
-        public string PluginId { get; }
+        public string PluginId { get; } = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
 
         public PluginState State
         {
@@ -465,7 +452,7 @@ namespace DotCompute.Algorithms.Management
             }
         }
 
-        public DateTime LastActivityTime { get; set; }
+        public DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
         public Exception? LastError { get; set; }
 

@@ -88,15 +88,9 @@ internal sealed class ErrorStatistics
         _ = Interlocked.Increment(ref _recoverySuccesses);
     }
 
-    public void RecordRecoveryFailure()
-    {
-        _ = Interlocked.Increment(ref _recoveryAttempts);
-    }
+    public void RecordRecoveryFailure() => _ = Interlocked.Increment(ref _recoveryAttempts);
 
-    public void Configure(ErrorStatisticsPolicy policy)
-    {
-        CaptureDetailedDiagnostics = policy.CaptureDetailedDiagnostics;
-    }
+    public void Configure(ErrorStatisticsPolicy policy) => CaptureDetailedDiagnostics = policy.CaptureDetailedDiagnostics;
 
     public Dictionary<CudaError, long> GetMostCommonErrors()
     {

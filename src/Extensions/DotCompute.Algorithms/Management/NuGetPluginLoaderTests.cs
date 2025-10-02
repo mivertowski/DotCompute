@@ -1,14 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.IO.Compression;
+using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
-using NuGet.Packaging.Core;
-using NuGet.Versioning;
 
 namespace DotCompute.Algorithms.Management
 {

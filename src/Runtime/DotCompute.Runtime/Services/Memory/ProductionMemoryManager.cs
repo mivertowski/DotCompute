@@ -11,7 +11,7 @@ using DotCompute.Runtime.Services.Buffers.Views;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Memory;
 
@@ -25,7 +25,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     private readonly ConcurrentDictionary<long, ProductionMemoryBuffer> _buffers = new();
     private readonly ConcurrentDictionary<long, WeakReference<ProductionMemoryBuffer>> _bufferRegistry = new();
     private readonly MemoryPool _memoryPool;
-    private readonly DotCompute.Runtime.Services.Statistics.MemoryStatistics _statistics = new();
+    private readonly Statistics.MemoryStatistics _statistics = new();
     private readonly SemaphoreSlim _allocationSemaphore = new(32, 32); // Limit concurrent allocations
     private long _nextId = 1;
     private bool _disposed;
@@ -34,7 +34,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     // Interface Properties
 
     public override IAccelerator Accelerator => _accelerator ?? throw new InvalidOperationException("No accelerator associated with this memory manager");
-    public override DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
+    public override MemoryStatistics Statistics => new()
     {
         TotalAllocated = _statistics.TotalBytesAllocated,
         CurrentUsage = _statistics.CurrentlyAllocatedBytes,
@@ -62,7 +62,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         _memoryPool = new MemoryPool(_logger);
 
         // Start background cleanup task
-        _ = Task.Run(PerformPeriodicCleanup);
+        _ = Task.Run(PerformPeriodicCleanupAsync);
 
         _logger.LogInfoMessage("Production memory manager initialized with advanced memory pooling");
     }
@@ -80,10 +80,8 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
 
     public override async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
-    {
         // Delegate to the internal implementation
-        return await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
-    }
+        => await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
 
     public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
@@ -160,7 +158,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         return view;
     }
 
-    public new DotCompute.Runtime.Services.Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
+    public new Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
 
     // Copy operations
 
@@ -289,7 +287,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <typeparam name="T">The element type.</typeparam>
     /// <param name="count">The number of elements to allocate.</param>
     /// <returns>A memory buffer for the allocated elements.</returns>
-    public override async ValueTask<IUnifiedMemoryBuffer> Allocate<T>(int count)
+    public override async ValueTask<IUnifiedMemoryBuffer> AllocateAsync<T>(int count)
     {
         if (_disposed)
         {
@@ -360,7 +358,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         }
     }
 
-    private async Task PerformPeriodicCleanup()
+    private async Task PerformPeriodicCleanupAsync()
     {
         while (!_disposed)
         {

@@ -504,18 +504,12 @@ public sealed class MetalExecutionTelemetry : IDisposable
     /// <summary>
     /// Gets current metrics snapshot
     /// </summary>
-    public Dictionary<string, object> GetMetrics()
-    {
-        return _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    public Dictionary<string, object> GetMetrics() => _metrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Gets recent events
     /// </summary>
-    public List<MetalTelemetryEvent> GetRecentEvents(int count = 100)
-    {
-        return _events.ToArray().TakeLast(count).ToList();
-    }
+    public List<MetalTelemetryEvent> GetRecentEvents(int count = 100) => [.. _events.ToArray().TakeLast(count)];
 
     /// <summary>
     /// Generates a comprehensive telemetry report
@@ -530,7 +524,7 @@ public sealed class MetalExecutionTelemetry : IDisposable
             Timestamp = DateTimeOffset.UtcNow,
             TotalEvents = events.Length,
             Metrics = metrics,
-            RecentEvents = events.TakeLast(50).ToList(),
+            RecentEvents = [.. events.TakeLast(50)],
             EventSummary = events
                 .GroupBy(e => $"{e.Category}.{e.EventName}")
                 .ToDictionary(g => g.Key, g => g.Count()),

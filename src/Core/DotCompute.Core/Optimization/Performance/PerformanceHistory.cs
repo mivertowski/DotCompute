@@ -9,21 +9,14 @@ namespace DotCompute.Core.Optimization.Performance;
 /// <summary>
 /// Historical performance data for a specific workload signature.
 /// </summary>
-public class PerformanceHistory
+public class PerformanceHistory(WorkloadSignature signature, int maxEntries = 1000)
 {
-    private readonly ConcurrentDictionary<string, List<PerformanceResult>> _backendResults;
-    private readonly WorkloadSignature _signature;
-    private readonly int _maxEntries;
+    private readonly ConcurrentDictionary<string, List<PerformanceResult>> _backendResults = new();
+    private readonly WorkloadSignature _signature = signature;
+    private readonly int _maxEntries = maxEntries;
 
     public WorkloadSignature Signature => _signature;
     public int TotalEntries => _backendResults.Values.Sum(results => results.Count);
-
-    public PerformanceHistory(WorkloadSignature signature, int maxEntries = 1000)
-    {
-        _signature = signature;
-        _maxEntries = maxEntries;
-        _backendResults = new ConcurrentDictionary<string, List<PerformanceResult>>();
-    }
 
     public void AddPerformanceResult(string backendId, PerformanceResult result)
     {

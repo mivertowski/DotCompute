@@ -13,7 +13,7 @@ public class Matrix
     /// <summary>
     /// Gets the actual matrix implementation.
     /// </summary>
-    public DotCompute.Algorithms.LinearAlgebra.Matrix Implementation { get; }
+    public Algorithms.LinearAlgebra.Matrix Implementation { get; }
 
     /// <summary>
     /// Initializes a new instance of the Matrix class.
@@ -23,7 +23,7 @@ public class Matrix
     public Matrix(int rows, int cols)
 
     {
-        Implementation = new DotCompute.Algorithms.LinearAlgebra.Matrix(rows, cols);
+        Implementation = new Algorithms.LinearAlgebra.Matrix(rows, cols);
     }
 
     /// <summary>
@@ -35,13 +35,13 @@ public class Matrix
     public Matrix(int rows, int cols, float[] data)
 
     {
-        Implementation = new DotCompute.Algorithms.LinearAlgebra.Matrix(rows, cols, data);
+        Implementation = new Algorithms.LinearAlgebra.Matrix(rows, cols, data);
     }
 
     /// <summary>
     /// Implicit conversion from the main Matrix type.
     /// </summary>
-    public static implicit operator Matrix(DotCompute.Algorithms.LinearAlgebra.Matrix matrix)
+    public static implicit operator Matrix(Algorithms.LinearAlgebra.Matrix matrix)
     {
         return new Matrix(matrix.Rows, matrix.Columns, matrix.ToArray());
     }
@@ -49,7 +49,7 @@ public class Matrix
     /// <summary>
     /// Implicit conversion to the main Matrix type.
     /// </summary>
-    public static implicit operator DotCompute.Algorithms.LinearAlgebra.Matrix(Matrix matrix)
+    public static implicit operator Algorithms.LinearAlgebra.Matrix(Matrix matrix)
     {
         return matrix.Implementation;
     }

@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
@@ -14,21 +12,15 @@ namespace DotCompute.Algorithms.Management.Execution;
 /// <summary>
 /// Service responsible for executing plugins with monitoring and retry logic.
 /// </summary>
-public sealed partial class PluginExecutor : IPluginExecutor
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginExecutor"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="lifecycleManager">The plugin lifecycle manager.</param>
+public sealed partial class PluginExecutor(ILogger<PluginExecutor> logger, IPluginLifecycleManager lifecycleManager) : IPluginExecutor
 {
-    private readonly ILogger<PluginExecutor> _logger;
-    private readonly IPluginLifecycleManager _lifecycleManager;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginExecutor"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="lifecycleManager">The plugin lifecycle manager.</param>
-    public PluginExecutor(ILogger<PluginExecutor> logger, IPluginLifecycleManager lifecycleManager)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-    }
+    private readonly ILogger<PluginExecutor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
 
     /// <inheritdoc/>
     public async Task<object> ExecutePluginAsync(
@@ -40,17 +32,8 @@ public sealed partial class PluginExecutor : IPluginExecutor
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        var plugin = _lifecycleManager.GetPlugin(pluginId);
-        if (plugin == null)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
-        }
-
-        var pluginInfo = _lifecycleManager.GetLoadedPluginInfo(pluginId);
-        if (pluginInfo == null)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' information not found.");
-        }
+        var plugin = _lifecycleManager.GetPlugin(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
+        var pluginInfo = _lifecycleManager.GetLoadedPluginInfo(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' information not found.");
 
         // Check plugin health before execution
         if (pluginInfo.Health == PluginHealth.Critical || pluginInfo.State != PluginState.Running)

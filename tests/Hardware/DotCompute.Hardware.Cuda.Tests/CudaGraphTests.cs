@@ -16,7 +16,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests graph creation, capture, execution, and performance optimization.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaGraphTests : ConsolidatedTestBase
+    public class CudaGraphTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
         private const string SimpleKernel = @"
             __global__ void simpleAdd(float* a, float* b, float* c, int n) {
@@ -41,8 +41,6 @@ namespace DotCompute.Hardware.Cuda.Tests
                     a[idx] = a[idx] * scale;
                 }
             }";
-
-        public CudaGraphTests(ITestOutputHelper output) : base(output) { }
 
         [SkippableFact]
         public async Task Graph_Creation_Should_Succeed()
@@ -98,7 +96,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             };
 
             // Convert to test helpers LaunchConfiguration
-            var testLaunchConfig = new Helpers.LaunchConfiguration
+            var testLaunchConfig = new LaunchConfiguration
             {
                 GridSizeX = launchConfig.GridSize.X,
                 GridSizeY = launchConfig.GridSize.Y,
@@ -177,7 +175,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Create and start graph capture
 
             var stream = accelerator.CreateStream();
-            _ = stream.BeginCapture();
+            _ = stream.BeginCaptureAsync();
 
             // Execute operations in capture mode
 
@@ -186,7 +184,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // End capture
 
-            var capturedGraph = stream.EndCapture();
+            var capturedGraph = stream.EndCaptureAsync();
             _ = capturedGraph.Should().NotBeNull();
 
             // Execute the captured graph
@@ -267,7 +265,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var graph = CudaGraphTestExtensions.CreateGraph(accelerator);
 
             // Convert to test helper LaunchConfiguration
-            var testLaunchConfig = new Helpers.LaunchConfiguration
+            var testLaunchConfig = new LaunchConfiguration
             {
                 GridSizeX = launchConfig.GridSize.X,
                 GridSizeY = launchConfig.GridSize.Y,
@@ -367,7 +365,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // CUDA graphs benefit from capturing multiple kernels, not single ones
 
             var stream = accelerator.CreateStream();
-            _ = stream.BeginCapture();
+            _ = stream.BeginCaptureAsync();
 
             // Capture 10 kernel launches in the graph to demonstrate the benefit
 
@@ -378,7 +376,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
 
-            var capturedGraph2 = stream.EndCapture();
+            var capturedGraph2 = stream.EndCaptureAsync();
             var executableGraph = capturedGraph2.Instantiate();
 
             // Test graph execution (each graph launch executes 10 kernels)
@@ -462,7 +460,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var graph = CudaGraphTestExtensions.CreateGraph(accelerator);
 
             // Convert to test helper LaunchConfiguration
-            var testLaunchConfig = new Helpers.LaunchConfiguration
+            var testLaunchConfig = new LaunchConfiguration
             {
                 GridSizeX = launchConfig.GridSize.X,
                 GridSizeY = launchConfig.GridSize.Y,
@@ -615,7 +613,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var graph = CudaGraphTestExtensions.CreateGraph(accelerator);
 
             // Convert to test helper LaunchConfiguration
-            var testLaunchConfig = new Helpers.LaunchConfiguration
+            var testLaunchConfig = new LaunchConfiguration
             {
                 GridSizeX = launchConfig.GridSize.X,
                 GridSizeY = launchConfig.GridSize.Y,

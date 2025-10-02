@@ -23,10 +23,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         => pipeline?.Stages?.Any(s => s.Type == PipelineStageType.Computation) == true;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
-    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
-    {
-        return await ApplyAsync(pipeline, cancellationToken);
-    }
+    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -35,7 +32,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
             OptimizationTypes = OptimizationType.KernelFusion
         };
 
-        var result = await ApplyInternalAsync(pipeline.Stages.ToList(), settings, cancellationToken);
+        var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);
         if (result.WasApplied)
         {
             return CreateOptimizedPipeline(pipeline, result.OptimizedStages, settings);
@@ -102,13 +99,12 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         // Create a new fused kernel that combines both stages into a single execution unit
         // This optimization reduces kernel launch overhead and intermediate memory transfers
 
-
         => new FusedKernelStage(stage1, stage2);
 
     private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
     {
         // Intelligent buffer size calculation that considers multiple optimization factors
-        _ = new IntelligentBufferSizeCalculator();
+        var calculator = new IntelligentBufferSizeCalculator();
 
         return IntelligentBufferSizeCalculator.CalculateOptimalBufferSize(stage1, stage2);
     }

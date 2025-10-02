@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.Arm;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 
 namespace DotCompute.Backends.CPU.Optimization;
@@ -248,8 +248,8 @@ public static class NativeAotOptimizations
         const int vectorSize = 8;
         var vectorCount = a.Length / vectorSize;
 
-        ref var aRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector512<double>.Zero;
 
@@ -290,8 +290,8 @@ public static class NativeAotOptimizations
         const int vectorSize = 4;
         var vectorCount = a.Length / vectorSize;
 
-        ref var aRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector256<double>.Zero;
 
@@ -332,8 +332,8 @@ public static class NativeAotOptimizations
         const int vectorSize = 2;
         var vectorCount = a.Length / vectorSize;
 
-        ref var aRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector128<double>.Zero;
 
@@ -367,8 +367,8 @@ public static class NativeAotOptimizations
         const int vectorSize = 2;
         var vectorCount = a.Length / vectorSize;
 
-        ref var aRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector128<double>.Zero;
 

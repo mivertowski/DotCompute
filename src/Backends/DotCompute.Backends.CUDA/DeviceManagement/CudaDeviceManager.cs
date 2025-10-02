@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -28,7 +28,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// Initializes a new instance of the <see cref="CudaDeviceManager"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    /// <exception cref="System.ArgumentNullException">logger</exception>
+    /// <exception cref="ArgumentNullException">logger</exception>
     public CudaDeviceManager(ILogger<CudaDeviceManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

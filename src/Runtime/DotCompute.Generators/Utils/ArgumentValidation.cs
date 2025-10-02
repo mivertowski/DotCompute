@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DotCompute.Generators.Utils
 {
@@ -53,14 +53,9 @@ namespace DotCompute.Generators.Utils
         /// Provides CallerArgumentExpression attribute for netstandard2.0.
         /// </summary>
         [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
-        internal sealed class CallerArgumentExpressionAttribute : Attribute
+        internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute
         {
-            public CallerArgumentExpressionAttribute(string parameterName)
-            {
-                ParameterName = parameterName;
-            }
-
-            public string ParameterName { get; }
+            public string ParameterName { get; } = parameterName;
         }
 #endif
     }

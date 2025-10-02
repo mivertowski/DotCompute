@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Execution.Plans;
-using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Execution
 {
@@ -59,7 +58,7 @@ namespace DotCompute.Core.Execution
         /// <param name="strategyType">The execution strategy to filter by</param>
         /// <returns>Array of plans using the specified strategy</returns>
         public ExecutionPlan<T>[] GetPlansByStrategy(ExecutionStrategyType strategyType)
-            => AllAlternatives.Where(p => p.StrategyType == strategyType).ToArray();
+            => [.. AllAlternatives.Where(p => p.StrategyType == strategyType)];
 
         /// <summary>
         /// Gets execution plans that use a specific number of devices.
@@ -67,7 +66,7 @@ namespace DotCompute.Core.Execution
         /// <param name="deviceCount">The number of devices to filter by</param>
         /// <returns>Array of plans using the specified number of devices</returns>
         public ExecutionPlan<T>[] GetPlansByDeviceCount(int deviceCount)
-            => AllAlternatives.Where(p => p.Devices.Length == deviceCount).ToArray();
+            => [.. AllAlternatives.Where(p => p.Devices.Length == deviceCount)];
 
         /// <summary>
         /// Gets execution plans within the specified execution time range.
@@ -76,8 +75,8 @@ namespace DotCompute.Core.Execution
         /// <param name="maxTimeMs">Maximum execution time in milliseconds</param>
         /// <returns>Array of plans within the specified time range</returns>
         public ExecutionPlan<T>[] GetPlansByExecutionTime(double minTimeMs, double maxTimeMs)
-            => AllAlternatives.Where(p => p.EstimatedExecutionTimeMs >= minTimeMs &&
+            => [.. AllAlternatives.Where(p => p.EstimatedExecutionTimeMs >= minTimeMs &&
 
-                                      p.EstimatedExecutionTimeMs <= maxTimeMs).ToArray();
+                                      p.EstimatedExecutionTimeMs <= maxTimeMs)];
     }
 }

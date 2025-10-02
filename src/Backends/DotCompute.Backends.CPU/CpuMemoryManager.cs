@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Extensions;
@@ -15,19 +15,11 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// NUMA-aware CPU memory manager that inherits from BaseMemoryManager.
 /// Reduces 1,232 lines to ~150 lines by leveraging base class functionality.
 /// </summary>
-public sealed class CpuMemoryManager : BaseMemoryManager
+public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemoryPolicy? defaultPolicy = null) : BaseMemoryManager(logger)
 {
-    private readonly Threading.NUMA.NumaTopology _topology;
-    private readonly NumaMemoryPolicy _defaultPolicy;
-    private readonly ILogger<CpuMemoryManager> _logger;
-
-    public CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemoryPolicy? defaultPolicy = null)
-        : base(logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _topology = NumaInfo.Topology;
-        _defaultPolicy = defaultPolicy ?? NumaMemoryPolicy.CreateDefault();
-    }
+    private readonly Threading.NUMA.NumaTopology _topology = NumaInfo.Topology;
+    private readonly NumaMemoryPolicy _defaultPolicy = defaultPolicy ?? NumaMemoryPolicy.CreateDefault();
+    private readonly ILogger<CpuMemoryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Gets NUMA topology information.
@@ -108,10 +100,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         };
     }
 
-    private int SelectOptimalNumaNode(NumaMemoryPolicy policy, long sizeInBytes)
-    {
-        return DetermineOptimalNode(policy, sizeInBytes);
-    }
+    private int SelectOptimalNumaNode(NumaMemoryPolicy policy, long sizeInBytes) => DetermineOptimalNode(policy, sizeInBytes);
 
     private int DetermineOptimalNode(NumaMemoryPolicy policy, long sizeInBytes)
     {
@@ -179,7 +168,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
     {
         // Create default options
         var acceleratorOptions = Microsoft.Extensions.Options.Options.Create(new CpuAcceleratorOptions());
-        var threadPoolOptions = Microsoft.Extensions.Options.Options.Create(new Threading.CpuThreadPoolOptions());
+        var threadPoolOptions = Microsoft.Extensions.Options.Options.Create(new CpuThreadPoolOptions());
 
         // Use the same logger but cast to required type - create compatible logger
 
@@ -228,38 +217,28 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
         // Simple CPU memory copy - both buffers are in CPU memory
-        return CopyBufferToBufferAsync(source, destination, cancellationToken);
-    }
+        => CopyBufferToBufferAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
-    {
         // Simple CPU memory copy with offsets
-        return CopyBufferWithOffsetsAsync(source, sourceOffset, destination, destinationOffset, count, cancellationToken);
-    }
+        => CopyBufferWithOffsetsAsync(source, sourceOffset, destination, destinationOffset, count, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
-    {
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
-        return CopyFromCpuBufferToHostAsync(source, destination, cancellationToken);
-    }
+        => CopyFromCpuBufferToHostAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
-    {
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
-        return CopyFromHostToCpuBufferAsync(source, destination, cancellationToken);
-    }
+        => CopyFromHostToCpuBufferAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
-    {
         // Create typed view of the buffer
-        return CreateTypedBufferView(buffer, offset, count);
-    }
+        => CreateTypedBufferView(buffer, offset, count);
 
     /// <inheritdoc/>
     public override void Clear()
@@ -651,18 +630,11 @@ public sealed class CpuMemoryManager : BaseMemoryManager
 /// <summary>
 /// Simple CPU memory buffer view implementation.
 /// </summary>
-internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
+internal sealed class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
 {
-    private readonly CpuMemoryBuffer _parent;
-    private readonly long _offset;
-    private readonly long _length;
-
-    public CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        _length = length;
-    }
+    private readonly CpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly long _offset = offset;
+    private readonly long _length = length;
 
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parent.Options;
@@ -762,10 +734,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         }
     }
 
-    public ReadOnlySpan<T> AsReadOnlySpan()
-    {
-        return AsSpan();
-    }
+    public ReadOnlySpan<T> AsReadOnlySpan() => AsSpan();
 
     public Memory<T> AsMemory()
     {
@@ -774,23 +743,15 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(memory.Span).ToArray().AsMemory();
     }
 
-    public ReadOnlyMemory<T> AsReadOnlyMemory()
-    {
-        return AsMemory();
-    }
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
 
     // Device Memory Access (CPU backend doesn't have separate device memory)
     public DeviceMemory GetDeviceMemory()
-    {
         // For CPU backend, device memory is the same as host memory
-        return DeviceMemory.Invalid;
-    }
+        => DeviceMemory.Invalid;
 
     // Memory Mapping (for CPU backend, this is essentially a no-op)
-    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
-    {
-        return new MappedMemory<T>(AsMemory());
-    }
+    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite) => new(AsMemory());
 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
@@ -802,10 +763,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         return new MappedMemory<T>(memory.Slice(offset, length));
     }
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     // Synchronization (CPU backend doesn't need synchronization)
     public void EnsureOnHost()
@@ -818,25 +776,16 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         // No-op for CPU backend - no separate device memory
     }
 
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public void Synchronize()
     {
         // No-op for CPU backend
     }
 
-    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public void MarkHostDirty()
     {
@@ -1009,15 +958,9 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
         => CopyToAsync(destination, offset, cancellationToken);
 
-    public void Dispose()
-    {
-        _view.Dispose();
-    }
+    public void Dispose() => _view.Dispose();
 
-    public ValueTask DisposeAsync()
-    {
-        return _view.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _view.DisposeAsync();
 
     // Helper methods
     private CpuMemoryBuffer GetParentBuffer()

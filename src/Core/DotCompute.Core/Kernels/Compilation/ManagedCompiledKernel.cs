@@ -12,7 +12,7 @@ namespace DotCompute.Core.Kernels.Compilation;
 /// Represents a compiled kernel ready for execution.
 /// Encapsulates the compiled binary, metadata, and execution parameters for a kernel.
 /// </summary>
-public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKernel
+public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
 {
     private bool _disposed;
 

@@ -30,7 +30,7 @@ public static class DebugServiceExtensions
         // Configure debug service options
         if (configureOptions != null)
         {
-            _ = services.Configure<DebugServiceOptions>(configureOptions);
+            _ = services.Configure(configureOptions);
         }
 
         return services;
@@ -92,7 +92,7 @@ public static class DebugServiceExtensions
             debugService =>
 
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)LogLevel.Warning;
+                debugService.VerbosityLevel = (AbstractionsMemory.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Warning;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = false;
                 debugService.SaveExecutionLogs = false;
@@ -122,7 +122,7 @@ public static class DebugServiceExtensions
         return services.AddComprehensiveDebugging(
             debugService =>
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)LogLevel.Debug;
+                debugService.VerbosityLevel = (AbstractionsMemory.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Debug;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = true;
                 debugService.SaveExecutionLogs = true;
@@ -154,7 +154,7 @@ public static class DebugServiceExtensions
         return services.AddComprehensiveDebugging(
             debugService =>
             {
-                debugService.VerbosityLevel = (DotCompute.Abstractions.Debugging.Types.LogLevel)LogLevel.Trace;
+                debugService.VerbosityLevel = (AbstractionsMemory.Debugging.LogLevel)Microsoft.Extensions.Logging.LogLevel.Trace;
                 debugService.EnableProfiling = true;
                 debugService.EnableMemoryAnalysis = true;
                 debugService.SaveExecutionLogs = true;
@@ -199,11 +199,7 @@ public static class ServiceDecoratorExtensions
         where TService : class
     {
         // Find the existing service registration
-        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService));
-        if (existingDescriptor == null)
-        {
-            throw new InvalidOperationException($"Service of type {typeof(TService).Name} is not registered.");
-        }
+        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService)) ?? throw new InvalidOperationException($"Service of type {typeof(TService).Name} is not registered.");
 
         // Create a new descriptor that wraps the original
         var decoratedDescriptor = ServiceDescriptor.Describe(

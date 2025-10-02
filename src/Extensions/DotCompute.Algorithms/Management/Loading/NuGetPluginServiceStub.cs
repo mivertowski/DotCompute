@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Loading;
@@ -12,7 +11,6 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// </summary>
 public sealed class NuGetPluginService : INuGetPluginService, IDisposable
 {
-    private readonly ILogger<NuGetPluginService> _logger;
     private bool _disposed;
 
     /// <summary>

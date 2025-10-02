@@ -235,7 +235,7 @@ public sealed class MetalComputeGraph : IDisposable
         var nodeId = GenerateNodeId();
         var node = new MetalGraphNode(nodeId, MetalNodeType.Barrier)
         {
-            Dependencies = dependencies.ToList(),
+            Dependencies = [.. dependencies],
             EstimatedMemoryUsage = 0 // Barriers don't consume additional memory
         };
 
@@ -618,10 +618,8 @@ public sealed class MetalComputeGraph : IDisposable
     }
 
     private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
-    {
         // Memory operations can be coalesced if they're adjacent and have no dependencies between them
-        return !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
-    }
+        => !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
 
     private int AnalyzeCommandBufferBatching()
     {
@@ -664,10 +662,8 @@ public sealed class MetalComputeGraph : IDisposable
     }
 
     private static bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
-    {
         // Nodes can be batched if they don't depend on each other
-        return !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
-    }
+        => !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
 
     #endregion
 

@@ -80,23 +80,14 @@ public sealed class MetalOperationMetrics
 /// <summary>
 /// Resource-specific metrics
 /// </summary>
-public sealed class MetalResourceMetrics
+public sealed class MetalResourceMetrics(string resourceName, long currentUsage, long limit)
 {
-    public string ResourceName { get; }
-    public long CurrentUsage { get; private set; }
-    public long PeakUsage { get; private set; }
-    public long Limit { get; private set; }
+    public string ResourceName { get; } = resourceName;
+    public long CurrentUsage { get; private set; } = currentUsage;
+    public long PeakUsage { get; private set; } = currentUsage;
+    public long Limit { get; private set; } = limit;
     public double UtilizationPercentage => Limit > 0 ? (double)CurrentUsage / Limit * 100.0 : 0.0;
-    public DateTimeOffset LastUpdated { get; private set; }
-
-    public MetalResourceMetrics(string resourceName, long currentUsage, long limit)
-    {
-        ResourceName = resourceName;
-        CurrentUsage = currentUsage;
-        PeakUsage = currentUsage;
-        Limit = limit;
-        LastUpdated = DateTimeOffset.UtcNow;
-    }
+    public DateTimeOffset LastUpdated { get; private set; } = DateTimeOffset.UtcNow;
 
     public void UpdateUsage(long currentUsage, long peakUsage, long limit)
     {
@@ -244,15 +235,10 @@ public sealed class CounterStatistics
 /// <summary>
 /// Performance counter wrapper
 /// </summary>
-public sealed class PerformanceCounter : IDisposable
+public sealed class PerformanceCounter(string counterName) : IDisposable
 {
-    public string CounterName { get; }
+    public string CounterName { get; } = counterName;
     private volatile bool _disposed;
-
-    public PerformanceCounter(string counterName)
-    {
-        CounterName = counterName;
-    }
 
     public void Dispose()
     {
@@ -341,11 +327,11 @@ public sealed class HealthEvent
 /// <summary>
 /// Component health information
 /// </summary>
-public sealed class ComponentHealth
+public sealed class ComponentHealth(string componentName)
 {
-    public string ComponentName { get; }
+    public string ComponentName { get; } = componentName;
     public HealthStatus Status { get; set; } = HealthStatus.Healthy;
-    public DateTimeOffset LastCheckTime { get; set; }
+    public DateTimeOffset LastCheckTime { get; set; } = DateTimeOffset.UtcNow;
     public int ErrorCount { get; private set; }
     public int SuccessCount { get; private set; }
     public string? LastError { get; set; }
@@ -356,12 +342,6 @@ public sealed class ComponentHealth
         ? (double)SuccessCount / (ErrorCount + SuccessCount)
 
         : 1.0;
-
-    public ComponentHealth(string componentName)
-    {
-        ComponentName = componentName;
-        LastCheckTime = DateTimeOffset.UtcNow;
-    }
 
     public void RecordError(MetalError error, string context)
     {
@@ -431,16 +411,11 @@ public sealed class MetalHealthAnalysis
 /// <summary>
 /// Alert history
 /// </summary>
-public sealed class AlertHistory
+public sealed class AlertHistory(string alertKey)
 {
-    public string AlertKey { get; }
+    public string AlertKey { get; } = alertKey;
     private readonly List<HealthEvent> _events = [];
     private readonly object _lock = new();
-
-    public AlertHistory(string alertKey)
-    {
-        AlertKey = alertKey;
-    }
 
     public void RecordEvent(DateTimeOffset timestamp, Dictionary<string, object> properties)
     {
@@ -467,7 +442,7 @@ public sealed class AlertHistory
 
         lock (_lock)
         {
-            return _events.Where(e => e.Timestamp >= cutoffTime).ToList();
+            return [.. _events.Where(e => e.Timestamp >= cutoffTime)];
         }
     }
 }
@@ -475,22 +450,15 @@ public sealed class AlertHistory
 /// <summary>
 /// Circuit breaker
 /// </summary>
-public sealed class CircuitBreaker
+public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
 {
-    public string Name { get; }
+    public string Name { get; } = name;
     private int _failureCount;
     private DateTimeOffset _lastFailureTime;
-    private readonly int _threshold;
-    private readonly TimeSpan _timeout;
+    private readonly int _threshold = threshold;
+    private readonly TimeSpan _timeout = timeout;
 
     public CircuitBreakerState State { get; private set; } = CircuitBreakerState.Closed;
-
-    public CircuitBreaker(string name, int threshold, TimeSpan timeout)
-    {
-        Name = name;
-        _threshold = threshold;
-        _timeout = timeout;
-    }
 
     public void RecordSuccess()
     {
@@ -547,18 +515,11 @@ public sealed class TimeWindow
 /// <summary>
 /// Logging context
 /// </summary>
-public sealed class LogContext
+public sealed class LogContext(string correlationId, string operationType, DateTimeOffset startTime)
 {
-    public string CorrelationId { get; }
-    public string OperationType { get; }
-    public DateTimeOffset StartTime { get; }
-
-    public LogContext(string correlationId, string operationType, DateTimeOffset startTime)
-    {
-        CorrelationId = correlationId;
-        OperationType = operationType;
-        StartTime = startTime;
-    }
+    public string CorrelationId { get; } = correlationId;
+    public string OperationType { get; } = operationType;
+    public DateTimeOffset StartTime { get; } = startTime;
 }
 
 /// <summary>

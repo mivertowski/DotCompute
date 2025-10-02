@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using global::System.Runtime.Loader;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Metadata;
@@ -17,32 +14,24 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// <summary>
 /// Service responsible for discovering and loading plugins from assemblies and directories.
 /// </summary>
-public sealed partial class PluginDiscoveryService : IPluginDiscoveryService
+/// <remarks>
+/// Initializes a new instance of the <see cref="PluginDiscoveryService"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="lifecycleManager">The plugin lifecycle manager.</param>
+/// <param name="securityValidator">The security validator.</param>
+/// <param name="options">Configuration options.</param>
+public sealed partial class PluginDiscoveryService(
+    ILogger<PluginDiscoveryService> logger,
+    IPluginLifecycleManager lifecycleManager,
+    ISecurityValidator securityValidator,
+    AlgorithmPluginManagerOptions options) : IPluginDiscoveryService
 {
-    private readonly ILogger<PluginDiscoveryService> _logger;
-    private readonly IPluginLifecycleManager _lifecycleManager;
-    private readonly ISecurityValidator _securityValidator;
-    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ILogger<PluginDiscoveryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+    private readonly ISecurityValidator _securityValidator = securityValidator ?? throw new ArgumentNullException(nameof(securityValidator));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PluginDiscoveryService"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="lifecycleManager">The plugin lifecycle manager.</param>
-    /// <param name="securityValidator">The security validator.</param>
-    /// <param name="options">Configuration options.</param>
-    public PluginDiscoveryService(
-        ILogger<PluginDiscoveryService> logger,
-        IPluginLifecycleManager lifecycleManager,
-        ISecurityValidator securityValidator,
-        AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-        _securityValidator = securityValidator ?? throw new ArgumentNullException(nameof(securityValidator));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
 
     /// <inheritdoc/>
     public async Task<int> DiscoverAndLoadPluginsAsync(string pluginDirectory, CancellationToken cancellationToken = default)

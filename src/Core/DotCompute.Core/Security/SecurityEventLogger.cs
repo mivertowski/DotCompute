@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Security;
@@ -11,28 +11,18 @@ namespace DotCompute.Core.Security;
 /// Handles security event logging with context and audit trail.
 /// Provides methods for logging various types of security events.
 /// </summary>
-public sealed class SecurityEventLogger
+public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
+    SecurityLoggingConfiguration configuration,
+    ConcurrentQueue<SecurityLogEntry> auditQueue,
+    SemaphoreSlim logWriteLock,
+    ConcurrentDictionary<string, CorrelationContext> correlationContexts)
 {
-    private readonly ILogger _logger;
-    private readonly SecurityLoggingConfiguration _configuration;
-    private readonly ConcurrentQueue<SecurityLogEntry> _auditQueue;
-    private readonly SemaphoreSlim _logWriteLock;
-    private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SecurityLoggingConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    private readonly ConcurrentQueue<SecurityLogEntry> _auditQueue = auditQueue ?? throw new ArgumentNullException(nameof(auditQueue));
+    private readonly SemaphoreSlim _logWriteLock = logWriteLock ?? throw new ArgumentNullException(nameof(logWriteLock));
+    private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
     private long _sequenceNumber;
-
-    public SecurityEventLogger(ILogger<SecurityEventLogger> logger,
-
-        SecurityLoggingConfiguration configuration,
-        ConcurrentQueue<SecurityLogEntry> auditQueue,
-        SemaphoreSlim logWriteLock,
-        ConcurrentDictionary<string, CorrelationContext> correlationContexts)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _auditQueue = auditQueue ?? throw new ArgumentNullException(nameof(auditQueue));
-        _logWriteLock = logWriteLock ?? throw new ArgumentNullException(nameof(logWriteLock));
-        _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
-    }
 
     /// <summary>
     /// Logs a security event with full context and audit trail.
@@ -50,9 +40,8 @@ public sealed class SecurityEventLogger
         try
         {
             _auditQueue.Enqueue(entry);
-
+            
             // Log based on severity
-
             LogSecurityEventByLevel(entry);
         }
         finally
@@ -156,7 +145,7 @@ public sealed class SecurityEventLogger
 
         await LogSecurityEventAsync(SecurityEventType.AuthenticationFailure,
             $"Authentication failed for user '{userId}': {failureReason}",
-            SecurityLevel.Medium, userId, null, data, null, callerName, sourceFile, lineNumber);
+            SecurityLevel.Warning, userId, null, data, null, callerName, sourceFile, lineNumber);
     }
 
     /// <summary>
@@ -167,18 +156,18 @@ public sealed class SecurityEventLogger
         [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
         [CallerLineNumber] int lineNumber = 0)
     {
-        var eventType = result.Granted
-            ? SecurityEventType.AccessGranted
+        var eventType = result == AccessResult.Granted 
+            ? SecurityEventType.AccessGranted 
             : SecurityEventType.AccessDenied;
-
-        var level = result.Granted
-            ? SecurityLevel.Informational
-            : SecurityLevel.Medium;
+        
+        var level = result == AccessResult.Granted 
+            ? SecurityLevel.Informational 
+            : SecurityLevel.Warning;
 
         var data = new Dictionary<string, object>
         {
             ["Action"] = action,
-            ["Result"] = result.Granted ? "Granted" : "Denied",
+            ["Result"] = result.ToString(),
             ["Reason"] = reason ?? "Not specified"
         };
 
@@ -191,7 +180,7 @@ public sealed class SecurityEventLogger
         }
 
         await LogSecurityEventAsync(eventType,
-            $"Access {(result.Granted ? "granted" : "denied")} for user '{userId}' to resource '{resource}' for action '{action}'",
+            $"Access {result.ToString().ToLowerInvariant()} for user '{userId}' to resource '{resource}' for action '{action}'",
             level, userId, resource, data, null, callerName, sourceFile, lineNumber);
     }
 
@@ -212,7 +201,7 @@ public sealed class SecurityEventLogger
             _ => SecurityEventType.DataAccess
         };
 
-        var level = isSuccessful ? SecurityLevel.Informational : SecurityLevel.Medium;
+        var level = isSuccessful ? SecurityLevel.Informational : SecurityLevel.Warning;
         var message = isSuccessful
             ? $"Data {operation.ToString().ToLowerInvariant()} operation successful for user '{userId}' on {dataType}"
             : $"Data {operation.ToString().ToLowerInvariant()} operation failed for user '{userId}' on {dataType}: {failureReason}";
@@ -256,7 +245,7 @@ public sealed class SecurityEventLogger
 
         var entry = new SecurityLogEntry
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             SequenceNumber = sequenceId,
             Timestamp = DateTimeOffset.UtcNow,
             EventType = eventType,
@@ -266,9 +255,9 @@ public sealed class SecurityEventLogger
             ResourceId = resourceId,
             CorrelationId = correlationId,
             CallerName = callerName,
-            SourceFile = _configuration.IncludeStackTraces ? sourceFile : string.Empty,
-            LineNumber = _configuration.IncludeStackTraces ? lineNumber : 0,
-            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
+            SourceFile = _configuration.IncludeStackTraces ? sourceFile : null,
+            LineNumber = _configuration.IncludeStackTraces ? lineNumber : null,
+            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
         };
 
         // Update correlation context if enabled
@@ -278,11 +267,8 @@ public sealed class SecurityEventLogger
                 new CorrelationContext { StartTime = entry.Timestamp, EventCount = 1 },
                 (key, existing) => new CorrelationContext
                 {
-
                     StartTime = existing.StartTime,
-
                     EventCount = existing.EventCount + 1
-
                 });
         }
 

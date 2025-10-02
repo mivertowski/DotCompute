@@ -768,20 +768,11 @@ internal sealed class MemoryUsageTracker
         UpdatePeakUsage(newUsage);
     }
 
-    public void RecordAllocationFailure(long sizeInBytes)
-    {
-        _ = Interlocked.Increment(ref _failedAllocations);
-    }
+    public void RecordAllocationFailure(long sizeInBytes) => _ = Interlocked.Increment(ref _failedAllocations);
 
-    public void RecordDeallocation()
-    {
-        _ = Interlocked.Increment(ref _totalDeallocations);
-    }
+    public void RecordDeallocation() => _ = Interlocked.Increment(ref _totalDeallocations);
 
-    public void RecordTransfer(long sizeInBytes, MemoryTransferDirection direction)
-    {
-        _ = Interlocked.Add(ref _totalBytesTransferred, sizeInBytes);
-    }
+    public void RecordTransfer(long sizeInBytes, MemoryTransferDirection direction) => _ = Interlocked.Add(ref _totalBytesTransferred, sizeInBytes);
 
     public void Reset()
     {
@@ -832,11 +823,11 @@ internal sealed class MemoryUsageTracker
 /// <summary>
 /// Simplified memory pool implementation.
 /// </summary>
-internal sealed class MemoryPool : IDisposable
+internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger logger) : IDisposable
 {
-    private readonly IUnifiedMemoryManager _memoryManager;
-    private readonly ILogger _logger;
-    private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools;
+    private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools = [];
     private readonly object _lock = new();
     private volatile bool _disposed;
     private int _hitCount = 0; // Initialize to suppress warning
@@ -851,13 +842,6 @@ internal sealed class MemoryPool : IDisposable
             var total = _hitCount + _missCount;
             return total > 0 ? (double)_hitCount / total : 0.0;
         }
-    }
-
-    public MemoryPool(IUnifiedMemoryManager memoryManager, ILogger logger)
-    {
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _pools = [];
     }
 
     public ValueTask<IUnifiedMemoryBuffer<T>> AllocateAsync<T>(
@@ -881,10 +865,8 @@ internal sealed class MemoryPool : IDisposable
     }
 
     public bool CanReturnToPool(IUnifiedMemoryBuffer buffer)
-    {
         // Simplified check - in production would validate buffer size, age, etc.
-        return buffer != null && !_disposed;
-    }
+        => buffer != null && !_disposed;
 
     public void ReturnToPool(IUnifiedMemoryBuffer buffer)
     {

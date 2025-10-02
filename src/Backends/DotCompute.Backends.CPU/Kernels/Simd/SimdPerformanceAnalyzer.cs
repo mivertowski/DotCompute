@@ -89,30 +89,21 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     /// </summary>
     /// <param name="elements">Number of vectorized elements.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void RecordVectorizedElements(long elements)
-    {
-        _ = Interlocked.Add(ref _vectorizedElements, elements);
-    }
+    public void RecordVectorizedElements(long elements) => _ = Interlocked.Add(ref _vectorizedElements, elements);
 
     /// <summary>
     /// Records the number of elements processed using scalar instructions.
     /// </summary>
     /// <param name="elements">Number of scalar elements.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void RecordScalarElements(long elements)
-    {
-        _ = Interlocked.Add(ref _scalarElements, elements);
-    }
+    public void RecordScalarElements(long elements) => _ = Interlocked.Add(ref _scalarElements, elements);
 
     /// <summary>
     /// Records the start of a reduction operation.
     /// </summary>
     /// <param name="elementCount">Number of elements in reduction.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void RecordReductionStart(int elementCount)
-    {
-        _ = Interlocked.Increment(ref _totalReductions);
-    }
+    public void RecordReductionStart(int elementCount) => _ = Interlocked.Increment(ref _totalReductions);
 
     /// <summary>
     /// Records the completion of a reduction operation.
@@ -247,20 +238,11 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
         };
     }
 
-    private SimdExecutionStrategy GetMostUsedStrategy()
-    {
-        return _strategyUsage.OrderByDescending(kvp => kvp.Value).FirstOrDefault().Key;
-    }
+    private SimdExecutionStrategy GetMostUsedStrategy() => _strategyUsage.OrderByDescending(kvp => kvp.Value).FirstOrDefault().Key;
 
-    private Dictionary<SimdExecutionStrategy, long> GetStrategyDistribution()
-    {
-        return _strategyUsage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    private Dictionary<SimdExecutionStrategy, long> GetStrategyDistribution() => _strategyUsage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-    private Dictionary<ReductionOperation, long> GetReductionDistribution()
-    {
-        return _reductionUsage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-    }
+    private Dictionary<ReductionOperation, long> GetReductionDistribution() => _reductionUsage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     private static string GetElementCountCategory(long elementCount)
     {
@@ -337,19 +319,14 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
 /// <summary>
 /// Thread-safe performance metric for tracking individual operation types.
 /// </summary>
-public sealed class PerformanceMetric
+public sealed class PerformanceMetric(string name)
 {
-    private readonly string _name;
+    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
     private long _executionCount;
     private long _totalTime;
     private long _totalElements;
     private long _minTime = long.MaxValue;
     private long _maxTime = long.MinValue;
-
-    public PerformanceMetric(string name)
-    {
-        _name = name ?? throw new ArgumentNullException(nameof(name));
-    }
 
     public void RecordExecution(TimeSpan executionTime, long elementCount)
     {

@@ -13,21 +13,14 @@ namespace DotCompute.Runtime.Services;
 /// <summary>
 /// Hosted service for initializing the DotCompute runtime at application startup
 /// </summary>
-public class RuntimeInitializationService : IHostedService
+public class RuntimeInitializationService(
+    AcceleratorRuntime runtime,
+    IOptions<DotComputeRuntimeOptions> options,
+    ILogger<RuntimeInitializationService> logger) : IHostedService
 {
-    private readonly AcceleratorRuntime _runtime;
-    private readonly DotComputeRuntimeOptions _options;
-    private readonly ILogger<RuntimeInitializationService> _logger;
-
-    public RuntimeInitializationService(
-        AcceleratorRuntime runtime,
-        IOptions<DotComputeRuntimeOptions> options,
-        ILogger<RuntimeInitializationService> logger)
-    {
-        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
-        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+    private readonly DotComputeRuntimeOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+    private readonly ILogger<RuntimeInitializationService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {

@@ -14,11 +14,10 @@ namespace DotCompute.Core.Debugging.Core;
 /// Provides comprehensive kernel validation and correctness checking.
 /// Enhanced version with advanced validation capabilities.
 /// </summary>
-public sealed partial class EnhancedKernelValidator : IDisposable
+public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValidator> logger, DebugServiceOptions? options = null) : IDisposable
 {
-    private readonly ILogger<EnhancedKernelValidator> _logger;
-    private readonly DebugServiceOptions _options;
-    private readonly ConcurrentDictionary<string, ValidationProfile> _validationProfiles;
+    private readonly ILogger<EnhancedKernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, ValidationProfile> _validationProfiles = new();
     private bool _disposed;
 
     private static readonly string[] DeterminismChecklist = [
@@ -27,13 +26,6 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         "Ensure atomic operations where required",
         "Consider thread-local storage for mutable state"
     ];
-
-    public EnhancedKernelValidator(ILogger<EnhancedKernelValidator> logger, DebugServiceOptions? options = null)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? new DebugServiceOptions();
-        _validationProfiles = new ConcurrentDictionary<string, ValidationProfile>();
-    }
 
     /// <summary>
     /// Validates kernel implementation for common issues and best practices.
@@ -52,8 +44,8 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         {
             KernelName = kernel.Name,
             ValidationTime = TimeSpan.Zero, // Will be updated at the end
-            Issues = new List<DebugValidationIssue>(),
-            Recommendations = new List<string>()
+            Issues = [],
+            Recommendations = []
         };
 
         try
@@ -113,7 +105,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
                 KernelName = result.KernelName,
                 IsValid = false,
                 ValidationTime = DateTime.UtcNow - startTime,
-                Issues = result.Issues.Append(debugValidationIssue).ToList(),
+                Issues = [.. result.Issues, debugValidationIssue],
                 Recommendations = result.Recommendations,
                 BackendsTested = result.BackendsTested,
                 Errors = result.Errors,
@@ -159,8 +151,8 @@ public sealed partial class EnhancedKernelValidator : IDisposable
             AcceleratorType = accelerator.Type,
             Iterations = iterations,
             TestTime = DateTime.UtcNow,
-            ExecutionResults = new List<object?>(),
-            Issues = new List<string>()
+            ExecutionResults = [],
+            Issues = []
         };
 
         try
@@ -218,8 +210,8 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         {
             KernelName = kernel.Name,
             AnalysisTime = DateTime.UtcNow,
-            Issues = new List<MemoryIssue>(),
-            Recommendations = new List<string>()
+            Issues = [],
+            Recommendations = []
         };
 
         try
@@ -295,34 +287,20 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         // Check kernel name
         if (string.IsNullOrWhiteSpace(kernel.Name))
         {
-            result.Issues.Add(new DebugValidationIssue
-            {
-                Severity = ValidationSeverity.Error,
-                Message = "Kernel name is null or empty",
-                BackendAffected = "All",
-                Context = "STR001",
-                Suggestion = "Provide a meaningful name for the kernel"
-            });
+            result.Issues.Add(new ValidationIssue("STR001", "Kernel name is null or empty", ValidationSeverity.Error));
         }
 
         // Check for descriptive naming
         if (kernel.Name != null && (kernel.Name.Length < 3 || !char.IsLetter(kernel.Name[0])))
         {
-            result.Issues.Add(new DebugValidationIssue
-            {
-                Severity = ValidationSeverity.Warning,
-                Message = "Kernel name should be descriptive and start with a letter",
-                BackendAffected = "All",
-                Context = "STR002",
-                Suggestion = "Use a descriptive name that starts with a letter and is at least 3 characters long"
-            });
+            result.Issues.Add(new ValidationIssue("STR002", "Kernel name should be descriptive and start with a letter", ValidationSeverity.Warning));
         }
     }
 
     /// <summary>
     /// Validates kernel parameters.
     /// </summary>
-    private void ValidateKernelParameters(IKernel kernel, KernelValidationResult result)
+    private static void ValidateKernelParameters(IKernel kernel, KernelValidationResult result)
     {
         result.Recommendations.Add("Ensure all parameters have proper bounds checking");
         result.Recommendations.Add("Consider using strongly-typed parameter structures");
@@ -332,7 +310,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Validates implementation patterns and best practices.
     /// </summary>
-    private void ValidateImplementationPatterns(IKernel kernel, KernelValidationResult result)
+    private static void ValidateImplementationPatterns(IKernel kernel, KernelValidationResult result)
     {
         result.Recommendations.Add("Use const parameters where data is not modified");
         result.Recommendations.Add("Prefer local memory over global memory when possible");
@@ -343,7 +321,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Validates performance considerations.
     /// </summary>
-    private void ValidatePerformanceConsiderations(IKernel kernel, KernelValidationResult result)
+    private static void ValidatePerformanceConsiderations(IKernel kernel, KernelValidationResult result)
     {
         result.Recommendations.Add("Profile with different input sizes to identify scaling behavior");
         result.Recommendations.Add("Consider vectorized operations where applicable");
@@ -354,7 +332,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Validates security considerations.
     /// </summary>
-    private void ValidateSecurityConsiderations(IKernel kernel, KernelValidationResult result)
+    private static void ValidateSecurityConsiderations(IKernel kernel, KernelValidationResult result)
     {
         result.Recommendations.Add("Validate all array bounds to prevent buffer overflows");
         result.Recommendations.Add("Sanitize input parameters to prevent injection attacks");
@@ -365,7 +343,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Safely executes a kernel with timeout protection.
     /// </summary>
-    private Task<object?> ExecuteKernelSafelyAsync(
+    private static async Task<object?> ExecuteKernelSafelyAsync(
         IKernel kernel,
         IAccelerator accelerator,
         object[] inputs,
@@ -374,9 +352,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         using var timeoutCts = new CancellationTokenSource(_options.ExecutionTimeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-        // IKernel doesn't have ExecuteAsync - need to use the accelerator to execute
-        // This would typically be done through IComputeOrchestrator or IKernelExecutor
-        return Task.FromException<object?>(new NotImplementedException("Kernel execution needs to be done through IKernelExecutor or IComputeOrchestrator"));
+        return await kernel.ExecuteAsync(accelerator, inputs, combinedCts.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -456,7 +432,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Analyzes input memory patterns.
     /// </summary>
-    private void AnalyzeInputMemoryPatterns(object[] inputs, MemoryPatternAnalysis analysis)
+    private static void AnalyzeInputMemoryPatterns(object[] inputs, MemoryPatternAnalysis analysis)
     {
         foreach (var input in inputs)
         {
@@ -504,7 +480,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
     /// <summary>
     /// Analyzes memory efficiency.
     /// </summary>
-    private void AnalyzeMemoryEfficiency(IKernel kernel, object[] inputs, MemoryPatternAnalysis analysis)
+    private static void AnalyzeMemoryEfficiency(IKernel kernel, object[] inputs, MemoryPatternAnalysis analysis)
     {
         long totalInputMemory = 0;
         foreach (var input in inputs)

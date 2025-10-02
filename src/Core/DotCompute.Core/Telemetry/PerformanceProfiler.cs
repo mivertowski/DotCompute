@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
@@ -42,7 +42,7 @@ public sealed class PerformanceProfiler : IDisposable
         _profileSamples = new ConcurrentQueue<ProfileSample>();
         _profilingSemaphore = new SemaphoreSlim(_options.MaxConcurrentProfiles, _options.MaxConcurrentProfiles);
 #if WINDOWS
-        _hwCounters = new Dictionary<string, PerformanceCounter>();
+        _hwCounters = [];
 #else
         _hwCounters = [];
 #endif

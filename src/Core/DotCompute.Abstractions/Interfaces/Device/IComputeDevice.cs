@@ -56,7 +56,7 @@ namespace DotCompute.Abstractions.Interfaces.Device
         /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous compilation operation, containing the compiled kernel.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernel"/> is null.</exception>
-        /// <exception cref="DotCompute.Abstractions.CompilationException">Thrown when kernel compilation fails.</exception>
+        /// <exception cref="CompilationException">Thrown when kernel compilation fails.</exception>
         public ValueTask<ICompiledKernel> CompileKernelAsync(
             KernelDefinition kernel,
             CompilationOptions? options = null,

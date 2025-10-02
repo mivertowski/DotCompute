@@ -13,16 +13,9 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Full persistent kernel infrastructure would require additional implementation.
     /// </summary>
     [Trait("Category", "HardwareRequired")]
-    public class PersistentKernelTests : CudaTestBase
+    public class PersistentKernelTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        private readonly ILogger<PersistentKernelTests> _logger;
-        private readonly CudaAcceleratorFactory _factory;
-
-        public PersistentKernelTests(ITestOutputHelper output) : base(output)
-        {
-            _logger = new TestLogger(output) as ILogger<PersistentKernelTests>;
-            _factory = new CudaAcceleratorFactory();
-        }
+        private readonly CudaAcceleratorFactory _factory = new();
 
         [SkippableFact]
         public async Task RingBuffer_Pattern_Kernel_Should_Compile()
@@ -61,7 +54,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
             // Act & Assert - should compile without errors
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
             _ = kernel.Should().NotBeNull();
@@ -118,7 +111,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
 
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
             // Execute time steps
 
@@ -190,7 +183,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             );
 
             // Act & Assert - should compile without errors
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
             _ = kernel.Should().NotBeNull();
@@ -255,7 +248,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 kernelCode
             );
 
-            var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
+            var kernel = await accelerator.CompileKernelAsync(kernelDef, new Abstractions.CompilationOptions());
 
 
             const int dataSize = 256;
@@ -372,14 +365,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             base.Dispose(disposing);
         }
 
-        private class TestLogger : ILogger
+        private class TestLogger(ITestOutputHelper output) : ILogger
         {
-            private readonly ITestOutputHelper _output;
-
-            public TestLogger(ITestOutputHelper output)
-            {
-                _output = output;
-            }
+            private readonly ITestOutputHelper _output = output;
 
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
             public bool IsEnabled(LogLevel logLevel) => true;

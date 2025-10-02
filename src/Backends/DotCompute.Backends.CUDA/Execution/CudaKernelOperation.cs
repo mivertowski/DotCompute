@@ -40,7 +40,7 @@ public sealed class CudaKernelOperation
     /// Gets or sets the type of kernel operation.
     /// Used for optimization and fusion decisions.
     /// </summary>
-    public DotCompute.Backends.CUDA.Types.CudaKernelType Type { get; set; } = CudaKernelType.Custom;
+    public CudaKernelType Type { get; set; } = CudaKernelType.Custom;
 
     /// <summary>
     /// Gets or sets whether this kernel should use Tensor Cores if available.
@@ -61,12 +61,12 @@ public sealed class CudaKernelOperation
     /// <summary>
     /// Gets or sets the cache configuration preference.
     /// </summary>
-    public DotCompute.Backends.CUDA.Types.CacheConfig CacheConfig { get; set; } = CUDA.Types.CacheConfig.PreferNone;
+    public CUDA.Types.CacheConfig CacheConfig { get; set; } = CUDA.Types.CacheConfig.PreferNone;
 
     /// <summary>
     /// Gets or sets the warp scheduling mode.
     /// </summary>
-    public DotCompute.Backends.CUDA.Types.WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
+    public WarpSchedulingMode WarpScheduling { get; set; } = WarpSchedulingMode.Default;
 
     /// <summary>
     /// Gets or sets the output dimensions as a string representation.

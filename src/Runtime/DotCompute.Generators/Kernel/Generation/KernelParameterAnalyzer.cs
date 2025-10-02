@@ -32,12 +32,7 @@ public sealed class KernelParameterAnalyzer
     /// - Backend compatibility assessment
     /// - Buffer vs scalar classification
     /// </remarks>
-    public List<ParameterInfo> AnalyzeParameters(IMethodSymbol methodSymbol)
-    {
-        return methodSymbol.Parameters
-            .Select(AnalyzeParameter)
-            .ToList();
-    }
+    public static List<ParameterInfo> AnalyzeParameters(IMethodSymbol methodSymbol) => [.. methodSymbol.Parameters.Select(AnalyzeParameter)];
 
     /// <summary>
     /// Analyzes a single parameter and extracts detailed information.
@@ -202,10 +197,7 @@ public sealed class KernelParameterAnalyzer
     /// </summary>
     /// <param name="type">The type to check.</param>
     /// <returns>True if the type is ReadOnlySpan; otherwise, false.</returns>
-    private static bool IsReadOnlySpanType(ITypeSymbol type)
-    {
-        return type is INamedTypeSymbol namedType && namedType.Name == "ReadOnlySpan";
-    }
+    private static bool IsReadOnlySpanType(ITypeSymbol type) => type is INamedTypeSymbol namedType && namedType.Name == "ReadOnlySpan";
 
     /// <summary>
     /// Gets the element type from a buffer type.
@@ -272,10 +264,8 @@ public sealed class KernelParameterAnalyzer
     /// <param name="parameter">The parameter to validate.</param>
     /// <returns>True if compatible with CPU backend; otherwise, false.</returns>
     private static bool ValidateCpuCompatibility(ParameterInfo parameter)
-    {
         // CPU backend supports all managed types
-        return true;
-    }
+        => true;
 
     /// <summary>
     /// Validates CUDA backend compatibility.

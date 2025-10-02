@@ -70,7 +70,7 @@ public sealed class StageValidationResult
     /// <summary>
     /// Gets or sets validation issues.
     /// </summary>
-    public List<DotCompute.Abstractions.Validation.ValidationIssue>? Issues { get; set; }
+    public List<Validation.ValidationIssue>? Issues { get; set; }
 
     /// <summary>
     /// Gets or sets validation errors.
@@ -86,10 +86,7 @@ public sealed class StageValidationResult
     /// Creates a successful validation result.
     /// </summary>
     /// <returns>A successful validation result</returns>
-    public static StageValidationResult Success()
-    {
-        return new StageValidationResult { IsValid = true };
-    }
+    public static StageValidationResult Success() => new() { IsValid = true };
 
     /// <summary>
     /// Creates a failed validation result with errors.

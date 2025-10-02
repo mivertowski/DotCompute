@@ -309,7 +309,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
                 for (var i = 0; i < allocationsPerThread; i++)
                 {
                     var buffer = await _memoryManager.AllocateAsync<byte>((int)bufferSize);
-                    results.Add(buffer);
+                    results.Add((IUnifiedMemoryBuffer<byte>)buffer);
                 }
             }
             catch (Exception ex)
@@ -345,7 +345,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         // Act - Mix of allocations and deallocations
         for (var i = 0; i < operationCount; i++)
         {
-            allocateTasks.Add(Task.Run(async () =>
+            allocateTasks.Add(Task.Run((Func<Task?>)(async () =>
             {
                 _ = Interlocked.Increment(ref activeTasks);
                 try
@@ -363,7 +363,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
                 {
                     _ = Interlocked.Decrement(ref activeTasks);
                 }
-            }));
+            })));
         }
 
         await Task.WhenAll(allocateTasks);
@@ -760,9 +760,9 @@ public sealed class BaseMemoryManagerTests : IDisposable
 /// <summary>
 /// Test implementation of BaseMemoryManager for comprehensive testing.
 /// </summary>
-internal sealed class TestMemoryManager : BaseMemoryManager
+internal sealed class TestMemoryManager(ILogger<BaseMemoryManager> logger, bool enablePooling = false) : BaseMemoryManager(logger)
 {
-    private readonly bool _enablePooling;
+    private readonly bool _enablePooling = enablePooling;
     private readonly object _lock = new();
     private readonly Dictionary<long, Queue<byte[]>> _pool = [];
     private long _currentAllocatedMemory;
@@ -780,12 +780,6 @@ internal sealed class TestMemoryManager : BaseMemoryManager
     public int PoolHitCount => _poolHitCount;
     public int CleanupCallCount => _cleanupCallCount;
 
-    public TestMemoryManager(ILogger<BaseMemoryManager> logger, bool enablePooling = false)
-        : base(logger)
-    {
-        _enablePooling = enablePooling;
-    }
-
     public override IAccelerator Accelerator => ConsolidatedMockAccelerator.CreateCpuMock();
 
     public override long MaxAllocationSize => long.MaxValue;
@@ -797,18 +791,12 @@ internal sealed class TestMemoryManager : BaseMemoryManager
     public override IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
-        int length)
-    {
-        return buffer; // Simplified for testing
-    }
+        int length) => buffer; // Simplified for testing
 
     public override ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
         IUnifiedMemoryBuffer<T> destination,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+        CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public override ValueTask CopyAsync<T>(
         IUnifiedMemoryBuffer<T> source,
@@ -816,36 +804,21 @@ internal sealed class TestMemoryManager : BaseMemoryManager
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
         int count,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+        CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public override ValueTask CopyToDeviceAsync<T>(
         ReadOnlyMemory<T> source,
         IUnifiedMemoryBuffer<T> deviceBuffer,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+        CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public override ValueTask CopyFromDeviceAsync<T>(
         IUnifiedMemoryBuffer<T> deviceBuffer,
         Memory<T> destination,
-        CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+        CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public override ValueTask FreeAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-    public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public override ValueTask OptimizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public override void Clear()
     {
@@ -865,10 +838,7 @@ internal sealed class TestMemoryManager : BaseMemoryManager
         return new ValueTask<IUnifiedMemoryBuffer>(new TestMemoryBuffer<byte>(array, sizeInBytes, this));
     }
 
-    protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
-    {
-        return buffer; // Simplified for testing
-    }
+    protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length) => buffer; // Simplified for testing
 
     public override MemoryStatistics Statistics
     {
@@ -926,22 +896,14 @@ internal sealed class TestMemoryManager : BaseMemoryManager
 /// <summary>
 /// Test memory buffer implementation.
 /// </summary>
-internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+internal sealed class TestMemoryBuffer<T>(byte[] array, long sizeInBytes, TestMemoryManager manager) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
-    private readonly byte[] _array;
-    private readonly TestMemoryManager _manager;
+    private readonly byte[] _array = array;
+    private readonly TestMemoryManager _manager = manager;
     private bool _disposed;
 
-    public TestMemoryBuffer(byte[] array, long sizeInBytes, TestMemoryManager manager)
-    {
-        _array = array;
-        SizeInBytes = sizeInBytes;
-        _manager = manager;
-        Length = (int)(sizeInBytes / Unsafe.SizeOf<T>());
-    }
-
-    public long SizeInBytes { get; }
-    public int Length { get; }
+    public long SizeInBytes { get; } = sizeInBytes;
+    public int Length { get; } = (int)(sizeInBytes / Unsafe.SizeOf<T>());
     public MemoryType MemoryType => MemoryType.Host;
     public IntPtr DevicePointer => IntPtr.Zero;
     public bool IsDisposed => _disposed;
@@ -998,10 +960,7 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
         return new MappedMemory<T>(AsMemory().Slice(offset, length), null);
     }
 
-    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(Map(mode));
-    }
+    public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
     public void EnsureOnHost() { /* Already on host */ }
     public void EnsureOnDevice() { /* Test implementation - no-op */ }

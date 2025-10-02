@@ -27,26 +27,19 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// The interpreter implements IDisposable to ensure proper cleanup of
 /// any resources allocated during preparation or execution.
 /// </remarks>
-public class KernelInterpreter : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="KernelInterpreter"/> class.
+/// </remarks>
+/// <param name="sourceCode">The kernel source code to be interpreted.</param>
+/// <param name="logger">The logger instance for diagnostic output.</param>
+/// <exception cref="ArgumentNullException">
+/// Thrown when <paramref name="sourceCode"/> or <paramref name="logger"/> is null.
+/// </exception>
+public class KernelInterpreter(string sourceCode, ILogger logger) : IDisposable
 {
-    private readonly string _sourceCode;
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _prepared;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="KernelInterpreter"/> class.
-    /// </summary>
-    /// <param name="sourceCode">The kernel source code to be interpreted.</param>
-    /// <param name="logger">The logger instance for diagnostic output.</param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="sourceCode"/> or <paramref name="logger"/> is null.
-    /// </exception>
-    public KernelInterpreter(string sourceCode, ILogger logger)
-    {
-        _sourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Prepares the interpreter for kernel execution by parsing and validating the source code.

@@ -13,16 +13,11 @@ namespace DotCompute.Runtime.Services.Memory;
 /// <summary>
 /// Implementation of unified memory service
 /// </summary>
-public class UnifiedMemoryService : IUnifiedMemoryService
+public class UnifiedMemoryService(ILogger<UnifiedMemoryService> logger) : IUnifiedMemoryService
 {
-    private readonly ILogger<UnifiedMemoryService> _logger;
+    private readonly ILogger<UnifiedMemoryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, HashSet<string>> _bufferAccelerators = new();
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, MemoryCoherenceStatus> _coherenceStatus = new();
-
-    public UnifiedMemoryService(ILogger<UnifiedMemoryService> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public async Task<IUnifiedMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds)
     {
@@ -87,19 +82,13 @@ public class UnifiedMemoryService : IUnifiedMemoryService
 /// <summary>
 /// Mock implementation of unified memory buffer for runtime service
 /// </summary>
-internal class RuntimeUnifiedMemoryBuffer : IUnifiedMemoryBuffer
+internal class RuntimeUnifiedMemoryBuffer(long sizeInBytes) : IUnifiedMemoryBuffer
 {
-    public long SizeInBytes { get; }
+    public long SizeInBytes { get; } = sizeInBytes;
     public MemoryOptions Options { get; } = MemoryOptions.None;
-    public nint DevicePointer { get; private set; }
+    public nint DevicePointer { get; private set; } = Marshal.AllocHGlobal((int)sizeInBytes);
     public bool IsDisposed { get; private set; }
     public BufferState State { get; set; } = BufferState.Allocated;
-
-    public RuntimeUnifiedMemoryBuffer(long sizeInBytes)
-    {
-        SizeInBytes = sizeInBytes;
-        DevicePointer = Marshal.AllocHGlobal((int)sizeInBytes);
-    }
 
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => ValueTask.CompletedTask;
 

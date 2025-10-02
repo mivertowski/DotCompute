@@ -175,10 +175,7 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Gets the warp size. Standard CUDA warp size is 32.
         /// </summary>
-        public static int WarpSize(this AcceleratorInfo info)
-        {
-            return info.DeviceType == "CPU" ? 1 : 32; // CUDA warp size is always 32
-        }
+        public static int WarpSize(this AcceleratorInfo info) => info.DeviceType == "CPU" ? 1 : 32; // CUDA warp size is always 32
 
         /// <summary>
         /// Gets the clock rate in MHz. Maps to existing MaxClockFrequency or provides estimate.
@@ -300,10 +297,7 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Determines if the device supports managed (unified) memory.
         /// </summary>
-        public static bool SupportsManagedMemory(this AcceleratorInfo info)
-        {
-            return info.IsUnifiedMemory || info.ComputeCapability?.Major >= 6;
-        }
+        public static bool SupportsManagedMemory(this AcceleratorInfo info) => info.IsUnifiedMemory || info.ComputeCapability?.Major >= 6;
 
         /// <summary>
         /// Determines if the device supports ray tracing operations.
@@ -331,10 +325,8 @@ namespace DotCompute.Core.Extensions
         /// Determines if the device supports tensor operations (Tensor Cores).
         /// </summary>
         public static bool SupportsTensorOperations(this AcceleratorInfo info)
-        {
             // Tensor Core support started with Volta (7.0)
-            return info.ComputeCapability?.Major >= 7;
-        }
+            => info.ComputeCapability?.Major >= 7;
 
         /// <summary>
         /// Legacy alias for IsUnifiedMemory property.
@@ -348,18 +340,12 @@ namespace DotCompute.Core.Extensions
         /// <summary>
         /// Gets the major version of compute capability. Provides safe access with defaults.
         /// </summary>
-        public static int ComputeCapabilityMajor(this AcceleratorInfo info)
-        {
-            return info.ComputeCapability?.Major ?? (info.DeviceType == "CPU" ? 0 : 6);
-        }
+        public static int ComputeCapabilityMajor(this AcceleratorInfo info) => info.ComputeCapability?.Major ?? (info.DeviceType == "CPU" ? 0 : 6);
 
         /// <summary>
         /// Gets the minor version of compute capability. Provides safe access with defaults.
         /// </summary>
-        public static int ComputeCapabilityMinor(this AcceleratorInfo info)
-        {
-            return info.ComputeCapability?.Minor ?? 0;
-        }
+        public static int ComputeCapabilityMinor(this AcceleratorInfo info) => info.ComputeCapability?.Minor ?? 0;
 
         #endregion
     }

@@ -3,13 +3,10 @@
 
 using Microsoft.Extensions.Logging;
 using MSLogger = Microsoft.Extensions.Logging.ILogger;
-using NuGet.Common;
 using NuGet.Configuration;
-using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using NuGet.Packaging.Core;
-using DotCompute.Abstractions.Security;
 using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Management.Types;
 
@@ -164,7 +161,7 @@ namespace DotCompute.Algorithms.Management
                 }
             }
 
-            return dependencies.ToArray();
+            return [.. dependencies];
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces.Pipelines;
+using DotCompute.Abstractions.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Stages;
@@ -169,7 +170,7 @@ namespace DotCompute.Core.Pipelines
                 [.. _stages],
                 _optimizationSettings,
                 new Dictionary<string, object>(_metadata),
-                ConvertEventHandlers().ToList(),
+                [.. ConvertEventHandlers()],
                 _errorHandler);
         }
 
@@ -234,14 +235,14 @@ namespace DotCompute.Core.Pipelines
         private string? _preferredBackend;
         private BackendFallbackStrategy _fallbackStrategy = BackendFallbackStrategy.Auto;
         private TimeSpan? _timeout;
-        private int _maxRetries;
+        private int _maxRetries = 0;
         private RetryStrategy _retryStrategy = RetryStrategy.ExponentialBackoff;
         private string? _cacheKey;
         private TimeSpan? _cacheTtl;
         private ExecutionPriority _executionPriority = ExecutionPriority.Normal;
         private Func<object[], ValidationResult>? _inputValidator;
         private Func<object, object>? _outputTransformer;
-        private bool _profilingEnabled;
+        private bool _profilingEnabled = false;
         private readonly List<string> _customMetrics = [];
         private ResourceRequirements? _resourceRequirements;
         private Func<Exception, ErrorHandlingResult>? _errorHandler;
@@ -254,10 +255,8 @@ namespace DotCompute.Core.Pipelines
         /// <param name="name">The stage name (ignored in this implementation)</param>
         /// <returns>The stage builder for fluent configuration</returns>
         public IKernelStageBuilder WithName(string name)
-        {
             // Name is set in constructor and cannot be changed
-            return this;
-        }
+            => this;
 
         /// <inheritdoc/>
         public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
@@ -472,14 +471,14 @@ namespace DotCompute.Core.Pipelines
         private LoadBalancingStrategy _loadBalancingStrategy = LoadBalancingStrategy.RoundRobin;
         private Func<IEnumerable<object>, object>? _resultAggregator;
         private ParallelErrorStrategy _errorStrategy = ParallelErrorStrategy.FailFast;
-        private bool _continueOnError;
+        private bool _continueOnError = false;
         private TimeSpan? _timeout;
         private MemorySharingMode _memorySharingMode = MemorySharingMode.None;
         private Func<object, IEnumerable<object>>? _workPartitioner;
         private ExecutionPriority _priority = ExecutionPriority.Normal;
         private readonly List<string> _barrierPoints = [];
         private ResourceAllocationStrategy _resourceAllocationStrategy = ResourceAllocationStrategy.FirstFit;
-        private bool _enableDetailedMetrics;
+        private bool _enableDetailedMetrics = false;
         private readonly List<AffinityRule> _affinityRules = [];
         private AdaptationPolicy _adaptationPolicy = AdaptationPolicy.Conservative;
 
@@ -505,11 +504,9 @@ namespace DotCompute.Core.Pipelines
 
         /// <inheritdoc/>
         public IParallelStageBuilder AddKernel(string kernelName, Action<IKernelStageBuilder>? stageBuilder = null)
-        {
             // Create a kernel stage builder for the named kernel
             // Note: This method requires a kernel instance - placeholder implementation
-            throw new NotImplementedException("AddKernel without ICompiledKernel parameter is not implemented");
-        }
+            => throw new NotImplementedException("AddKernel without ICompiledKernel parameter is not implemented");
 
         /// <inheritdoc/>
         public IParallelStageBuilder AddKernels(IEnumerable<ParallelKernelConfig> kernelConfigs)

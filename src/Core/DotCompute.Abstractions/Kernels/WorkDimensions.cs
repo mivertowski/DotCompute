@@ -9,22 +9,28 @@ namespace DotCompute.Abstractions.Kernels;
 /// Represents the work dimensions for kernel execution, defining the global and local work sizes
 /// across up to three dimensions (X, Y, Z).
 /// </summary>
-public struct WorkDimensions : IEquatable<WorkDimensions>
+/// <remarks>
+/// Initializes a new instance of the <see cref="WorkDimensions"/> struct.
+/// </remarks>
+/// <param name="x">The X dimension size.</param>
+/// <param name="y">The Y dimension size (default 1).</param>
+/// <param name="z">The Z dimension size (default 1).</param>
+public struct WorkDimensions(long x, long y = 1, long z = 1) : IEquatable<WorkDimensions>
 {
     /// <summary>
     /// Gets or sets the X dimension size.
     /// </summary>
-    public long X { get; set; }
+    public long X { get; set; } = x > 0 ? x : throw new ArgumentOutOfRangeException(nameof(x), "Must be greater than 0");
 
     /// <summary>
     /// Gets or sets the Y dimension size.
     /// </summary>
-    public long Y { get; set; }
+    public long Y { get; set; } = y > 0 ? y : throw new ArgumentOutOfRangeException(nameof(y), "Must be greater than 0");
 
     /// <summary>
     /// Gets or sets the Z dimension size.
     /// </summary>
-    public long Z { get; set; }
+    public long Z { get; set; } = z > 0 ? z : throw new ArgumentOutOfRangeException(nameof(z), "Must be greater than 0");
 
     /// <summary>
     /// Gets the number of active dimensions (1, 2, or 3).
@@ -35,19 +41,6 @@ public struct WorkDimensions : IEquatable<WorkDimensions>
     /// Gets the total number of work items across all dimensions.
     /// </summary>
     public long TotalWorkItems => X * Y * Z;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WorkDimensions"/> struct.
-    /// </summary>
-    /// <param name="x">The X dimension size.</param>
-    /// <param name="y">The Y dimension size (default 1).</param>
-    /// <param name="z">The Z dimension size (default 1).</param>
-    public WorkDimensions(long x, long y = 1, long z = 1)
-    {
-        X = x > 0 ? x : throw new ArgumentOutOfRangeException(nameof(x), "Must be greater than 0");
-        Y = y > 0 ? y : throw new ArgumentOutOfRangeException(nameof(y), "Must be greater than 0");
-        Z = z > 0 ? z : throw new ArgumentOutOfRangeException(nameof(z), "Must be greater than 0");
-    }
 
     /// <summary>
     /// Creates a one-dimensional work configuration.

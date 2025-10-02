@@ -37,12 +37,12 @@ public sealed class CudaKernelIntegration : IDisposable
 
         _compiler = new CudaKernelCompiler(context, logger);
         // Create logger with correct generic type for CudaKernelExecutor
-        var executorLogger = logger is ILogger<Execution.CudaKernelExecutor> typedLogger
+        var executorLogger = logger is ILogger<CudaKernelExecutor> typedLogger
             ? typedLogger
-            : (ILogger<Execution.CudaKernelExecutor>)(object)logger;
+            : (ILogger<CudaKernelExecutor>)(object)logger;
         _executor = new CudaKernelExecutor(context.ToIAccelerator(), context, null!, null!, executorLogger);
         _cache = new CudaKernelCache(logger);
-        _executionStats = new Dictionary<string, KernelExecutionStats>();
+        _executionStats = [];
 
         // Set up periodic optimization
         _optimizationTimer = new Timer(PerformOptimization, null,
@@ -189,7 +189,7 @@ public sealed class CudaKernelIntegration : IDisposable
             return new KernelExecutionConfig
             {
                 GlobalWorkSize = problemSize,
-                LocalWorkSize = new[] { Math.Min(256, problemSize[0]) },
+                LocalWorkSize = [Math.Min(256, problemSize[0])],
                 DynamicSharedMemorySize = 0,
                 Stream = null,
                 Flags = 0, // KernelLaunchFlags.None
@@ -359,7 +359,7 @@ public sealed class CudaKernelIntegration : IDisposable
 
     private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
     {
-        return arguments.Select(arg => new InterfacesKernelArgument
+        return [.. arguments.Select(arg => new InterfacesKernelArgument
         {
             Name = arg.Name,
             Value = arg.Value ?? new object(),
@@ -368,7 +368,7 @@ public sealed class CudaKernelIntegration : IDisposable
             MemoryBuffer = arg.MemoryBuffer as IUnifiedMemoryBuffer,
             SizeInBytes = arg.SizeInBytes,
             IsOutput = arg.IsOutput
-        }).ToArray();
+        })];
     }
 
     private void RecordExecutionStats(string kernelName, TimeSpan duration, bool success)
@@ -501,12 +501,12 @@ public sealed class KernelExecutionStats
     public DateTimeOffset LastExecution { get; set; }
 
 
-    public TimeSpan AverageExecutionTime =>
+    public TimeSpan AverageExecutionTime
 
-        TotalExecutions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalExecutions) : TimeSpan.Zero;
+        => TotalExecutions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalExecutions) : TimeSpan.Zero;
 
 
-    public double SuccessRate =>
+    public double SuccessRate
 
-        TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions : 0.0;
+        => TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions : 0.0;
 }

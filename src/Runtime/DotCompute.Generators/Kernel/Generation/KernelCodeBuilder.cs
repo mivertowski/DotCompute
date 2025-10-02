@@ -52,7 +52,7 @@ public sealed class KernelCodeBuilder
     /// 4. Generates unified wrapper classes
     /// 5. Generates invoker classes for dynamic execution
     /// </remarks>
-    public void BuildKernelSources(
+    public static void BuildKernelSources(
         IEnumerable<KernelMethodInfo> kernelMethods,
         IEnumerable<KernelClassInfo> kernelClasses,
         Compilation compilation,
@@ -514,10 +514,7 @@ public sealed class KernelCodeBuilder
         return typeString;
     }
 
-    private static string SanitizeFileName(string input)
-    {
-        return input.Replace(".", "_").Replace("<", "_").Replace(">", "_");
-    }
+    private static string SanitizeFileName(string input) => input.Replace(".", "_").Replace("<", "_").Replace(">", "_");
 }
 
 /// <summary>
@@ -528,12 +525,12 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets the list of validation errors.
     /// </summary>
-    public List<string> Errors { get; } = new();
+    public List<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the list of validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = new();
+    public List<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets a value indicating whether the validation result contains errors.

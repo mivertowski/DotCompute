@@ -25,7 +25,6 @@ namespace DotCompute.Core.Memory.P2P
 
         // Matrix configuration
         private const int MatrixRefreshIntervalMs = 30000; // 30 seconds
-        private const double CapabilityExpiryHours = 1.0; // Refresh capabilities after 1 hour
 
         public P2PCapabilityMatrix(ILogger logger)
         {
@@ -549,12 +548,10 @@ namespace DotCompute.Core.Memory.P2P
 
 
 
-
             => true;
 
         private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
             // Placeholder - would return actual timestamp in real implementation - TODO
-
 
 
 
@@ -785,12 +782,10 @@ namespace DotCompute.Core.Memory.P2P
 
 
 
-
             => 0;
 
         private static double CalculateCacheHitRatio()
             // Placeholder - would track cache hits/misses in real implementation - TODO
-
 
 
 

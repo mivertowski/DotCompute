@@ -78,7 +78,7 @@ namespace DotCompute.Core.Pipelines
                 var wasApplied = true;
                 if (wasApplied)
                 {
-                    optimizedStages = strategyResult.Stages.ToList();
+                    optimizedStages = [.. strategyResult.Stages];
 
                     var optimization = new AppliedOptimization
                     {
@@ -172,12 +172,12 @@ namespace DotCompute.Core.Pipelines
                 result.Metrics["ParallelStageCount"] = parallelStageCount;
 
                 // Check for optimization opportunities
-                await AnalyzeKernelFusionOpportunities(pipeline, result, cancellationToken);
-                await AnalyzeMemoryOptimizationOpportunities(pipeline, result, cancellationToken);
-                await AnalyzeParallelizationOpportunities(pipeline, result, cancellationToken);
+                await AnalyzeKernelFusionOpportunitiesAsync(pipeline, result, cancellationToken);
+                await AnalyzeMemoryOptimizationOpportunitiesAsync(pipeline, result, cancellationToken);
+                await AnalyzeParallelizationOpportunitiesAsync(pipeline, result, cancellationToken);
 
                 // Detect potential issues
-                await DetectPotentialIssues(pipeline, result, cancellationToken);
+                await DetectPotentialIssuesAsync(pipeline, result, cancellationToken);
 
                 return result;
             }
@@ -241,7 +241,7 @@ namespace DotCompute.Core.Pipelines
                 CustomParameters = { ["FusionCriteria"] = fusionCriteria }
             };
 
-            var temporaryPipeline = CreateOptimizedPipeline(pipeline, pipeline.Stages.ToList(), settings);
+            var temporaryPipeline = CreateOptimizedPipeline(pipeline, [.. pipeline.Stages], settings);
             var result = await strategy.ApplyAsync(temporaryPipeline, cancellationToken);
 
             return result;
@@ -276,7 +276,7 @@ namespace DotCompute.Core.Pipelines
                 MemoryConstraints = memoryConstraints
             };
 
-            var temporaryPipeline = CreateOptimizedPipeline(pipeline, pipeline.Stages.ToList(), settings);
+            var temporaryPipeline = CreateOptimizedPipeline(pipeline, [.. pipeline.Stages], settings);
             var result = await strategy.ApplyAsync(temporaryPipeline, cancellationToken);
 
             return result;
@@ -323,7 +323,7 @@ namespace DotCompute.Core.Pipelines
 
             foreach (var stage in pipeline.Stages)
             {
-                var optimizedStage = await OptimizeStageForBackends(stage, backendList, cancellationToken);
+                var optimizedStage = await OptimizeStageForBackendsAsync(stage, backendList, cancellationToken);
                 optimizedStages.Add(optimizedStage);
             }
 
@@ -359,7 +359,7 @@ namespace DotCompute.Core.Pipelines
                 CustomParameters = { ["ParallelismGoals"] = parallelismGoals }
             };
 
-            var temporaryPipeline = CreateOptimizedPipeline(pipeline, pipeline.Stages.ToList(), settings);
+            var temporaryPipeline = CreateOptimizedPipeline(pipeline, [.. pipeline.Stages], settings);
             var result = await strategy.ApplyAsync(temporaryPipeline, cancellationToken);
 
             return result;
@@ -392,7 +392,7 @@ namespace DotCompute.Core.Pipelines
 
             foreach (var stage in pipeline.Stages)
             {
-                var optimizedStage = await ApplyLoopOptimizationsToStage(stage, loopOptimizations, cancellationToken);
+                var optimizedStage = await ApplyLoopOptimizationsToStageAsync(stage, loopOptimizations, cancellationToken);
                 optimizedStages.Add(optimizedStage);
             }
 
@@ -431,7 +431,7 @@ namespace DotCompute.Core.Pipelines
 
             foreach (var stage in pipeline.Stages)
             {
-                var optimizedStage = await OptimizeStageDataLayout(stage, layoutPreferences, cancellationToken);
+                var optimizedStage = await OptimizeStageDataLayoutAsync(stage, layoutPreferences, cancellationToken);
                 optimizedStages.Add(optimizedStage);
             }
 
@@ -497,8 +497,8 @@ namespace DotCompute.Core.Pipelines
 
                     // Note: In a real implementation, you would execute both pipelines
                     // and compare their outputs. This is a simplified version.
-                    var originalResult = await SimulateExecution(originalPipeline, testInput);
-                    var optimizedResult = await SimulateExecution(optimizedPipeline, testInput);
+                    var originalResult = await SimulateExecutionAsync(originalPipeline, testInput);
+                    var optimizedResult = await SimulateExecutionAsync(optimizedPipeline, testInput);
 
                     totalResults++;
                     if (CompareResults(originalResult, optimizedResult))
@@ -560,7 +560,7 @@ namespace DotCompute.Core.Pipelines
             // Simulate impact estimation for each optimization type
             foreach (var optimization in optimizationList)
             {
-                var impact = await EstimateOptimizationTypeImpact(pipeline, optimization, cancellationToken);
+                var impact = await EstimateOptimizationTypeImpactAsync(pipeline, optimization, cancellationToken);
 
                 // Combine impacts (multiplicative for speedup, additive for memory)
                 estimate.EstimatedSpeedup *= impact.SpeedupFactor;
@@ -623,13 +623,10 @@ namespace DotCompute.Core.Pipelines
         }
 
         /// <inheritdoc/>
-        public IEnumerable<IOptimizationStrategy> GetAvailableStrategies(OptimizationType optimizationType)
-        {
-            return _strategies.Where(s => (s.SupportedOptimizations & optimizationType) != 0);
-        }
+        public IEnumerable<IOptimizationStrategy> GetAvailableStrategies(OptimizationType optimizationType) => _strategies.Where(s => (s.SupportedOptimizations & optimizationType) != 0);
 
         // Helper methods for the async implementations
-        private static async Task AnalyzeKernelFusionOpportunities(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static async Task AnalyzeKernelFusionOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
             await Task.Delay(10, cancellationToken); // Simulate analysis time
 
@@ -651,7 +648,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private static async Task AnalyzeMemoryOptimizationOpportunities(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static async Task AnalyzeMemoryOptimizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
             await Task.Delay(10, cancellationToken); // Simulate analysis time
 
@@ -662,7 +659,7 @@ namespace DotCompute.Core.Pipelines
             result.Recommendations.Add("Apply memory layout optimizations for better cache performance");
         }
 
-        private static async Task AnalyzeParallelizationOpportunities(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static async Task AnalyzeParallelizationOpportunitiesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
             await Task.Delay(10, cancellationToken); // Simulate analysis time
 
@@ -675,7 +672,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private static async Task DetectPotentialIssues(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
+        private static async Task DetectPotentialIssuesAsync(IKernelPipeline pipeline, PipelineAnalysisResult result, CancellationToken cancellationToken)
         {
             await Task.Delay(5, cancellationToken); // Simulate detection time
 
@@ -692,7 +689,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private static async Task<IPipelineStage> OptimizeStageForBackends(IPipelineStage stage, List<string> targetBackends, CancellationToken cancellationToken)
+        private static async Task<IPipelineStage> OptimizeStageForBackendsAsync(IPipelineStage stage, List<string> targetBackends, CancellationToken cancellationToken)
         {
             await Task.Delay(1, cancellationToken); // Simulate optimization time
 
@@ -701,7 +698,7 @@ namespace DotCompute.Core.Pipelines
             return stage;
         }
 
-        private static async Task<IPipelineStage> ApplyLoopOptimizationsToStage(IPipelineStage stage, LoopOptimizations loopOptimizations, CancellationToken cancellationToken)
+        private static async Task<IPipelineStage> ApplyLoopOptimizationsToStageAsync(IPipelineStage stage, LoopOptimizations loopOptimizations, CancellationToken cancellationToken)
         {
             await Task.Delay(1, cancellationToken); // Simulate optimization time
 
@@ -710,7 +707,7 @@ namespace DotCompute.Core.Pipelines
             return stage;
         }
 
-        private static async Task<IPipelineStage> OptimizeStageDataLayout(IPipelineStage stage, DataLayoutPreferences layoutPreferences, CancellationToken cancellationToken)
+        private static async Task<IPipelineStage> OptimizeStageDataLayoutAsync(IPipelineStage stage, DataLayoutPreferences layoutPreferences, CancellationToken cancellationToken)
         {
             await Task.Delay(1, cancellationToken); // Simulate optimization time
 
@@ -719,7 +716,7 @@ namespace DotCompute.Core.Pipelines
             return stage;
         }
 
-        private static async Task<object> SimulateExecution(IKernelPipeline pipeline, object[] testInput)
+        private static async Task<object> SimulateExecutionAsync(IKernelPipeline pipeline, object[] testInput)
         {
             await Task.Delay(1); // Simulate execution time
 
@@ -729,13 +726,11 @@ namespace DotCompute.Core.Pipelines
         }
 
         private static bool CompareResults(object result1, object result2)
-        {
             // In a real implementation, this would perform deep comparison of results
             // For now, just compare hash codes
-            return result1?.GetHashCode() == result2?.GetHashCode();
-        }
+            => result1?.GetHashCode() == result2?.GetHashCode();
 
-        private static async Task<(double SpeedupFactor, double MemoryReduction, TimeSpan OptimizationTime)> EstimateOptimizationTypeImpact(
+        private static async Task<(double SpeedupFactor, double MemoryReduction, TimeSpan OptimizationTime)> EstimateOptimizationTypeImpactAsync(
             IKernelPipeline pipeline,
             OptimizationType optimization,
             CancellationToken cancellationToken)
@@ -754,10 +749,7 @@ namespace DotCompute.Core.Pipelines
             };
         }
 
-        private static int CountIndependentStages(IEnumerable<IPipelineStage> stages)
-        {
-            return stages.Count(stage => stage.Dependencies.Count == 0);
-        }
+        private static int CountIndependentStages(IEnumerable<IPipelineStage> stages) => stages.Count(stage => stage.Dependencies.Count == 0);
 
         private static bool HasDependencyCycles(IEnumerable<IPipelineStage> stages)
         {
@@ -806,7 +798,7 @@ namespace DotCompute.Core.Pipelines
             return false;
         }
 
-        private static bool CanFuseKernels(Stages.KernelStage stage1, Stages.KernelStage stage2)
+        private static bool CanFuseKernels(KernelStage stage1, KernelStage stage2)
         {
             // Simplified fusion check - in practice this would be much more complex
             // Check if stage2 depends only on stage1's output

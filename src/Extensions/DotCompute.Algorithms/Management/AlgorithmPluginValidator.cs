@@ -4,35 +4,23 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Security;
-using DotCompute.Abstractions.Security;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Algorithms.Management
 {
     /// <summary>
     /// Handles validation of algorithm plugins including security, compatibility, and integrity checks.
     /// </summary>
-    public sealed partial class AlgorithmPluginValidator : IDisposable, IAsyncDisposable
+    public sealed partial class AlgorithmPluginValidator(ILogger<AlgorithmPluginValidator> logger, AlgorithmPluginManagerOptions options) : IDisposable, IAsyncDisposable
     {
-        private readonly ILogger<AlgorithmPluginValidator> _logger;
-        private readonly AlgorithmPluginManagerOptions _options;
+        private readonly ILogger<AlgorithmPluginValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
         private readonly ConcurrentDictionary<string, ValidationResult> _validationCache = new();
         // private readonly AssemblyValidator _assemblyValidator; // TODO: Implement security validation
-        private readonly MalwareScanner _malwareScanner;
-
-        public AlgorithmPluginValidator(ILogger<AlgorithmPluginValidator> logger, AlgorithmPluginManagerOptions options)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-            // TODO: Initialize security validators when implemented
-            // _assemblyValidator = new AssemblyValidator(logger, options);
-            _malwareScanner = new MalwareScanner(logger, options);
-        }
+        private readonly MalwareScanner _malwareScanner = new(logger, options);
 
         /// <summary>
         /// Validates a plugin assembly before loading.
@@ -58,10 +46,11 @@ namespace DotCompute.Algorithms.Management
             }
 
             LogValidatingAssembly(assemblyPath);
-            var validationTasks = new List<Task<ValidationResult>>();
-
-            // Basic file validation
-            validationTasks.Add(ValidateFileBasicsAsync(assemblyPath, cancellationToken));
+            var validationTasks = new List<Task<ValidationResult>>
+            {
+                // Basic file validation
+                ValidateFileBasicsAsync(assemblyPath, cancellationToken)
+            };
 
             // Security validation - TODO: Implement security validation classes
             if (_options.EnableSecurityValidation)
@@ -95,7 +84,7 @@ namespace DotCompute.Algorithms.Management
             var combinedResult = CombineValidationResults(results);
 
             // Cache the result
-            _validationCache.TryAdd(cacheKey, combinedResult);
+            _ = _validationCache.TryAdd(cacheKey, combinedResult);
 
             LogValidationCompleted(assemblyPath, combinedResult.IsValid, combinedResult.Severity);
             return combinedResult;
@@ -112,19 +101,20 @@ namespace DotCompute.Algorithms.Management
             ArgumentNullException.ThrowIfNull(plugin);
 
             LogValidatingPlugin(plugin.Id);
-            var validations = new List<ValidationResult>();
+            var validations = new List<ValidationResult>
+            {
+                // Basic plugin interface validation
+                ValidatePluginInterface(plugin),
 
-            // Basic plugin interface validation
-            validations.Add(ValidatePluginInterface(plugin));
+                // Plugin metadata validation
+                ValidatePluginMetadata(plugin),
 
-            // Plugin metadata validation
-            validations.Add(ValidatePluginMetadata(plugin));
+                // Plugin capabilities validation
+                await ValidatePluginCapabilitiesAsync(plugin, cancellationToken).ConfigureAwait(false),
 
-            // Plugin capabilities validation
-            validations.Add(await ValidatePluginCapabilitiesAsync(plugin, cancellationToken).ConfigureAwait(false));
-
-            // Resource usage validation
-            validations.Add(ValidateResourceUsage(plugin));
+                // Resource usage validation
+                ValidateResourceUsage(plugin)
+            };
 
             // Security permissions validation
             if (_options.EnableSecurityValidation)
@@ -132,7 +122,7 @@ namespace DotCompute.Algorithms.Management
                 validations.Add(ValidateSecurityPermissions(plugin));
             }
 
-            var result = CombineValidationResults(validations.ToArray());
+            var result = CombineValidationResults([.. validations]);
             LogPluginValidationCompleted(plugin.Id, result.IsValid, result.Severity);
             return result;
         }
@@ -285,7 +275,7 @@ namespace DotCompute.Algorithms.Management
                 }
 
                 LogAssemblyMetadataValid(assemblyPath);
-                return CombineValidationResults(validations.ToArray());
+                return CombineValidationResults([.. validations]);
             }
             catch (Exception ex)
             {
@@ -369,7 +359,7 @@ namespace DotCompute.Algorithms.Management
                 validations.Add(ValidationResult.Warning("Plugin declares no supported operations", ValidationSeverity.Info));
             }
 
-            return CombineValidationResults(validations.ToArray());
+            return CombineValidationResults([.. validations]);
         }
 
         /// <summary>
@@ -397,7 +387,7 @@ namespace DotCompute.Algorithms.Management
                 validations.Add(ValidationResult.Warning("Plugin description is missing", ValidationSeverity.Info));
             }
 
-            return CombineValidationResults(validations.ToArray());
+            return CombineValidationResults([.. validations]);
         }
 
         /// <summary>
@@ -434,7 +424,7 @@ namespace DotCompute.Algorithms.Management
                     }
                 }
 
-                return CombineValidationResults(validations.ToArray());
+                return CombineValidationResults([.. validations]);
             }
             catch (Exception ex)
             {
@@ -467,7 +457,7 @@ namespace DotCompute.Algorithms.Management
                 }
             }
 
-            return CombineValidationResults(validations.ToArray());
+            return CombineValidationResults([.. validations]);
         }
 
         /// <summary>
@@ -488,7 +478,7 @@ namespace DotCompute.Algorithms.Management
                     ValidationSeverity.Warning));
             }
 
-            return CombineValidationResults(validations.ToArray());
+            return CombineValidationResults([.. validations]);
         }
 
         /// <summary>
@@ -548,10 +538,8 @@ namespace DotCompute.Algorithms.Management
         /// Checks if a runtime version is compatible.
         /// </summary>
         private static bool IsCompatibleRuntimeVersion(string runtimeVersion)
-        {
             // Simplified compatibility check
-            return runtimeVersion.StartsWith("v4.") || runtimeVersion.StartsWith("v5.") || runtimeVersion.StartsWith("v6.") || runtimeVersion.StartsWith("v7.") || runtimeVersion.StartsWith("v8.") || runtimeVersion.StartsWith("v9.");
-        }
+            => runtimeVersion.StartsWith("v4.") || runtimeVersion.StartsWith("v5.") || runtimeVersion.StartsWith("v6.") || runtimeVersion.StartsWith("v7.") || runtimeVersion.StartsWith("v8.") || runtimeVersion.StartsWith("v9.");
 
         /// <summary>
         /// Checks if a string is a valid identifier.
@@ -611,10 +599,7 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Disposes resources used by the validator.
         /// </summary>
-        public void Dispose()
-        {
-            _malwareScanner?.Dispose();
-        }
+        public void Dispose() => _malwareScanner?.Dispose();
 
         /// <summary>
         /// Asynchronously disposes resources used by the validator.

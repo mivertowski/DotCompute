@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.LinearAlgebra;
 using DotCompute.Algorithms.Selection.Enums;
 using DotCompute.Algorithms.Selection.Models;
@@ -20,17 +20,12 @@ public static class AlgorithmSelector
 {
     // Hardware capability flags
     private static readonly bool _hasAvx2 = Avx2.IsSupported;
-    private static readonly bool _hasFma = Fma.IsSupported;
     private static readonly bool _hasSse42 = Sse42.IsSupported;
     private static readonly int _coreCount = Environment.ProcessorCount;
 
     // Performance threshold tables (auto-tuned)
 
     private static readonly ConcurrentDictionary<string, PerformanceThresholds> _thresholds = new();
-
-    // Performance cache to avoid redundant measurements
-
-    private static readonly ConcurrentDictionary<string, AlgorithmPerformance> _performanceCache = new();
 
     // Auto-tuning state
 
@@ -45,50 +40,30 @@ public static class AlgorithmSelector
     /// <summary>
     /// Performance thresholds for algorithm selection.
     /// </summary>
-    private readonly struct PerformanceThresholds
+    private readonly struct PerformanceThresholds(int simdThreshold, int parallelThreshold,
+
+        int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
     {
-        public readonly int SimdThreshold;
-        public readonly int ParallelThreshold;
-        public readonly int CacheObliviousThreshold;
-        public readonly int StrassenThreshold;
-        public readonly int BlockedThreshold;
-
-
-        public PerformanceThresholds(int simdThreshold, int parallelThreshold,
-
-            int cacheObliviousThreshold, int strassenThreshold, int blockedThreshold)
-        {
-            SimdThreshold = simdThreshold;
-            ParallelThreshold = parallelThreshold;
-            CacheObliviousThreshold = cacheObliviousThreshold;
-            StrassenThreshold = strassenThreshold;
-            BlockedThreshold = blockedThreshold;
-        }
+        public readonly int SimdThreshold = simdThreshold;
+        public readonly int ParallelThreshold = parallelThreshold;
+        public readonly int CacheObliviousThreshold = cacheObliviousThreshold;
+        public readonly int StrassenThreshold = strassenThreshold;
+        public readonly int BlockedThreshold = blockedThreshold;
     }
 
 
     /// <summary>
     /// Algorithm performance metadata.
     /// </summary>
-    private readonly struct AlgorithmPerformance
+    private readonly struct AlgorithmPerformance(string algorithm, TimeSpan executionTime,
+
+        double throughputMFLOPS, int inputSize)
     {
-        public readonly string Algorithm;
-        public readonly TimeSpan ExecutionTime;
-        public readonly double ThroughputMFLOPS;
-        public readonly int InputSize;
-        public readonly DateTime Timestamp;
-
-
-        public AlgorithmPerformance(string algorithm, TimeSpan executionTime,
-
-            double throughputMFLOPS, int inputSize)
-        {
-            Algorithm = algorithm;
-            ExecutionTime = executionTime;
-            ThroughputMFLOPS = throughputMFLOPS;
-            InputSize = inputSize;
-            Timestamp = DateTime.UtcNow;
-        }
+        public readonly string Algorithm = algorithm;
+        public readonly TimeSpan ExecutionTime = executionTime;
+        public readonly double ThroughputMFLOPS = throughputMFLOPS;
+        public readonly int InputSize = inputSize;
+        public readonly DateTime Timestamp = DateTime.UtcNow;
     }
 
 
@@ -487,15 +462,15 @@ public static class AlgorithmSelector
     }
 
 
-    private static global::System.Numerics.Complex[] CreateRandomComplexArray(int size)
+    private static System.Numerics.Complex[] CreateRandomComplexArray(int size)
     {
-        var array = new global::System.Numerics.Complex[size];
+        var array = new System.Numerics.Complex[size];
         var random = new Random(42);
 
 
         for (var i = 0; i < size; i++)
         {
-            array[i] = new global::System.Numerics.Complex(random.NextDouble(), random.NextDouble());
+            array[i] = new System.Numerics.Complex(random.NextDouble(), random.NextDouble());
         }
 
 
@@ -557,7 +532,7 @@ public static class AlgorithmSelector
     }
 
 
-    private static double BenchmarkFFT(global::System.Numerics.Complex[] data, FFTStrategy strategy)
+    private static double BenchmarkFFT(System.Numerics.Complex[] data, FFTStrategy strategy)
     {
         var dataCopy = data.ToArray();
         var stopwatch = Stopwatch.StartNew();
@@ -566,10 +541,10 @@ public static class AlgorithmSelector
         try
         {
             var complexSpan = dataCopy.AsSpan();
-            var dotComputeComplex = new DotCompute.Algorithms.SignalProcessing.Complex[dataCopy.Length];
+            var dotComputeComplex = new SignalProcessing.Complex[dataCopy.Length];
             for (var i = 0; i < dataCopy.Length; i++)
             {
-                dotComputeComplex[i] = new DotCompute.Algorithms.SignalProcessing.Complex((float)dataCopy[i].Real, (float)dataCopy[i].Imaginary);
+                dotComputeComplex[i] = new SignalProcessing.Complex((float)dataCopy[i].Real, (float)dataCopy[i].Imaginary);
             }
             FFTOptimizations.OptimizedFFT(dotComputeComplex);
         }

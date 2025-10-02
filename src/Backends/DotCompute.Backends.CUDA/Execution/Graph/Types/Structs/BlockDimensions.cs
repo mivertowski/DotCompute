@@ -6,17 +6,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Structs
     /// <summary>
     /// Block dimensions for kernel launch
     /// </summary>
-    public struct BlockDimensions
+    public struct BlockDimensions(uint x, uint y = 1, uint z = 1)
     {
-        public uint X { get; set; }
-        public uint Y { get; set; }
-        public uint Z { get; set; }
-
-        public BlockDimensions(uint x, uint y = 1, uint z = 1)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        public uint X { get; set; } = x;
+        public uint Y { get; set; } = y;
+        public uint Z { get; set; } = z;
     }
 }

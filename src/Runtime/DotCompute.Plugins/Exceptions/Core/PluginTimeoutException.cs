@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using global::System.Runtime.Serialization;
+using System.Runtime.Serialization;
 
 namespace DotCompute.Plugins.Exceptions.Core;
 

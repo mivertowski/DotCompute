@@ -17,20 +17,15 @@ namespace DotCompute.Core.Pipelines.Profiling;
 /// <summary>
 /// Basic pipeline profiler implementation for monitoring pipeline execution.
 /// </summary>
-internal sealed class BasicPipelineProfiler : IPipelineProfiler
+/// <remarks>
+/// Initializes a new instance of the <see cref="BasicPipelineProfiler"/> class.
+/// </remarks>
+/// <param name="logger">Optional logger for profiler events.</param>
+internal sealed class BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logger = null) : IPipelineProfiler
 {
     private readonly Dictionary<string, DateTime> _executionStarts = [];
     private readonly Dictionary<string, DateTime> _stageStarts = [];
-    private readonly ILogger<BasicPipelineProfiler>? _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BasicPipelineProfiler"/> class.
-    /// </summary>
-    /// <param name="logger">Optional logger for profiler events.</param>
-    public BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logger = null)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<BasicPipelineProfiler>? _logger = logger;
 
     /// <summary>
     /// Starts profiling a pipeline execution.
@@ -169,7 +164,7 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
             PipelineId = "example",
             TotalExecutionTime = TimeSpan.FromMinutes(1),
             KernelStats = [],
-            MemoryStats = new DotCompute.Abstractions.Pipelines.Results.MemoryUsageStats
+            MemoryStats = new AbstractionsMemory.Pipelines.Results.MemoryUsageStats
             {
                 PeakMemoryUsageBytes = 2 * 1024 * 1024,
                 TotalAllocatedBytes = 1024 * 1024,

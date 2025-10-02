@@ -5,11 +5,13 @@ using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve LogLevel conflicts
-using DebugLogLevel = DotCompute.Abstractions.Debugging.Types.LogLevel;
+using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
@@ -18,22 +20,14 @@ namespace DotCompute.Core.Debugging.Infrastructure;
 /// Specialized logging infrastructure for kernel debugging operations.
 /// Provides structured logging, performance metrics tracking, and debug output formatting.
 /// </summary>
-public sealed class KernelDebugLogger : IDisposable
+public sealed class KernelDebugLogger(
+    ILogger<KernelDebugLogger> logger,
+    DebugServiceOptions options) : IDisposable
 {
-    private readonly ILogger<KernelDebugLogger> _logger;
-    private readonly DebugServiceOptions _options;
-    private readonly List<DebugLogEntry> _debugHistory;
+    private readonly ILogger<KernelDebugLogger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly List<DebugLogEntry> _debugHistory = [];
     private readonly object _lock = new();
     private bool _disposed;
-
-    public KernelDebugLogger(
-        ILogger<KernelDebugLogger> logger,
-        DebugServiceOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _debugHistory = new List<DebugLogEntry>();
-    }
 
     /// <summary>
     /// Logs the start of kernel validation.
@@ -379,7 +373,7 @@ public sealed class KernelDebugLogger : IDisposable
     /// </summary>
     /// <param name="kernelName">Name of the kernel that was analyzed.</param>
     /// <param name="analysisResult">Performance analysis result.</param>
-    public async Task LogPerformanceAnalysisAsync(string kernelName, DotCompute.Abstractions.Debugging.PerformanceAnalysisResult analysisResult)
+    public async Task LogPerformanceAnalysisAsync(string kernelName, PerformanceAnalysisResult analysisResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -405,7 +399,7 @@ public sealed class KernelDebugLogger : IDisposable
             kernelName, analysisResult.ExecutionStatistics.TotalExecutions, analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
 
         // Log significant bottlenecks
-        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)BottleneckSeverity.Medium))
+        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)CoreBottleneckSeverity.Medium))
         {
             _logger.LogWarning("Performance bottleneck detected in kernel {KernelName}: {Description} (Severity: {Severity})",
                 kernelName, bottleneck.Description, bottleneck.Severity);
@@ -596,7 +590,7 @@ public sealed class KernelDebugLogger : IDisposable
     /// <summary>
     /// Determines if a log level should be logged based on options.
     /// </summary>
-    private bool ShouldLog(MsLogLevel logLevel)
+    private static bool ShouldLog(MsLogLevel logLevel)
     {
         return _options.VerbosityLevel switch
         {
@@ -629,10 +623,9 @@ public sealed class KernelDebugLogger : IDisposable
     {
         lock (_lock)
         {
-            return _debugHistory
+            return [.. _debugHistory
                 .Where(entry => entry.KernelName == kernelName && entry.Timestamp >= cutoffTime)
-                .OrderBy(entry => entry.Timestamp)
-                .ToList();
+                .OrderBy(entry => entry.Timestamp)];
         }
     }
 
@@ -667,5 +660,5 @@ public record DebugLogEntry
     public DateTime Timestamp { get; init; }
     public string Operation { get; init; } = string.Empty;
     public string KernelName { get; init; } = string.Empty;
-    public Dictionary<string, object> Data { get; init; } = new();
+    public Dictionary<string, object> Data { get; init; } = [];
 }

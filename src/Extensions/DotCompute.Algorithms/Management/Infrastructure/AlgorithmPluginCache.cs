@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Metadata;
-using DotCompute.Algorithms.Types.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Infrastructure;
@@ -21,7 +19,6 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
     private readonly ConcurrentDictionary<string, CachedAssembly> _assemblyCache = new();
     private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache = new();
     private readonly ConcurrentDictionary<string, CachedExecutionResult> _executionCache = new();
-    private readonly ConcurrentDictionary<string, CachedPackageInfo> _packageCache = new();
     private readonly Timer _cleanupTimer;
     private bool _disposed;
 
@@ -171,7 +168,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             if (!fileInfo.Exists)
             {
                 // File no longer exists, remove from cache
-                _assemblyCache.TryRemove(assemblyPath, out _);
+                _ = _assemblyCache.TryRemove(assemblyPath, out _);
                 return false;
             }
 
@@ -179,7 +176,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             if (fileInfo.LastWriteTimeUtc > cachedAssembly.LoadTime)
             {
                 // File has been modified, remove from cache
-                _assemblyCache.TryRemove(assemblyPath, out _);
+                _ = _assemblyCache.TryRemove(assemblyPath, out _);
                 _logger.LogDebug("Assembly {AssemblyPath} has been modified, removing from cache", assemblyPath);
                 return false;
             }
@@ -315,7 +312,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var maxAge = _options.ExecutionCacheMaxAge;
             if (DateTime.UtcNow - cachedResult.ExecutionTime > maxAge)
             {
-                _executionCache.TryRemove(cacheKey, out _);
+                _ = _executionCache.TryRemove(cacheKey, out _);
                 _logger.LogDebug("Execution cache entry expired for {PluginId}", pluginId);
                 return null;
             }
@@ -341,7 +338,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
         // Remove metadata cache
-        _metadataCache.TryRemove(pluginId, out _);
+        _ = _metadataCache.TryRemove(pluginId, out _);
 
         // Remove execution cache entries
         var keysToRemove = _executionCache.Keys
@@ -350,7 +347,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
 
         foreach (var key in keysToRemove)
         {
-            _executionCache.TryRemove(key, out _);
+            _ = _executionCache.TryRemove(key, out _);
         }
 
         _logger.LogDebug("Invalidated cache for plugin {PluginId}", pluginId);

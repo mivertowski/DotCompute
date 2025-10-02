@@ -101,7 +101,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
             if (result.Success)
             {
-                history.RecordSuccess((Types.CompilationFallbackStrategy)strategy);
+                history.RecordSuccess((CompilationFallbackStrategy)strategy);
 
                 // Cache successful compilation
 
@@ -157,7 +157,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
                     strategy, kernelName);
 
 
-                var modifiedOptions = ApplyFallbackStrategy((Types.CompilationFallbackStrategy)strategy, currentOptions, context);
+                var modifiedOptions = ApplyFallbackStrategy((CompilationFallbackStrategy)strategy, currentOptions, context);
                 var attempt = new CompilationAttempt
                 {
                     Strategy = strategy,
@@ -231,7 +231,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
     /// <summary>
     /// Gets compilation statistics and recommendations
     /// </summary>
-    public Statistics.CompilationStatistics GetCompilationStatistics()
+    public CompilationStatistics GetCompilationStatistics()
     {
         var totalCompilations = _compilationHistory.Count;
         var successfulCompilations = _compilationHistory.Values.Count(h => h.LastCompilationSuccessful);
@@ -526,7 +526,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
             // OptimizationLevel.Debug => 0.90, // Commented out as may be unreachable
             OptimizationLevel.Default => 0.80,
             OptimizationLevel.Full => 0.70,
-            // OptimizationLevel.Aggressive => 0.60, // Removed - same as Full (both map to O3)
+            OptimizationLevel.Aggressive => 0.60,
             _ => 0.85
         };
 
@@ -595,7 +595,6 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
 
 
-
         => 0.75; // 75% hit rate placeholder
 
     private void CleanupCache(object? state)
@@ -651,7 +650,6 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
     }
 }
-
 
 
 

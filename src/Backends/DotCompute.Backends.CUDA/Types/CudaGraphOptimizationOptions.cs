@@ -14,8 +14,8 @@ namespace DotCompute.Backends.CUDA.Types
         public int MaxNodesPerGraph { get; set; } = 1000;
         public bool UseInstantiatedGraphs { get; set; } = true;
         public bool EnableOptimization { get; set; } = true;
-        public DotCompute.Backends.CUDA.Types.CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
+        public CudaArchitecture TargetArchitecture { get; set; } = CudaArchitecture.Ada;
         public bool EnableKernelFusion { get; set; } = true;
-        public DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
+        public CudaGraphOptimizationLevel OptimizationLevel { get; set; } = CudaGraphOptimizationLevel.Balanced;
     }
 }

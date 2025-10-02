@@ -224,18 +224,12 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Converts compute capability to architecture string for compilation.
         /// </summary>
-        public static string GetArchitectureString((int major, int minor) capability)
-        {
-            return $"compute_{capability.major}{capability.minor}";
-        }
+        public static string GetArchitectureString((int major, int minor) capability) => $"compute_{capability.major}{capability.minor}";
 
         /// <summary>
         /// Converts compute capability to SM string for PTX.
         /// </summary>
-        public static string GetSmString((int major, int minor) capability)
-        {
-            return $"sm_{capability.major}{capability.minor}";
-        }
+        public static string GetSmString((int major, int minor) capability) => $"sm_{capability.major}{capability.minor}";
 
         /// <summary>
         /// Clears the cached capability, forcing re-detection on next access.

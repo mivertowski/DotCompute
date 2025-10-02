@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -23,13 +23,8 @@ namespace DotCompute.Backends.CUDA.Execution
         private readonly SemaphoreSlim _streamCreationSemaphore;
         private readonly Timer _maintenanceTimer;
         private readonly object _lockObject = new();
-
-        // RTX 2000 optimization constants
-        private const int RTX_2000_SM_COUNT = 24;
-        private const int STREAMS_PER_SM_GROUP = 6; // 24 SMs / 4 streams = 6 SMs per stream
         private const int OPTIMAL_CONCURRENT_STREAMS = 4;
         private const int MAX_CONCURRENT_STREAMS = 32;
-        private const int INITIAL_POOL_SIZE = 8;
 
         // Stream priority ranges
         private int _leastPriority;
@@ -782,18 +777,12 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Group of streams working together
     /// </summary>
-    public sealed class CudaStreamGroup : IDisposable
+    public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
     {
-        private readonly ConcurrentDictionary<StreamId, IntPtr> _streams;
+        private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;
 
-        public CudaStreamGroup(string name, int capacity = 4)
-        {
-            Name = name;
-            _streams = new ConcurrentDictionary<StreamId, IntPtr>();
-        }
-
-        public string Name { get; }
+        public string Name { get; } = name;
         public IReadOnlyDictionary<StreamId, IntPtr> Streams => _streams;
 
         internal void AddStream(StreamId streamId, IntPtr stream) => _streams[streamId] = stream;

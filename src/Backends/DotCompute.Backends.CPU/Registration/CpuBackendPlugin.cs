@@ -197,7 +197,7 @@ public static class CpuBackendPluginExtensions
         _ = services.AddSingleton<IAccelerator>(provider =>
         {
             var accelerator = provider.GetRequiredService<CpuAccelerator>();
-            return new Plugins.Core.NamedAcceleratorWrapper("cpu", accelerator);
+            return new NamedAcceleratorWrapper("cpu", accelerator);
         });
 
         return services;

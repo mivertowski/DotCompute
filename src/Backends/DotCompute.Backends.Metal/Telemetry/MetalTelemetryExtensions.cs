@@ -242,7 +242,7 @@ public static class MetalTelemetryExtensions
 
         if (externalEndpoints.Length > 0)
         {
-            options.LoggingOptions.ExternalLogEndpoints = externalEndpoints.ToList();
+            options.LoggingOptions.ExternalLogEndpoints = [.. externalEndpoints];
         }
 
         return options;
@@ -252,21 +252,14 @@ public static class MetalTelemetryExtensions
 /// <summary>
 /// Hosted service for managing Metal telemetry background tasks
 /// </summary>
-internal sealed class MetalTelemetryHostedService : BackgroundService
+internal sealed class MetalTelemetryHostedService(
+    MetalTelemetryManager telemetryManager,
+    IOptions<MetalTelemetryOptions> options,
+    ILogger<MetalTelemetryHostedService> logger) : BackgroundService
 {
-    private readonly MetalTelemetryManager _telemetryManager;
-    private readonly MetalTelemetryOptions _options;
-    private readonly ILogger<MetalTelemetryHostedService> _logger;
-
-    public MetalTelemetryHostedService(
-        MetalTelemetryManager telemetryManager,
-        IOptions<MetalTelemetryOptions> options,
-        ILogger<MetalTelemetryHostedService> logger)
-    {
-        _telemetryManager = telemetryManager;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly MetalTelemetryManager _telemetryManager = telemetryManager;
+    private readonly MetalTelemetryOptions _options = options.Value;
+    private readonly ILogger<MetalTelemetryHostedService> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -409,8 +402,5 @@ public static class ServiceCollectionTelemetryExtensions
     /// <summary>
     /// Starts building Metal telemetry configuration
     /// </summary>
-    public static MetalTelemetryBuilder AddMetalTelemetryBuilder(this IServiceCollection services)
-    {
-        return new MetalTelemetryBuilder(services);
-    }
+    public static MetalTelemetryBuilder AddMetalTelemetryBuilder(this IServiceCollection services) => new(services);
 }

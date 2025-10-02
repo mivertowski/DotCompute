@@ -176,7 +176,7 @@ public class KernelChainTests : PipelineTestBase
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip)]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort)]
     [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback)]
-    public async Task KernelChain_ErrorStrategy_HandlesFailures(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy)
+    public async Task KernelChain_ErrorStrategy_HandlesFailures(Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy)
     {
         // Arrange
         var input = GenerateTestData<float>(100);

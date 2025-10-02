@@ -175,7 +175,7 @@ public class OptimizationStrategyTests : IDisposable
 
         var constraints = new SelectionConstraints
         {
-            AllowedBackends = new HashSet<string> { "CPU" },
+            AllowedBackends = ["CPU"],
             MaxMemoryUsageMB = 1000,
             MinConfidenceScore = 0.5f
         };
@@ -277,7 +277,7 @@ public class OptimizationStrategyTests : IDisposable
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await orchestrator.ExecuteAsync<string>("TestKernel", new object[] { 1, 2, 3 });
+        var result = await orchestrator.ExecuteAsync<string>("TestKernel", [1, 2, 3]);
 
         // Assert
         _ = result.Should().Be(expectedResult);
@@ -447,11 +447,11 @@ public class OptimizationStrategyTests : IDisposable
         var backendStats = stats["TestBackend"];
 
         // Assert
-        backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0d, 0.1d); // Average of successful executions only
-        backendStats.ReliabilityScore.Should().BeApproximately(0.75f, 0.01f); // 3 out of 4 successful
+        _ = backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0d, 0.1d); // Average of successful executions only
+        _ = backendStats.ReliabilityScore.Should().BeApproximately(0.75f, 0.01f); // 3 out of 4 successful
         _ = stats.Should().NotBeNull();
-        backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0, 0.1);
-        backendStats.SampleCount.Should().Be(3); // Only successful executions
+        _ = backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0, 0.1);
+        _ = backendStats.SampleCount.Should().Be(3); // Only successful executions
     }
 
     #endregion
@@ -482,9 +482,9 @@ public class OptimizationStrategyTests : IDisposable
         state.RecordExecution(result);
 
         // Assert
-        state.RecentAverageExecutionTimeMs.Should().BeApproximately(50.0, 0.1);
-        state.LastExecutionTime.Should().BeCloseTo(result.Timestamp, TimeSpan.FromSeconds(1));
-        state.RecentExecutionCount.Should().Be(1);
+        _ = state.RecentAverageExecutionTimeMs.Should().BeApproximately(50.0, 0.1);
+        _ = state.LastExecutionTime.Should().BeCloseTo(result.Timestamp, TimeSpan.FromSeconds(1));
+        _ = state.RecentExecutionCount.Should().Be(1);
     }
 
     [Fact]
@@ -514,16 +514,16 @@ public class OptimizationStrategyTests : IDisposable
         var cudaSummary = cudaState.GetSummary();
 
         // Assert - CPU summary
-        cpuSummary.BackendId.Should().Be("CPU");
-        cpuSummary.CurrentUtilization.Should().BeApproximately(0.5, 0.01);
-        cpuSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(200, 0.1);
-        cpuSummary.RecentExecutionCount.Should().Be(100);
+        _ = cpuSummary.BackendId.Should().Be("CPU");
+        _ = cpuSummary.CurrentUtilization.Should().BeApproximately(0.5, 0.01);
+        _ = cpuSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(200, 0.1);
+        _ = cpuSummary.RecentExecutionCount.Should().Be(100);
 
         // Assert - CUDA summary (faster backend)
-        cudaSummary.BackendId.Should().Be("CUDA");
-        cudaSummary.CurrentUtilization.Should().BeApproximately(0.8, 0.01);
-        cudaSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(50, 0.1);
-        cudaSummary.RecentExecutionCount.Should().Be(500);
+        _ = cudaSummary.BackendId.Should().Be("CUDA");
+        _ = cudaSummary.CurrentUtilization.Should().BeApproximately(0.8, 0.01);
+        _ = cudaSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(50, 0.1);
+        _ = cudaSummary.RecentExecutionCount.Should().Be(500);
     }
 
     #endregion
@@ -603,7 +603,7 @@ public class OptimizationStrategyTests : IDisposable
 
         // Assert
         var averageTimeMs = stopwatch.ElapsedMilliseconds / (double)iterations;
-        averageTimeMs.Should().BeLessThan(10.0, "Backend selection should be fast for real-time optimization");
+        _ = averageTimeMs.Should().BeLessThan(10.0, "Backend selection should be fast for real-time optimization");
 
         _output.WriteLine($"Average backend selection time: {averageTimeMs:F2}ms over {iterations} iterations");
     }
@@ -650,7 +650,7 @@ public class OptimizationStrategyTests : IDisposable
             TotalMemory = performanceScore * 1024L * 1024L, // GB converted to bytes
             AvailableMemory = (long)(performanceScore * 1024L * 1024L * 0.8),
         };
-        mock.Setup(a => a.Info).Returns(info);
+        _ = mock.Setup(a => a.Info).Returns(info);
         _ = mock.Setup(a => a.IsAvailable).Returns(isAvailable);
         return mock;
     }
@@ -684,10 +684,8 @@ public class OptimizationStrategyTests : IDisposable
     }
 
     public void Dispose()
-    {
         // Cleanup any test resources if needed
-        GC.SuppressFinalize(this);
-    }
+        => GC.SuppressFinalize(this);
 
     #endregion
 }

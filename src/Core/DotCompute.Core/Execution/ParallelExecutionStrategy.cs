@@ -4,14 +4,13 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
-using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Plans;
-using DotCompute.Core.Execution.Types;
+using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Workload;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -151,8 +150,8 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask<ParallelExecutionResult> ExecuteDataParallelAsync<T>(
             string kernelName,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             DataParallelismOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
@@ -473,8 +472,8 @@ namespace DotCompute.Core.Execution
         }
 
         private void ValidateDataParallelInputs<T>(
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices) where T : unmanaged
         {
             if (inputBuffers == null || inputBuffers.Length == 0)
@@ -505,8 +504,8 @@ namespace DotCompute.Core.Execution
 
         private async ValueTask<DataParallelExecutionPlan<T>> CreateDataParallelExecutionPlanAsync<T>(
             string kernelName,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers,
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers,
+            IUnifiedMemoryBuffer<T>[] inputBuffers,
+            IUnifiedMemoryBuffer<T>[] outputBuffers,
             IAccelerator[] devices,
             DataParallelismOptions options,
             CancellationToken cancellationToken) where T : unmanaged
@@ -556,14 +555,14 @@ namespace DotCompute.Core.Execution
             return plan;
         }
 
-        private static async ValueTask<AbstractionsMemory.IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
-            AbstractionsMemory.IUnifiedMemoryBuffer<T>[] sourceBuffers,
+        private static async ValueTask<IUnifiedMemoryBuffer<T>[]> CreateDeviceBufferSlicesAsync<T>(
+            IUnifiedMemoryBuffer<T>[] sourceBuffers,
             IAccelerator device,
             int startIndex,
             int elementCount,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            var deviceBuffers = new AbstractionsMemory.IUnifiedMemoryBuffer<T>[sourceBuffers.Length];
+            var deviceBuffers = new IUnifiedMemoryBuffer<T>[sourceBuffers.Length];
 
             for (var i = 0; i < sourceBuffers.Length; i++)
             {
@@ -579,7 +578,7 @@ namespace DotCompute.Core.Execution
             return deviceBuffers;
         }
 
-        private async ValueTask<DotCompute.Core.Execution.ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
+        private async ValueTask<ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
             string kernelName,
             IAccelerator device,
             CancellationToken cancellationToken)
@@ -605,7 +604,7 @@ namespace DotCompute.Core.Execution
             // Cache the kernel
             var kernelCache = _distributedKernelCache.GetOrAdd(cacheKey, _ => new CompiledKernelCache());
             // Convert from Kernels.ManagedCompiledKernel to Execution.ManagedCompiledKernel
-            var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
+            var executionKernel = new ManagedCompiledKernel(
                 kernelsCompiledKernel.Name,
                 device,
                 new CompiledKernel { Name = kernelsCompiledKernel.Name });
@@ -681,17 +680,17 @@ namespace DotCompute.Core.Execution
             return results!;
         }
 
-        private static DotCompute.Abstractions.Kernels.KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IUnifiedMemoryBuffer<T>[] inputBuffers, AbstractionsMemory.IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
+        private static AbstractionsMemory.Kernels.KernelArgument[] CreateKernelArguments<T>(IUnifiedMemoryBuffer<T>[] inputBuffers, IUnifiedMemoryBuffer<T>[] outputBuffers) where T : unmanaged
         {
-            var args = new DotCompute.Abstractions.Kernels.KernelArgument[inputBuffers.Length + outputBuffers.Length];
+            var args = new AbstractionsMemory.Kernels.KernelArgument[inputBuffers.Length + outputBuffers.Length];
 
             for (var i = 0; i < inputBuffers.Length; i++)
             {
-                args[i] = new DotCompute.Abstractions.Kernels.KernelArgument
+                args[i] = new AbstractionsMemory.Kernels.KernelArgument
                 {
                     Name = $"input_{i}",
                     Value = inputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
+                    Type = typeof(IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = inputBuffers[i] as IUnifiedMemoryBuffer
                 };
@@ -699,11 +698,11 @@ namespace DotCompute.Core.Execution
 
             for (var i = 0; i < outputBuffers.Length; i++)
             {
-                args[inputBuffers.Length + i] = new DotCompute.Abstractions.Kernels.KernelArgument
+                args[inputBuffers.Length + i] = new AbstractionsMemory.Kernels.KernelArgument
                 {
                     Name = $"output_{i}",
                     Value = outputBuffers[i],
-                    Type = typeof(AbstractionsMemory.IUnifiedMemoryBuffer<T>),
+                    Type = typeof(IUnifiedMemoryBuffer<T>),
                     IsDeviceMemory = true,
                     MemoryBuffer = outputBuffers[i] as IUnifiedMemoryBuffer
                 };
@@ -924,28 +923,26 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Converts Abstractions KernelArgument[] to Interfaces KernelArgument[]
         /// </summary>
-        private static DotCompute.Abstractions.Interfaces.Kernels.KernelArgument[] ConvertKernelArguments(DotCompute.Abstractions.Kernels.KernelArgument[] abstractionsArgs)
+        private static AbstractionsMemory.Interfaces.Kernels.KernelArgument[] ConvertKernelArguments(AbstractionsMemory.Kernels.KernelArgument[] abstractionsArgs)
         {
-            return abstractionsArgs.Select(arg => new DotCompute.Abstractions.Interfaces.Kernels.KernelArgument
+            return [.. abstractionsArgs.Select(arg => new AbstractionsMemory.Interfaces.Kernels.KernelArgument
             {
                 Name = arg.Name,
                 Type = arg.Type,
                 Value = arg.Value!,
                 Size = arg.Size,
                 IsOutput = arg.IsOutput
-            }).ToArray();
+            })];
         }
 
         /// <summary>
         /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
         /// TODO: Replace with proper implementation when concrete ManagedCompiledKernel is available
         /// </summary>
-        private static DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
-        {
+        private static AbstractionsMemory.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(ManagedCompiledKernel executionKernel)
             // Temporary stub to allow compilation - TODO: Implement proper conversion
             // when concrete ManagedCompiledKernel implementation is available
-            throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
-        }
+            => throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
 
         #endregion
     }

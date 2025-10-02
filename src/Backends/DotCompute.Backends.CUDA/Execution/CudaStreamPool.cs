@@ -259,12 +259,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
 
             // No streams available, create a new one
-            var newStream = CreatePooledStream(priority);
-            if (newStream == null)
-            {
-                throw new InvalidOperationException("Failed to create new stream for pool");
-            }
-
+            var newStream = CreatePooledStream(priority) ?? throw new InvalidOperationException("Failed to create new stream for pool");
             _logger.LogTrace("Created new stream {Stream} for {Priority} priority pool",
                 newStream.Handle, priority);
 

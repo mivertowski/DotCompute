@@ -2,13 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.IO.Compression;
-using global::System.Security.Cryptography;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using MSLogger = Microsoft.Extensions.Logging.ILogger;
-using NuGet.Common;
 using NuGet.Configuration;
-using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Packaging.Core;
 using DotCompute.Algorithms.Management.Models;
@@ -67,7 +65,7 @@ namespace DotCompute.Algorithms.Management
                 var downloadPath = Path.Combine(_options.CacheDirectory, $"{identity.Id}.{identity.Version}.nupkg");
 
                 // Ensure cache directory exists
-                Directory.CreateDirectory(_options.CacheDirectory);
+                _ = Directory.CreateDirectory(_options.CacheDirectory);
 
                 foreach (var sourceRepository in _sourceRepositoryProvider.GetRepositories())
                 {
@@ -117,7 +115,7 @@ namespace DotCompute.Algorithms.Management
                                         identity.Id, identity.Version, fileInfo.Length);
 
                                     // Cache the download path
-                                    _downloadCache.TryAdd(cacheKey, downloadPath);
+                                    _ = _downloadCache.TryAdd(cacheKey, downloadPath);
                                     return downloadPath;
                                 }
                                 else
@@ -149,7 +147,7 @@ namespace DotCompute.Algorithms.Management
             }
             finally
             {
-                _downloadSemaphore.Release();
+                _ = _downloadSemaphore.Release();
             }
         }
 
@@ -186,7 +184,7 @@ namespace DotCompute.Algorithms.Management
                 Directory.Delete(extractPath, true);
             }
 
-            Directory.CreateDirectory(extractPath);
+            _ = Directory.CreateDirectory(extractPath);
 
             _logger.LogDebug("Extracting package: {PackageId} {Version} to {ExtractPath}",
                 identity.Id, identity.Version, extractPath);
@@ -222,7 +220,7 @@ namespace DotCompute.Algorithms.Management
                         var directory = Path.GetDirectoryName(entryPath);
                         if (directory != null && !Directory.Exists(directory))
                         {
-                            Directory.CreateDirectory(directory);
+                            _ = Directory.CreateDirectory(directory);
                         }
 
                         // Extract file
@@ -371,7 +369,7 @@ namespace DotCompute.Algorithms.Management
                 // Remove cache entries
                 foreach (var key in cachesToRemove)
                 {
-                    _downloadCache.TryRemove(key, out _);
+                    _ = _downloadCache.TryRemove(key, out _);
                 }
 
                 _logger.LogInformation("Cache cleanup completed. Removed {Count} entries.", cachesToRemove.Count);
@@ -393,54 +391,25 @@ namespace DotCompute.Algorithms.Management
     /// <summary>
     /// Adapter to bridge Microsoft.Extensions.Logging.ILogger to NuGet.Common.ILogger.
     /// </summary>
-    internal sealed class NuGetLoggerAdapter : NuGet.Common.ILogger
+    internal sealed class NuGetLoggerAdapter(MSLogger logger) : NuGet.Common.ILogger
     {
-        private readonly MSLogger _logger;
+        private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        public NuGetLoggerAdapter(MSLogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
 
-        public void LogDebug(string data)
-        {
-            _logger.LogDebug("{Data}", data);
-        }
+        public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
 
-        public void LogVerbose(string data)
-        {
-            _logger.LogTrace("{Data}", data);
-        }
+        public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogInformation(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
+        public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogMinimal(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
+        public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
 
-        public void LogWarning(string data)
-        {
-            _logger.LogWarning("{Data}", data);
-        }
+        public void LogError(string data) => _logger.LogError("{Data}", data);
 
-        public void LogError(string data)
-        {
-            _logger.LogError("{Data}", data);
-        }
+        public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogInformationSummary(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
-
-        public void LogErrorSummary(string data)
-        {
-            _logger.LogError("{Data}", data);
-        }
+        public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
 
         public void Log(NuGet.Common.LogLevel level, string data)
         {
@@ -464,10 +433,7 @@ namespace DotCompute.Algorithms.Management
             await Task.CompletedTask;
         }
 
-        public void Log(NuGet.Common.ILogMessage message)
-        {
-            Log(message.Level, message.Message);
-        }
+        public void Log(NuGet.Common.ILogMessage message) => Log(message.Level, message.Message);
 
         public async Task LogAsync(NuGet.Common.ILogMessage message)
         {

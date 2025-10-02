@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Algorithms.LinearAlgebra;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -19,7 +19,6 @@ public static class ParallelOptimizations
     // Parallel thresholds
 
     private const int PARALLEL_THRESHOLD = 1000;
-    private const int WORK_STEALING_THRESHOLD = 10000;
     private const int GPU_THRESHOLD = 100000;
 
 
@@ -556,7 +555,7 @@ public static class ParallelOptimizations
         /// <param name="gpuKernel">GPU kernel function</param>
         /// <param name="cpuFallback">CPU fallback function</param>
         /// <returns>Computation result</returns>
-        public static async Task<TOutput[]> AsyncGpuCompute<TInput, TOutput>(
+        public static async Task<TOutput[]> AsyncGpuComputeAsync<TInput, TOutput>(
             TInput[] inputData,
             Func<TInput[], Task<TOutput[]>> gpuKernel,
             Func<TInput[], TOutput[]> cpuFallback)
@@ -585,7 +584,7 @@ public static class ParallelOptimizations
         /// <summary>
         /// Hybrid CPU-GPU computation with dynamic load balancing.
         /// </summary>
-        public static async Task<TOutput[]> HybridCompute<TInput, TOutput>(
+        public static async Task<TOutput[]> HybridComputeAsync<TInput, TOutput>(
             TInput[] inputData,
             Func<TInput[], Task<TOutput[]>> gpuKernel,
             Func<TInput[], TOutput[]> cpuKernel,

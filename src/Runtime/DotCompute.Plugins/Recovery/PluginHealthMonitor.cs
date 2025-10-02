@@ -31,7 +31,7 @@ public sealed class PluginHealthMonitor : IDisposable
     /// <summary>
     /// Generates comprehensive health report for all plugins
     /// </summary>
-    public PluginHealthReport GenerateHealthReport(IEnumerable<PluginHealthState> pluginStates)
+    public static PluginHealthReport GenerateHealthReport(IEnumerable<PluginHealthState> pluginStates)
     {
         var pluginHealth = new Dictionary<string, PluginHealthInfo>();
 
@@ -74,7 +74,7 @@ public sealed class PluginHealthMonitor : IDisposable
     /// <summary>
     /// Checks health of specific plugin state
     /// </summary>
-    public PluginHealthInfo CheckPluginHealth(PluginHealthState state)
+    public static PluginHealthInfo CheckPluginHealth(PluginHealthState state)
     {
         return new PluginHealthInfo
         {
@@ -133,26 +133,17 @@ public sealed class PluginHealthMonitor : IDisposable
     /// <summary>
     /// Records a failure for a plugin
     /// </summary>
-    public void RecordFailure(string pluginId, Exception exception)
-    {
-        _logger.LogError(exception, "Plugin {PluginId} failed", pluginId);
-    }
+    public void RecordFailure(string pluginId, Exception exception) => _logger.LogError(exception, "Plugin {PluginId} failed", pluginId);
 
     /// <summary>
     /// Records a successful recovery for a plugin
     /// </summary>
-    public void RecordRecovery(string pluginId)
-    {
-        _logger.LogInformation("Plugin {PluginId} successfully recovered", pluginId);
-    }
+    public void RecordRecovery(string pluginId) => _logger.LogInformation("Plugin {PluginId} successfully recovered", pluginId);
 
     /// <summary>
     /// Records a plugin shutdown event
     /// </summary>
-    public void RecordShutdown(string pluginId, string reason = "Unknown reason")
-    {
-        _logger.LogInformation("Plugin {PluginId} has been shut down: {Reason}", pluginId, reason);
-    }
+    public void RecordShutdown(string pluginId, string reason = "Unknown reason") => _logger.LogInformation("Plugin {PluginId} has been shut down: {Reason}", pluginId, reason);
 
     private static double CalculateOverallHealth(Dictionary<string, PluginHealthInfo> pluginHealth)
     {

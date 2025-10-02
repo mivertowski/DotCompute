@@ -217,18 +217,16 @@ internal static class PTXCompiler
         compilationOptions.Add("-std=c++17");
         compilationOptions.Add("--use_fast_math");
 
-        return compilationOptions.ToArray();
+        return [.. compilationOptions];
     }
 
     /// <summary>
     /// Gets the target compute capability based on the current device.
     /// </summary>
     private static (int major, int minor) GetTargetComputeCapability()
-    {
         // Get compute capability from CUDA capability manager
         // Cap at compute_86 for CUDA 12.8 compatibility
-        return (8, 6);
-    }
+        => (8, 6);
 
     /// <summary>
     /// Extracts kernel function names from CUDA source code.
@@ -284,16 +282,10 @@ internal static class PTXCompiler
     /// <summary>
     /// Stores mangled function names for later retrieval.
     /// </summary>
-    private static void StoreMangledNames(string kernelName, Dictionary<string, string> mangledNames)
-    {
-        _ = _mangledNamesCache.AddOrUpdate(kernelName, mangledNames, (_, _) => mangledNames);
-    }
+    private static void StoreMangledNames(string kernelName, Dictionary<string, string> mangledNames) => _ = _mangledNamesCache.AddOrUpdate(kernelName, mangledNames, (_, _) => mangledNames);
 
     /// <summary>
     /// Retrieves stored mangled names for a kernel.
     /// </summary>
-    public static Dictionary<string, string>? GetMangledNames(string kernelName)
-    {
-        return _mangledNamesCache.TryGetValue(kernelName, out var names) ? names : null;
-    }
+    public static Dictionary<string, string>? GetMangledNames(string kernelName) => _mangledNamesCache.TryGetValue(kernelName, out var names) ? names : null;
 }

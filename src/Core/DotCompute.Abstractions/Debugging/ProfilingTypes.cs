@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -211,7 +209,7 @@ public sealed class MemoryProfilingData
 /// <summary>
 /// Represents CPU profiling data for kernel execution.
 /// </summary>
-public sealed class CpuProfilingData
+ public sealed class CpuProfilingData
 {
     /// <summary>
     /// Gets the CPU usage percentage (0-100).
@@ -345,7 +343,61 @@ public sealed class PerformanceAnalysis
     public DateTime AnalysisTime { get; init; }
 }
 
-// PerformanceTrend class removed - using unified version from DotCompute.Abstractions.Types
+/// <summary>
+/// Represents a performance trend identified in the data.
+/// </summary>
+public sealed class PerformanceTrend
+{
+    /// <summary>
+    /// Gets the kernel name.
+    /// </summary>
+    public string KernelName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the time range for the trend.
+    /// </summary>
+    public TimeSpan TimeRange { get; init; }
+
+    /// <summary>
+    /// Gets the number of data points.
+    /// </summary>
+    public int DataPoints { get; init; }
+
+    /// <summary>
+    /// Gets the trend direction.
+    /// </summary>
+    public TrendDirection TrendDirection { get; init; }
+
+    /// <summary>
+    /// Gets the time of analysis.
+    /// </summary>
+    public DateTime AnalysisTime { get; init; }
+
+    /// <summary>
+    /// Gets the metric that is trending.
+    /// </summary>
+    public string Metric { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the direction of the trend.
+    /// </summary>
+    public TrendDirection Direction { get; init; }
+
+    /// <summary>
+    /// Gets the confidence level of the trend (0-1).
+    /// </summary>
+    public double Confidence { get; init; }
+
+    /// <summary>
+    /// Gets the rate of change per time period.
+    /// </summary>
+    public double RateOfChange { get; init; }
+
+    /// <summary>
+    /// Gets the description of the trend.
+    /// </summary>
+    public string Description { get; init; } = string.Empty;
+}
 
 /// <summary>
 /// Represents a performance anomaly detected in the data.
@@ -540,7 +592,36 @@ public sealed class AcceleratorPerformanceSummary
     public double ThroughputScore { get; init; }
 }
 
-// TrendDirection enum removed - using unified version from DotCompute.Abstractions.Types
+/// <summary>
+/// Direction of a performance trend.
+/// </summary>
+public enum TrendDirection
+{
+    /// <summary>
+    /// Unknown trend direction.
+    /// </summary>
+    Unknown,
+
+    /// <summary>
+    /// No clear trend direction.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// Performance is improving over time.
+    /// </summary>
+    Improving,
+
+    /// <summary>
+    /// Performance is degrading over time.
+    /// </summary>
+    Degrading,
+
+    /// <summary>
+    /// Performance is stable over time.
+    /// </summary>
+    Stable
+}
 
 /// <summary>
 /// Type of performance anomaly.

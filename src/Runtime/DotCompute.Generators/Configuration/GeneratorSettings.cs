@@ -7,13 +7,13 @@
 namespace DotCompute.Generators.Configuration;
 
 // Re-export the main settings class for backward compatibility
-[System.Obsolete("Use DotCompute.Generators.Configuration.Settings.GeneratorSettings instead. This alias will be removed in a future version.", false)]
+[Obsolete("Use DotCompute.Generators.Configuration.Settings.GeneratorSettings instead. This alias will be removed in a future version.", false)]
 public class GeneratorSettings : Settings.GeneratorSettings
 {
 }
 
 // Re-export enums for backward compatibility
-[System.Obsolete("Use DotCompute.Generators.Configuration.Settings.Enums.OptimizationLevel instead. This alias will be removed in a future version.", false)]
+[Obsolete("Use DotCompute.Generators.Configuration.Settings.Enums.OptimizationLevel instead. This alias will be removed in a future version.", false)]
 public enum OptimizationLevel
 {
     None = Settings.Enums.OptimizationLevel.None,
@@ -22,7 +22,7 @@ public enum OptimizationLevel
     Size = Settings.Enums.OptimizationLevel.Size
 }
 
-[System.Obsolete("Use DotCompute.Generators.Configuration.Settings.Enums.TargetRuntime instead. This alias will be removed in a future version.", false)]
+[Obsolete("Use DotCompute.Generators.Configuration.Settings.Enums.TargetRuntime instead. This alias will be removed in a future version.", false)]
 public enum TargetRuntime
 {
     Auto = Settings.Enums.TargetRuntime.Auto,
@@ -33,12 +33,12 @@ public enum TargetRuntime
 }
 
 // Re-export classes for backward compatibility
-[System.Obsolete("Use DotCompute.Generators.Configuration.Settings.Features.FeatureFlags instead. This alias will be removed in a future version.", false)]
+[Obsolete("Use DotCompute.Generators.Configuration.Settings.Features.FeatureFlags instead. This alias will be removed in a future version.", false)]
 public class FeatureFlags : Settings.Features.FeatureFlags
 {
 }
 
-[System.Obsolete("Use DotCompute.Generators.Configuration.Settings.Validation.ValidationSettings instead. This alias will be removed in a future version.", false)]
+[Obsolete("Use DotCompute.Generators.Configuration.Settings.Validation.ValidationSettings instead. This alias will be removed in a future version.", false)]
 public class ValidationSettings : Settings.Validation.ValidationSettings
 {
 }

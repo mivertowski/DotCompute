@@ -11,24 +11,19 @@ namespace DotCompute.Core.Execution.Kernels;
 /// Wrapper that adapts CompiledKernel struct to ICompiledKernel interface.
 /// Provides a unified interface for compiled kernel execution and resource management.
 /// </summary>
-internal sealed class CompiledKernelWrapper : ICompiledKernel
+/// <remarks>
+/// Initializes a new instance of the CompiledKernelWrapper class.
+/// </remarks>
+/// <param name="kernel">The compiled kernel to wrap.</param>
+internal sealed class CompiledKernelWrapper(CompiledKernel kernel) : ICompiledKernel
 {
-    private readonly CompiledKernel _kernel;
+    private readonly CompiledKernel _kernel = kernel;
     private bool _disposed;
 
     /// <summary>
     /// Gets the kernel unique identifier.
     /// </summary>
     public Guid Id { get; } = Guid.NewGuid();
-
-    /// <summary>
-    /// Initializes a new instance of the CompiledKernelWrapper class.
-    /// </summary>
-    /// <param name="kernel">The compiled kernel to wrap.</param>
-    public CompiledKernelWrapper(CompiledKernel kernel)
-    {
-        _kernel = kernel;
-    }
 
     /// <summary>
     /// Gets the kernel name.
@@ -67,8 +62,5 @@ internal sealed class CompiledKernelWrapper : ICompiledKernel
     /// <summary>
     /// Disposes the kernel wrapper and releases associated resources.
     /// </summary>
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 }

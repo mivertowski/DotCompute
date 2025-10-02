@@ -137,7 +137,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
         var capabilities = SimdCapabilities.GetSummary();
         var context = new Simd.ExecutionContext(capabilities);
 
-        return _optimizationEngine.AnalyzeWorkload<T>(elementCount, context);
+        return SimdOptimizationEngine.AnalyzeWorkload<T>(elementCount, context);
     }
 
     /// <summary>

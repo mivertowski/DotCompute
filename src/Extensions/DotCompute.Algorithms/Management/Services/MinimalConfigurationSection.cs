@@ -3,29 +3,22 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
-using DotCompute.Algorithms.Management.Types;
 
 namespace DotCompute.Algorithms.Management.Services
 {
     /// <summary>
     /// Minimal configuration section for plugin initialization.
     /// </summary>
-    internal sealed class MinimalConfigurationSection : IConfigurationSection
+    internal sealed class MinimalConfigurationSection(string key) : IConfigurationSection
     {
-        public MinimalConfigurationSection(string key)
-        {
-            Key = key;
-            Path = key;
-        }
-
         public string? this[string key]
         {
             get => null;
             set { }
         }
 
-        public string Key { get; }
-        public string Path { get; }
+        public string Key { get; } = key;
+        public string Path { get; } = key;
         public string? Value { get; set; }
 
         public IEnumerable<IConfigurationSection> GetChildren() => [];

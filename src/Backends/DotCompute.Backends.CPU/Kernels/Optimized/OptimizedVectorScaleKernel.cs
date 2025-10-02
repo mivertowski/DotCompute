@@ -17,16 +17,14 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// It automatically falls back to scalar operations for elements that don't fit into
 /// vector lanes. The implementation uses <see cref="Vector{T}"/> for hardware acceleration.
 /// </remarks>
-internal class OptimizedVectorScaleKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedVectorScaleKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class OptimizedVectorScaleKernel(string name, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedVectorScaleKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public OptimizedVectorScaleKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
 
     /// <summary>
     /// Executes the vector scaling kernel asynchronously.

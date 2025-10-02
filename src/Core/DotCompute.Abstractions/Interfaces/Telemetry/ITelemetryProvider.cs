@@ -41,7 +41,7 @@ public interface ITelemetryProvider : IDisposable
     /// <summary>
     /// Creates a timer for measuring operation duration.
     /// </summary>
-    public Interfaces.Telemetry.IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null);
+    public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null);
 
     /// <summary>
     /// Records memory allocation metrics.
@@ -293,10 +293,8 @@ public static class Telemetry
     /// TODO: UnifiedTelemetryProvider should be implemented in DotCompute.Core
     /// </summary>
     public static void Initialize(TelemetryConfiguration configuration)
-    {
         // TODO: Replace with actual implementation from DotCompute.Core
-        Provider = new NullTelemetryProvider();
-    }
+        => Provider = new NullTelemetryProvider();
 }
 
 /// <summary>
@@ -309,7 +307,7 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
     public void RecordHistogram(string name, double value, IDictionary<string, object?>? tags = null) { }
     public Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal) => null;
     public void RecordEvent(string name, IDictionary<string, object?>? attributes = null) { }
-    public Interfaces.Telemetry.IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null) => new NullTimer();
+    public IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null) => new NullTimer();
     public void RecordMemoryAllocation(long bytes, string? allocationType = null) { }
     public void RecordGarbageCollection(int generation, TimeSpan duration, long memoryBefore, long memoryAfter) { }
     public void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed) { }
@@ -319,7 +317,7 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
     public void Dispose() { }
 
 
-    private sealed class NullTimer : Interfaces.Telemetry.IOperationTimer
+    private sealed class NullTimer : IOperationTimer
     {
         public static string OperationName => string.Empty;
         public static string OperationId => string.Empty;

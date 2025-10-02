@@ -20,9 +20,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     [Trait("Category", CUDA)]
     [Trait("Category", TestCategories.Hardware)]
     [Trait("Category", RequiresHardware)]
-    public class CudaAcceleratorHardwareTests : CudaTestBase
+    public class CudaAcceleratorHardwareTests(ITestOutputHelper output) : CudaTestBase(output)
     {
-        public CudaAcceleratorHardwareTests(ITestOutputHelper output) : base(output) { }
 
         #region Device Initialization Tests
 
@@ -271,7 +270,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Use the same successful pattern as Vector Add test instead of the problematic (gridDim, blockDim, args) signature
 
-            var launchConfig = new DotCompute.Backends.CUDA.Configuration.LaunchConfiguration
+            var launchConfig = new Backends.CUDA.Configuration.LaunchConfiguration
             {
                 GridSize = new Dim3(tilesPerSide, tilesPerSide),
                 BlockSize = new Dim3(16, 16)
@@ -280,7 +279,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             await accelerator.SynchronizeAsync();
-            perfMeasurement.Stop();
+            _ = perfMeasurement.Stop();
 
             // Download and verify results (simplified verification)
 
@@ -563,7 +562,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
             }
-            perfMeasurement.Stop();
+            _ = perfMeasurement.Stop();
 
 
             var hostToDeviceBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
@@ -580,7 +579,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyToAsync(results);
                 await accelerator.SynchronizeAsync();
             }
-            perfMeasurement.Stop();
+            _ = perfMeasurement.Stop();
 
 
             var deviceToHostBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);

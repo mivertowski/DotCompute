@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Buffers;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Buffers;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Types;
@@ -77,7 +77,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Gets the memory options for this buffer.
     /// </summary>
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => MemoryOptions.None;
+    public MemoryOptions Options => MemoryOptions.None;
 
     /// <summary>
     /// Gets the buffer state for tracking transfers.
@@ -320,7 +320,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Asynchronously ensures the buffer is available on the host with improved performance.
     /// </summary>
-    public async ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public async ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -367,7 +367,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Asynchronously ensures the buffer is available on the device.
     /// </summary>
-    public async ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public async ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -413,10 +413,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     #region Performance-Optimized Private Methods
 
     private static ObjectPool<T[]> CreateDefaultArrayPool()
-    {
         // For now, return a simple wrapper around ArrayPool
-        return new ArrayPoolWrapper<T>();
-    }
+        => new ArrayPoolWrapper<T>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void UpdateAccessTime() => _lastAccessTime = DateTimeOffset.UtcNow;
@@ -468,7 +466,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask AllocateDeviceMemoryAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask AllocateDeviceMemoryAsync(Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_deviceBuffer != null)
         {
@@ -505,7 +503,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask EnsureDeviceAllocatedAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask EnsureDeviceAllocatedAsync(Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_deviceBuffer == null)
         {
@@ -565,7 +563,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask TransferHostToDeviceAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask TransferHostToDeviceAsync(Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
         {
@@ -593,7 +591,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    private async ValueTask TransferDeviceToHostAsync(DotCompute.Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
+    private async ValueTask TransferDeviceToHostAsync(Abstractions.AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null || _deviceBuffer == null)
         {
@@ -843,14 +841,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         UpdateAccessTime();
         EnsureOnHost();
         return new MappedMemory<T>(AsMemory());
     }
 
-    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -862,7 +860,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         return new MappedMemory<T>(memory);
     }
 
-    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         UpdateAccessTime();
         await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
@@ -1094,7 +1092,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Asynchronously synchronizes the buffer state between host and device.
     /// </summary>
-    public async ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public async ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         UpdateAccessTime();

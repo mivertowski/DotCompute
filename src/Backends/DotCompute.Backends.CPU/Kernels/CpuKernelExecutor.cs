@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Accelerators;
@@ -19,20 +19,13 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// High-performance kernel executor for CPU with SIMD vectorization and parallel execution.
 /// </summary>
-internal sealed class CpuKernelExecutor
+internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger, SimdSummary? simdCapabilities = null)
 {
-    private readonly CpuThreadPool _threadPool;
-    private readonly ILogger _logger;
-    private readonly SimdSummary _simdCapabilities;
+    private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SimdSummary _simdCapabilities = simdCapabilities ?? SimdCapabilities.GetSummary();
     private long _executionCount;
     private double _totalExecutionTime;
-
-    public CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger, SimdSummary? simdCapabilities = null)
-    {
-        _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _simdCapabilities = simdCapabilities ?? SimdCapabilities.GetSummary();
-    }
 
     /// <summary>
     /// Executes a kernel with the specified arguments and work group configuration.

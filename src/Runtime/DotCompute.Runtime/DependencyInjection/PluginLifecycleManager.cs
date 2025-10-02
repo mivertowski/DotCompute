@@ -13,23 +13,17 @@ namespace DotCompute.Runtime.DependencyInjection;
 /// <summary>
 /// Implementation of plugin lifecycle manager with DI support
 /// </summary>
-public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
+public class PluginLifecycleManager(
+    IPluginDependencyResolver dependencyResolver,
+    ILogger<PluginLifecycleManager> logger) : IPluginLifecycleManager, IDisposable
 {
-    private readonly IPluginDependencyResolver _dependencyResolver;
-    private readonly ILogger<PluginLifecycleManager> _logger;
+    private readonly IPluginDependencyResolver _dependencyResolver = dependencyResolver ?? throw new ArgumentNullException(nameof(dependencyResolver));
+    private readonly ILogger<PluginLifecycleManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, PluginLifecycleState> _pluginStates = new();
     private readonly ConcurrentDictionary<string, object> _pluginInstances = new();
     private readonly ConcurrentDictionary<string, PluginLifecycleHandlers> _lifecycleHandlers = new();
     private readonly ConcurrentDictionary<string, IServiceScope> _pluginScopes = new();
     private bool _disposed;
-
-    public PluginLifecycleManager(
-        IPluginDependencyResolver dependencyResolver,
-        ILogger<PluginLifecycleManager> logger)
-    {
-        _dependencyResolver = dependencyResolver ?? throw new ArgumentNullException(nameof(dependencyResolver));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public async Task<T> CreatePluginAsync<T>(Type pluginType, IServiceProvider serviceProvider)
         where T : class
@@ -373,18 +367,12 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
 /// <summary>
 /// Default implementation of plugin factory with DI support
 /// </summary>
-public class DefaultPluginFactory : IPluginFactory
+public class DefaultPluginFactory(
+    IPluginLifecycleManager lifecycleManager,
+    ILogger<DefaultPluginFactory> logger) : IPluginFactory
 {
-    private readonly IPluginLifecycleManager _lifecycleManager;
-    private readonly ILogger<DefaultPluginFactory> _logger;
-
-    public DefaultPluginFactory(
-        IPluginLifecycleManager lifecycleManager,
-        ILogger<DefaultPluginFactory> logger)
-    {
-        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly IPluginLifecycleManager _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
+    private readonly ILogger<DefaultPluginFactory> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<T> CreateAsync<T>(Type pluginType, IServiceScope serviceScope) where T : class
     {
@@ -429,7 +417,7 @@ public class DefaultPluginFactory : IPluginFactory
 
             // Check if type has a public constructor
             var constructors = pluginType.GetConstructors();
-            if (!constructors.Any())
+            if (constructors.Length == 0)
             {
                 return false;
             }
@@ -466,7 +454,7 @@ public class DefaultPluginFactory : IPluginFactory
 
             // Get property dependencies
             var properties = pluginType.GetProperties()
-                .Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any());
+                .Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Length != 0);
 
             foreach (var property in properties)
             {

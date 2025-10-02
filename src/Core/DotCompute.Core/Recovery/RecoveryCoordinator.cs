@@ -180,7 +180,7 @@ public sealed class RecoveryCoordinator : IDisposable
     /// </summary>
     public async Task<RecoveryResult> RecoverMemoryErrorAsync(
         Exception error,
-        Models.MemoryRecoveryContext context,
+        MemoryRecoveryContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default) => await _memoryRecovery.RecoverAsync(error, context, options ?? new RecoveryOptions(), cancellationToken);
 
@@ -273,14 +273,14 @@ public sealed class RecoveryCoordinator : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
 
-        var healthResults = new List<Statistics.ComponentHealthResult>();
+        var healthResults = new List<ComponentHealthResult>();
 
 
         try
         {
             // Check GPU health
             var gpuHealth = _gpuRecovery.GetDeviceHealthReport();
-            healthResults.Add(new Statistics.ComponentHealthResult
+            healthResults.Add(new ComponentHealthResult
             {
                 Component = "GPU",
                 IsHealthy = gpuHealth.OverallHealth > 0.7,
@@ -291,7 +291,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check memory health
 
             var memoryHealth = _memoryRecovery.GetMemoryPressureInfo();
-            healthResults.Add(new Statistics.ComponentHealthResult
+            healthResults.Add(new ComponentHealthResult
             {
                 Component = "Memory",
                 IsHealthy = memoryHealth.Level <= MemoryPressureLevel.Medium,
@@ -302,7 +302,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check compilation health
 
             var compilationHealth = _compilationFallback.GetCompilationStatistics();
-            healthResults.Add(new Statistics.ComponentHealthResult
+            healthResults.Add(new ComponentHealthResult
             {
                 Component = "Compilation",
                 IsHealthy = compilationHealth.SuccessRate > 0.8,
@@ -313,7 +313,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check circuit breaker health
 
             var circuitHealth = _circuitBreaker.GetStatistics();
-            healthResults.Add(new Statistics.ComponentHealthResult
+            healthResults.Add(new ComponentHealthResult
             {
                 Component = "Network",
                 IsHealthy = circuitHealth.GlobalState == CircuitState.Closed,
@@ -324,7 +324,7 @@ public sealed class RecoveryCoordinator : IDisposable
             // Check plugin health
 
             var pluginHealth = _pluginRecovery.GetHealthReport();
-            healthResults.Add(new Statistics.ComponentHealthResult
+            healthResults.Add(new ComponentHealthResult
             {
                 Component = "Plugins",
                 IsHealthy = pluginHealth.OverallHealth > 0.8,
@@ -386,7 +386,6 @@ public sealed class RecoveryCoordinator : IDisposable
     private void RegisterDefaultStrategies()
         // Strategies are directly used rather than registered generically
         // due to their specific implementations and contexts
-
 
 
 

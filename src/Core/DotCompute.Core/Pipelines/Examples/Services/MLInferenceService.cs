@@ -16,8 +16,5 @@ public class MLInferenceService
     /// </summary>
     /// <param name="input">Input data for prediction</param>
     /// <returns>ML prediction result</returns>
-    public static async Task<MLPrediction> PredictAsync(MLInputData input)
-    {
-        return await KernelChainExamples.MachineLearningInferenceExample(input);
-    }
+    public static async Task<MLPrediction> PredictAsync(MLInputData input) => await KernelChainExamples.MachineLearningInferenceExampleAsync(input);
 }

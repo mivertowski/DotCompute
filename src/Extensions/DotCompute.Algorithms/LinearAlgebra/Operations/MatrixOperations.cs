@@ -2,18 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
-using Microsoft.Extensions.Logging;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
-using DotCompute.Abstractions.Memory;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations

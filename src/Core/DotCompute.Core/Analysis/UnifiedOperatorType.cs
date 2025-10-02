@@ -460,26 +460,17 @@ public static class UnifiedOperatorTypeExtensions
     /// <summary>
     /// Checks if the operator is a LINQ operation.
     /// </summary>
-    public static bool IsLinqOperation(this UnifiedOperatorType operatorType)
-    {
-        return operatorType is >= UnifiedOperatorType.Filter and <= UnifiedOperatorType.Zip;
-    }
+    public static bool IsLinqOperation(this UnifiedOperatorType operatorType) => operatorType is >= UnifiedOperatorType.Filter and <= UnifiedOperatorType.Zip;
 
     /// <summary>
     /// Checks if the operator is an arithmetic operation.
     /// </summary>
-    public static bool IsArithmetic(this UnifiedOperatorType operatorType)
-    {
-        return operatorType is >= UnifiedOperatorType.Arithmetic and <= UnifiedOperatorType.Power;
-    }
+    public static bool IsArithmetic(this UnifiedOperatorType operatorType) => operatorType is >= UnifiedOperatorType.Arithmetic and <= UnifiedOperatorType.Power;
 
     /// <summary>
     /// Checks if the operator is a comparison operation.
     /// </summary>
-    public static bool IsComparison(this UnifiedOperatorType operatorType)
-    {
-        return operatorType is >= UnifiedOperatorType.Comparison and <= UnifiedOperatorType.GreaterThanOrEqual;
-    }
+    public static bool IsComparison(this UnifiedOperatorType operatorType) => operatorType is >= UnifiedOperatorType.Comparison and <= UnifiedOperatorType.GreaterThanOrEqual;
 
     /// <summary>
     /// Checks if the operator supports parallel execution.

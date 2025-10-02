@@ -31,7 +31,7 @@ public static class OptimizationServiceExtensions
         // Register optimization options
         if (configureOptions != null)
         {
-            _ = services.Configure<PerformanceOptimizationOptions>(configureOptions);
+            _ = services.Configure(configureOptions);
         }
 
         // Register adaptive selection options
@@ -98,7 +98,7 @@ public static class OptimizationServiceExtensions
         // Configure adaptive selection options
         if (configureSelection != null)
         {
-            _ = services.Configure<AdaptiveSelectionOptions>(configureSelection);
+            _ = services.Configure(configureSelection);
         }
 
         return services.AddPerformanceOptimizedOrchestrator(configureOptimization);
@@ -303,11 +303,7 @@ public static class ServiceCollectionDecoratorExtensions
         where TService : class
     {
         // Find the existing service registration
-        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService));
-        if (existingDescriptor == null)
-        {
-            throw new InvalidOperationException($"Service of type {typeof(TService).Name} is not registered.");
-        }
+        var existingDescriptor = services.LastOrDefault(x => x.ServiceType == typeof(TService)) ?? throw new InvalidOperationException($"Service of type {typeof(TService).Name} is not registered.");
 
         // Create a new descriptor that wraps the original
         var decoratedDescriptor = ServiceDescriptor.Describe(

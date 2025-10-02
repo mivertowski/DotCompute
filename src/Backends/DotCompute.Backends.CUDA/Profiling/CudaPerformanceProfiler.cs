@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -419,7 +419,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                         TotalBytes = g.Sum(p => p.BytesTransferred),
                         AverageBytes = g.Average(p => p.BytesTransferred),
                         TotalTime = TimeSpan.FromMilliseconds(g.Sum(p => p.TransferTime.TotalMilliseconds)),
-                        AverageBandwidth = CalculateAverageBandwidth(g.ToList())
+                        AverageBandwidth = CalculateAverageBandwidth([.. g])
                     });
 
             // Find bottlenecks
@@ -534,15 +534,12 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Timer callback wrapper for collecting metrics.
         /// </summary>
-        private void CollectMetricsWrapper(object? state)
-        {
-            _ = Task.Run(async () => await CollectMetrics(state));
-        }
+        private void CollectMetricsWrapper(object? state) => _ = Task.Run(async () => await CollectMetricsAsync(state));
 
         /// <summary>
         /// Collects periodic metrics.
         /// </summary>
-        private async Task CollectMetrics(object? state)
+        private async Task CollectMetricsAsync(object? state)
         {
             if (!_isProfilingActive)
             {
@@ -576,8 +573,8 @@ namespace DotCompute.Backends.CUDA.Profiling
             var report = new ProfilingReport
             {
                 GeneratedAt = DateTimeOffset.UtcNow,
-                KernelProfiles = _kernelProfiles.Values.ToList(),
-                MemoryProfiles = _memoryProfiles.Values.ToList()
+                KernelProfiles = [.. _kernelProfiles.Values],
+                MemoryProfiles = [.. _memoryProfiles.Values]
             };
 
             // Calculate summary statistics
@@ -597,15 +594,13 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
 
             // Identify top time consumers
-            report.TopKernelsByTime = report.KernelProfiles
+            report.TopKernelsByTime = [.. report.KernelProfiles
                 .OrderByDescending(k => k.TotalTime)
-                .Take(10)
-                .ToList();
+                .Take(10)];
 
-            report.TopMemoryTransfers = report.MemoryProfiles
+            report.TopMemoryTransfers = [.. report.MemoryProfiles
                 .OrderByDescending(m => m.BytesTransferred)
-                .Take(10)
-                .ToList();
+                .Take(10)];
 
             return report;
         }

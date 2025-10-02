@@ -8,12 +8,12 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 // Using aliases to resolve ValidationIssue conflicts
-using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 
 namespace DotCompute.Core.Kernels;
 
@@ -195,9 +195,9 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// Validates kernel definition parameters.
     /// Common validation logic that was duplicated across implementations.
     /// </summary>
-    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    protected virtual UnifiedValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
-        var result = new DotCompute.Abstractions.Validation.UnifiedValidationResult();
+        var result = new UnifiedValidationResult();
 
 
         if (string.IsNullOrWhiteSpace(definition.Name))
@@ -244,7 +244,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition) => UnifiedValidationResult.Success();
+    protected virtual UnifiedValidationResult AdditionalValidation(KernelDefinition definition) => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
 
 
     /// <summary>
@@ -428,17 +428,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = result.IsValid,
-                Errors = result.Errors
-                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code, e.Message, ValidationSeverity.Error))
-                    .ToList(),
-                Warnings = result.Warnings
-                    .Select(w => new DotCompute.Abstractions.Validation.ValidationWarning
+                Errors = [.. result.Errors.Select(e => new ValidationIssue(e.Code, e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error))],
+                Warnings = [.. result.Warnings
+                    .Select(w => new ValidationWarning
                     {
                         Code = w.Code ?? "UNKNOWN",
                         Message = w.Message,
-                        Severity = WarningSeverity.Medium
-                    })
-                    .ToList()
+                        Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium
+                    })]
             };
         }
         catch (Exception ex)
@@ -448,12 +445,12 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = false,
-                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue("VALIDATION_ERROR", $"Validation failed: {ex.Message}", ValidationSeverity.Error)]
+                Errors = [new ValidationIssue("VALIDATION_ERROR", $"Validation failed: {ex.Message}", DotCompute.Abstractions.Validation.ValidationSeverity.Error)]
             };
         }
     }
     /// <inheritdoc/>
-    public virtual DotCompute.Abstractions.Validation.UnifiedValidationResult Validate(KernelDefinition source)
+    public virtual UnifiedValidationResult Validate(KernelDefinition source)
     {
         ArgumentNullException.ThrowIfNull(source);
 
@@ -464,12 +461,11 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
 
     /// <inheritdoc/>
-    public virtual async ValueTask<DotCompute.Abstractions.Validation.UnifiedValidationResult> ValidateAsync(
+    public virtual async ValueTask<UnifiedValidationResult> ValidateAsync(
         KernelDefinition source,
         CancellationToken cancellationToken = default)
         // For base implementation, use synchronous validation
         // Derived classes can override for async validation
-
 
 
         => await ValueTask.FromResult(Validate(source));
@@ -489,19 +485,18 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Base implementation returns the same kernel
         // Derived classes should override for actual optimization
 
-        return await OptimizeKernelCore(kernel, level, cancellationToken);
+        return await OptimizeKernelCoreAsync(kernel, level, cancellationToken);
     }
 
 
     /// <summary>
     /// Core optimization logic to be implemented by derived classes.
     /// </summary>
-    protected virtual ValueTask<AbstractionsICompiledKernel> OptimizeKernelCore(
+    protected virtual ValueTask<AbstractionsICompiledKernel> OptimizeKernelCoreAsync(
         AbstractionsICompiledKernel kernel,
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization
-
 
 
         => ValueTask.FromResult(kernel);

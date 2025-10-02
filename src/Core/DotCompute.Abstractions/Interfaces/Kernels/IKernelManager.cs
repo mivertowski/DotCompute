@@ -3,7 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions.Kernels.Types;
-using ManagedCompiledKernel = DotCompute.Abstractions.Kernels.Compilation.ManagedCompiledKernel;
+using DotCompute.Abstractions.Kernels.Compilation;
 
 namespace DotCompute.Abstractions.Interfaces.Kernels
 {

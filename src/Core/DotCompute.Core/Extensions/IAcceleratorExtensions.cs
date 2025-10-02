@@ -198,7 +198,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="stream">The compute stream.</param>
         /// <returns>A task representing the begin capture operation.</returns>
-        public static ValueTask BeginCapture(this IComputeStream stream)
+        public static ValueTask BeginCaptureAsync(this IComputeStream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
 
@@ -233,7 +233,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="stream">The compute stream.</param>
         /// <returns>A task representing the end capture operation, returning the captured graph.</returns>
-        public static ValueTask<object?> EndCapture(this IComputeStream stream)
+        public static ValueTask<object?> EndCaptureAsync(this IComputeStream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
 
@@ -318,10 +318,7 @@ namespace DotCompute.Core.Extensions
             // No-op for stub implementation
         }
 
-        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public void Dispose()
         {

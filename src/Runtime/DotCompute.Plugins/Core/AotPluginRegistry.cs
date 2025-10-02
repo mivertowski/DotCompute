@@ -29,7 +29,7 @@ namespace DotCompute.Plugins.Core
         /// Initializes a new instance of the <see cref="AotPluginRegistry"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">logger</exception>
+        /// <exception cref="ArgumentNullException">logger</exception>
         public AotPluginRegistry(ILogger<AotPluginRegistry> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -310,7 +310,7 @@ namespace DotCompute.Plugins.Core
         /// Initializes a new instance of the <see cref="AotPluginSystem"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        /// <exception cref="System.ArgumentNullException">logger</exception>
+        /// <exception cref="ArgumentNullException">logger</exception>
         public AotPluginSystem(ILogger<AotPluginSystem> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -397,7 +397,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public static bool IsAotCompatible =>
 #if NETCOREAPP
-            !global::System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+            !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
 #else
         false;
 #endif

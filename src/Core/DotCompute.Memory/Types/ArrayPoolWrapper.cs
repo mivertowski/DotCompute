@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Buffers;
+using System.Buffers;
 using Microsoft.Extensions.ObjectPool;
 
 namespace DotCompute.Memory.Types;

@@ -124,7 +124,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         }
         finally
         {
-            _stateLock.Release();
+            _ = _stateLock.Release();
         }
     }
 
@@ -203,7 +203,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         }
         finally
         {
-            _stateLock.Release();
+            _ = _stateLock.Release();
         }
     }
 
@@ -300,7 +300,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             LastRestart = state.LastRestart,
             LastShutdown = state.LastShutdown,
             LastError = state.LastError,
-            StateHistory = state.StateHistory.ToList()
+            StateHistory = [.. state.StateHistory]
         };
     }
 
@@ -435,10 +435,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
     /// </summary>
     /// <param name="pluginId">The plugin ID.</param>
     /// <returns>Plugin lifecycle state.</returns>
-    private PluginLifecycleState GetOrCreatePluginState(string pluginId)
-    {
-        return _pluginStates.GetOrAdd(pluginId, id => new PluginLifecycleState(id));
-    }
+    private PluginLifecycleState GetOrCreatePluginState(string pluginId) => _pluginStates.GetOrAdd(pluginId, id => new PluginLifecycleState(id));
 
     public void Dispose()
     {
@@ -495,12 +492,12 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 /// <summary>
 /// Represents the lifecycle state of a plugin.
 /// </summary>
-internal sealed class PluginLifecycleState
+internal sealed class PluginLifecycleState(string pluginId)
 {
-    public string PluginId { get; }
-    public PluginState CurrentState { get; private set; }
-    public PluginHealth Health { get; set; }
-    public DateTime LastStateChange { get; private set; }
+    public string PluginId { get; } = pluginId;
+    public PluginState CurrentState { get; private set; } = PluginState.Loaded;
+    public PluginHealth Health { get; set; } = PluginHealth.Unknown;
+    public DateTime LastStateChange { get; private set; } = DateTime.UtcNow;
     public Exception? LastError { get; set; }
 
     public int InitializationCount { get; set; }
@@ -515,14 +512,6 @@ internal sealed class PluginLifecycleState
 
     public Queue<StateTransition> StateHistory { get; } = new();
 
-    public PluginLifecycleState(string pluginId)
-    {
-        PluginId = pluginId;
-        CurrentState = PluginState.Loaded;
-        Health = PluginHealth.Unknown;
-        LastStateChange = DateTime.UtcNow;
-    }
-
     public void TransitionTo(PluginState newState)
     {
         var oldState = CurrentState;
@@ -534,7 +523,7 @@ internal sealed class PluginLifecycleState
         // Keep only recent history
         while (StateHistory.Count > 50)
         {
-            StateHistory.Dequeue();
+            _ = StateHistory.Dequeue();
         }
     }
 }

@@ -141,7 +141,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// Gets or sets the optimization options for this graph.
         /// </summary>
         /// <value>A CudaGraphOptimizationOptions instance specifying optimization behavior.</value>
-        public DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions Options { get; set; } = new DotCompute.Backends.CUDA.Types.CudaGraphOptimizationOptions();
+        public CUDA.Types.CudaGraphOptimizationOptions Options { get; set; } = new CUDA.Types.CudaGraphOptimizationOptions();
 
         /// <summary>
         /// Gets the current count of nodes in the graph.

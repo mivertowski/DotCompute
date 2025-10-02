@@ -60,7 +60,7 @@ public sealed class CoalescingAnalysis
     /// <summary>
     /// Gets or sets identified coalescing issues.
     /// </summary>
-    public List<DotCompute.Abstractions.Types.CoalescingIssue> Issues { get; set; } = [];
+    public List<CoalescingIssue> Issues { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization recommendations.

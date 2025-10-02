@@ -12,16 +12,11 @@ namespace DotCompute.Plugins.Loaders.NuGet;
 /// <summary>
 /// Loads and manages NuGet-based plugins
 /// </summary>
-internal sealed class NuGetPluginLoader : IDisposable
+internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDisposable
 {
-    private readonly ILogger<NuGetPluginLoader> _logger;
-    private readonly Dictionary<string, NuGetPluginLoadContext> _loadContexts = new();
+    private readonly ILogger<NuGetPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Dictionary<string, NuGetPluginLoadContext> _loadContexts = [];
     private bool _disposed;
-
-    public NuGetPluginLoader(ILogger<NuGetPluginLoader> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public Task<IBackendPlugin?> LoadPluginAsync(string packagePath, string packageId, CancellationToken cancellationToken = default)
     {
@@ -97,7 +92,7 @@ internal sealed class NuGetPluginLoader : IDisposable
             }
 
             var packageDirectories = Directory.GetDirectories(searchPath)
-                .Where(dir => Directory.GetFiles(dir, "*.dll").Any());
+                .Where(dir => Directory.GetFiles(dir, "*.dll").Length != 0);
 
             foreach (var packageDir in packageDirectories)
             {

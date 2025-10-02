@@ -146,10 +146,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
     /// <summary>
     /// Gets performance metrics for this kernel.
     /// </summary>
-    public ExecutionStatistics GetPerformanceMetrics()
-    {
-        return _executor.GetExecutionStatistics();
-    }
+    public ExecutionStatistics GetPerformanceMetrics() => _executor.GetExecutionStatistics();
 
     public ValueTask DisposeAsync()
     {

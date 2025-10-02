@@ -12,19 +12,14 @@ namespace DotCompute.Generators.Backend.CPU;
 /// Generates scalar implementation for kernel execution.
 /// Handles non-vectorizable code and remainder processing.
 /// </summary>
-public class ScalarCodeGenerator : CpuCodeGeneratorBase
+public class ScalarCodeGenerator(
+    string methodName,
+    IReadOnlyList<KernelParameter> parameters,
+    MethodDeclarationSyntax methodSyntax,
+    VectorizationInfo vectorizationInfo) : CpuCodeGeneratorBase(methodName, parameters, methodSyntax, vectorizationInfo)
 {
+
     #region Constructor
-
-
-    public ScalarCodeGenerator(
-        string methodName,
-        IReadOnlyList<KernelParameter> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        VectorizationInfo vectorizationInfo)
-        : base(methodName, parameters, methodSyntax, vectorizationInfo)
-    {
-    }
 
     #endregion
 

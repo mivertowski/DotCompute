@@ -10,7 +10,7 @@ namespace DotCompute.Core.Pipelines.Models;
 /// <summary>
 /// Execution context for pipeline operations in the Core pipeline system.
 /// </summary>
-public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.PipelineExecutionContext, IDisposable, IAsyncDisposable
+public sealed class PipelineExecutionContext : AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, IDisposable, IAsyncDisposable
 {
     private bool _disposed;
     private string? _pipelineId;
@@ -197,8 +197,7 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     /// <summary>
     /// Gets or sets the execution priority.
     /// </summary>
-    public int Priority { get; set; }
-
+    public int Priority { get; set; } = 0;
 
     /// <summary>
     /// Gets a value indicating whether the execution has been cancelled.
@@ -214,30 +213,21 @@ public sealed class PipelineExecutionContext : Abstractions.Models.Pipelines.Pip
     /// Adds an entry to the execution history.
     /// </summary>
     /// <param name="entry">The history entry</param>
-    public void AddHistoryEntry(string entry)
-    {
-        ExecutionHistory.Add($"[{DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss.fff}] {entry}");
-    }
+    public void AddHistoryEntry(string entry) => ExecutionHistory.Add($"[{DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss.fff}] {entry}");
 
     /// <summary>
     /// Increments a performance counter.
     /// </summary>
     /// <param name="counterName">The counter name</param>
     /// <param name="increment">The increment value</param>
-    public void IncrementCounter(string counterName, long increment = 1)
-    {
-        PerformanceCounters[counterName] = PerformanceCounters.GetValueOrDefault(counterName, 0) + increment;
-    }
+    public void IncrementCounter(string counterName, long increment = 1) => PerformanceCounters[counterName] = PerformanceCounters.GetValueOrDefault(counterName, 0) + increment;
 
     /// <summary>
     /// Records memory allocation.
     /// </summary>
     /// <param name="category">The allocation category</param>
     /// <param name="bytes">The number of bytes allocated</param>
-    public void RecordMemoryAllocation(string category, long bytes)
-    {
-        MemoryAllocations[category] = MemoryAllocations.GetValueOrDefault(category, 0) + bytes;
-    }
+    public void RecordMemoryAllocation(string category, long bytes) => MemoryAllocations[category] = MemoryAllocations.GetValueOrDefault(category, 0) + bytes;
 
     /// <summary>
     /// Creates a child context for sub-pipeline execution.
@@ -402,8 +392,7 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets whether to enable automatic retry on failure.
     /// </summary>
-    public bool EnableAutoRetry { get; set; }
-
+    public bool EnableAutoRetry { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the maximum retry count.
@@ -428,8 +417,7 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets whether to continue execution on error.
     /// </summary>
-    public bool ContinueOnError { get; set; }
-
+    public bool ContinueOnError { get; set; } = false;
 
     /// <summary>
     /// Gets or sets additional configuration options.

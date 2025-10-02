@@ -2,9 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Numerics;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Algorithms.LinearAlgebra;
 
 namespace DotCompute.Algorithms.Optimized;
@@ -23,9 +23,9 @@ public static class BLASOptimizations
 
     // SIMD vector sizes
 
-    private static readonly int Vector256Size = Vector256<float>.Count;
-    private static readonly int Vector128Size = Vector128<float>.Count;
-    private static readonly int VectorSize = Vector<float>.Count;
+    private static readonly int _vector256Size = Vector256<float>.Count;
+    private static readonly int _vector128Size = Vector128<float>.Count;
+    private static readonly int _vectorSize = Vector<float>.Count;
 
     #region Level 1 BLAS Operations (Vector-Vector)
 
@@ -413,7 +413,7 @@ public static class BLASOptimizations
 
             // Vectorized accumulation for dense row segments
 
-            if (end - start >= VectorSize)
+            if (end - start >= _vectorSize)
             {
                 sum = SpMVVectorized(values, colInd, x, start, end);
             }
@@ -443,11 +443,11 @@ public static class BLASOptimizations
         {
             var sum = Vector256<float>.Zero;
             var i = 0;
-            var vectorCount = n - (n % Vector256Size);
+            var vectorCount = n - (n % _vector256Size);
 
             // Process 8 elements at a time
 
-            for (; i < vectorCount; i += Vector256Size)
+            for (; i < vectorCount; i += _vector256Size)
             {
                 var xVec = Avx.LoadVector256(xPtr + i);
                 var yVec = Avx.LoadVector256(yPtr + i);
@@ -479,11 +479,11 @@ public static class BLASOptimizations
         {
             var sum = Vector128<float>.Zero;
             var i = 0;
-            var vectorCount = n - (n % Vector128Size);
+            var vectorCount = n - (n % _vector128Size);
 
             // Process 4 elements at a time
 
-            for (; i < vectorCount; i += Vector128Size)
+            for (; i < vectorCount; i += _vector128Size)
             {
                 var xVec = Sse.LoadVector128(xPtr + i);
                 var yVec = Sse.LoadVector128(yPtr + i);
@@ -513,14 +513,14 @@ public static class BLASOptimizations
         var n = x.Length;
         var sum = Vector<float>.Zero;
         var i = 0;
-        var vectorCount = n - (n % VectorSize);
+        var vectorCount = n - (n % _vectorSize);
 
         // Process vectorized elements
 
-        for (; i < vectorCount; i += VectorSize)
+        for (; i < vectorCount; i += _vectorSize)
         {
-            var xVec = new Vector<float>(x.Slice(i, VectorSize));
-            var yVec = new Vector<float>(y.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, _vectorSize));
+            var yVec = new Vector<float>(y.Slice(i, _vectorSize));
             sum += xVec * yVec;
         }
 
@@ -548,10 +548,10 @@ public static class BLASOptimizations
         {
             var alphaVec = Vector256.Create(alpha);
             var i = 0;
-            var vectorCount = n - (n % Vector256Size);
+            var vectorCount = n - (n % _vector256Size);
 
 
-            for (; i < vectorCount; i += Vector256Size)
+            for (; i < vectorCount; i += _vector256Size)
             {
                 var xVec = Avx.LoadVector256(xPtr + i);
                 var yVec = Avx.LoadVector256(yPtr + i);
@@ -577,10 +577,10 @@ public static class BLASOptimizations
         {
             var alphaVec = Vector128.Create(alpha);
             var i = 0;
-            var vectorCount = n - (n % Vector128Size);
+            var vectorCount = n - (n % _vector128Size);
 
 
-            for (; i < vectorCount; i += Vector128Size)
+            for (; i < vectorCount; i += _vector128Size)
             {
                 var xVec = Sse.LoadVector128(xPtr + i);
                 var yVec = Sse.LoadVector128(yPtr + i);
@@ -604,15 +604,15 @@ public static class BLASOptimizations
         var n = x.Length;
         var alphaVec = new Vector<float>(alpha);
         var i = 0;
-        var vectorCount = n - (n % VectorSize);
+        var vectorCount = n - (n % _vectorSize);
 
 
-        for (; i < vectorCount; i += VectorSize)
+        for (; i < vectorCount; i += _vectorSize)
         {
-            var xVec = new Vector<float>(x.Slice(i, VectorSize));
-            var yVec = new Vector<float>(y.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, _vectorSize));
+            var yVec = new Vector<float>(y.Slice(i, _vectorSize));
             var result = yVec + alphaVec * xVec;
-            result.CopyTo(y.Slice(i, VectorSize));
+            result.CopyTo(y.Slice(i, _vectorSize));
         }
 
         // Handle remaining elements
@@ -632,10 +632,10 @@ public static class BLASOptimizations
         {
             var alphaVec = Vector256.Create(alpha);
             var i = 0;
-            var vectorCount = n - (n % Vector256Size);
+            var vectorCount = n - (n % _vector256Size);
 
 
-            for (; i < vectorCount; i += Vector256Size)
+            for (; i < vectorCount; i += _vector256Size)
             {
                 var xVec = Avx.LoadVector256(xPtr + i);
                 var result = Avx.Multiply(alphaVec, xVec);
@@ -660,10 +660,10 @@ public static class BLASOptimizations
         {
             var alphaVec = Vector128.Create(alpha);
             var i = 0;
-            var vectorCount = n - (n % Vector128Size);
+            var vectorCount = n - (n % _vector128Size);
 
 
-            for (; i < vectorCount; i += Vector128Size)
+            for (; i < vectorCount; i += _vector128Size)
             {
                 var xVec = Sse.LoadVector128(xPtr + i);
                 var result = Sse.Multiply(alphaVec, xVec);
@@ -686,14 +686,14 @@ public static class BLASOptimizations
         var n = x.Length;
         var alphaVec = new Vector<float>(alpha);
         var i = 0;
-        var vectorCount = n - (n % VectorSize);
+        var vectorCount = n - (n % _vectorSize);
 
 
-        for (; i < vectorCount; i += VectorSize)
+        for (; i < vectorCount; i += _vectorSize)
         {
-            var xVec = new Vector<float>(x.Slice(i, VectorSize));
+            var xVec = new Vector<float>(x.Slice(i, _vectorSize));
             var result = alphaVec * xVec;
-            result.CopyTo(x.Slice(i, VectorSize));
+            result.CopyTo(x.Slice(i, _vectorSize));
         }
 
         // Handle remaining elements

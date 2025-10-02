@@ -345,16 +345,11 @@ internal sealed class CpuKernelExecutor : IDisposable
     // Helper methods
 
     private void ExecuteBasicKernel(KernelExecutionContext context, long[] workItemId)
-    {
         // Basic kernel execution - this would be implemented based on kernel definition
         // For now, this is a placeholder that would delegate to the actual kernel logic
-        _logger.LogTrace("Executing basic kernel for work item [{workItem}]", string.Join(", ", workItemId));
-    }
+        => _logger.LogTrace("Executing basic kernel for work item [{workItem}]", string.Join(", ", workItemId));
 
-    private static long GetTotalWorkItems(WorkDimensions dimensions)
-    {
-        return dimensions.X * dimensions.Y * dimensions.Z;
-    }
+    private static long GetTotalWorkItems(WorkDimensions dimensions) => dimensions.X * dimensions.Y * dimensions.Z;
 
     private static long[] GetWorkItemId(long globalIndex, WorkDimensions dimensions)
     {
@@ -413,10 +408,7 @@ internal sealed class CpuKernelExecutor : IDisposable
         };
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {

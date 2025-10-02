@@ -11,17 +11,11 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Simplified dependency resolver for plugin dependencies
     /// </summary>
-    public sealed class EnhancedDependencyResolver : IDisposable
+    public sealed class EnhancedDependencyResolver(ILogger<EnhancedDependencyResolver> logger) : IDisposable
     {
-        private readonly ILogger<EnhancedDependencyResolver> _logger;
-        private readonly ConcurrentDictionary<string, string> _packageCache;
+        private readonly ILogger<EnhancedDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly ConcurrentDictionary<string, string> _packageCache = new();
         private bool _disposed;
-
-        public EnhancedDependencyResolver(ILogger<EnhancedDependencyResolver> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _packageCache = new ConcurrentDictionary<string, string>();
-        }
 
         /// <summary>
         /// Simplified dependency resolution - just returns success for now

@@ -22,7 +22,7 @@ public class ValidationSettings
     /// <value>
     /// <c>true</c> if null checks should be inserted before dereferencing
     /// objects and arrays; otherwise, <c>false</c>. Null checks help prevent
-    /// <see cref="System.NullReferenceException"/> at runtime.
+    /// <see cref="NullReferenceException"/> at runtime.
     /// </value>
     /// <remarks>
     /// Null checks add safety by validating that objects and arrays are not
@@ -39,7 +39,7 @@ public class ValidationSettings
     /// <value>
     /// <c>true</c> if bounds checks should be inserted before array and
     /// collection access; otherwise, <c>false</c>. Bounds checks help prevent
-    /// <see cref="System.IndexOutOfRangeException"/> at runtime.
+    /// <see cref="IndexOutOfRangeException"/> at runtime.
     /// </value>
     /// <remarks>
     /// Bounds checking validates that array and collection indices are within

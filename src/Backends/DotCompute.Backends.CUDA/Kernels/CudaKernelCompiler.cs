@@ -39,12 +39,9 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
         }
     }
 
-    public async Task<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, DotCompute.Abstractions.CompilationOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        return await CompileAsync(definition, options, cancellationToken);
-    }
+    public async Task<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default) => await CompileAsync(definition, options, cancellationToken);
 
-    public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, DotCompute.Abstractions.CompilationOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(definition);
@@ -65,13 +62,13 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
         }
     }
 
-    public async Task<ICompiledKernel[]> CompileBatchAsync(KernelDefinition[] definitions, DotCompute.Abstractions.CompilationOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<ICompiledKernel[]> CompileBatchAsync(KernelDefinition[] definitions, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(definitions);
 
         var results = await _pipeline.CompileBatchAsync(definitions, options, cancellationToken).ConfigureAwait(false);
-        return results.Cast<ICompiledKernel>().ToArray();
+        return [.. results.Cast<ICompiledKernel>()];
     }
 
     public bool TryGetCached(string kernelName, out ICompiledKernel? compiledKernel)
@@ -102,18 +99,12 @@ public sealed partial class CudaKernelCompiler : IDisposable, IAsyncDisposable
     /// <summary>
     /// Gets the mangled function name for a kernel and function name.
     /// </summary>
-    public static string? GetMangledFunctionName(string kernelName, string functionName)
-    {
-        return PTXCompiler.GetMangledNames(kernelName)?.GetValueOrDefault(functionName);
-    }
+    public static string? GetMangledFunctionName(string kernelName, string functionName) => PTXCompiler.GetMangledNames(kernelName)?.GetValueOrDefault(functionName);
 
     /// <summary>
     /// Gets all mangled function names for a kernel.
     /// </summary>
-    public static Dictionary<string, string>? GetAllMangledNames(string kernelName)
-    {
-        return PTXCompiler.GetMangledNames(kernelName);
-    }
+    public static Dictionary<string, string>? GetAllMangledNames(string kernelName) => PTXCompiler.GetMangledNames(kernelName);
 
     /// <summary>
     /// Checks NVRTC availability and version

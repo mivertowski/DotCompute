@@ -41,10 +41,7 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Generates a new correlation ID for tracking related operations
     /// </summary>
-    public static string GenerateCorrelationId()
-    {
-        return $"metal_{Guid.NewGuid():N}"[..24]; // 24 character correlation ID
-    }
+    public static string GenerateCorrelationId() => $"metal_{Guid.NewGuid():N}"[..24]; // 24 character correlation ID
 
     /// <summary>
     /// Starts a new logging context with correlation ID
@@ -463,7 +460,7 @@ public sealed class MetalProductionLogger : IDisposable
             // Write to external systems if configured
             if (_options.ExternalLogEndpoints?.Count > 0)
             {
-                _ = Task.Run(() => WriteToExternalSystems(entry));
+                _ = Task.Run(() => WriteToExternalSystemsAsync(entry));
             }
         }
         catch (Exception ex)
@@ -507,7 +504,7 @@ public sealed class MetalProductionLogger : IDisposable
         }
     }
 
-    private async Task WriteToExternalSystems(StructuredLogEntry entry)
+    private async Task WriteToExternalSystemsAsync(StructuredLogEntry entry)
     {
         if (_options.ExternalLogEndpoints == null)
         {
@@ -519,7 +516,7 @@ public sealed class MetalProductionLogger : IDisposable
         {
             try
             {
-                await WriteToExternalEndpoint(endpoint, entry);
+                await WriteToExternalEndpointAsync(endpoint, entry);
             }
             catch (Exception ex)
             {
@@ -528,8 +525,7 @@ public sealed class MetalProductionLogger : IDisposable
         }
     }
 
-    private static async Task WriteToExternalEndpoint(string endpoint, StructuredLogEntry entry)
-    {
+    private static async Task WriteToExternalEndpointAsync(string endpoint, StructuredLogEntry entry)
         // Placeholder for external system integration
         // Would implement specific integrations for:
         // - Elasticsearch
@@ -539,8 +535,7 @@ public sealed class MetalProductionLogger : IDisposable
         // - Custom log aggregation services
 
 
-        await Task.Delay(10); // Simulate async operation
-    }
+        => await Task.Delay(10); // Simulate async operation
 
     /// <summary>
     /// Performs cleanup of old log contexts

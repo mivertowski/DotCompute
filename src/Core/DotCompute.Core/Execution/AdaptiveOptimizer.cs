@@ -17,8 +17,6 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class AdaptiveOptimizer
 {
-    private readonly ILogger _logger;
-
     public AdaptiveOptimizer(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

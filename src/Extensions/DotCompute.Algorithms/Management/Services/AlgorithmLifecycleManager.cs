@@ -8,7 +8,6 @@ using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.Net.Http;
 using System.Net.Sockets;
 
 namespace DotCompute.Algorithms.Management.Services;
@@ -53,12 +52,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         ArgumentNullException.ThrowIfNull(accelerator);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var loadedPlugin = _registry.GetLoadedPluginInfo(pluginId);
-        if (loadedPlugin == null)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' not found in registry.");
-        }
-
+        var loadedPlugin = _registry.GetLoadedPluginInfo(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' not found in registry.");
         try
         {
             _registry.UpdatePluginState(pluginId, PluginState.Initializing);
@@ -98,12 +92,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         ArgumentNullException.ThrowIfNull(inputs);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var plugin = _registry.GetPlugin(pluginId);
-        if (plugin == null)
-        {
-            throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
-        }
-
+        var plugin = _registry.GetPlugin(pluginId) ?? throw new InvalidOperationException($"Plugin '{pluginId}' not found.");
         var stopwatch = Stopwatch.StartNew();
         Exception? lastError = null;
 
@@ -254,12 +243,9 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
     /// <summary>
     /// Performs health checks on all loaded plugins.
     /// </summary>
-    private void PerformHealthChecksWrapper(object? state)
-    {
-        _ = Task.Run(async () => await PerformHealthChecks(state));
-    }
+    private void PerformHealthChecksWrapper(object? state) => _ = Task.Run(async () => await PerformHealthChecksAsync(state));
 
-    private async Task PerformHealthChecks(object? state)
+    private async Task PerformHealthChecksAsync(object? state)
     {
         if (_disposed)
         {

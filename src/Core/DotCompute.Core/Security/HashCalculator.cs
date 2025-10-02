@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -30,10 +30,11 @@ public sealed class HashCalculator : IDisposable
         "MD5", "SHA-1", "MD4", "MD2"
     };
 
+    /// <inheritdoc/>
     public HashCalculator(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _hashCache = new Dictionary<string, CachedHashResult>();
+        _hashCache = [];
 
         // Set up cache cleanup timer
         _cacheCleanupTimer = new Timer(CleanupCache, null,
@@ -140,7 +141,7 @@ public sealed class HashCalculator : IDisposable
         {
             InputSize = data.Length,
             CalculationTime = DateTimeOffset.UtcNow,
-            RequestedAlgorithms = algorithms.ToList()
+            RequestedAlgorithms = [.. algorithms]
         };
 
         try
@@ -425,6 +426,7 @@ public sealed class HashCalculator : IDisposable
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (!_disposed)
@@ -451,13 +453,21 @@ public sealed class HashCalculator : IDisposable
 /// </summary>
 public sealed class HashResult
 {
+    /// <inheritdoc/>
     public required string Algorithm { get; init; }
+    /// <inheritdoc/>
     public int InputSize { get; init; }
+    /// <inheritdoc/>
     public byte[]? HashValue { get; set; }
+    /// <inheritdoc/>
     public int HashSize { get; set; }
+    /// <inheritdoc/>
     public bool IsSuccessful { get; set; }
+    /// <inheritdoc/>
     public string? ErrorMessage { get; set; }
+    /// <inheritdoc/>
     public DateTimeOffset CalculationTime { get; init; }
+    /// <inheritdoc/>
     public List<string> Warnings { get; } = [];
 }
 
@@ -466,11 +476,17 @@ public sealed class HashResult
 /// </summary>
 public sealed class MultiHashResult
 {
+    /// <inheritdoc/>
     public int InputSize { get; init; }
+    /// <inheritdoc/>
     public DateTimeOffset CalculationTime { get; init; }
+    /// <inheritdoc/>
     public List<string> RequestedAlgorithms { get; init; } = [];
+    /// <inheritdoc/>
     public Dictionary<string, HashResult> HashResults { get; } = [];
+    /// <inheritdoc/>
     public bool IsSuccessful { get; set; }
+    /// <inheritdoc/>
     public List<string> Errors { get; } = [];
 }
 
@@ -479,14 +495,23 @@ public sealed class MultiHashResult
 /// </summary>
 public sealed class HashVerificationResult
 {
+    /// <inheritdoc/>
     public required string Algorithm { get; init; }
+    /// <inheritdoc/>
     public int InputSize { get; init; }
+    /// <inheritdoc/>
     public int ExpectedHashSize { get; init; }
+    /// <inheritdoc/>
     public byte[]? CalculatedHash { get; set; }
+    /// <inheritdoc/>
     public byte[]? ExpectedHash { get; set; }
+    /// <inheritdoc/>
     public bool IsValid { get; set; }
+    /// <inheritdoc/>
     public bool IsSuccessful { get; set; }
+    /// <inheritdoc/>
     public string? ErrorMessage { get; set; }
+    /// <inheritdoc/>
     public DateTimeOffset VerificationTime { get; init; }
 }
 
@@ -495,11 +520,17 @@ public sealed class HashVerificationResult
 /// </summary>
 public sealed class HashAlgorithmValidationResult
 {
+    /// <inheritdoc/>
     public required string Algorithm { get; init; }
+    /// <inheritdoc/>
     public required string Context { get; init; }
+    /// <inheritdoc/>
     public DateTimeOffset ValidationTime { get; init; }
+    /// <inheritdoc/>
     public bool IsApproved { get; set; }
+    /// <inheritdoc/>
     public List<string> SecurityIssues { get; } = [];
+    /// <inheritdoc/>
     public List<string> Recommendations { get; } = [];
 }
 

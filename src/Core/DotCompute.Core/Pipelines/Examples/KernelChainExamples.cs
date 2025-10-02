@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 // Type aliases to resolve ambiguous references
-using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
 using KernelChainExecutionResult = DotCompute.Abstractions.Pipelines.Results.KernelChainExecutionResult;
 using KernelStepMetrics = DotCompute.Abstractions.Pipelines.Results.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Pipelines.Results.KernelChainMemoryMetrics;
@@ -26,7 +26,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Simple sequential kernel chain for image processing.
         /// Demonstrates basic kernel chaining with error handling.
         /// </summary>
-        public static async Task<byte[]> ImageProcessingChainExample(byte[] imageData)
+        public static async Task<byte[]> ImageProcessingChainExampleAsync(byte[] imageData)
         {
             var result = await KernelChain.Create()
                 .Kernel("LoadImage", imageData)
@@ -45,7 +45,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Parallel execution for data processing pipeline.
         /// Shows how multiple kernels can run concurrently for performance.
         /// </summary>
-        public static async Task<float[]> ParallelDataProcessingExample(float[] rawData)
+        public static async Task<float[]> ParallelDataProcessingExampleAsync(float[] rawData)
         {
             var result = await KernelChain.Create()
                 .Kernel("PreprocessData", rawData)
@@ -67,7 +67,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Conditional branching based on analysis results.
         /// Demonstrates dynamic execution paths based on intermediate results.
         /// </summary>
-        public static async Task<ProcessedData> ConditionalProcessingExample(RawInputData inputData)
+        public static async Task<ProcessedData> ConditionalProcessingExampleAsync(RawInputData inputData)
         {
             var result = await KernelChain.Create()
                 .Kernel("AnalyzeInput", inputData)
@@ -93,7 +93,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Complex machine learning inference pipeline.
         /// Shows integration with existing DotCompute infrastructure for ML workloads.
         /// </summary>
-        public static async Task<MLPrediction> MachineLearningInferenceExample(MLInputData inputData)
+        public static async Task<MLPrediction> MachineLearningInferenceExampleAsync(MLInputData inputData)
         {
             var result = await KernelChain.Create()
                 .Kernel("LoadMLModel", "model_v2.bin")
@@ -121,7 +121,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Scientific computing with error handling and fallbacks.
         /// Demonstrates robust execution with multiple error handling strategies.
         /// </summary>
-        public static async Task<SimulationResult> ScientificComputingExample(SimulationParameters parameters)
+        public static async Task<SimulationResult> ScientificComputingExampleAsync(SimulationParameters parameters)
         {
             var result = await KernelChain.Create()
                 .Kernel("InitializeSimulation", parameters)
@@ -160,7 +160,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Real-time processing pipeline with streaming data.
         /// Shows how to handle continuous data streams with kernel chains.
         /// </summary>
-        public static async Task<ProcessingMetrics> RealTimeStreamProcessingExample(IAsyncEnumerable<DataChunk> dataStream)
+        public static async Task<ProcessingMetrics> RealTimeStreamProcessingExampleAsync(IAsyncEnumerable<DataChunk> dataStream)
         {
             var totalProcessed = 0;
             var errors = new List<Exception>();
@@ -210,7 +210,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Advanced kernel chain with metrics and optimization recommendations.
         /// Shows how to get detailed execution information and performance insights.
         /// </summary>
-        public static async Task<DetailedExecutionReport> AdvancedMetricsExample(ComplexWorkload workload)
+        public static async Task<DetailedExecutionReport> AdvancedMetricsExampleAsync(ComplexWorkload workload)
         {
             var executionResult = await KernelChain.Create()
                 .Kernel("AnalyzeWorkload", workload)
@@ -232,11 +232,11 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 Success = executionResult.Success,
                 TotalExecutionTime = executionResult.ExecutionTime,
-                StepMetrics = executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
+                StepMetrics = [.. executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics)],
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(executionResult.MemoryMetrics),
                 BackendUsed = executionResult.Backend,
                 Errors = executionResult.Errors?.ToList() ?? [],
-                Recommendations = await GenerateOptimizationRecommendations(ConvertToResultsKernelChainExecutionResult(executionResult))
+                Recommendations = await GenerateOptimizationRecommendationsAsync(ConvertToResultsKernelChainExecutionResult(executionResult))
             };
 
             return report;
@@ -246,18 +246,18 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Quick utility methods for common operations.
         /// Shows the convenience methods for simple kernel executions.
         /// </summary>
-        public static async Task QuickOperationsExample()
+        public static async Task QuickOperationsExampleAsync()
         {
             // Simple one-shot kernel execution
-            _ = await KernelChain.Quick<float[]>("GenerateRandomNumbers", 1000);
+            var result1 = await KernelChain.QuickAsync<float[]>("GenerateRandomNumbers", 1000);
 
             // Quick execution with backend preference
-            _ = await KernelChain.OnBackend("CUDA")
+            var result2 = await KernelChain.OnBackend("CUDA")
                 .Kernel("MatrixMultiply", new float[,] { { 1, 2 }, { 3, 4 } }, new float[,] { { 5, 6 }, { 7, 8 } })
                 .ExecuteAsync<float[,]>();
 
             // Quick execution with profiling
-            _ = await KernelChain.WithProfiling("QuickTest")
+            var result3 = await KernelChain.WithProfiling("QuickTest")
                 .Kernel("SortArray", new int[] { 3, 1, 4, 1, 5, 9 })
                 .ExecuteAsync<int[]>();
         }
@@ -283,7 +283,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// Example: Application startup configuration.
         /// Shows the proper initialization sequence for production applications.
         /// </summary>
-        public static Task ConfigureApplication(IHost app)
+        public static Task ConfigureApplicationAsync(IHost app)
         {
             // Initialize DotCompute runtime with kernel chaining support
             // await app.Services.InitializeDotComputeWithKernelChainingAsync();
@@ -309,7 +309,7 @@ namespace DotCompute.Core.Pipelines.Examples
         }
 
         // Helper method to generate optimization recommendations
-        private static async Task<List<string>> GenerateOptimizationRecommendations(KernelChainExecutionResult executionResult)
+        private static async Task<List<string>> GenerateOptimizationRecommendationsAsync(KernelChainExecutionResult executionResult)
         {
             var recommendations = new List<string>();
 
@@ -336,7 +336,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// <summary>
         /// Converts Interface KernelStepMetrics to Results KernelStepMetrics
         /// </summary>
-        private static KernelStepMetrics ConvertToResultsKernelStepMetrics(DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics interfaceMetrics)
+        private static KernelStepMetrics ConvertToResultsKernelStepMetrics(AbstractionsMemory.Interfaces.Pipelines.KernelStepMetrics interfaceMetrics)
         {
             return new KernelStepMetrics
             {
@@ -357,7 +357,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// <summary>
         /// Converts Interface KernelChainMemoryMetrics to Results KernelChainMemoryMetrics
         /// </summary>
-        private static KernelChainMemoryMetrics? ConvertToResultsKernelChainMemoryMetrics(DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics? interfaceMetrics)
+        private static KernelChainMemoryMetrics? ConvertToResultsKernelChainMemoryMetrics(AbstractionsMemory.Interfaces.Pipelines.KernelChainMemoryMetrics? interfaceMetrics)
         {
             if (interfaceMetrics == null)
             {
@@ -380,7 +380,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// <summary>
         /// Converts Interface KernelChainExecutionResult to Results KernelChainExecutionResult
         /// </summary>
-        private static KernelChainExecutionResult ConvertToResultsKernelChainExecutionResult(DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult interfaceResult)
+        private static KernelChainExecutionResult ConvertToResultsKernelChainExecutionResult(AbstractionsMemory.Interfaces.Pipelines.KernelChainExecutionResult interfaceResult)
         {
             return new KernelChainExecutionResult
             {

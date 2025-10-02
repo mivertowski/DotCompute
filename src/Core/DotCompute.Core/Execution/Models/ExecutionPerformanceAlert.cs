@@ -56,12 +56,12 @@ public class ExecutionPerformanceAlert
     /// <summary>
     /// Gets or sets additional alert metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets recommended actions to address this alert.
     /// </summary>
-    public List<string> RecommendedActions { get; set; } = new();
+    public List<string> RecommendedActions { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether this alert has been acknowledged.

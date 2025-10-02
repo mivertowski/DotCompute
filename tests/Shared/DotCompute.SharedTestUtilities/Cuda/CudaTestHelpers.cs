@@ -375,10 +375,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// <param name="blockY">Block Y dimension.</param>
     /// <param name="blockZ">Block Z dimension.</param>
     /// <returns>A tuple containing the grid and block dimensions.</returns>
-    public static (Dim3 grid, Dim3 block) CreateLaunchConfig(int gridX, int gridY, int gridZ, int blockX, int blockY, int blockZ)
-    {
-        return (new Dim3(gridX, gridY, gridZ), new Dim3(blockX, blockY, blockZ));
-    }
+    public static (Dim3 grid, Dim3 block) CreateLaunchConfig(int gridX, int gridY, int gridZ, int blockX, int blockY, int blockZ) => (new Dim3(gridX, gridY, gridZ), new Dim3(blockX, blockY, blockZ));
 
     /// <summary>
     /// Creates a launch configuration with optimal settings for the given problem size.
@@ -398,13 +395,13 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// <param name="optimizationLevel">The optimization level to use.</param>
     /// <param name="generateDebugInfo">Whether to generate debug information.</param>
     /// <returns>A CompilationOptions instance configured for testing.</returns>
-    public static DotCompute.Abstractions.CompilationOptions CreateTestCompilationOptions(DotCompute.Abstractions.Types.OptimizationLevel optimizationLevel = OptimizationLevel.O2, bool generateDebugInfo = false)
+    public static Abstractions.CompilationOptions CreateTestCompilationOptions(OptimizationLevel optimizationLevel = OptimizationLevel.O2, bool generateDebugInfo = false)
     {
-        return new DotCompute.Abstractions.CompilationOptions
+        return new Abstractions.CompilationOptions
         {
             OptimizationLevel = optimizationLevel,
             GenerateDebugInfo = generateDebugInfo,
-            AdditionalFlags = new List<string> { "--std=c++17" },
+            AdditionalFlags = ["--std=c++17"],
             Defines = new Dictionary<string, string>
             {
                 ["__CUDA_ARCH__"] = "750" // Default to compute capability 7.5

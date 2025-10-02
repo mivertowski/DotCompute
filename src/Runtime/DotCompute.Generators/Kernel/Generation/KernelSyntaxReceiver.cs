@@ -26,11 +26,11 @@ public sealed class KernelSyntaxReceiver
     /// <returns>An incremental values provider for kernel methods.</returns>
     public static IncrementalValuesProvider<T> CreateKernelMethodProvider<T>(
         IncrementalGeneratorInitializationContext context,
-        System.Func<GeneratorSyntaxContext, T?> transform)
+        Func<GeneratorSyntaxContext, T?> transform)
         where T : class
     {
         return context.SyntaxProvider
-            .CreateSyntaxProvider<T>(
+            .CreateSyntaxProvider(
                 predicate: static (s, _) => IsKernelMethod(s),
                 transform: (ctx, _) => transform(ctx)!)
             .Where(static m => m is not null);
@@ -44,11 +44,11 @@ public sealed class KernelSyntaxReceiver
     /// <returns>An incremental values provider for kernel classes.</returns>
     public static IncrementalValuesProvider<T> CreateKernelClassProvider<T>(
         IncrementalGeneratorInitializationContext context,
-        System.Func<GeneratorSyntaxContext, T?> transform)
+        Func<GeneratorSyntaxContext, T?> transform)
         where T : class
     {
         return context.SyntaxProvider
-            .CreateSyntaxProvider<T>(
+            .CreateSyntaxProvider(
                 predicate: static (s, _) => IsKernelClass(s),
                 transform: (ctx, _) => transform(ctx)!)
             .Where(static c => c is not null);
@@ -129,10 +129,7 @@ public sealed class KernelSyntaxReceiver
     /// - "KernelAttribute" (full form)
     /// - Qualified names containing "Kernel"
     /// </remarks>
-    private static bool IsKernelAttributeName(string attributeName)
-    {
-        return attributeName.Contains("Kernel");
-    }
+    private static bool IsKernelAttributeName(string attributeName) => attributeName.Contains("Kernel");
 
     /// <summary>
     /// Gets all method declarations from a class that have kernel attributes.

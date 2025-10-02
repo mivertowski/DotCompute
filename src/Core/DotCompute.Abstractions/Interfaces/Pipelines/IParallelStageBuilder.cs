@@ -89,7 +89,7 @@ public interface IParallelStageBuilder
     /// </summary>
     /// <param name="priority">Execution priority level</param>
     /// <returns>The parallel stage builder for fluent configuration</returns>
-    public IParallelStageBuilder WithPriority(DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority priority);
+    public IParallelStageBuilder WithPriority(Abstractions.Pipelines.Enums.ExecutionPriority priority);
 
     /// <summary>
     /// Configures barrier synchronization points within the parallel stage.

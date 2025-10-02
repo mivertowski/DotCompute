@@ -18,12 +18,11 @@ namespace DotCompute.Core.Pipelines
     /// <summary>
     /// Default implementation of IPipelineMemoryManager.
     /// </summary>
-    internal sealed class PipelineMemoryManager : IPipelineMemoryManager
+    internal sealed class PipelineMemoryManager(IUnifiedMemoryManager memoryManager, IComputeDevice device) : IPipelineMemoryManager
     {
-        private readonly IUnifiedMemoryManager _memoryManager;
-        private readonly IComputeDevice _device;
-        private readonly ConcurrentDictionary<string, object> _sharedMemories;
-        private readonly ConcurrentDictionary<Type, MemoryPool> _pools;
+        private readonly IComputeDevice _device = device ?? throw new ArgumentNullException(nameof(device));
+        private readonly ConcurrentDictionary<string, object> _sharedMemories = new();
+        private readonly ConcurrentDictionary<Type, MemoryPool> _pools = new();
         private readonly Lock _statsLock = new();
 
         private long _totalAllocatedBytes;
@@ -33,14 +32,6 @@ namespace DotCompute.Core.Pipelines
         private long _totalAllocationCount;
         private double _cacheHitRate;
         private bool _isDisposed;
-
-        public PipelineMemoryManager(IUnifiedMemoryManager memoryManager, IComputeDevice device)
-        {
-            _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _device = device ?? throw new ArgumentNullException(nameof(device));
-            _sharedMemories = new();
-            _pools = new();
-        }
 
         /// <inheritdoc/>
         public async ValueTask<IPipelineMemory<T>> AllocateAsync<T>(
@@ -310,7 +301,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private void ValidateSharedAllocationParameters<T>(string key, long elementCount) where T : unmanaged
+        private static void ValidateSharedAllocationParameters<T>(string key, long elementCount) where T : unmanaged
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(key);
             ValidateAllocationParameters<T>(elementCount);
@@ -323,10 +314,8 @@ namespace DotCompute.Core.Pipelines
         }
 
         private static Type CreatePoolKey<T>(long sizeHint) where T : unmanaged
-        {
             // For now, use type-based pooling. In future, consider size-based bins
-            return typeof(T);
-        }
+            => typeof(T);
 
         private static MemoryAccess DetermineMemoryAccess(MemoryHint hint)
         {
@@ -396,25 +385,16 @@ namespace DotCompute.Core.Pipelines
     /// <summary>
     /// Implementation of IPipelineMemory with production-grade memory management.
     /// </summary>
-    internal sealed class PipelineMemory<T> : IPipelineMemory<T> where T : unmanaged
+    internal sealed class PipelineMemory<T>(IDeviceMemory deviceMemory, long elementCount, IComputeDevice device, bool isFromPool) : IPipelineMemory<T> where T : unmanaged
     {
-        private readonly IDeviceMemory _deviceMemory;
-        private readonly long _elementCount;
-        private readonly IComputeDevice _device;
-        private readonly bool _isFromPool;
-        private readonly SemaphoreSlim _lockSemaphore;
+        private readonly IDeviceMemory _deviceMemory = deviceMemory;
+        private readonly long _elementCount = elementCount;
+        private readonly IComputeDevice _device = device;
+        private readonly bool _isFromPool = isFromPool;
+        private readonly SemaphoreSlim _lockSemaphore = new(1, 1);
         private readonly object _disposeLock = new();
         private volatile bool _isLocked;
         private volatile bool _isDisposed;
-
-        public PipelineMemory(IDeviceMemory deviceMemory, long elementCount, IComputeDevice device, bool isFromPool)
-        {
-            _deviceMemory = deviceMemory;
-            _elementCount = elementCount;
-            _device = device;
-            _isFromPool = isFromPool;
-            _lockSemaphore = new SemaphoreSlim(1, 1);
-        }
 
         /// <inheritdoc/>
         public string Id { get; } = Guid.NewGuid().ToString();
@@ -473,7 +453,7 @@ namespace DotCompute.Core.Pipelines
                 }
             };
 
-            return new DotCompute.Abstractions.Interfaces.Pipelines.MemoryLock<T>(this, mode, unlockAction);
+            return new MemoryLock<T>(this, mode, unlockAction);
         }
 
         /// <inheritdoc/>
@@ -652,7 +632,7 @@ namespace DotCompute.Core.Pipelines
             }
         }
 
-        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(PipelineMemory<T>));
+        private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(PipelineMemory<>));
     }
 
     /// <summary>

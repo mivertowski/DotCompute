@@ -53,10 +53,7 @@ namespace DotCompute.Backends.CUDA.Initialization
         /// <summary>
         /// Sets the logger to use for initialization diagnostics.
         /// </summary>
-        public static void SetLogger(ILogger logger)
-        {
-            _logger = logger;
-        }
+        public static void SetLogger(ILogger logger) => _logger = logger;
 
         /// <summary>
         /// Ensures CUDA runtime is properly initialized. Safe to call multiple times.

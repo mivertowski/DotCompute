@@ -16,16 +16,14 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// to maximize CPU utilization. The implementation uses row-major order and leverages
 /// parallel loops for optimal performance on multi-core systems.
 /// </remarks>
-internal class OptimizedMatrixMultiplyKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedMatrixMultiplyKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class OptimizedMatrixMultiplyKernel(string name, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedMatrixMultiplyKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public OptimizedMatrixMultiplyKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
 
     /// <summary>
     /// Executes the matrix multiplication kernel asynchronously.

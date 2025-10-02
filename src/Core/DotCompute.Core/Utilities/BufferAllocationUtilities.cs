@@ -85,19 +85,13 @@ public static class BufferAllocationUtilities
     /// Gets the size of an unmanaged type with caching for performance.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetElementSize<T>() where T : unmanaged
-    {
-        return TypeSizeCache.GetOrAdd(typeof(T), _ => Unsafe.SizeOf<T>());
-    }
+    public static int GetElementSize<T>() where T : unmanaged => TypeSizeCache.GetOrAdd(typeof(T), _ => Unsafe.SizeOf<T>());
 
     /// <summary>
     /// Calculates allocation size in bytes for a given count and type.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long CalculateAllocationSize<T>(int count) where T : unmanaged
-    {
-        return (long)count * GetElementSize<T>();
-    }
+    public static long CalculateAllocationSize<T>(int count) where T : unmanaged => (long)count * GetElementSize<T>();
 
     /// <summary>
     /// Validates copy operation parameters with comprehensive bounds checking.

@@ -13,7 +13,7 @@ public class PerformanceReport
     public required string KernelName { get; set; }
     public TimeSpan TimeWindow { get; set; }
     public int ExecutionCount { get; set; }
-    public Dictionary<string, BackendPerformanceStats> Backends { get; set; } = new();
+    public Dictionary<string, BackendPerformanceStats> Backends { get; set; } = [];
     public OverallPerformanceStats? OverallStats { get; set; }
     public string Summary { get; set; } = string.Empty;
 }

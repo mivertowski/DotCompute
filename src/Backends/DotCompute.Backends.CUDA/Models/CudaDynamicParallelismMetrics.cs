@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
     /// DEPRECATED: Use DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics instead.
     /// This class is kept for backward compatibility during migration.
     /// </summary>
-    [System.Obsolete("Use DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics instead.", false)]
+    [Obsolete("Use DotCompute.Backends.CUDA.Execution.Metrics.CudaDynamicParallelismMetrics instead.", false)]
     public sealed class CudaDynamicParallelismMetrics
     {
         /// <summary>

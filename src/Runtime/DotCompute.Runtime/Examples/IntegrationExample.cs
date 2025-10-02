@@ -48,7 +48,7 @@ public static class IntegrationExample
     /// </summary>
     public static async Task ExecuteExampleKernelAsync(IServiceProvider serviceProvider)
     {
-        var orchestrator = serviceProvider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
+        var orchestrator = serviceProvider.GetRequiredService<Abstractions.Interfaces.IComputeOrchestrator>();
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("IntegrationExample");
 
@@ -147,7 +147,7 @@ public static class ExampleKernels
 
         // The generated code would internally call:
 
-        var orchestrator = serviceProvider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
+        var orchestrator = serviceProvider.GetRequiredService<Abstractions.Interfaces.IComputeOrchestrator>();
 
         // This demonstrates the integration pattern:
 

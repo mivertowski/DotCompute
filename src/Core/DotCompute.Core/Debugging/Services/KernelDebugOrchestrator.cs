@@ -4,9 +4,9 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
+using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
 using Microsoft.Extensions.Logging;
 
@@ -228,10 +228,10 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             await _debugLogger.LogTracingStartAsync(kernelName, backendType, tracePoints);
 
             // Perform execution tracing
-            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, backendType, inputs);
+            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
 
             // Enhance with additional analysis
-            var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace) ?? trace;
+            var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace);
 
             // Log tracing completion
             await _debugLogger.LogTracingCompletionAsync(kernelName, enhancedTrace);
@@ -253,7 +253,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <param name="timeWindow">Time window for historical analysis.</param>
     /// <returns>Comprehensive performance analysis.</returns>
-    public async Task<DotCompute.Core.Debugging.Core.PerformanceAnalysisResult> AnalyzePerformanceAsync(
+    public async Task<PerformanceAnalysisResult> AnalyzePerformanceAsync(
         string kernelName,
         TimeSpan? timeWindow = null)
     {
@@ -281,7 +281,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
                 kernelName, performanceReport, memoryAnalysis, bottleneckAnalysis);
 
             // Combine all analyses
-            var result = new DotCompute.Core.Debugging.Core.PerformanceAnalysisResult
+            var result = new PerformanceAnalysisResult
             {
                 KernelName = kernelName,
                 PerformanceReport = performanceReport,
@@ -344,7 +344,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
                 KernelName = determinismResult.KernelName,
                 IsDeterministic = determinismResult.IsDeterministic,
                 ExecutionCount = determinismResult.RunCount,
-                AllResults = new List<object>(), // Not available in core result
+                AllResults = [], // Not available in core result
                 MaxVariation = 0.0f, // Not available in core result
                 NonDeterminismSource = determinismResult.NonDeterministicComponents.FirstOrDefault(),
                 Recommendations = determinismResult.Recommendations
@@ -404,7 +404,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     public string[] GetAvailableBackends()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _accelerators.Keys.ToArray();
+        return [.. _accelerators.Keys];
     }
 
     /// <summary>
@@ -451,9 +451,9 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
                 BackendType = "Multiple", // Analyzer determines backend
                 TotalMemoryAccessed = 0, // Not available in current MemoryPatternAnalysis
                 MemoryEfficiency = (float)analysis.AllocationEfficiency,
-                AccessPatterns = new List<DotCompute.Abstractions.Debugging.MemoryAccessPattern>(), // Not available in current MemoryPatternAnalysis
-                Optimizations = new List<DotCompute.Abstractions.Debugging.PerformanceOptimization>(), // Not available in current MemoryPatternAnalysis
-                Warnings = analysis.LeakProbability > 0.5 ? new List<string> { "Potential memory leak detected" } : new List<string>()
+                AccessPatterns = new List<MemoryAccessPattern>(), // Not available in current MemoryPatternAnalysis
+                Optimizations = new List<PerformanceOptimization>(), // Not available in current MemoryPatternAnalysis
+                Warnings = analysis.LeakProbability > 0.5 ? ["Potential memory leak detected"] : []
             };
 
             _logger.LogInformation("Completed memory pattern analysis for kernel {KernelName}", kernelName);
@@ -503,10 +503,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// Configures debugging options such as verbosity level, output formats, etc.
     /// </summary>
     /// <param name="options">Debugging configuration options.</param>
-    public void Configure(DebugServiceOptions options)
-    {
-        UpdateOptions(options); // Delegate to existing implementation
-    }
+    public void Configure(DebugServiceOptions options) => UpdateOptions(options); // Delegate to existing implementation
 
     /// <summary>
     /// Gets capabilities for a specific backend accelerator.
@@ -525,7 +522,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             capabilities.AddRange(["Multi-threading", "SIMD", "Vector Operations"]);
         }
 
-        return capabilities.ToArray();
+        return [.. capabilities];
     }
 
     /// <summary>
@@ -546,10 +543,8 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// Gets maximum memory for a backend accelerator.
     /// </summary>
     private static long GetBackendMaxMemory(IAccelerator accelerator)
-    {
         // Default implementation - could be enhanced with accelerator-specific queries
-        return Environment.WorkingSet; // Fallback to current working set
-    }
+        => Environment.WorkingSet; // Fallback to current working set
 
     /// <summary>
     /// Gets properties for a backend accelerator.
@@ -621,25 +616,25 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// <summary>
     /// Converts Core PerformanceAnalysisResult to Abstractions PerformanceAnalysisResult.
     /// </summary>
-    private static DotCompute.Abstractions.Debugging.PerformanceAnalysisResult ConvertToAbstractionsPerformanceAnalysisResult(DotCompute.Core.Debugging.Core.PerformanceAnalysisResult coreResult)
+    private static AbstractionsMemory.Debugging.PerformanceAnalysisResult ConvertToAbstractionsPerformanceAnalysisResult(PerformanceAnalysisResult coreResult)
     {
-        return new DotCompute.Abstractions.Debugging.PerformanceAnalysisResult
+        return new AbstractionsMemory.Debugging.PerformanceAnalysisResult
         {
             KernelName = coreResult.KernelName,
             BackendType = "Unknown", // Not available in core result
-            ExecutionTime = coreResult.ExecutionStatistics?.AverageExecutionTime ?? TimeSpan.Zero,
+            ExecutionTime = TimeSpan.FromMilliseconds(coreResult.ExecutionStatistics.AverageExecutionTime),
             MemoryUsage = 0, // Could be extracted from MemoryAnalysis if needed
             ThroughputOpsPerSecond = 0.0, // ThroughputOpsPerSecond not available in current PerformanceReport
-            Bottlenecks = coreResult.BottleneckAnalysis?.Bottlenecks?.Select(b => b.Description).ToList() ?? new List<string>()
+            Bottlenecks = coreResult.BottleneckAnalysis.Bottlenecks.Select(b => b.Description).ToList()
         };
     }
 
     /// <summary>
     /// Converts Core DeterminismAnalysisResult to Abstractions DeterminismAnalysisResult.
     /// </summary>
-    private static DotCompute.Abstractions.Debugging.DeterminismAnalysisResult ConvertToAbstractionsDeterminismAnalysisResult(DotCompute.Core.Debugging.Analytics.DeterminismAnalysisResult coreResult)
+    private static AbstractionsMemory.Debugging.DeterminismAnalysisResult ConvertToAbstractionsDeterminismAnalysisResult(Analytics.DeterminismAnalysisResult coreResult)
     {
-        return new DotCompute.Abstractions.Debugging.DeterminismAnalysisResult
+        return new AbstractionsMemory.Debugging.DeterminismAnalysisResult
         {
             KernelName = coreResult.KernelName,
             IsDeterministic = coreResult.IsDeterministic,
@@ -650,8 +645,8 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             NonDeterministicComponents = coreResult.NonDeterministicComponents,
             NonDeterminismSource = coreResult.NonDeterministicComponents.FirstOrDefault(),
             Recommendations = coreResult.Recommendations,
-            AllResults = new List<object>(), // Not available in core result
-            StatisticalAnalysis = new Dictionary<string, object>()
+            AllResults = [], // Not available in core result
+            StatisticalAnalysis = []
         };
     }
 
@@ -678,4 +673,18 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             }
         }
     }
+}
+
+/// <summary>
+/// Comprehensive performance analysis result.
+/// </summary>
+public record PerformanceAnalysisResult
+{
+    public string KernelName { get; init; } = string.Empty;
+    public KernelPerformanceReport PerformanceReport { get; init; } = new();
+    public MemoryUsageAnalysis MemoryAnalysis { get; init; } = new();
+    public Core.BottleneckAnalysis BottleneckAnalysis { get; init; } = new();
+    public Core.ExecutionStatistics ExecutionStatistics { get; init; } = new();
+    public AdvancedPerformanceAnalysis AdvancedAnalysis { get; init; } = new();
+    public DateTime GeneratedAt { get; init; }
 }

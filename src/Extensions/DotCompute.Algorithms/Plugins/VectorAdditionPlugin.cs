@@ -8,7 +8,6 @@ using DotCompute.Core.Kernels;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Memory;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.Plugins
@@ -17,16 +16,11 @@ namespace DotCompute.Algorithms.Plugins
 /// <summary>
 /// Adapter to use ILogger VectorAdditionPlugin as ILogger KernelManager.
 /// </summary>
-internal class KernelManagerLoggerWrapper : ILogger<KernelManager>
+internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelManager>
 {
-    private readonly ILogger _innerLogger;
+    private readonly ILogger _innerLogger = innerLogger;
 
-    public KernelManagerLoggerWrapper(ILogger innerLogger)
-    {
-        _innerLogger = innerLogger;
-    }
-
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         => _innerLogger.BeginScope(state);
 
     public bool IsEnabled(LogLevel logLevel)
@@ -36,11 +30,15 @@ internal class KernelManagerLoggerWrapper : ILogger<KernelManager>
         => _innerLogger.Log(logLevel, eventId, state, exception, formatter);
 }
 
-/// <summary>
-/// Algorithm plugin for element-wise vector addition with GPU acceleration.
-/// </summary>
+    /// <summary>
+    /// Algorithm plugin for element-wise vector addition with GPU acceleration.
+    /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="VectorAdditionPlugin"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
 #pragma warning disable CA1001 // Types that own disposable fields should be disposable - handled in OnDisposeAsync
-public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
+    public sealed partial class VectorAdditionPlugin(ILogger<VectorAdditionPlugin> logger) : AlgorithmPluginBase(logger)
 #pragma warning restore CA1001
 {
     private KernelManager? _kernelManager;
@@ -48,16 +46,8 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
     private ManagedCompiledKernel? _cachedKernel;
     private readonly Lock _kernelLock = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="VectorAdditionPlugin"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public VectorAdditionPlugin(ILogger<VectorAdditionPlugin> logger) : base(logger)
-    {
-    }
-
-    /// <inheritdoc/>
-    public override string Id => "com.dotcompute.algorithms.vector.add";
+        /// <inheritdoc/>
+        public override string Id => "com.dotcompute.algorithms.vector.add";
 
     /// <inheritdoc/>
     public override string Name => "Vector Addition";
@@ -277,11 +267,11 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
             if (length > 10000)
             {
                 const int batchSize = 1000;
-                Parallel.For(0, (length + batchSize - 1) / batchSize, batch =>
+                _ = Parallel.For(0, (length + batchSize - 1) / batchSize, batch =>
                 {
                     var start = batch * batchSize;
                     var end = Math.Min(start + batchSize, length);
-                    
+
                     for (var i = start; i < end; i++)
                     {
                         result[i] = a[i] + b[i];

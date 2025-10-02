@@ -36,19 +36,11 @@ namespace DotCompute.Memory.Tests.TestHelpers;
 /// The new implementation provides better functionality and configuration options.
 /// </summary>
 [Obsolete("Use DotCompute.Tests.Common.TestMemoryBuffer<T> instead. This will be removed in a future version.")]
-internal sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmanaged
+internal sealed class TestDeviceBuffer<T>(IAccelerator accelerator, long sizeInBytes, MemoryType memoryType = MemoryType.Device) : BaseDeviceBuffer<T>(sizeInBytes, IntPtr.Zero) where T : unmanaged
 {
-    private readonly IAccelerator _accelerator;
-    private readonly MemoryType _memoryType;
+    private readonly IAccelerator _accelerator = accelerator;
+    private readonly MemoryType _memoryType = memoryType;
     private bool _isDisposed;
-
-    public TestDeviceBuffer(IAccelerator accelerator, long sizeInBytes, MemoryType memoryType = MemoryType.Device)
-
-        : base(sizeInBytes, IntPtr.Zero)
-    {
-        _accelerator = accelerator;
-        _memoryType = memoryType;
-    }
 
     public override IntPtr DevicePointer => IntPtr.Zero;
     public override MemoryType MemoryType => _memoryType;
@@ -66,31 +58,31 @@ internal sealed class TestDeviceBuffer<T> : BaseDeviceBuffer<T> where T : unmana
     public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
+    public override MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
+    public override MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(Memory<T>.Empty, null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(Memory<T>.Empty, null));
+    public override ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(Memory<T>.Empty, null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
@@ -209,31 +201,31 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
     public override DeviceMemory GetDeviceMemory() => new(_pinnedPointer, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory(), null);
+    public override MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory(), null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory().Slice(offset, length), null);
+    public override MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory().Slice(offset, length), null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(AsMemory(), null));
+    public override ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(AsMemory(), null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
@@ -349,16 +341,9 @@ internal sealed unsafe class TestUnifiedBuffer<T> : BaseUnifiedBuffer<T> where T
 /// <summary>
 /// Test implementation of BasePooledBuffer for unit testing.
 /// </summary>
-internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanaged
+internal sealed class TestPooledBuffer<T>(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction) : BasePooledBuffer<T>(sizeInBytes, returnAction) where T : unmanaged
 {
-    private readonly Memory<T> _memory;
-
-    public TestPooledBuffer(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction)
-
-        : base(sizeInBytes, returnAction)
-    {
-        _memory = new T[sizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<T>()];
-    }
+    private readonly Memory<T> _memory = new T[sizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<T>()];
 
     public override IntPtr DevicePointer => IntPtr.Zero;
     public override MemoryType MemoryType => MemoryType.Host;
@@ -370,31 +355,31 @@ internal sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmana
     public override DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
 
 
-    public override MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_memory, null);
+    public override MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_memory, null);
 
 
-    public override MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_memory.Slice(offset, length), null);
+    public override MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_memory.Slice(offset, length), null);
 
 
-    public override ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(_memory, null));
+    public override ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(new MappedMemory<T>(_memory, null));
 
 
     public override void EnsureOnHost() { }
     public override void EnsureOnDevice() { }
 
 
-    public override ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
-    public override ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 
     public override void Synchronize() { }
 
 
-    public override ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+    public override ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
 

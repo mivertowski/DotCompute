@@ -10,25 +10,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Represents a view into a CUDA memory buffer that doesn't own the underlying memory.
     /// This is used for creating buffer slices without additional allocations.
     /// </summary>
-    public sealed class CudaMemoryBufferView : IUnifiedMemoryBuffer
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaMemoryBufferView"/> class.
+    /// </remarks>
+    /// <param name="devicePointer">The device memory pointer for this view.</param>
+    /// <param name="sizeInBytes">The size of this view in bytes.</param>
+    /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
+    public sealed class CudaMemoryBufferView(nint devicePointer, long sizeInBytes, IUnifiedMemoryBuffer parentBuffer) : IUnifiedMemoryBuffer
     {
-        private readonly nint _devicePointer;
-        private readonly long _sizeInBytes;
-        private readonly IUnifiedMemoryBuffer _parentBuffer;
+        private readonly nint _devicePointer = devicePointer;
+        private readonly long _sizeInBytes = sizeInBytes;
+        private readonly IUnifiedMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaMemoryBufferView"/> class.
-        /// </summary>
-        /// <param name="devicePointer">The device memory pointer for this view.</param>
-        /// <param name="sizeInBytes">The size of this view in bytes.</param>
-        /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
-        public CudaMemoryBufferView(nint devicePointer, long sizeInBytes, IUnifiedMemoryBuffer parentBuffer)
-        {
-            _devicePointer = devicePointer;
-            _sizeInBytes = sizeInBytes;
-            _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        }
 
         /// <summary>
         /// Gets the device memory pointer for this view.
@@ -48,24 +41,16 @@ namespace DotCompute.Backends.CUDA.Memory
         public bool IsDisposed => _disposed || _parentBuffer.IsDisposed;
 
         /// <inheritdoc/>
-        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        }
+        public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
 
         /// <inheritdoc/>
-        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        }
+        public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
 
         /// <inheritdoc/>
         public void Dispose()
-        {
             // Views don't own memory, so we just mark as disposed
             // The parent buffer is responsible for the actual memory cleanup
-            _disposed = true;
-        }
+            => _disposed = true;
 
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
@@ -80,25 +65,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// This is used for creating typed buffer slices without additional allocations.
     /// </summary>
     /// <typeparam name="T">The type of elements in the buffer.</typeparam>
-    public sealed class CudaMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaMemoryBufferView{T}"/> class.
+    /// </remarks>
+    /// <param name="devicePointer">The device memory pointer for this view.</param>
+    /// <param name="length">The number of elements in this view.</param>
+    /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
+    public sealed class CudaMemoryBufferView<T>(nint devicePointer, int length, IUnifiedMemoryBuffer parentBuffer) : IUnifiedMemoryBuffer<T> where T : unmanaged
     {
-        private readonly nint _devicePointer;
-        private readonly int _length;
-        private readonly IUnifiedMemoryBuffer _parentBuffer;
+        private readonly nint _devicePointer = devicePointer;
+        private readonly int _length = length;
+        private readonly IUnifiedMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaMemoryBufferView{T}"/> class.
-        /// </summary>
-        /// <param name="devicePointer">The device memory pointer for this view.</param>
-        /// <param name="length">The number of elements in this view.</param>
-        /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
-        public CudaMemoryBufferView(nint devicePointer, int length, IUnifiedMemoryBuffer parentBuffer)
-        {
-            _devicePointer = devicePointer;
-            _length = length;
-            _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
-        }
 
         /// <summary>
         /// Gets the device memory pointer for this view.
@@ -135,8 +113,8 @@ namespace DotCompute.Backends.CUDA.Memory
         public MappedMemory<T> Map(MapMode mode) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         public MappedMemory<T> MapRange(int start, int count, MapMode mode) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         public ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        public ValueTask EnsureOnHost(CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        public ValueTask EnsureOnDevice(CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
+        public ValueTask EnsureOnHostAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
+        public ValueTask EnsureOnDeviceAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
         public void EnsureOnHost() => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
@@ -160,15 +138,9 @@ namespace DotCompute.Backends.CUDA.Memory
         }
 
         // Base interface methods
-        ValueTask IUnifiedMemoryBuffer.CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        }
+        ValueTask IUnifiedMemoryBuffer.CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset, CancellationToken cancellationToken) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
 
-        ValueTask IUnifiedMemoryBuffer.CopyToAsync<TElement>(Memory<TElement> destination, long offset, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
-        }
+        ValueTask IUnifiedMemoryBuffer.CopyToAsync<TElement>(Memory<TElement> destination, long offset, CancellationToken cancellationToken) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
 
         /// <inheritdoc/>
         public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
@@ -179,11 +151,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
         /// <inheritdoc/>
         public void Dispose()
-        {
             // Views don't own memory, so we just mark as disposed
             // The parent buffer is responsible for the actual memory cleanup
-            _disposed = true;
-        }
+            => _disposed = true;
 
         /// <inheritdoc/>
         public ValueTask DisposeAsync()

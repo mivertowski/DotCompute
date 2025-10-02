@@ -486,7 +486,7 @@ public class CudaMemoryManagementTests : CudaTestBase
         for (var i = 0; i < bufferCount; i++)
         {
             buffers[i] = await _memoryManager.AllocateAsync<float>(elementCount);
-            expectedData[i] = Enumerable.Range(0, elementCount).Select(j => i * 1000.0f + j).ToArray();
+            expectedData[i] = [.. Enumerable.Range(0, elementCount).Select(j => i * 1000.0f + j)];
         }
 
         // Act - Concurrent transfers

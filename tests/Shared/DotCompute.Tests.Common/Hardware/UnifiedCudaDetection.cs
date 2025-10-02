@@ -90,21 +90,11 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable XDOC001 // Missing XML documentation
-        public readonly override bool Equals(object? obj)
-#pragma warning restore XDOC001 // Missing XML documentation
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        {
-            return obj is CudaDeviceProperties other && Equals(other);
-        }
+        public readonly override bool Equals(object? obj) => obj is CudaDeviceProperties other && Equals(other);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable XDOC001 // Missing XML documentation
-        public readonly override int GetHashCode()
-#pragma warning restore XDOC001 // Missing XML documentation
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        {
-            return HashCode.Combine(DeviceName, Major, Minor, TotalGlobalMem, MultiProcessorCount);
-        }
+        public readonly override int GetHashCode() => HashCode.Combine(DeviceName, Major, Minor, TotalGlobalMem, MultiProcessorCount);
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable XDOC001 // Missing XML documentation

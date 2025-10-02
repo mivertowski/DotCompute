@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -146,7 +146,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         };
 
         _pendingRequests.Enqueue(request);
-        await ExecutePrefetchRequest(request);
+        await ExecutePrefetchRequestAsync(request);
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
             // Execute prefetch operation
 
-            var result = CudaRuntime.cudaMemPrefetchAsync(
+            var result = CudaRuntime.cudaMemPrefetch(
                 address,
 
                 (nuint)size,
@@ -374,7 +374,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         return null;
     }
 
-    private async Task ExecutePrefetchRequest(OptimizedPrefetchRequest request)
+    private async Task ExecutePrefetchRequestAsync(OptimizedPrefetchRequest request)
     {
         await _prefetchSemaphore.WaitAsync();
         try
@@ -386,16 +386,16 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             switch (strategy)
             {
                 case PrefetchStrategy.Sequential:
-                    await ExecuteSequentialPrefetch(request);
+                    await ExecuteSequentialPrefetchAsync(request);
                     break;
                 case PrefetchStrategy.Random:
-                    await ExecuteRandomPrefetch(request);
+                    await ExecuteRandomPrefetchAsync(request);
                     break;
                 case PrefetchStrategy.Adaptive:
-                    await ExecuteAdaptivePrefetch(request);
+                    await ExecuteAdaptivePrefetchAsync(request);
                     break;
                 default:
-                    await ExecuteDefaultPrefetch(request);
+                    await ExecuteDefaultPrefetchAsync(request);
                     break;
             }
 
@@ -407,24 +407,24 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         }
     }
 
-    private async Task ExecuteSequentialPrefetch(OptimizedPrefetchRequest request)
+    private async Task ExecuteSequentialPrefetchAsync(OptimizedPrefetchRequest request)
     {
         // Prefetch with read-ahead for sequential access
         var prefetchSize = Math.Min(request.Size * 2, _config.MaxPrefetchSize);
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, CacheLevel.L2);
     }
 
-    private async Task ExecuteRandomPrefetch(OptimizedPrefetchRequest request)
+    private async Task ExecuteRandomPrefetchAsync(OptimizedPrefetchRequest request)
     {
         // Conservative prefetch for random access
         var prefetchSize = Math.Min(request.Size, _config.MaxPrefetchSize / 2);
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, CacheLevel.L1);
     }
 
-    private async Task ExecuteAdaptivePrefetch(OptimizedPrefetchRequest request)
+    private async Task ExecuteAdaptivePrefetchAsync(OptimizedPrefetchRequest request)
     {
         // Adaptive prefetch based on current bandwidth utilization
-        var bandwidthUtil = await EstimateBandwidthUtilization();
+        var bandwidthUtil = await EstimateBandwidthUtilizationAsync();
         var cacheLevel = bandwidthUtil > 0.7 ? CacheLevel.L1 : CacheLevel.L2;
         var prefetchSize = (long)(request.Size * (1.5 - bandwidthUtil));
 
@@ -432,10 +432,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         await PrefetchToCacheAsync(request.DevicePtr, request.Offset, prefetchSize, cacheLevel);
     }
 
-    private async Task ExecuteDefaultPrefetch(OptimizedPrefetchRequest request)
-    {
-        await PrefetchToCacheAsync(request.DevicePtr, request.Offset, request.Size, CacheLevel.L2);
-    }
+    private async Task ExecuteDefaultPrefetchAsync(OptimizedPrefetchRequest request) => await PrefetchToCacheAsync(request.DevicePtr, request.Offset, request.Size, CacheLevel.L2);
 
     private PrefetchStrategy DetermineOptimalStrategy(OptimizedPrefetchRequest request)
     {
@@ -514,7 +511,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
                        Math.Min(_config.MaxPrefetchSize, (long)(baseDistance * frequencyFactor)));
     }
 
-    private Task<double> EstimateBandwidthUtilization()
+    private Task<double> EstimateBandwidthUtilizationAsync()
     {
         // Simplified bandwidth estimation based on recent prefetch activity
         var recentPrefetches = Interlocked.Read(ref _totalPrefetches) - Interlocked.Read(ref _successfulPrefetches);
@@ -628,26 +625,20 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 /// <summary>
 /// Tracks memory access patterns for predictive prefetching.
 /// </summary>
-internal sealed class AccessPattern
+internal sealed class AccessPattern(IntPtr devicePtr)
 {
     private readonly Queue<MemoryAccess> _accesses = new();
     private readonly object _lock = new();
 
 
-    public IntPtr DevicePtr { get; }
+    public IntPtr DevicePtr { get; } = devicePtr;
     public bool AutoPrefetchEnabled { get; set; }
     public bool AdaptivePrefetchEnabled { get; set; }
     public long MemorySize { get; set; }
     public long PrefetchDistance { get; set; } = 64 * 1024; // 64KB default
     public PrefetchStrategy OptimalStrategy { get; set; } = PrefetchStrategy.Adaptive;
     public int AccessCount { get; private set; }
-    public DateTimeOffset LastAccessTime { get; private set; }
-
-    public AccessPattern(IntPtr devicePtr)
-    {
-        DevicePtr = devicePtr;
-        LastAccessTime = DateTimeOffset.UtcNow;
-    }
+    public DateTimeOffset LastAccessTime { get; private set; } = DateTimeOffset.UtcNow;
 
     public void RecordAccess(long offset, long size, MemoryAccessType accessType, DateTimeOffset timestamp)
     {
@@ -670,7 +661,7 @@ internal sealed class AccessPattern
     {
         lock (_lock)
         {
-            return _accesses.TakeLast(count).ToList();
+            return [.. _accesses.TakeLast(count)];
         }
     }
 }

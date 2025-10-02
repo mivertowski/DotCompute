@@ -227,10 +227,8 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
         AbstractionsKernelArgument[] arguments,
         CudaExecutionOptions options,
         CancellationToken cancellationToken)
-    {
         // Advanced features optimization logic would go here
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
         CudaCompiledKernel kernel,
@@ -269,10 +267,7 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
         double contextHealth,
         double memoryHealth,
         double kernelHealth,
-        double streamHealth)
-    {
-        return (deviceHealth + contextHealth + memoryHealth + kernelHealth + streamHealth) / 5.0;
-    }
+        double streamHealth) => (deviceHealth + contextHealth + memoryHealth + kernelHealth + streamHealth) / 5.0;
 
     private void PerformHealthCheck(object? state)
     {

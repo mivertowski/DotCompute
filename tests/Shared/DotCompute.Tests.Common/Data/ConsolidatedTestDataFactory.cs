@@ -58,10 +58,7 @@ public static class ConsolidatedTestDataFactory
     /// <summary>
     /// Generates an array of sequential integers starting from the specified value.
     /// </summary>
-    public static int[] CreateSequentialArray(int length, int start = 0)
-    {
-        return Enumerable.Range(start, length).ToArray();
-    }
+    public static int[] CreateSequentialArray(int length, int start = 0) => [.. Enumerable.Range(start, length)];
 
     /// <summary>
     /// Generates an array filled with the specified value.
@@ -294,23 +291,17 @@ public static class ConsolidatedTestDataFactory
     /// <summary>
     /// Common sizes for performance testing across all backend types.
     /// </summary>
-    public static readonly int[] CommonPerformanceSizes = { 1024, 4096, 16384, 65536, 262144, 1048576 };
+    public static readonly int[] CommonPerformanceSizes = [1024, 4096, 16384, 65536, 262144, 1048576];
 
     /// <summary>
     /// Generates performance test data for the specified size.
     /// </summary>
-    public static (float[] input1, float[] input2) CreatePerformanceDataPair(int size)
-    {
-        return (CreateFloatArray(size, -100f, 100f), CreateFloatArray(size, -100f, 100f));
-    }
+    public static (float[] input1, float[] input2) CreatePerformanceDataPair(int size) => (CreateFloatArray(size, -100f, 100f), CreateFloatArray(size, -100f, 100f));
 
     /// <summary>
     /// Generates large matrix data for performance testing.
     /// </summary>
-    public static (float[,] matrix1, float[,] matrix2) CreateLargeMatrixPair(int size)
-    {
-        return (CreateFloatMatrix(size, size, -10f, 10f), CreateFloatMatrix(size, size, -10f, 10f));
-    }
+    public static (float[,] matrix1, float[,] matrix2) CreateLargeMatrixPair(int size) => (CreateFloatMatrix(size, size, -10f, 10f), CreateFloatMatrix(size, size, -10f, 10f));
 
     /// <summary>
     /// Generates large datasets for memory stress testing.
@@ -399,31 +390,31 @@ public static class ConsolidatedTestDataFactory
         /// <summary>
         /// Float edge cases including special values.
         /// </summary>
-        public static readonly float[] FloatValues = {
+        public static readonly float[] FloatValues = [
             0.0f, -0.0f, 1.0f, -1.0f,
             float.Epsilon, -float.Epsilon,
             float.MinValue, float.MaxValue,
             float.PositiveInfinity, float.NegativeInfinity,
             float.NaN
-        };
+        ];
 
         /// <summary>
         /// Double edge cases including special values.
         /// </summary>
-        public static readonly double[] DoubleValues = {
+        public static readonly double[] DoubleValues = [
             0.0, -0.0, 1.0, -1.0,
             double.Epsilon, -double.Epsilon,
             double.MinValue, double.MaxValue,
             double.PositiveInfinity, double.NegativeInfinity,
             double.NaN
-        };
+        ];
 
         /// <summary>
         /// Integer edge cases.
         /// </summary>
-        public static readonly int[] IntValues = {
+        public static readonly int[] IntValues = [
             0, 1, -1, int.MinValue, int.MaxValue
-        };
+        ];
 
         /// <summary>
         /// Creates arrays containing edge case values mixed with normal values.
@@ -464,18 +455,12 @@ public static class ConsolidatedTestDataFactory
         /// <summary>
         /// Estimates shared memory requirements for a kernel.
         /// </summary>
-        public static int EstimateSharedMemoryRequirement(int elementsPerThread, int threadsPerBlock, int bytesPerElement)
-        {
-            return elementsPerThread * threadsPerBlock * bytesPerElement;
-        }
+        public static int EstimateSharedMemoryRequirement(int elementsPerThread, int threadsPerBlock, int bytesPerElement) => elementsPerThread * threadsPerBlock * bytesPerElement;
 
         /// <summary>
         /// Creates execution parameters for CUDA kernels.
         /// </summary>
-        public static object CreateExecutionParameters(int gridSize, int blockSize, int sharedMemoryBytes = 0)
-        {
-            return new { GridSize = gridSize, BlockSize = blockSize, SharedMemoryBytes = sharedMemoryBytes };
-        }
+        public static object CreateExecutionParameters(int gridSize, int blockSize, int sharedMemoryBytes = 0) => new { GridSize = gridSize, BlockSize = blockSize, SharedMemoryBytes = sharedMemoryBytes };
     }
 
     /// <summary>
@@ -497,10 +482,7 @@ public static class ConsolidatedTestDataFactory
         /// <summary>
         /// Creates threadgroup execution parameters for Metal.
         /// </summary>
-        public static object CreateThreadgroupParameters(int threadsPerGroup, int threadgroupMemoryLength = 0)
-        {
-            return new { ThreadsPerThreadgroup = threadsPerGroup, ThreadgroupMemoryLength = threadgroupMemoryLength };
-        }
+        public static object CreateThreadgroupParameters(int threadsPerGroup, int threadgroupMemoryLength = 0) => new { ThreadsPerThreadgroup = threadsPerGroup, ThreadgroupMemoryLength = threadgroupMemoryLength };
     }
 
     #endregion
@@ -630,17 +612,17 @@ public static class ConsolidatedTestDataFactory
         if (typeof(T) == typeof(float))
         {
             var result = CreateFloatArray(size);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
         if (typeof(T) == typeof(int))
         {
             var result = CreateIntArray(size);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
         if (typeof(T) == typeof(double))
         {
             var result = CreateDoubleArray(size);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");
@@ -653,12 +635,12 @@ public static class ConsolidatedTestDataFactory
             var result = new float[size];
             for (var i = 0; i < size; i++)
                 result[i] = i;
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
         if (typeof(T) == typeof(int))
         {
             var result = CreateSequentialArray(size);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");
@@ -669,12 +651,12 @@ public static class ConsolidatedTestDataFactory
         if (typeof(T) == typeof(float))
         {
             var result = CreateFilledArray(size, 1.0f);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
         if (typeof(T) == typeof(int))
         {
             var result = CreateFilledArray(size, 1);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");
@@ -693,7 +675,7 @@ public static class ConsolidatedTestDataFactory
                 var normal = (float)(Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2));
                 result[i] = normal;
             }
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");
@@ -704,7 +686,7 @@ public static class ConsolidatedTestDataFactory
         if (typeof(T) == typeof(float))
         {
             var result = CreateSparseFloatArray(size, 0.1);
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");
@@ -723,7 +705,7 @@ public static class ConsolidatedTestDataFactory
                 var clusterValue = cluster * 10.0f;
                 result[i] = clusterValue + _random.NextSingle() * 2.0f - 1.0f;
             }
-            return result.Cast<T>().ToArray();
+            return [.. result.Cast<T>()];
         }
 
         throw new ArgumentException($"Unsupported type: {typeof(T)}");

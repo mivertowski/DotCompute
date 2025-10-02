@@ -84,9 +84,9 @@ public class KernelSourceGenerator : IIncrementalGenerator
         try
         {
             // Use the code builder to orchestrate all generation
-            _codeBuilder.BuildKernelSources(methods, classes, compilation, context);
+            KernelCodeBuilder.BuildKernelSources(methods, classes, compilation, context);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             // Report generation errors as diagnostics
             context.ReportDiagnostic(Diagnostic.Create(

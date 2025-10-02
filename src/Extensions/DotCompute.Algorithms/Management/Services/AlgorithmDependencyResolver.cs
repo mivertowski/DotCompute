@@ -12,22 +12,14 @@ namespace DotCompute.Algorithms.Management.Services;
 /// <summary>
 /// Resolves plugin dependencies and provides best-match plugin selection.
 /// </summary>
-public sealed partial class AlgorithmDependencyResolver : IDisposable
+public sealed partial class AlgorithmDependencyResolver(
+    ILogger<AlgorithmDependencyResolver> logger,
+    AlgorithmPluginManagerOptions options,
+    AlgorithmRegistry registry) : IDisposable
 {
-    private readonly ILogger<AlgorithmDependencyResolver> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
-    private readonly AlgorithmRegistry _registry;
+    private readonly ILogger<AlgorithmDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmRegistry _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     private bool _disposed;
-
-    public AlgorithmDependencyResolver(
-        ILogger<AlgorithmDependencyResolver> logger,
-        AlgorithmPluginManagerOptions options,
-        AlgorithmRegistry registry)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-    }
 
     /// <summary>
     /// Resolves the best plugin for the given requirements.
@@ -137,7 +129,7 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
                 var path = new List<string>();
                 if (HasCircularDependency(plugin.Plugin.Id, visited, recursionStack, path))
                 {
-                    circularDependencies.Add(new List<string>(path));
+                    circularDependencies.Add([.. path]);
                 }
             }
         }
@@ -360,11 +352,9 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
     /// Checks if the output type is compatible.
     /// </summary>
     private static bool IsOutputTypeCompatible(IAlgorithmPlugin plugin, Type expectedOutputType)
-    {
         // This would require additional metadata about plugin output types
         // For now, we'll assume compatibility
-        return true;
-    }
+        => true;
 
     /// <summary>
     /// Checks if the plugin version meets the minimum requirement.
@@ -404,7 +394,7 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
             return;
         }
 
-        visited.Add(pluginId);
+        _ = visited.Add(pluginId);
         var loadedPlugin = _registry.GetLoadedPluginInfo(pluginId);
         if (loadedPlugin == null)
         {
@@ -426,8 +416,8 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
     /// </summary>
     private bool HasCircularDependency(string pluginId, HashSet<string> visited, HashSet<string> recursionStack, List<string> path)
     {
-        visited.Add(pluginId);
-        recursionStack.Add(pluginId);
+        _ = visited.Add(pluginId);
+        _ = recursionStack.Add(pluginId);
         path.Add(pluginId);
 
         var loadedPlugin = _registry.GetLoadedPluginInfo(pluginId);
@@ -452,7 +442,7 @@ public sealed partial class AlgorithmDependencyResolver : IDisposable
             }
         }
 
-        recursionStack.Remove(pluginId);
+        _ = recursionStack.Remove(pluginId);
         path.RemoveAt(path.Count - 1);
         return false;
     }

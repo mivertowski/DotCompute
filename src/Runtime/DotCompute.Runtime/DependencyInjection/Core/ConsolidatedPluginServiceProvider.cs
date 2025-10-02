@@ -410,7 +410,7 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
         _ = _pluginServices.AddScoped<IPluginMetrics, PluginMetrics>();
 
         // Register common services that plugins might need
-        _ = _pluginServices.AddSingleton<ILoggerFactory>(_ =>
+        _ = _pluginServices.AddSingleton(_ =>
             _hostServiceProvider.GetRequiredService<ILoggerFactory>());
 
         // Allow host services to be injected if configured

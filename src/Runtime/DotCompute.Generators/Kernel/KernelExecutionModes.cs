@@ -58,22 +58,15 @@ public enum KernelExecutionMode
 /// Handles generation of kernel code for different execution modes.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated via reflection or dependency injection")]
-internal sealed class KernelExecutionModeHandler
+internal sealed class KernelExecutionModeHandler(
+    KernelMethodInfo kernelInfo,
+
+    KernelExecutionMode mode,
+    Dictionary<string, object>? configuration = null)
 {
-    private readonly KernelMethodInfo _kernelInfo;
-    private readonly KernelExecutionMode _mode;
-    private readonly Dictionary<string, object> _configuration;
-
-    public KernelExecutionModeHandler(
-        KernelMethodInfo kernelInfo,
-
-        KernelExecutionMode mode,
-        Dictionary<string, object>? configuration = null)
-    {
-        _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
-        _mode = mode;
-        _configuration = configuration ?? [];
-    }
+    private readonly KernelMethodInfo _kernelInfo = kernelInfo ?? throw new ArgumentNullException(nameof(kernelInfo));
+    private readonly KernelExecutionMode _mode = mode;
+    private readonly Dictionary<string, object> _configuration = configuration ?? [];
 
 
     /// <summary>

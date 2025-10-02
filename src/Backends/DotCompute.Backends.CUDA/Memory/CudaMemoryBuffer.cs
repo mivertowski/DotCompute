@@ -12,27 +12,18 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <summary>
     /// Represents a CUDA memory buffer allocated on the GPU device.
     /// </summary>
-    public sealed class CudaMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaMemoryBuffer"/> class.
+    /// </remarks>
+    /// <param name="device">The CUDA device.</param>
+    /// <param name="devicePointer">The device memory pointer.</param>
+    /// <param name="sizeInBytes">The size in bytes.</param>
+    /// <param name="options">Memory allocation options.</param>
+    public sealed class CudaMemoryBuffer(CudaDevice device, nint devicePointer, long sizeInBytes, MemoryOptions options = MemoryOptions.None) : IUnifiedMemoryBuffer, IDisposable
     {
-        private readonly CudaDevice _device;
-        private readonly nint _devicePointer;
-        private readonly long _sizeInBytes;
+        private readonly nint _devicePointer = devicePointer;
+        private readonly long _sizeInBytes = sizeInBytes;
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaMemoryBuffer"/> class.
-        /// </summary>
-        /// <param name="device">The CUDA device.</param>
-        /// <param name="devicePointer">The device memory pointer.</param>
-        /// <param name="sizeInBytes">The size in bytes.</param>
-        /// <param name="options">Memory allocation options.</param>
-        public CudaMemoryBuffer(CudaDevice device, nint devicePointer, long sizeInBytes, MemoryOptions options = MemoryOptions.None)
-        {
-            _device = device ?? throw new ArgumentNullException(nameof(device));
-            _devicePointer = devicePointer;
-            _sizeInBytes = sizeInBytes;
-            Options = options;
-        }
 
         /// <summary>
         /// Gets the device memory pointer.
@@ -47,7 +38,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
         /// <inheritdoc/>
-        public MemoryOptions Options { get; }
+        public MemoryOptions Options { get; } = options;
 
 
         /// <inheritdoc/>
@@ -217,37 +208,25 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Represents a generic CUDA memory buffer allocated on the GPU device.
     /// </summary>
     /// <typeparam name="T">The element type stored in the buffer.</typeparam>
-    public sealed class CudaMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable where T : unmanaged
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CudaMemoryBuffer{T}"/> class.
+    /// </remarks>
+    /// <param name="devicePointer">The device memory pointer.</param>
+    /// <param name="count">The number of elements.</param>
+    /// <param name="context">The CUDA context.</param>
+    /// <param name="options">Memory allocation options.</param>
+    /// <param name="accelerator">Optional accelerator reference for advanced features.</param>
+    public sealed class CudaMemoryBuffer<T>(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null) : IUnifiedMemoryBuffer<T>, IDisposable where T : unmanaged
     {
-        private readonly CudaContext _context;
-        private readonly nint _devicePointer;
-        private readonly long _count;
-        private readonly long _sizeInBytes;
+        private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly nint _devicePointer = devicePointer;
+        private readonly long _count = count;
+        private readonly long _sizeInBytes = count * Unsafe.SizeOf<T>();
         private bool _disposed;
-        private bool _isDirty;
-        private readonly HashSet<(long start, long end)> _dirtyRanges;
-        private readonly object _dirtyLock = new object();
-        private readonly WeakReference<IAccelerator>? _acceleratorRef;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaMemoryBuffer{T}"/> class.
-        /// </summary>
-        /// <param name="devicePointer">The device memory pointer.</param>
-        /// <param name="count">The number of elements.</param>
-        /// <param name="context">The CUDA context.</param>
-        /// <param name="options">Memory allocation options.</param>
-        /// <param name="accelerator">Optional accelerator reference for advanced features.</param>
-        public CudaMemoryBuffer(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null)
-        {
-            _devicePointer = devicePointer;
-            _count = count;
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _sizeInBytes = count * Unsafe.SizeOf<T>();
-            Options = options;
-            _isDirty = false;
-            _dirtyRanges = [];
-            _acceleratorRef = accelerator != null ? new WeakReference<IAccelerator>(accelerator) : null;
-        }
+        private bool _isDirty = false;
+        private readonly HashSet<(long start, long end)> _dirtyRanges = [];
+        private readonly object _dirtyLock = new();
+        private readonly WeakReference<IAccelerator>? _acceleratorRef = accelerator != null ? new WeakReference<IAccelerator>(accelerator) : null;
 
         /// <summary>
         /// Gets the device memory pointer.
@@ -268,7 +247,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
         /// <inheritdoc/>
-        public MemoryOptions Options { get; }
+        public MemoryOptions Options { get; } = options;
 
 
         /// <inheritdoc/>
@@ -565,7 +544,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = stream == IntPtr.Zero
 
                     ? CudaRuntime.cudaMemcpy(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice)
-                    : CudaRuntime.cudaMemcpyAsync(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice, stream);
+                    : CudaRuntime.cudaMemcpy(destPtr, sourcePtr, (nuint)bytesToCopy, CudaMemcpyKind.DeviceToDevice, stream);
                 CudaRuntime.CheckError(result, "async copying range between device buffers");
 
 
@@ -668,7 +647,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             lock (_dirtyLock)
             {
-                return _dirtyRanges.ToArray();
+                return [.. _dirtyRanges];
             }
         }
 
@@ -688,7 +667,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             var dirtyRanges = GetDirtyRanges();
-            if (!dirtyRanges.Any())
+            if (dirtyRanges.Length == 0)
             {
                 return;
             }

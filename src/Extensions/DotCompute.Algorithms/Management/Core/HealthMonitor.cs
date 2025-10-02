@@ -103,15 +103,12 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <summary>
     /// Timer callback wrapper for periodic health checks.
     /// </summary>
-    private void OnHealthCheckTimerWrapper(object? state)
-    {
-        _ = Task.Run(async () => await OnHealthCheckTimer(state));
-    }
+    private void OnHealthCheckTimerWrapper(object? state) => _ = Task.Run(async () => await OnHealthCheckTimerAsync(state));
 
     /// <summary>
     /// Timer callback for periodic health checks.
     /// </summary>
-    private async Task OnHealthCheckTimer(object? state) => await PerformHealthChecksAsync().ConfigureAwait(false);
+    private async Task OnHealthCheckTimerAsync(object? state) => await PerformHealthChecksAsync().ConfigureAwait(false);
 
     /// <summary>
     /// Checks the health of a single plugin.

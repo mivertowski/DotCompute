@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Plugins.Core;
@@ -210,7 +210,7 @@ public static class MetalBackendPluginExtensions
         _ = services.AddSingleton<IAccelerator>(provider =>
         {
             var accelerator = provider.GetRequiredService<MetalAccelerator>();
-            return new Plugins.Core.NamedAcceleratorWrapper("metal", accelerator);
+            return new NamedAcceleratorWrapper("metal", accelerator);
         });
 
         return services;

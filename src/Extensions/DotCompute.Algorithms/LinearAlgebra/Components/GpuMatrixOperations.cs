@@ -2,11 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Algorithms.Types;
-using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Algorithms.Logging;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
@@ -22,24 +20,17 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <summary>
     /// Specialized component for GPU-accelerated matrix operations including multiplication, decomposition, and transformations.
     /// </summary>
-    public sealed class GpuMatrixOperations : IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the GpuMatrixOperations.
+    /// </remarks>
+    /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
+    /// <param name="logger">Logger instance.</param>
+    public sealed class GpuMatrixOperations(KernelManager kernelManager, ILogger<GpuMatrixOperations> logger) : IDisposable
     {
-        private readonly KernelManager _kernelManager;
-        private readonly ILogger<GpuMatrixOperations> _logger;
-        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache;
+        private readonly KernelManager _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+        private readonly ILogger<GpuMatrixOperations> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
-
-        /// <summary>
-        /// Initializes a new instance of the GpuMatrixOperations.
-        /// </summary>
-        /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
-        /// <param name="logger">Logger instance.</param>
-        public GpuMatrixOperations(KernelManager kernelManager, ILogger<GpuMatrixOperations> logger)
-        {
-            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _kernelCache = [];
-        }
 
         /// <summary>
         /// Gets the kernel source for matrix multiply operation.
@@ -108,8 +99,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
                 var executionConfig = new KernelExecutionConfig
                 {
-                    GlobalWorkSize = config.GlobalWorkSize.Select(x => (int)x).ToArray(),
-                    LocalWorkSize = config.LocalWorkSize.Select(x => (int)x).ToArray(),
+                    GlobalWorkSize = [.. config.GlobalWorkSize.Select(x => (int)x)],
+                    LocalWorkSize = [.. config.LocalWorkSize.Select(x => (int)x)],
                     CaptureTimings = true
                 };
 

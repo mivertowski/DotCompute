@@ -21,22 +21,22 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets or sets validation messages
     /// </summary>
-    public List<string> Messages { get; set; } = new();
+    public List<string> Messages { get; set; } = [];
 
     /// <summary>
     /// Gets or sets validation warnings
     /// </summary>
-    public List<string> Warnings { get; set; } = new();
+    public List<string> Warnings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets validation errors
     /// </summary>
-    public List<string> Errors { get; set; } = new();
+    public List<string> Errors { get; set; } = [];
 
     /// <summary>
     /// Gets or sets additional metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the validation timestamp

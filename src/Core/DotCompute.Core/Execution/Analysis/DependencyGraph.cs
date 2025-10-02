@@ -133,7 +133,7 @@ namespace DotCompute.Core.Execution.Analysis
         {
             var allNodes = GetAllNodes();
             var dependencyNodes = _dependencies.Values.SelectMany(deps => deps).ToHashSet();
-            return allNodes.Where(node => !dependencyNodes.Contains(node)).ToList();
+            return [.. allNodes.Where(node => !dependencyNodes.Contains(node))];
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace DotCompute.Core.Execution.Analysis
         public List<int> GetRootNodes()
         {
             var allNodes = GetAllNodes();
-            return allNodes.Where(node => !HasDependencies(node)).ToList();
+            return [.. allNodes.Where(node => !HasDependencies(node))];
         }
 
         /// <summary>
@@ -224,8 +224,7 @@ namespace DotCompute.Core.Execution.Analysis
             }
             return nodes;
         }
-
-
+        
         /// <summary>
         /// Clears all dependencies from the graph.
         /// </summary>

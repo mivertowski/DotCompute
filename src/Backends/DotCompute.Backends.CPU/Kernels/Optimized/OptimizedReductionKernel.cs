@@ -16,16 +16,14 @@ namespace DotCompute.Backends.CPU.Kernels.Optimized;
 /// to sum all elements in a vector. The algorithm divides the input into partitions
 /// processed by different threads, then combines the results for the final sum.
 /// </remarks>
-internal class OptimizedReductionKernel : Base.OptimizedKernelBase
+/// <remarks>
+/// Initializes a new instance of the <see cref="OptimizedReductionKernel"/> class.
+/// </remarks>
+/// <param name="name">The name of the kernel.</param>
+/// <param name="options">The compilation options for the kernel.</param>
+/// <param name="logger">The logger instance for diagnostics.</param>
+internal class OptimizedReductionKernel(string name, CompilationOptions options, ILogger logger) : Base.OptimizedKernelBase(name, options, logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OptimizedReductionKernel"/> class.
-    /// </summary>
-    /// <param name="name">The name of the kernel.</param>
-    /// <param name="options">The compilation options for the kernel.</param>
-    /// <param name="logger">The logger instance for diagnostics.</param>
-    public OptimizedReductionKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
 
     /// <summary>
     /// Executes the reduction kernel asynchronously.

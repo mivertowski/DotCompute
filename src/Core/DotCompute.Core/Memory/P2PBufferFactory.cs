@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory.Utilities;
 using Microsoft.Extensions.Logging;
@@ -15,25 +15,16 @@ namespace DotCompute.Core.Memory
     /// P2P-aware buffer factory that creates optimized buffers for multi-GPU scenarios.
     /// Handles direct P2P transfers, host-mediated transfers, and memory pooling.
     /// </summary>
-    public sealed class P2PBufferFactory : IAsyncDisposable
+    public sealed class P2PBufferFactory(
+        ILogger logger,
+        P2PCapabilityDetector capabilityDetector) : IAsyncDisposable
     {
-        private readonly ILogger _logger;
-        private readonly P2PCapabilityDetector _capabilityDetector;
-        private readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools;
-        private readonly ConcurrentDictionary<string, P2PConnectionState> _activeP2PConnections;
-        private readonly SemaphoreSlim _factorySemaphore;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly P2PCapabilityDetector _capabilityDetector = capabilityDetector ?? throw new ArgumentNullException(nameof(capabilityDetector));
+        private readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools = new();
+        private readonly ConcurrentDictionary<string, P2PConnectionState> _activeP2PConnections = new();
+        private readonly SemaphoreSlim _factorySemaphore = new(1, 1);
         private bool _disposed;
-
-        public P2PBufferFactory(
-            ILogger logger,
-            P2PCapabilityDetector capabilityDetector)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _capabilityDetector = capabilityDetector ?? throw new ArgumentNullException(nameof(capabilityDetector));
-            _devicePools = new ConcurrentDictionary<string, DeviceBufferPool>();
-            _activeP2PConnections = new ConcurrentDictionary<string, P2PConnectionState>();
-            _factorySemaphore = new SemaphoreSlim(1, 1);
-        }
 
         /// <summary>
         /// Creates a P2P-optimized buffer on the target device with data from the source buffer.

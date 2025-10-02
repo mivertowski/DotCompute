@@ -369,7 +369,7 @@ public sealed class MetalGraphNode
             Kernel = Kernel,
             ThreadgroupsPerGrid = ThreadgroupsPerGrid,
             ThreadsPerThreadgroup = ThreadsPerThreadgroup,
-            Arguments = Arguments.ToArray(),
+            Arguments = [.. Arguments],
             SourceBuffer = SourceBuffer,
             DestinationBuffer = DestinationBuffer,
             CopySize = CopySize,

@@ -18,6 +18,6 @@ public sealed class KernelExecutionPlan
     public required int MemoryPrefetchDistance { get; init; }
     public required bool EnableLoopUnrolling { get; init; }
     public required IReadOnlySet<string> InstructionSets { get; init; }
-    public List<string> MemoryOptimizations { get; init; } = new();
-    public List<string> CacheOptimizations { get; init; } = new();
+    public List<string> MemoryOptimizations { get; init; } = [];
+    public List<string> CacheOptimizations { get; init; } = [];
 }

@@ -12,15 +12,10 @@ namespace DotCompute.Runtime.Services;
 /// Service for discovering and registering kernels from generated source code.
 /// This bridges the generated KernelRegistry with the runtime KernelExecutionService.
 /// </summary>
-public class GeneratedKernelDiscoveryService
+public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoveryService> logger)
 {
-    private readonly ILogger<GeneratedKernelDiscoveryService> _logger;
+    private readonly ILogger<GeneratedKernelDiscoveryService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly List<Assembly> _scannedAssemblies = [];
-
-    public GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoveryService> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <summary>
     /// Discovers and registers all kernels from loaded assemblies.
@@ -320,7 +315,7 @@ public class GeneratedKernelDiscoveryService
                 }
 
 
-                return supportedBackends.ToArray();
+                return [.. supportedBackends];
             }
         }
         catch (Exception ex)

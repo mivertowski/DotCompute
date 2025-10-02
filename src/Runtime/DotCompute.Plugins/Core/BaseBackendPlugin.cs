@@ -96,7 +96,7 @@ namespace DotCompute.Plugins.Core
         {
             Logger?.LogDebug("Registering named accelerator wrapper for {BackendName}", AcceleratorName);
 
-            _ = services.AddSingleton<IAccelerator>(provider =>
+            _ = services.AddSingleton(provider =>
             {
                 try
                 {
@@ -216,22 +216,16 @@ namespace DotCompute.Plugins.Core
     /// Common wrapper to provide named accelerator support across all backends.
     /// This consolidates the duplicate NamedAcceleratorWrapper implementations.
     /// </summary>
-    public sealed class NamedAcceleratorWrapper : IAccelerator
+    /// <remarks>
+    /// Initializes a new instance of the NamedAcceleratorWrapper class.
+    /// </remarks>
+    /// <param name="name">The name for this accelerator.</param>
+    /// <param name="accelerator">The underlying accelerator instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when name or accelerator is null.</exception>
+    public sealed class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
     {
-        private readonly string _name;
-        private readonly IAccelerator _accelerator;
-
-        /// <summary>
-        /// Initializes a new instance of the NamedAcceleratorWrapper class.
-        /// </summary>
-        /// <param name="name">The name for this accelerator.</param>
-        /// <param name="accelerator">The underlying accelerator instance.</param>
-        /// <exception cref="ArgumentNullException">Thrown when name or accelerator is null.</exception>
-        public NamedAcceleratorWrapper(string name, IAccelerator accelerator)
-        {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
-            _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        }
+        private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+        private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
         /// <inheritdoc/>
         public string Name => _name;

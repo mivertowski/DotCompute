@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Buffers;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -111,7 +111,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
 
     /// <inheritdoc/>
-    public virtual MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public virtual MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ThrowIfDisposed();
         EnsureOnHost();
@@ -119,7 +119,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc/>
-    public virtual MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
+    public virtual MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -131,7 +131,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);
@@ -148,16 +148,16 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
 
     /// <inheritdoc/>
-    public abstract ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    public abstract ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
-    public abstract ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    public abstract ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
     public abstract void Synchronize();
 
     /// <inheritdoc/>
-    public abstract ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
+    public abstract ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default);
 
 
     /// <inheritdoc/>
@@ -388,19 +388,13 @@ public abstract class BaseUnifiedBuffer<T> : BaseMemoryBuffer<T> where T : unman
 /// <summary>
 /// Base class for pooled memory buffers with automatic recycling.
 /// </summary>
-public abstract class BasePooledBuffer<T> : BaseMemoryBuffer<T>, IMemoryOwner<T> where T : unmanaged
+/// <remarks>
+/// Initializes a new instance of the <see cref="BasePooledBuffer{T}"/> class.
+/// </remarks>
+public abstract class BasePooledBuffer<T>(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction = null) : BaseMemoryBuffer<T>(sizeInBytes), IMemoryOwner<T> where T : unmanaged
 {
-    private readonly Action<BasePooledBuffer<T>>? _returnAction;
+    private readonly Action<BasePooledBuffer<T>>? _returnAction = returnAction;
     private volatile int _disposed;
-
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BasePooledBuffer{T}"/> class.
-    /// </summary>
-    protected BasePooledBuffer(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction = null) : base(sizeInBytes)
-    {
-        _returnAction = returnAction;
-    }
 
 
     /// <inheritdoc/>

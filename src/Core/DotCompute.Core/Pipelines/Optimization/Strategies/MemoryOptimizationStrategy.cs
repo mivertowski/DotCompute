@@ -23,10 +23,7 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
     public bool CanOptimize(IKernelPipeline pipeline) => pipeline?.Stages?.Any() == true;
     public bool CanApply(IKernelPipeline pipeline) => CanOptimize(pipeline);
 
-    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
-    {
-        return await ApplyAsync(pipeline, cancellationToken);
-    }
+    public async Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default) => await ApplyAsync(pipeline, cancellationToken);
 
     public async Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
     {
@@ -35,7 +32,7 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
             OptimizationTypes = OptimizationType.MemoryAccess
         };
 
-        var result = await ApplyInternalAsync(pipeline.Stages.ToList(), settings, cancellationToken);
+        var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);
         return CreateOptimizedPipeline(pipeline, result.OptimizedStages, settings);
     }
 
@@ -66,7 +63,6 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         // - Memory pooling for reduced allocations
         // - Prefetching for improved cache performance
         // - Alignment optimizations for SIMD operations
-
 
         => new MemoryOptimizedStageWrapper(stage);
 
@@ -115,8 +111,8 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
     public IReadOnlyList<string> Dependencies => _innerStage.Dependencies;
     public IReadOnlyDictionary<string, object> Metadata => _innerStage.Metadata;
 
-    public async ValueTask<DotCompute.Abstractions.Models.Pipelines.StageExecutionResult> ExecuteAsync(
-        DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context,
+    public async ValueTask<AbstractionsMemory.Models.Pipelines.StageExecutionResult> ExecuteAsync(
+        AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
     {
         // Apply memory optimizations before execution
@@ -131,11 +127,11 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
         return result;
     }
 
-    public DotCompute.Abstractions.Models.Pipelines.StageValidationResult Validate() => _innerStage.Validate();
+    public AbstractionsMemory.Models.Pipelines.StageValidationResult Validate() => _innerStage.Validate();
 
     public IStageMetrics GetMetrics() => _innerStage.GetMetrics();
 
-    private static async ValueTask OptimizeMemoryAsync(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context)
+    private static async ValueTask OptimizeMemoryAsync(AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context)
     {
         // Implement memory layout optimizations
         if (context.MemoryManager != null)
@@ -145,7 +141,7 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
 
     }
 
-    private static async ValueTask CleanupMemoryAsync(DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext context)
+    private static async ValueTask CleanupMemoryAsync(AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context)
     {
         // Clean up temporary memory
         if (context.MemoryManager != null)

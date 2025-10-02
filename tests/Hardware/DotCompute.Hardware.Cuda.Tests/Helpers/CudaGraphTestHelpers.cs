@@ -14,19 +14,15 @@ public static class CudaGraphTestWrapper
     /// Adds a memory copy operation to the graph.
     /// </summary>
     public static object AddMemoryCopy(IUnifiedMemoryBuffer<float> source, IUnifiedMemoryBuffer<float> destination, int sizeInBytes)
-    {
         // This is a test helper - actual implementation would use CUDA graph API
-        return new { Type = "MemoryCopy", Source = source, Destination = destination, Size = sizeInBytes };
-    }
+        => new { Type = "MemoryCopy", Source = source, Destination = destination, Size = sizeInBytes };
 
     /// <summary>
     /// Adds a kernel execution node to the graph.
     /// </summary>
     public static object AddKernel(ICompiledKernel kernel, LaunchConfiguration config, params object[] args)
-    {
         // This is a test helper - actual implementation would use CUDA graph API
-        return new { Type = "Kernel", Kernel = kernel, Config = config, Arguments = args };
-    }
+        => new { Type = "Kernel", Kernel = kernel, Config = config, Arguments = args };
 }
 
 /// <summary>
@@ -38,10 +34,8 @@ public static class CudaGraphExecutable
     /// Launches a graph asynchronously.
     /// </summary>
     public static Task LaunchAsync(object executableGraph)
-    {
         // This is a test helper - actual implementation would execute the graph
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 }
 
 /// <summary>
@@ -52,10 +46,7 @@ public static class CudaGraphTestExtensions
     /// <summary>
     /// Creates a test graph.
     /// </summary>
-    public static TestGraph CreateGraph(this IAccelerator accelerator)
-    {
-        return new TestGraph();
-    }
+    public static TestGraph CreateGraph(this IAccelerator accelerator) => new();
 }
 
 /// <summary>
@@ -75,10 +66,8 @@ public class TestGraph
     /// Instantiates the graph for execution.
     /// </summary>
     public static object Instantiate()
-    {
         // Test implementation
-        return new { Type = "ExecutableGraph" };
-    }
+        => new { Type = "ExecutableGraph" };
 }
 
 /// <summary>

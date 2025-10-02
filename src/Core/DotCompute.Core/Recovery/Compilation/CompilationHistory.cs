@@ -23,9 +23,14 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// 
 /// The class implements IDisposable to ensure proper cleanup of tracked data.
 /// </remarks>
-public class CompilationHistory : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="CompilationHistory"/> class.
+/// </remarks>
+/// <param name="kernelName">The name of the kernel to track.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
+public class CompilationHistory(string kernelName) : IDisposable
 {
-    private readonly string _kernelName;
+    private readonly string _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
     private readonly List<Exception> _recentErrors = [];
     private readonly List<CompilationFallbackStrategy> _attemptedStrategies = [];
     private int _failureCount;
@@ -74,16 +79,6 @@ public class CompilationHistory : IDisposable
     /// </summary>
     /// <value>A read-only collection of recent exceptions.</value>
     public IReadOnlyList<Exception> RecentErrors => _recentErrors.AsReadOnly();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CompilationHistory"/> class.
-    /// </summary>
-    /// <param name="kernelName">The name of the kernel to track.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
-    public CompilationHistory(string kernelName)
-    {
-        _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
-    }
 
     /// <summary>
     /// Records a compilation failure with the associated error and compilation options.

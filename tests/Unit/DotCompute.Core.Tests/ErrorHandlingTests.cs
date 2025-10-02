@@ -1107,9 +1107,8 @@ public sealed class ErrorHandlingTests : IDisposable
     /// <summary>
     /// Test accelerator implementation with comprehensive error simulation capabilities.
     /// </summary>
-    private sealed class TestErrorAccelerator : BaseAccelerator
+    private sealed class TestErrorAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
     {
-        private readonly SemaphoreSlim _stateLock = new(1, 1);
         private readonly ConcurrentDictionary<string, object> _internalState = new();
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         private readonly int _stateConsistencyViolations;
@@ -1290,11 +1289,6 @@ public sealed class ErrorHandlingTests : IDisposable
         private int _attemptCount;
         private int _memoryFailureCount;
         private readonly Random _random = new();
-
-        public TestErrorAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info, AcceleratorType.CPU, memory, new AcceleratorContext(IntPtr.Zero, 0), logger)
-        {
-        }
 
         protected override async ValueTask<ICompiledKernel> CompileKernelCoreAsync(
             KernelDefinition definition,

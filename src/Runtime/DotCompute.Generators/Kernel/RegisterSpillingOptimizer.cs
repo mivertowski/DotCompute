@@ -297,7 +297,7 @@ internal sealed class RegisterSpillingOptimizer
 
         public SpillCodeTransformer(List<string> spillableVariables)
         {
-            _spillVars = new HashSet<string>(spillableVariables);
+            _spillVars = [.. spillableVariables];
             _spillInfoMap = [];
             _output = new StringBuilder();
             _processedDeclarations = [];
@@ -388,10 +388,7 @@ internal sealed class RegisterSpillingOptimizer
             _ = _output.AppendLine(processedLine);
         }
 
-        private static bool IsLoopConstruct(string line)
-        {
-            return Regex.IsMatch(line, @"\b(for|while|do)\b\s*\(");
-        }
+        private static bool IsLoopConstruct(string line) => Regex.IsMatch(line, @"\b(for|while|do)\b\s*\(");
 
         private static bool IsVariableDeclaration(string line, out string varName, out string varType, out string initializer)
         {

@@ -103,19 +103,19 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
         {
             Name = classSymbol.Name,
             Namespace = classSymbol.ContainingNamespace.ToDisplayString(),
-            KernelMethodNames = kernelMethods.Select(m => m.Name).ToList()
+            KernelMethodNames = [.. kernelMethods.Select(m => m.Name)]
         };
     }
 
     private static List<ParameterInfo> GetParameterInfo(IMethodSymbol method)
     {
-        return method.Parameters.Select(p => new ParameterInfo
+        return [.. method.Parameters.Select(p => new ParameterInfo
         {
             Name = p.Name,
             Type = p.Type.ToDisplayString(),
             IsBuffer = IsBufferType(p.Type),
             IsReadOnly = p.RefKind == RefKind.In || p.Type.IsReadOnly
-        }).ToList();
+        })];
     }
 
     private static bool IsBufferType(ITypeSymbol type)

@@ -2,16 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Abstractions.Security;
 using DotCompute.Algorithms.Types.Security;
 using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 using ThreatLevel = DotCompute.Abstractions.Security.ThreatLevel;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types.Enums;
-using DotCompute.Algorithms.Types.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Validation;
@@ -181,7 +177,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         try
         {
             using var stream = File.OpenRead(assemblyPath);
-            await stream.ReadAsync(new byte[1], cancellationToken);
+            _ = await stream.ReadAsync(new byte[1], cancellationToken);
         }
         catch (Exception ex)
         {
@@ -205,7 +201,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         // Digital signature validation
         if (_options.RequireDigitalSignature)
         {
-            var signatureResult = await _authenticodeValidator.ValidateAsync(assemblyPath);
+            var signatureResult = await AuthenticodeValidator.ValidateAsync(assemblyPath);
             if (!signatureResult.IsValid || signatureResult.TrustLevel < TrustLevel.PartiallyTrusted)
             {
                 result.Errors.Add($"Digital signature validation failed: {signatureResult.ErrorMessage}");
@@ -229,7 +225,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         // Malware scanning
         if (_options.EnableMalwareScanning)
         {
-            var malwareResult = await _malwareScanner.ScanAssemblyAsync(assemblyPath);
+            var malwareResult = await MalwareScanner.ScanAssemblyAsync(assemblyPath);
             if (!malwareResult.IsClean || malwareResult.ThreatLevel >= ThreatLevel.Medium)
             {
                 result.Errors.Add($"Malware scan failed: {malwareResult.ThreatDescription}");
@@ -245,7 +241,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath, cancellationToken)
         };
 
-        var policyResult = _securityPolicy.EvaluateRules(context);
+        var policyResult = SecurityPolicyEngine.EvaluateRules(context);
         if (!policyResult.IsAllowed)
         {
             result.Errors.Add($"Security policy violations: {string.Join(", ", policyResult.Violations)}");
@@ -262,7 +258,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates assembly structure and metadata.
     /// </summary>
-    private async Task<bool> ValidateAssemblyStructureAsync(
+    private static async Task<bool> ValidateAssemblyStructureAsync(
         string assemblyPath,
         PluginValidationResult result,
         CancellationToken cancellationToken)
@@ -348,7 +344,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates individual plugin type.
     /// </summary>
-    private bool ValidatePluginType(Type pluginType, PluginValidationResult result)
+    private static bool ValidatePluginType(Type pluginType, PluginValidationResult result)
     {
         // Check for parameterless constructor
         var constructors = pluginType.GetConstructors();
@@ -374,7 +370,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates performance characteristics.
     /// </summary>
-    private async Task ValidatePerformanceCharacteristicsAsync(
+    private static async Task ValidatePerformanceCharacteristicsAsync(
         string assemblyPath,
         PluginValidationResult result,
         CancellationToken cancellationToken)
@@ -415,7 +411,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates plugin metadata.
     /// </summary>
-    private void ValidatePluginMetadata(IAlgorithmPlugin plugin, PluginInstanceValidationResult result)
+    private static void ValidatePluginMetadata(IAlgorithmPlugin plugin, PluginInstanceValidationResult result)
     {
         if (string.IsNullOrWhiteSpace(plugin.Id))
         {
@@ -441,14 +437,14 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates plugin capabilities.
     /// </summary>
-    private void ValidatePluginCapabilities(IAlgorithmPlugin plugin, PluginInstanceValidationResult result)
+    private static void ValidatePluginCapabilities(IAlgorithmPlugin plugin, PluginInstanceValidationResult result)
     {
-        if (plugin.SupportedAcceleratorTypes == null || !plugin.SupportedAcceleratorTypes.Any())
+        if (plugin.SupportedAcceleratorTypes == null || plugin.SupportedAcceleratorTypes.Length == 0)
         {
             result.Warnings.Add("Plugin has no supported accelerator types");
         }
 
-        if (plugin.InputTypes == null || !plugin.InputTypes.Any())
+        if (plugin.InputTypes == null || plugin.InputTypes.Length == 0)
         {
             result.Warnings.Add("Plugin has no supported data types");
         }
@@ -457,7 +453,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates plugin dependencies.
     /// </summary>
-    private async Task ValidatePluginDependenciesAsync(
+    private static async Task ValidatePluginDependenciesAsync(
         IAlgorithmPlugin plugin,
         PluginInstanceValidationResult result,
         CancellationToken cancellationToken)
@@ -471,7 +467,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             {
                 try
                 {
-                    Assembly.Load(referencedAssembly);
+                    _ = Assembly.Load(referencedAssembly);
                 }
                 catch (FileNotFoundException)
                 {
@@ -494,7 +490,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates runtime performance characteristics.
     /// </summary>
-    private async Task ValidateRuntimePerformanceAsync(
+    private static async Task ValidateRuntimePerformanceAsync(
         IAlgorithmPlugin plugin,
         PluginInstanceValidationResult result,
         CancellationToken cancellationToken)
@@ -554,7 +550,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
 
         foreach (var publisher in _options.TrustedPublishers)
         {
-            _securityPolicy.AddTrustedPublisher(publisher);
+            SecurityPolicyEngine.AddTrustedPublisher(publisher);
         }
     }
 
@@ -773,30 +769,27 @@ public sealed class PerformanceValidationMetrics
 }
 
 // Placeholder classes for security components
-internal sealed class SecurityPolicyEngine : IDisposable
+internal sealed class SecurityPolicyEngine(ILogger logger) : IDisposable
 {
     public bool RequireDigitalSignature { get; set; }
     public bool RequireStrongName { get; set; }
     public SecurityLevel MinimumSecurityLevel { get; set; }
     public long MaxAssemblySize { get; set; }
 
-    public SecurityPolicyEngine(ILogger logger) { }
-    public void AddTrustedPublisher(string publisher) { }
-    public SecurityPolicyResult EvaluateRules(SecurityEvaluationContext context) => new() { IsAllowed = true };
+    public static void AddTrustedPublisher(string publisher) { }
+    public static SecurityPolicyResult EvaluateRules(SecurityEvaluationContext context) => new() { IsAllowed = true };
     public void Dispose() { }
 }
 
-internal sealed class AuthenticodeValidator : IDisposable
+internal sealed class AuthenticodeValidator(ILogger logger) : IDisposable
 {
-    public AuthenticodeValidator(ILogger logger) { }
-    public Task<AuthenticodeResult> ValidateAsync(string assemblyPath) => Task.FromResult(new AuthenticodeResult { IsValid = true, TrustLevel = TrustLevel.High });
+    public static Task<AuthenticodeResult> ValidateAsync(string assemblyPath) => Task.FromResult(new AuthenticodeResult { IsValid = true, TrustLevel = TrustLevel.High });
     public void Dispose() { }
 }
 
-internal sealed class MalwareScanner : IDisposable
+internal sealed class MalwareScanner(ILogger logger) : IDisposable
 {
-    public MalwareScanner(ILogger logger) { }
-    public Task<MalwareResult> ScanAssemblyAsync(string assemblyPath) => Task.FromResult(new MalwareResult { IsClean = true, ThreatLevel = ThreatLevel.None });
+    public static Task<MalwareResult> ScanAssemblyAsync(string assemblyPath) => Task.FromResult(new MalwareResult { IsClean = true, ThreatLevel = ThreatLevel.None });
     public void Dispose() { }
 }
 

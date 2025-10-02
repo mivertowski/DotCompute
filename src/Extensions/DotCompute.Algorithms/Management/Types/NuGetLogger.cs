@@ -10,54 +10,25 @@ namespace DotCompute.Algorithms.Management.Types
     /// Adapter to bridge Microsoft.Extensions.Logging.ILogger to NuGet.Common.ILogger.
     /// Provides compatibility between .NET logging and NuGet package operations.
     /// </summary>
-    internal sealed class NuGetLogger : NuGet.Common.ILogger
+    internal sealed class NuGetLogger(MSLogger logger) : NuGet.Common.ILogger
     {
-        private readonly MSLogger _logger;
+        private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        public NuGetLogger(MSLogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
 
-        public void LogDebug(string data)
-        {
-            _logger.LogDebug("{Data}", data);
-        }
+        public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
 
-        public void LogVerbose(string data)
-        {
-            _logger.LogTrace("{Data}", data);
-        }
+        public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogInformation(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
+        public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogMinimal(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
+        public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
 
-        public void LogWarning(string data)
-        {
-            _logger.LogWarning("{Data}", data);
-        }
+        public void LogError(string data) => _logger.LogError("{Data}", data);
 
-        public void LogError(string data)
-        {
-            _logger.LogError("{Data}", data);
-        }
+        public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
 
-        public void LogInformationSummary(string data)
-        {
-            _logger.LogInformation("{Data}", data);
-        }
-
-        public void LogErrorSummary(string data)
-        {
-            _logger.LogError("{Data}", data);
-        }
+        public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
 
         public void Log(NuGet.Common.LogLevel level, string data)
         {
@@ -81,10 +52,7 @@ namespace DotCompute.Algorithms.Management.Types
             await Task.CompletedTask;
         }
 
-        public void Log(NuGet.Common.ILogMessage message)
-        {
-            Log(message.Level, message.Message);
-        }
+        public void Log(NuGet.Common.ILogMessage message) => Log(message.Level, message.Message);
 
         public async Task LogAsync(NuGet.Common.ILogMessage message)
         {

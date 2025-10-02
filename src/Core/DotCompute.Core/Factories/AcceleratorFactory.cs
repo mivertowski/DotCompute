@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Factories;
 using Microsoft.Extensions.Logging;
@@ -212,13 +212,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
 
-        var provider = serviceProvider.GetService(typeof(TProvider)) as TProvider;
-        if (provider == null)
-        {
-            throw new InvalidOperationException($"Provider type {typeof(TProvider).Name} is not registered in the service provider");
-        }
-
-
+        var provider = serviceProvider.GetService(typeof(TProvider)) as TProvider ?? throw new InvalidOperationException($"Provider type {typeof(TProvider).Name} is not registered in the service provider");
         return await ValueTask.FromResult(provider);
     }
 
@@ -251,11 +245,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             var backendName = type.ToString();
             RegisterBackend(backendName, async (config, loggerFactory) =>
             {
-                var provider = Activator.CreateInstance(providerType) as IAcceleratorProvider;
-                if (provider == null)
-                {
-                    throw new InvalidOperationException($"Failed to create instance of {providerType.Name}");
-                }
+                var provider = Activator.CreateInstance(providerType) as IAcceleratorProvider ?? throw new InvalidOperationException($"Failed to create instance of {providerType.Name}");
 
                 // Provider should create the accelerator based on type and config
                 // The actual CreateAsync method signature may vary
@@ -409,13 +399,11 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Missing: Pool size management, eviction policies, fragmentation handling
 
 
-
         => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
 
     private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
         // TODO: Production - Implement unified memory manager for CUDA
         // Missing: cudaMallocManaged, prefetching, migration hints
-
 
 
         => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
@@ -562,7 +550,6 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     private static long GetSystemMemory()
         // TODO: Production - Implement proper system memory detection
         // Missing: Platform-specific memory queries (Windows WMI, Linux /proc/meminfo)
-
 
 
         => GC.GetTotalMemory(false) * 10; // Rough estimate

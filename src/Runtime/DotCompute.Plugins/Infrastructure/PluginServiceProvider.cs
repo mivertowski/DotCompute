@@ -259,7 +259,7 @@ namespace DotCompute.Plugins.Infrastructure
             _ = _pluginServices.AddScoped<IPluginMetrics, PluginMetrics>();
 
             // Register common services that plugins might need
-            _ = _pluginServices.AddSingleton<ILoggerFactory>(_ =>
+            _ = _pluginServices.AddSingleton(_ =>
                 _hostServiceProvider.GetRequiredService<ILoggerFactory>());
 
             // Allow host services to be injected if configured
@@ -492,18 +492,11 @@ namespace DotCompute.Plugins.Infrastructure
     /// <summary>
     /// Scoped service provider wrapper for plugins.
     /// </summary>
-    internal sealed class PluginScopedServiceProvider : IServiceProvider
+    internal sealed class PluginScopedServiceProvider(IServiceScope scope, Assembly pluginAssembly, ILogger logger) : IServiceProvider
     {
-        private readonly IServiceScope _scope;
-        private readonly Assembly _pluginAssembly;
-        private readonly ILogger _logger;
-
-        public PluginScopedServiceProvider(IServiceScope scope, Assembly pluginAssembly, ILogger logger)
-        {
-            _scope = scope ?? throw new ArgumentNullException(nameof(scope));
-            _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+        private readonly IServiceScope _scope = scope ?? throw new ArgumentNullException(nameof(scope));
+        private readonly Assembly _pluginAssembly = pluginAssembly ?? throw new ArgumentNullException(nameof(pluginAssembly));
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         public object? GetService(Type serviceType)
         {
@@ -528,18 +521,12 @@ namespace DotCompute.Plugins.Infrastructure
     /// <summary>
     /// Plugin-specific service scope wrapper.
     /// </summary>
-    internal sealed class PluginServiceScope : IServiceScope
+    internal sealed class PluginServiceScope(IServiceProvider serviceProvider, IServiceScope innerScope) : IServiceScope
     {
-        private readonly IServiceScope _innerScope;
+        private readonly IServiceScope _innerScope = innerScope ?? throw new ArgumentNullException(nameof(innerScope));
         private bool _disposed;
 
-        public PluginServiceScope(IServiceProvider serviceProvider, IServiceScope innerScope)
-        {
-            ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _innerScope = innerScope ?? throw new ArgumentNullException(nameof(innerScope));
-        }
-
-        public IServiceProvider ServiceProvider { get; }
+        public IServiceProvider ServiceProvider { get; } = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
         public void Dispose()
         {
@@ -558,50 +545,41 @@ namespace DotCompute.Plugins.Infrastructure
     /// <summary>
     /// Attribute to mark a class for automatic service registration.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PluginServiceAttribute"/> class.
+    /// </remarks>
+    /// <param name="lifetime">The service lifetime.</param>
+    /// <param name="serviceType">The service type to register as.</param>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public sealed class PluginServiceAttribute : Attribute
+    public sealed class PluginServiceAttribute(ServiceLifetime lifetime = ServiceLifetime.Scoped, Type? serviceType = null) : Attribute
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PluginServiceAttribute"/> class.
-        /// </summary>
-        /// <param name="lifetime">The service lifetime.</param>
-        /// <param name="serviceType">The service type to register as.</param>
-        public PluginServiceAttribute(ServiceLifetime lifetime = ServiceLifetime.Scoped, Type? serviceType = null)
-        {
-            Lifetime = lifetime;
-            ServiceType = serviceType;
-        }
 
         /// <summary>
         /// Gets the service lifetime.
         /// </summary>
-        public ServiceLifetime Lifetime { get; }
+        public ServiceLifetime Lifetime { get; } = lifetime;
 
         /// <summary>
         /// Gets the service type to register as.
         /// </summary>
-        public Type? ServiceType { get; }
+        public Type? ServiceType { get; } = serviceType;
     }
 
     /// <summary>
     /// Attribute to mark properties for dependency injection.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PluginInjectAttribute"/> class.
+    /// </remarks>
+    /// <param name="required">Whether the dependency is required.</param>
     [AttributeUsage(AttributeTargets.Property)]
-    public sealed class PluginInjectAttribute : Attribute
+    public sealed class PluginInjectAttribute(bool required = true) : Attribute
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PluginInjectAttribute"/> class.
-        /// </summary>
-        /// <param name="required">Whether the dependency is required.</param>
-        public PluginInjectAttribute(bool required = true)
-        {
-            Required = required;
-        }
 
         /// <summary>
         /// Gets whether the dependency is required.
         /// </summary>
-        public bool Required { get; }
+        public bool Required { get; } = required;
     }
 
     /// <summary>
@@ -627,14 +605,9 @@ namespace DotCompute.Plugins.Infrastructure
     /// <summary>
     /// Default plugin activator implementation.
     /// </summary>
-    internal sealed class PluginActivator : IPluginActivator
+    internal sealed class PluginActivator(IServiceProvider serviceProvider) : IPluginActivator
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public PluginActivator(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        }
+        private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
         public object CreateInstance(Type type) => ActivatorUtilities.CreateInstance(_serviceProvider, type);
 
@@ -657,15 +630,8 @@ namespace DotCompute.Plugins.Infrastructure
     /// <summary>
     /// Default plugin validator implementation.
     /// </summary>
-    internal sealed class PluginValidator : IPluginValidator
+    internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
     {
-        private readonly ILogger<PluginValidator> _logger;
-
-        public PluginValidator(ILogger<PluginValidator> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
         public async Task<PluginValidationResult> ValidateAsync(object plugin)
         {
             await Task.CompletedTask;

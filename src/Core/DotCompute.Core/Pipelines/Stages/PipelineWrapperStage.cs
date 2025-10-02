@@ -91,7 +91,7 @@ namespace DotCompute.Core.Pipelines.Stages
             {
                 foreach (var error in pipelineValidation.Errors)
                 {
-                    errors.Add(new ValidationIssue("PIPELINE_001", error.Message, ValidationSeverity.Error));
+                    errors.Add(new ValidationIssue(ValidationSeverity.Error, error.Message, "PIPELINE_001"));
                 }
             }
 

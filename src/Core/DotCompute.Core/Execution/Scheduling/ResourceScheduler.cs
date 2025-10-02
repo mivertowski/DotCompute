@@ -15,22 +15,16 @@ namespace DotCompute.Core.Execution.Scheduling
     /// Provides intelligent device selection, workload distribution, and layer assignment
     /// for different parallelization strategies.
     /// </summary>
-    public sealed class ResourceScheduler
+    /// <remarks>
+    /// Initializes a new instance of the ResourceScheduler class.
+    /// </remarks>
+    /// <param name="logger">Logger for scheduler operations</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
+    public sealed class ResourceScheduler(ILogger logger)
     {
-        private readonly ILogger _logger;
-        private readonly DevicePerformanceEstimator _performanceEstimator;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly DevicePerformanceEstimator _performanceEstimator = new();
         private static readonly DevicePerformanceEstimator _staticPerformanceEstimator = new();
-
-        /// <summary>
-        /// Initializes a new instance of the ResourceScheduler class.
-        /// </summary>
-        /// <param name="logger">Logger for scheduler operations</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
-        public ResourceScheduler(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceEstimator = new DevicePerformanceEstimator();
-        }
 
         /// <summary>
         /// Selects optimal devices based on performance characteristics and options.

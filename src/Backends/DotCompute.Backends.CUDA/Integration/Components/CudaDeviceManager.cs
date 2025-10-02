@@ -406,7 +406,7 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
 
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
-        DotCompute.Abstractions.CompilationOptions? options = null,
+        CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         try

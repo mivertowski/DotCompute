@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -49,10 +48,10 @@ public sealed partial class DebugMetricsCollector : IDisposable
         {
             Timestamp = timestamp,
             Value = value,
-            Tags = tags ?? new Dictionary<string, string>()
+            Tags = tags ?? []
         };
 
-        _ = _metricsData.AddOrUpdate(name,
+        _metricsData.AddOrUpdate(name,
             new MetricsSeries { Name = name, Points = [metricPoint] },
             (key, existing) =>
             {
@@ -205,7 +204,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         {
             GeneratedAt = DateTime.UtcNow,
             TimeRange = timeRange,
-            MetricsSummaries = new Dictionary<string, MetricsSummary>(),
+            MetricsSummaries = [],
             SystemMetrics = CollectCurrentSystemMetrics()
         };
 
@@ -262,7 +261,9 @@ public sealed partial class DebugMetricsCollector : IDisposable
             };
         }
 
-        var trend = AnalyzeTrend(recentPoints, metricName, timeRange);
+        var trend = AnalyzeTrend(recentPoints);
+        trend.MetricName = metricName;
+        trend.TimeRange = timeRange;
 
         LogTrendAnalysisCompleted(metricName, recentPoints.Count, trend.TrendDirection.ToString());
 
@@ -305,7 +306,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
                     ExpectedValue = mean,
                     Deviation = Math.Abs(point.Value - mean),
                     Severity = Math.Abs(point.Value - mean) > (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                    Type = point.Value > threshold ? AnomalyType.PerformanceSpike : AnomalyType.ThroughputDrop
+                    Type = point.Value > threshold ? AnomalyType.Spike : AnomalyType.Drop
                 });
             }
         }
@@ -454,7 +455,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         return sorted[lowerIndex] * (1 - weight) + sorted[upperIndex] * weight;
     }
 
-    private static PerformanceTrend AnalyzeTrend(List<MetricPoint> points, string metricName, TimeSpan timeRange)
+    private static PerformanceTrend AnalyzeTrend(List<MetricPoint> points)
     {
         if (points.Count < 3)
         {
@@ -473,21 +474,19 @@ public sealed partial class DebugMetricsCollector : IDisposable
 
         var trendDirection = slope switch
         {
-            > 0.1 => TrendDirection.Improving,
-            < -0.1 => TrendDirection.Degrading,
+            > 0.1 => TrendDirection.Increasing,
+            < -0.1 => TrendDirection.Decreasing,
             _ => TrendDirection.Stable
         };
 
         return new PerformanceTrend
         {
-            MetricName = metricName,
-            TimeRange = timeRange,
             DataPoints = points.Count,
             TrendDirection = trendDirection,
-            Magnitude = Math.Abs(slope),
-            RateOfChange = slope,
-            PercentChange = points.Count > 0 && points.First().Value != 0 ? (points.Last().Value - points.First().Value) / Math.Abs(points.First().Value) : 0,
-            AnalysisTime = DateTime.UtcNow
+            Slope = slope,
+            StartValue = points.First().Value,
+            EndValue = points.Last().Value,
+            AverageChange = (points.Last().Value - points.First().Value) / points.Count
         };
     }
 

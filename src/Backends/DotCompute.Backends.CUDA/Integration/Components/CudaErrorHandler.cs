@@ -285,7 +285,7 @@ public sealed class CudaErrorHandler : IDisposable
 
     #region Private Methods
 
-    private CudaErrorSeverity DetermineErrorSeverity(CudaError error)
+    private static CudaErrorSeverity DetermineErrorSeverity(CudaError error)
     {
         return error switch
         {

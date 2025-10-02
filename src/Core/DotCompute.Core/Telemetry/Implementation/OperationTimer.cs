@@ -10,18 +10,9 @@ namespace DotCompute.Core.Telemetry.Implementation;
 /// <summary>
 /// Operation timer implementation.
 /// </summary>
-internal sealed class OperationTimer : IOperationTimer
+internal sealed class OperationTimer(string operationName, IDictionary<string, object?>? tags) : IOperationTimer
 {
-    private readonly string _operationName;
-    private readonly IDictionary<string, object?>? _tags;
-    private readonly Stopwatch _stopwatch;
-
-    public OperationTimer(string operationName, IDictionary<string, object?>? tags)
-    {
-        _operationName = operationName;
-        _tags = tags;
-        _stopwatch = Stopwatch.StartNew();
-    }
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
     public bool IsEnabled => true;
     public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;

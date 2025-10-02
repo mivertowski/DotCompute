@@ -273,10 +273,7 @@ public sealed class SimdPerformanceProfiler : IDisposable
         };
     }
 
-    private static double CalculatePerformanceGain(double throughput1, double throughput2)
-    {
-        return throughput2 > 0 ? (throughput1 / throughput2) - 1.0 : 0.0;
-    }
+    private static double CalculatePerformanceGain(double throughput1, double throughput2) => throughput2 > 0 ? (throughput1 / throughput2) - 1.0 : 0.0;
 
     private static string GenerateRecommendation(
         SimdExecutionStrategy strategy1,
@@ -414,10 +411,8 @@ internal sealed class StrategyMetrics
     }
 
     public double CalculateEfficiencyTrend()
-    {
         // Simplified efficiency calculation
-        return CalculateThroughputTrend() * CalculateVectorizationTrend();
-    }
+        => CalculateThroughputTrend() * CalculateVectorizationTrend();
 
     public double CalculateConsistencyScore()
     {

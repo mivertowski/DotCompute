@@ -12,7 +12,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the base stage execution result.
     /// </summary>
-    public required Abstractions.Models.Pipelines.StageExecutionResult BaseResult { get; init; }
+    public required AbstractionsMemory.Models.Pipelines.StageExecutionResult BaseResult { get; init; }
 
     /// <summary>
     /// Gets whether the stage execution was successful.
@@ -101,7 +101,7 @@ public sealed class StageExecutionResult
         Dictionary<string, object> outputData,
         TimeSpan executionTime)
     {
-        var baseResult = new Abstractions.Models.Pipelines.StageExecutionResult
+        var baseResult = new AbstractionsMemory.Models.Pipelines.StageExecutionResult
         {
             Success = true,
             StageId = stageId,
@@ -131,7 +131,7 @@ public sealed class StageExecutionResult
         TimeSpan executionTime,
         Dictionary<string, object>? partialOutputs = null)
     {
-        var baseResult = new Abstractions.Models.Pipelines.StageExecutionResult
+        var baseResult = new AbstractionsMemory.Models.Pipelines.StageExecutionResult
         {
             Success = false,
             StageId = stageId,

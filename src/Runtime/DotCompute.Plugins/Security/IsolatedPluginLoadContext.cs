@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using global::System.Runtime.Loader;
+using System.Runtime.Loader;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
@@ -12,31 +12,20 @@ namespace DotCompute.Plugins.Security;
 /// <summary>
 /// Isolated assembly load context for secure plugin loading with restricted access.
 /// </summary>
-public class IsolatedPluginLoadContext : AssemblyLoadContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="IsolatedPluginLoadContext"/> class.
+/// </remarks>
+public class IsolatedPluginLoadContext(
+    string name,
+    string pluginAssemblyPath,
+    SandboxPermissions permissions,
+    ILogger logger) : AssemblyLoadContext(name, isCollectible: true)
 {
-    private readonly string _pluginAssemblyPath;
-    private readonly SandboxPermissions _permissions;
-    private readonly ILogger _logger;
-    private readonly AssemblyDependencyResolver _resolver;
+    private readonly SandboxPermissions _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AssemblyDependencyResolver _resolver = new(pluginAssemblyPath);
     private readonly HashSet<string> _loadedAssemblies = [];
     private readonly object _loadLock = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="IsolatedPluginLoadContext"/> class.
-    /// </summary>
-    public IsolatedPluginLoadContext(
-        string name,
-        string pluginAssemblyPath,
-        SandboxPermissions permissions,
-        ILogger logger)
-
-        : base(name, isCollectible: true)
-    {
-        _pluginAssemblyPath = pluginAssemblyPath ?? throw new ArgumentNullException(nameof(pluginAssemblyPath));
-        _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _resolver = new AssemblyDependencyResolver(pluginAssemblyPath);
-    }
 
     /// <summary>
     /// Loads an assembly with security validation.

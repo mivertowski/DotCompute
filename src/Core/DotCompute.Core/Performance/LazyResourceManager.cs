@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Performance;
@@ -27,9 +27,8 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     private readonly ConcurrentDictionary<string, LazyResource<T>> _resources;
     private readonly SemaphoreSlim _initializationSemaphore;
     private readonly Timer _maintenanceTimer;
-
+    
     // Performance counters
-
     private long _totalRequests;
     private long _cacheHits;
     private long _cacheMisses;
@@ -56,8 +55,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<LazyResourceManager<T>>.Instance;
         _config = config ?? LazyResourceConfiguration.Default;
         _resources = new ConcurrentDictionary<string, LazyResource<T>>();
-        _initializationSemaphore = new SemaphoreSlim(_config.MaxConcurrentInitializations,
-
+        _initializationSemaphore = new SemaphoreSlim(_config.MaxConcurrentInitializations, 
                                                       _config.MaxConcurrentInitializations);
 
         // Setup maintenance timer for cleanup and optimization
@@ -95,7 +93,6 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(key);
 
-
         _ = Interlocked.Increment(ref _totalRequests);
 
         // Fast path: resource already exists and is initialized
@@ -123,15 +120,13 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     public T? TryGetResource(string key)
     {
         ThrowIfDisposed();
-
-
+        
         if (_resources.TryGetValue(key, out var resource) && resource.IsInitialized)
         {
             resource.UpdateLastAccess();
             return resource.Value;
         }
-
-
+        
         return null;
     }
 
@@ -146,10 +141,8 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(key);
 
-        var cancellationToken = _config.PreloadTimeout.HasValue
-
-            ? new CancellationTokenSource(_config.PreloadTimeout.Value).Token
-
+        var cancellationToken = _config.PreloadTimeout.HasValue 
+            ? new CancellationTokenSource(_config.PreloadTimeout.Value).Token 
             : CancellationToken.None;
 
         return priority switch
@@ -157,11 +150,9 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             PreloadPriority.High => Task.Run(() => GetResourceAsync(key, cancellationToken)),
             PreloadPriority.Normal => Task.Run(() => GetResourceAsync(key, cancellationToken)),
             PreloadPriority.Low => Task.Delay(100, cancellationToken)
-                .ContinueWith(_ => GetResourceAsync(key, cancellationToken),
-                             cancellationToken,
-
-                             TaskContinuationOptions.NotOnCanceled,
-
+                .ContinueWith(_ => GetResourceAsync(key, cancellationToken), 
+                             cancellationToken, 
+                             TaskContinuationOptions.NotOnCanceled, 
                              TaskScheduler.Default),
             _ => Task.CompletedTask
         };
@@ -175,16 +166,13 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task representing all preload operations.</returns>
     public async Task PreloadResourcesAsync(
-        IEnumerable<string> keys,
-
-        int maxConcurrency = 4,
-
+        IEnumerable<string> keys, 
+        int maxConcurrency = 4, 
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(keys);
-
-
+        
         var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
         var tasks = keys.Select(async key =>
         {
@@ -220,8 +208,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             {
                 await DisposeResourceAsync(resource).ConfigureAwait(false);
             }
-
-
+            
             _logger.LogDebug("Invalidated resource with key '{Key}'", key);
         }
     }
@@ -234,8 +221,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     public async Task InvalidateAllResourcesAsync(bool disposeExisting = true)
     {
         ThrowIfDisposed();
-
-
+        
         var resources = _resources.ToArray();
         _resources.Clear();
 
@@ -244,12 +230,10 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             var disposalTasks = resources
                 .Where(kvp => kvp.Value.IsInitialized)
                 .Select(kvp => DisposeResourceAsync(kvp.Value));
-
-
+            
             await Task.WhenAll(disposalTasks).ConfigureAwait(false);
         }
-
-
+        
         _logger.LogDebug("Invalidated all {Count} resources", resources.Length);
     }
 
@@ -271,8 +255,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     public ResourceInfo? GetResourceInfo(string key)
     {
         ThrowIfDisposed();
-
-
+        
         if (_resources.TryGetValue(key, out var resource))
         {
             return new ResourceInfo
@@ -285,8 +268,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
                 InitializationTime = resource.InitializationTime
             };
         }
-
-
+        
         return null;
     }
 
@@ -294,9 +276,8 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     {
         // Get or create the lazy resource
         var lazyResource = _resources.GetOrAdd(key, _ => new LazyResource<T>(key));
-
+        
         // Double-check pattern for thread safety
-
         if (lazyResource.IsInitialized)
         {
             return lazyResource.Value!;
@@ -315,26 +296,20 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             // Initialize the resource
             var startTime = DateTimeOffset.UtcNow;
             _logger.LogDebug("Initializing resource with key '{Key}'", key);
-
-
+            
             try
             {
                 var resource = await _factory(cancellationToken).ConfigureAwait(false);
                 var initializationTime = DateTimeOffset.UtcNow - startTime;
-
-
+                
                 lazyResource.SetValue(resource, initializationTime);
-
 
                 _ = Interlocked.Increment(ref _totalInitializations);
                 RecordInitializationTime(initializationTime);
-
-
-                _logger.LogDebug("Successfully initialized resource '{Key}' in {Time}ms",
-
+                
+                _logger.LogDebug("Successfully initialized resource '{Key}' in {Time}ms", 
                     key, initializationTime.TotalMilliseconds);
-
-
+                
                 return resource;
             }
             catch (Exception ex)
@@ -342,7 +317,6 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
                 _logger.LogError(ex, "Failed to initialize resource with key '{Key}'", key);
 
                 // Remove failed resource from cache
-
                 _ = _resources.TryRemove(key, out _);
                 throw;
             }
@@ -375,7 +349,6 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             {
                 disposable.Dispose();
             }
-
 
             _ = Interlocked.Increment(ref _totalDisposals);
             _logger.LogTrace("Disposed resource with key '{Key}'", resource.Key);
@@ -418,8 +391,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
         var cutoff = DateTimeOffset.UtcNow - _config.ResourceLifetime.Value;
         var expiredKeys = new List<string>();
-
-
+        
         foreach (var kvp in _resources)
         {
             if (kvp.Value.LastAccessTime < cutoff)
@@ -427,14 +399,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
                 expiredKeys.Add(kvp.Key);
             }
         }
-
-
+        
         foreach (var key in expiredKeys)
         {
             await InvalidateResourceAsync(key, disposeExisting: true).ConfigureAwait(false);
         }
-
-
+        
         if (expiredKeys.Count > 0)
         {
             _logger.LogDebug("Cleaned up {Count} expired resources", expiredKeys.Count);
@@ -447,8 +417,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         _logger.LogTrace(
             "Resource manager stats - Requests: {Requests}, Hit Rate: {HitRate:P2}, " +
             "Active: {Active}, Avg Init Time: {InitTime}ms",
-            stats.TotalRequests, stats.HitRate, stats.ActiveResources,
-
+            stats.TotalRequests, stats.HitRate, stats.ActiveResources, 
             stats.AverageInitializationTime.TotalMilliseconds);
     }
 
@@ -458,15 +427,11 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         var ticks = initializationTime.Ticks;
         var currentAvg = Interlocked.Read(ref _averageInitializationTime);
         var totalInits = Interlocked.Read(ref _totalInitializations);
-
+        
         // Update running average
-
-        var newAvg = totalInits > 1
-
-            ? (currentAvg * (totalInits - 1) + ticks) / totalInits
-
+        var newAvg = totalInits > 1 
+            ? (currentAvg * (totalInits - 1) + ticks) / totalInits 
             : ticks;
-
 
         _ = Interlocked.Exchange(ref _averageInitializationTime, newAvg);
     }
@@ -483,7 +448,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     {
         if (_disposed)
         {
-            throw new ObjectDisposedException(nameof(LazyResourceManager<T>));
+            throw new ObjectDisposedException(nameof(LazyResourceManager<>));
         }
     }
 
@@ -494,14 +459,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             _disposed = true;
             _maintenanceTimer?.Dispose();
             _initializationSemaphore?.Dispose();
-
+            
             // Dispose all resources synchronously
-
             var disposalTasks = _resources.Values
                 .Where(r => r.IsInitialized)
                 .Select(DisposeResourceAsync);
-
-
+            
             try
             {
                 Task.WhenAll(disposalTasks).GetAwaiter().GetResult();
@@ -510,8 +473,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             {
                 _logger.LogWarning(ex, "Error disposing resources during manager disposal");
             }
-
-
+            
             _resources.Clear();
             _logger.LogDebug("Lazy resource manager disposed for type {Type}", typeof(T).Name);
         }
@@ -529,16 +491,14 @@ internal sealed class LazyResource<T> where T : class
     private T? _value;
     private volatile bool _isInitialized;
     private long _accessCount;
-
-
+    
     public string Key { get; }
     public DateTimeOffset CreatedAt { get; }
     public DateTimeOffset LastAccessTime { get; private set; }
     public TimeSpan InitializationTime { get; private set; }
     public bool IsInitialized => _isInitialized;
     public long AccessCount => Interlocked.Read(ref _accessCount);
-
-
+    
     public T? Value
     {
         get
@@ -586,32 +546,27 @@ public sealed class LazyResourceConfiguration
     /// Maximum number of concurrent resource initializations.
     /// </summary>
     public int MaxConcurrentInitializations { get; init; } = 4;
-
-
+    
     /// <summary>
     /// Lifetime of resources before cleanup.
     /// </summary>
     public TimeSpan? ResourceLifetime { get; init; } = TimeSpan.FromHours(1);
-
-
+    
     /// <summary>
     /// Interval for maintenance operations.
     /// </summary>
     public TimeSpan MaintenanceInterval { get; init; } = TimeSpan.FromMinutes(10);
-
-
+    
     /// <summary>
     /// Timeout for preload operations.
     /// </summary>
     public TimeSpan? PreloadTimeout { get; init; } = TimeSpan.FromMinutes(5);
-
-
+    
     /// <summary>
     /// Default configuration optimized for general use.
     /// </summary>
     public static LazyResourceConfiguration Default => new();
-
-
+    
     /// <summary>
     /// Configuration optimized for high-frequency access.
     /// </summary>
@@ -622,8 +577,7 @@ public sealed class LazyResourceConfiguration
         MaintenanceInterval = TimeSpan.FromMinutes(5),
         PreloadTimeout = TimeSpan.FromMinutes(2)
     };
-
-
+    
     /// <summary>
     /// Configuration optimized for memory-constrained environments.
     /// </summary>
@@ -634,8 +588,7 @@ public sealed class LazyResourceConfiguration
         MaintenanceInterval = TimeSpan.FromMinutes(2),
         PreloadTimeout = TimeSpan.FromMinutes(1)
     };
-
-
+    
     public override string ToString()
     {
         return $"LazyResourceConfig(MaxConcurrent={MaxConcurrentInitializations}, " +
@@ -656,8 +609,7 @@ public readonly record struct LazyResourceStatistics
     public TimeSpan AverageInitializationTime { get; init; }
     public int ActiveResources { get; init; }
     public double HitRate { get; init; }
-
-
+    
     public long LiveResources => TotalInitializations - TotalDisposals;
     public double InitializationRatio => TotalRequests > 0 ? (double)TotalInitializations / TotalRequests : 0.0;
 }
@@ -673,8 +625,7 @@ public readonly record struct ResourceInfo
     public DateTimeOffset LastAccessTime { get; init; }
     public long AccessCount { get; init; }
     public TimeSpan InitializationTime { get; init; }
-
-
+    
     public TimeSpan Age => DateTimeOffset.UtcNow - CreatedAt;
     public TimeSpan TimeSinceLastAccess => DateTimeOffset.UtcNow - LastAccessTime;
 }
@@ -709,11 +660,7 @@ public static class LazyResourceManager
         Func<CancellationToken, Task<T>> factory,
         Func<T, Task>? disposer = null,
         ILogger<LazyResourceManager<T>>? logger = null,
-        LazyResourceConfiguration? config = null) where T : class
-    {
-        return new LazyResourceManager<T>(factory, disposer, logger, config);
-    }
-
+        LazyResourceConfiguration? config = null) where T : class => new(factory, disposer, logger, config);
 
     /// <summary>
     /// Creates a new lazy resource manager with synchronous factory.
@@ -731,12 +678,10 @@ public static class LazyResourceManager
         LazyResourceConfiguration? config = null) where T : class
     {
         var asyncFactory = new Func<CancellationToken, Task<T>>(_ => Task.FromResult(factory()));
-        var asyncDisposer = disposer != null
-
+        var asyncDisposer = disposer != null 
             ? new Func<T, Task>(resource => { disposer(resource); return Task.CompletedTask; })
             : null;
-
-
+        
         return new LazyResourceManager<T>(asyncFactory, asyncDisposer, logger, config);
     }
 }

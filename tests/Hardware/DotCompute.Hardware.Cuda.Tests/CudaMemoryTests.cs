@@ -16,10 +16,8 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests device memory allocation, host-device transfers, unified memory, and memory bandwidth.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaMemoryTests : ConsolidatedTestBase
+    public class CudaMemoryTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
-        public CudaMemoryTests(ITestOutputHelper output) : base(output) { }
-
         [SkippableFact]
         public async Task Device_Memory_Allocation_Should_Succeed()
         {

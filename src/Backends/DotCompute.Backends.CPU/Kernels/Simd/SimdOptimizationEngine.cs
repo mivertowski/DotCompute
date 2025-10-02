@@ -10,16 +10,10 @@ namespace DotCompute.Backends.CPU.Kernels.Simd;
 /// SIMD optimization engine responsible for execution strategy selection,
 /// performance optimization, and workload analysis.
 /// </summary>
-public sealed class SimdOptimizationEngine
+public sealed class SimdOptimizationEngine(SimdSummary capabilities, ExecutorConfiguration config)
 {
-    private readonly SimdSummary _capabilities;
-    private readonly ExecutorConfiguration _config;
-
-    public SimdOptimizationEngine(SimdSummary capabilities, ExecutorConfiguration config)
-    {
-        _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-    }
+    private readonly SimdSummary _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
+    private readonly ExecutorConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
 
     /// <summary>
     /// Determines the optimal execution strategy based on workload characteristics and hardware capabilities.
@@ -51,7 +45,7 @@ public sealed class SimdOptimizationEngine
     /// <param name="elementCount">Number of elements.</param>
     /// <param name="context">Execution context.</param>
     /// <returns>Workload analysis profile.</returns>
-    public WorkloadProfile AnalyzeWorkload<T>(long elementCount, ExecutionContext context) where T : unmanaged
+    public static WorkloadProfile AnalyzeWorkload<T>(long elementCount, ExecutionContext context) where T : unmanaged
     {
         var profile = new WorkloadProfile
         {
@@ -334,17 +328,11 @@ public enum SimdExecutionStrategy
 /// <summary>
 /// Execution context for thread-local optimizations.
 /// </summary>
-public sealed class ExecutionContext
+public sealed class ExecutionContext(SimdSummary capabilities)
 {
-    public SimdSummary Capabilities { get; }
+    public SimdSummary Capabilities { get; } = capabilities;
     public long ThreadExecutions { get; set; }
-    public DateTimeOffset LastExecution { get; set; }
-
-    public ExecutionContext(SimdSummary capabilities)
-    {
-        Capabilities = capabilities;
-        LastExecution = DateTimeOffset.UtcNow;
-    }
+    public DateTimeOffset LastExecution { get; set; } = DateTimeOffset.UtcNow;
 }
 
 /// <summary>

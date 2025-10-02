@@ -36,7 +36,7 @@ kernel void vectorAdd(
             name: "vectorAdd",
             language: KernelLanguage.Metal,
             entryPoint: "vectorAdd",
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {
@@ -94,7 +94,7 @@ kernel void matrixMultiply(
             name: "matrixMultiply",
             language: KernelLanguage.Metal,
             entryPoint: "matrixMultiply",
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {
@@ -168,7 +168,7 @@ kernel void reduction{operation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {
@@ -248,7 +248,7 @@ kernel void convolution2D(
             name: "convolution2D",
             language: KernelLanguage.Metal,
             entryPoint: "convolution2D",
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {
@@ -305,7 +305,7 @@ kernel void activation{activation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {
@@ -350,7 +350,7 @@ kernel void {operation}(
             name: operation,
             language: KernelLanguage.Metal,
             entryPoint: operation,
-            dependencies: new string[0]
+            dependencies: []
         );
         _ = new CompilationOptions
         {

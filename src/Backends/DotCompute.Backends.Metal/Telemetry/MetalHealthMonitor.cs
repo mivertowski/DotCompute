@@ -764,10 +764,7 @@ public sealed class MetalHealthMonitor : IDisposable
         return windows;
     }
 
-    private static bool IsInTimeWindow(HealthEvent healthEvent, TimeWindow window)
-    {
-        return healthEvent.Timestamp >= window.Start && healthEvent.Timestamp < window.End;
-    }
+    private static bool IsInTimeWindow(HealthEvent healthEvent, TimeWindow window) => healthEvent.Timestamp >= window.Start && healthEvent.Timestamp < window.End;
 
     private static Dictionary<string, object> GetSystemHealthMetrics()
     {

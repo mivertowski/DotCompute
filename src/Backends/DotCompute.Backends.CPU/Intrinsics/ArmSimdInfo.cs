@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.Arm;
 
 namespace DotCompute.Backends.CPU.Intrinsics;
 

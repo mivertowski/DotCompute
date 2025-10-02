@@ -10,7 +10,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for CUDA Profiling Tools Interface (CUPTI) for detailed performance metrics.
     /// </summary>
-    public sealed class CuptiWrapper : IDisposable
+    public sealed class CuptiWrapper(ILogger logger) : IDisposable
     {
 #if WINDOWS
         private const string CUPTI_LIBRARY = "cupti64_2024.3.2.dll";
@@ -18,17 +18,11 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private const string CUPTI_LIBRARY = "libcupti.so";
 #endif
 
-        private readonly ILogger _logger;
-        private readonly Dictionary<string, CuptiMetric> _availableMetrics;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly Dictionary<string, CuptiMetric> _availableMetrics = [];
         private bool _initialized;
         private bool _disposed;
         private IntPtr _subscriber;
-
-        public CuptiWrapper(ILogger logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _availableMetrics = [];
-        }
 
         /// <summary>
         /// Initializes CUPTI library and discovers available metrics.
@@ -238,10 +232,8 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private void EnableMetric(CuptiMetric metric)
-        {
             // In real implementation, enable specific metric collection
-            _logger.LogDebugMessage("Enabling metric: {metric.Name}");
-        }
+            => _logger.LogDebugMessage("Enabling metric: {metric.Name}");
 
         private static double ReadMetricValue(CuptiMetric metric)
         {
@@ -277,17 +269,13 @@ namespace DotCompute.Backends.CUDA.Monitoring
         }
 
         private static void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
-        {
             // Parse kernel execution record
             // This would extract timing, grid/block dimensions, etc. TODO
-            metrics.KernelExecutions++;
-        }
+            => metrics.KernelExecutions++;
 
         private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
-        {
             // Parse memory copy record
-            metrics.MemoryTransfers++;
-        }
+            => metrics.MemoryTransfers++;
 
         public void Dispose()
         {

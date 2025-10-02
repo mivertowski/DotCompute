@@ -8,25 +8,14 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// <summary>
 /// CUDA context-specific memory manager wrapping CudaMemoryManager
 /// </summary>
-public sealed class CudaContextMemoryManager
+public sealed class CudaContextMemoryManager(CudaContext context, ILogger logger)
 {
-    private readonly CudaMemoryManager _underlyingManager;
-
-    public CudaContextMemoryManager(CudaContext context, ILogger logger)
-    {
-        _underlyingManager = new CudaMemoryManager(context ?? throw new ArgumentNullException(nameof(context)), logger ?? throw new ArgumentNullException(nameof(logger)));
-    }
+    private readonly CudaMemoryManager _underlyingManager = new(context ?? throw new ArgumentNullException(nameof(context)), logger ?? throw new ArgumentNullException(nameof(logger)));
 
     // Expose underlying manager for compatibility
     public CudaMemoryManager UnderlyingManager => _underlyingManager;
 
-    public void Dispose()
-    {
-        _underlyingManager.Dispose();
-    }
+    public void Dispose() => _underlyingManager.Dispose();
 
-    public ValueTask DisposeAsync()
-    {
-        return _underlyingManager.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _underlyingManager.DisposeAsync();
 }

@@ -1,32 +1,26 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types.LinearAlgebra;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Plugins
 {
 
-/// <summary>
-/// Plugin for linear algebra operations on matrices and vectors.
-/// </summary>
-public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
+    /// <summary>
+    /// Plugin for linear algebra operations on matrices and vectors.
+    /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="LinearAlgebraPlugin"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    public sealed class LinearAlgebraPlugin(ILogger<LinearAlgebraPlugin> logger) : AlgorithmPluginBase(logger)
 {
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LinearAlgebraPlugin"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public LinearAlgebraPlugin(ILogger<LinearAlgebraPlugin> logger) : base(logger)
-    {
-    }
-
-    /// <inheritdoc/>
-    public override string Id => "com.dotcompute.algorithms.linalg";
+        /// <inheritdoc/>
+        public override string Id => "com.dotcompute.algorithms.linalg";
 
     /// <inheritdoc/>
     public override string Name => "Linear Algebra Operations";
@@ -210,17 +204,11 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         return await MatrixMath.SubtractAsync(matrices[0], matrices[1], Accelerator, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<Matrix> TransposeAsync(Matrix matrix, CancellationToken cancellationToken)
-    {
-        return await MatrixMath.TransposeAsync(matrix, Accelerator, cancellationToken).ConfigureAwait(false);
-    }
+        private async Task<Matrix> TransposeAsync(Matrix matrix, CancellationToken cancellationToken) => await MatrixMath.TransposeAsync(matrix, Accelerator, cancellationToken).ConfigureAwait(false);
 
-    private async Task<Matrix> InverseAsync(Matrix matrix, CancellationToken cancellationToken)
-    {
-        return await MatrixMath.InverseAsync(matrix, Accelerator, cancellationToken).ConfigureAwait(false);
-    }
+        private async Task<Matrix> InverseAsync(Matrix matrix, CancellationToken cancellationToken) => await MatrixMath.InverseAsync(matrix, Accelerator, cancellationToken).ConfigureAwait(false);
 
-    private async Task<object> DeterminantAsync(Matrix matrix, CancellationToken cancellationToken)
+        private async Task<object> DeterminantAsync(Matrix matrix, CancellationToken cancellationToken)
     {
         var det = await MatrixMath.DeterminantAsync(matrix, Accelerator, cancellationToken).ConfigureAwait(false);
         return det; // Box the float as object
@@ -232,15 +220,11 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         return new { L = l, U = u, P = p }; // Return as anonymous object
     }
 
-    private async Task<Matrix> SolveAsync(Matrix a, Matrix b, CancellationToken cancellationToken)
-    {
-        return await MatrixMath.SolveAsync(a, b, Accelerator, cancellationToken).ConfigureAwait(false);
-    }
+        private async Task<Matrix> SolveAsync(Matrix a, Matrix b, CancellationToken cancellationToken) => await MatrixMath.SolveAsync(a, b, Accelerator, cancellationToken).ConfigureAwait(false);
 
-    /// <inheritdoc/>
-    protected override ValueTask OnDisposeAsync()
-    {
-        // Nothing to dispose currently
-        return ValueTask.CompletedTask;
+        /// <inheritdoc/>
+        protected override ValueTask OnDisposeAsync()
+            // Nothing to dispose currently
+            => ValueTask.CompletedTask;
     }
-}}
+}

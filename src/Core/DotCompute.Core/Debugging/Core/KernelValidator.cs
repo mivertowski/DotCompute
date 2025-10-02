@@ -5,15 +5,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Performance;
 
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
-using DebugLogLevel = DotCompute.Abstractions.Debugging.Types.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -21,21 +18,13 @@ namespace DotCompute.Core.Debugging.Core;
 /// Core kernel validation logic for cross-backend verification.
 /// Handles kernel execution across multiple backends and result comparison.
 /// </summary>
-public sealed class KernelValidator : IDisposable
+public sealed class KernelValidator(
+    ILogger<KernelValidator> logger,
+    DebugServiceOptions options) : IDisposable
 {
-    private readonly ILogger<KernelValidator> _logger;
-    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators;
-    private readonly DebugServiceOptions _options;
+    private readonly ILogger<KernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private bool _disposed;
-
-    public KernelValidator(
-        ILogger<KernelValidator> logger,
-        DebugServiceOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _accelerators = new ConcurrentDictionary<string, IAccelerator>();
-    }
 
     /// <summary>
     /// Validates a kernel across multiple backends with comprehensive comparison.
@@ -78,7 +67,7 @@ public sealed class KernelValidator : IDisposable
                 {
                     KernelName = kernelName,
                     IsValid = false,
-                    BackendsTested = availableAccelerators.Keys.ToArray(),
+                    BackendsTested = [.. availableAccelerators.Keys],
                     Issues = [
                         new DebugValidationIssue
                         {
@@ -223,10 +212,9 @@ public sealed class KernelValidator : IDisposable
         {
             performanceComparison[result.BackendType] = new PerformanceMetrics
             {
-                ExecutionTimeMs = (long)result.ExecutionTime.TotalMilliseconds,
-                MemoryUsageBytes = result.MemoryUsed,
-                OperationsPerSecond = (long)CalculateThroughput(result),
-                Operation = result.KernelName
+                ExecutionTime = result.ExecutionTime,
+                MemoryUsage = result.MemoryUsed,
+                ThroughputOpsPerSecond = (int)CalculateThroughput(result)
             };
         }
 
@@ -240,7 +228,7 @@ public sealed class KernelValidator : IDisposable
             BackendsCompared = backendNames,
             Differences = differences,
             Strategy = comparisonStrategy,
-            Tolerance = _options.VerbosityLevel == DebugLogLevel.Trace ? 1e-8f : 1e-6f,
+            Tolerance = _options.VerbosityLevel == AbstractionsMemory.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
             PerformanceComparison = performanceComparison
         };
     }
@@ -421,10 +409,8 @@ public sealed class KernelValidator : IDisposable
     /// Gets memory usage for an accelerator.
     /// </summary>
     private static long GetMemoryUsage(IAccelerator accelerator)
-    {
         // Placeholder - would get actual memory usage from accelerator
-        return 1024 * 1024; // 1MB placeholder
-    }
+        => 1024 * 1024; // 1MB placeholder
 
     /// <summary>
     /// Compares results using the specified strategy.
@@ -456,7 +442,7 @@ public sealed class KernelValidator : IDisposable
     {
         // Simplified comparison logic - would be more sophisticated in practice
         var baseline = results[0];
-        var tolerance = _options.VerbosityLevel == DebugLogLevel.Trace ? 1e-8f : 1e-6f;
+        var tolerance = _options.VerbosityLevel == AbstractionsMemory.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f;
 
         for (var i = 1; i < results.Count; i++)
         {
@@ -509,10 +495,8 @@ public sealed class KernelValidator : IDisposable
     /// Compares results with statistical comparison.
     /// </summary>
     private bool CompareStatistical(List<KernelExecutionResult> results, List<ResultDifference> differences)
-    {
         // Simplified statistical comparison
-        return CompareWithTolerance(results, differences);
-    }
+        => CompareWithTolerance(results, differences);
 
     /// <summary>
     /// Calculates numerical difference between two results.
@@ -546,10 +530,7 @@ public sealed class KernelValidator : IDisposable
     /// <summary>
     /// Checks if two results are exactly equal.
     /// </summary>
-    private static bool AreResultsExactlyEqual(object? result1, object? result2)
-    {
-        return Equals(result1, result2);
-    }
+    private static bool AreResultsExactlyEqual(object? result1, object? result2) => Equals(result1, result2);
 
     /// <summary>
     /// Calculates throughput for a kernel execution result.

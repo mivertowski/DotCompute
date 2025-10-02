@@ -11,17 +11,11 @@ namespace DotCompute.Backends.CUDA.Extensions
         /// <summary>
         /// Converts a Task to a ValueTask.
         /// </summary>
-        public static ValueTask AsValueTask(this Task task)
-        {
-            return new ValueTask(task);
-        }
+        public static ValueTask AsValueTaskAsync(this Task task) => new(task);
 
         /// <summary>
         /// Converts a Task{T} to a ValueTask{T}.
         /// </summary>
-        public static ValueTask<T> AsValueTask<T>(this Task<T> task)
-        {
-            return new ValueTask<T>(task);
-        }
+        public static ValueTask<T> AsValueTaskAsync<T>(this Task<T> task) => new(task);
     }
 }

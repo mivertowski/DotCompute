@@ -469,26 +469,18 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// Represents a transfer channel for a specific device with bandwidth management.
     /// </summary>
-    internal sealed class TransferChannel : IDisposable
+    internal sealed class TransferChannel(string deviceId, string deviceName, int maxConcurrentTransfers, double maxBandwidthGBps) : IDisposable
     {
-        private readonly string _deviceId;
-        private readonly string _deviceName;
-        private readonly double _maxBandwidthGBps;
-        private readonly SemaphoreSlim _concurrencySemaphore;
+        private readonly string _deviceId = deviceId;
+        private readonly string _deviceName = deviceName;
+        private readonly double _maxBandwidthGBps = maxBandwidthGBps;
+        private readonly SemaphoreSlim _concurrencySemaphore = new(maxConcurrentTransfers, maxConcurrentTransfers);
         private readonly object _statsLock = new();
 
         private long _totalTransfers;
         private long _totalBytesTransferred;
         private TimeSpan _totalTransferTime;
         private double _currentBandwidthUtilization;
-
-        public TransferChannel(string deviceId, string deviceName, int maxConcurrentTransfers, double maxBandwidthGBps)
-        {
-            _deviceId = deviceId;
-            _deviceName = deviceName;
-            _maxBandwidthGBps = maxBandwidthGBps;
-            _concurrencySemaphore = new SemaphoreSlim(maxConcurrentTransfers, maxConcurrentTransfers);
-        }
 
         public string DeviceId => _deviceId;
         public string DeviceName => _deviceName;

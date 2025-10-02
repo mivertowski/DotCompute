@@ -122,10 +122,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     /// <summary>
     /// Executes recovery for a plugin context
     /// </summary>
-    public async Task<RecoveryResult> ExecuteRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken = default)
-    {
-        return await RecoverAsync(new Exception("Plugin recovery required"), context, new RecoveryOptions(), cancellationToken);
-    }
+    public async Task<RecoveryResult> ExecuteRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken = default) => await RecoverAsync(new Exception("Plugin recovery required"), context, new RecoveryOptions(), cancellationToken);
 
     /// <summary>
     /// Executes recovery using a specific strategy
@@ -174,10 +171,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
     /// <summary>
     /// Gets health information for all monitored plugins
     /// </summary>
-    public PluginHealthReport GetHealthReport()
-    {
-        return _healthMonitor.GenerateHealthReport(_pluginStates.Values);
-    }
+    public PluginHealthReport GetHealthReport() => PluginHealthMonitor.GenerateHealthReport(_pluginStates.Values);
 
     /// <summary>
     /// Performs emergency shutdown of a crashed plugin
@@ -226,7 +220,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
             var result = new PluginCompatibilityResult { PluginId = pluginId };
 
             // Check .NET version compatibility
-            var targetFramework = pluginAssembly.GetCustomAttribute<global::System.Runtime.Versioning.TargetFrameworkAttribute>();
+            var targetFramework = pluginAssembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
             result.FrameworkCompatible = IsFrameworkCompatible(targetFramework?.FrameworkName);
 
             // Check dependency versions
@@ -424,7 +418,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         }
     }
 
-    private async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
+    private static async Task<bool> StopPluginAsync(string pluginId, CancellationToken cancellationToken)
     {
         try
         {
@@ -437,7 +431,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         }
     }
 
-    private async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
+    private static async Task<bool> StartPluginAsync(string pluginId, CancellationToken cancellationToken)
     {
         try
         {

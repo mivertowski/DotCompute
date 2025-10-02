@@ -8,19 +8,14 @@ namespace DotCompute.Algorithms.Types.SignalProcessing;
 /// <summary>
 /// Complex number type alias for compatibility.
 /// </summary>
-public readonly struct Complex
+/// <remarks>
+/// Initializes a new instance of the Complex struct.
+/// </remarks>
+/// <param name="real">The real component.</param>
+/// <param name="imaginary">The imaginary component.</param>
+public readonly struct Complex(float real, float imaginary)
 {
-    private readonly DotCompute.Algorithms.SignalProcessing.Complex _inner;
-
-    /// <summary>
-    /// Initializes a new instance of the Complex struct.
-    /// </summary>
-    /// <param name="real">The real component.</param>
-    /// <param name="imaginary">The imaginary component.</param>
-    public Complex(float real, float imaginary)
-    {
-        _inner = new DotCompute.Algorithms.SignalProcessing.Complex(real, imaginary);
-    }
+    private readonly Algorithms.SignalProcessing.Complex _inner = new(real, imaginary);
 
     /// <summary>
     /// Gets the real component.
@@ -45,7 +40,7 @@ public readonly struct Complex
     /// <summary>
     /// Implicit conversion from the main Complex type.
     /// </summary>
-    public static implicit operator Complex(DotCompute.Algorithms.SignalProcessing.Complex complex)
+    public static implicit operator Complex(Algorithms.SignalProcessing.Complex complex)
     {
         return new Complex(complex.Real, complex.Imaginary);
     }
@@ -53,7 +48,7 @@ public readonly struct Complex
     /// <summary>
     /// Implicit conversion to the main Complex type.
     /// </summary>
-    public static implicit operator DotCompute.Algorithms.SignalProcessing.Complex(Complex complex)
+    public static implicit operator Algorithms.SignalProcessing.Complex(Complex complex)
     {
         return complex._inner;
     }

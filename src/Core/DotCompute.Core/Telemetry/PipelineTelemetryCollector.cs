@@ -98,12 +98,12 @@ public sealed class PipelineTelemetryCollector : IDisposable
             unit: "items/s",
             description: "Pipeline item throughput in items per second");
 
-        _activePipelinesGauge = PipelineMeter.CreateObservableGauge<long>(
+        _activePipelinesGauge = PipelineMeter.CreateObservableGauge(
             "dotcompute_pipeline_active_count",
             observeValue: () => Interlocked.Read(ref _activePipelineCount),
             description: "Number of currently active pipelines");
 
-        _averageCacheHitRatio = PipelineMeter.CreateObservableGauge<double>(
+        _averageCacheHitRatio = PipelineMeter.CreateObservableGauge(
             "dotcompute_pipeline_cache_hit_ratio",
             observeValue: GetAverageCacheHitRatio,
             description: "Average cache hit ratio across all pipelines");
@@ -112,7 +112,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         if (_options.EnablePeriodicExport)
         {
             _metricsExportTimer = new Timer(
-                ExportMetricsAsync,
+                ExportMetrics,
                 null,
                 TimeSpan.FromSeconds(_options.ExportIntervalSeconds),
                 TimeSpan.FromSeconds(_options.ExportIntervalSeconds));
@@ -442,7 +442,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         return await Task.FromResult(JsonSerializer.Serialize(otlpData, DotComputeJsonContext.Default.OpenTelemetryData));
     }
 
-    private void ExportMetricsAsync(object? state)
+    private void ExportMetrics(object? state)
     {
         if (_disposed)
         {
@@ -506,11 +506,9 @@ public sealed class PipelineTelemetryCollector : IDisposable
     }
 
     private static async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
-    {
         // Custom telemetry event processing logic
         // This could include forwarding to external systems, alerting, etc.
-        await Task.CompletedTask;
-    }
+        => await Task.CompletedTask;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetAverageCacheHitRatio()
@@ -599,46 +597,31 @@ public sealed class PipelineExecutionContext : IDisposable
     public DateTime StartTime { get; set; }
     public Activity? Activity { get; set; }
 
-    public void Dispose()
-    {
-        Activity?.Dispose();
-    }
+    public void Dispose() => Activity?.Dispose();
 }
 
 /// <summary>
 /// Thread-safe snapshot of pipeline metrics using lock-free operations.
 /// </summary>
-public sealed class PipelineMetricsSnapshot
+public sealed class PipelineMetricsSnapshot(
+    string pipelineId,
+    long executionCount,
+    long successCount,
+    TimeSpan totalDuration,
+    TimeSpan minDuration,
+    TimeSpan maxDuration,
+    long itemsProcessed,
+    DateTime lastExecution)
 {
-    private long _executionCount;
-    private long _successCount;
-    private long _totalDurationTicks;
-    private long _minDurationTicks;
-    private long _maxDurationTicks;
-    private long _itemsProcessed;
+    private long _executionCount = executionCount;
+    private long _successCount = successCount;
+    private long _totalDurationTicks = totalDuration.Ticks;
+    private long _minDurationTicks = minDuration.Ticks;
+    private long _maxDurationTicks = maxDuration.Ticks;
+    private long _itemsProcessed = itemsProcessed;
 
-    public string PipelineId { get; }
-    public DateTime LastExecution { get; set; }
-
-    public PipelineMetricsSnapshot(
-        string pipelineId,
-        long executionCount,
-        long successCount,
-        TimeSpan totalDuration,
-        TimeSpan minDuration,
-        TimeSpan maxDuration,
-        long itemsProcessed,
-        DateTime lastExecution)
-    {
-        PipelineId = pipelineId;
-        _executionCount = executionCount;
-        _successCount = successCount;
-        _totalDurationTicks = totalDuration.Ticks;
-        _minDurationTicks = minDuration.Ticks;
-        _maxDurationTicks = maxDuration.Ticks;
-        _itemsProcessed = itemsProcessed;
-        LastExecution = lastExecution;
-    }
+    public string PipelineId { get; } = pipelineId;
+    public DateTime LastExecution { get; set; } = lastExecution;
 
     public long ExecutionCount
     {
@@ -746,37 +729,25 @@ public sealed class PipelineMetricsSnapshot
 /// <summary>
 /// Thread-safe snapshot of stage metrics using lock-free operations.
 /// </summary>
-public sealed class StageMetricsSnapshot
+public sealed class StageMetricsSnapshot(
+    string pipelineId,
+    string stageId,
+    long executionCount,
+    long successCount,
+    TimeSpan totalDuration,
+    TimeSpan minDuration,
+    TimeSpan maxDuration,
+    long memoryUsed)
 {
-    private long _executionCount;
-    private long _successCount;
-    private long _totalDurationTicks;
-    private long _memoryUsed;
-    private long _minDurationTicks;
-    private long _maxDurationTicks;
+    private long _executionCount = executionCount;
+    private long _successCount = successCount;
+    private long _totalDurationTicks = totalDuration.Ticks;
+    private long _memoryUsed = memoryUsed;
+    private long _minDurationTicks = minDuration.Ticks;
+    private long _maxDurationTicks = maxDuration.Ticks;
 
-    public string PipelineId { get; }
-    public string StageId { get; }
-
-    public StageMetricsSnapshot(
-        string pipelineId,
-        string stageId,
-        long executionCount,
-        long successCount,
-        TimeSpan totalDuration,
-        TimeSpan minDuration,
-        TimeSpan maxDuration,
-        long memoryUsed)
-    {
-        PipelineId = pipelineId;
-        StageId = stageId;
-        _executionCount = executionCount;
-        _successCount = successCount;
-        _totalDurationTicks = totalDuration.Ticks;
-        _minDurationTicks = minDuration.Ticks;
-        _maxDurationTicks = maxDuration.Ticks;
-        _memoryUsed = memoryUsed;
-    }
+    public string PipelineId { get; } = pipelineId;
+    public string StageId { get; } = stageId;
 
     public long ExecutionCount => Interlocked.Read(ref _executionCount);
     public long SuccessCount => Interlocked.Read(ref _successCount);

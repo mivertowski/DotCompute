@@ -18,18 +18,18 @@ public static class ConsolidatedTestUtilities
     /// </summary>
     public static readonly int[] StandardTestSizes =
 
-    {
+    [
         4,          // Single element (4 bytes for float)
         1024,       // Small buffer (1KB)
         4096,       // Medium buffer (4KB) 
         65536,      // Large buffer (64KB)
         1048576     // Very large buffer (1MB)
-    };
+    ];
 
     /// <summary>
     /// Standard alignment values for alignment testing.
     /// </summary>
-    public static readonly int[] StandardAlignments = { 16, 32, 64, 128, 256 };
+    public static readonly int[] StandardAlignments = [16, 32, 64, 128, 256];
 
     #region Test Data Generation
 

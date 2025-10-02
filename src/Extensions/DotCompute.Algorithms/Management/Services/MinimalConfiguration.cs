@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
-using DotCompute.Algorithms.Management.Types;
 
 namespace DotCompute.Algorithms.Management.Services
 {

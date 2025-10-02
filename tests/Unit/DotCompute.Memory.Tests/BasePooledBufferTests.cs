@@ -9,17 +9,8 @@ namespace DotCompute.Memory.Tests;
 /// <summary>
 /// Tests for BasePooledBuffer specialization.
 /// </summary>
-public class BasePooledBufferTests
+public class BasePooledBufferTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-
-    public BasePooledBufferTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-
     [Fact]
     [Trait("Category", "BufferTypes")]
     public void PooledBuffer_InitializesCorrectly()

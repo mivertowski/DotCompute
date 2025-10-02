@@ -64,20 +64,21 @@ namespace DotCompute.Runtime.Services
                 throw new ObjectDisposedException(nameof(ProductionMonitor));
             }
 
-            var healthChecks = new List<HealthCheckResult>();
+            var healthChecks = new List<HealthCheckResult>
+            {
+                // System resource checks
+                await CheckCpuUsageAsync(cancellationToken).ConfigureAwait(false),
+                await CheckMemoryUsageAsync(cancellationToken).ConfigureAwait(false),
+                await CheckDiskSpaceAsync(cancellationToken).ConfigureAwait(false),
 
-            // System resource checks
-            healthChecks.Add(await CheckCpuUsageAsync(cancellationToken).ConfigureAwait(false));
-            healthChecks.Add(await CheckMemoryUsageAsync(cancellationToken).ConfigureAwait(false));
-            healthChecks.Add(await CheckDiskSpaceAsync(cancellationToken).ConfigureAwait(false));
+                // .NET runtime checks
+                CheckGarbageCollectorHealth(),
+                CheckThreadPoolHealth(),
 
-            // .NET runtime checks
-            healthChecks.Add(CheckGarbageCollectorHealth());
-            healthChecks.Add(CheckThreadPoolHealth());
-
-            // Application-specific checks
-            healthChecks.Add(CheckAcceleratorHealth());
-            healthChecks.Add(CheckKernelExecutionHealth());
+                // Application-specific checks
+                CheckAcceleratorHealth(),
+                CheckKernelExecutionHealth()
+            };
 
             var overallHealth = DetermineOverallHealth(healthChecks);
             var report = new SystemHealthReport(DateTime.UtcNow, overallHealth, healthChecks.AsReadOnly());
@@ -498,20 +499,15 @@ namespace DotCompute.Runtime.Services
     /// <summary>
     /// Represents a performance counter for tracking metrics over time.
     /// </summary>
-    public sealed class PerformanceCounter : IDisposable
+    public sealed class PerformanceCounter(string name) : IDisposable
     {
-        private readonly string _name;
+        private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
         private readonly Queue<(double Value, DateTime Timestamp)> _samples = new();
         private readonly object _lock = new();
         private double _currentValue;
         private double _minValue = double.MaxValue;
         private double _maxValue = double.MinValue;
         private readonly TimeSpan _maxAge = TimeSpan.FromHours(1);
-
-        public PerformanceCounter(string name)
-        {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
-        }
 
         public string Name => _name;
         public double CurrentValue => _currentValue;

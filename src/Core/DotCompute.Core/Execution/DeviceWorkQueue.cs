@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Core.Execution.Models;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
@@ -15,14 +14,6 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     {
-        private readonly IAccelerator _device;
-        private readonly int _deviceIndex;
-        private readonly ILogger _logger;
-        private readonly ConcurrentQueue<WorkItem<T>> _workQueue;
-        private readonly SemaphoreSlim _workAvailable;
-        private readonly Lock _statsLock = new();
-        private readonly DeviceQueueStatistics _statistics;
-        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceWorkQueue{T}"/> class.

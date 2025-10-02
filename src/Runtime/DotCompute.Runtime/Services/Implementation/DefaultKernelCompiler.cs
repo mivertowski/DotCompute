@@ -16,10 +16,10 @@ namespace DotCompute.Runtime.Services.Implementation;
 /// Default kernel compiler implementation that delegates to backend-specific compilers.
 /// Implements the unified kernel compiler interface.
 /// </summary>
-public class DefaultKernelCompiler : IUnifiedKernelCompiler
+public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUnifiedKernelCompiler
 {
-    private readonly ILogger<DefaultKernelCompiler> _logger;
-    private readonly ConcurrentDictionary<string, IUnifiedKernelCompiler> _backendCompilers;
+    private readonly ILogger<DefaultKernelCompiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, IUnifiedKernelCompiler> _backendCompilers = new();
 
     /// <inheritdoc />
     public string Name => "Default Kernel Compiler";
@@ -42,12 +42,6 @@ public class DefaultKernelCompiler : IUnifiedKernelCompiler
         { "SupportsOptimization", true },
         { "Version", "1.0.0" }
     };
-
-    public DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _backendCompilers = new ConcurrentDictionary<string, IUnifiedKernelCompiler>();
-    }
 
     /// <summary>
     /// Registers a backend-specific compiler.
@@ -165,11 +159,9 @@ public class DefaultKernelCompiler : IUnifiedKernelCompiler
         KernelDefinition source,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
-    {
         // Use a dummy accelerator for the legacy method call
         // This is a design issue that should be addressed in the future
-        throw new NotSupportedException("This method requires an accelerator. Use CompileAsync(KernelDefinition, IAccelerator, CancellationToken) instead.");
-    }
+        => throw new NotSupportedException("This method requires an accelerator. Use CompileAsync(KernelDefinition, IAccelerator, CancellationToken) instead.");
 
     /// <inheritdoc />
     public UnifiedValidationResult Validate(KernelDefinition source)
@@ -209,11 +201,9 @@ public class DefaultKernelCompiler : IUnifiedKernelCompiler
     public async ValueTask<UnifiedValidationResult> ValidateAsync(
         KernelDefinition source,
         CancellationToken cancellationToken = default)
-    {
         // For now, delegate to synchronous validation
         // In the future, this could perform more expensive async validation
-        return await Task.FromResult(Validate(source));
-    }
+        => await Task.FromResult(Validate(source));
 
     /// <inheritdoc />
     public async ValueTask<ICompiledKernel> OptimizeAsync(

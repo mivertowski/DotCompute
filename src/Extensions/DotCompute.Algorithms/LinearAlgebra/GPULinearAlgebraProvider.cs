@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
@@ -53,9 +52,9 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     {
         GpuOptimizationStrategies.ValidateMatrixMultiplication(a, b);
 
-        var matrixProperties = _optimizationStrategies.AnalyzeMatrixProperties(a, b);
-        var hardwareInfo = _optimizationStrategies.GetHardwareInfo(accelerator);
-        var config = _optimizationStrategies.GetOptimalKernelConfig(LinearAlgebraOp.MatrixMultiply, matrixProperties, hardwareInfo);
+        var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(a, b);
+        var hardwareInfo = GpuOptimizationStrategies.GetHardwareInfo(accelerator);
+        var config = GpuOptimizationStrategies.GetOptimalKernelConfig(LinearAlgebraOp.MatrixMultiply, matrixProperties, hardwareInfo);
 
         try
         {
@@ -79,8 +78,8 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     {
         ArgumentNullException.ThrowIfNull(matrix);
 
-        var matrixProperties = _optimizationStrategies.AnalyzeMatrixProperties(matrix);
-        var hardwareInfo = _optimizationStrategies.GetHardwareInfo(accelerator);
+        var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(matrix);
+        var hardwareInfo = GpuOptimizationStrategies.GetHardwareInfo(accelerator);
 
         // For small matrices, CPU might be faster due to GPU overhead
         if (matrix.Size < _optimizationStrategies.GetGPUThreshold(accelerator))
@@ -110,8 +109,8 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     {
         ArgumentNullException.ThrowIfNull(matrix);
 
-        var matrixProperties = _optimizationStrategies.AnalyzeMatrixProperties(matrix);
-        var hardwareInfo = _optimizationStrategies.GetHardwareInfo(accelerator);
+        var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(matrix);
+        var hardwareInfo = GpuOptimizationStrategies.GetHardwareInfo(accelerator);
 
         if (matrix.Size < _optimizationStrategies.GetGPUThreshold(accelerator))
         {
@@ -142,7 +141,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     {
         GpuOptimizationStrategies.ValidateLinearSystem(a, b);
 
-        var matrixProperties = _optimizationStrategies.AnalyzeMatrixProperties(a);
+        var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(a);
         var selectedMethod = method == LinearSystemSolver.Auto ? _optimizationStrategies.SelectOptimalSolver(matrixProperties) : method;
 
         try
@@ -150,7 +149,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             return selectedMethod switch
             {
                 LinearSystemSolver.LU => await _solverOps.SolveLUAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
-                LinearSystemSolver.Cholesky => await _solverOps.SolveCholeskyAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
+                LinearSystemSolver.Cholesky => await GpuSolverOperations.SolveCholeskyAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                 LinearSystemSolver.QR => await _solverOps.SolveQRAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                 LinearSystemSolver.ConjugateGradient => await _solverOps.SolveIterativeAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                 _ => throw new ArgumentException($"Unknown solver method: {selectedMethod}")

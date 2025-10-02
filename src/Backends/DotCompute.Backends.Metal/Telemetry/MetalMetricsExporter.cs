@@ -381,7 +381,7 @@ public sealed class MetalMetricsExporter : IDisposable
         return sb.ToString();
     }
 
-    private object ConvertToOTLPFormat(MetalTelemetrySnapshot snapshot)
+    private static object ConvertToOTLPFormat(MetalTelemetrySnapshot snapshot)
     {
         var resourceMetrics = new
         {
@@ -454,7 +454,7 @@ public sealed class MetalMetricsExporter : IDisposable
             }
         };
 
-        return metrics.ToArray();
+        return [.. metrics];
     }
 
     private static object ConvertToApplicationInsightsFormat(MetalTelemetrySnapshot snapshot, ExporterConfiguration exporter)

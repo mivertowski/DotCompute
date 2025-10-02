@@ -15,28 +15,20 @@ namespace DotCompute.Algorithms.Management.Services;
 /// Provides dependency resolution and plugin matching capabilities.
 /// Handles plugin discovery based on requirements, compatibility checks, and optimal selection.
 /// </summary>
-public sealed class AlgorithmPluginResolver : IDisposable
+/// <remarks>
+/// Initializes a new instance of the <see cref="AlgorithmPluginResolver"/> class.
+/// </remarks>
+/// <param name="logger">The logger instance.</param>
+/// <param name="options">Configuration options.</param>
+/// <param name="registry">The plugin registry.</param>
+public sealed class AlgorithmPluginResolver(
+    ILogger<AlgorithmPluginResolver> logger,
+    AlgorithmPluginManagerOptions options,
+    AlgorithmPluginRegistry registry) : IDisposable
 {
-    private readonly ILogger<AlgorithmPluginResolver> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
-    private readonly AlgorithmPluginRegistry _registry;
+    private readonly ILogger<AlgorithmPluginResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginRegistry _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlgorithmPluginResolver"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="options">Configuration options.</param>
-    /// <param name="registry">The plugin registry.</param>
-    public AlgorithmPluginResolver(
-        ILogger<AlgorithmPluginResolver> logger,
-        AlgorithmPluginManagerOptions options,
-        AlgorithmPluginRegistry registry)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-    }
 
     /// <summary>
     /// Resolves the best plugin for the given requirements.
@@ -296,37 +288,37 @@ public sealed class AlgorithmPluginResolver : IDisposable
     /// <summary>
     /// Applies requirement filters to the candidate list.
     /// </summary>
-    private List<IAlgorithmPlugin> ApplyRequirementFilters(List<IAlgorithmPlugin> candidates, PluginRequirements requirements)
+    private static List<IAlgorithmPlugin> ApplyRequirementFilters(List<IAlgorithmPlugin> candidates, PluginRequirements requirements)
     {
         var filtered = candidates;
 
         // Filter by accelerator type
         if (requirements.RequiredAcceleratorType.HasValue)
         {
-            filtered = filtered.Where(p => p.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value)).ToList();
+            filtered = [.. filtered.Where(p => p.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value))];
         }
 
         // Filter by input type
         if (requirements.InputType != null)
         {
-            filtered = filtered.Where(p => p.InputTypes.Contains(requirements.InputType)).ToList();
+            filtered = [.. filtered.Where(p => p.InputTypes.Contains(requirements.InputType))];
         }
 
         // Filter by output type
         if (requirements.OutputType != null)
         {
-            filtered = filtered.Where(p => requirements.OutputType.IsAssignableFrom(p.OutputType)).ToList();
+            filtered = [.. filtered.Where(p => requirements.OutputType.IsAssignableFrom(p.OutputType))];
         }
 
         // Filter by version requirements
         if (requirements.MinimumVersion != null)
         {
-            filtered = filtered.Where(p => p.Version >= requirements.MinimumVersion).ToList();
+            filtered = [.. filtered.Where(p => p.Version >= requirements.MinimumVersion)];
         }
 
         if (requirements.MaximumVersion != null)
         {
-            filtered = filtered.Where(p => p.Version <= requirements.MaximumVersion).ToList();
+            filtered = [.. filtered.Where(p => p.Version <= requirements.MaximumVersion)];
         }
 
         return filtered;
@@ -411,7 +403,7 @@ public sealed class AlgorithmPluginResolver : IDisposable
             return;
         }
 
-        visiting.Add(pluginId);
+        _ = visiting.Add(pluginId);
 
         // Get plugin dependencies from metadata
         var loadedPlugin = _registry.GetLoadedPlugin(pluginId);
@@ -423,16 +415,13 @@ public sealed class AlgorithmPluginResolver : IDisposable
             }
         }
 
-        visiting.Remove(pluginId);
-        visited.Add(pluginId);
+        _ = visiting.Remove(pluginId);
+        _ = visited.Add(pluginId);
         resolved.Add(pluginId);
     }
 
     /// <inheritdoc/>
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 
     /// <summary>
     /// Represents a plugin with its compatibility score.

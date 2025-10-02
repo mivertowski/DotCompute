@@ -57,13 +57,7 @@ public enum SecurityLevel
     /// Critical security level - ultra-strict restrictions.
     /// Most restrictive security mode with comprehensive auditing.
     /// </summary>
-    Critical = 7,
-
-    /// <summary>
-    /// Informational security level - used for logging informational events.
-    /// No restrictions, purely for audit trail and information purposes.
-    /// </summary>
-    Informational = 8
+    Critical = 7
 }
 
 /// <summary>
@@ -222,7 +216,6 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => "High security - strict restrictions",
             SecurityLevel.Maximum => "Maximum security - comprehensive protection",
             SecurityLevel.Critical => "Critical security - ultra-strict restrictions",
-            SecurityLevel.Informational => "Informational - for audit trails and logging",
             _ => "Unknown security level"
         };
     }
@@ -245,7 +238,6 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => 80,
             SecurityLevel.Maximum => 95,
             SecurityLevel.Critical => 100,
-            SecurityLevel.Informational => 0, // Same as None - no enforcement
             _ => 50 // Default to standard
         };
     }
@@ -256,20 +248,14 @@ public static class SecurityLevelExtensions
     /// <param name="level">The current security level.</param>
     /// <param name="other">The other security level to compare against.</param>
     /// <returns>True if this level is higher than the other.</returns>
-    public static bool IsHigherThan(this SecurityLevel level, SecurityLevel other)
-    {
-        return level > other;
-    }
+    public static bool IsHigherThan(this SecurityLevel level, SecurityLevel other) => level > other;
 
     /// <summary>
     /// Determines if this security level requires auditing.
     /// </summary>
     /// <param name="level">The security level.</param>
     /// <returns>True if auditing is required.</returns>
-    public static bool RequiresAuditing(this SecurityLevel level)
-    {
-        return level >= SecurityLevel.High;
-    }
+    public static bool RequiresAuditing(this SecurityLevel level) => level >= SecurityLevel.High;
 
     /// <summary>
     /// Determines if this security level allows the specified operation.
@@ -289,7 +275,6 @@ public static class SecurityLevelExtensions
             SecurityLevel.High => operation is SecurityOperation.MemoryManagement or SecurityOperation.GpuKernelExecution,
             SecurityLevel.Maximum => operation is SecurityOperation.GpuKernelExecution,
             SecurityLevel.Critical => false,
-            SecurityLevel.Informational => true, // Same as None - allows all for informational purposes
             _ => false
         };
     }

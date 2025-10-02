@@ -16,18 +16,18 @@ public sealed class SecurityAuditor : IDisposable
     private volatile bool _disposed;
 
     // Approved cryptographic algorithms
-    private static readonly HashSet<string> ApprovedCiphers = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _approvedCiphers = new(StringComparer.OrdinalIgnoreCase)
     {
         "AES-256-GCM", "AES-256-CBC", "AES-192-GCM", "AES-192-CBC", "ChaCha20-Poly1305"
     };
 
-    private static readonly HashSet<string> ApprovedHashAlgorithms = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _approvedHashAlgorithms = new(StringComparer.OrdinalIgnoreCase)
     {
         "SHA-256", "SHA-384", "SHA-512", "SHA3-256", "SHA3-384", "SHA3-512", "BLAKE2b"
     };
 
     // Weak algorithms that should not be used
-    private static readonly HashSet<string> WeakAlgorithms = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _weakAlgorithms = new(StringComparer.OrdinalIgnoreCase)
     {
         "DES", "3DES", "RC4", "MD5", "SHA-1", "RSA-1024", "AES-ECB"
     };
@@ -56,10 +56,10 @@ public sealed class SecurityAuditor : IDisposable
 
         var validSizes = keyType switch
         {
-            KeyType.AES => new[] { 128, 192, 256 },
-            KeyType.RSA => new[] { 2048, 3072, 4096 },
-            KeyType.ECDSA => new[] { 256, 384, 521 },
-            KeyType.ChaCha20 => new[] { 256 },
+            KeyType.AES => [128, 192, 256],
+            KeyType.RSA => [2048, 3072, 4096],
+            KeyType.ECDSA => [256, 384, 521],
+            KeyType.ChaCha20 => [256],
             _ => Array.Empty<int>()
         };
 
@@ -98,7 +98,7 @@ public sealed class SecurityAuditor : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
         // Check for weak algorithms
-        if (WeakAlgorithms.Contains(algorithm))
+        if (_weakAlgorithms.Contains(algorithm))
         {
             result.ErrorMessage = $"Algorithm '{algorithm}' is not approved for security reasons";
             _logger.LogWarning($"Algorithm validation failed: {algorithm} is considered weak");
@@ -106,7 +106,7 @@ public sealed class SecurityAuditor : IDisposable
         }
 
         // Check if algorithm is in approved list
-        if (!ApprovedCiphers.Contains(algorithm) && !ApprovedHashAlgorithms.Contains(algorithm))
+        if (!_approvedCiphers.Contains(algorithm) && !_approvedHashAlgorithms.Contains(algorithm))
         {
             result.ErrorMessage = $"Algorithm '{algorithm}' is not in the approved list";
             _logger.LogWarning($"Algorithm validation failed: {algorithm} not in approved list");
@@ -141,7 +141,7 @@ public sealed class SecurityAuditor : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
 
         // Check for weak hash algorithms
-        if (WeakAlgorithms.Contains(hashAlgorithm))
+        if (_weakAlgorithms.Contains(hashAlgorithm))
         {
             result.ErrorMessage = $"Hash algorithm '{hashAlgorithm}' is not approved for security reasons";
             _logger.LogWarning($"Hash algorithm validation failed: {hashAlgorithm} is considered weak");
@@ -149,7 +149,7 @@ public sealed class SecurityAuditor : IDisposable
         }
 
         // Check if hash algorithm is approved
-        if (!ApprovedHashAlgorithms.Contains(hashAlgorithm))
+        if (!_approvedHashAlgorithms.Contains(hashAlgorithm))
         {
             result.ErrorMessage = $"Hash algorithm '{hashAlgorithm}' is not in the approved list";
             _logger.LogWarning($"Hash algorithm validation failed: {hashAlgorithm} not in approved list");
@@ -194,11 +194,11 @@ public sealed class SecurityAuditor : IDisposable
         };
 
         // Check for weak algorithms
-        if (WeakAlgorithms.Contains(algorithm))
+        if (_weakAlgorithms.Contains(algorithm))
         {
             result.IsApproved = false;
             result.Issues.Add($"Algorithm '{algorithm}' is considered cryptographically weak");
-            result.Recommendations.Add($"Consider using approved alternatives: {string.Join(", ", ApprovedCiphers)}");
+            result.Recommendations.Add($"Consider using approved alternatives: {string.Join(", ", _approvedCiphers)}");
             return result;
         }
 

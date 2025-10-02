@@ -21,18 +21,12 @@ namespace DotCompute.Core.Tests.Recovery;
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Component", "RecoveryStrategies")]
-public sealed class RecoveryStrategyTests : IDisposable
+public sealed class RecoveryStrategyTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly ITestOutputHelper _output;
-    private readonly Mock<ILogger> _mockLogger;
+    private readonly ITestOutputHelper _output = output;
+    private readonly Mock<ILogger> _mockLogger = new();
     private readonly List<IDisposable> _disposables = [];
     private bool _disposed;
-
-    public RecoveryStrategyTests(ITestOutputHelper output)
-    {
-        _output = output;
-        _mockLogger = new Mock<ILogger>();
-    }
 
     #region CompilationFallback Tests
 
@@ -846,20 +840,12 @@ public sealed class RecoveryStrategyTests : IDisposable
 }
 
 // Test implementations of recovery strategies
-public class TestCompilationFallback : IRecoveryStrategy, IDisposable
+public class TestCompilationFallback(ILogger logger) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger;
     private bool _disposed;
 
-    public TestCompilationFallback(ILogger logger)
-    {
-        _logger = logger;
-    }
-
-    public bool CanHandle(RecoveryContext context)
-    {
-        return context.FailureType.Contains("Compilation");
-    }
+    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Compilation");
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -880,15 +866,12 @@ public class TestCompilationFallback : IRecoveryStrategy, IDisposable
         return RecoveryResult.CreateSuccess(action, "Successfully fell back to CPU compilation");
     }
 
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 }
 
-public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable, IDisposable
+public class TestMemoryRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IAsyncDisposable, IDisposable
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger;
     private int _concurrentRecoveryCount;
     private bool _disposed;
 
@@ -899,15 +882,7 @@ public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable, I
     public bool MemoryFootprintReduced { get; private set; }
     public int ConcurrentRecoveryCount => _concurrentRecoveryCount;
 
-    public TestMemoryRecoveryStrategy(ILogger logger)
-    {
-        _logger = logger;
-    }
-
-    public bool CanHandle(RecoveryContext context)
-    {
-        return context.FailureType.Contains("Memory") || context.FailureType.Contains("OutOfMemory");
-    }
+    public bool CanHandle(RecoveryContext context) => context.FailureType.Contains("Memory") || context.FailureType.Contains("OutOfMemory");
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
@@ -971,20 +946,15 @@ public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable, I
     }
 }
 
-public class TestGpuRecoveryManager : IRecoveryStrategy, IDisposable
+public class TestGpuRecoveryManager(ILogger logger) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger;
     private bool _disposed;
 
     public bool DeviceResetPerformed { get; private set; }
     public bool ContextRebuilt { get; private set; }
     public bool WorkloadReduced { get; private set; }
     public bool DriverReloaded { get; private set; }
-
-    public TestGpuRecoveryManager(ILogger logger)
-    {
-        _logger = logger;
-    }
 
     public bool CanHandle(RecoveryContext context)
     {
@@ -1030,25 +1000,15 @@ public class TestGpuRecoveryManager : IRecoveryStrategy, IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 }
 
-public class TestRecoveryCoordinator : IRecoveryStrategy, IDisposable
+public class TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> strategies) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
-    private readonly List<IRecoveryStrategy> _strategies;
+    private readonly List<IRecoveryStrategy> _strategies = strategies;
     private bool _disposed;
 
     public List<string> StrategiesAttempted { get; } = [];
-
-    public TestRecoveryCoordinator(ILogger logger, List<IRecoveryStrategy> strategies)
-    {
-        _logger = logger;
-        _strategies = strategies;
-    }
 
     public bool CanHandle(RecoveryContext context) => true;
 
@@ -1091,15 +1051,8 @@ public class TestRecoveryCoordinator : IRecoveryStrategy, IDisposable
     }
 }
 
-public class TestAlwaysFailingStrategy : IRecoveryStrategy
+public class TestAlwaysFailingStrategy(ILogger logger) : IRecoveryStrategy
 {
-    private readonly ILogger _logger;
-
-    public TestAlwaysFailingStrategy(ILogger logger)
-    {
-        _logger = logger;
-    }
-
     public bool CanHandle(RecoveryContext context) => true;
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
@@ -1109,18 +1062,13 @@ public class TestAlwaysFailingStrategy : IRecoveryStrategy
     }
 }
 
-public class TestPatternDetectingRecovery : IRecoveryStrategy, IDisposable
+public class TestPatternDetectingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger;
     private readonly Dictionary<string, int> _failurePatterns = [];
 
     public bool PatternDetected { get; private set; }
     public bool AdaptiveStrategy { get; private set; }
-
-    public TestPatternDetectingRecovery(ILogger logger)
-    {
-        _logger = logger;
-    }
 
     public bool CanHandle(RecoveryContext context) => true;
 
@@ -1141,22 +1089,12 @@ public class TestPatternDetectingRecovery : IRecoveryStrategy, IDisposable
         return RecoveryResult.CreateSuccess("PatternBasedRecovery", "Recovery adapted to pattern");
     }
 
-    public void Dispose()
-    {
-        _failurePatterns.Clear();
-    }
+    public void Dispose() => _failurePatterns.Clear();
 }
 
-public class TestEscalatingRecovery : IRecoveryStrategy, IDisposable
+public class TestEscalatingRecovery(ILogger logger) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
-
     public int EscalationLevel { get; private set; }
-
-    public TestEscalatingRecovery(ILogger logger)
-    {
-        _logger = logger;
-    }
 
     public bool CanHandle(RecoveryContext context) => true;
 
@@ -1182,15 +1120,8 @@ public class TestEscalatingRecovery : IRecoveryStrategy, IDisposable
     }
 }
 
-public class TestSlowRecoveryStrategy : IRecoveryStrategy, IDisposable
+public class TestSlowRecoveryStrategy(ILogger logger) : IRecoveryStrategy, IDisposable
 {
-    private readonly ILogger _logger;
-
-    public TestSlowRecoveryStrategy(ILogger logger)
-    {
-        _logger = logger;
-    }
-
     public bool CanHandle(RecoveryContext context) => true;
 
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)

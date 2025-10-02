@@ -409,7 +409,7 @@ namespace DotCompute.Backends.CUDA.Execution
             };
         }
 
-        private Compilation.CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
+        private CudaLaunchConfig GetOptimalLaunchConfig(CompiledKernel kernel, KernelExecutionConfig executionConfig)
         {
             var globalSize = executionConfig.GlobalWorkSize;
             var localSize = executionConfig.LocalWorkSize;
@@ -476,16 +476,12 @@ namespace DotCompute.Backends.CUDA.Execution
         private async Task LaunchKernelAsync(
         CompiledKernel kernel,
         KernelArguments arguments,
-        Compilation.CudaLaunchConfig launchConfig,
+        CudaLaunchConfig launchConfig,
         IntPtr stream,
         CancellationToken cancellationToken = default)
         {
             // Convert CompiledKernel struct to CudaCompiledKernel
-            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel);
-            if (cudaKernel == null)
-            {
-                throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
-            }
+            var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel) ?? throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
 
             // Set CUDA context
             _context.MakeCurrent();

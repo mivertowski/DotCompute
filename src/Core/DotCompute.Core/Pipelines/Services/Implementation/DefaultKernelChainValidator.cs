@@ -11,15 +11,8 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// <summary>
     /// Default implementation of kernel chain validation service.
     /// </summary>
-    public sealed class DefaultKernelChainValidator : IKernelChainValidator
+    public sealed class DefaultKernelChainValidator(ILogger<DefaultKernelChainValidator>? logger = null) : IKernelChainValidator
     {
-        private readonly ILogger<DefaultKernelChainValidator>? _logger;
-
-        public DefaultKernelChainValidator(ILogger<DefaultKernelChainValidator>? logger = null)
-        {
-            _logger = logger;
-        }
-
         public async Task<KernelChainValidationResult> ValidateChainAsync(IEnumerable<KernelChainStep> steps, CancellationToken cancellationToken = default)
         {
             var stepsList = steps.ToList();

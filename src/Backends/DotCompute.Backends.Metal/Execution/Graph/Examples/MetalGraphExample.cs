@@ -53,14 +53,14 @@ public static class MetalGraphExample
                 normalizeKernel,
                 MTLSize.Make(matrixSize / 16, matrixSize / 16), // Threadgroups
                 MTLSize.Make(16, 16), // Threads per threadgroup
-                new object[] { inputBufferA, matrixSize }
+                [inputBufferA, matrixSize]
             );
 
             var normalizeB = graph.AddKernelNode(
                 normalizeKernel,
                 MTLSize.Make(matrixSize / 16, matrixSize / 16),
                 MTLSize.Make(16, 16),
-                new object[] { inputBufferB, matrixSize }
+                [inputBufferB, matrixSize]
             );
 
             // Step 3: Add main computation node - matrix multiplication
@@ -69,20 +69,20 @@ public static class MetalGraphExample
                 matMulKernel,
                 MTLSize.Make(matrixSize / 16, matrixSize / 16),
                 MTLSize.Make(16, 16),
-                new object[] { inputBufferA, inputBufferB, outputBuffer, matrixSize },
-                dependencies: new[] { normalizeA, normalizeB }
+                [inputBufferA, inputBufferB, outputBuffer, matrixSize],
+                dependencies: [normalizeA, normalizeB]
             );
 
             // Step 4: Add memory synchronization barrier
-            var syncBarrier = graph.AddBarrierNode(new[] { matrixMultiply });
+            var syncBarrier = graph.AddBarrierNode([matrixMultiply]);
 
             // Step 5: Add postprocessing node - apply final transformations
             var postProcess = graph.AddKernelNode(
                 postProcessKernel,
                 MTLSize.Make(matrixSize / 16, matrixSize / 16),
                 MTLSize.Make(16, 16),
-                new object[] { outputBuffer, matrixSize },
-                dependencies: new[] { syncBarrier }
+                [outputBuffer, matrixSize],
+                dependencies: [syncBarrier]
             );
 
             // Step 6: Add memory operations for result copying
@@ -91,7 +91,7 @@ public static class MetalGraphExample
                 outputBuffer,
                 tempBuffer,
                 matrixSize * matrixSize * sizeof(float),
-                dependencies: new[] { postProcess }
+                dependencies: [postProcess]
             );
 
             logger.LogInformation("Created complex matrix multiplication graph with {NodeCount} nodes",
@@ -275,7 +275,7 @@ public static class MetalGraphExample
                 invalidKernel,
                 MTLSize.Make(0, 0), // Invalid threadgroup size
                 MTLSize.Make(2048, 1), // Exceeds Metal limits
-                new object[] { IntPtr.Zero } // Invalid buffer
+                [IntPtr.Zero] // Invalid buffer
             );
 
             logger.LogInformation("Created graph with intentional errors for demonstration");
@@ -293,7 +293,7 @@ public static class MetalGraphExample
                 // Fix the issues
                 invalidNode.ThreadgroupsPerGrid = MTLSize.Make(64, 64);
                 invalidNode.ThreadsPerThreadgroup = MTLSize.Make(16, 16);
-                invalidNode.Arguments = new object[] { CreateMockBuffer(1024) };
+                invalidNode.Arguments = [CreateMockBuffer(1024)];
 
                 // Retry building
                 graph.Build();
@@ -344,7 +344,7 @@ public static class MetalGraphExample
             kernel,
             MTLSize.Make(64, 64),
             MTLSize.Make(16, 16),
-            new object[] { CreateMockBuffer(1024), CreateMockBuffer(1024), CreateMockBuffer(1024) }
+            [CreateMockBuffer(1024), CreateMockBuffer(1024), CreateMockBuffer(1024)]
         );
 
         logger.LogDebug("Created simple compute graph with 1 kernel node");
@@ -361,30 +361,30 @@ public static class MetalGraphExample
             CreateMockKernel("preprocess"),
             MTLSize.Make(32, 32),
             MTLSize.Make(16, 16),
-            new object[] { CreateMockBuffer(2048) }
+            [CreateMockBuffer(2048)]
         );
 
         var stage2A = graph.AddKernelNode(
             CreateMockKernel("process_branch_a"),
             MTLSize.Make(32, 32),
             MTLSize.Make(16, 16),
-            new object[] { CreateMockBuffer(2048) },
-            dependencies: new[] { stage1 }
+            [CreateMockBuffer(2048)],
+            dependencies: [stage1]
         );
 
         var stage2B = graph.AddKernelNode(
             CreateMockKernel("process_branch_b"),
             MTLSize.Make(32, 32),
             MTLSize.Make(16, 16),
-            new object[] { CreateMockBuffer(2048) },
-            dependencies: new[] { stage1 }
+            [CreateMockBuffer(2048)],
+            dependencies: [stage1]
         );
         _ = graph.AddKernelNode(
             CreateMockKernel("merge_results"),
             MTLSize.Make(32, 32),
             MTLSize.Make(16, 16),
-            new object[] { CreateMockBuffer(2048), CreateMockBuffer(2048), CreateMockBuffer(2048) },
-            dependencies: new[] { stage2A, stage2B }
+            [CreateMockBuffer(2048), CreateMockBuffer(2048), CreateMockBuffer(2048)],
+            dependencies: [stage2A, stage2B]
         );
 
         logger.LogDebug("Created complex pipeline graph with 4 kernel nodes");
@@ -401,29 +401,24 @@ public static class MetalGraphExample
         var largeBuffer3 = CreateMockBuffer(1024 * 1024);
 
         var copy1 = graph.AddMemoryCopyNode(largeBuffer1, largeBuffer2, 1024 * 1024);
-        var copy2 = graph.AddMemoryCopyNode(largeBuffer2, largeBuffer3, 1024 * 1024, new[] { copy1 });
+        var copy2 = graph.AddMemoryCopyNode(largeBuffer2, largeBuffer3, 1024 * 1024, [copy1]);
         _ = graph.AddKernelNode(
             CreateMockKernel("memory_intensive_kernel"),
             MTLSize.Make(128, 128),
             MTLSize.Make(8, 8),
-            new object[] { largeBuffer3 },
-            dependencies: new[] { copy2 }
+            [largeBuffer3],
+            dependencies: [copy2]
         );
 
         logger.LogDebug("Created memory intensive graph with 2 copy nodes and 1 kernel node");
         return graph;
     }
 
-    private static ICompiledKernel CreateMockKernel(string name)
-    {
-        return new MockCompiledKernel { Name = name };
-    }
+    private static ICompiledKernel CreateMockKernel(string name) => new MockCompiledKernel { Name = name };
 
     private static IntPtr CreateMockBuffer(long size)
-    {
         // In a real implementation, this would create an actual Metal buffer
-        return new IntPtr(Random.Shared.Next(0x1000, 0x10000));
-    }
+        => new(Random.Shared.Next(0x1000, 0x10000));
 
     #endregion
 }
@@ -441,10 +436,8 @@ internal class MockCompiledKernel : ICompiledKernel
     public bool IsDisposed { get; private set; }
 
     public Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
-    {
         // Mock implementation - just return completed task
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     public object GetMetadata()
     {

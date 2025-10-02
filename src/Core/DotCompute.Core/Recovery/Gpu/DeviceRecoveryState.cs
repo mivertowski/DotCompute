@@ -13,7 +13,12 @@ namespace DotCompute.Core.Recovery.Gpu;
 /// to make informed recovery decisions. It automatically manages device health
 /// status based on error patterns and recovery success rates.
 /// </remarks>
-public class DeviceRecoveryState
+/// <remarks>
+/// Initializes a new instance of the <see cref="DeviceRecoveryState"/> class.
+/// </remarks>
+/// <param name="deviceId">The unique identifier for the GPU device.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
+public class DeviceRecoveryState(string deviceId)
 {
     private readonly ConcurrentQueue<Exception> _recentErrors = new();
     private readonly object _lock = new();
@@ -26,7 +31,7 @@ public class DeviceRecoveryState
     /// Gets the unique identifier of the GPU device this state tracks.
     /// </summary>
     /// <value>The device identifier string.</value>
-    public string DeviceId { get; }
+    public string DeviceId { get; } = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
 
     /// <summary>
     /// Gets a value indicating whether the device is currently considered healthy.
@@ -67,16 +72,6 @@ public class DeviceRecoveryState
     /// </summary>
     /// <value>The UTC timestamp of the last health check.</value>
     public DateTimeOffset LastHealthCheck { get; private set; } = DateTimeOffset.UtcNow;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeviceRecoveryState"/> class.
-    /// </summary>
-    /// <param name="deviceId">The unique identifier for the GPU device.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
-    public DeviceRecoveryState(string deviceId)
-    {
-        DeviceId = deviceId ?? throw new ArgumentNullException(nameof(deviceId));
-    }
 
     /// <summary>
     /// Records an error that occurred on this device and updates the failure statistics.

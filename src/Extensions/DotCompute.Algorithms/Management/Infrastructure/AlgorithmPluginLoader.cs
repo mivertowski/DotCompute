@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
 using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Loading;
@@ -18,21 +17,15 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
 /// Manages assembly load contexts, dependency resolution, and plugin instantiation.
 /// </summary>
-public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposable
+public sealed partial class AlgorithmPluginLoader(
+    ILogger<AlgorithmPluginLoader> logger,
+    AlgorithmPluginManagerOptions options) : IAsyncDisposable, IDisposable
 {
-    private readonly ILogger<AlgorithmPluginLoader> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ILogger<AlgorithmPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
     private bool _disposed;
-
-    public AlgorithmPluginLoader(
-        ILogger<AlgorithmPluginLoader> logger,
-        AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
 
     /// <summary>
     /// Loads plugins from an assembly file with advanced isolation and security validation.
@@ -85,7 +78,7 @@ public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposabl
                 }
 
                 // Add to load contexts
-                _loadContexts.TryAdd(assemblyName, loadContext);
+                _ = _loadContexts.TryAdd(assemblyName, loadContext);
 
                 // Discover plugin types
                 var pluginTypes = assembly.GetTypes()
@@ -136,7 +129,7 @@ public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposabl
         }
         finally
         {
-            _loadingSemaphore.Release();
+            _ = _loadingSemaphore.Release();
         }
     }
 

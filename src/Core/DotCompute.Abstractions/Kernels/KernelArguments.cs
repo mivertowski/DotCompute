@@ -23,8 +23,7 @@ public class KernelLaunchConfiguration
     /// <summary>
     /// Gets or sets the shared memory size in bytes.
     /// </summary>
-    public uint SharedMemoryBytes { get; set; }
-
+    public uint SharedMemoryBytes { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the CUDA stream to use (0 for default stream).
@@ -228,10 +227,7 @@ public class KernelArguments : IEnumerable<object?>
     /// Gets the launch configuration for backend-specific kernel execution.
     /// </summary>
     /// <returns>The launch configuration or null if not set.</returns>
-    public KernelLaunchConfiguration? GetLaunchConfiguration()
-    {
-        return LaunchConfiguration;
-    }
+    public KernelLaunchConfiguration? GetLaunchConfiguration() => LaunchConfiguration;
 
 
     /// <summary>

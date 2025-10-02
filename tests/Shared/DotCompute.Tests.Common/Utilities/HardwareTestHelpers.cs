@@ -106,7 +106,7 @@ public static class HardwareTestHelpers
         return new TestEnvironment
         {
             SimdCapabilities = capabilities,
-            AvailableInstructionSets = availableSets.ToArray(),
+            AvailableInstructionSets = [.. availableSets],
             RequiredInstructionSets = requiredSets,
             IsValidEnvironment = missingRequired.Length == 0
         };
@@ -326,8 +326,8 @@ public static class HardwareTestHelpers
     private static async Task<GpuDeviceInfo[]> GetCudaDevicesAsync()
     {
         await Task.Delay(1);
-        return new[]
-        {
+        return
+        [
             new GpuDeviceInfo
             {
                 Name = "NVIDIA RTX 4090",
@@ -335,7 +335,7 @@ public static class HardwareTestHelpers
                 ComputeCapability = "8.9",
                 Backend = GpuBackend.CUDA
             }
-        };
+        ];
     }
 
     private static async Task<bool> TryDetectOpenCLAsync()
@@ -362,8 +362,8 @@ public static class HardwareTestHelpers
         if (!OperatingSystem.IsMacOS())
             return Array.Empty<GpuDeviceInfo>();
 
-        return new[]
-        {
+        return
+        [
             new GpuDeviceInfo
             {
                 Name = "Apple M3 Max",
@@ -371,7 +371,7 @@ public static class HardwareTestHelpers
                 ComputeCapability = "Metal 3.1",
                 Backend = GpuBackend.Metal
             }
-        };
+        ];
     }
 
     #endregion

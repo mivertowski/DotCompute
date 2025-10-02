@@ -19,7 +19,7 @@ public class CudaKernelCompilerTests : CudaTestBase
     private readonly ITestOutputHelper _output;
     private readonly Mock<ILogger<CudaKernelCompiler>>? _mockLogger;
     private readonly CudaKernelCompiler? _compiler;
-    private readonly DotCompute.Backends.CUDA.CudaContext? _context;
+    private readonly Backends.CUDA.CudaContext? _context;
 
     public CudaKernelCompilerTests(ITestOutputHelper output) : base(output)
     {
@@ -27,7 +27,7 @@ public class CudaKernelCompilerTests : CudaTestBase
         _mockLogger = new Mock<ILogger<CudaKernelCompiler>>();
         if (IsCudaAvailable())
         {
-            _context = new DotCompute.Backends.CUDA.CudaContext(0);
+            _context = new Backends.CUDA.CudaContext(0);
             _compiler = new CudaKernelCompiler(_context, _mockLogger.Object);
         }
     }
@@ -184,7 +184,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions { OptimizationLevel = level };
+        var options = new Abstractions.CompilationOptions { OptimizationLevel = level };
 
         // Act
         var result = await _compiler.CompileAsync(definition, options);
@@ -220,7 +220,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -489,7 +489,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -526,7 +526,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {
@@ -576,7 +576,7 @@ public class CudaKernelCompilerTests : CudaTestBase
             // Language would be set via source generator
         };
 
-        var options = new DotCompute.Abstractions.CompilationOptions
+        var options = new Abstractions.CompilationOptions
         {
             // Metadata = new Dictionary<string, object>
             // {

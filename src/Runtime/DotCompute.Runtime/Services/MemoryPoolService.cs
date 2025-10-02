@@ -13,7 +13,7 @@ namespace DotCompute.Runtime.Services;
 /// <summary>
 /// Production implementation of memory pool service for efficient buffer reuse and management.
 /// </summary>
-public sealed class MemoryPoolService : Runtime.Services.IMemoryPoolService, IDisposable
+public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
 {
     private readonly ILogger<MemoryPoolService> _logger;
     private readonly ConcurrentDictionary<long, Queue<PooledBuffer>> _sizePools = new();
@@ -532,27 +532,19 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 /// <summary>
 /// Accelerator-specific memory pool implementation.
 /// </summary>
-internal sealed class AcceleratorMemoryPool : IMemoryPool, IDisposable
+internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger, long initialSize = 1024 * 1024, long maxSize = 512 * 1024 * 1024) : IMemoryPool, IDisposable
 {
-    public string AcceleratorId { get; }
-    public long TotalSize { get; private set; }
+    public string AcceleratorId { get; } = acceleratorId;
+    public long TotalSize { get; private set; } = initialSize;
     public long AvailableSize => TotalSize - UsedSize;
     public long UsedSize { get; private set; }
     public int ActiveAllocations { get; private set; }
 
-    private readonly ILogger _logger;
+    private readonly ILogger _logger = logger;
     private readonly ConcurrentQueue<IUnifiedMemoryBuffer> _freeBuffers = new();
     private readonly ConcurrentDictionary<Guid, IUnifiedMemoryBuffer> _activeBuffers = new();
-    private readonly long _maxSize;
+    private readonly long _maxSize = maxSize;
     private bool _disposed;
-
-    public AcceleratorMemoryPool(string acceleratorId, ILogger logger, long initialSize = 1024 * 1024, long maxSize = 512 * 1024 * 1024)
-    {
-        AcceleratorId = acceleratorId;
-        _logger = logger;
-        TotalSize = initialSize;
-        _maxSize = maxSize;
-    }
 
     public async Task<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes)
     {

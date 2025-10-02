@@ -14,8 +14,5 @@ public class ImageProcessingService
     /// </summary>
     /// <param name="imageData">Raw image data to process</param>
     /// <returns>Processed image data</returns>
-    public static async Task<byte[]> ProcessImageAsync(byte[] imageData)
-    {
-        return await KernelChainExamples.ImageProcessingChainExample(imageData);
-    }
+    public static async Task<byte[]> ProcessImageAsync(byte[] imageData) => await KernelChainExamples.ImageProcessingChainExampleAsync(imageData);
 }

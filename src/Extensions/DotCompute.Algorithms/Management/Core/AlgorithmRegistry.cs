@@ -13,17 +13,11 @@ namespace DotCompute.Algorithms.Management.Core;
 /// <summary>
 /// Manages registration and discovery of algorithm plugins.
 /// </summary>
-public sealed partial class AlgorithmRegistry : IDisposable
+public sealed partial class AlgorithmRegistry(ILogger<AlgorithmRegistry> logger) : IDisposable
 {
-    private readonly ILogger<AlgorithmRegistry> _logger;
-    private readonly ConcurrentDictionary<string, LoadedPluginInfo> _plugins;
+    private readonly ILogger<AlgorithmRegistry> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, LoadedPluginInfo> _plugins = new();
     private bool _disposed;
-
-    public AlgorithmRegistry(ILogger<AlgorithmRegistry> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _plugins = new ConcurrentDictionary<string, LoadedPluginInfo>();
-    }
 
     /// <summary>
     /// Gets the registered plugin IDs.
@@ -152,8 +146,8 @@ public sealed partial class AlgorithmRegistry : IDisposable
             Name = lp.Plugin.Name,
             Version = lp.Plugin.Version,
             Description = lp.Plugin.Description,
-            SupportedAccelerators = lp.Plugin.SupportedAcceleratorTypes.ToArray(),
-            InputTypes = lp.Plugin.InputTypes.Select(t => t.Name).ToArray(),
+            SupportedAccelerators = [.. lp.Plugin.SupportedAcceleratorTypes],
+            InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.Name)],
             OutputType = lp.Plugin.OutputType.Name,
             PerformanceProfile = lp.Plugin.GetPerformanceProfile(),
             LoadTime = lp.LoadTime,

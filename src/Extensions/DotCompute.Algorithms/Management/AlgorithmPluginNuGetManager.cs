@@ -1,20 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Management.Metadata;
 using Microsoft.Extensions.Logging;
 using NuGet.Common;
-using NuGet.Configuration;
 using NuGet.Packaging;
-using NuGet.Packaging.Core;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
@@ -43,7 +33,7 @@ public class AlgorithmPluginNuGetManager
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DotCompute", "PluginCache", "NuGet");
 
-        Directory.CreateDirectory(_packageCacheDirectory);
+        _ = Directory.CreateDirectory(_packageCacheDirectory);
         _httpClient = new HttpClient();
     }
 
@@ -102,10 +92,10 @@ public class AlgorithmPluginNuGetManager
         if (!Directory.Exists(extractPath))
         {
             using var packageReader = new PackageArchiveReader(packagePath);
-            await packageReader.CopyFilesAsync(
+            _ = await packageReader.CopyFilesAsync(
                 extractPath,
                 packageReader.GetFiles(),
-                ExtractPackageFilesAsync,
+                ExtractPackageFiles,
                 NullLogger.Instance,
                 cancellationToken);
         }
@@ -151,7 +141,7 @@ public class AlgorithmPluginNuGetManager
         _logger.LogInformation("Updating package {PackageId} from {CurrentVersion} to {NewVersion}",
             packageId, currentVersion, latestVersion);
 
-        await DownloadPackageAsync(packageId, latestVersion.ToString(), source, cancellationToken);
+        _ = await DownloadPackageAsync(packageId, latestVersion.ToString(), source, cancellationToken);
         return true;
     }
 
@@ -290,7 +280,7 @@ public class AlgorithmPluginNuGetManager
         return result;
     }
 
-    private static string ExtractPackageFilesAsync(
+    private static string ExtractPackageFiles(
         string sourceFile,
         string targetPath,
         Stream fileStream)
@@ -300,7 +290,7 @@ public class AlgorithmPluginNuGetManager
 
         if (!string.IsNullOrEmpty(targetDir))
         {
-            Directory.CreateDirectory(targetDir);
+            _ = Directory.CreateDirectory(targetDir);
         }
 
         using var targetStream = File.Create(targetFile);
@@ -309,10 +299,7 @@ public class AlgorithmPluginNuGetManager
         return targetFile;
     }
 
-    public void Dispose()
-    {
-        _httpClient?.Dispose();
-    }
+    public void Dispose() => _httpClient?.Dispose();
 }
 
 /// <summary>
@@ -337,5 +324,5 @@ public class InternalNuGetValidationResult
     public string? Version { get; set; }
     public required string PackagePath { get; init; }
     public bool HasPluginAssemblies { get; set; }
-    public List<string> ValidationErrors { get; } = new();
+    public List<string> ValidationErrors { get; } = [];
 }

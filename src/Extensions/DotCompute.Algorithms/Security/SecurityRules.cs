@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Reflection;
-using global::System.Security.Cryptography;
-using global::System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -11,18 +11,13 @@ namespace DotCompute.Algorithms.Security;
 /// <summary>
 /// Security rule that validates file size constraints.
 /// </summary>
-public sealed class FileSizeSecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
+/// </remarks>
+/// <param name="maxSize">Maximum allowed file size in bytes.</param>
+public sealed class FileSizeSecurityRule(long maxSize) : SecurityRule
 {
-    private readonly long _maxSize;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FileSizeSecurityRule"/> class.
-    /// </summary>
-    /// <param name="maxSize">Maximum allowed file size in bytes.</param>
-    public FileSizeSecurityRule(long maxSize)
-    {
-        _maxSize = maxSize;
-    }
+    private readonly long _maxSize = maxSize;
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
@@ -363,18 +358,13 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
 /// <summary>
 /// Security rule that enforces directory-based policies.
 /// </summary>
-public sealed class DirectoryPolicySecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
+/// </remarks>
+/// <param name="directoryPolicies">The directory policies to enforce.</param>
+public sealed class DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies) : SecurityRule
 {
-    private readonly Dictionary<string, SecurityLevel> _directoryPolicies;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DirectoryPolicySecurityRule"/> class.
-    /// </summary>
-    /// <param name="directoryPolicies">The directory policies to enforce.</param>
-    public DirectoryPolicySecurityRule(Dictionary<string, SecurityLevel> directoryPolicies)
-    {
-        _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
-    }
+    private readonly Dictionary<string, SecurityLevel> _directoryPolicies = directoryPolicies ?? throw new ArgumentNullException(nameof(directoryPolicies));
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
@@ -445,21 +435,15 @@ public sealed class DirectoryPolicySecurityRule : SecurityRule
 /// <summary>
 /// Security rule that validates assemblies against a blocklist.
 /// </summary>
-public sealed class BlocklistSecurityRule : SecurityRule
+/// <remarks>
+/// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
+/// </remarks>
+/// <param name="blockedHashes">Set of blocked assembly hashes.</param>
+/// <param name="blockedNames">Set of blocked assembly names.</param>
+public sealed class BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames) : SecurityRule
 {
-    private readonly HashSet<string> _blockedHashes;
-    private readonly HashSet<string> _blockedNames;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BlocklistSecurityRule"/> class.
-    /// </summary>
-    /// <param name="blockedHashes">Set of blocked assembly hashes.</param>
-    /// <param name="blockedNames">Set of blocked assembly names.</param>
-    public BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet<string> blockedNames)
-    {
-        _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
-        _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
-    }
+    private readonly HashSet<string> _blockedHashes = blockedHashes ?? throw new ArgumentNullException(nameof(blockedHashes));
+    private readonly HashSet<string> _blockedNames = blockedNames ?? throw new ArgumentNullException(nameof(blockedNames));
 
     /// <inheritdoc/>
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)

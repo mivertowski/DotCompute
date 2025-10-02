@@ -27,7 +27,6 @@ public sealed class MetalCommandStream : IDisposable
     private const int APPLE_SILICON_OPTIMAL_STREAMS = 6;
     private const int INTEL_MAC_OPTIMAL_STREAMS = 4;
     private const int MAX_CONCURRENT_STREAMS = 32;
-    private const int INITIAL_POOL_SIZE = 8;
 
     // Special streams
     private IntPtr _defaultCommandQueue;
@@ -554,11 +553,9 @@ public sealed class MetalCommandStream : IDisposable
     }
 
     private IntPtr CreateCommandQueueWithPriority(MetalStreamPriority priority)
-    {
         // For now, create a standard command queue
         // In a full implementation, this would set queue priority if supported
-        return MetalNative.CreateCommandQueue(_device);
-    }
+        => MetalNative.CreateCommandQueue(_device);
 
     private static async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)
     {
@@ -848,18 +845,12 @@ public sealed class MetalCommandExecutionResult
 /// <summary>
 /// Group of streams working together
 /// </summary>
-public sealed class MetalStreamGroup : IDisposable
+public sealed class MetalStreamGroup(string name, int capacity = 4) : IDisposable
 {
-    private readonly ConcurrentDictionary<StreamId, IntPtr> _streams;
+    private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
     private volatile bool _disposed;
 
-    public MetalStreamGroup(string name, int capacity = 4)
-    {
-        Name = name;
-        _streams = new ConcurrentDictionary<StreamId, IntPtr>();
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
     public IReadOnlyDictionary<StreamId, IntPtr> Streams => _streams;
 
     internal void AddStream(StreamId streamId, IntPtr commandQueue) => _streams[streamId] = commandQueue;

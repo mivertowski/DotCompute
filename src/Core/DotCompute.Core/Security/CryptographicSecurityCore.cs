@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Security;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -186,7 +185,7 @@ namespace DotCompute.Core.Security
         /// <summary>
         /// Validates a cryptographic algorithm for security compliance.
         /// </summary>
-        public AlgorithmValidationResult ValidateCryptographicAlgorithm(string algorithm, int keySize, string context)
+        public static AlgorithmValidationResult ValidateCryptographicAlgorithm(string algorithm, int keySize, string context)
         {
             var result = new AlgorithmValidationResult
             {
@@ -222,7 +221,7 @@ namespace DotCompute.Core.Security
 
         #region Private Methods
 
-        private async Task<SecureKeyContainer> GenerateKeyContainerAsync(KeyType keyType, int keySize,
+        private static async Task<SecureKeyContainer> GenerateKeyContainerAsync(KeyType keyType, int keySize,
             string identifier, string purpose)
         {
             return keyType switch
@@ -255,7 +254,7 @@ namespace DotCompute.Core.Security
             return new SecureKeyContainer(KeyType.RSA, keyData, identifier, purpose, keySize);
         }
 
-        private async Task<EncryptionResult> PerformEncryptionAsync(ReadOnlyMemory<byte> data,
+        private static async Task<EncryptionResult> PerformEncryptionAsync(ReadOnlyMemory<byte> data,
             SecureKeyContainer keyContainer, string algorithm, ReadOnlyMemory<byte> associatedData, EncryptionResult result)
         {
             try
@@ -327,16 +326,13 @@ namespace DotCompute.Core.Security
     }
 
     // Supporting types - essential subset for compilation
-    public enum SecurityLevel { Weak, Low, Moderate, Medium, Strong, High, Critical, Unknown, Informational }
+    public enum SecurityLevel { Weak, Moderate, Strong, Unknown }
 
     public class CryptographicConfiguration
     {
         public static CryptographicConfiguration Default => new();
         public TimeSpan KeyRotationInterval { get; set; } = TimeSpan.FromHours(24);
         public TimeSpan KeyLifetime { get; set; } = TimeSpan.FromDays(30);
-        public bool EnableTimingAttackProtection { get; set; } = true;
-        public TimeSpan KeyMaxAge { get; set; } = TimeSpan.FromDays(365);
-        public bool RequireApprovedAlgorithms { get; set; } = true;
     }
 
     public interface ICryptographicResult
@@ -358,7 +354,6 @@ namespace DotCompute.Core.Security
         public string? ErrorMessage { get; set; }
         public bool Success { get; set; }
         public string? Fingerprint { get; set; }
-        public string? KeyFingerprint { get; set; }
     }
 
     public class EncryptionResult : ICryptographicResult
@@ -392,10 +387,9 @@ namespace DotCompute.Core.Security
         public bool IsApproved { get; set; }
         public SecurityLevel SecurityLevel { get; set; }
         public string ValidationMessage { get; set; } = string.Empty;
-        public List<string> Issues { get; set; } = new();
-        public List<string> SecurityIssues { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public List<string> Recommendations { get; set; } = new();
+        public List<string> Issues { get; set; } = [];
+        public List<string> Warnings { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
     }
 
     public class SecureKeyContainer : IDisposable
@@ -405,9 +399,6 @@ namespace DotCompute.Core.Security
         public string Identifier { get; init; }
         public string Purpose { get; init; }
         public DateTimeOffset CreationTime { get; init; }
-        public byte[]? PublicKeyData { get; init; }
-        public SecureString? KeyData { get; init; }
-        public byte[]? RawKeyData { get; init; }
         private readonly byte[] _keyData;
         private bool _disposed;
 

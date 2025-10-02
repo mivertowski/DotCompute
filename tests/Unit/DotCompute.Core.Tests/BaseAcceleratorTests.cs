@@ -1280,7 +1280,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         const long totalMemory = 1024 * 1024 * 1024; // 1GB
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
         _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
         _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
         _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
@@ -1346,7 +1346,7 @@ public sealed class BaseAcceleratorTests : IDisposable
         var allocationSize = 0L;
 
         // Setup Statistics property with correct property names
-        var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
+        var mockStats = new Mock<Abstractions.Memory.MemoryStatistics>();
         _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
         _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
         _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
@@ -1858,7 +1858,15 @@ public sealed class BaseAcceleratorTests : IDisposable
     /// <summary>
     /// Enhanced test implementation of BaseAccelerator for comprehensive testing.
     /// </summary>
-    private sealed class TestAccelerator : BaseAccelerator
+    private sealed class TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger) : BaseAccelerator(info ?? throw new ArgumentNullException(nameof(info)),
+
+              info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
+
+              memory ?? throw new ArgumentNullException(nameof(memory)),
+
+              new AcceleratorContext(IntPtr.Zero, 0),
+
+              logger ?? throw new ArgumentNullException(nameof(logger)))
     {
         // Basic tracking
         public bool CompileKernelCoreCalled { get; private set; }
@@ -1911,20 +1919,6 @@ public sealed class BaseAcceleratorTests : IDisposable
         private readonly List<TimeSpan> _compilationTimes = [];
         private int _activeCompilations;
         private int _activeSyncs;
-
-        public TestAccelerator(AcceleratorInfo info, IUnifiedMemoryManager memory, ILogger logger)
-            : base(info ?? throw new ArgumentNullException(nameof(info)),
-
-                  info != null ? Enum.Parse<AcceleratorType>(info.DeviceType) : AcceleratorType.CPU,
-
-                  memory ?? throw new ArgumentNullException(nameof(memory)),
-
-                  new AcceleratorContext(IntPtr.Zero, 0),
-
-                  logger ?? throw new ArgumentNullException(nameof(logger)))
-        {
-        }
-
 
         protected override object? InitializeCore()
         {

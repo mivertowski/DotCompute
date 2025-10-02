@@ -137,6 +137,6 @@ namespace DotCompute.Core.Memory.P2P
         public int DistinctFailureTypes { get; set; }
         public string? MostCommonFailureType { get; set; }
         public double RecentFailureRate { get; set; }
-        public Dictionary<string, int> FailuresByType { get; set; } = new();
+        public Dictionary<string, int> FailuresByType { get; set; } = [];
     }
 }

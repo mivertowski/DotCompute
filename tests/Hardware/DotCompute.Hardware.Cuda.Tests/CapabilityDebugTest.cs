@@ -2,14 +2,9 @@ using DotCompute.Backends.CUDA.Configuration;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
-    public class CapabilityDebugTest
+    public class CapabilityDebugTest(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public CapabilityDebugTest(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        private readonly ITestOutputHelper _output = output;
 
         [Fact]
         public void Debug_CheckComputeCapability()

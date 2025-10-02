@@ -305,10 +305,7 @@ public static class UnifiedTestHelpers
             };
         }
 
-        private static double CalculateThroughput(long bytes, double seconds)
-        {
-            return seconds > 0 ? (bytes / (1024.0 * 1024.0 * 1024.0)) / seconds : 0;
-        }
+        private static double CalculateThroughput(long bytes, double seconds) => seconds > 0 ? (bytes / (1024.0 * 1024.0 * 1024.0)) / seconds : 0;
     }
 
     /// <summary>
@@ -507,16 +504,10 @@ public static class UnifiedTestHelpers
     /// <summary>
     /// Test logger implementation for xUnit output.
     /// </summary>
-    public class TestLogger : ILogger
+    public class TestLogger(ITestOutputHelper output, string categoryName = "Test") : ILogger
     {
-        private readonly ITestOutputHelper _output;
-        private readonly string _categoryName;
-
-        public TestLogger(ITestOutputHelper output, string categoryName = "Test")
-        {
-            _output = output;
-            _categoryName = categoryName;
-        }
+        private readonly ITestOutputHelper _output = output;
+        private readonly string _categoryName = categoryName;
 
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
         public bool IsEnabled(LogLevel logLevel) => true;
@@ -536,15 +527,10 @@ public static class UnifiedTestHelpers
     /// <summary>
     /// Factory for creating test loggers.
     /// </summary>
-    public sealed class TestLoggerFactory : ILoggerFactory
+    public sealed class TestLoggerFactory(ITestOutputHelper output) : ILoggerFactory
     {
-        private readonly ITestOutputHelper _output;
+        private readonly ITestOutputHelper _output = output;
         private bool _disposed;
-
-        public TestLoggerFactory(ITestOutputHelper output)
-        {
-            _output = output;
-        }
 
         public ILogger CreateLogger(string categoryName) => new TestLogger(_output, categoryName);
         public void AddProvider(ILoggerProvider provider) { }
@@ -576,8 +562,8 @@ public static class UnifiedTestHelpers
     /// <param name="actual">Actual performance result</param>
     /// <param name="tolerancePercent">Tolerance percentage for comparison (default 10%)</param>
     public static void ComparePerformanceResults(
-        DotCompute.SharedTestUtilities.Performance.PerformanceResult expected,
-        DotCompute.SharedTestUtilities.Performance.PerformanceResult actual,
+        SharedTestUtilities.Performance.PerformanceResult expected,
+        SharedTestUtilities.Performance.PerformanceResult actual,
         double tolerancePercent = 10.0)
     {
         // Allow for some variation in performance measurements
@@ -602,10 +588,7 @@ public static class UnifiedTestHelpers
         float[] actual,
         float tolerance = 0.0001f,
         int maxElementsToCheck = 1000,
-        string? context = null)
-    {
-        ValidationHelpers.VerifyFloatArraysMatch(expected, actual, tolerance, maxElementsToCheck, context);
-    }
+        string? context = null) => ValidationHelpers.VerifyFloatArraysMatch(expected, actual, tolerance, maxElementsToCheck, context);
 
     #endregion
 }

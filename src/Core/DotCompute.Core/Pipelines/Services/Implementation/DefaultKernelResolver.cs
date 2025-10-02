@@ -11,26 +11,18 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// Default implementation of kernel resolution service.
     /// Resolves kernel names to compiled kernel instances using the generated kernel discovery service.
     /// </summary>
-    public sealed class DefaultKernelResolver : IKernelResolver
+    /// <remarks>
+    /// Initializes a new instance of the DefaultKernelResolver class.
+    /// </remarks>
+    /// <param name="serviceProvider">The service provider for kernel discovery</param>
+    /// <param name="logger">Optional logger for diagnostics</param>
+    public sealed class DefaultKernelResolver(
+        IServiceProvider serviceProvider,
+        ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<DefaultKernelResolver>? _logger;
-        private readonly ConcurrentDictionary<string, ICompiledKernel?> _kernelCache;
+        private readonly ILogger<DefaultKernelResolver>? _logger = logger;
+        private readonly ConcurrentDictionary<string, ICompiledKernel?> _kernelCache = new();
         private volatile bool _initialized;
-
-        /// <summary>
-        /// Initializes a new instance of the DefaultKernelResolver class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider for kernel discovery</param>
-        /// <param name="logger">Optional logger for diagnostics</param>
-        public DefaultKernelResolver(
-            IServiceProvider serviceProvider,
-            ILogger<DefaultKernelResolver>? logger = null)
-        {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = logger;
-            _kernelCache = new ConcurrentDictionary<string, ICompiledKernel?>();
-        }
 
         /// <inheritdoc/>
         public async Task<ICompiledKernel?> ResolveKernelAsync(string kernelName, CancellationToken cancellationToken = default)

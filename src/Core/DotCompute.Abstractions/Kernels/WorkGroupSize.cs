@@ -249,31 +249,22 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// Returns the work group size as an array
     /// </summary>
     /// <returns>An array containing [X, Y, Z]</returns>
-    public int[] ToArray() => new[] { X, Y, Z };
+    public int[] ToArray() => [X, Y, Z];
 
     /// <summary>
     /// Equality comparison
     /// </summary>
-    public bool Equals(WorkGroupSize other)
-    {
-        return X == other.X && Y == other.Y && Z == other.Z;
-    }
+    public bool Equals(WorkGroupSize other) => X == other.X && Y == other.Y && Z == other.Z;
 
     /// <summary>
     /// Equality comparison
     /// </summary>
-    public override bool Equals(object? obj)
-    {
-        return obj is WorkGroupSize other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is WorkGroupSize other && Equals(other);
 
     /// <summary>
     /// Gets the hash code
     /// </summary>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z);
-    }
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
     /// <summary>
     /// String representation

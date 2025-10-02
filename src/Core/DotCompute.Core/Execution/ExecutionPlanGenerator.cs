@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using global::System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Execution.Types;
@@ -14,8 +14,8 @@ using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Analysis;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using ExecutionPerformanceMonitor = DotCompute.Core.Execution.PerformanceMonitor;
 using DotCompute.Core.Execution.Optimization;
+
 namespace DotCompute.Core.Execution
 {
     /// <summary>
@@ -23,28 +23,17 @@ namespace DotCompute.Core.Execution
     /// Creates optimized execution plans for different parallelization strategies including
     /// data parallel, model parallel, and pipeline parallel execution.
     /// </summary>
-    public sealed class ExecutionPlanGenerator
+    /// <remarks>
+    /// Initializes a new instance of the ExecutionPlanGenerator class.
+    /// </remarks>
+    /// <param name="logger">Logger for generator operations</param>
+    /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
+    public sealed class ExecutionPlanGenerator(ILogger logger)
     {
-        private readonly ILogger _logger;
-        private readonly ExecutionPerformanceMonitor _performanceMonitor;
-        private readonly DependencyAnalyzer _dependencyAnalyzer;
-        private readonly ResourceScheduler _resourceScheduler;
-        private readonly ExecutionOptimizer _executionOptimizer;
-
-        /// <summary>
-        /// Initializes a new instance of the ExecutionPlanGenerator class.
-        /// </summary>
-        /// <param name="logger">Logger for generator operations</param>
-        /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
-        /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
-        public ExecutionPlanGenerator(ILogger logger, ExecutionPerformanceMonitor performanceMonitor)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
-            _dependencyAnalyzer = new DependencyAnalyzer(logger);
-            _resourceScheduler = new ResourceScheduler(logger);
-            _executionOptimizer = new ExecutionOptimizer(logger);
-        }
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly DependencyAnalyzer _dependencyAnalyzer = new(logger);
+        private readonly ResourceScheduler _resourceScheduler = new(logger);
+        private readonly ExecutionOptimizer _executionOptimizer = new(logger);
 
         /// <summary>
         /// Generates an optimized execution plan for data parallel workloads.
@@ -171,7 +160,7 @@ namespace DotCompute.Core.Execution
 
                 // 4. Estimate execution time for the model
                 var estimatedExecutionTime = EstimateModelParallelExecutionTime(
-                    workload.ModelLayers.Count, layerAssignments.Values.ToArray());
+                    workload.ModelLayers.Count, [.. layerAssignments.Values]);
 
 
 
@@ -302,7 +291,7 @@ namespace DotCompute.Core.Execution
             // Compile kernels in parallel for all devices
             foreach (var assignment in workloadDistribution.DeviceAssignments)
             {
-                compilationTasks.Add(Task.FromResult(CompileKernelForDeviceAsync(kernelName, assignment.Device, cancellationToken)));
+                compilationTasks.Add(Task.FromResult(CompileKernelForDevice(kernelName, assignment.Device, cancellationToken)));
             }
 
             var compiledKernels = await Task.WhenAll(compilationTasks);
@@ -474,7 +463,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Compiles a kernel for a specific device.
         /// </summary>
-        private static ManagedCompiledKernel CompileKernelForDeviceAsync(string kernelName, IAccelerator device, CancellationToken cancellationToken)
+        private static ManagedCompiledKernel CompileKernelForDevice(string kernelName, IAccelerator device, CancellationToken cancellationToken)
         {
             // Compile kernel for the specific device type with appropriate optimizations
             _ = new KernelCompilationOptions
@@ -543,7 +532,7 @@ namespace DotCompute.Core.Execution
                 buffers.Add(buffer);
             }
 
-            return buffers.ToArray();
+            return [.. buffers];
         }
 
         /// <summary>
@@ -579,7 +568,7 @@ namespace DotCompute.Core.Execution
                 buffers.Add(buffer);
             }
 
-            return buffers.ToArray();
+            return [.. buffers];
         }
 
         /// <summary>

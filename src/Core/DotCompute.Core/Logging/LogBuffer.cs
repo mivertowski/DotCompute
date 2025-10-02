@@ -707,20 +707,13 @@ public sealed class ConsoleSink : ILogSink, IHealthCheckable
     public void Dispose() { }
 }
 
-public sealed class FileSink : ILogSink, IHealthCheckable
+public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
 {
-    private readonly string _filePath;
+    private readonly string _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
     private readonly SemaphoreSlim _writeSemaphore = new(1, 1);
 
 
     public bool IsHealthy { get; private set; } = true;
-
-
-    public FileSink(string filePath)
-    {
-        _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-    }
-
 
     public void Initialize()
     {
@@ -758,7 +751,6 @@ public sealed class FileSink : ILogSink, IHealthCheckable
 
     public Task FlushAsync(CancellationToken cancellationToken = default)
         // File writes are immediately flushed
-
 
 
 

@@ -294,11 +294,9 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// Override for error-specific recovery decision logic.
     /// </summary>
     protected virtual bool ShouldAttemptRecoveryForError(Exception error, RecoveryAttemptHistory history, RecoveryOptions options)
-    {
         // Base implementation allows recovery for all errors
         // Override in derived classes for specific error handling
-        return true;
-    }
+        => true;
 
     #endregion
 
@@ -312,11 +310,9 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         TContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken)
-    {
         // Base implementation does nothing
         // Override in derived classes for preparation logic
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     /// <summary>
     /// Validates recovery result and performs cleanup - override for strategy-specific validation.
@@ -325,11 +321,9 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         RecoveryResult result,
         TContext context,
         CancellationToken cancellationToken)
-    {
         // Base implementation does nothing
         // Override in derived classes for validation logic
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     #endregion
 
@@ -374,10 +368,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// Creates a context key for tracking recovery history.
     /// Override for context-specific key generation.
     /// </summary>
-    protected virtual string GetContextKey(TContext context)
-    {
-        return context.GetHashCode().ToString();
-    }
+    protected virtual string GetContextKey(TContext context) => context.GetHashCode().ToString();
 
     /// <summary>
     /// Creates a failure result with consistent formatting.
@@ -414,20 +405,14 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// <param name="message">The success message.</param>
     /// <param name="duration">The duration of the recovery operation.</param>
     /// <returns>A successful recovery result.</returns>
-    protected RecoveryResult Success(string message, TimeSpan duration)
-    {
-        return CreateSuccessResult(message, duration);
-    }
+    protected RecoveryResult Success(string message, TimeSpan duration) => CreateSuccessResult(message, duration);
 
     /// <summary>
     /// Convenience method to create a failed recovery result.
     /// </summary>
     /// <param name="message">The failure message.</param>
     /// <returns>A failed recovery result.</returns>
-    protected RecoveryResult Failure(string message)
-    {
-        return CreateFailureResult(message, new InvalidOperationException(message));
-    }
+    protected RecoveryResult Failure(string message) => CreateFailureResult(message, new InvalidOperationException(message));
 
     /// <summary>
     /// Convenience method to create a failed recovery result with an exception.
@@ -435,10 +420,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// <param name="message">The failure message.</param>
     /// <param name="exception">The exception that caused the failure.</param>
     /// <returns>A failed recovery result.</returns>
-    protected RecoveryResult Failure(string message, Exception exception)
-    {
-        return CreateFailureResult(message, exception);
-    }
+    protected RecoveryResult Failure(string message, Exception exception) => CreateFailureResult(message, exception);
 
     /// <summary>
     /// Convenience method to create a failed recovery result with an exception and duration.
@@ -458,10 +440,8 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// Determines if manual intervention is required based on the error types.
     /// </summary>
     protected virtual bool IsManualInterventionRequired(Exception originalError, Exception? recoveryException)
-    {
         // Override in derived classes for specific logic
-        return recoveryException != null || originalError is SystemException;
-    }
+        => recoveryException != null || originalError is SystemException;
 
     /// <summary>
     /// Calculates retry delay with optional exponential backoff.
@@ -666,13 +646,13 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 /// <summary>
 /// Tracks recovery attempt history for a specific context.
 /// </summary>
-public sealed class RecoveryAttemptHistory
+public sealed class RecoveryAttemptHistory(string contextKey)
 {
     private readonly object _lock = new();
     private readonly Queue<RecoveryAttempt> _attempts = new();
     private const int MaxHistorySize = 100;
 
-    public string ContextKey { get; }
+    public string ContextKey { get; } = contextKey;
     public DateTimeOffset LastAttempt { get; private set; }
     public int ConsecutiveFailures { get; private set; }
     public int TotalAttempts { get; private set; }
@@ -687,11 +667,6 @@ public sealed class RecoveryAttemptHistory
                 return _attempts.ToArray();
             }
         }
-    }
-
-    public RecoveryAttemptHistory(string contextKey)
-    {
-        ContextKey = contextKey;
     }
 
     public void AddAttempt(RecoveryAttempt attempt)
@@ -775,8 +750,7 @@ public sealed class RecoveryOptions
     public int MaxConsecutiveFailures { get; init; } = 5;
     public TimeSpan RateLimitWindow { get; init; } = TimeSpan.FromMinutes(1);
     public int MaxAttemptsPerWindow { get; init; } = 10;
-    public bool AllowConcurrentRecovery { get; init; }
-
+    public bool AllowConcurrentRecovery { get; init; } = false;
     public TimeSpan RecoveryTimeout { get; init; } = TimeSpan.FromMinutes(5);
 }
 
@@ -792,27 +766,6 @@ public sealed class RecoveryResult
     public TimeSpan Duration { get; set; }
     public bool RequiresManualIntervention { get; init; }
     public Dictionary<string, object> Metadata { get; init; } = [];
-
-    /// <summary>
-    /// Creates a successful recovery result.
-    /// </summary>
-    public static RecoveryResult CreateSuccess(string message, string strategy = "Unknown") => new()
-    {
-        Success = true,
-        Message = message,
-        Strategy = strategy
-    };
-
-    /// <summary>
-    /// Creates a failed recovery result.
-    /// </summary>
-    public static RecoveryResult CreateFailure(string message, string strategy = "Unknown", Exception? exception = null) => new()
-    {
-        Success = false,
-        Message = message,
-        Strategy = strategy,
-        Exception = exception
-    };
 }
 
 /// <summary>
@@ -846,6 +799,5 @@ public interface IRecoveryStrategy<in TContext> where TContext : class
         CancellationToken cancellationToken = default);
     public RecoveryStatistics GetStatistics();
 }
-
 
 #endregion

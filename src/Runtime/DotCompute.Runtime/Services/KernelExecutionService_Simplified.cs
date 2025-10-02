@@ -14,21 +14,14 @@ namespace DotCompute.Runtime.Services;
 /// This bridges generated kernel code with the runtime infrastructure.
 /// </summary>
 [SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "Service layer logging")]
-public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfaces.IComputeOrchestrator, IDisposable
+public class KernelExecutionServiceSimplified(
+    AcceleratorRuntime runtime,
+    ILogger<KernelExecutionServiceSimplified> logger) : Abstractions.Interfaces.IComputeOrchestrator, IDisposable
 {
-    private readonly AcceleratorRuntime _runtime;
-    private readonly ILogger<KernelExecutionServiceSimplified> _logger;
-    private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry;
+    private readonly AcceleratorRuntime _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+    private readonly ILogger<KernelExecutionServiceSimplified> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Dictionary<string, KernelRegistrationInfo> _kernelRegistry = [];
     private bool _disposed;
-
-    public KernelExecutionServiceSimplified(
-        AcceleratorRuntime runtime,
-        ILogger<KernelExecutionServiceSimplified> logger)
-    {
-        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _kernelRegistry = [];
-    }
 
     /// <summary>
     /// Registers kernels from the generated kernel registry.
@@ -49,12 +42,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
-
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
         return await ExecuteAsync<T>(kernelName, accelerator, args);
     }
 
@@ -71,12 +59,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
             return await ExecuteAsync<T>(kernelName, args);
         }
 
-        var accelerator = accelerators.FirstOrDefault();
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
-        }
-
+        var accelerator = accelerators.FirstOrDefault() ?? throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
         return await ExecuteAsync<T>(kernelName, accelerator, args);
     }
 
@@ -110,11 +93,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     /// <inheritdoc />
     public async Task<T> ExecuteWithBuffersAsync<T>(string kernelName, IEnumerable<IUnifiedMemoryBuffer> buffers, params object[] scalarArgs)
     {
-        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Combine unified buffers with scalar arguments
         var allArgs = buffers.Cast<object>().Concat(scalarArgs).ToArray();
@@ -222,15 +201,10 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var accelerator = !string.IsNullOrEmpty(executionParameters.PreferredBackend)
+        var accelerator = (!string.IsNullOrEmpty(executionParameters.PreferredBackend)
             ? _runtime.GetAccelerators()
                 .FirstOrDefault(a => a.Info.DeviceType.Equals(executionParameters.PreferredBackend, StringComparison.OrdinalIgnoreCase))
-            : await GetOptimalAcceleratorAsync(kernelName);
-
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+            : await GetOptimalAcceleratorAsync(kernelName)) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Execute kernel and return as object
         var result = await ExecuteAsync<object>(kernelName, accelerator, executionParameters.Arguments);
@@ -242,11 +216,7 @@ public class KernelExecutionServiceSimplified : DotCompute.Abstractions.Interfac
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var accelerator = await GetOptimalAcceleratorAsync(kernelName);
-        if (accelerator == null)
-        {
-            throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
-        }
+        var accelerator = await GetOptimalAcceleratorAsync(kernelName) ?? throw new InvalidOperationException($"No suitable accelerator found for kernel: {kernelName}");
 
         // Execute kernel and return as object
         var result = await ExecuteAsync<object>(kernelName, accelerator, args);

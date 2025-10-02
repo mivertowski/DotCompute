@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using global::System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
@@ -97,7 +97,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     }.AsReadOnly();
 
     /// <inheritdoc/>
-    public async ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileAsync(
+    public async ValueTask<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -133,7 +133,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             };
 
 
-            return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
+            return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 cachedPipelineState,
                 _commandQueue,
@@ -226,7 +226,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             MetalNative.ReleaseFunction(function);
 
 
-            return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
+            return (ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 pipelineState,
                 _commandQueue,
@@ -481,12 +481,10 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     public ValueTask<ValidationResult> ValidateAsync(KernelDefinition kernel, CancellationToken cancellationToken = default) => ValueTask.FromResult(Validate(kernel));
 
     /// <inheritdoc/>
-    public ValueTask<DotCompute.Abstractions.ICompiledKernel> OptimizeAsync(DotCompute.Abstractions.ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
-    {
+    public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
         // TODO: Implement Metal-specific optimizations
         // For now, return the kernel as-is since Metal optimization happens at compile time
-        return ValueTask.FromResult(kernel);
-    }
+        => ValueTask.FromResult(kernel);
 
     // Backward compatibility methods for legacy IKernelCompiler interface
 

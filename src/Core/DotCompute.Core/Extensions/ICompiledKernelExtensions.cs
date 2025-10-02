@@ -580,159 +580,111 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="gridDim">Grid dimensions</param>
-        public static void SetGridDimensions(this KernelArguments arguments, (int x, int y, int z) gridDim)
-        {
-            arguments.SetMetadata(GridDimensionsKey, gridDim);
-        }
+        public static void SetGridDimensions(this KernelArguments arguments, (int x, int y, int z) gridDim) => arguments.SetMetadata(GridDimensionsKey, gridDim);
 
         /// <summary>
         /// Gets grid dimensions from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Grid dimensions or default value</returns>
-        public static (int x, int y, int z) GetGridDimensions(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<(int, int, int)>(GridDimensionsKey, (1, 1, 1));
-        }
+        public static (int x, int y, int z) GetGridDimensions(this KernelArguments arguments) => arguments.GetMetadata(GridDimensionsKey, (1, 1, 1));
 
         /// <summary>
         /// Sets block dimensions in the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="blockDim">Block dimensions</param>
-        public static void SetBlockDimensions(this KernelArguments arguments, (int x, int y, int z) blockDim)
-        {
-            arguments.SetMetadata(BlockDimensionsKey, blockDim);
-        }
+        public static void SetBlockDimensions(this KernelArguments arguments, (int x, int y, int z) blockDim) => arguments.SetMetadata(BlockDimensionsKey, blockDim);
 
         /// <summary>
         /// Gets block dimensions from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Block dimensions or default value</returns>
-        public static (int x, int y, int z) GetBlockDimensions(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<(int, int, int)>(BlockDimensionsKey, (1, 1, 1));
-        }
+        public static (int x, int y, int z) GetBlockDimensions(this KernelArguments arguments) => arguments.GetMetadata(BlockDimensionsKey, (1, 1, 1));
 
         /// <summary>
         /// Sets launch configuration in the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="launchConfig">Launch configuration</param>
-        public static void SetLaunchConfiguration(this KernelArguments arguments, object launchConfig)
-        {
-            arguments.SetMetadata(LaunchConfigKey, launchConfig);
-        }
+        public static void SetLaunchConfiguration(this KernelArguments arguments, object launchConfig) => arguments.SetMetadata(LaunchConfigKey, launchConfig);
 
         /// <summary>
         /// Gets launch configuration from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Launch configuration or null</returns>
-        public static object? GetLaunchConfiguration(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<object?>(LaunchConfigKey, null);
-        }
+        public static object? GetLaunchConfiguration(this KernelArguments arguments) => arguments.GetMetadata<object?>(LaunchConfigKey, null);
 
         /// <summary>
         /// Sets execution stream in the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="stream">Execution stream</param>
-        public static void SetExecutionStream(this KernelArguments arguments, object stream)
-        {
-            arguments.SetMetadata(ExecutionStreamKey, stream);
-        }
+        public static void SetExecutionStream(this KernelArguments arguments, object stream) => arguments.SetMetadata(ExecutionStreamKey, stream);
 
         /// <summary>
         /// Gets execution stream from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Execution stream or null</returns>
-        public static object? GetExecutionStream(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<object?>(ExecutionStreamKey, null);
-        }
+        public static object? GetExecutionStream(this KernelArguments arguments) => arguments.GetMetadata<object?>(ExecutionStreamKey, null);
 
         /// <summary>
         /// Sets execution options in the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="options">Execution options</param>
-        public static void SetExecutionOptions(this KernelArguments arguments, KernelExecutionOptions options)
-        {
-            arguments.SetMetadata(ExecutionOptionsKey, options);
-        }
+        public static void SetExecutionOptions(this KernelArguments arguments, KernelExecutionOptions options) => arguments.SetMetadata(ExecutionOptionsKey, options);
 
         /// <summary>
         /// Gets execution options from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Execution options or null</returns>
-        public static KernelExecutionOptions? GetExecutionOptions(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<KernelExecutionOptions?>(ExecutionOptionsKey, null);
-        }
+        public static KernelExecutionOptions? GetExecutionOptions(this KernelArguments arguments) => arguments.GetMetadata<KernelExecutionOptions?>(ExecutionOptionsKey, null);
 
         /// <summary>
         /// Sets global work size for OpenCL-style kernels.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="globalWorkSize">Global work size array</param>
-        public static void SetGlobalWorkSize(this KernelArguments arguments, int[] globalWorkSize)
-        {
-            arguments.SetMetadata(GlobalWorkSizeKey, globalWorkSize);
-        }
+        public static void SetGlobalWorkSize(this KernelArguments arguments, int[] globalWorkSize) => arguments.SetMetadata(GlobalWorkSizeKey, globalWorkSize);
 
         /// <summary>
         /// Gets global work size from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Global work size array or null</returns>
-        public static int[]? GetGlobalWorkSize(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<int[]?>(GlobalWorkSizeKey, null);
-        }
+        public static int[]? GetGlobalWorkSize(this KernelArguments arguments) => arguments.GetMetadata<int[]?>(GlobalWorkSizeKey, null);
 
         /// <summary>
         /// Sets local work size for OpenCL-style kernels.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="localWorkSize">Local work size array</param>
-        public static void SetLocalWorkSize(this KernelArguments arguments, int[] localWorkSize)
-        {
-            arguments.SetMetadata(LocalWorkSizeKey, localWorkSize);
-        }
+        public static void SetLocalWorkSize(this KernelArguments arguments, int[] localWorkSize) => arguments.SetMetadata(LocalWorkSizeKey, localWorkSize);
 
         /// <summary>
         /// Gets local work size from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Local work size array or null</returns>
-        public static int[]? GetLocalWorkSize(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<int[]?>(LocalWorkSizeKey, null);
-        }
+        public static int[]? GetLocalWorkSize(this KernelArguments arguments) => arguments.GetMetadata<int[]?>(LocalWorkSizeKey, null);
 
         /// <summary>
         /// Sets shared memory size in the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <param name="sharedMemorySize">Shared memory size in bytes</param>
-        public static void SetSharedMemorySize(this KernelArguments arguments, int sharedMemorySize)
-        {
-            arguments.SetMetadata(SharedMemorySizeKey, sharedMemorySize);
-        }
+        public static void SetSharedMemorySize(this KernelArguments arguments, int sharedMemorySize) => arguments.SetMetadata(SharedMemorySizeKey, sharedMemorySize);
 
         /// <summary>
         /// Gets shared memory size from the kernel arguments.
         /// </summary>
         /// <param name="arguments">The kernel arguments</param>
         /// <returns>Shared memory size in bytes or 0</returns>
-        public static int GetSharedMemorySize(this KernelArguments arguments)
-        {
-            return arguments.GetMetadata<int>(SharedMemorySizeKey, 0);
-        }
+        public static int GetSharedMemorySize(this KernelArguments arguments) => arguments.GetMetadata(SharedMemorySizeKey, 0);
     }
 }

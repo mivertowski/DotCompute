@@ -25,7 +25,7 @@ namespace DotCompute.Backends.CUDA
     {
         private readonly CudaDevice _device;
         private readonly CudaContext _context;
-        private readonly Memory.CudaMemoryManager _memoryManager;
+        private readonly CudaMemoryManager _memoryManager;
         private readonly CudaKernelCompiler _kernelCompiler;
         private readonly CudaGraphManager? _graphManager;
 

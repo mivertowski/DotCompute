@@ -224,7 +224,6 @@ internal sealed class CryptographicValidator : IDisposable
     /// </summary>
     public async Task<EntropyValidationResult> ValidateEntropyAsync(byte[] randomData)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(randomData);
 
@@ -267,9 +266,8 @@ internal sealed class CryptographicValidator : IDisposable
 
     // Private validation methods
 
-    private async Task ValidateAgainstWeakAlgorithmsAsync(string algorithm, AlgorithmValidationResult result)
+    private static async Task ValidateAgainstWeakAlgorithmsAsync(string algorithm, AlgorithmValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (WeakAlgorithmReplacements.ContainsKey(algorithm.ToUpperInvariant()))
         {
             result.IsApproved = false;
@@ -279,9 +277,8 @@ internal sealed class CryptographicValidator : IDisposable
         }
     }
 
-    private async Task ValidateKeySizeRequirementsAsync(string algorithm, int keySize, AlgorithmValidationResult result)
+    private static async Task ValidateKeySizeRequirementsAsync(string algorithm, int keySize, AlgorithmValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         var minimumSizes = new Dictionary<string, int>
         {
             ["AES"] = 128,
@@ -300,9 +297,8 @@ internal sealed class CryptographicValidator : IDisposable
         }
     }
 
-    private async Task ValidateAgainstSecurityStandardAsync(string algorithm, int keySize, string standard, AlgorithmValidationResult result)
+    private static async Task ValidateAgainstSecurityStandardAsync(string algorithm, int keySize, string standard, AlgorithmValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (!SecurityStandards.TryGetValue(standard.ToUpperInvariant(), out var securityStandard))
         {
             result.Warnings.Add($"Unknown security standard: {standard}");
@@ -326,9 +322,8 @@ internal sealed class CryptographicValidator : IDisposable
         }
     }
 
-    private async Task ValidateForContextAsync(string algorithm, int keySize, string context, AlgorithmValidationResult result)
+    private static async Task ValidateForContextAsync(string algorithm, int keySize, string context, AlgorithmValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         // Context-specific validation logic
         switch (context.ToLowerInvariant())
         {
@@ -356,9 +351,8 @@ internal sealed class CryptographicValidator : IDisposable
         }
     }
 
-    private async Task ValidateImplementationSecurityAsync(string algorithm, AlgorithmValidationResult result)
+    private static async Task ValidateImplementationSecurityAsync(string algorithm, AlgorithmValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         // Check for implementation-specific security considerations
         if (algorithm.Contains("CBC"))
         {
@@ -375,7 +369,6 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task ValidateKeyRotationSettingsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (config.KeyRotationInterval > TimeSpan.FromDays(90))
         {
             result.Issues.Add("Key rotation interval exceeds recommended maximum of 90 days");
@@ -388,23 +381,16 @@ internal sealed class CryptographicValidator : IDisposable
     }
 
     private static async Task ValidateEntropyRequirementsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
-    {
-        await Task.CompletedTask.ConfigureAwait(false);
         // Validate entropy source configuration
         // This would typically check if hardware RNG is available and properly configured
-        result.Recommendations.Add("Ensure entropy source meets minimum randomness requirements");
-    }
+        => result.Recommendations.Add("Ensure entropy source meets minimum randomness requirements");
 
     private static async Task ValidateTimingAttackProtectionsAsync(CryptographicConfiguration config, ConfigurationValidationResult result)
-    {
-        await Task.CompletedTask.ConfigureAwait(false);
         // Validate timing attack protection measures
-        result.Recommendations.Add("Implement constant-time comparisons for sensitive operations");
-    }
+        => result.Recommendations.Add("Implement constant-time comparisons for sensitive operations");
 
     private static async Task ValidateAgainstStandardAsync(CryptographicConfiguration config, string standard, ConfigurationValidationResult result)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         if (SecurityStandards.TryGetValue(standard.ToUpperInvariant(), out var securityStandard))
         {
             // Validate configuration against specific standard requirements
@@ -414,7 +400,6 @@ internal sealed class CryptographicValidator : IDisposable
 
     private async Task<OperationAuditResult> AuditSingleOperationAsync(CryptographicOperation operation)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         var result = new OperationAuditResult
         {
             OperationType = operation.Type,
@@ -440,7 +425,6 @@ internal sealed class CryptographicValidator : IDisposable
 
     private static async Task<List<string>> GenerateSecurityRecommendationsAsync(List<OperationAuditResult> results)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
         var recommendations = new List<string>();
 
         var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm"))).ToList();
@@ -551,8 +535,8 @@ internal sealed class CryptographicValidator : IDisposable
 public class SecurityStandard
 {
     public required string Name { get; set; }
-    public List<string> ApprovedAlgorithms { get; set; } = new();
-    public Dictionary<string, int> MinimumKeySizes { get; set; } = new();
+    public List<string> ApprovedAlgorithms { get; set; } = [];
+    public Dictionary<string, int> MinimumKeySizes { get; set; } = [];
 }
 
 // Use the canonical SecurityLevel from DotCompute.Abstractions.Security
@@ -574,8 +558,8 @@ public class ConfigurationValidationResult
     public string? TargetStandard { get; set; }
     public DateTimeOffset ValidationTime { get; set; }
     public bool IsCompliant { get; set; }
-    public List<string> Issues { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Issues { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
 }
 
 public class SecurityAuditResult
@@ -584,9 +568,9 @@ public class SecurityAuditResult
     public DateTimeOffset AuditTime { get; set; }
     public int OperationsAudited { get; set; }
     public SecurityLevel OverallSecurityLevel { get; set; }
-    public List<OperationAuditResult> OperationResults { get; set; } = new();
-    public List<string> Recommendations { get; set; } = new();
-    public List<string> AuditErrors { get; set; } = new();
+    public List<OperationAuditResult> OperationResults { get; set; } = [];
+    public List<string> Recommendations { get; set; } = [];
+    public List<string> AuditErrors { get; set; } = [];
 }
 
 public class OperationAuditResult
@@ -594,7 +578,7 @@ public class OperationAuditResult
     public required string OperationType { get; set; }
     public required string Algorithm { get; set; }
     public SecurityLevel SecurityLevel { get; set; }
-    public List<string> Issues { get; set; } = new();
+    public List<string> Issues { get; set; } = [];
 }
 
 public class EntropyValidationResult
@@ -605,7 +589,7 @@ public class EntropyValidationResult
     public double ChiSquare { get; set; }
     public double CompressionRatio { get; set; }
     public EntropyQuality Quality { get; set; }
-    public List<string> Recommendations { get; set; } = new();
+    public List<string> Recommendations { get; set; } = [];
     public string? ErrorMessage { get; set; }
 }
 

@@ -10,19 +10,14 @@ namespace DotCompute.Generators.Backend.CPU;
 /// <summary>
 /// Generates parallel implementation using task parallelism for multi-core execution.
 /// </summary>
-public class ParallelCodeGenerator : CpuCodeGeneratorBase
+public class ParallelCodeGenerator(
+    string methodName,
+    IReadOnlyList<KernelParameter> parameters,
+    MethodDeclarationSyntax methodSyntax,
+    VectorizationInfo vectorizationInfo) : CpuCodeGeneratorBase(methodName, parameters, methodSyntax, vectorizationInfo)
 {
+
     #region Constructor
-
-
-    public ParallelCodeGenerator(
-        string methodName,
-        IReadOnlyList<KernelParameter> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        VectorizationInfo vectorizationInfo)
-        : base(methodName, parameters, methodSyntax, vectorizationInfo)
-    {
-    }
 
     #endregion
 

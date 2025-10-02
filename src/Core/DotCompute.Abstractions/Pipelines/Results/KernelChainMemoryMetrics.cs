@@ -231,7 +231,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
 
         private static string FormatBytes(long bytes)
         {
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            string[] suffixes = ["B", "KB", "MB", "GB", "TB"];
             var counter = 0;
             double number = bytes;
             while (Math.Round(number / 1024) >= 1)

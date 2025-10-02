@@ -4,11 +4,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.Loader;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
-using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Metadata;
 using DotCompute.Algorithms.Abstractions;
@@ -18,19 +16,13 @@ namespace DotCompute.Algorithms.Management
     /// <summary>
     /// Handles the loading of algorithm plugins from assemblies and NuGet packages.
     /// </summary>
-    public sealed partial class AlgorithmPluginLoader : IAsyncDisposable, IDisposable
+    public sealed partial class AlgorithmPluginLoader(ILogger<AlgorithmPluginLoader> logger, AlgorithmPluginManagerOptions options) : IAsyncDisposable, IDisposable
     {
-        private readonly ILogger<AlgorithmPluginLoader> _logger;
-        private readonly AlgorithmPluginManagerOptions _options;
+        private readonly ILogger<AlgorithmPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
         private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
         private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
         private bool _disposed;
-
-        public AlgorithmPluginLoader(ILogger<AlgorithmPluginLoader> logger, AlgorithmPluginManagerOptions options)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
 
         /// <summary>
         /// Loads plugins from an assembly file with advanced isolation and security validation.
@@ -83,7 +75,7 @@ namespace DotCompute.Algorithms.Management
                     }
 
                     // Add to load contexts
-                    _loadContexts.TryAdd(assemblyName, loadContext);
+                    _ = _loadContexts.TryAdd(assemblyName, loadContext);
 
                     // Discover plugin types
                     var pluginTypes = assembly.GetTypes()
@@ -123,7 +115,7 @@ namespace DotCompute.Algorithms.Management
             }
             finally
             {
-                _loadingSemaphore.Release();
+                _ = _loadingSemaphore.Release();
             }
         }
 
@@ -329,10 +321,10 @@ namespace DotCompute.Algorithms.Management
                 LoadTime = DateTime.UtcNow,
                 AssemblyName = Path.GetFileName(assemblyPath),
                 TypeName = plugin.GetType().FullName ?? "Unknown",
-                Capabilities = plugin.SupportedOperations.ToArray(),
-                SupportedAccelerators = plugin.SupportedAcceleratorTypes.Select(t => t.ToString()).ToArray(),
+                Capabilities = [.. plugin.SupportedOperations],
+                SupportedAccelerators = [.. plugin.SupportedAcceleratorTypes.Select(t => t.ToString())],
                 LoadContextName = "Default",
-                AdditionalMetadata = new Dictionary<string, object>()
+                AdditionalMetadata = []
             };
         }
 

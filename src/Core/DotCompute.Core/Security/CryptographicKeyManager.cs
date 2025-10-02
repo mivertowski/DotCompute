@@ -17,7 +17,6 @@ internal sealed class CryptographicKeyManager : IDisposable
     private readonly ILogger<CryptographicKeyManager> _logger;
     private readonly CryptographicConfiguration _configuration;
     private readonly ConcurrentDictionary<string, SecureKeyContainer> _keyStore;
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _rotatedKeys;
     private readonly RandomNumberGenerator _randomGenerator;
     private readonly Timer _keyRotationTimer;
     private readonly SemaphoreSlim _operationLock;
@@ -30,7 +29,6 @@ internal sealed class CryptographicKeyManager : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _keyStore = new ConcurrentDictionary<string, SecureKeyContainer>();
-        _rotatedKeys = new ConcurrentDictionary<string, DateTimeOffset>();
         _randomGenerator = RandomNumberGenerator.Create();
         _operationLock = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
 
@@ -349,7 +347,7 @@ internal sealed class CryptographicKeyManager : IDisposable
 
     // Private implementation methods
 
-    private bool ValidateKeyParameters(KeyType keyType, int keySize, KeyGenerationResult result)
+    private static bool ValidateKeyParameters(KeyType keyType, int keySize, KeyGenerationResult result)
     {
         var isValid = keyType switch
         {
@@ -373,7 +371,16 @@ internal sealed class CryptographicKeyManager : IDisposable
         var keyBytes = new byte[keySize / 8];
         _randomGenerator.GetBytes(keyBytes);
 
-        return new SecureKeyContainer(KeyType.AES, keyBytes, identifier, purpose, keySize);
+        return new SecureKeyContainer
+        {
+            Identifier = identifier,
+            KeyType = KeyType.AES,
+            KeySize = keySize,
+            Purpose = purpose,
+            KeyMaterial = keyBytes,
+            CreationTime = DateTimeOffset.UtcNow,
+            LastUsed = DateTimeOffset.UtcNow
+        };
     }
 
     private SecureKeyContainer GenerateRsaKey(int keySize, string identifier, string purpose)
@@ -381,7 +388,16 @@ internal sealed class CryptographicKeyManager : IDisposable
         using var rsa = RSA.Create(keySize);
         var privateKey = rsa.ExportPkcs8PrivateKey();
 
-        return new SecureKeyContainer(KeyType.RSA, privateKey, identifier, purpose, keySize);
+        return new SecureKeyContainer
+        {
+            Identifier = identifier,
+            KeyType = KeyType.RSA,
+            KeySize = keySize,
+            Purpose = purpose,
+            KeyMaterial = privateKey,
+            CreationTime = DateTimeOffset.UtcNow,
+            LastUsed = DateTimeOffset.UtcNow
+        };
     }
 
     private SecureKeyContainer GenerateEcdsaKey(int keySize, string identifier, string purpose)
@@ -397,7 +413,16 @@ internal sealed class CryptographicKeyManager : IDisposable
         using var ecdsa = ECDsa.Create(curve);
         var privateKey = ecdsa.ExportPkcs8PrivateKey();
 
-        return new SecureKeyContainer(KeyType.ECDSA, privateKey, identifier, purpose, keySize);
+        return new SecureKeyContainer
+        {
+            Identifier = identifier,
+            KeyType = KeyType.ECDSA,
+            KeySize = keySize,
+            Purpose = purpose,
+            KeyMaterial = privateKey,
+            CreationTime = DateTimeOffset.UtcNow,
+            LastUsed = DateTimeOffset.UtcNow
+        };
     }
 
     private SecureKeyContainer GenerateChaCha20Key(int keySize, string identifier, string purpose)
@@ -405,7 +430,16 @@ internal sealed class CryptographicKeyManager : IDisposable
         var keyBytes = new byte[32]; // ChaCha20 uses 256-bit keys
         _randomGenerator.GetBytes(keyBytes);
 
-        return new SecureKeyContainer(KeyType.ChaCha20, keyBytes, identifier, purpose, keySize);
+        return new SecureKeyContainer
+        {
+            Identifier = identifier,
+            KeyType = KeyType.ChaCha20,
+            KeySize = keySize,
+            Purpose = purpose,
+            KeyMaterial = keyBytes,
+            CreationTime = DateTimeOffset.UtcNow,
+            LastUsed = DateTimeOffset.UtcNow
+        };
     }
 
     private bool IsKeyExpired(SecureKeyContainer key)
@@ -417,7 +451,7 @@ internal sealed class CryptographicKeyManager : IDisposable
     private static string ComputeKeyFingerprint(SecureKeyContainer key)
     {
         using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(key.GetKeyBytes());
+        var hash = sha256.ComputeHash(key.KeyMaterial.ToArray());
         return Convert.ToHexString(hash)[..16]; // First 16 chars for readability
     }
 
@@ -446,9 +480,8 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
 
         // Mark old key as rotated but keep it for a grace period
-        // Note: IsRotated and RotationTime properties need to be added to SecureKeyContainer
-        // For now, we'll track this in a separate collection
-        _rotatedKeys[keyId] = DateTimeOffset.UtcNow;
+        oldKey.IsRotated = true;
+        oldKey.RotationTime = DateTimeOffset.UtcNow;
 
         return new KeyRotationResult
         {
@@ -461,22 +494,18 @@ internal sealed class CryptographicKeyManager : IDisposable
 
     private static KeyExportResult ExportAsPkcs8(SecureKeyContainer key, string? passphrase, KeyExportResult result)
     {
-        result.ExportedData = key.GetKeyBytes();
+        result.ExportedData = key.KeyMaterial.ToArray();
         result.ExportFormat = "PKCS#8";
         return result;
     }
 
     private KeyExportResult ExportAsPkcs12(SecureKeyContainer key, string? passphrase, KeyExportResult result)
-    {
         // PKCS#12 export implementation would go here
-        throw new NotImplementedException("PKCS#12 export not yet implemented");
-    }
+        => throw new NotImplementedException("PKCS#12 export not yet implemented");
 
     private KeyExportResult ExportAsJwk(SecureKeyContainer key, KeyExportResult result)
-    {
         // JWK export implementation would go here
-        throw new NotImplementedException("JWK export not yet implemented");
-    }
+        => throw new NotImplementedException("JWK export not yet implemented");
 
     private void PerformKeyRotation(object? state)
     {
@@ -548,8 +577,8 @@ public class KeyRotationResult
     public DateTimeOffset RotationTime { get; set; }
     public bool ForceRotation { get; set; }
     public bool IsSuccessful { get; set; }
-    public List<string> RotatedKeys { get; set; } = new();
-    public List<string> FailedRotations { get; set; } = new();
+    public List<string> RotatedKeys { get; set; } = [];
+    public List<string> FailedRotations { get; set; } = [];
     public string? NewKeyIdentifier { get; set; }
     public string? ErrorMessage { get; set; }
 }

@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
@@ -15,18 +12,12 @@ namespace DotCompute.Algorithms.Management;
 /// Handles health monitoring for algorithm plugins including memory usage,
 /// response time analysis, error rate tracking, and resource leak detection.
 /// </summary>
-public class AlgorithmPluginHealthMonitor
+public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options)
 {
-    private readonly ILogger<AlgorithmPluginHealthMonitor> _logger;
-    private readonly AlgorithmPluginManagerOptions _options;
+    private readonly ILogger<AlgorithmPluginHealthMonitor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private Timer? _healthCheckTimer;
     private bool _disposed;
-
-    public AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
 
     /// <summary>
     /// Starts periodic health monitoring for all loaded plugins.
@@ -40,7 +31,7 @@ public class AlgorithmPluginHealthMonitor
 
 
         _healthCheckTimer = new Timer(
-            async _ => await PerformHealthChecks(healthCheckCallback),
+            async _ => await PerformHealthChecksAsync(healthCheckCallback),
             null,
             _options.HealthCheckInterval,
             _options.HealthCheckInterval);
@@ -72,7 +63,7 @@ public class AlgorithmPluginHealthMonitor
             await Task.CompletedTask; // Keep async for future compatibility
 
             // Simple health check - if plugin can validate basic input, it's healthy
-            var testInput = new object[] { new object() };
+            var testInput = new object[] { new() };
             if (plugin.ValidateInputs(testInput))
             {
                 _logger.LogDebug("Plugin {PluginId} passed basic health check", plugin.Id);
@@ -173,7 +164,7 @@ public class AlgorithmPluginHealthMonitor
         };
     }
 
-    private async Task PerformHealthChecks(Func<Task> healthCheckCallback)
+    private async Task PerformHealthChecksAsync(Func<Task> healthCheckCallback)
     {
         try
         {

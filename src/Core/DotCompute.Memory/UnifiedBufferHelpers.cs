@@ -123,10 +123,7 @@ public static class UnifiedBufferHelpers
     public static UnifiedBufferSlice<T> CreateSlice<T>(
         UnifiedBuffer<T> buffer,
         int offset,
-        int length) where T : unmanaged
-    {
-        return new UnifiedBufferSlice<T>(buffer, offset, length);
-    }
+        int length) where T : unmanaged => new(buffer, offset, length);
 
     /// <summary>
     /// Creates a type view of a buffer.

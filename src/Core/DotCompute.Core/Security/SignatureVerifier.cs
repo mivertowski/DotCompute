@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Security.Cryptography;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -29,7 +29,7 @@ public sealed class SignatureVerifier : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _randomGenerator = RandomNumberGenerator.Create();
-        _verificationCache = new Dictionary<string, CachedSignatureValidation>();
+        _verificationCache = [];
 
         // Set up cache cleanup timer
         _cacheCleanupTimer = new Timer(CleanupCache, null,

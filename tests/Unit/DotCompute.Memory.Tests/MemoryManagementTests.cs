@@ -13,14 +13,9 @@ namespace DotCompute.Memory.Tests;
 /// Comprehensive tests for memory management covering unified memory managers, coherency,
 /// memory views, resource management, and performance optimization.
 /// </summary>
-public class MemoryManagementTests
+public class MemoryManagementTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public MemoryManagementTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     #region Unified Memory Manager Tests
 
@@ -684,7 +679,7 @@ public class MemoryManagementTests
 
         // IUnifiedMemoryManager properties
         public IAccelerator Accelerator => null!;
-        public DotCompute.Abstractions.Memory.MemoryStatistics Statistics => new()
+        public Abstractions.Memory.MemoryStatistics Statistics => new()
         {
             TotalAllocated = _allocatedBuffers.Sum(b => b.SizeInBytes),
             AllocationCount = _allocatedBuffers.Count,
@@ -777,15 +772,15 @@ public class MemoryManagementTests
         }
 
         // Device memory operations - stub implementations for testing
-        public DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
-        public void FreeDevice(DeviceMemory deviceMemory) { }
-        public void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
-        public ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
-        public void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
-        public ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
+        public static DeviceMemory AllocateDevice(long sizeInBytes) => new(IntPtr.Zero, sizeInBytes);
+        public static void FreeDevice(DeviceMemory deviceMemory) { }
+        public static void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes) { }
+        public static ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes) { }
+        public static void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes) { }
+        public static ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes) { }
 
         public async ValueTask DisposeAsync()
         {
@@ -886,13 +881,13 @@ public class MemoryManagementTests
             }
         }
 
-        public ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             EnsureOnHost();
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             EnsureOnDevice();
             return ValueTask.CompletedTask;
@@ -907,7 +902,7 @@ public class MemoryManagementTests
             }
         }
 
-        public ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
+        public ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default)
         {
             Synchronize();
             return ValueTask.CompletedTask;
@@ -986,12 +981,12 @@ public class MemoryManagementTests
             // Return a mock type-converted buffer
             => new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory());
+        public MappedMemory<T> Map(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory());
 
-        public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
+        public MappedMemory<T> MapRange(int offset, int length, Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller for disposal")]
-        public ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public ValueTask<MappedMemory<T>> MapAsync(Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
         public void Dispose()
         {
@@ -1017,16 +1012,11 @@ public class MemoryManagementTests
     /// <summary>
     /// Test implementation of raw IUnifiedMemoryBuffer for testing purposes.
     /// </summary>
-    private sealed class TestRawUnifiedBuffer : IUnifiedMemoryBuffer
+    private sealed class TestRawUnifiedBuffer(long sizeInBytes) : IUnifiedMemoryBuffer
     {
         private volatile bool _disposed;
 
-        public TestRawUnifiedBuffer(long sizeInBytes)
-        {
-            SizeInBytes = sizeInBytes;
-        }
-
-        public long SizeInBytes { get; }
+        public long SizeInBytes { get; } = sizeInBytes;
         public static IntPtr DevicePointer => IntPtr.Zero;
         public static IAccelerator Accelerator => null!;
         public MemoryOptions Options => MemoryOptions.None;
@@ -1039,10 +1029,10 @@ public class MemoryManagementTests
         public DeviceMemory GetDeviceMemory() => new(IntPtr.Zero, SizeInBytes);
         public static void EnsureOnHost() { }
         public static void EnsureOnDevice() { }
-        public static ValueTask EnsureOnHostAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-        public static ValueTask EnsureOnDeviceAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask EnsureOnHostAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask EnsureOnDeviceAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public static void Synchronize() { }
-        public static ValueTask SynchronizeAsync(DotCompute.Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+        public static ValueTask SynchronizeAsync(Abstractions.AcceleratorContext context = default, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
         public static void MarkHostDirty() { }
         public static void MarkDeviceDirty() { }
 

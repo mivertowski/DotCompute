@@ -13,17 +13,11 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// <summary>
 /// Handles plugin metadata loading, validation, and management.
 /// </summary>
-public sealed partial class AlgorithmMetadata : IDisposable
+public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger) : IDisposable
 {
-    private readonly ILogger<AlgorithmMetadata> _logger;
-    private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache;
+    private readonly ILogger<AlgorithmMetadata> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<string, PluginMetadata> _metadataCache = new();
     private bool _disposed;
-
-    public AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _metadataCache = new ConcurrentDictionary<string, PluginMetadata>();
-    }
 
     /// <summary>
     /// Loads plugin metadata from a manifest file or assembly attributes.
@@ -44,18 +38,12 @@ public sealed partial class AlgorithmMetadata : IDisposable
         try
         {
             // Try to load from manifest file first
-            var metadata = await LoadFromManifestAsync(assemblyPath).ConfigureAwait(false);
-
-            // If no manifest, try to extract from assembly attributes
-            if (metadata == null)
-            {
-                metadata = await LoadFromAssemblyAttributesAsync(assemblyPath).ConfigureAwait(false);
-            }
+            var metadata = await LoadFromManifestAsync(assemblyPath).ConfigureAwait(false) ?? await LoadFromAssemblyAttributesAsync(assemblyPath).ConfigureAwait(false);
 
             // Cache the result (even if null)
             if (metadata != null)
             {
-                _metadataCache.TryAdd(assemblyPath, metadata);
+                _ = _metadataCache.TryAdd(assemblyPath, metadata);
                 LogMetadataLoaded(_logger, assemblyPath, metadata.Id);
             }
 
@@ -180,7 +168,7 @@ public sealed partial class AlgorithmMetadata : IDisposable
             Capabilities = Array.Empty<string>(),
             SupportedAccelerators = Array.Empty<string>(),
             LoadContextName = "Default",
-            AdditionalMetadata = new Dictionary<string, object>()
+            AdditionalMetadata = []
         };
     }
 
@@ -301,7 +289,7 @@ public sealed partial class AlgorithmMetadata : IDisposable
                 Capabilities = Array.Empty<string>(),
                 SupportedAccelerators = Array.Empty<string>(),
                 LoadContextName = "Default",
-                AdditionalMetadata = new Dictionary<string, object>()
+                AdditionalMetadata = []
             };
 
             await Task.CompletedTask; // Make method async for consistency

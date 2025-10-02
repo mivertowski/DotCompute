@@ -15,7 +15,7 @@ namespace DotCompute.Hardware.Cuda.Tests
     /// Tests kernel compilation, execution, and performance on real hardware.
     /// </summary>
     [Trait("Category", "RequiresCUDA")]
-    public class CudaKernelExecutionTests : ConsolidatedTestBase
+    public class CudaKernelExecutionTests(ITestOutputHelper output) : ConsolidatedTestBase(output)
     {
         private const string VectorAddKernel = @"
             extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n) {
@@ -87,8 +87,6 @@ namespace DotCompute.Hardware.Cuda.Tests
                 // }
                 // But this requires NVCC compilation with -rdc=true and cudadevrt linking
             }";
-
-        public CudaKernelExecutionTests(ITestOutputHelper output) : base(output) { }
 
         [SkippableFact]
         public async Task Vector_Add_Kernel_Should_Execute_Correctly()
@@ -394,7 +392,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Compile kernel with dynamic parallelism
 
             var kernelDef = new KernelDefinition("parentKernel", DynamicParallelismKernel, "parentKernel");
-            var compilationOptions = new DotCompute.Abstractions.CompilationOptions
+            var compilationOptions = new Abstractions.CompilationOptions
             {
                 EnableDynamicParallelism = true,
                 OptimizationLevel = OptimizationLevel.Default

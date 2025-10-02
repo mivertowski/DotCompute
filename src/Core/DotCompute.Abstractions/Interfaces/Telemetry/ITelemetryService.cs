@@ -25,7 +25,7 @@ public interface ITelemetryService
     /// Records a memory operation with transfer metrics.
     /// </summary>
     public void RecordMemoryOperation(string operationType, string deviceId, long bytes, TimeSpan duration,
-        DotCompute.Abstractions.Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
+        Types.MemoryAccessMetrics metrics, string? correlationId = null, Exception? exception = null);
 
 
     /// <summary>
@@ -150,10 +150,8 @@ public static class TelemetryServiceCollectionExtensions
     /// TODO: FileSink implementation should be in DotCompute.Core
     /// </summary>
     public static IServiceCollection AddFileLogging(this IServiceCollection services, string logFilePath)
-    {
         // TODO: Replace with actual FileSink implementation from DotCompute.Core
-        throw new NotImplementedException("FileSink implementation moved to DotCompute.Core. Use implementation project's extension method instead.");
-    }
+        => throw new NotImplementedException("FileSink implementation moved to DotCompute.Core. Use implementation project's extension method instead.");
 
 
     /// <summary>
@@ -192,5 +190,4 @@ public interface ILogSink : IDisposable
 
 // TODO: Default implementation of the telemetry service should be moved to DotCompute.Core.
 // This concrete implementation is temporarily removed from abstractions project.
-
 // internal sealed class TelemetryService : ITelemetryService, IDisposable - MOVED TO IMPLEMENTATION PROJECT

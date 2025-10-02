@@ -53,10 +53,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// This should be called by the accelerator after construction.
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
-        internal void SetAccelerator(IAccelerator accelerator)
-        {
-            _accelerator = accelerator;
-        }
+        internal void SetAccelerator(IAccelerator accelerator) => _accelerator = accelerator;
 
         /// <summary>
         /// Gets the total amount of memory currently allocated.

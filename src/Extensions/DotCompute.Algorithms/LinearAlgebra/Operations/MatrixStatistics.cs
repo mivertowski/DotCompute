@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
 {
@@ -245,7 +244,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             try
             {
-                await MatrixDecomposition.CholeskyDecompositionAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
+                _ = await MatrixDecomposition.CholeskyDecompositionAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (InvalidOperationException)
