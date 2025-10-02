@@ -1,4 +1,3 @@
-using DotCompute.Backends.CUDA.Optimization.Types;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CUDA.Optimization.Configuration

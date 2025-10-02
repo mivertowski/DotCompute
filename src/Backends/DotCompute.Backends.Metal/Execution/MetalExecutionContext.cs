@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -155,8 +153,10 @@ public sealed class MetalExecutionContext : IDisposable
 
             // Create execution info
             var streamHandle = await _commandStream.CreateStreamAsync(
-                MetalStreamFlags.Concurrent, 
-                ConvertPriority(executionOptions.Priority), 
+                MetalStreamFlags.Concurrent,
+
+                ConvertPriority(executionOptions.Priority),
+
                 cancellationToken).ConfigureAwait(false);
 
             var executionInfo = new MetalOperationExecutionInfo
@@ -343,7 +343,8 @@ public sealed class MetalExecutionContext : IDisposable
             AverageOperationDuration = recentMetricsArray.Length > 0
                 ? TimeSpan.FromMilliseconds(recentMetricsArray.Average(m => m.DurationMs))
                 : TimeSpan.Zero,
-            
+
+
             SuccessRate = recentMetricsArray.Length > 0
                 ? (double)recentMetricsArray.Count(m => m.Success) / recentMetricsArray.Length
                 : 1.0,
@@ -411,7 +412,7 @@ public sealed class MetalExecutionContext : IDisposable
             // Test basic operation
             try
             {
-                await ExecuteOperationAsync("health-check",
+                _ = await ExecuteOperationAsync("health-check",
                     async info =>
                     {
                         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
@@ -454,7 +455,7 @@ public sealed class MetalExecutionContext : IDisposable
         while (DateTimeOffset.UtcNow - startTime < timeout)
         {
             var pendingDependencies = dependencies
-                .Where(dep => _activeOperations.ContainsKey(dep))
+                .Where(_activeOperations.ContainsKey)
                 .ToList();
 
             if (pendingDependencies.Count == 0)
@@ -465,7 +466,7 @@ public sealed class MetalExecutionContext : IDisposable
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        var stillPending = dependencies.Where(dep => _activeOperations.ContainsKey(dep)).ToList();
+        var stillPending = dependencies.Where(_activeOperations.ContainsKey).ToList();
         if (stillPending.Count > 0)
         {
             throw new TimeoutException($"Operation {operationId} timed out waiting for dependencies: {string.Join(", ", stillPending)}");
@@ -595,7 +596,8 @@ public sealed class MetalExecutionContext : IDisposable
 
         try
         {
-            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                    System.Runtime.InteropServices.Architecture.Arm64;
         }
         catch
@@ -835,8 +837,8 @@ internal sealed class MetalPerformanceCollector : IDisposable
 
         // Record operation metrics
 
-        _metrics.AddOrUpdate($"operation_{operationId}_duration", durationMs, (_, _) => durationMs);
-        _metrics.AddOrUpdate($"operation_{operationId}_success", success, (_, _) => success);
+        _ = _metrics.AddOrUpdate($"operation_{operationId}_duration", durationMs, (_, _) => durationMs);
+        _ = _metrics.AddOrUpdate($"operation_{operationId}_success", success, (_, _) => success);
     }
 
     public void RecordResourceAllocation(MetalResourceType type, long sizeInBytes)
@@ -848,7 +850,7 @@ internal sealed class MetalPerformanceCollector : IDisposable
 
 
         var key = $"resource_{type}_allocated";
-        _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
+        _ = _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
     }
 
     public void RecordResourceDeallocation(MetalResourceType type, long sizeInBytes)
@@ -860,7 +862,7 @@ internal sealed class MetalPerformanceCollector : IDisposable
 
 
         var key = $"resource_{type}_deallocated";
-        _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
+        _ = _metrics.AddOrUpdate(key, sizeInBytes, (_, existing) => (long)existing + sizeInBytes);
     }
 
     public Dictionary<string, object> GetMetrics()

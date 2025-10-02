@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Numerics;
 using global::System.Runtime.CompilerServices;
-using global::System.Runtime.Intrinsics;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels.Simd;
@@ -83,8 +81,8 @@ public sealed class SimdExecutor : IDisposable
 
         try
         {
-            Interlocked.Increment(ref _totalExecutions);
-            Interlocked.Add(ref _totalElements, elementCount);
+            _ = Interlocked.Increment(ref _totalExecutions);
+            _ = Interlocked.Add(ref _totalElements, elementCount);
 
             // Determine optimal execution strategy
             var strategy = _instructionSelector.DetermineExecutionStrategy<T>(elementCount, context);
@@ -97,8 +95,8 @@ public sealed class SimdExecutor : IDisposable
 
             // Update performance counters
             var (vectorized, scalar) = SimdPerformanceProfiler.CalculateVectorizationStats(strategy, elementCount);
-            Interlocked.Add(ref _vectorizedElements, vectorized);
-            Interlocked.Add(ref _scalarElements, scalar);
+            _ = Interlocked.Add(ref _vectorizedElements, vectorized);
+            _ = Interlocked.Add(ref _scalarElements, scalar);
 
             RecordExecutionTime(startTime);
         }
@@ -171,7 +169,7 @@ public sealed class SimdExecutor : IDisposable
     private void RecordExecutionTime(DateTimeOffset startTime)
     {
         var elapsed = (DateTimeOffset.UtcNow - startTime).Ticks;
-        Interlocked.Add(ref _totalExecutionTime, elapsed);
+        _ = Interlocked.Add(ref _totalExecutionTime, elapsed);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

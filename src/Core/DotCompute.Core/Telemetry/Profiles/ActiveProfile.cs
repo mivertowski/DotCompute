@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Core.Telemetry.Options;
-using DotCompute.Core.Telemetry.System;
 
 namespace DotCompute.Core.Telemetry.Profiles;
 

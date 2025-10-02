@@ -7,9 +7,7 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 

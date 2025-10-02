@@ -1,13 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelDefinition = DotCompute.Abstractions.Kernels.KernelDefinition;
 using DotCompute.Abstractions.Models.Device;
-using DotCompute.Abstractions;
-
-using System;
 namespace DotCompute.Abstractions.Interfaces.Device
 {
     /// <summary>

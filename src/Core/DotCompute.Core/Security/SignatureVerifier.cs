@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Security;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -515,7 +514,8 @@ public sealed class SignatureVerifier : IDisposable
         using var sha256 = SHA256.Create();
         var dataHash = sha256.ComputeHash(data.ToArray());
         var signatureHash = sha256.ComputeHash(signature.ToArray());
-        
+
+
         return $"{Convert.ToHexString(dataHash)[..16]}_{Convert.ToHexString(signatureHash)[..16]}_{keyIdentifier}_{hashAlgorithm}";
     }
 
@@ -536,7 +536,7 @@ public sealed class SignatureVerifier : IDisposable
 
                 foreach (var (key, _) in expiredEntries)
                 {
-                    _verificationCache.Remove(key);
+                    _ = _verificationCache.Remove(key);
                 }
 
                 if (expiredEntries.Count > 0)
@@ -557,12 +557,14 @@ public sealed class SignatureVerifier : IDisposable
         {
             _cacheCleanupTimer?.Dispose();
             _randomGenerator?.Dispose();
-            
+
+
             lock (_cacheLock)
             {
                 _verificationCache.Clear();
             }
-            
+
+
             _disposed = true;
             _logger.LogDebugMessage("Signature Verifier disposed");
         }

@@ -3,13 +3,9 @@
 
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Core.Pipelines;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Pipelines;
 
@@ -37,7 +33,7 @@ public class KernelChainTests : PipelineTestBase
 
         // Assert
         Assert.NotNull(builder);
-        Assert.IsAssignableFrom<IKernelChainBuilder>(builder);
+        _ = Assert.IsAssignableFrom<IKernelChainBuilder>(builder);
     }
 
     [Fact]
@@ -151,7 +147,7 @@ public class KernelChainTests : PipelineTestBase
         // Act - First execution (uncached)
         var firstExecution = await MeasureExecutionTimeAsync(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("SlowKernel", input)
                 .Cache(cacheKey, TimeSpan.FromMinutes(1))
                 .ExecuteAsync<float[]>(CreateTestTimeout());
@@ -160,7 +156,7 @@ public class KernelChainTests : PipelineTestBase
         // Second execution (should be cached)
         var secondExecution = await MeasureExecutionTimeAsync(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("SlowKernel", input)
                 .Cache(cacheKey, TimeSpan.FromMinutes(1))
                 .ExecuteAsync<float[]>(CreateTestTimeout());
@@ -188,7 +184,7 @@ public class KernelChainTests : PipelineTestBase
 
         // Configure error handling
 
-        builder.OnError(ex => strategy);
+        _ = builder.OnError(ex => strategy);
 
         // Act & Assert based on strategy
         switch (strategy)
@@ -215,9 +211,9 @@ public class KernelChainTests : PipelineTestBase
 
             case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort:
                 // Should throw and abort the entire chain
-                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 {
-                    await builder
+                    _ = await builder
                         .Kernel("VectorAdd", input, input, new float[input.Length])
                         .Then("ErrorKernel", input)
                         .Then("VectorAdd", input, input, new float[input.Length])
@@ -250,7 +246,7 @@ public class KernelChainTests : PipelineTestBase
         // Verify the backend selection was recorded
 
         var history = _mockOrchestrator.ExecutionHistory;
-        Assert.Single(history);
+        _ = Assert.Single(history);
         Assert.True(history[0].Success);
     }
 
@@ -359,9 +355,9 @@ public class KernelChainTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("VerySlowKernel", input) // Takes 1000ms
                 .WithTimeout(TimeSpan.FromMilliseconds(50)) // Timeout after 50ms
                 .ExecuteAsync<float[]>(CreateTestTimeout());

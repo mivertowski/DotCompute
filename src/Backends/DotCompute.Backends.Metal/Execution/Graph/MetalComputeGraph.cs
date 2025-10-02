@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
@@ -271,14 +269,14 @@ public sealed class MetalComputeGraph : IDisposable
             var dependentNodes = _nodes.Where(n => n.Dependencies.Any(d => d.Id == nodeId)).ToList();
             foreach (var dependent in dependentNodes)
             {
-                dependent.Dependencies.RemoveAll(d => d.Id == nodeId);
+                _ = dependent.Dependencies.RemoveAll(d => d.Id == nodeId);
             }
 
             // Rebuild the concurrent bag without the removed node
             var remainingNodes = _nodes.Where(n => n.Id != nodeId).ToList();
             while (!_nodes.IsEmpty)
             {
-                _nodes.TryTake(out _);
+                _ = _nodes.TryTake(out _);
             }
 
             foreach (var node in remainingNodes)
@@ -319,14 +317,15 @@ public sealed class MetalComputeGraph : IDisposable
         {
             while (!_nodes.IsEmpty)
             {
-                _nodes.TryTake(out _);
+                _ = _nodes.TryTake(out _);
             }
 
             _dependencyGraph.Clear();
             Statistics.NodeCount = 0;
             IsBuilt = false;
             IsOptimized = false;
-            
+
+
             _logger?.LogDebug("Cleared all nodes from graph '{Name}'", Name);
         }
     }
@@ -346,11 +345,13 @@ public sealed class MetalComputeGraph : IDisposable
         lock (_lock)
         {
             _logger?.LogDebug("Building graph '{Name}' with {NodeCount} nodes", Name, _nodes.Count);
-            
+
             // Clear and rebuild dependency graph
+
             _dependencyGraph.Clear();
-            
+
             // Build dependency relationships
+
             var nodeDict = _nodes.ToDictionary(n => n.Id, n => n);
             var nodeIndex = 0;
             var nodeToIndex = new Dictionary<string, int>();
@@ -378,9 +379,11 @@ public sealed class MetalComputeGraph : IDisposable
                 var executionOrder = _dependencyGraph.TopologicalSort();
                 Statistics.CriticalPathLength = CalculateCriticalPathLength();
                 Statistics.ParallelismOpportunities = CalculateParallelismOpportunities();
-                
+
+
                 IsBuilt = true;
-                _logger?.LogInformation("Successfully built graph '{Name}' - Critical path: {CriticalPath}, Parallelism opportunities: {Parallelism}", 
+                _logger?.LogInformation("Successfully built graph '{Name}' - Critical path: {CriticalPath}, Parallelism opportunities: {Parallelism}",
+
                     Name, Statistics.CriticalPathLength, Statistics.ParallelismOpportunities);
             }
             catch (InvalidOperationException ex)
@@ -399,7 +402,8 @@ public sealed class MetalComputeGraph : IDisposable
     public IReadOnlyList<MetalGraphNode> GetExecutionOrder()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (!IsBuilt)
         {
             throw new InvalidOperationException("Graph must be built before getting execution order.");
@@ -407,7 +411,8 @@ public sealed class MetalComputeGraph : IDisposable
 
         var executionOrder = _dependencyGraph.TopologicalSort();
         var nodeArray = _nodes.ToArray();
-        
+
+
         return executionOrder.Select(index => nodeArray[index]).ToList().AsReadOnly();
     }
 
@@ -520,7 +525,7 @@ public sealed class MetalComputeGraph : IDisposable
                 return pathLengths.GetValueOrDefault(node.Id, 0);
             }
 
-            visited.Add(node.Id);
+            _ = visited.Add(node.Id);
 
             var maxDependencyPath = node.Dependencies.Count > 0
                 ? node.Dependencies.Max(dep => CalculateNodePath(dep))
@@ -530,13 +535,14 @@ public sealed class MetalComputeGraph : IDisposable
             return pathLengths[node.Id];
         }
 
-        return _nodes.Max(node => CalculateNodePath(node));
+        return _nodes.Max(CalculateNodePath);
     }
 
     private int CalculateParallelismOpportunities()
     {
         var levels = new Dictionary<MetalGraphNode, int>();
-        
+
+
         foreach (var node in _nodes)
         {
             var level = node.Dependencies.Count > 0
@@ -632,7 +638,7 @@ public sealed class MetalComputeGraph : IDisposable
 
 
             var group = new List<MetalGraphNode> { node };
-            processed.Add(node.Id);
+            _ = processed.Add(node.Id);
 
             // Find nodes that can be batched with this one
             foreach (var other in _nodes)
@@ -646,7 +652,7 @@ public sealed class MetalComputeGraph : IDisposable
                 if (CanBatchInSameCommandBuffer(node, other))
                 {
                     group.Add(other);
-                    processed.Add(other.Id);
+                    _ = processed.Add(other.Id);
                 }
             }
 

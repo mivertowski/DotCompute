@@ -42,8 +42,9 @@ public sealed class MetalExecutionManager : IDisposable
         {
             // Initialize core execution components
             InitializeComponents(managerOptions);
-            
+
             // Initialize telemetry if enabled
+
             if (managerOptions.EnableTelemetry)
             {
                 _telemetry = new MetalExecutionTelemetry(_logger, managerOptions.TelemetryReportingInterval);
@@ -164,8 +165,9 @@ public sealed class MetalExecutionManager : IDisposable
                     try
                     {
                         using var encoder = _encoderFactory.CreateEncoder(commandBuffer);
-                        
+
                         // Execute the user operation
+
                         var operationResult = await operation(executionInfo, encoder).ConfigureAwait(false);
 
                         // Ensure encoding is finished
@@ -241,7 +243,7 @@ public sealed class MetalExecutionManager : IDisposable
 
         try
         {
-            await _executionContext.ExecuteOperationAsync(
+            _ = await _executionContext.ExecuteOperationAsync(
                 descriptor.OperationId,
                 async executionInfo =>
                 {
@@ -249,9 +251,11 @@ public sealed class MetalExecutionManager : IDisposable
                     {
                         case MetalMemoryOperationDescriptor.OperationType.DeviceToDevice:
                             MetalNative.CopyBuffer(
-                                descriptor.Source, 
+                                descriptor.Source,
+
                                 descriptor.SourceOffset,
-                                descriptor.Destination, 
+                                descriptor.Destination,
+
                                 descriptor.DestinationOffset,
                                 descriptor.BytesToCopy);
                             break;
@@ -436,14 +440,18 @@ public sealed class MetalExecutionManager : IDisposable
             Architecture = stats.IsAppleSilicon ? MetalGpuArchitecture.AppleM1 : MetalGpuArchitecture.IntelIntegrated,
             PlatformOptimization = stats.IsAppleSilicon ? MetalPlatformOptimization.MacOS : MetalPlatformOptimization.Generic,
             Configuration = _options.ExecutionConfiguration,
-            
+
+
             ResourceUsage = stats.ExecutionStatistics.ResourceBreakdown
                 .ToDictionary(kvp => kvp.Key, kvp => (long)kvp.Value),
-            
+
+
             PerformanceMetrics = stats.TelemetryMetrics,
-            
+
+
             Messages = [], // Would be populated with recent diagnostic messages
-            
+
+
             SystemInfo = new Dictionary<string, string>
             {
                 ["Device"] = _device.ToString(),
@@ -461,23 +469,32 @@ public sealed class MetalExecutionManager : IDisposable
     private void InitializeComponents(MetalExecutionManagerOptions options)
     {
         // Create loggers for each component
-        var streamLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+        var streamLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandStream>();
-            
-        var eventLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var eventLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalEventManager>();
-            
-        var errorLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var errorLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalErrorHandler>();
-            
-        var contextLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var contextLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalExecutionContext>();
-            
-        var encoderLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => 
+
+
+        var encoderLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandEncoder>();
 
@@ -485,14 +502,16 @@ public sealed class MetalExecutionManager : IDisposable
         _commandStream = new MetalCommandStream(_device, streamLogger);
         _eventManager = new MetalEventManager(_device, eventLogger);
         _errorHandler = new MetalErrorHandler(errorLogger, options.ErrorRecoveryOptions);
-        
+
+
         var contextOptions = new MetalExecutionContextOptions
         {
             ErrorRecoveryOptions = options.ErrorRecoveryOptions,
             EnablePerformanceTracking = options.EnablePerformanceTracking
         };
         _executionContext = new MetalExecutionContext(_device, contextLogger, contextOptions);
-        
+
+
         _encoderFactory = new MetalCommandEncoderFactory(encoderLogger);
 
         _logger.LogDebug("Initialized Metal execution components: CommandStream, EventManager, ErrorHandler, ExecutionContext, EncoderFactory");
@@ -583,5 +602,6 @@ public sealed class MetalExecutionManagerHealthCheck
     public List<string> Issues { get; set; } = [];
     public Dictionary<string, bool> ComponentHealth { get; set; } = [];
 }
+
 
 #endregion

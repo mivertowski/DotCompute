@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
 namespace DotCompute.Memory;
 
@@ -131,7 +128,7 @@ public sealed partial class UnifiedBuffer<T>
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -176,7 +173,7 @@ public sealed partial class UnifiedBuffer<T>
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -295,7 +292,7 @@ public sealed partial class UnifiedBuffer<T>
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 

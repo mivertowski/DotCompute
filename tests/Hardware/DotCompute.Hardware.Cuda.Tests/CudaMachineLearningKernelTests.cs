@@ -1,19 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
-using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Specialized;
 using DotCompute.Tests.Common.Helpers;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -96,7 +88,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 input, kernels, bias, output,
                 inputHeight, inputWidth, inputChannels,
                 outputChannels, kernelSize, stride, padding);
-            perf.Stop();
+            _ = perf.Stop();
 
 
             var ops = (long)outputHeight * outputWidth * outputChannels *
@@ -105,9 +97,9 @@ namespace DotCompute.Hardware.Cuda.Tests
             perf.LogResults();
 
             // Assert - verify output is reasonable
-            output.Should().NotContain(float.NaN);
-            output.Should().NotContain(float.PositiveInfinity);
-            output.Should().NotContain(float.NegativeInfinity);
+            _ = output.Should().NotContain(float.NaN);
+            _ = output.Should().NotContain(float.PositiveInfinity);
+            _ = output.Should().NotContain(float.NegativeInfinity);
 
 
             var outputMean = output.Average();
@@ -115,7 +107,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             Output.WriteLine($"Output statistics - Mean: {outputMean:F4}, Std: {outputStd:F4}");
-            outputStd.Should().BeGreaterThan(0.01f, "Convolution should produce varied output");
+            _ = outputStd.Should().BeGreaterThan(0.01f, "Convolution should produce varied output");
         }
 
         [SkippableFact]
@@ -174,7 +166,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                         }
 
 
-                        output[outputIdx].Should().BeApproximately(expectedMax, 0.0001f,
+                        _ = output[outputIdx].Should().BeApproximately(expectedMax, 0.0001f,
                             $"Max pooling at position ({oh}, {ow}, {c})");
                     }
                 }
@@ -222,9 +214,9 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var std = MathF.Sqrt(variance);
 
 
-                mean.Should().BeApproximately(0.0f, 0.1f,
+                _ = mean.Should().BeApproximately(0.0f, 0.1f,
                     $"Normalized feature {f} should have mean ≈ 0");
-                std.Should().BeApproximately(1.0f, 0.1f,
+                _ = std.Should().BeApproximately(1.0f, 0.1f,
                     $"Normalized feature {f} should have std ≈ 1");
             }
         }
@@ -275,16 +267,16 @@ namespace DotCompute.Hardware.Cuda.Tests
                 for (var c = 0; c < numClasses; c++)
                 {
                     var idx = b * numClasses + c;
-                    probabilities[idx].Should().BeInRange(0.0f, 1.0f,
+                    _ = probabilities[idx].Should().BeInRange(0.0f, 1.0f,
                         "Softmax output should be probabilities");
                     sum += probabilities[idx];
                     maxProb = MathF.Max(maxProb, probabilities[idx]);
                 }
 
 
-                sum.Should().BeApproximately(1.0f, 0.001f,
+                _ = sum.Should().BeApproximately(1.0f, 0.001f,
                     $"Softmax probabilities for batch {b} should sum to 1");
-                maxProb.Should().BeGreaterThan(0.0f,
+                _ = maxProb.Should().BeGreaterThan(0.0f,
                     "At least one probability should be non-zero");
             }
         }
@@ -337,8 +329,8 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
             var avgLoss = losses.Average();
-            avgLoss.Should().BeGreaterThan(0.0f, "Loss should be positive");
-            avgLoss.Should().BeLessThan(10.0f, "Loss should be reasonable");
+            _ = avgLoss.Should().BeGreaterThan(0.0f, "Loss should be positive");
+            _ = avgLoss.Should().BeLessThan(10.0f, "Loss should be reasonable");
 
             // Verify individual losses
 
@@ -349,7 +341,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 var expectedLoss = -MathF.Log(MathF.Max(1e-7f, pred));
 
 
-                losses[b].Should().BeApproximately(expectedLoss, 0.001f,
+                _ = losses[b].Should().BeApproximately(expectedLoss, 0.001f,
                     $"Cross-entropy loss for batch {b}");
             }
         }
@@ -376,7 +368,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var actualDropRate = (float)droppedCount / size;
 
 
-            actualDropRate.Should().BeApproximately(dropoutRate, 0.05f,
+            _ = actualDropRate.Should().BeApproximately(dropoutRate, 0.05f,
                 "Dropout rate should match expected rate");
 
             // Check scaling
@@ -385,7 +377,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var nonZeroOutputs = output.Where(o => o > 0.0f).ToArray();
             if (nonZeroOutputs.Length > 0)
             {
-                nonZeroOutputs.Average().Should().BeApproximately(expectedScale, 0.1f,
+                _ = nonZeroOutputs.Average().Should().BeApproximately(expectedScale, 0.1f,
                     "Non-dropped outputs should be scaled correctly");
             }
         }
@@ -434,8 +426,8 @@ namespace DotCompute.Hardware.Cuda.Tests
                 seqLength, batchSize, inputSize, hiddenSize);
 
             // Assert
-            output.Should().NotContain(float.NaN);
-            output.Should().NotContain(float.PositiveInfinity);
+            _ = output.Should().NotContain(float.NaN);
+            _ = output.Should().NotContain(float.PositiveInfinity);
 
             // Check that output changes over time
 
@@ -444,13 +436,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             var difference = firstTimeStep.Zip(lastTimeStep, (a, b) => MathF.Abs(a - b)).Average();
-            difference.Should().BeGreaterThan(0.01f,
+            _ = difference.Should().BeGreaterThan(0.01f,
                 "LSTM output should evolve over time steps");
 
             // Check hidden state magnitude is reasonable
 
-            var hiddenMagnitude = finalH.Select(h => MathF.Abs(h)).Average();
-            hiddenMagnitude.Should().BeInRange(0.0f, 10.0f,
+            var hiddenMagnitude = finalH.Select(MathF.Abs).Average();
+            _ = hiddenMagnitude.Should().BeInRange(0.0f, 10.0f,
                 "Hidden state should have reasonable magnitude");
         }
 

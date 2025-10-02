@@ -1,13 +1,6 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using global::System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
-using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 

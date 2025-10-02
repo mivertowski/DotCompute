@@ -1,18 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Tests.TestImplementations;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Accelerators;
 
@@ -61,10 +55,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Name.Should().Be("testKernel");
-        result.IsReady.Should().BeTrue();
-        _accelerator.CompileKernelAsyncCalled.Should().BeTrue();
+        _ = result.Should().NotBeNull();
+        _ = result.Name.Should().Be("testKernel");
+        result.IsValid.Should().BeTrue();
+        _ = _accelerator.CompileKernelAsyncCalled.Should().BeTrue();
     }
 
     [Fact]
@@ -78,7 +72,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef!, options);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>()
+        _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("kernelDefinition");
     }
 
@@ -93,7 +87,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>()
+        _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("options");
     }
 
@@ -109,7 +103,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Theory]
@@ -132,10 +126,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        result.Should().NotBeNull();
-        _accelerator.LastCompilationOptions.Should().NotBeNull();
-        _accelerator.LastCompilationOptions!.OptimizationLevel.Should().Be(level);
-        _accelerator.LastCompilationOptions.GenerateDebugInfo.Should().Be(generateDebugInfo);
+        _ = result.Should().NotBeNull();
+        _ = _accelerator.LastCompilationOptions.Should().NotBeNull();
+        _ = _accelerator.LastCompilationOptions!.OptimizationLevel.Should().Be(level);
+        _ = _accelerator.LastCompilationOptions.GenerateDebugInfo.Should().Be(generateDebugInfo);
     }
 
     [Fact]
@@ -150,7 +144,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Simulated compilation error*");
     }
 
@@ -167,7 +161,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options, cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -180,17 +174,17 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var options = new CompilationOptions();
 
         // Act
-        var task1 = _accelerator.CompileKernelAsync(kernelDef1, options);
-        var task2 = _accelerator.CompileKernelAsync(kernelDef2, options);
-        var task3 = _accelerator.CompileKernelAsync(kernelDef3, options);
+        var task1 = _accelerator.CompileKernelAsync(kernelDef1, options).AsTask();
+        var task2 = _accelerator.CompileKernelAsync(kernelDef2, options).AsTask();
+        var task3 = _accelerator.CompileKernelAsync(kernelDef3, options).AsTask();
 
         var results = await Task.WhenAll(task1, task2, task3);
 
         // Assert
-        results.Should().HaveCount(3);
-        results.Should().OnlyContain(r => r.IsReady);
-        results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
-        _accelerator.CompilationCount.Should().Be(3);
+        _ = results.Should().HaveCount(3);
+        results.Should().OnlyContain(r => r.IsValid);
+        _ = results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
+        _ = _accelerator.CompilationCount.Should().Be(3);
     }
 
     [Fact]
@@ -204,10 +198,10 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        result.Should().NotBeNull();
-        _accelerator.LastLoggedKernelName.Should().Be("metricsKernel");
-        _accelerator.LastLoggedCompilationTime.Should().BePositive();
-        _accelerator.LastLoggedByteCodeSize.Should().BePositive();
+        _ = result.Should().NotBeNull();
+        _ = _accelerator.LastLoggedKernelName.Should().Be("metricsKernel");
+        _ = _accelerator.LastLoggedCompilationTime.Should().BePositive();
+        _ = _accelerator.LastLoggedByteCodeSize.Should().BePositive();
     }
 
     [Fact]
@@ -222,11 +216,11 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var result2 = await _accelerator.CompileKernelAsync(kernelDef, options);
 
         // Assert
-        result1.Should().NotBeNull();
-        result2.Should().NotBeNull();
-        result1.Name.Should().Be(result2.Name);
-        _accelerator.CompilationCount.Should().Be(1); // Should only compile once due to caching
-        _accelerator.CacheHits.Should().Be(1);
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = result1.Name.Should().Be(result2.Name);
+        _ = _accelerator.CompilationCount.Should().Be(1); // Should only compile once due to caching
+        _ = _accelerator.CacheHits.Should().Be(1);
     }
 
     public void Dispose()

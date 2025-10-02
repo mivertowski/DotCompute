@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;

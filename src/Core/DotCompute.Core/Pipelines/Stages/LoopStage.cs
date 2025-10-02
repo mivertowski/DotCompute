@@ -2,16 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Linq;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Models.Pipelines;
-using DotCompute.Core.Telemetry;
-using DotCompute.Core.Pipelines.Models;
 
 // Type aliases to resolve ambiguous references
 using PipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
 using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
-using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
 using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;

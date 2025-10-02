@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Security;
 using global::System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -328,11 +327,13 @@ public sealed class EncryptionManager : IDisposable
 
                 _randomGenerator.GetBytes(nonce);
                 _randomGenerator.GetBytes(tag);
-                
+
                 // In a real implementation, this would be actual ChaCha20 encryption
+
                 data.Span.CopyTo(ciphertext);
-                
+
                 // XOR with pseudo-random data for demonstration
+
                 var keyStream = new byte[data.Length];
                 _randomGenerator.GetBytes(keyStream);
                 for (var i = 0; i < ciphertext.Length; i++)
@@ -450,8 +451,9 @@ public sealed class EncryptionManager : IDisposable
                 // ChaCha20-Poly1305 decryption would go here
                 // For now, return a mock implementation that reverses the mock encryption
                 var plaintext = new byte[encryptedData.Length];
-                
+
                 // Mock decryption - XOR with the same pseudo-random data
+
                 var keyStream = new byte[encryptedData.Length];
                 _randomGenerator.GetBytes(keyStream);
                 for (var i = 0; i < plaintext.Length; i++)

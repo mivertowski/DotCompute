@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Utilities;
 
@@ -317,8 +316,9 @@ public sealed class MetalErrorHandler : IDisposable
                 {
                     // Apple Silicon unified memory cleanup
                     _logger.LogInformation("Performing unified memory cleanup on Apple Silicon");
-                    
+
                     // Force system memory pressure handling
+
                     GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
                     GC.WaitForPendingFinalizers();
                 }
@@ -326,8 +326,9 @@ public sealed class MetalErrorHandler : IDisposable
                 {
                     // Intel Mac discrete GPU memory cleanup
                     _logger.LogInformation("Performing discrete GPU memory cleanup on Intel Mac");
-                    
+
                     // More conservative cleanup for discrete GPUs
+
                     GC.Collect(1, GCCollectionMode.Default, blocking: false);
                 }
             }
@@ -400,7 +401,8 @@ public sealed class MetalErrorHandler : IDisposable
 
                 // For Metal, device reset is more limited than CUDA
                 // We mainly clear command queues and buffers
-                
+
+
                 Thread.Sleep(100); // Brief pause to let operations complete
 
                 _logger.LogInformation("Metal device state reset successful");
@@ -563,7 +565,8 @@ public sealed class MetalErrorHandler : IDisposable
 
         try
         {
-            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                    System.Runtime.InteropServices.Architecture.Arm64;
         }
         catch
@@ -641,8 +644,9 @@ public enum MetalError
 {
     Unknown = 0,
     Success = 1,
-    
+
     // Device errors
+
     DeviceNotFound,
     DeviceNotSupported,
     DeviceRemoved,
@@ -650,21 +654,24 @@ public enum MetalError
     DeviceNotReady,
     DeviceLost,
     DeviceUnavailable,
-    
+
     // Memory errors
+
     OutOfMemory,
     ResourceAllocationFailed,
     BufferAllocationFailed,
     TextureAllocationFailed,
     InsufficientMemory,
-    
+
     // Command buffer errors
+
     CommandBufferError,
     CommandBufferNotEnqueued,
     CommandEncoderError,
     InvalidCommandQueue,
-    
+
     // Execution errors
+
     NotReady,
     Timeout,
     Busy,
@@ -674,8 +681,9 @@ public enum MetalError
     InvalidArgument,
     InternalError,
     ResourceLimitExceeded,
-    
+
     // System errors
+
     SystemFailure,
     HardwareFailure,
     DriverError,
@@ -694,7 +702,8 @@ public class MetalException : Exception
         ErrorCode = errorCode;
     }
 
-    public MetalException(MetalError errorCode, string message, Exception innerException) 
+    public MetalException(MetalError errorCode, string message, Exception innerException)
+
         : base(message, innerException)
     {
         ErrorCode = errorCode;
@@ -708,13 +717,15 @@ public class MetalOperationException : MetalException
 {
     public string OperationName { get; }
 
-    public MetalOperationException(string operationName, string message) 
+    public MetalOperationException(string operationName, string message)
+
         : base(MetalError.Unknown, $"Metal operation '{operationName}' failed: {message}")
     {
         OperationName = operationName;
     }
 
-    public MetalOperationException(string operationName, string message, Exception innerException) 
+    public MetalOperationException(string operationName, string message, Exception innerException)
+
         : base(MetalError.Unknown, $"Metal operation '{operationName}' failed: {message}", innerException)
     {
         OperationName = operationName;
@@ -726,7 +737,8 @@ public class MetalOperationException : MetalException
 /// </summary>
 public class MetalUnavailableException : MetalException
 {
-    public MetalUnavailableException(string message) 
+    public MetalUnavailableException(string message)
+
         : base(MetalError.DeviceNotReady, message)
     {
     }
@@ -737,7 +749,8 @@ public class MetalUnavailableException : MetalException
 /// </summary>
 public class MetalDeviceException : MetalException
 {
-    public MetalDeviceException(string message) 
+    public MetalDeviceException(string message)
+
         : base(MetalError.DeviceNotFound, message)
     {
     }
@@ -748,7 +761,8 @@ public class MetalDeviceException : MetalException
 /// </summary>
 public class MetalCpuFallbackRequiredException : MetalException
 {
-    public MetalCpuFallbackRequiredException(string message) 
+    public MetalCpuFallbackRequiredException(string message)
+
         : base(MetalError.UnsupportedFeature, message)
     {
     }

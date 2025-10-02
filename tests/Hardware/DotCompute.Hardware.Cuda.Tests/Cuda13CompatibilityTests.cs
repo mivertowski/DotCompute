@@ -5,8 +5,6 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Common.Specialized;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

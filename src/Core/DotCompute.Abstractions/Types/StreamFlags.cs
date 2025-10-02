@@ -1,5 +1,3 @@
-using System;
-
 namespace DotCompute.Backends.CUDA.Execution.Types
 {
     /// <summary>

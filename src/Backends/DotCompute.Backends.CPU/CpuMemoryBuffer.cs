@@ -1,11 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CPU.Threading;
@@ -156,6 +153,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         // For CPU backend, device memory is the same as host memory
 
 
+
         => new(_nativeHandle, _sizeInBytes);
 
     public MappedMemory<byte> Map(MapMode mode = MapMode.ReadWrite)
@@ -197,10 +195,12 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         // CPU buffer is always on host
 
 
+
         => _state = BufferState.HostOnly;
 
     public void EnsureOnDevice()
         // CPU buffer is always on host (CPU is the device)
+
 
 
         => _state = BufferState.DeviceOnly;

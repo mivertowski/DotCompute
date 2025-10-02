@@ -4,8 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;

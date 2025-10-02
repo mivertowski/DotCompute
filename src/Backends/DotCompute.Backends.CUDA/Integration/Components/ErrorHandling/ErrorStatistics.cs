@@ -63,17 +63,17 @@ internal sealed class ErrorStatistics
 
     public void RecordError(CudaError error)
     {
-        Interlocked.Increment(ref _totalErrors);
-        Interlocked.Increment(ref _recentErrors);
+        _ = Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _recentErrors);
 
         var severity = DetermineErrorSeverity(error);
         if (severity == CudaErrorSeverity.Critical)
         {
-            Interlocked.Increment(ref _criticalErrors);
+            _ = Interlocked.Increment(ref _criticalErrors);
         }
         else if (severity != CudaErrorSeverity.None)
         {
-            Interlocked.Increment(ref _recoverableErrors);
+            _ = Interlocked.Increment(ref _recoverableErrors);
         }
 
         lock (_lock)
@@ -84,13 +84,13 @@ internal sealed class ErrorStatistics
 
     public void RecordRecoverySuccess()
     {
-        Interlocked.Increment(ref _recoveryAttempts);
-        Interlocked.Increment(ref _recoverySuccesses);
+        _ = Interlocked.Increment(ref _recoveryAttempts);
+        _ = Interlocked.Increment(ref _recoverySuccesses);
     }
 
     public void RecordRecoveryFailure()
     {
-        Interlocked.Increment(ref _recoveryAttempts);
+        _ = Interlocked.Increment(ref _recoveryAttempts);
     }
 
     public void Configure(ErrorStatisticsPolicy policy)

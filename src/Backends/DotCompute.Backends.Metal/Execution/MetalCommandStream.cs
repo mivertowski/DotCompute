@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
@@ -48,7 +47,8 @@ public sealed class MetalCommandStream : IDisposable
         _streamGroups = new ConcurrentDictionary<string, MetalStreamGroup>();
         _streamCreationSemaphore = new SemaphoreSlim(MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS);
         _dependencyTracker = new MetalStreamDependencyTracker();
-        
+
+
         _isAppleSilicon = DetectAppleSilicon();
         var optimalStreams = _isAppleSilicon ? APPLE_SILICON_OPTIMAL_STREAMS : INTEL_MAC_OPTIMAL_STREAMS;
 
@@ -242,7 +242,8 @@ public sealed class MetalCommandStream : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Command execution failed on stream {StreamId}", streamId);
-            
+
+
             return new MetalCommandExecutionResult
             {
                 StreamId = streamId,
@@ -276,7 +277,8 @@ public sealed class MetalCommandStream : IDisposable
         }
 
         var commandBuffer = _commandBufferPool.GetCommandBuffer();
-        
+
+
         try
         {
             if (timeout.HasValue)
@@ -287,7 +289,7 @@ public sealed class MetalCommandStream : IDisposable
 
                 try
                 {
-                    await CommitAndWaitAsync(commandBuffer, combinedCts.Token).ConfigureAwait(false);
+                    _ = await CommitAndWaitAsync(commandBuffer, combinedCts.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
                 {
@@ -296,7 +298,7 @@ public sealed class MetalCommandStream : IDisposable
             }
             else
             {
-                await CommitAndWaitAsync(commandBuffer, cancellationToken).ConfigureAwait(false);
+                _ = await CommitAndWaitAsync(commandBuffer, cancellationToken).ConfigureAwait(false);
             }
 
             streamInfo.LastUsed = DateTimeOffset.UtcNow;
@@ -375,7 +377,7 @@ public sealed class MetalCommandStream : IDisposable
 
                     try
                     {
-                        await ExecuteCommandAsync(streamHandle.StreamId, node.Operation, node.Id, cancellationToken).ConfigureAwait(false);
+                        _ = await ExecuteCommandAsync(streamHandle.StreamId, node.Operation, node.Id, cancellationToken).ConfigureAwait(false);
                         await SynchronizeStreamAsync(streamHandle.StreamId, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                         completedNodes[node.Id] = true;
@@ -496,7 +498,8 @@ public sealed class MetalCommandStream : IDisposable
         {
             // Rebalance streams based on hardware utilization
             var activeStreamCount = _activeStreams.Values.Count(s => !IsStreamReady(s.StreamId));
-            var optimalCount = Math.Min(activeStreamCount, 
+            var optimalCount = Math.Min(activeStreamCount,
+
                 _isAppleSilicon ? APPLE_SILICON_OPTIMAL_STREAMS : INTEL_MAC_OPTIMAL_STREAMS);
 
             // Prefer high-priority streams for active work
@@ -517,7 +520,8 @@ public sealed class MetalCommandStream : IDisposable
         if (_activeStreams.TryRemove(streamId, out var streamInfo))
         {
             // Release the command queue
-            if (streamInfo.CommandQueue != IntPtr.Zero && 
+            if (streamInfo.CommandQueue != IntPtr.Zero &&
+
                 streamInfo.CommandQueue != _defaultCommandQueue &&
                 !_optimizedCommandQueues.Contains(streamInfo.CommandQueue))
             {
@@ -611,8 +615,10 @@ public sealed class MetalCommandStream : IDisposable
 
     private void DestroyStream(IntPtr commandQueue)
     {
-        if (commandQueue == IntPtr.Zero || 
-            commandQueue == _defaultCommandQueue || 
+        if (commandQueue == IntPtr.Zero ||
+
+            commandQueue == _defaultCommandQueue ||
+
             _optimizedCommandQueues.Contains(commandQueue))
         {
             return; // Don't destroy default or optimized command queues
@@ -657,7 +663,8 @@ public sealed class MetalCommandStream : IDisposable
 
         try
         {
-            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == 
+            return System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+
                    System.Runtime.InteropServices.Architecture.Arm64;
         }
         catch

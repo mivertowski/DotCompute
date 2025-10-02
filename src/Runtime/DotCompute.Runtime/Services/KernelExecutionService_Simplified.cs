@@ -4,8 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Runtime.Logging;
 

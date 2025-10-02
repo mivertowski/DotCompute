@@ -5,8 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Backends.Metal.Execution.Graph.Nodes;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
-using DotCompute.Backends.Metal.Execution.Graph.Configuration;
-using DotCompute.Backends.Metal.Execution.Graph.Statistics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution.Graph;
@@ -122,7 +120,8 @@ public sealed class MetalGraphExecutor : IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Execution of graph '{GraphName}' was cancelled", graph.Name);
-            
+
+
             return new MetalGraphExecutionResult
             {
                 ExecutionId = executionId,
@@ -136,7 +135,8 @@ public sealed class MetalGraphExecutor : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to execute graph '{GraphName}'", graph.Name);
-            
+
+
             return new MetalGraphExecutionResult
             {
                 ExecutionId = executionId,
@@ -153,7 +153,7 @@ public sealed class MetalGraphExecutor : IDisposable
             // Clean up node completion sources
             foreach (var completion in _nodeCompletions.Values)
             {
-                completion.TrySetResult(false);
+                _ = completion.TrySetResult(false);
             }
             _nodeCompletions.Clear();
         }
@@ -185,7 +185,8 @@ public sealed class MetalGraphExecutor : IDisposable
             try
             {
                 await ExecuteNodeByTypeAsync(node, context);
-                
+
+
                 nodeStopwatch.Stop();
                 node.ExecutionEndTime = DateTimeOffset.UtcNow;
                 node.ExecutionState = MetalNodeExecutionState.Completed;
@@ -193,7 +194,8 @@ public sealed class MetalGraphExecutor : IDisposable
                 context.NodesExecuted++;
                 context.TotalGpuTimeMs += nodeStopwatch.Elapsed.TotalMilliseconds;
 
-                _logger.LogTrace("Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms", 
+                _logger.LogTrace("Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms",
+
                     node.Id, nodeStopwatch.Elapsed.TotalMilliseconds);
 
                 // Mark node as completed
@@ -222,7 +224,7 @@ public sealed class MetalGraphExecutor : IDisposable
         }
         finally
         {
-            _executionSemaphore.Release();
+            _ = _executionSemaphore.Release();
         }
     }
 
@@ -303,8 +305,9 @@ public sealed class MetalGraphExecutor : IDisposable
     private async Task ExecuteGraphInternalAsync(GraphExecutionContext context)
     {
         var nodes = context.Graph.GetExecutionOrder();
-        
+
         // Initialize completion sources for all nodes
+
         foreach (var node in nodes)
         {
             _nodeCompletions[node.Id] = new TaskCompletionSource<bool>();
@@ -323,7 +326,8 @@ public sealed class MetalGraphExecutor : IDisposable
 
             // Execute all nodes in this level in parallel
             var levelTasks = level.Select(node => ExecuteNodeWithDependenciesAsync(node, context)).ToArray();
-            
+
+
             try
             {
                 await Task.WhenAll(levelTasks);
@@ -341,8 +345,9 @@ public sealed class MetalGraphExecutor : IDisposable
     {
         // Wait for dependencies first
         await WaitForDependenciesAsync(node, context.CancellationToken);
-        
+
         // Then execute the node
+
         await ExecuteNodeAsync(node, context);
     }
 
@@ -405,7 +410,8 @@ public sealed class MetalGraphExecutor : IDisposable
             // Commit and wait
             await CommitAndWaitMetalCommandBuffer(commandBuffer);
 
-            _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups", 
+            _logger.LogTrace("Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups",
+
                 node.Id, node.ThreadgroupsPerGrid.TotalElements);
         }
         finally
@@ -442,7 +448,8 @@ public sealed class MetalGraphExecutor : IDisposable
 
             context.TotalMemoryTransferred += node.CopySize;
 
-            _logger.LogTrace("Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes", 
+            _logger.LogTrace("Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes",
+
                 node.Id, node.CopySize);
         }
         finally
@@ -478,7 +485,8 @@ public sealed class MetalGraphExecutor : IDisposable
 
             context.TotalMemoryTransferred += node.CopySize;
 
-            _logger.LogTrace("Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}", 
+            _logger.LogTrace("Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}",
+
                 node.Id, node.CopySize, node.FillValue);
         }
         finally
@@ -505,7 +513,7 @@ public sealed class MetalGraphExecutor : IDisposable
         // Calculate execution level for each node
         foreach (var node in nodes)
         {
-            CalculateExecutionLevel(node, nodeToLevel, processed);
+            _ = CalculateExecutionLevel(node, nodeToLevel, processed);
         }
 
         // Group nodes by level
@@ -534,7 +542,7 @@ public sealed class MetalGraphExecutor : IDisposable
             throw new InvalidOperationException($"Circular dependency detected involving node {node.Id}");
         }
 
-        processed.Add(node.Id);
+        _ = processed.Add(node.Id);
 
         var maxDependencyLevel = -1;
         foreach (var dependency in node.Dependencies)
@@ -545,7 +553,7 @@ public sealed class MetalGraphExecutor : IDisposable
 
         var level = maxDependencyLevel + 1;
         nodeToLevel[node.Id] = level;
-        processed.Remove(node.Id);
+        _ = processed.Remove(node.Id);
 
         return level;
     }
@@ -561,7 +569,8 @@ public sealed class MetalGraphExecutor : IDisposable
 
         var idealParallelTime = context.TotalGpuTimeMs / Environment.ProcessorCount;
         var actualTime = context.TotalGpuTimeMs;
-        
+
+
         return Math.Min(1.0, idealParallelTime / actualTime);
     }
 
@@ -575,7 +584,8 @@ public sealed class MetalGraphExecutor : IDisposable
 
         var totalMemoryGB = context.TotalMemoryTransferred / (1024.0 * 1024.0 * 1024.0);
         var timeInSeconds = context.TotalGpuTimeMs / 1000.0;
-        
+
+
         return totalMemoryGB / timeInSeconds; // GB/s
     }
 
@@ -670,11 +680,12 @@ public sealed class MetalGraphExecutor : IDisposable
         try
         {
             _cancellationTokenSource.Cancel();
-            
+
             // Complete any pending node tasks
+
             foreach (var completion in _nodeCompletions.Values)
             {
-                completion.TrySetCanceled();
+                _ = completion.TrySetCanceled();
             }
             _nodeCompletions.Clear();
 
@@ -715,7 +726,8 @@ public class GraphExecutionContext
     public MetalComputeGraph Graph { get; }
     public IntPtr CommandQueue { get; }
     public CancellationToken CancellationToken { get; }
-    
+
+
     public int NodesExecuted { get; set; }
     public int CommandBuffersUsed { get; set; }
     public double TotalGpuTimeMs { get; set; }

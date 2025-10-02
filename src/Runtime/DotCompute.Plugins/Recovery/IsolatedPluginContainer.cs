@@ -216,7 +216,7 @@ namespace DotCompute.Plugins.Recovery
                 }
                 finally
                 {
-                    _operationLock.Release();
+                    _ = _operationLock.Release();
                 }
             }
             catch (Exception ex)

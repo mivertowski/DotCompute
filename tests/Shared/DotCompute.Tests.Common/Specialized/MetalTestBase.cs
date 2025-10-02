@@ -2,11 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using DotCompute.Tests.Common.Fixtures;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Common.Specialized;
@@ -23,7 +21,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
     /// </summary>
     /// <param name="output">Test output helper for logging.</param>
     /// <param name="fixture">Optional common test fixture.</param>
-    protected MetalTestBase(ITestOutputHelper output, CommonTestFixture? fixture = null) 
+    protected MetalTestBase(ITestOutputHelper output, CommonTestFixture? fixture = null)
+
         : base(output, fixture)
     {
         LogMetalEnvironment();
@@ -83,7 +82,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             // Placeholder implementation for cross-platform compatibility
             var deviceName = IsAppleSilicon() ? "Apple M-Series GPU" : "Intel Integrated Graphics";
             var memoryInfo = IsAppleSilicon() ? "Unified Memory" : "Shared Memory";
-            
+
+
             return $"{deviceName} ({memoryInfo}, macOS {GetMacOSVersion()})";
         }
         catch (Exception ex)
@@ -214,7 +214,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             // Align to SIMD boundaries for Apple Silicon optimization
             var alignedCount = ((count + 7) / 8) * 8; // Align to 8-element SIMD boundaries
             var data = UnifiedTestHelpers.TestDataGenerator.CreateRandomData(alignedCount, seed);
-            
+
+
             return data;
         }
 
@@ -224,7 +225,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
         public static float[] CreateTextureData(int width, int height, bool pattern = false, int seed = 42)
         {
             var data = new float[width * height * 4]; // RGBA format
-            
+
+
             if (pattern)
             {
                 // Create a checkerboard pattern for validation
@@ -234,7 +236,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
                     {
                         var index = (y * width + x) * 4;
                         var isBlack = (x / 8 + y / 8) % 2 == 0;
-                        
+
+
                         data[index] = isBlack ? 0.0f : 1.0f;     // R
                         data[index + 1] = isBlack ? 0.0f : 1.0f; // G
                         data[index + 2] = isBlack ? 0.0f : 1.0f; // B
@@ -250,7 +253,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
                     data[i] = (float)random.NextDouble();
                 }
             }
-            
+
+
             return data;
         }
 
@@ -298,10 +302,12 @@ public abstract class MetalTestBase : ConsolidatedTestBase
         {
             var currentUsage = GetCurrentGpuMemoryUsage();
             var currentUsageMB = currentUsage / (1024.0 * 1024.0);
-            
+
+
             Log($"Metal unified memory usage: {currentUsageMB:F1} MB");
-            
+
             // Metal uses unified memory, so we primarily track system memory
+
             LogMemoryUsage();
         }
         catch (Exception ex)
@@ -327,7 +333,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             // Add Metal-specific services here
             // services.AddSingleton<IMetalBackendFactory, MetalBackendFactory>();
             // services.AddSingleton<IMetalMemoryManager, MetalMemoryManager>();
-            
+
+
             Log("Metal services configured in DI container");
         }
     }
@@ -345,16 +352,19 @@ public abstract class MetalTestBase : ConsolidatedTestBase
         Log($"Metal Available: {IsMetalAvailable()}");
         Log($"Apple Silicon: {IsAppleSilicon()}");
         Log($"macOS Version: {GetMacOSVersion()}");
-        
+
+
         if (IsMetalAvailable())
         {
             Log($"Device Info: {GetMetalDeviceInfoString()}");
             Log($"Minimum macOS 10.11+: {HasMinimumMacOSVersion(new Version(10, 11))}");
             Log($"Unified Memory Architecture: {IsAppleSilicon()}");
-            
+
+
             TakeGpuMemorySnapshot("metal_initial");
         }
-        
+
+
         Log("=========================");
     }
 
@@ -376,7 +386,8 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             Log($"  Device: {GetMetalDeviceInfoString()}");
             Log($"  Architecture: {(IsAppleSilicon() ? "Apple Silicon" : "Intel")}");
             Log($"  macOS Version: {GetMacOSVersion()}");
-            
+
+
             if (IsAppleSilicon())
             {
                 Log($"  Unified Memory: Yes");
@@ -386,8 +397,9 @@ public abstract class MetalTestBase : ConsolidatedTestBase
             {
                 Log($"  Shared Memory: Yes (Intel integrated)");
             }
-            
+
             // Additional Metal-specific capability logging would go here
+
         }
         catch (Exception ex)
         {

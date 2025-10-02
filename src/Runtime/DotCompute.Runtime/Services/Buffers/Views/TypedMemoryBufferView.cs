@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Abstractions.Types;
 using global::System.Runtime.CompilerServices;
 
 namespace DotCompute.Runtime.Services.Buffers.Views;

@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Runtime.Logging;
-using DotCompute.Runtime.Services.Statistics;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.InteropServices;

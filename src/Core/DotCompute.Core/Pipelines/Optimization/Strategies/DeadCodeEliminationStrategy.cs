@@ -1,11 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
 using OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel;
 
@@ -84,10 +82,12 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
     private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
         // Simplified - in practice would analyze data flow
 
+
         => [.. stages.SelectMany(s => s.Dependencies)];
 
     private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
         // Check if stage produces useful output or has side effects
+
 
         => usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Computation;
 

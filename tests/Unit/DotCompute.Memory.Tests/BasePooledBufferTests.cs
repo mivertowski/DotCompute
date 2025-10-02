@@ -3,9 +3,6 @@
 
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Tests.TestHelpers;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Memory.Tests;
 
@@ -48,10 +45,7 @@ public class BasePooledBufferTests
     {
         // Arrange
         var returnCalled = false;
-        var returnAction = new Action<BasePooledBuffer<int>>(b =>
-        {
-            returnCalled = true;
-        });
+        var returnAction = new Action<BasePooledBuffer<int>>(b => returnCalled = true);
 
 
         var buffer = new TestPooledBuffer<int>(512, returnAction);

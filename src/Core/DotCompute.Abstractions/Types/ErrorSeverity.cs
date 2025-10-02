@@ -30,4 +30,5 @@ public enum ErrorSeverity
 }
 
 // BottleneckType moved to DotCompute.Abstractions.Types.BottleneckType
+
 // This duplicate enum has been removed to avoid conflicts.

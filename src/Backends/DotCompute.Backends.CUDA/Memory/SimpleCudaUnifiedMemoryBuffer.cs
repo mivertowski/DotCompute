@@ -3,7 +3,6 @@
 
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Extensions;
@@ -213,7 +212,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            await Task.Run(() => EnsureOnHost(), cancellationToken).ConfigureAwait(false);
+            await Task.Run(EnsureOnHost, cancellationToken).ConfigureAwait(false);
             return Map(mode);
         }
 
@@ -221,20 +220,20 @@ namespace DotCompute.Backends.CUDA.Memory
         public async ValueTask<MappedMemory<T>> MapRangeAsync(int offset, int length, MapMode mode, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            await Task.Run(() => EnsureOnHost(), cancellationToken).ConfigureAwait(false);
+            await Task.Run(EnsureOnHost, cancellationToken).ConfigureAwait(false);
             return MapRange(offset, length, mode);
         }
 
         /// <inheritdoc/>
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => Synchronize(), cancellationToken).AsValueTask();
+            return Task.Run(Synchronize, cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>
         public ValueTask SynchronizeAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => Synchronize(), cancellationToken).AsValueTask();
+            return Task.Run(Synchronize, cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>
@@ -285,13 +284,13 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask EnsureOnHostAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => EnsureOnHost(), cancellationToken).AsValueTask();
+            return Task.Run(EnsureOnHost, cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>
         public ValueTask EnsureOnDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => EnsureOnDevice(), cancellationToken).AsValueTask();
+            return Task.Run(EnsureOnDevice, cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>
@@ -316,10 +315,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            return Task.Run(() =>
-            {
-                source.Span.CopyTo(AsSpan());
-            }, cancellationToken).AsValueTask();
+            return Task.Run(() => source.Span.CopyTo(AsSpan()), cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>
@@ -332,10 +328,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            return Task.Run(() =>
-            {
-                AsReadOnlySpan().CopyTo(destination.Span);
-            }, cancellationToken).AsValueTask();
+            return Task.Run(() => AsReadOnlySpan().CopyTo(destination.Span), cancellationToken).AsValueTask();
         }
 
         /// <inheritdoc/>

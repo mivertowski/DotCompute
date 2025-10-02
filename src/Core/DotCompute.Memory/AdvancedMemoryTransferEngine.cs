@@ -6,7 +6,6 @@ using global::System.IO.MemoryMappedFiles;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Types;
 
 namespace DotCompute.Memory;

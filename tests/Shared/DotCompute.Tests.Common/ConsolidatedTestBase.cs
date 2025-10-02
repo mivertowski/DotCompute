@@ -3,10 +3,8 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using DotCompute.Tests.Common.Data;
 using DotCompute.Tests.Common.Fixtures;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -121,11 +119,13 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
         Fixture = fixture;
         _memorySnapshots = [];
         _disposables = [];
-        
+
         // Create cancellation token for long operations (5 minute timeout)
+
         _cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5));
-        
+
         // Set output in fixture for logging if available
+
         Fixture?.SetOutput(output);
 
         // Create test-specific temp directory
@@ -767,7 +767,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     {
         directoryName ??= $"subdir_{Guid.NewGuid():N}";
         var dirPath = Path.Combine(TempDirectory, directoryName);
-        Directory.CreateDirectory(dirPath);
+        _ = Directory.CreateDirectory(dirPath);
         return dirPath;
     }
 
@@ -780,7 +780,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
         var testName = GetType().Name;
         var tempDir = Fixture?.TempDirectory ?? Path.GetTempPath();
         var testTempDir = Path.Combine(tempDir, $"{testName}_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(testTempDir);
+        _ = Directory.CreateDirectory(testTempDir);
         return testTempDir;
     }
 
@@ -994,20 +994,22 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
         try
         {
             var services = new ServiceCollection();
-            
+
             // Add logging
-            services.AddLogging(builder =>
+
+            _ = services.AddLogging(builder =>
             {
-                builder.AddConfiguration(Configuration.GetSection("Logging"));
-                builder.AddConsole();
+                _ = builder.AddConfiguration(Configuration.GetSection("Logging"));
+                _ = builder.AddConsole();
             });
 
             // Add configuration
-            services.AddSingleton(Configuration);
+            _ = services.AddSingleton(Configuration);
 
             // Allow derived classes to add more services
             ConfigureAdditionalServices(services);
-            
+
+
             _serviceProvider = services.BuildServiceProvider();
             _disposables.Add(_serviceProvider);
         }
@@ -1043,7 +1045,8 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     /// <param name="threadCount">Number of concurrent threads.</param>
     /// <returns>Results from all operations.</returns>
     protected async Task<List<T>> ExecuteConcurrentlyAsync<T>(
-        Func<int, Task<T>> operation, 
+        Func<int, Task<T>> operation,
+
         int threadCount = 10)
     {
         var tasks = new List<Task<T>>();
@@ -1052,7 +1055,8 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
             var threadId = i;
             tasks.Add(Task.Run(() => operation(threadId), CancellationToken));
         }
-        
+
+
         var results = await Task.WhenAll(tasks);
         return new List<T>(results);
     }

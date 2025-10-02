@@ -4,9 +4,6 @@ using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Specialized;
-using Xunit;
-using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 

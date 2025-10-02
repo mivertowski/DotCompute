@@ -1,13 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
@@ -137,8 +132,8 @@ public class UnifiedMemoryManager : BaseMemoryManager
             if (pooledBuffer != null)
             {
                 var buffer = new UnifiedBuffer<byte>(this, (int)sizeInBytes);
-                _activeBuffers.TryAdd(id, buffer);
-                _bufferRegistry.TryAdd(id, new WeakReference<IUnifiedMemoryBuffer>(buffer));
+                _ = _activeBuffers.TryAdd(id, buffer);
+                _ = _bufferRegistry.TryAdd(id, new WeakReference<IUnifiedMemoryBuffer>(buffer));
 
                 var elapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
                 _statistics.RecordAllocation(sizeInBytes, elapsedMs, fromPool: true);
@@ -151,8 +146,8 @@ public class UnifiedMemoryManager : BaseMemoryManager
 
             // Allocate new buffer
             var newBuffer = new UnifiedBuffer<byte>(this, (int)sizeInBytes);
-            _activeBuffers.TryAdd(id, newBuffer);
-            _bufferRegistry.TryAdd(id, new WeakReference<IUnifiedMemoryBuffer>(newBuffer));
+            _ = _activeBuffers.TryAdd(id, newBuffer);
+            _ = _bufferRegistry.TryAdd(id, new WeakReference<IUnifiedMemoryBuffer>(newBuffer));
 
             var allocElapsedMs = (Stopwatch.GetTimestamp() - startTime) * 1000.0 / Stopwatch.Frequency;
             _statistics.RecordAllocation(sizeInBytes, allocElapsedMs, fromPool: false);
@@ -188,7 +183,7 @@ public class UnifiedMemoryManager : BaseMemoryManager
         }
         finally
         {
-            _allocationSemaphore.Release();
+            _ = _allocationSemaphore.Release();
         }
     }
 
@@ -293,8 +288,8 @@ public class UnifiedMemoryManager : BaseMemoryManager
 
         foreach (var bufferId in buffersToRemove)
         {
-            _activeBuffers.TryRemove(bufferId, out _);
-            _bufferRegistry.TryRemove(bufferId, out _);
+            _ = _activeBuffers.TryRemove(bufferId, out _);
+            _ = _bufferRegistry.TryRemove(bufferId, out _);
         }
 
         if (buffersToRemove.Count > 0)
@@ -417,8 +412,8 @@ public class UnifiedMemoryManager : BaseMemoryManager
 
         foreach (var deadId in deadReferences)
         {
-            _bufferRegistry.TryRemove(deadId, out _);
-            _activeBuffers.TryRemove(deadId, out _);
+            _ = _bufferRegistry.TryRemove(deadId, out _);
+            _ = _activeBuffers.TryRemove(deadId, out _);
         }
 
         if (deadReferences.Count > 0)

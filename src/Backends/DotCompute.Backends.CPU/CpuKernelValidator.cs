@@ -1,13 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Validation;
@@ -196,7 +191,7 @@ internal sealed class CpuKernelValidator : IDisposable
     /// <summary>
     /// Performs runtime validation during kernel execution.
     /// </summary>
-    public async Task<RuntimeValidationResult> ValidateRuntimeExecution(
+    public async Task<RuntimeValidationResult> ValidateRuntimeExecutionAsync(
         KernelExecutionContext context,
         KernelDefinition definition)
     {
@@ -238,7 +233,7 @@ internal sealed class CpuKernelValidator : IDisposable
 
     // Private validation methods
 
-    private Task ValidateKernelDefinitionAsync(KernelDefinition definition, CpuValidationResult result)
+    private static Task ValidateKernelDefinitionAsync(KernelDefinition definition, CpuValidationResult result)
     {
         // Validate kernel name
         if (string.IsNullOrWhiteSpace(definition.Name))
@@ -273,7 +268,7 @@ internal sealed class CpuKernelValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ValidateWorkDimensionsAsync(WorkDimensions workDimensions, CpuValidationResult result)
+    private static Task ValidateWorkDimensionsAsync(WorkDimensions workDimensions, CpuValidationResult result)
     {
         // Validate dimension values
         if (workDimensions.X <= 0 || workDimensions.Y <= 0 || workDimensions.Z <= 0)
@@ -426,7 +421,7 @@ internal sealed class CpuKernelValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ValidateResourceUsageAsync(
+    private static Task ValidateResourceUsageAsync(
         KernelDefinition definition,
         WorkDimensions workDimensions,
         CpuValidationResult result)
@@ -547,7 +542,7 @@ internal sealed class CpuKernelValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ValidateArgumentTypesAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
+    private static Task ValidateArgumentTypesAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
     {
         // NOTE: KernelDefinition.Parameters property doesn't exist in current API
         // Type validation is performed by the kernel compiler based on metadata
@@ -563,7 +558,7 @@ internal sealed class CpuKernelValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ValidateArgumentConstraintsAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
+    private static Task ValidateArgumentConstraintsAsync(KernelArguments arguments, KernelDefinition definition, ArgumentValidationResult result)
     {
         // NOTE: KernelDefinition.Parameters property doesn't exist in current API
         // Constraint validation would require parameter metadata which isn't available
@@ -692,8 +687,8 @@ internal sealed class CpuKernelValidator : IDisposable
         // Detect available instruction sets (simplified)
         if (Vector.IsHardwareAccelerated)
         {
-            capabilities.SupportedInstructionSets.Add("SSE");
-            capabilities.SupportedInstructionSets.Add("AVX");
+            _ = capabilities.SupportedInstructionSets.Add("SSE");
+            _ = capabilities.SupportedInstructionSets.Add("AVX");
         }
 
         return capabilities;

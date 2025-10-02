@@ -3,8 +3,6 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
-using System.Collections.Concurrent;
-using CorePluginHealthStatus = DotCompute.Core.Recovery.PluginHealthStatus;
 
 namespace DotCompute.Plugins.Recovery;
 

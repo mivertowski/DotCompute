@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 
-using System;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Configuration;
-using DotCompute.Core.Execution.Types;
 namespace DotCompute.Core.Execution.Metrics
 {
     /// <summary>

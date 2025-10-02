@@ -7,10 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions.Kernels;
-
-using System;
 namespace DotCompute.Core.Compute
 {
 
@@ -122,7 +119,7 @@ namespace DotCompute.Core.Compute
 
                 if (process.Start())
                 {
-                    process.WaitForExit(5000); // 5 second timeout
+                    _ = process.WaitForExit(5000); // 5 second timeout
                     if (process.ExitCode == 0)
                     {
                         var output = process.StandardOutput.ReadToEnd();
@@ -215,7 +212,7 @@ namespace DotCompute.Core.Compute
 
                     if (process.Start())
                     {
-                        process.WaitForExit(3000); // 3 second timeout
+                        _ = process.WaitForExit(3000); // 3 second timeout
                         if (process.ExitCode == 0)
                         {
                             var output = process.StandardOutput.ReadToEnd();
@@ -255,7 +252,7 @@ namespace DotCompute.Core.Compute
 
                 if (process.Start())
                 {
-                    process.WaitForExit(5000); // 5 second timeout
+                    _ = process.WaitForExit(5000); // 5 second timeout
                     if (process.ExitCode == 0)
                     {
                         var output = process.StandardOutput.ReadToEnd().Trim();
@@ -278,7 +275,7 @@ namespace DotCompute.Core.Compute
 
                     if (vendorProcess.Start())
                     {
-                        vendorProcess.WaitForExit(3000);
+                        _ = vendorProcess.WaitForExit(3000);
                         if (vendorProcess.ExitCode == 0)
                         {
                             var vendor = vendorProcess.StandardOutput.ReadToEnd().Trim();
@@ -521,6 +518,7 @@ namespace DotCompute.Core.Compute
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
             // CPU operations are synchronous by default
+
 
 
             => ValueTask.CompletedTask;

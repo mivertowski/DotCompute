@@ -5,7 +5,6 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Types;
-using System.Diagnostics;
 
 namespace DotCompute.Core.Recovery.Memory.Monitoring;
 

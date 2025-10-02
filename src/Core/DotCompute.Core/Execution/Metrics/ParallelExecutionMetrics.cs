@@ -3,8 +3,6 @@
 
 
 using DotCompute.Abstractions.Types;
-
-using System;
 namespace DotCompute.Core.Execution.Metrics
 {
     /// <summary>

@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution.Scheduling;
@@ -163,7 +162,7 @@ internal class DevicePerformanceEstimator
 
         // Update rolling performance score
         var throughput = dataSize / actualTime.TotalSeconds;
-        _devicePerformanceScores.AddOrUpdate(performanceKey, throughput,
+        _ = _devicePerformanceScores.AddOrUpdate(performanceKey, throughput,
             (key, oldValue) => (oldValue * 0.8) + (throughput * 0.2)); // Exponential moving average
 
         // Update kernel model if we have enough data
@@ -736,7 +735,7 @@ internal class DevicePerformanceEstimator
                 // Keep only recent measurements
                 while (_measurements.Count > MaxMeasurements)
                 {
-                    _measurements.Dequeue();
+                    _ = _measurements.Dequeue();
                 }
             }
         }

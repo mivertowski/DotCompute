@@ -1,21 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Tests.Common.Specialized;
-using System.Linq;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.Tests.Common.Utilities;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -134,7 +126,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var result = await ExecuteReductionKernel(data);
 
             // Assert
-            result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
+            _ = result.Should().BeApproximately(expected, 10.0f); // Allow for floating-point precision in atomic operations
         }
 
         [SkippableFact]
@@ -201,14 +193,14 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Assert - Basic validation
             for (var i = 0; i < Math.Min(100, numOptions); i++)
             {
-                callPrices[i].Should().BeGreaterThan(0);
-                putPrices[i].Should().BeGreaterThan(0);
+                _ = callPrices[i].Should().BeGreaterThan(0);
+                _ = putPrices[i].Should().BeGreaterThan(0);
 
                 // Call-Put parity check (approximate)
 
                 var parity = callPrices[i] - putPrices[i];
                 var expected = stockPrices[i] - strikePrices[i] * MathF.Exp(-riskFreeRate * timeToExpiry[i]);
-                parity.Should().BeApproximately(expected, 1.0f);
+                _ = parity.Should().BeApproximately(expected, 1.0f);
             }
         }
 

@@ -5,8 +5,6 @@ using System.Diagnostics;
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Models;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Workload;
@@ -18,9 +16,6 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using ExecutionPerformanceMonitor = DotCompute.Core.Execution.PerformanceMonitor;
 using DotCompute.Core.Execution.Optimization;
-using ManagedCompiledKernel = DotCompute.Core.Execution.ManagedCompiledKernel;
-
-using System;
 namespace DotCompute.Core.Execution
 {
     /// <summary>

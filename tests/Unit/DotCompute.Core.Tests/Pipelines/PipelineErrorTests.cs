@@ -1,15 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Globalization;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Pipelines;
 
@@ -38,7 +34,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure graceful error recovery
 
-        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
+        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
@@ -50,7 +46,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Assert
         Assert.True(result.Success); // Overall success despite individual failure
         Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors); // One error from FailingKernel
+        _ = Assert.Single(result.Errors); // One error from FailingKernel
 
         // Should have 3 steps: Add (success), Failing (error), Multiply (success)
 
@@ -68,7 +64,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure fallback on memory issues
 
-        builder.OnError(ex => ex is OutOfMemoryException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
+        _ = builder.OnError(ex => ex is OutOfMemoryException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -79,8 +75,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Assert
         Assert.True(result.Success); // Should succeed after fallback
         Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors);
-        Assert.IsType<OutOfMemoryException>(result.Errors[0]);
+        _ = Assert.Single(result.Errors);
+        _ = Assert.IsType<OutOfMemoryException>(result.Errors[0]);
 
         // Should have fallen back to CPU
 
@@ -97,7 +93,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Act & Assert
         var exception = await Assert.ThrowsAsync<PipelineValidationException>(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("InvalidKernel", null!, null!) // Invalid null arguments
                 .WithValidation(validateInputs: true)
                 .ExecuteAsync<float[]>(CreateTestTimeout());
@@ -119,7 +115,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure backend switching on failure
 
-        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback);
+        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback);
 
         // Act
         var result = await builder
@@ -130,7 +126,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Assert
         Assert.True(result.Success); // Should succeed after backend switch
         Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors); // One error from CUDA failure
+        _ = Assert.Single(result.Errors); // One error from CUDA failure
 
         // Should have switched to different backend
 
@@ -155,7 +151,7 @@ public class PipelineErrorTests : PipelineTestBase
         await cts.CancelAsync();
 
         // Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => task);
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => task);
 
         // Verify resources were cleaned up (mock orchestrator should record cleanup)
 
@@ -177,7 +173,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        builder.OnError(ex => strategy);
+        _ = builder.OnError(ex => strategy);
 
         // Act
         Exception? caughtException = null;
@@ -213,7 +209,7 @@ public class PipelineErrorTests : PipelineTestBase
         else
         {
             Assert.NotNull(caughtException);
-            Assert.IsType<InvalidOperationException>(caughtException);
+            _ = Assert.IsType<InvalidOperationException>(caughtException);
         }
     }
 
@@ -227,16 +223,16 @@ public class PipelineErrorTests : PipelineTestBase
         // Configure circuit breaker (fails after 3 consecutive failures)
 
         var failureCount = 0;
-        builder.OnError(ex =>
+        _ = builder.OnError(ex =>
         {
             failureCount++;
             return failureCount >= 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry;
         });
 
         // Act & Assert - Should abort after 3 failures
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("AlwaysFailingKernel", data) // Always fails
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
@@ -256,7 +252,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        builder.OnError(ex => ex is TimeoutException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
+        _ = builder.OnError(ex => ex is TimeoutException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -267,8 +263,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Assert
         Assert.True(result.Success); // Should succeed with fallback
         Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors);
-        Assert.IsType<TimeoutException>(result.Errors[0]);
+        _ = Assert.Single(result.Errors);
+        _ = Assert.IsType<TimeoutException>(result.Errors[0]);
     }
 
     [Fact]
@@ -280,7 +276,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Act & Assert
         var exception = await Assert.ThrowsAsync<PipelineValidationException>(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("VectorAdd", null!, null!, null!) // Invalid inputs
                 .WithValidation(validateInputs: true)
                 .ExecuteAsync<float[]>(CreateTestTimeout());
@@ -300,7 +296,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure to continue on failure
 
-        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
+        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -313,7 +309,7 @@ public class PipelineErrorTests : PipelineTestBase
         Assert.True(result.Success); // Overall success
         Assert.NotNull(result.Result);
         Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors); // One partial failure recorded
+        _ = Assert.Single(result.Errors); // One partial failure recorded
 
         // All steps should have been attempted
 
@@ -329,7 +325,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Continue on all errors to collect them
 
-        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
+        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -360,16 +356,16 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Retry with exponential backoff
 
-        builder.OnError(ex =>
+        _ = builder.OnError(ex =>
         {
             retryCount++;
             return retryCount < 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort;
         });
 
         // Act & Assert - Should eventually abort after retries
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await builder
+            _ = await builder
                 .Kernel("SometimesFailingKernel", data) // Fails first 3 times
                 .ExecuteAsync<float[]>(CreateTestTimeout());
         });
@@ -389,7 +385,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
+        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
@@ -443,10 +439,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Backend-specific failure
 
         _mockOrchestrator.RegisterMockKernel("BackendSpecificFailure", args =>
-        {
             // Simulate CUDA-specific failure
-            throw new InvalidOperationException("CUDA kernel compilation failed");
-        });
+            throw new InvalidOperationException("CUDA kernel compilation failed"));
 
         // Long running kernel
 
@@ -463,10 +457,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Partial failure kernel
 
         _mockOrchestrator.RegisterMockKernel("PartialFailingKernel", args =>
-        {
             // Simulate partial processing failure
-            throw new InvalidOperationException("Partial processing error");
-        });
+            throw new InvalidOperationException("Partial processing error"));
 
         // Multiple error kernels
 

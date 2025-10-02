@@ -2,10 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using DotCompute.Tests.Common.Specialized;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -140,10 +137,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var definition = CudaTestHelpers.CreateTestKernelDefinition("errorKernel", invalidKernelCode);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                await accelerator.CompileKernelAsync(definition);
-            });
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => _ = await accelerator.CompileKernelAsync(definition));
 
             Output.WriteLine("Compilation error handling verified");
         }

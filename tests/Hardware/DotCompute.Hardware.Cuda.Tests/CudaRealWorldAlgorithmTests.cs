@@ -1,21 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Tests.Common.Specialized;
-using System.Linq;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
-using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.SharedTestUtilities.Performance;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -82,14 +73,14 @@ namespace DotCompute.Hardware.Cuda.Tests
                     expected[i * n + j] = sum;
                 }
             }
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(m * n * k * 2L); // 2 ops per multiply-add
 
             // Act - Execute tiled matrix multiplication on GPU
             perf = new PerformanceMeasurement("GPU Tiled Matrix Multiply", Output);
             perf.Start();
             await ExecuteTiledMatrixMultiply(a, b, result, m, n, k);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(m * n * k * 2L);
 
             // Assert
@@ -115,11 +106,11 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perf = new PerformanceMeasurement("Parallel Reduction", Output);
             perf.Start();
             var gpuSum = await ExecuteParallelReduction(data);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(size * sizeof(float));
 
             // Assert
-            gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001),
+            _ = gpuSum.Should().BeApproximately((float)expectedSum, (float)(expectedSum * 0.001),
 
                 "GPU reduction should match CPU sum within tolerance");
 
@@ -176,7 +167,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perf = new PerformanceMeasurement("Bitonic Sort", Output);
             perf.Start();
             await ExecuteBitonicSort(gpuData);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(size * sizeof(float));
 
             // Assert
@@ -231,7 +222,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Peak should be at frequency bin 10
 
-            maxIndex.Should().BeCloseTo((int)frequency, 1,
+            _ = maxIndex.Should().BeCloseTo((int)frequency, 1,
 
                 "FFT should show peak at input frequency");
 
@@ -286,7 +277,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var perf = new PerformanceMeasurement($"Heat Diffusion {iterations} iterations", Output);
             perf.Start();
             await ExecuteHeatDiffusion2D(temperature, width, height, alpha, iterations);
-            perf.Stop();
+            _ = perf.Stop();
             perf.LogResults(width * height * sizeof(float) * iterations);
 
             // Assert
@@ -294,13 +285,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Energy should be approximately conserved (with small numerical error)
 
-            finalEnergy.Should().BeApproximately(initialEnergy, initialEnergy * 0.01f,
+            _ = finalEnergy.Should().BeApproximately(initialEnergy, initialEnergy * 0.01f,
                 "Total energy should be conserved in heat diffusion");
 
             // Temperature should have diffused (max temp should decrease)
 
             var maxTemp = temperature.Max();
-            maxTemp.Should().BeLessThan(100.0f, "Maximum temperature should decrease due to diffusion");
+            _ = maxTemp.Should().BeLessThan(100.0f, "Maximum temperature should decrease due to diffusion");
 
             // Temperature should be more uniform (lower standard deviation)
 
@@ -340,15 +331,15 @@ namespace DotCompute.Hardware.Cuda.Tests
             await ExecuteBFS(edges, distances, startNode, numNodes);
 
             // Assert
-            distances[startNode].Should().Be(0, "Start node should have distance 0");
-            distances.Should().NotContain(-1, "All nodes should be reachable in connected graph");
+            _ = distances[startNode].Should().Be(0, "Start node should have distance 0");
+            _ = distances.Should().NotContain(-1, "All nodes should be reachable in connected graph");
 
             // Verify monotonicity of distances
 
             for (var i = 1; i < numNodes; i++)
             {
-                distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
-                distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
+                _ = distances[i].Should().BeGreaterThan(0, "All non-start nodes should have positive distance");
+                _ = distances[i].Should().BeLessThan(numNodes, "Distance should not exceed number of nodes");
             }
 
 
@@ -620,15 +611,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                 {
                     var target = random.Next(numNodes);
                     if (target != i)
-                        nodeEdges.Add(target);
+                        _ = nodeEdges.Add(target);
                 }
 
                 // Ensure connectivity by connecting to next node
 
                 if (i < numNodes - 1)
-                    nodeEdges.Add(i + 1);
+                    _ = nodeEdges.Add(i + 1);
                 if (i > 0)
-                    nodeEdges.Add(i - 1);
+                    _ = nodeEdges.Add(i - 1);
 
 
                 edges[i] = nodeEdges.ToArray();

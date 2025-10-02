@@ -1,18 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Text;
 using System.Security;
-using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
 
@@ -62,7 +56,7 @@ internal sealed class CryptographicAuditor : IDisposable
             "DotCompute", "Security", "audit.log");
 
         // Ensure audit log directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(_auditLogPath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(_auditLogPath)!);
 
         // Set up periodic audit log flushing
         _flushTimer = new Timer(FlushAuditLogs, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
@@ -375,7 +369,7 @@ internal sealed class CryptographicAuditor : IDisposable
         }
         finally
         {
-            _flushLock.Release();
+            _ = _flushLock.Release();
         }
     }
 
@@ -515,11 +509,11 @@ internal sealed class CryptographicAuditor : IDisposable
     private string ConvertToCsv(List<SecurityEvent> events)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("EventId,Timestamp,EventType,Severity,Category,Description,UserId,SessionId");
+        _ = csv.AppendLine("EventId,Timestamp,EventType,Severity,Category,Description,UserId,SessionId");
 
         foreach (var evt in events)
         {
-            csv.AppendLine($"{evt.EventId},{evt.Timestamp:O},{evt.EventType},{evt.Severity},{evt.Category}," +
+            _ = csv.AppendLine($"{evt.EventId},{evt.Timestamp:O},{evt.EventType},{evt.Severity},{evt.Category}," +
                           $"\"{evt.Description.Replace("\"", "\"\"")}\",{evt.UserId},{evt.SessionId}");
         }
 
@@ -530,20 +524,20 @@ internal sealed class CryptographicAuditor : IDisposable
     {
         // Simplified XML conversion - in practice, use XmlDocument or XElement
         var xml = new StringBuilder();
-        xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        xml.AppendLine("<SecurityEvents>");
+        _ = xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        _ = xml.AppendLine("<SecurityEvents>");
 
         foreach (var evt in events)
         {
-            xml.AppendLine($"  <Event id=\"{evt.EventId}\" timestamp=\"{evt.Timestamp:O}\">");
-            xml.AppendLine($"    <Type>{evt.EventType}</Type>");
-            xml.AppendLine($"    <Severity>{evt.Severity}</Severity>");
-            xml.AppendLine($"    <Category>{evt.Category}</Category>");
-            xml.AppendLine($"    <Description>{SecurityElement.Escape(evt.Description)}</Description>");
-            xml.AppendLine("  </Event>");
+            _ = xml.AppendLine($"  <Event id=\"{evt.EventId}\" timestamp=\"{evt.Timestamp:O}\">");
+            _ = xml.AppendLine($"    <Type>{evt.EventType}</Type>");
+            _ = xml.AppendLine($"    <Severity>{evt.Severity}</Severity>");
+            _ = xml.AppendLine($"    <Category>{evt.Category}</Category>");
+            _ = xml.AppendLine($"    <Description>{SecurityElement.Escape(evt.Description)}</Description>");
+            _ = xml.AppendLine("  </Event>");
         }
 
-        xml.AppendLine("</SecurityEvents>");
+        _ = xml.AppendLine("</SecurityEvents>");
         return xml.ToString();
     }
 
@@ -560,7 +554,7 @@ internal sealed class CryptographicAuditor : IDisposable
             // Flush any remaining audit logs
             try
             {
-                FlushAuditLogsAsync().Wait(TimeSpan.FromSeconds(5));
+                _ = FlushAuditLogsAsync().Wait(TimeSpan.FromSeconds(5));
             }
             catch (Exception ex)
             {

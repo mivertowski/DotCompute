@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace DotCompute.Abstractions.Pipelines.Results;
 
 /// <summary>
@@ -58,10 +55,13 @@ public sealed class KernelChainValidationResult
     /// <param name="warnings">The validation warnings.</param>
     /// <returns>A validation result indicating success with warnings.</returns>
     public static KernelChainValidationResult SuccessWithWarnings(IEnumerable<string> warnings)
-        => new() 
-        { 
-            IsValid = true, 
-            Warnings = warnings.ToList() 
+        => new()
+        {
+
+            IsValid = true,
+
+            Warnings = warnings.ToList()
+
         };
 
     /// <summary>
@@ -70,10 +70,13 @@ public sealed class KernelChainValidationResult
     /// <param name="errors">The validation errors.</param>
     /// <returns>A validation result indicating failure.</returns>
     public static KernelChainValidationResult Failure(IEnumerable<string> errors)
-        => new() 
-        { 
-            IsValid = false, 
-            Errors = errors.ToList() 
+        => new()
+        {
+
+            IsValid = false,
+
+            Errors = errors.ToList()
+
         };
 
     /// <summary>
@@ -83,9 +86,11 @@ public sealed class KernelChainValidationResult
     /// <param name="warnings">The validation warnings.</param>
     /// <returns>A validation result indicating failure with additional warnings.</returns>
     public static KernelChainValidationResult Failure(IEnumerable<string> errors, IEnumerable<string> warnings)
-        => new() 
-        { 
-            IsValid = false, 
+        => new()
+        {
+
+            IsValid = false,
+
             Errors = errors.ToList(),
             Warnings = warnings.ToList()
         };
@@ -153,7 +158,8 @@ public sealed class KernelChainValidationResult
         }
 
 
-        return $"Validation failed with {Errors.Count} error(s)" + 
+        return $"Validation failed with {Errors.Count} error(s)" +
+
                (HasWarnings ? $" and {Warnings.Count} warning(s)" : "");
     }
 }

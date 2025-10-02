@@ -13,7 +13,6 @@ using DotCompute.Backends.CPU.Kernels.Enums;
 using DotCompute.Backends.CPU.Kernels.Exceptions;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Types;
-using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
@@ -465,7 +464,7 @@ internal static partial class CpuKernelCompiler
         }
 
         // Check for vectorizable operations
-        return ast.Operations.Any(op => IsVectorizableOperation(op));
+        return ast.Operations.Any(IsVectorizableOperation);
     }
 
     private static bool IsVectorizableOperation(AstNode operation)

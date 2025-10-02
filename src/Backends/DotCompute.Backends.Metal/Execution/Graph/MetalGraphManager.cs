@@ -29,18 +29,22 @@ public sealed class MetalGraphManager : IDisposable
     /// <param name="logger">The logger instance for graph management operations.</param>
     /// <param name="defaultConfiguration">Default configuration for new graphs.</param>
     public MetalGraphManager(
-        ILogger<MetalGraphManager> logger, 
+        ILogger<MetalGraphManager> logger,
+
         MetalGraphConfiguration? defaultConfiguration = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _defaultConfiguration = defaultConfiguration ?? new MetalGraphConfiguration();
-        
+
+
         var executorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalGraphExecutor>.Instance;
         var optimizerLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalGraphOptimizer>.Instance;
-        
+
+
         _executor = new MetalGraphExecutor(executorLogger, _defaultConfiguration.MaxConcurrentOperations);
         _optimizer = new MetalGraphOptimizer(optimizerLogger, _defaultConfiguration.OptimizationParameters);
-        
+
+
         _graphs = new ConcurrentDictionary<string, MetalComputeGraph>();
         _graphStatistics = new ConcurrentDictionary<string, MetalGraphStatistics>();
 
@@ -75,7 +79,8 @@ public sealed class MetalGraphManager : IDisposable
     public MetalComputeGraph CreateGraph(string name, MetalGraphConfiguration? configuration = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Graph name cannot be null or empty.", nameof(name));
@@ -88,10 +93,12 @@ public sealed class MetalGraphManager : IDisposable
 
         var config = configuration ?? _defaultConfiguration;
         var graphLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalComputeGraph>.Instance;
-        
+
+
         var graph = new MetalComputeGraph(name, graphLogger);
-        
+
         // Apply configuration settings
+
         ApplyConfigurationToGraph(graph, config);
 
         if (_graphs.TryAdd(name, graph))
@@ -115,7 +122,8 @@ public sealed class MetalGraphManager : IDisposable
     public MetalComputeGraph? GetGraph(string name)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         return _graphs.TryGetValue(name ?? string.Empty, out var graph) ? graph : null;
     }
 
@@ -127,7 +135,8 @@ public sealed class MetalGraphManager : IDisposable
     public bool RemoveGraph(string name)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (string.IsNullOrWhiteSpace(name))
         {
             return false;
@@ -136,9 +145,10 @@ public sealed class MetalGraphManager : IDisposable
 
         if (_graphs.TryRemove(name, out var graph))
         {
-            _graphStatistics.TryRemove(name, out _);
+            _ = _graphStatistics.TryRemove(name, out _);
             graph.Dispose();
-            
+
+
             _logger.LogInformation("Removed and disposed Metal compute graph '{GraphName}'", name);
             return true;
         }
@@ -157,7 +167,8 @@ public sealed class MetalGraphManager : IDisposable
     public MetalComputeGraph? CloneGraph(string sourceName, string targetName, MetalGraphConfiguration? configuration = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (string.IsNullOrWhiteSpace(sourceName) || string.IsNullOrWhiteSpace(targetName))
         {
             return null;
@@ -178,14 +189,16 @@ public sealed class MetalGraphManager : IDisposable
 
 
         var clonedGraph = CreateGraph(targetName, configuration);
-        
+
         // Clone nodes from source graph
+
         foreach (var sourceNode in sourceGraph.Nodes)
         {
             var clonedNode = sourceNode.Clone($"clone_{sourceNode.Id}");
-            
+
             // Add the cloned node to the new graph (this would need proper implementation)
             // For now, we'll just log the cloning operation
+
             _logger.LogDebug("Cloning node '{SourceNodeId}' to '{ClonedNodeId}'", sourceNode.Id, clonedNode.Id);
         }
 
@@ -204,11 +217,13 @@ public sealed class MetalGraphManager : IDisposable
     /// <param name="parameters">Optional optimization parameters.</param>
     /// <returns>The optimization result, or null if the graph was not found.</returns>
     public async Task<MetalOptimizationResult?> OptimizeGraphAsync(
-        string graphName, 
+        string graphName,
+
         MetalOptimizationParameters? parameters = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var graph = GetGraph(graphName);
         if (graph == null)
         {
@@ -217,11 +232,13 @@ public sealed class MetalGraphManager : IDisposable
         }
 
         _logger.LogInformation("Starting optimization of graph '{GraphName}'", graphName);
-        
+
+
         try
         {
             var result = await _optimizer.OptimizeAsync(graph, parameters);
-            
+
+
             if (result.Success)
             {
                 // Update graph statistics with optimization results
@@ -237,7 +254,8 @@ public sealed class MetalGraphManager : IDisposable
             }
             else
             {
-                _logger.LogWarning("Failed to optimize graph '{GraphName}': {Error}", 
+                _logger.LogWarning("Failed to optimize graph '{GraphName}': {Error}",
+
                     graphName, result.ErrorMessage);
             }
 
@@ -258,7 +276,8 @@ public sealed class MetalGraphManager : IDisposable
     public async Task<MetalGraphAnalysis?> AnalyzeGraphAsync(string graphName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var graph = GetGraph(graphName);
         if (graph == null)
         {
@@ -286,7 +305,8 @@ public sealed class MetalGraphManager : IDisposable
         CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var graph = GetGraph(graphName);
         if (graph == null)
         {
@@ -308,14 +328,16 @@ public sealed class MetalGraphManager : IDisposable
             }
         }
 
-        _logger.LogInformation("Executing graph '{GraphName}' with {NodeCount} nodes", 
+        _logger.LogInformation("Executing graph '{GraphName}' with {NodeCount} nodes",
+
             graphName, graph.NodeCount);
 
         try
         {
             var result = await _executor.ExecuteAsync(graph, commandQueue, cancellationToken);
-            
+
             // Update statistics with execution results
+
             var statistics = _graphStatistics.GetValueOrDefault(graphName);
             if (statistics != null)
             {
@@ -335,7 +357,8 @@ public sealed class MetalGraphManager : IDisposable
             }
             else
             {
-                _logger.LogWarning("Failed to execute graph '{GraphName}': {Error}", 
+                _logger.LogWarning("Failed to execute graph '{GraphName}': {Error}",
+
                     graphName, result.ErrorMessage);
             }
 
@@ -361,7 +384,8 @@ public sealed class MetalGraphManager : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var unbuiltGraphs = _graphs.Values.Where(g => !g.IsBuilt).ToList();
-        
+
+
         if (unbuiltGraphs.Count == 0)
         {
             _logger.LogDebug("All graphs are already built");
@@ -398,7 +422,8 @@ public sealed class MetalGraphManager : IDisposable
     public MetalGraphStatistics? GetGraphStatistics(string graphName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         return _graphStatistics.TryGetValue(graphName ?? string.Empty, out var stats) ? stats : null;
     }
 
@@ -428,13 +453,15 @@ public sealed class MetalGraphManager : IDisposable
 
             if (graphStats.AverageGpuExecutionTimeMs > 0)
             {
-                stats.AverageExecutionTimeMs = (stats.AverageExecutionTimeMs * (stats.GraphsWithExecutions - 1) + 
+                stats.AverageExecutionTimeMs = (stats.AverageExecutionTimeMs * (stats.GraphsWithExecutions - 1) +
+
                                                graphStats.AverageGpuExecutionTimeMs) / stats.GraphsWithExecutions;
                 stats.GraphsWithExecutions++;
             }
         }
 
-        stats.OverallSuccessRate = stats.TotalExecutions > 0 ? 
+        stats.OverallSuccessRate = stats.TotalExecutions > 0 ?
+
             (double)stats.TotalSuccessfulExecutions / stats.TotalExecutions * 100 : 0;
 
         return stats;
@@ -451,27 +478,27 @@ public sealed class MetalGraphManager : IDisposable
         var report = new System.Text.StringBuilder();
         var aggregated = GetAggregatedStatistics();
 
-        report.AppendLine("Metal Graph Manager Comprehensive Report");
-        report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        report.AppendLine(new string('=', 60));
+        _ = report.AppendLine("Metal Graph Manager Comprehensive Report");
+        _ = report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = report.AppendLine(new string('=', 60));
 
         // Manager summary
-        report.AppendLine("\nManager Summary:");
-        report.AppendLine($"  Total Graphs Managed: {aggregated.TotalGraphs:N0}");
-        report.AppendLine($"  Total Executions: {aggregated.TotalExecutions:N0}");
-        report.AppendLine($"  Overall Success Rate: {aggregated.OverallSuccessRate:F1}%");
-        report.AppendLine($"  Total GPU Time: {aggregated.TotalGpuTimeMs:F0} ms");
-        report.AppendLine($"  Average Execution Time: {aggregated.AverageExecutionTimeMs:F2} ms");
+        _ = report.AppendLine("\nManager Summary:");
+        _ = report.AppendLine($"  Total Graphs Managed: {aggregated.TotalGraphs:N0}");
+        _ = report.AppendLine($"  Total Executions: {aggregated.TotalExecutions:N0}");
+        _ = report.AppendLine($"  Overall Success Rate: {aggregated.OverallSuccessRate:F1}%");
+        _ = report.AppendLine($"  Total GPU Time: {aggregated.TotalGpuTimeMs:F0} ms");
+        _ = report.AppendLine($"  Average Execution Time: {aggregated.AverageExecutionTimeMs:F2} ms");
 
         // Individual graph reports
-        report.AppendLine("\nIndividual Graph Reports:");
-        report.AppendLine(new string('-', 40));
+        _ = report.AppendLine("\nIndividual Graph Reports:");
+        _ = report.AppendLine(new string('-', 40));
 
         foreach (var kvp in _graphStatistics.OrderBy(kvp => kvp.Key))
         {
             var graphReport = kvp.Value.GenerateReport();
-            report.AppendLine(graphReport);
-            report.AppendLine(new string('-', 40));
+            _ = report.AppendLine(graphReport);
+            _ = report.AppendLine(new string('-', 40));
         }
 
         return report.ToString();
@@ -485,7 +512,8 @@ public sealed class MetalGraphManager : IDisposable
     public bool ResetGraphStatistics(string graphName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var statistics = GetGraphStatistics(graphName);
         if (statistics != null)
         {
@@ -520,7 +548,8 @@ public sealed class MetalGraphManager : IDisposable
     {
         // Apply configuration settings to the graph
         // This would involve setting up the graph based on the configuration
-        
+
+
         _logger.LogDebug("Applied configuration to graph '{GraphName}' - " +
                         "Parallel execution: {ParallelExecution}, " +
                         "Apple Silicon optimizations: {AppleSiliconOpt}",

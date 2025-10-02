@@ -280,11 +280,9 @@ public class ExampleGpuTests : ConsolidatedTestBase
         // Act - Measure GPU kernel execution time
 
         var kernelTime = MeasureGpuKernelTime(() =>
-        {
             // Simulate GPU kernel execution
             // In real tests, this would launch actual GPU kernels
-            Thread.Sleep(10); // Simulate 10ms GPU work
-        }, iterations: 5);
+            Thread.Sleep(10), iterations: 5);
 
         // Assert - Validate performance
 

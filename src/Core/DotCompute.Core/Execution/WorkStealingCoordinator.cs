@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Core.Kernels;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Configuration;
@@ -13,8 +12,6 @@ using DotCompute.Core.Execution.Enums;
 using DotCompute.Core.Execution.Models;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
-using System;
 namespace DotCompute.Core.Execution
 {
 
@@ -364,6 +361,7 @@ namespace DotCompute.Core.Execution
         private int SelectHierarchicalVictim(int thiefIndex)
             // Implement hierarchical stealing based on device hierarchy
             // For now, fallback to richest victim strategy - TODO
+
 
 
 

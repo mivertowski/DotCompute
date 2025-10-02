@@ -4,8 +4,6 @@
 // This file provides a type alias to the canonical PerformanceMetrics in DotCompute.Abstractions
 // All CUDA-specific performance metrics now use the unified type.
 
-using PerformanceMetrics = DotCompute.Abstractions.Performance.PerformanceMetrics;
-
 namespace DotCompute.Backends.CUDA.Types
 {
     // Intentionally empty - using type alias at file scope

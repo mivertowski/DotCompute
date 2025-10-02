@@ -10,7 +10,6 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace DotCompute.Backends.CUDA.Integration.Components;
 
@@ -75,7 +74,7 @@ public sealed class CudaErrorHandler : IDisposable
         // Keep only recent errors in memory
         while (_recentErrors.Count > 100)
         {
-            _recentErrors.TryDequeue(out _);
+            _ = _recentErrors.TryDequeue(out _);
         }
 
         var severity = DetermineErrorSeverity(error);

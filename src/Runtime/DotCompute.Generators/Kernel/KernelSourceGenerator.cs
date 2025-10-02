@@ -59,7 +59,7 @@ public class KernelSourceGenerator : IIncrementalGenerator
 
         // Register the source output handler
         context.RegisterSourceOutput(kernelsToGenerate,
-            (context, sources) => ExecuteGeneration(context, sources));
+            ExecuteGeneration);
     }
 
     /// <summary>

@@ -5,7 +5,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Core.Pipelines.Optimization.Models;
 

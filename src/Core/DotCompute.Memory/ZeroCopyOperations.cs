@@ -68,8 +68,10 @@ public static class ZeroCopyOperations
     /// <param name="source">Source span.</param>
     /// <returns>Reinterpreted span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<TTo> Cast<TFrom, TTo>(this Span<TFrom> source) 
-        where TFrom : unmanaged 
+    public static Span<TTo> Cast<TFrom, TTo>(this Span<TFrom> source)
+
+        where TFrom : unmanaged
+
         where TTo : unmanaged
     {
         return MemoryMarshal.Cast<TFrom, TTo>(source);
@@ -83,8 +85,10 @@ public static class ZeroCopyOperations
     /// <param name="source">Source span.</param>
     /// <returns>Reinterpreted read-only span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<TTo> Cast<TFrom, TTo>(this ReadOnlySpan<TFrom> source) 
-        where TFrom : unmanaged 
+    public static ReadOnlySpan<TTo> Cast<TFrom, TTo>(this ReadOnlySpan<TFrom> source)
+
+        where TFrom : unmanaged
+
         where TTo : unmanaged
     {
         return MemoryMarshal.Cast<TFrom, TTo>(source);
@@ -182,7 +186,8 @@ public static class ZeroCopyOperations
     {
         var elementSize = Unsafe.SizeOf<T>();
         var totalBytes = source.Length * elementSize;
-        
+
+
         fixed (T* srcPtr = source)
         fixed (T* dstPtr = destination)
         {
@@ -217,8 +222,9 @@ public static class ZeroCopyOperations
         {
             return left.SequenceEqual(right);
         }
-        
+
         // For other types, use memory comparison
+
         return MemoryExtensions.SequenceEqual(left, right);
     }
 
@@ -286,7 +292,8 @@ public static class MemoryMappedOperations
     /// <param name="access">Memory map access mode.</param>
     /// <returns>Memory-mapped span.</returns>
     public static MemoryMappedSpan<T> CreateMemoryMappedSpan<T>(
-        string filePath, 
+        string filePath,
+
         MemoryMappedFileAccess access = MemoryMappedFileAccess.Read) where T : unmanaged
     {
         return new MemoryMappedSpan<T>(filePath, access);
@@ -356,7 +363,8 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
         {
             throw new ArgumentOutOfRangeException();
         }
-        
+
+
         return AsSpan().Slice((int)offset, length);
     }
 

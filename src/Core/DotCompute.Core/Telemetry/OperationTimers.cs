@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
@@ -31,7 +30,7 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
         {
             foreach (var tag in tags)
             {
-                _activity.SetTag(tag.Key, tag.Value?.ToString());
+                _ = _activity.SetTag(tag.Key, tag.Value?.ToString());
             }
         }
     }
@@ -58,8 +57,8 @@ internal sealed class UnifiedOperationTimer : IOperationTimer
 
             _telemetryProvider.RecordHistogram("operation.duration.ms", _stopwatch.Elapsed.TotalMilliseconds, tags);
 
-            _activity?.SetTag("duration.ms", _stopwatch.Elapsed.TotalMilliseconds);
-            _activity?.SetStatus(ActivityStatusCode.Ok);
+            _ = (_activity?.SetTag("duration.ms", _stopwatch.Elapsed.TotalMilliseconds));
+            _ = (_activity?.SetStatus(ActivityStatusCode.Ok));
 
             OperationCompleted?.Invoke(this, new OperationTimingEventArgs
             {

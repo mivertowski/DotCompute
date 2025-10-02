@@ -4,10 +4,7 @@ using global::System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Execution;
 
 namespace DotCompute.Core.Logging;
 
@@ -605,6 +602,7 @@ public sealed class LogEnricher : IDisposable
 
     private static string HashString(string input)
         // Simple hash for user identification (not cryptographically secure)
+
 
 
 

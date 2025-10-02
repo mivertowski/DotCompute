@@ -11,7 +11,6 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CPU.Logging;
 using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Kernels;

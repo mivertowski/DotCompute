@@ -3,8 +3,6 @@
 
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory.Tests.TestHelpers;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 

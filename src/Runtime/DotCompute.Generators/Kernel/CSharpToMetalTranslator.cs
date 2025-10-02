@@ -1,15 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DotCompute.Generators.Models.Kernel;
-using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel;
 
@@ -44,31 +40,38 @@ internal sealed class CSharpToMetalTranslator
     public string GenerateCompleteKernel()
     {
         var result = new StringBuilder();
-        
+
         // Add Metal headers
-        result.AppendLine("#include <metal_stdlib>");
-        result.AppendLine("#include <metal_atomic>");
-        result.AppendLine("using namespace metal;");
-        result.AppendLine();
-        
+
+        _ = result.AppendLine("#include <metal_stdlib>");
+        _ = result.AppendLine("#include <metal_atomic>");
+        _ = result.AppendLine("using namespace metal;");
+        _ = result.AppendLine();
+
         // Generate kernel signature
-        result.Append("kernel void ");
-        result.Append(_kernelInfo.Name);
-        result.AppendLine("(");
-        
+
+        _ = result.Append("kernel void ");
+        _ = result.Append(_kernelInfo.Name);
+        _ = result.AppendLine("(");
+
         // Generate parameters
+
         GenerateParameterList(result);
-        
-        result.AppendLine(")");
-        result.AppendLine("{");
-        
+
+
+        _ = result.AppendLine(")");
+        _ = result.AppendLine("{");
+
         // Generate body
+
         _indentLevel = 1;
         var body = TranslateMethodBody();
-        result.Append(body);
-        
-        result.AppendLine("}");
-        
+        _ = result.Append(body);
+
+
+        _ = result.AppendLine("}");
+
+
         return result.ToString();
     }
 
@@ -104,45 +107,50 @@ internal sealed class CSharpToMetalTranslator
     {
         var bufferIndex = 0;
         var parameters = _kernelInfo.Parameters;
-        
+
+
         for (var i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
-            result.Append("    ");
-            
+            _ = result.Append("    ");
+
             // Convert parameter type to Metal type
+
             var metalType = ConvertToMetalParameterType(param.Type, param.Name);
-            result.Append(metalType);
-            result.Append(" ");
-            result.Append(param.Name);
-            result.Append(" [[buffer(");
-            result.Append(bufferIndex++);
-            result.Append(")]]");
-            
+            _ = result.Append(metalType);
+            _ = result.Append(" ");
+            _ = result.Append(param.Name);
+            _ = result.Append(" [[buffer(");
+            _ = result.Append(bufferIndex++);
+            _ = result.Append(")]]");
+
+
             if (i < parameters.Count - 1)
             {
-                result.AppendLine(",");
+                _ = result.AppendLine(",");
             }
         }
-        
+
         // Add thread position parameters
+
         if (parameters.Count > 0)
         {
-            result.AppendLine(",");
+            _ = result.AppendLine(",");
         }
-        
+
         // Determine dimensionality based on kernel usage
+
         var dimensions = GetKernelDimensions();
         switch (dimensions)
         {
             case 1:
-                result.Append("    uint gid [[thread_position_in_grid]]");
+                _ = result.Append("    uint gid [[thread_position_in_grid]]");
                 break;
             case 2:
-                result.Append("    uint2 gid [[thread_position_in_grid]]");
+                _ = result.Append("    uint2 gid [[thread_position_in_grid]]");
                 break;
             case 3:
-                result.Append("    uint3 gid [[thread_position_in_grid]]");
+                _ = result.Append("    uint3 gid [[thread_position_in_grid]]");
                 break;
         }
     }
@@ -155,11 +163,14 @@ internal sealed class CSharpToMetalTranslator
 
         // Check if it's read-only
 
-        var isReadOnly = csharpType.Contains("ReadOnlySpan") || 
-                         paramName.StartsWith("input") || 
+        var isReadOnly = csharpType.Contains("ReadOnlySpan") ||
+
+                         paramName.StartsWith("input") ||
+
                          paramName.StartsWith("source");
-        
+
         // Extract element type from Span<T> or array
+
         var elementType = "float";
         if (csharpType.Contains("<") && csharpType.Contains(">"))
         {
@@ -171,12 +182,15 @@ internal sealed class CSharpToMetalTranslator
         {
             elementType = csharpType.Replace("[]", "");
         }
-        
+
         // Convert element type to Metal type
+
         var metalElementType = ConvertToMetalType(elementType);
-        
+
         // Determine memory qualifier
-        if (csharpType == "int" || csharpType == "float" || csharpType == "uint" || 
+
+        if (csharpType == "int" || csharpType == "float" || csharpType == "uint" ||
+
             csharpType == "bool" || csharpType == "double")
         {
             return $"constant {metalElementType}&";
@@ -205,11 +219,11 @@ internal sealed class CSharpToMetalTranslator
         {
             if (IsThreadgroupCandidate(variable))
             {
-                _threadgroupVariables.Add(variable.Name);
+                _ = _threadgroupVariables.Add(variable.Name);
             }
             else if (IsConstantCandidate(variable))
             {
-                _constantVariables.Add(variable.Name);
+                _ = _constantVariables.Add(variable.Name);
             }
         }
     }
@@ -234,8 +248,10 @@ internal sealed class CSharpToMetalTranslator
             IParameterSymbol param => param.RefKind == RefKind.In,
             _ => false
         };
-        
-        return variable.IsStatic || 
+
+
+        return variable.IsStatic ||
+
                variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0 ||
                isReadOnly;
     }
@@ -307,11 +323,11 @@ internal sealed class CSharpToMetalTranslator
 
             if (variable.Initializer != null)
             {
-                _output.Append(" = ");
+                _ = _output.Append(" = ");
                 TranslateExpression(variable.Initializer.Value);
             }
 
-            _output.AppendLine(";");
+            _ = _output.AppendLine(";");
         }
     }
 
@@ -319,7 +335,7 @@ internal sealed class CSharpToMetalTranslator
     {
         WriteIndented("");
         TranslateExpression(exprStmt.Expression);
-        _output.AppendLine(";");
+        _ = _output.AppendLine(";");
     }
 
     private void TranslateExpression(ExpressionSyntax expression)
@@ -336,7 +352,7 @@ internal sealed class CSharpToMetalTranslator
                 TranslateIdentifier(identifier);
                 break;
             case LiteralExpressionSyntax literal:
-                _output.Append(literal.Token.Text);
+                _ = _output.Append(literal.Token.Text);
                 break;
             case MemberAccessExpressionSyntax memberAccess:
                 TranslateMemberAccess(memberAccess);
@@ -348,26 +364,26 @@ internal sealed class CSharpToMetalTranslator
                 TranslateElementAccess(elementAccess);
                 break;
             case PrefixUnaryExpressionSyntax prefixUnary:
-                _output.Append(prefixUnary.OperatorToken.Text);
+                _ = _output.Append(prefixUnary.OperatorToken.Text);
                 TranslateExpression(prefixUnary.Operand);
                 break;
             case PostfixUnaryExpressionSyntax postfixUnary:
                 TranslateExpression(postfixUnary.Operand);
-                _output.Append(postfixUnary.OperatorToken.Text);
+                _ = _output.Append(postfixUnary.OperatorToken.Text);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _output.Append("(");
+                _ = _output.Append("(");
                 TranslateExpression(parenthesized.Expression);
-                _output.Append(")");
+                _ = _output.Append(")");
                 break;
             case CastExpressionSyntax cast:
-                _output.Append("(");
-                _output.Append(ConvertToMetalType(cast.Type.ToString()));
-                _output.Append(")");
+                _ = _output.Append("(");
+                _ = _output.Append(ConvertToMetalType(cast.Type.ToString()));
+                _ = _output.Append(")");
                 TranslateExpression(cast.Expression);
                 break;
             default:
-                _output.Append($"/* Unsupported expression: {expression.Kind()} */");
+                _ = _output.Append($"/* Unsupported expression: {expression.Kind()} */");
                 break;
         }
     }
@@ -375,55 +391,57 @@ internal sealed class CSharpToMetalTranslator
     private void TranslateBinaryExpression(BinaryExpressionSyntax binary)
     {
         TranslateExpression(binary.Left);
-        _output.Append($" {binary.OperatorToken.Text} ");
+        _ = _output.Append($" {binary.OperatorToken.Text} ");
         TranslateExpression(binary.Right);
     }
 
     private void TranslateAssignmentExpression(AssignmentExpressionSyntax assignment)
     {
         TranslateExpression(assignment.Left);
-        _output.Append($" {assignment.OperatorToken.Text} ");
+        _ = _output.Append($" {assignment.OperatorToken.Text} ");
         TranslateExpression(assignment.Right);
     }
 
     private void TranslateIdentifier(IdentifierNameSyntax identifier)
     {
         var name = identifier.Identifier.Text;
-        
+
         // Map Kernel.ThreadId to Metal thread position
+
         if (_variableMapping.ContainsKey(name))
         {
-            _output.Append(_variableMapping[name]);
+            _ = _output.Append(_variableMapping[name]);
         }
         else
         {
-            _output.Append(name);
+            _ = _output.Append(name);
         }
     }
 
     private void TranslateMemberAccess(MemberAccessExpressionSyntax memberAccess)
     {
         var fullName = memberAccess.ToString();
-        
+
         // Handle Kernel.ThreadId.X/Y/Z
+
         if (fullName.StartsWith("Kernel.ThreadId") || fullName.StartsWith("ThreadId"))
         {
             var dimensions = GetKernelDimensions();
             if (fullName.EndsWith(".X") || fullName.EndsWith(".x"))
             {
-                _output.Append(dimensions == 1 ? "gid" : "gid.x");
+                _ = _output.Append(dimensions == 1 ? "gid" : "gid.x");
             }
             else if (fullName.EndsWith(".Y") || fullName.EndsWith(".y"))
             {
-                _output.Append("gid.y");
+                _ = _output.Append("gid.y");
             }
             else if (fullName.EndsWith(".Z") || fullName.EndsWith(".z"))
             {
-                _output.Append("gid.z");
+                _ = _output.Append("gid.z");
             }
             else
             {
-                _output.Append("gid");
+                _ = _output.Append("gid");
             }
         }
         // Handle array.Length or span.Length
@@ -432,41 +450,43 @@ internal sealed class CSharpToMetalTranslator
             // In Metal, we'd need to pass length as a separate parameter
             // For now, assume it's passed as a constant
             TranslateExpression(memberAccess.Expression);
-            _output.Append("_length");
+            _ = _output.Append("_length");
         }
         else
         {
             TranslateExpression(memberAccess.Expression);
-            _output.Append(".");
-            _output.Append(memberAccess.Name.Identifier.Text);
+            _ = _output.Append(".");
+            _ = _output.Append(memberAccess.Name.Identifier.Text);
         }
     }
 
     private void TranslateInvocation(InvocationExpressionSyntax invocation)
     {
         var methodName = invocation.Expression.ToString();
-        
+
         // Handle atomic operations
+
         if (methodName.Contains("Interlocked.Add") || methodName.Contains("atomic_add"))
         {
-            _output.Append("atomic_fetch_add_explicit(");
+            _ = _output.Append("atomic_fetch_add_explicit(");
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 2)
             {
-                _output.Append("(device atomic_int*)&");
+                _ = _output.Append("(device atomic_int*)&");
                 TranslateExpression(args[0].Expression);
-                _output.Append(", ");
+                _ = _output.Append(", ");
                 TranslateExpression(args[1].Expression);
-                _output.Append(", memory_order_relaxed");
+                _ = _output.Append(", memory_order_relaxed");
             }
-            _output.Append(")");
+            _ = _output.Append(")");
         }
         // Handle math functions
         else if (methodName.StartsWith("Math.") || methodName.StartsWith("MathF."))
         {
             var function = methodName.Substring(methodName.LastIndexOf('.') + 1).ToLower();
-            
+
             // Map C# math functions to Metal equivalents
+
             var metalFunction = function switch
             {
                 "sin" => "sin",
@@ -483,66 +503,67 @@ internal sealed class CSharpToMetalTranslator
                 "ceil" => "ceil",
                 _ => function
             };
-            
-            _output.Append(metalFunction);
-            _output.Append("(");
+
+
+            _ = _output.Append(metalFunction);
+            _ = _output.Append("(");
             var first = true;
             foreach (var arg in invocation.ArgumentList.Arguments)
             {
                 if (!first)
                 {
-                    _output.Append(", ");
+                    _ = _output.Append(", ");
                 }
 
 
                 TranslateExpression(arg.Expression);
                 first = false;
             }
-            _output.Append(")");
+            _ = _output.Append(")");
         }
         // Handle barrier/fence operations
         else if (methodName.Contains("Barrier") || methodName.Contains("MemoryFence"))
         {
-            _output.Append("threadgroup_barrier(mem_flags::mem_threadgroup)");
+            _ = _output.Append("threadgroup_barrier(mem_flags::mem_threadgroup)");
         }
         else
         {
             // Default invocation translation
             TranslateExpression(invocation.Expression);
-            _output.Append("(");
+            _ = _output.Append("(");
             var first = true;
             foreach (var arg in invocation.ArgumentList.Arguments)
             {
                 if (!first)
                 {
-                    _output.Append(", ");
+                    _ = _output.Append(", ");
                 }
 
 
                 TranslateExpression(arg.Expression);
                 first = false;
             }
-            _output.Append(")");
+            _ = _output.Append(")");
         }
     }
 
     private void TranslateElementAccess(ElementAccessExpressionSyntax elementAccess)
     {
         TranslateExpression(elementAccess.Expression);
-        _output.Append("[");
+        _ = _output.Append("[");
         var first = true;
         foreach (var arg in elementAccess.ArgumentList.Arguments)
         {
             if (!first)
             {
-                _output.Append(", ");
+                _ = _output.Append(", ");
             }
 
 
             TranslateExpression(arg.Expression);
             first = false;
         }
-        _output.Append("]");
+        _ = _output.Append("]");
     }
 
     private void TranslateForStatement(ForStatementSyntax forStmt)
@@ -555,22 +576,22 @@ internal sealed class CSharpToMetalTranslator
             var type = ConvertToMetalType(forStmt.Declaration.Type.ToString());
             foreach (var variable in forStmt.Declaration.Variables)
             {
-                _output.Append($"{type} {variable.Identifier.Text}");
+                _ = _output.Append($"{type} {variable.Identifier.Text}");
                 if (variable.Initializer != null)
                 {
-                    _output.Append(" = ");
+                    _ = _output.Append(" = ");
                     TranslateExpression(variable.Initializer.Value);
                 }
             }
         }
-        _output.Append("; ");
+        _ = _output.Append("; ");
 
         // Condition
         if (forStmt.Condition != null)
         {
             TranslateExpression(forStmt.Condition);
         }
-        _output.Append("; ");
+        _ = _output.Append("; ");
 
         // Incrementors
         var firstIncr = true;
@@ -578,7 +599,7 @@ internal sealed class CSharpToMetalTranslator
         {
             if (!firstIncr)
             {
-                _output.Append(", ");
+                _ = _output.Append(", ");
             }
 
 
@@ -586,7 +607,7 @@ internal sealed class CSharpToMetalTranslator
             firstIncr = false;
         }
 
-        _output.AppendLine(")");
+        _ = _output.AppendLine(")");
 
         // Body
         if (forStmt.Statement is BlockSyntax block)
@@ -609,7 +630,7 @@ internal sealed class CSharpToMetalTranslator
     {
         WriteIndented("if (");
         TranslateExpression(ifStmt.Condition);
-        _output.AppendLine(")");
+        _ = _output.AppendLine(")");
 
         if (ifStmt.Statement is BlockSyntax block)
         {
@@ -631,12 +652,12 @@ internal sealed class CSharpToMetalTranslator
             WriteIndented("else");
             if (ifStmt.Else.Statement is IfStatementSyntax elseIf)
             {
-                _output.Append(" ");
+                _ = _output.Append(" ");
                 TranslateIfStatement(elseIf);
             }
             else
             {
-                _output.AppendLine();
+                _ = _output.AppendLine();
                 TranslateStatement(ifStmt.Else.Statement);
             }
         }
@@ -646,7 +667,7 @@ internal sealed class CSharpToMetalTranslator
     {
         WriteIndented("while (");
         TranslateExpression(whileStmt.Condition);
-        _output.AppendLine(")");
+        _ = _output.AppendLine(")");
 
         if (whileStmt.Statement is BlockSyntax block)
         {
@@ -669,10 +690,10 @@ internal sealed class CSharpToMetalTranslator
         WriteIndented("return");
         if (returnStmt.Expression != null)
         {
-            _output.Append(" ");
+            _ = _output.Append(" ");
             TranslateExpression(returnStmt.Expression);
         }
-        _output.AppendLine(";");
+        _ = _output.AppendLine(";");
     }
 
     private static string ConvertToMetalType(string csharpType)
@@ -704,34 +725,36 @@ internal sealed class CSharpToMetalTranslator
     {
         for (var i = 0; i < _indentLevel; i++)
         {
-            _output.Append("    ");
+            _ = _output.Append("    ");
         }
         if (!string.IsNullOrEmpty(text))
         {
-            _output.AppendLine(text);
+            _ = _output.AppendLine(text);
         }
     }
 
     private string GenerateDefaultKernelBody()
     {
         var result = new StringBuilder();
-        result.AppendLine("    // Default kernel implementation");
-        
+        _ = result.AppendLine("    // Default kernel implementation");
+
+
         var dimensions = GetKernelDimensions();
         switch (dimensions)
         {
             case 1:
-                result.AppendLine("    uint idx = gid;");
+                _ = result.AppendLine("    uint idx = gid;");
                 break;
             case 2:
-                result.AppendLine("    uint2 idx = gid;");
+                _ = result.AppendLine("    uint2 idx = gid;");
                 break;
             case 3:
-                result.AppendLine("    uint3 idx = gid;");
+                _ = result.AppendLine("    uint3 idx = gid;");
                 break;
         }
-        
-        result.AppendLine("    // TODO: Implement kernel logic");
+
+
+        _ = result.AppendLine("    // TODO: Implement kernel logic");
         return result.ToString();
     }
 
@@ -744,8 +767,9 @@ internal sealed class CSharpToMetalTranslator
         }
 
         var bodyText = _kernelInfo.MethodDeclaration.Body.ToString();
-        
+
         // Check for ThreadId.Z usage
+
         if (bodyText.Contains("ThreadId.Z") || bodyText.Contains("ThreadId.z"))
         {
             return 3;
@@ -755,7 +779,8 @@ internal sealed class CSharpToMetalTranslator
         {
             return 2;
         }
-        
+
+
         return 1; // Default to 1D
     }
 }

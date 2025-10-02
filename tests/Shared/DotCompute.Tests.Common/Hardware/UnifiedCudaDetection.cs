@@ -128,9 +128,9 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
 
                 _ = IsCudaAvailable(); // Ensure detection has run
-                #pragma warning disable CA1508
+#pragma warning disable CA1508
                 return _cachedDiagnosticInfo ?? "No diagnostic information available";
-                #pragma warning restore CA1508
+#pragma warning restore CA1508
             }
         }
 
@@ -138,12 +138,12 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
         private static bool CheckCudaAvailability()
         {
             var diagnostics = new System.Text.StringBuilder();
-            diagnostics.AppendLine("=== CUDA Detection Diagnostics ===");
+            _ = diagnostics.AppendLine("=== CUDA Detection Diagnostics ===");
 
             // Step 1: Check for CUDA runtime libraries
 
             var hasRuntimeLibrary = false;
-            diagnostics.AppendLine("\n1. CUDA Runtime Library Check:");
+            _ = diagnostics.AppendLine("\n1. CUDA Runtime Library Check:");
 
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -152,7 +152,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 foreach (var lib in windowsLibs)
                 {
                     var exists = File.Exists(lib);
-                    diagnostics.AppendLine($"   {lib}: {(exists ? "✓" : "✗")}");
+                    _ = diagnostics.AppendLine($"   {lib}: {(exists ? "✓" : "✗")}");
                     if (exists && !hasRuntimeLibrary)
                     {
                         hasRuntimeLibrary = true;
@@ -176,7 +176,7 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 foreach (var path in linuxPaths)
                 {
                     var exists = File.Exists(path);
-                    diagnostics.AppendLine($"   {path}: {(exists ? "✓" : "✗")}");
+                    _ = diagnostics.AppendLine($"   {path}: {(exists ? "✓" : "✗")}");
                     if (exists && !hasRuntimeLibrary)
                     {
                         hasRuntimeLibrary = true;
@@ -187,14 +187,14 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
             if (!hasRuntimeLibrary)
             {
-                diagnostics.AppendLine("\n❌ No CUDA runtime library found");
+                _ = diagnostics.AppendLine("\n❌ No CUDA runtime library found");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return false;
             }
 
             // Step 2: Check CUDA device count using P/Invoke
 
-            diagnostics.AppendLine("\n2. CUDA Device Detection:");
+            _ = diagnostics.AppendLine("\n2. CUDA Device Detection:");
 
 
             try
@@ -202,13 +202,13 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                 var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
 
 
-                diagnostics.AppendLine($"   cudaGetDeviceCount result: {result}");
-                diagnostics.AppendLine($"   Device count: {deviceCount}");
+                _ = diagnostics.AppendLine($"   cudaGetDeviceCount result: {result}");
+                _ = diagnostics.AppendLine($"   Device count: {deviceCount}");
 
 
                 if (result != CudaError.Success)
                 {
-                    diagnostics.AppendLine($"   Error: {CudaRuntime.GetErrorString(result)}");
+                    _ = diagnostics.AppendLine($"   Error: {CudaRuntime.GetErrorString(result)}");
                     _cachedDiagnosticInfo = diagnostics.ToString();
                     return false;
                 }
@@ -216,61 +216,61 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
 
                 if (deviceCount == 0)
                 {
-                    diagnostics.AppendLine("   ❌ No CUDA devices found");
+                    _ = diagnostics.AppendLine("   ❌ No CUDA devices found");
                     _cachedDiagnosticInfo = diagnostics.ToString();
                     return false;
                 }
 
                 // Step 3: Get driver and runtime versions
 
-                diagnostics.AppendLine("\n3. CUDA Version Information:");
+                _ = diagnostics.AppendLine("\n3. CUDA Version Information:");
 
 
                 if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
-                    diagnostics.AppendLine($"   Driver Version: {FormatCudaVersion(driverVersion)}");
+                    _ = diagnostics.AppendLine($"   Driver Version: {FormatCudaVersion(driverVersion)}");
                 }
 
 
                 if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
-                    diagnostics.AppendLine($"   Runtime Version: {FormatCudaVersion(runtimeVersion)}");
+                    _ = diagnostics.AppendLine($"   Runtime Version: {FormatCudaVersion(runtimeVersion)}");
                 }
 
                 // Step 4: Get device properties for first device
 
-                diagnostics.AppendLine("\n4. Primary Device Properties:");
+                _ = diagnostics.AppendLine("\n4. Primary Device Properties:");
 
 
                 var props = new CudaDeviceProperties();
                 if (CudaRuntime.cudaGetDeviceProperties(ref props, 0) == CudaError.Success)
                 {
-                    diagnostics.AppendLine($"   Device Name: {props.DeviceName}");
-                    diagnostics.AppendLine($"   Compute Capability: {props.Major}.{props.Minor}");
-                    diagnostics.AppendLine($"   Total Memory: {props.TotalGlobalMem / (1024 * 1024 * 1024):F2} GB");
-                    diagnostics.AppendLine($"   Multiprocessors: {props.MultiProcessorCount}");
+                    _ = diagnostics.AppendLine($"   Device Name: {props.DeviceName}");
+                    _ = diagnostics.AppendLine($"   Compute Capability: {props.Major}.{props.Minor}");
+                    _ = diagnostics.AppendLine($"   Total Memory: {props.TotalGlobalMem / (1024 * 1024 * 1024):F2} GB");
+                    _ = diagnostics.AppendLine($"   Multiprocessors: {props.MultiProcessorCount}");
                 }
 
 
-                diagnostics.AppendLine("\n✓ CUDA is available and functional");
+                _ = diagnostics.AppendLine("\n✓ CUDA is available and functional");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return true;
             }
             catch (DllNotFoundException ex)
             {
-                diagnostics.AppendLine($"\n❌ CUDA runtime DLL not found: {ex.Message}");
+                _ = diagnostics.AppendLine($"\n❌ CUDA runtime DLL not found: {ex.Message}");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return false;
             }
             catch (EntryPointNotFoundException ex)
             {
-                diagnostics.AppendLine($"\n❌ CUDA function not found: {ex.Message}");
+                _ = diagnostics.AppendLine($"\n❌ CUDA function not found: {ex.Message}");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return false;
             }
             catch (Exception ex)
             {
-                diagnostics.AppendLine($"\n❌ Unexpected error: {ex.GetType().Name}: {ex.Message}");
+                _ = diagnostics.AppendLine($"\n❌ Unexpected error: {ex.GetType().Name}: {ex.Message}");
                 _cachedDiagnosticInfo = diagnostics.ToString();
                 return false;
             }

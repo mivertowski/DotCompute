@@ -3,11 +3,8 @@
 
 using System.Diagnostics;
 using DotCompute.Tests.Common.Specialized;
-using Xunit.Abstractions;
-using Xunit;
 using DotCompute.Backends.CUDA.Factory;
 // using DotCompute.Backends.CUDA.Kernels; // Not needed
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests
@@ -88,7 +85,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 return allocations.Count;
             })).ToArray();
 
-            await Task.WhenAll(tasks);
+            _ = await Task.WhenAll(tasks);
 
             // Assert
             Output.WriteLine($"Concurrent allocations test completed");
@@ -131,7 +128,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Regular Memory: {regularBandwidth:F2} GB/s");
             Output.WriteLine($"  Total time: {regularStopwatch.ElapsedMilliseconds} ms");
 
-            regularBandwidth.Should().BeGreaterThan(0, "Should achieve measurable bandwidth");
+            _ = regularBandwidth.Should().BeGreaterThan(0, "Should achieve measurable bandwidth");
 
             // Cleanup
             regularBuffer.Dispose();
@@ -201,7 +198,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Success Count: {successCount}/{operationCount}");
             Output.WriteLine($"  Failure Count: {failureCount}");
 
-            successCount.Should().BeGreaterThan((int)(operationCount * 0.9),
+            _ = successCount.Should().BeGreaterThan((int)(operationCount * 0.9),
 
                 "Most operations should succeed");
         }
@@ -270,7 +267,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 if (iter % 20 == 0)
                 {
                     await buffer.CopyToAsync(hostData.AsMemory());
-                    hostData[0].Should().BeGreaterThan(0, "Data should be computed");
+                    _ = hostData[0].Should().BeGreaterThan(0, "Data should be computed");
 
 
                     Output.WriteLine($"Iteration {iter}: First value = {hostData[0]:F6}");
@@ -290,7 +287,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total time: {stopwatch.Elapsed.TotalSeconds:F2} seconds");
             Output.WriteLine($"  Throughput: {throughput:F2} MB/s");
 
-            hostData.All(v => !float.IsNaN(v) && !float.IsInfinity(v))
+            _ = hostData.All(v => !float.IsNaN(v) && !float.IsInfinity(v))
                 .Should().BeTrue("All values should remain valid");
         }
 
@@ -330,7 +327,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total time: {stopwatch.ElapsedMilliseconds} ms");
             Output.WriteLine($"  Average per buffer: {stopwatch.ElapsedMilliseconds / (double)bufferCount:F2} ms");
 
-            stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0, "Should measure time");
+            _ = stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0, "Should measure time");
         }
 
         [SkippableFact]
@@ -357,12 +354,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                     {
                         var size = Random.Shared.Next(1024, 1024 * 64); // Smaller sizes
                         using var buffer = await accelerator.Memory.AllocateAsync<byte>(size);
-                        Interlocked.Increment(ref operations);
+                        _ = Interlocked.Increment(ref operations);
                         await Task.Delay(10, cts.Token);
                     }
                     catch
                     {
-                        Interlocked.Increment(ref errors);
+                        _ = Interlocked.Increment(ref errors);
                     }
                 }
             }));
@@ -402,12 +399,12 @@ namespace DotCompute.Hardware.Cuda.Tests
                         );
                         await kernel.ExecuteAsync(kernelArgs);
 
-                        Interlocked.Increment(ref operations);
+                        _ = Interlocked.Increment(ref operations);
                         await Task.Delay(15, cts.Token);
                     }
                     catch
                     {
-                        Interlocked.Increment(ref errors);
+                        _ = Interlocked.Increment(ref errors);
                     }
                 }
             }));
@@ -428,8 +425,8 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"  Total Errors: {errors}");
             Output.WriteLine($"  Error Rate: {(double)errors / (operations > 0 ? operations : 1):P2}");
 
-            operations.Should().BeGreaterThan(10, "Should complete some operations");
-            ((double)errors / (operations > 0 ? operations : 1)).Should().BeLessThan(0.2, "Error rate should be reasonable");
+            _ = operations.Should().BeGreaterThan(10, "Should complete some operations");
+            _ = ((double)errors / (operations > 0 ? operations : 1)).Should().BeLessThan(0.2, "Error rate should be reasonable");
         }
 
         protected override void Dispose(bool disposing)

@@ -3,17 +3,12 @@
 
 using System.Diagnostics;
 using DotCompute.Tests.Common.Specialized;
-using DotCompute.Tests.Common.Utilities;
-using Xunit.Abstractions;
-using Xunit;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.SharedTestUtilities.Performance;
 // Using SharedTestUtilities.Performance for PerformanceMeasurement
 using Microsoft.Extensions.Logging;
 
@@ -149,7 +144,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 measure.Start();
                 await kernel.LaunchAsync(launchConfig, deviceInput, deviceOutput, elementCount);
-                measure.Stop();
+                _ = measure.Stop();
                 times[i] = measure.Duration.TotalSeconds;
             }
 

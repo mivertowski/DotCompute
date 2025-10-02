@@ -4,8 +4,6 @@
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-
-using System;
 namespace DotCompute.Core.Compute.Memory
 {
     /// <summary>

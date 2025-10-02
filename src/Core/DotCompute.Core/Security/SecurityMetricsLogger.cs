@@ -33,8 +33,9 @@ public sealed class SecurityMetricsLogger
     {
         // Update correlation metrics
         _metrics.ActiveCorrelations = _correlationContexts.Count;
-        
+
         // Calculate average events per correlation
+
         if (_correlationContexts.Count > 0)
         {
             _metrics.AverageEventsPerCorrelation = _correlationContexts.Values
@@ -85,13 +86,13 @@ public sealed class SecurityMetricsLogger
         if (!string.IsNullOrEmpty(entry.UserId))
         {
             _metrics.UniqueUsersCount = _metrics.UserEventCounts.Count;
-            _metrics.UserEventCounts.AddOrUpdate(entry.UserId, 1, (key, count) => count + 1);
+            _ = _metrics.UserEventCounts.AddOrUpdate(entry.UserId, 1, (key, count) => count + 1);
         }
 
         // Update resource-specific metrics
         if (!string.IsNullOrEmpty(entry.ResourceId))
         {
-            _metrics.ResourceEventCounts.AddOrUpdate(entry.ResourceId, 1, (key, count) => count + 1);
+            _ = _metrics.ResourceEventCounts.AddOrUpdate(entry.ResourceId, 1, (key, count) => count + 1);
         }
 
         // Update time-based metrics
@@ -133,7 +134,8 @@ public sealed class SecurityMetricsLogger
         _metrics.AverageEventsPerCorrelation = 0;
         _metrics.FirstEventTime = default;
         _metrics.LastEventTime = default;
-        
+
+
         _metrics.UserEventCounts.Clear();
         _metrics.ResourceEventCounts.Clear();
         _metrics.EventsByType.Clear();

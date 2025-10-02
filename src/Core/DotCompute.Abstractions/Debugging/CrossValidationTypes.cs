@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces;
-
 namespace DotCompute.Abstractions.Debugging;
 
 // KernelExecutionResult is already defined in IKernelDebugService.cs as a record

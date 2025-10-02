@@ -3,7 +3,6 @@
 
 using global::System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P
 {

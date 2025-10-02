@@ -246,4 +246,5 @@ public sealed class SystemMetrics
     public int GCGen2Collections { get; init; }
 }
 
+
 // PerformanceMetrics is already defined in IKernelDebugService.cs

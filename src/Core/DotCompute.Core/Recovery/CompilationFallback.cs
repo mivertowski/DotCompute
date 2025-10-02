@@ -6,9 +6,6 @@ using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Interfaces.Recovery;
-using DotCompute.Core.Recovery.Models;
-using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Types;
 using Microsoft.Extensions.Logging;
 using CompilationRecoveryContext = DotCompute.Core.Recovery.Compilation.CompilationRecoveryContext;
@@ -598,6 +595,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
 
 
 
+
         => 0.75; // 75% hit rate placeholder
 
     private void CleanupCache(object? state)
@@ -653,6 +651,7 @@ public sealed class CompilationFallback : BaseRecoveryStrategy<CompilationRecove
         }
     }
 }
+
 
 
 

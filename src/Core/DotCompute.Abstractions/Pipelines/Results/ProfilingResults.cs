@@ -160,4 +160,5 @@ public sealed class PerformanceRecommendation
     public required string Impact { get; init; }
 }
 
+
 // PerformanceTrend class removed - using unified version from DotCompute.Abstractions.Types

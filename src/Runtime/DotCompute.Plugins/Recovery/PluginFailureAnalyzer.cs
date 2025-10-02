@@ -2,10 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Text.Json;
-using DotCompute.Core.Recovery;
-using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Recovery;
@@ -116,7 +112,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
         }
         finally
         {
-            _analysisLock.Release();
+            _ = _analysisLock.Release();
         }
     }
 
@@ -258,11 +254,11 @@ public sealed class PluginFailureAnalyzer : IDisposable
 
         return (recentFailures, criticalFailures) switch
         {
-            (> 10, _) => FailureSeverity.Critical,
-            (> 5, _) => FailureSeverity.High,
+            ( > 10, _) => FailureSeverity.Critical,
+            ( > 5, _) => FailureSeverity.High,
             (_, > 0) => FailureSeverity.High,
-            (> 2, _) => FailureSeverity.Medium,
-            (> 0, _) => FailureSeverity.Low,
+            ( > 2, _) => FailureSeverity.Medium,
+            ( > 0, _) => FailureSeverity.Low,
             _ => FailureSeverity.None
         };
     }
@@ -401,7 +397,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
             Confidence = analysis.Confidence
         };
 
-        _identifiedPatterns.AddOrUpdate(pluginId, pattern, (_, _) => pattern);
+        _ = _identifiedPatterns.AddOrUpdate(pluginId, pattern, (_, _) => pattern);
     }
 
     private static FailureTrendDirection DetermineTrendDirection(FailureAnalysisResult analysis)
@@ -431,7 +427,7 @@ public sealed class PluginFailureAnalyzer : IDisposable
             {
                 foreach (var pluginId in _failureHistory.Keys)
                 {
-                    await AnalyzePluginFailuresAsync(pluginId);
+                    _ = await AnalyzePluginFailuresAsync(pluginId);
                     await Task.Delay(100); // Prevent overwhelming the system
                 }
             }

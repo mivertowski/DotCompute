@@ -1,26 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
-using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Specialized;
-using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.Logging;
-using DotCompute.SharedTestUtilities.Performance;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -37,7 +26,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         public CudaKernelPersistenceTests(ITestOutputHelper output) : base(output)
         {
             _cacheDirectory = Path.Combine(Path.GetTempPath(), $"cuda_kernel_cache_{Guid.NewGuid()}");
-            Directory.CreateDirectory(_cacheDirectory);
+            _ = Directory.CreateDirectory(_cacheDirectory);
 
             if (IsCudaAvailable())
             {
@@ -108,18 +97,18 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
 
-            compiled.Should().NotBeNull();
+            _ = compiled.Should().NotBeNull();
 
             // Check that cache file was created
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.cubin");
-            cacheFiles.Should().NotBeEmpty("Compiled kernel should be cached to disk");
+            _ = cacheFiles.Should().NotBeEmpty("Compiled kernel should be cached to disk");
 
             // Verify the cached file contains valid data
 
             var cacheFile = cacheFiles[0];
             var fileInfo = new FileInfo(cacheFile);
-            fileInfo.Length.Should().BeGreaterThan(0, "Cache file should contain compiled kernel data");
+            _ = fileInfo.Length.Should().BeGreaterThan(0, "Cache file should contain compiled kernel data");
         }
 
         [SkippableFact]
@@ -150,20 +139,20 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             perf.Start();
             var compiled1 = await _compiler.CompileAsync(kernel);
-            perf.Stop();
+            _ = perf.Stop();
             var firstCompileTime = perf.Elapsed;
 
             // Second compilation - should load from cache
 
             perf.Start();
             var compiled2 = await _compiler.CompileAsync(kernel);
-            perf.Stop();
+            _ = perf.Stop();
             var secondCompileTime = perf.Elapsed;
 
             // Assert
 
-            compiled1.Should().NotBeNull();
-            compiled2.Should().NotBeNull();
+            _ = compiled1.Should().NotBeNull();
+            _ = compiled2.Should().NotBeNull();
 
             // Second compilation should be significantly faster (loading from cache)
 
@@ -171,7 +160,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             Output.WriteLine($"Second compile (cached): {secondCompileTime.TotalMilliseconds:F2}ms");
 
 
-            secondCompileTime.Should().BeLessThan(firstCompileTime.Multiply(0.5),
+            _ = secondCompileTime.Should().BeLessThan(firstCompileTime.Multiply(0.5),
 
                 "Cached compilation should be at least 2x faster");
         }
@@ -260,13 +249,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
 
-            result1[0].Should().BeApproximately(2.0f, 0.001f, "V1 should multiply by 2");
-            result2[0].Should().BeApproximately(3.0f, 0.001f, "V2 should multiply by 3");
+            _ = result1[0].Should().BeApproximately(2.0f, 0.001f, "V1 should multiply by 2");
+            _ = result2[0].Should().BeApproximately(3.0f, 0.001f, "V2 should multiply by 3");
 
             // Verify separate cache files exist
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.cubin");
-            cacheFiles.Length.Should().BeGreaterThanOrEqualTo(2, "Different versions should have separate cache files");
+            _ = cacheFiles.Length.Should().BeGreaterThanOrEqualTo(2, "Different versions should have separate cache files");
         }
 
         [SkippableFact]
@@ -308,16 +297,16 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 compiled2 = await compiler2.CompileAsync(kernel);
             }
-            perf.Stop();
+            _ = perf.Stop();
 
             // Assert
 
-            compiled1.Should().NotBeNull();
-            compiled2.Should().NotBeNull();
+            _ = compiled1.Should().NotBeNull();
+            _ = compiled2.Should().NotBeNull();
 
             // Loading from cache should be fast
 
-            perf.Duration.TotalMilliseconds.Should().BeLessThan(100,
+            _ = perf.Duration.TotalMilliseconds.Should().BeLessThan(100,
 
                 "Loading cached kernel should be very fast");
 
@@ -325,7 +314,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             const int size = 100;
             var testData = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 1.0f, 1.0f);
-            var expected = testData.Select(x => MathF.Sqrt(x)).ToArray();
+            var expected = testData.Select(MathF.Sqrt).ToArray();
 
 
             await using var buffer = await _accelerator.Memory.AllocateAsync<float>(size);
@@ -389,13 +378,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
 
-            results.Should().HaveCount(concurrentCount);
-            results.Should().OnlyContain(r => r != null, "All concurrent compilations should succeed");
+            _ = results.Should().HaveCount(concurrentCount);
+            _ = results.Should().OnlyContain(r => r != null, "All concurrent compilations should succeed");
 
             // Only one cache file should exist (all threads should share the same cached kernel)
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*concurrent_kernel*.cubin");
-            cacheFiles.Should().HaveCount(1, "Concurrent access should result in single cache file");
+            _ = cacheFiles.Should().HaveCount(1, "Concurrent access should result in single cache file");
         }
 
         [SkippableFact]
@@ -437,13 +426,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
 
-            compiledDebug.Should().NotBeNull();
-            compiledRelease.Should().NotBeNull();
+            _ = compiledDebug.Should().NotBeNull();
+            _ = compiledRelease.Should().NotBeNull();
 
             // Should have separate cache entries for different compilation options
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*options_kernel*.cubin");
-            cacheFiles.Length.Should().BeGreaterThanOrEqualTo(2,
+            _ = cacheFiles.Length.Should().BeGreaterThanOrEqualTo(2,
 
                 "Different compilation options should create separate cache entries");
         }
@@ -488,7 +477,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
 
-            firstPassPerf.Stop();
+            _ = firstPassPerf.Stop();
             // firstPassPerf.LogResults();
 
             // Act - Second compilation pass (should use cache)
@@ -504,24 +493,24 @@ namespace DotCompute.Hardware.Cuda.Tests
             }
 
 
-            secondPassPerf.Stop();
+            _ = secondPassPerf.Stop();
             // secondPassPerf.LogResults();
 
             // Assert
 
-            firstPassResults.Should().HaveCount(librarySize);
-            secondPassResults.Should().HaveCount(librarySize);
+            _ = firstPassResults.Should().HaveCount(librarySize);
+            _ = secondPassResults.Should().HaveCount(librarySize);
 
             // Cached compilation should be significantly faster
 
             var speedup = firstPassPerf.Duration.TotalMilliseconds / secondPassPerf.Duration.TotalMilliseconds;
             Output.WriteLine($"Cache speedup: {speedup:F1}x");
-            speedup.Should().BeGreaterThan(5.0, "Cache should provide significant speedup for kernel library");
+            _ = speedup.Should().BeGreaterThan(5.0, "Cache should provide significant speedup for kernel library");
 
             // Verify all kernels are cached
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.cubin");
-            cacheFiles.Length.Should().BeGreaterThanOrEqualTo(librarySize, "All library kernels should be cached");
+            _ = cacheFiles.Length.Should().BeGreaterThanOrEqualTo(librarySize, "All library kernels should be cached");
         }
 
         [SkippableFact]
@@ -551,7 +540,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Corrupt the cache file
 
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*corruption_test*.cubin");
-            cacheFiles.Should().NotBeEmpty();
+            _ = cacheFiles.Should().NotBeEmpty();
 
 
             var cacheFile = cacheFiles[0];
@@ -563,13 +552,13 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Assert
 
-            compiled2.Should().NotBeNull("Compiler should recover from corrupted cache");
+            _ = compiled2.Should().NotBeNull("Compiler should recover from corrupted cache");
 
             // Test functionality to ensure it recompiled correctly
 
             const int size = 10;
             var testData = UnifiedTestHelpers.TestDataGenerator.CreateLinearSequence(size, 0.0f, 0.1f);
-            var expected = testData.Select(x => MathF.Exp(x)).ToArray();
+            var expected = testData.Select(MathF.Exp).ToArray();
 
 
             await using var buffer = await _accelerator.Memory.AllocateAsync<float>(size);

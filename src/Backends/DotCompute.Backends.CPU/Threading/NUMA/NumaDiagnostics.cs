@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using System.Text;
 using DotCompute.Abstractions.Validation;
 
@@ -205,89 +204,89 @@ public static class NumaDiagnostics
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("NUMA System Diagnostic Report");
-        sb.AppendLine("============================");
-        sb.AppendLine($"Generated: {report.Timestamp:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"Analysis Time: {report.AnalysisTime.TotalMilliseconds:F2} ms");
-        sb.AppendLine($"Overall Health: {report.OverallHealth}");
-        sb.AppendLine();
+        _ = sb.AppendLine("NUMA System Diagnostic Report");
+        _ = sb.AppendLine("============================");
+        _ = sb.AppendLine($"Generated: {report.Timestamp:yyyy-MM-dd HH:mm:ss}");
+        _ = sb.AppendLine($"Analysis Time: {report.AnalysisTime.TotalMilliseconds:F2} ms");
+        _ = sb.AppendLine($"Overall Health: {report.OverallHealth}");
+        _ = sb.AppendLine();
 
         // System Information
         if (report.SystemInfo != null)
         {
-            sb.AppendLine("System Information:");
-            sb.AppendLine($"  Platform: {report.SystemInfo.Platform}");
-            sb.AppendLine($"  OS Version: {report.SystemInfo.OsVersion}");
-            sb.AppendLine($"  Total Memory: {report.SystemInfo.TotalMemoryGB:F2} GB");
-            sb.AppendLine($"  CPU Count: {report.SystemInfo.ProcessorCount}");
-            sb.AppendLine();
+            _ = sb.AppendLine("System Information:");
+            _ = sb.AppendLine($"  Platform: {report.SystemInfo.Platform}");
+            _ = sb.AppendLine($"  OS Version: {report.SystemInfo.OsVersion}");
+            _ = sb.AppendLine($"  Total Memory: {report.SystemInfo.TotalMemoryGB:F2} GB");
+            _ = sb.AppendLine($"  CPU Count: {report.SystemInfo.ProcessorCount}");
+            _ = sb.AppendLine();
         }
 
         // Topology Information
         if (report.Topology != null)
         {
-            sb.AppendLine("NUMA Topology:");
-            sb.AppendLine($"  Node Count: {report.Topology.NodeCount}");
-            sb.AppendLine($"  Is NUMA System: {report.Topology.IsNumaSystem}");
-            sb.AppendLine($"  Total Processors: {report.Topology.ProcessorCount}");
-            sb.AppendLine($"  Cache Line Size: {report.Topology.CacheLineSize} bytes");
-            sb.AppendLine($"  Page Size: {report.Topology.PageSize} bytes");
+            _ = sb.AppendLine("NUMA Topology:");
+            _ = sb.AppendLine($"  Node Count: {report.Topology.NodeCount}");
+            _ = sb.AppendLine($"  Is NUMA System: {report.Topology.IsNumaSystem}");
+            _ = sb.AppendLine($"  Total Processors: {report.Topology.ProcessorCount}");
+            _ = sb.AppendLine($"  Cache Line Size: {report.Topology.CacheLineSize} bytes");
+            _ = sb.AppendLine($"  Page Size: {report.Topology.PageSize} bytes");
 
             foreach (var node in report.Topology.Nodes)
             {
-                sb.AppendLine($"  Node {node.NodeId}:");
-                sb.AppendLine($"    Processors: {node.ProcessorCount}");
-                sb.AppendLine($"    Memory: {node.MemorySize / (1024 * 1024 * 1024.0):F2} GB");
-                sb.AppendLine($"    CPU List: {string.Join(",", node.CpuList.Take(8))}{(node.CpuList.Count() > 8 ? "..." : "")}");
+                _ = sb.AppendLine($"  Node {node.NodeId}:");
+                _ = sb.AppendLine($"    Processors: {node.ProcessorCount}");
+                _ = sb.AppendLine($"    Memory: {node.MemorySize / (1024 * 1024 * 1024.0):F2} GB");
+                _ = sb.AppendLine($"    CPU List: {string.Join(",", node.CpuList.Take(8))}{(node.CpuList.Count() > 8 ? "..." : "")}");
             }
-            sb.AppendLine();
+            _ = sb.AppendLine();
         }
 
         // Platform Capabilities
         if (report.Capabilities != null)
         {
-            sb.AppendLine("Platform Capabilities:");
-            sb.AppendLine($"  Native NUMA Support: {report.Capabilities.HasNativeNumaSupport}");
-            sb.AppendLine($"  Memory Binding: {report.Capabilities.SupportsMemoryBinding}");
-            sb.AppendLine($"  Affinity Control: {report.Capabilities.SupportsAffinityControl}");
-            sb.AppendLine($"  Huge Pages: {report.Capabilities.SupportsHugePages}");
-            sb.AppendLine($"  Detection Method: {report.Capabilities.PreferredDetectionMethod}");
-            sb.AppendLine();
+            _ = sb.AppendLine("Platform Capabilities:");
+            _ = sb.AppendLine($"  Native NUMA Support: {report.Capabilities.HasNativeNumaSupport}");
+            _ = sb.AppendLine($"  Memory Binding: {report.Capabilities.SupportsMemoryBinding}");
+            _ = sb.AppendLine($"  Affinity Control: {report.Capabilities.SupportsAffinityControl}");
+            _ = sb.AppendLine($"  Huge Pages: {report.Capabilities.SupportsHugePages}");
+            _ = sb.AppendLine($"  Detection Method: {report.Capabilities.PreferredDetectionMethod}");
+            _ = sb.AppendLine();
         }
 
         // Issues
         if (report.Issues.Count > 0)
         {
-            sb.AppendLine("Issues Found:");
+            _ = sb.AppendLine("Issues Found:");
             foreach (var issue in report.Issues.OrderByDescending(i => i.Severity))
             {
-                sb.AppendLine($"  [{issue.Severity}] {issue.Title}");
-                sb.AppendLine($"    Category: {issue.Category}");
-                sb.AppendLine($"    Description: {issue.Description}");
-                sb.AppendLine($"    Impact: {issue.Impact}");
-                sb.AppendLine($"    Recommendation: {issue.Recommendation}");
-                sb.AppendLine();
+                _ = sb.AppendLine($"  [{issue.Severity}] {issue.Title}");
+                _ = sb.AppendLine($"    Category: {issue.Category}");
+                _ = sb.AppendLine($"    Description: {issue.Description}");
+                _ = sb.AppendLine($"    Impact: {issue.Impact}");
+                _ = sb.AppendLine($"    Recommendation: {issue.Recommendation}");
+                _ = sb.AppendLine();
             }
         }
 
         // Recommendations
         if (report.Recommendations.Count > 0)
         {
-            sb.AppendLine("Recommendations:");
+            _ = sb.AppendLine("Recommendations:");
             foreach (var recommendation in report.Recommendations)
             {
-                sb.AppendLine($"  • {recommendation}");
+                _ = sb.AppendLine($"  • {recommendation}");
             }
-            sb.AppendLine();
+            _ = sb.AppendLine();
         }
 
         // Warnings
         if (report.Warnings.Count > 0)
         {
-            sb.AppendLine("Warnings:");
+            _ = sb.AppendLine("Warnings:");
             foreach (var warning in report.Warnings)
             {
-                sb.AppendLine($"  ⚠ {warning}");
+                _ = sb.AppendLine($"  ⚠ {warning}");
             }
         }
 
@@ -604,7 +603,7 @@ public static class NumaDiagnostics
 
             // Test affinity setting
             var nodeId = operations % topology.NodeCount;
-            affinityManager.SetThreadAffinity(0, nodeId);
+            _ = affinityManager.SetThreadAffinity(0, nodeId);
 
             var elapsed = DateTime.UtcNow - start;
             totalTime += elapsed;

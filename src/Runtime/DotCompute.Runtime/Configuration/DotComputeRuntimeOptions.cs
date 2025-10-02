@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime.Configuration;
 

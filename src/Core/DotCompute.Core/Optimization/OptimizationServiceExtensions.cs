@@ -31,11 +31,11 @@ public static class OptimizationServiceExtensions
         // Register optimization options
         if (configureOptions != null)
         {
-            services.Configure<PerformanceOptimizationOptions>(configureOptions);
+            _ = services.Configure<PerformanceOptimizationOptions>(configureOptions);
         }
 
         // Register adaptive selection options
-        services.Configure<AdaptiveSelectionOptions>(options =>
+        _ = services.Configure<AdaptiveSelectionOptions>(options =>
         {
             options.EnableLearning = true;
             options.MinConfidenceThreshold = 0.6f;
@@ -65,10 +65,10 @@ public static class OptimizationServiceExtensions
         Action<PerformanceOptimizationOptions>? configureOptions = null)
     {
         // Add performance optimization services
-        services.AddPerformanceOptimization(configureOptions);
+        _ = services.AddPerformanceOptimization(configureOptions);
 
         // Decorate the existing orchestrator with performance optimization
-        services.Decorate<IComputeOrchestrator>((inner, provider) =>
+        _ = services.Decorate<IComputeOrchestrator>((inner, provider) =>
         {
             var backendSelector = provider.GetRequiredService<AdaptiveBackendSelector>();
             var performanceProfiler = provider.GetRequiredService<PerformanceProfiler>();
@@ -98,7 +98,7 @@ public static class OptimizationServiceExtensions
         // Configure adaptive selection options
         if (configureSelection != null)
         {
-            services.Configure<AdaptiveSelectionOptions>(configureSelection);
+            _ = services.Configure<AdaptiveSelectionOptions>(configureSelection);
         }
 
         return services.AddPerformanceOptimizedOrchestrator(configureOptimization);
@@ -341,7 +341,7 @@ public static class ServiceCollectionDecoratorExtensions
             existingDescriptor.Lifetime);
 
         // Replace the existing registration
-        services.Remove(existingDescriptor);
+        _ = services.Remove(existingDescriptor);
         services.Add(decoratedDescriptor);
 
         return services;

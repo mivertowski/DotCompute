@@ -6,7 +6,6 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
@@ -48,7 +47,7 @@ public abstract class BaseAccelerator : IAccelerator
         _ = AcceleratorUtilities.InitializeWithLogging(
             _logger,
             Type.ToString(),
-            () => InitializeCore(),
+            InitializeCore,
             Info.Name);
     }
 
@@ -124,6 +123,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// <returns>Initialization result (typically null or status object)</returns>
     protected virtual object? InitializeCore()
         // Default implementation - derived classes can override
+
 
 
         => null;
@@ -228,6 +228,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// </summary>
     protected virtual ValueTask DisposeCoreAsync()
         // Default implementation - derived classes can override
+
 
 
         => ValueTask.CompletedTask;

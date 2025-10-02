@@ -199,12 +199,14 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     public IUnifiedMemoryBuffer<T> Slice(int start, int length)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (start < 0 || start >= Length)
         {
             throw new ArgumentOutOfRangeException(nameof(start));
         }
-        
+
+
         if (length < 0 || start + length > Length)
         {
             throw new ArgumentOutOfRangeException(nameof(length));

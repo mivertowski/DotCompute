@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Graphs.Types;
 
 namespace DotCompute.Backends.CUDA.Graphs.Models

@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Generic;
 using System.Text;
 using DotCompute.Generators.Models.Kernel;
 
@@ -351,14 +350,14 @@ __kernel void {kernelName}_opencl_kernel(
     public static string GetParameterValidationTemplate(List<ParameterInfo> parameters)
     {
         var validation = new StringBuilder();
-        validation.AppendLine("            // Validate parameters");
+        _ = validation.AppendLine("            // Validate parameters");
 
         foreach (var param in parameters)
         {
             if (param.IsBuffer)
             {
-                validation.AppendLine($"            if ({param.Name} == null)");
-                validation.AppendLine($"                throw new ArgumentNullException(nameof({param.Name}));");
+                _ = validation.AppendLine($"            if ({param.Name} == null)");
+                _ = validation.AppendLine($"                throw new ArgumentNullException(nameof({param.Name}));");
             }
         }
 
@@ -412,22 +411,22 @@ __kernel void {kernelName}_opencl_kernel(
     public static string GetServiceRegistrationTemplate(List<KernelMethodInfo> kernelMethods)
     {
         var registration = new StringBuilder();
-        registration.AppendLine("        public static IServiceCollection AddGeneratedKernels(this IServiceCollection services)");
-        registration.AppendLine("        {");
-        registration.AppendLine("            // Register kernel discovery service");
-        registration.AppendLine("            services.AddSingleton<IKernelDiscoveryService, GeneratedKernelDiscoveryService>();");
-        registration.AppendLine();
+        _ = registration.AppendLine("        public static IServiceCollection AddGeneratedKernels(this IServiceCollection services)");
+        _ = registration.AppendLine("        {");
+        _ = registration.AppendLine("            // Register kernel discovery service");
+        _ = registration.AppendLine("            services.AddSingleton<IKernelDiscoveryService, GeneratedKernelDiscoveryService>();");
+        _ = registration.AppendLine();
 
         foreach (var method in kernelMethods)
         {
             var executorName = $"{method.Name}KernelExecutor";
-            registration.AppendLine($"            // Register {method.Name} kernel executor");
-            registration.AppendLine($"            services.AddTransient<I{executorName}, {executorName}>();");
+            _ = registration.AppendLine($"            // Register {method.Name} kernel executor");
+            _ = registration.AppendLine($"            services.AddTransient<I{executorName}, {executorName}>();");
         }
 
-        registration.AppendLine();
-        registration.AppendLine("            return services;");
-        registration.AppendLine("        }");
+        _ = registration.AppendLine();
+        _ = registration.AppendLine("            return services;");
+        _ = registration.AppendLine("        }");
 
         return registration.ToString();
     }
@@ -447,28 +446,28 @@ __kernel void {kernelName}_opencl_kernel(
         string? remarks = null)
     {
         var doc = new StringBuilder();
-        doc.AppendLine("        /// <summary>");
-        doc.AppendLine($"        /// {summary}");
-        doc.AppendLine("        /// </summary>");
+        _ = doc.AppendLine("        /// <summary>");
+        _ = doc.AppendLine($"        /// {summary}");
+        _ = doc.AppendLine("        /// </summary>");
 
         if (parameters != null)
         {
             foreach (var parameter in parameters)
             {
-                doc.AppendLine($"        /// <param name=\"{parameter.Key}\">{parameter.Value}</param>");
+                _ = doc.AppendLine($"        /// <param name=\"{parameter.Key}\">{parameter.Value}</param>");
             }
         }
 
         if (!string.IsNullOrEmpty(returns))
         {
-            doc.AppendLine($"        /// <returns>{returns}</returns>");
+            _ = doc.AppendLine($"        /// <returns>{returns}</returns>");
         }
 
         if (!string.IsNullOrEmpty(remarks))
         {
-            doc.AppendLine("        /// <remarks>");
-            doc.AppendLine($"        /// {remarks}");
-            doc.AppendLine("        /// </remarks>");
+            _ = doc.AppendLine("        /// <remarks>");
+            _ = doc.AppendLine($"        /// {remarks}");
+            _ = doc.AppendLine("        /// </remarks>");
         }
 
         return doc.ToString();

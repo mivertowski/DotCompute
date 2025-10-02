@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Kernels.Types;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
 

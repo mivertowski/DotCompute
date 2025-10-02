@@ -3,7 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Backends.CPU.Kernels.Simd;
 
@@ -370,5 +369,6 @@ public sealed class ExecutorConfiguration
         UnrollFactor = 8
     };
 }
+
 
 #endregion

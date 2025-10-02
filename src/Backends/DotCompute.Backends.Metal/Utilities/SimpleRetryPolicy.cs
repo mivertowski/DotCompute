@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Utilities;
@@ -73,9 +70,11 @@ public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
             catch (Exception ex) when (attempts < _maxRetries)
             {
                 attempts++;
-                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}", 
+                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}",
+
                     attempts, _maxRetries, ex.Message);
-                
+
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     throw;
@@ -100,9 +99,11 @@ public sealed class SimpleRetryPolicy : IAsyncPolicy, IAsyncPolicy<object>
             catch (Exception ex) when (attempts < _maxRetries)
             {
                 attempts++;
-                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}", 
+                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}",
+
                     attempts, _maxRetries, ex.Message);
-                
+
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     throw;
@@ -151,9 +152,11 @@ public sealed class SimpleRetryPolicy<T> : IAsyncPolicy<T>
             catch (Exception ex) when (attempts < _maxRetries)
             {
                 attempts++;
-                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}", 
+                _logger?.LogWarning("Retry attempt {Attempt} of {MaxRetries} after error: {Error}",
+
                     attempts, _maxRetries, ex.Message);
-                
+
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     throw;

@@ -1,19 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CPU.Kernels.Models;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -33,9 +26,9 @@ internal sealed class CpuKernelCache : IDisposable
     private bool _disposed;
 
     // Cache configuration defaults
-    private readonly TimeSpan DefaultExpiryTime = TimeSpan.FromHours(1);
-    private readonly int DefaultMaxCacheSize = 1000;
-    private readonly TimeSpan DefaultCleanupInterval = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _defaultExpiryTime = TimeSpan.FromHours(1);
+    private readonly int _defaultMaxCacheSize = 1000;
+    private readonly TimeSpan _defaultCleanupInterval = TimeSpan.FromMinutes(5);
 
     public CpuKernelCache(ILogger logger, CacheConfiguration? configuration = null)
     {
@@ -48,12 +41,12 @@ internal sealed class CpuKernelCache : IDisposable
 
         // Set up periodic cache cleanup
         _cleanupTimer = new Timer(PerformCacheCleanup, null,
-            _configuration.CleanupInterval ?? DefaultCleanupInterval,
-            _configuration.CleanupInterval ?? DefaultCleanupInterval);
+            _configuration.CleanupInterval ?? _defaultCleanupInterval,
+            _configuration.CleanupInterval ?? _defaultCleanupInterval);
 
         _logger.LogDebug("CpuKernelCache initialized with max size: {maxSize}, expiry: {expiry}",
-            _configuration.MaxCacheSize ?? DefaultMaxCacheSize,
-            _configuration.ExpiryTime ?? DefaultExpiryTime);
+            _configuration.MaxCacheSize ?? _defaultMaxCacheSize,
+            _configuration.ExpiryTime ?? _defaultExpiryTime);
     }
 
     /// <summary>
@@ -79,7 +72,7 @@ internal sealed class CpuKernelCache : IDisposable
             else
             {
                 // Remove expired kernel
-                await RemoveKernelAsync(cacheKey);
+                _ = await RemoveKernelAsync(cacheKey);
                 _logger.LogDebug("Cache miss (expired) for kernel: {cacheKey}", cacheKey);
             }
         }
@@ -109,12 +102,12 @@ internal sealed class CpuKernelCache : IDisposable
         try
         {
             // Check cache size limits
-            if (await ShouldEvictCacheEntries())
+            if (await ShouldEvictCacheEntriesAsync())
             {
                 await EvictLeastRecentlyUsedEntriesAsync();
             }
 
-            var expiryTime = customExpiry ?? _configuration.ExpiryTime ?? DefaultExpiryTime;
+            var expiryTime = customExpiry ?? _configuration.ExpiryTime ?? _defaultExpiryTime;
             var cachedKernel = new CachedKernel
             {
                 CacheKey = cacheKey,
@@ -138,7 +131,7 @@ internal sealed class CpuKernelCache : IDisposable
         }
         finally
         {
-            _cacheLock.Release();
+            _ = _cacheLock.Release();
         }
     }
 
@@ -183,7 +176,7 @@ internal sealed class CpuKernelCache : IDisposable
             }
             else
             {
-                _optimizationCache.TryRemove(profileKey, out _);
+                _ = _optimizationCache.TryRemove(profileKey, out _);
                 _logger.LogTrace("Optimization profile cache miss (expired): {profileKey}", profileKey);
             }
         }
@@ -228,7 +221,7 @@ internal sealed class CpuKernelCache : IDisposable
             }
             else
             {
-                _performanceCache.TryRemove(metricsKey, out _);
+                _ = _performanceCache.TryRemove(metricsKey, out _);
                 _logger.LogTrace("Performance metrics cache miss (expired): {metricsKey}", metricsKey);
             }
         }
@@ -346,7 +339,7 @@ internal sealed class CpuKernelCache : IDisposable
         }
         finally
         {
-            _cacheLock.Release();
+            _ = _cacheLock.Release();
         }
     }
 
@@ -387,9 +380,9 @@ internal sealed class CpuKernelCache : IDisposable
         return DateTimeOffset.UtcNow - metrics.Timestamp < maxAge;
     }
 
-    private Task<bool> ShouldEvictCacheEntries()
+    private Task<bool> ShouldEvictCacheEntriesAsync()
     {
-        var maxSize = _configuration.MaxCacheSize ?? DefaultMaxCacheSize;
+        var maxSize = _configuration.MaxCacheSize ?? _defaultMaxCacheSize;
         return Task.FromResult(_kernelCache.Count >= maxSize);
     }
 
@@ -402,7 +395,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         foreach (var entry in entriesToEvict)
         {
-            await RemoveKernelAsync(entry.CacheKey);
+            _ = await RemoveKernelAsync(entry.CacheKey);
         }
 
         _logger.LogDebug("Evicted {count} cache entries due to size limit", entriesToEvict.Count);
@@ -412,10 +405,7 @@ internal sealed class CpuKernelCache : IDisposable
     {
         try
         {
-            _ = Task.Run(async () =>
-            {
-                await CleanupExpiredEntriesAsync();
-            });
+            _ = Task.Run(CleanupExpiredEntriesAsync);
         }
         catch (Exception ex)
         {
@@ -460,17 +450,17 @@ internal sealed class CpuKernelCache : IDisposable
         // Remove expired entries
         foreach (var key in expiredKernels)
         {
-            await RemoveKernelAsync(key);
+            _ = await RemoveKernelAsync(key);
         }
 
         foreach (var key in expiredProfiles)
         {
-            _optimizationCache.TryRemove(key, out _);
+            _ = _optimizationCache.TryRemove(key, out _);
         }
 
         foreach (var key in expiredMetrics)
         {
-            _performanceCache.TryRemove(key, out _);
+            _ = _performanceCache.TryRemove(key, out _);
         }
 
         if (expiredKernels.Count > 0 || expiredProfiles.Count > 0 || expiredMetrics.Count > 0)
@@ -634,4 +624,5 @@ public class PerformanceCacheStatistics
 }
 
 // Use the canonical PerformanceMetrics from DotCompute.Abstractions.Performance
+
 // This local class has been replaced with the unified type

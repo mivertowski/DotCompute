@@ -2,11 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Runtime.Logging;
 
 namespace DotCompute.Runtime.Services
@@ -53,7 +51,7 @@ namespace DotCompute.Runtime.Services
             var profile = _performanceProfiles.GetOrAdd(kernelName, _ => new KernelPerformanceProfile(kernelName));
             profile.AddExecution(metrics);
 
-            Interlocked.Increment(ref _statistics._totalRecordedExecutions);
+            _ = Interlocked.Increment(ref _statistics._totalRecordedExecutions);
 
             _logger.LogDebugMessage($"Recorded performance for kernel {kernelName}: {metrics.ExecutionTime.TotalMilliseconds}ms, {metrics.MemoryUsageMB}MB");
         }
@@ -129,7 +127,7 @@ namespace DotCompute.Runtime.Services
                 }
             }
 
-            Interlocked.Increment(ref _statistics._totalOptimizationsApplied);
+            _ = Interlocked.Increment(ref _statistics._totalOptimizationsApplied);
 
             var result = new OptimizationResult(kernelName, appliedOptimizations.AsReadOnly());
             _logger.LogInfoMessage($"Applied {appliedOptimizations.Count} optimizations for kernel {kernelName}");
@@ -155,7 +153,7 @@ namespace DotCompute.Runtime.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
             ArgumentNullException.ThrowIfNull(strategy);
 
-            _strategies.AddOrUpdate(kernelName, strategy, (_, _) => strategy);
+            _ = _strategies.AddOrUpdate(kernelName, strategy, (_, _) => strategy);
 
             _logger.LogInfoMessage($"Updated optimization strategy for kernel {kernelName}");
         }
@@ -408,8 +406,8 @@ namespace DotCompute.Runtime.Services
                     }
                 }
 
-                Interlocked.Add(ref _statistics._totalAnalysisRuns, 1);
-                Interlocked.Add(ref _statistics._totalRecommendationsGenerated, recommendationsGenerated);
+                _ = Interlocked.Add(ref _statistics._totalAnalysisRuns, 1);
+                _ = Interlocked.Add(ref _statistics._totalRecommendationsGenerated, recommendationsGenerated);
 
                 _logger.LogDebugMessage($"Optimization analysis completed: {kernelsAnalyzed} kernels, {recommendationsGenerated} recommendations");
             }

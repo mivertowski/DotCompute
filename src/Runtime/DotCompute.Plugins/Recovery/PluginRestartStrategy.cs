@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
-using DotCompute.Core.Recovery;
 using RecoveryResult = DotCompute.Core.Recovery.RecoveryResult;
 
 namespace DotCompute.Plugins.Recovery;

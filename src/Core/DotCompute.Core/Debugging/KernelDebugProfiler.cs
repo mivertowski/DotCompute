@@ -1,17 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Debugging.Types;
@@ -92,7 +85,7 @@ public sealed class KernelDebugProfiler : IDisposable
             const int maxHistorySize = 1000; // Default max history size
             while (_executionHistory.Count > maxHistorySize)
             {
-                _executionHistory.TryDequeue(out _);
+                _ = _executionHistory.TryDequeue(out _);
             }
 
             return executionResult;
@@ -292,7 +285,7 @@ public sealed class KernelDebugProfiler : IDisposable
         foreach (var group in backendGroups)
         {
             var execTimes = group.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
-            var memoryUsages = group.Select(r => GetMemoryUsage(r)).Where(m => m > 0).ToArray();
+            var memoryUsages = group.Select(GetMemoryUsage).Where(m => m > 0).ToArray();
 
             backendStats[group.Key] = new BackendPerformanceStats
             {
@@ -313,7 +306,7 @@ public sealed class KernelDebugProfiler : IDisposable
             SuccessfulExecutions = relevantResults.Count(r => r.Success),
             FailedExecutions = relevantResults.Count(r => !r.Success),
             AverageExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average(),
-            TotalMemoryUsed = relevantResults.Sum(r => GetMemoryUsage(r))
+            TotalMemoryUsed = relevantResults.Sum(GetMemoryUsage)
         };
 
         return Task.FromResult(new PerformanceReport

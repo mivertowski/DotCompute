@@ -270,7 +270,7 @@ public static class PerformanceBenchmarks
 
                 var realFFTResult = BenchmarkFunction<float[]>(
                     "Real FFT",
-                    () => { /* var result = FFTOptimizations.OptimizedRealFFT(realData); */ return realData; },
+                    () => realData,
                     realFlopCount, bytesProcessed / 2, baselineTime);
                 report.Add(realFFTResult);
             }
@@ -397,7 +397,7 @@ public static class PerformanceBenchmarks
 
             var sequentialReductionResult = BenchmarkFunction<float>(
                 "Sequential Reduction",
-                () => array.Sum(),
+                array.Sum,
                 reductionFlopCount, reductionBytesProcessed);
             report.Add(sequentialReductionResult);
 

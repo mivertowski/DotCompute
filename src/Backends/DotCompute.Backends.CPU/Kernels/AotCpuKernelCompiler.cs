@@ -10,9 +10,7 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Enums;
-using DotCompute.Core;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CPU.Logging;
 using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements

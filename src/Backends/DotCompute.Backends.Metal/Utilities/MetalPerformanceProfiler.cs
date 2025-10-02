@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Backends.Metal.Utilities;
 

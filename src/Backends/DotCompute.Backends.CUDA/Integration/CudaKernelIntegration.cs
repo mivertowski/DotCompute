@@ -6,8 +6,6 @@ using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution;
-using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using DotCompute.Abstractions.Kernels;
@@ -35,7 +33,8 @@ public sealed class CudaKernelIntegration : IDisposable
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
+
         _compiler = new CudaKernelCompiler(context, logger);
         // Create logger with correct generic type for CudaKernelExecutor
         var executorLogger = logger is ILogger<Execution.CudaKernelExecutor> typedLogger
@@ -100,9 +99,11 @@ public sealed class CudaKernelIntegration : IDisposable
 
             // Cache the result
             _cache.CacheKernel(cacheKey, compiledKernel!); // Non-null after successful compilation and cast
-            
+
+
             _logger.LogDebugMessage($"Kernel '{kernelName}' compiled and cached");
-            
+
+
             return compiledKernel!; // Non-null after successful compilation
         }
         catch (Exception ex)
@@ -127,30 +128,36 @@ public sealed class CudaKernelIntegration : IDisposable
         }
 
         var startTime = DateTimeOffset.UtcNow;
-        
+
+
         try
         {
             // Convert arguments
             var convertedArguments = ConvertKernelArguments(arguments);
-            
+
             // Execute kernel
+
             var result = await _executor.ExecuteAndWaitAsync(
                 kernel.ToCompiledKernel(), convertedArguments, config, cancellationToken);
 
             var endTime = DateTimeOffset.UtcNow;
-            
+
             // Record execution statistics
+
             RecordExecutionStats(kernel.Name, endTime - startTime, result.Success);
-            
+
+
             _logger.LogDebugMessage($"Kernel '{kernel.Name}' executed: Success={result.Success}, Duration={endTime - startTime}");
-            
+
+
             return result;
         }
         catch (Exception ex)
         {
             var endTime = DateTimeOffset.UtcNow;
             RecordExecutionStats(kernel.Name, endTime - startTime, false);
-            
+
+
             _logger.LogErrorMessage(ex, $"Kernel '{kernel.Name}' execution failed");
             throw;
         }
@@ -176,8 +183,9 @@ public sealed class CudaKernelIntegration : IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get optimal execution config for kernel '{KernelName}'", kernel.Name);
-            
+
             // Return default configuration
+
             return new KernelExecutionConfig
             {
                 GlobalWorkSize = problemSize,
@@ -227,15 +235,17 @@ public sealed class CudaKernelIntegration : IDisposable
 
                 var totalExecutions = _executionStats.Values.Sum(s => s.TotalExecutions);
                 var successfulExecutions = _executionStats.Values.Sum(s => s.SuccessfulExecutions);
-                
+
+
                 if (totalExecutions == 0)
                 {
                     return 1.0;
                 }
 
                 var successRate = (double)successfulExecutions / totalExecutions;
-                
+
                 // Health is based on success rate and recent performance
+
                 return successRate;
             }
         }
@@ -262,10 +272,12 @@ public sealed class CudaKernelIntegration : IDisposable
             {
                 // Optimize cache based on workload
                 _cache.OptimizeForWorkload(profile);
-                
+
                 // Update compilation options for future kernels
+
                 UpdateOptimizationStrategies(profile);
-                
+
+
                 _logger.LogDebugMessage("Kernel optimization completed");
             }
             catch (Exception ex)
@@ -289,8 +301,9 @@ public sealed class CudaKernelIntegration : IDisposable
         {
             // Clean up old cache entries
             _cache.Cleanup();
-            
+
             // Reset old statistics
+
             lock (_statsLock)
             {
                 var oldEntries = _executionStats
@@ -299,7 +312,7 @@ public sealed class CudaKernelIntegration : IDisposable
 
                 foreach (var (key, _) in oldEntries)
                 {
-                    _executionStats.Remove(key);
+                    _ = _executionStats.Remove(key);
                 }
 
                 if (oldEntries.Count > 0)
@@ -307,7 +320,8 @@ public sealed class CudaKernelIntegration : IDisposable
                     _logger.LogDebugMessage($"Cleaned up {oldEntries.Count} old execution statistics");
                 }
             }
-            
+
+
             _logger.LogDebugMessage("Kernel maintenance completed");
         }
         catch (Exception ex)
@@ -324,7 +338,8 @@ public sealed class CudaKernelIntegration : IDisposable
         // Generate a cache key based on source, name, and options
         var sourceHash = kernelSource.GetHashCode();
         var optionsHash = options.GetHashCode();
-        
+
+
         return $"{kernelName}_{sourceHash:X8}_{optionsHash:X8}";
     }
 
@@ -377,15 +392,18 @@ public sealed class CudaKernelIntegration : IDisposable
                 {
                     stats.SuccessfulExecutions++;
                 }
-                
+
+
                 stats.TotalExecutionTime += duration;
                 stats.LastExecution = DateTimeOffset.UtcNow;
-                
+
+
                 if (duration < stats.FastestExecution || stats.FastestExecution == TimeSpan.Zero)
                 {
                     stats.FastestExecution = duration;
                 }
-                
+
+
                 if (duration > stats.SlowestExecution)
                 {
                     stats.SlowestExecution = duration;
@@ -446,19 +464,23 @@ public sealed class CudaKernelIntegration : IDisposable
         if (!_disposed)
         {
             _optimizationTimer?.Dispose();
-            
+
             // Clean up statistics
+
             lock (_statsLock)
             {
                 _executionStats.Clear();
             }
-            
+
+
             _cache?.Dispose();
             _executor?.Dispose();
             _compiler?.Dispose();
-            
+
+
             _disposed = true;
-            
+
+
             _logger.LogDebugMessage("CUDA Kernel Integration disposed");
         }
     }
@@ -477,10 +499,14 @@ public sealed class KernelExecutionStats
     public TimeSpan SlowestExecution { get; set; }
     public DateTimeOffset FirstExecution { get; init; }
     public DateTimeOffset LastExecution { get; set; }
-    
-    public TimeSpan AverageExecutionTime => 
+
+
+    public TimeSpan AverageExecutionTime =>
+
         TotalExecutions > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / TotalExecutions) : TimeSpan.Zero;
-    
-    public double SuccessRate => 
+
+
+    public double SuccessRate =>
+
         TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions : 0.0;
 }

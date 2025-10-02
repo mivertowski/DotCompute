@@ -352,6 +352,7 @@ public static class AdvancedIntegration
 
 
 
+
         => GaussLegendre7Point(values, a, b) * 1.05f; // Rough approximation
 
     /// <summary>

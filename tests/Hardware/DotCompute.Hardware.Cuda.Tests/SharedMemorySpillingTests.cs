@@ -3,10 +3,7 @@
 
 using System.Diagnostics;
 using DotCompute.Tests.Common.Specialized;
-using Xunit.Abstractions;
-using Xunit;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.SharedTestUtilities.Cuda;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Hardware.Cuda.Tests

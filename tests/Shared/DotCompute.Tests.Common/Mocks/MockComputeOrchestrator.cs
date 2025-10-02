@@ -5,8 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Kernels;
 
 namespace DotCompute.Tests.Common.Mocks;
 

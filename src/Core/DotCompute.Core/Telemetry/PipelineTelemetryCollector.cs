@@ -8,8 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using DotCompute.Core.Aot;
-using DotCompute.Core.Pipelines;
-using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -130,7 +128,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _activePipelineCount);
+        _ = Interlocked.Increment(ref _activePipelineCount);
 
 
         var context = new PipelineExecutionContext
@@ -146,8 +144,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         if (context.Activity != null)
         {
-            context.Activity.SetTag("pipeline.id", pipelineId);
-            context.Activity.SetTag("correlation.id", context.CorrelationId);
+            _ = context.Activity.SetTag("pipeline.id", pipelineId);
+            _ = context.Activity.SetTag("correlation.id", context.CorrelationId);
         }
 
         return context;
@@ -169,8 +167,8 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
 
         var duration = DateTime.UtcNow - context.StartTime;
-        Interlocked.Decrement(ref _activePipelineCount);
-        Interlocked.Increment(ref _totalPipelineExecutions);
+        _ = Interlocked.Decrement(ref _activePipelineCount);
+        _ = Interlocked.Increment(ref _totalPipelineExecutions);
 
         // Record metrics with tags
         var tags = new KeyValuePair<string, object?>[]
@@ -191,7 +189,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         }
 
         // Update pipeline snapshot (lock-free)
-        _pipelineSnapshots.AddOrUpdate(
+        _ = _pipelineSnapshots.AddOrUpdate(
             context.PipelineId,
             _ => CreateInitialPipelineSnapshot(context.PipelineId, duration, success, itemsProcessed),
             (_, existing) => existing.UpdateWith(duration, success, itemsProcessed));
@@ -215,7 +213,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
             });
         }
 
-        context.Activity?.SetStatus(success ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
+        _ = (context.Activity?.SetStatus(success ? ActivityStatusCode.Ok : ActivityStatusCode.Error));
         context.Activity?.Dispose();
     }
 
@@ -236,7 +234,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _totalStageExecutions);
+        _ = Interlocked.Increment(ref _totalStageExecutions);
 
 
         var tags = new KeyValuePair<string, object?>[]
@@ -251,7 +249,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         // Update stage snapshot (lock-free)
         var stageKey = $"{pipelineId}:{stageId}";
-        _stageSnapshots.AddOrUpdate(
+        _ = _stageSnapshots.AddOrUpdate(
             stageKey,
             _ => CreateInitialStageSnapshot(pipelineId, stageId, duration, success, memoryUsed),
             (_, existing) => existing.UpdateWith(duration, success, memoryUsed));
@@ -266,10 +264,10 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ThrowIfDisposed();
 
 
-        Interlocked.Increment(ref _totalCacheAccesses);
+        _ = Interlocked.Increment(ref _totalCacheAccesses);
         if (hit)
         {
-            Interlocked.Increment(ref _cacheHits);
+            _ = Interlocked.Increment(ref _cacheHits);
         }
 
         var tags = new KeyValuePair<string, object?>[]
@@ -366,24 +364,24 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         // Global metrics
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_executions_total counter");
-        prometheus.AppendLine($"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
+        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_executions_total counter");
+        _ = prometheus.AppendLine($"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
 
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_active_count gauge");
-        prometheus.AppendLine($"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
+        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_active_count gauge");
+        _ = prometheus.AppendLine($"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
 
 
-        prometheus.AppendLine($"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
-        prometheus.AppendLine($"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
+        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
+        _ = prometheus.AppendLine($"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
 
         // Per-pipeline metrics
         foreach (var snapshot in _pipelineSnapshots.Values)
         {
             var labels = $"{{pipeline_id=\"{snapshot.PipelineId}\"}}";
-            prometheus.AppendLine($"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
-            prometheus.AppendLine($"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
-            prometheus.AppendLine($"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
+            _ = prometheus.AppendLine($"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
+            _ = prometheus.AppendLine($"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
+            _ = prometheus.AppendLine($"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
         }
 
         return await Task.FromResult(prometheus.ToString());
@@ -700,15 +698,15 @@ public sealed class PipelineMetricsSnapshot
 
     public PipelineMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long items)
     {
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
         if (success)
         {
-            Interlocked.Increment(ref _successCount);
+            _ = Interlocked.Increment(ref _successCount);
         }
 
 
-        Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
-        Interlocked.Add(ref _itemsProcessed, items);
+        _ = Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
+        _ = Interlocked.Add(ref _itemsProcessed, items);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
@@ -797,15 +795,15 @@ public sealed class StageMetricsSnapshot
 
     public StageMetricsSnapshot UpdateWith(TimeSpan duration, bool success, long memory)
     {
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
         if (success)
         {
-            Interlocked.Increment(ref _successCount);
+            _ = Interlocked.Increment(ref _successCount);
         }
 
 
-        Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
-        Interlocked.Add(ref _memoryUsed, memory);
+        _ = Interlocked.Add(ref _totalDurationTicks, duration.Ticks);
+        _ = Interlocked.Add(ref _memoryUsed, memory);
 
         // Update min/max using compare-and-swap for thread safety
         var durationTicks = duration.Ticks;
@@ -840,5 +838,6 @@ public sealed class StageMetricsSnapshot
         return this;
     }
 }
+
 
 // TelemetryEvent and TelemetryEventType are defined in BaseTelemetryProvider.cs to avoid duplication

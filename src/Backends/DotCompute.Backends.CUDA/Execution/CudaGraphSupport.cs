@@ -1,29 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using global::System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph;
-using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
-using DotCompute.Backends.CUDA.Execution.Graph.Enums;
-using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
-using DotCompute.Backends.CUDA.Execution.Graph.Options;
-using DotCompute.Backends.CUDA.Execution.Graph.Results;
-using DotCompute.Backends.CUDA.Execution.Graph.Statistics;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Types;
-using DotCompute.Backends.CUDA.Execution.Optimization;
 using Microsoft.Extensions.Logging;
-using GraphOptimizationLevel = DotCompute.Backends.CUDA.Types.CudaGraphOptimizationLevel;
 using CudaArchitecture = DotCompute.Backends.CUDA.Types.CudaArchitecture;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -843,6 +828,7 @@ namespace DotCompute.Backends.CUDA.Execution
         private static double EstimateFusionBenefit(CudaKernelOperation first, CudaKernelOperation second)
             // Estimate the performance benefit of fusing these kernels
             // Consider memory bandwidth savings and kernel launch overhead reduction
+
 
 
             => 0.2; // 20% estimated improvement

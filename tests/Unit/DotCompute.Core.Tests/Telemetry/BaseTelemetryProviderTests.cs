@@ -5,13 +5,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Telemetry;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
 
 // Alias for timer interface
 using ITelemetryTimer = DotCompute.Abstractions.Interfaces.Telemetry.IOperationTimer;
@@ -64,10 +60,10 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
-        metrics.Should().ContainKey(metricName);
-        metrics[metricName].Should().HaveCountGreaterThan(0);
-        metrics[metricName].Last().Value.Should().Be(value);
-        metrics[metricName].Last().Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        _ = metrics.Should().ContainKey(metricName);
+        _ = metrics[metricName].Should().HaveCountGreaterThan(0);
+        _ = metrics[metricName].Last().Value.Should().Be(value);
+        _ = metrics[metricName].Last().Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
 
     [Theory]
@@ -79,7 +75,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         // Act & Assert
         var act = () => _telemetryProvider.RecordMetric(invalidName, 100.0);
-        act.Should().Throw<ArgumentException>().WithParameterName("metricName");
+        _ = act.Should().Throw<ArgumentException>().WithParameterName("metricName");
     }
 
     [Theory]
@@ -91,7 +87,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         // Act & Assert
         var act = () => _telemetryProvider.RecordMetric("test_metric", invalidValue);
-        act.Should().Throw<ArgumentException>().WithParameterName("value");
+        _ = act.Should().Throw<ArgumentException>().WithParameterName("value");
     }
 
     [Fact]
@@ -112,9 +108,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
         var metric = metrics["execution_time"].Last();
-        metric.Tags.Should().BeEquivalentTo(tags);
-        metric.Tags["device"].Should().Be("gpu");
-        metric.Tags["kernel"].Should().Be("matrix_multiply");
+        _ = metric.Tags.Should().BeEquivalentTo(tags);
+        _ = metric.Tags["device"].Should().Be("gpu");
+        _ = metric.Tags["kernel"].Should().Be("matrix_multiply");
     }
 
     [Fact]
@@ -135,11 +131,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
-        metrics[metricName].Should().HaveCount(metricCount);
+        _ = metrics[metricName].Should().HaveCount(metricCount);
 
         var avgRecordTime = stopwatch.ElapsedMilliseconds / (double)metricCount;
         _output.WriteLine($"Average metric recording time: {avgRecordTime:F3}ms");
-        avgRecordTime.Should().BeLessThan(0.1, "metric recording should be very fast");
+        _ = avgRecordTime.Should().BeLessThan(0.1, "metric recording should be very fast");
     }
 
     [Fact]
@@ -156,7 +152,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var counters = _telemetryProvider.GetCounters();
-        counters[counterName].Should().Be(9); // 1 + 5 + 3
+        _ = counters[counterName].Should().Be(9); // 1 + 5 + 3
     }
 
     #endregion
@@ -181,12 +177,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var events = _telemetryProvider.GetEvents();
-        events.Should().HaveCount(1);
+        _ = events.Should().HaveCount(1);
 
         var trackedEvent = events.First();
-        trackedEvent.Name.Should().Be(eventName);
-        trackedEvent.Properties.Should().BeEquivalentTo(properties);
-        trackedEvent.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+        _ = trackedEvent.Name.Should().Be(eventName);
+        _ = trackedEvent.Properties.Should().BeEquivalentTo(properties);
+        _ = trackedEvent.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -204,12 +200,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var events = _telemetryProvider.GetEvents();
-        events.Should().HaveCount(2);
-        events.Should().AllSatisfy(e => e.CorrelationId.Should().Be(correlationId));
+        _ = events.Should().HaveCount(2);
+        _ = events.Should().AllSatisfy(e => e.CorrelationId.Should().Be(correlationId));
 
         // Verify events can be correlated
         var correlatedEvents = events.Where(e => e.CorrelationId == correlationId).ToList();
-        correlatedEvents.Should().HaveCount(2);
+        _ = correlatedEvents.Should().HaveCount(2);
     }
 
     [Fact]
@@ -229,12 +225,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var exceptions = _telemetryProvider.GetExceptions();
-        exceptions.Should().HaveCount(1);
+        _ = exceptions.Should().HaveCount(1);
 
         var trackedException = exceptions.First();
-        trackedException.Exception.Should().Be(exception);
-        trackedException.AdditionalData.Should().BeEquivalentTo(additionalData);
-        trackedException.StackTrace.Should().NotBeNullOrEmpty();
+        _ = trackedException.Exception.Should().Be(exception);
+        _ = trackedException.AdditionalData.Should().BeEquivalentTo(additionalData);
+        _ = trackedException.StackTrace.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -251,13 +247,13 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var dependencies = _telemetryProvider.GetDependencies();
-        dependencies.Should().HaveCount(1);
+        _ = dependencies.Should().HaveCount(1);
 
         var dependency = dependencies.First();
-        dependency.Name.Should().Be(dependencyName);
-        dependency.Operation.Should().Be(operationName);
-        dependency.Duration.Should().Be(duration);
-        dependency.Success.Should().BeTrue();
+        _ = dependency.Name.Should().Be(dependencyName);
+        _ = dependency.Operation.Should().Be(operationName);
+        _ = dependency.Duration.Should().Be(duration);
+        _ = dependency.Success.Should().BeTrue();
     }
 
     #endregion
@@ -274,16 +270,17 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         // Act
         using var timer = _telemetryProvider.StartTimer(timerName);
         Thread.Sleep(100); // Simulate work
-        timer.Stop();
+
 
         // Assert
+
         var timers = _telemetryProvider.GetTimers();
-        timers.Should().ContainKey(timerName);
+        _ = timers.Should().ContainKey(timerName);
 
         var measurements = timers[timerName];
-        measurements.Should().HaveCount(1);
-        measurements.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
-        measurements.First().Should().BeLessThan(TimeSpan.FromMilliseconds(200));
+        _ = measurements.Should().HaveCount(1);
+        _ = measurements.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(90));
+        _ = measurements.First().Should().BeLessThan(TimeSpan.FromMilliseconds(200));
     }
 
     [Fact]
@@ -304,8 +301,8 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         result.Should().Be(42);
 
         var timers = _telemetryProvider.GetTimers();
-        timers["test_function"].Should().HaveCount(1);
-        timers["test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
+        _ = timers["test_function"].Should().HaveCount(1);
+        _ = timers["test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
     }
 
     [Fact]
@@ -323,8 +320,8 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         result.Should().Be("success");
 
         var timers = _telemetryProvider.GetTimers();
-        timers["async_test_function"].Should().HaveCount(1);
-        timers["async_test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
+        _ = timers["async_test_function"].Should().HaveCount(1);
+        _ = timers["async_test_function"].First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
     }
 
     [Fact]
@@ -338,9 +335,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var metrics = _telemetryProvider.GetMetrics();
 
         // Verify system metrics are captured
-        metrics.Should().ContainKey("system.cpu_usage");
-        metrics.Should().ContainKey("system.memory_usage");
-        metrics.Should().ContainKey("system.available_memory");
+        _ = metrics.Should().ContainKey("system.cpu_usage");
+        _ = metrics.Should().ContainKey("system.memory_usage");
+        _ = metrics.Should().ContainKey("system.available_memory");
 
         _output.WriteLine($"CPU Usage: {metrics["system.cpu_usage"].Last().Value:F1}%");
         _output.WriteLine($"Memory Usage: {metrics["system.memory_usage"].Last().Value:F1}%");
@@ -378,11 +375,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("no exceptions should occur during concurrent recording");
+        _ = exceptions.Should().BeEmpty("no exceptions should occur during concurrent recording");
 
         var metrics = _telemetryProvider.GetMetrics();
         var totalMetrics = metrics.Values.Sum(m => m.Count);
-        totalMetrics.Should().Be(threadCount * metricsPerThread);
+        _ = totalMetrics.Should().Be(threadCount * metricsPerThread);
     }
 
     [Fact]
@@ -405,8 +402,8 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var events = _telemetryProvider.GetEvents();
-        events.Should().HaveCount(concurrentEvents);
-        events.Should().AllSatisfy(e => e.CorrelationId.Should().Be(correlationId));
+        _ = events.Should().HaveCount(concurrentEvents);
+        _ = events.Should().AllSatisfy(e => e.CorrelationId.Should().Be(correlationId));
     }
 
     [Fact]
@@ -421,19 +418,20 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         {
             using var timer = _telemetryProvider.StartTimer($"concurrent_timer_{i}");
             Thread.Sleep(10 + (i % 20)); // Variable sleep time
-            timer.Stop();
+
+
         }));
 
         await Task.WhenAll(tasks);
 
         // Assert
         var timers = _telemetryProvider.GetTimers();
-        timers.Should().HaveCount(timerCount);
+        _ = timers.Should().HaveCount(timerCount);
 
         foreach (var timer in timers.Values)
         {
-            timer.Should().HaveCount(1);
-            timer.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(5));
+            _ = timer.Should().HaveCount(1);
+            _ = timer.First().Should().BeGreaterThan(TimeSpan.FromMilliseconds(5));
         }
     }
 
@@ -459,11 +457,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var events = _telemetryProvider.GetEvents();
         var sampledCount = events.Count;
 
-        _output.WriteLine($"Events recorded: {sampledCount}/{eventCount} ({(double)sampledCount/eventCount:P})");
+        _output.WriteLine($"Events recorded: {sampledCount}/{eventCount} ({(double)sampledCount / eventCount:P})");
 
         // Allow some variance due to randomness in sampling
-        sampledCount.Should().BeLessThan(eventCount / 2, "sampling should significantly reduce event count");
-        sampledCount.Should().BeGreaterThan(0, "some events should still be recorded");
+        _ = sampledCount.Should().BeLessThan(eventCount / 2, "sampling should significantly reduce event count");
+        _ = sampledCount.Should().BeGreaterThan(0, "some events should still be recorded");
     }
 
     [Fact]
@@ -480,9 +478,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
-        metrics.Should().ContainKey("production_metric");
-        metrics.Should().ContainKey("performance_metric");
-        metrics.Should().NotContainKey("debug_metric");
+        _ = metrics.Should().ContainKey("production_metric");
+        _ = metrics.Should().ContainKey("performance_metric");
+        _ = metrics.Should().NotContainKey("debug_metric");
     }
 
     [Fact]
@@ -501,8 +499,8 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var metrics = _telemetryProvider.GetMetrics();
-        metrics["retention_test"].Should().HaveCountLessThan(10, "old metrics should be pruned");
-        metrics["retention_test"].Should().HaveCountLessOrEqualTo(5, "count limit should be enforced");
+        _ = metrics["retention_test"].Should().HaveCountLessThan(10, "old metrics should be pruned");
+        _ = metrics["retention_test"].Should().HaveCountLessThanOrEqualTo(5, "count limit should be enforced");
     }
 
     #endregion
@@ -524,12 +522,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var stats = _telemetryProvider.GetMetricStatistics("stats_test");
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.Count.Should().Be(5);
-        stats.Mean.Should().BeApproximately(30.0, 0.1);
-        stats.Min.Should().Be(10.0);
-        stats.Max.Should().Be(50.0);
-        stats.StandardDeviation.Should().BeGreaterThan(0);
+        _ = stats.Should().NotBeNull();
+        _ = stats.Count.Should().Be(5);
+        _ = stats.Mean.Should().BeApproximately(30.0, 0.1);
+        _ = stats.Min.Should().Be(10.0);
+        _ = stats.Max.Should().Be(50.0);
+        _ = stats.StandardDeviation.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -549,9 +547,9 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var p99 = _telemetryProvider.GetMetricPercentile("percentile_test", 99);
 
         // Assert
-        p50.Should().BeApproximately(50.5, 1.0); // Median
-        p95.Should().BeApproximately(95.0, 1.0);
-        p99.Should().BeApproximately(99.0, 1.0);
+        _ = p50.Should().BeApproximately(50.5, 1.0); // Median
+        _ = p95.Should().BeApproximately(95.0, 1.0);
+        _ = p99.Should().BeApproximately(99.0, 1.0);
     }
 
     [Fact]
@@ -570,7 +568,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var frequency = _telemetryProvider.GetEventFrequency("frequency_test", TimeSpan.FromSeconds(1));
 
         // Assert
-        frequency.Should().BeGreaterThan(50, "should capture significant event rate");
+        _ = frequency.Should().BeGreaterThan(50, "should capture significant event rate");
         _output.WriteLine($"Event frequency: {frequency:F1} events/second");
     }
 
@@ -606,7 +604,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         _output.WriteLine($"Memory increase: {memoryIncrease / 1024 / 1024:F1}MB");
         _output.WriteLine($"Memory per metric: {memoryPerMetric:F1} bytes");
 
-        memoryPerMetric.Should().BeLessThan(500, "memory usage per metric should be reasonable");
+        _ = memoryPerMetric.Should().BeLessThan(500, "memory usage per metric should be reasonable");
     }
 
     [Fact]
@@ -627,7 +625,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Assert
         var cleanupCount = _telemetryProvider.CleanupCount;
-        cleanupCount.Should().BeGreaterThan(0, "cleanup should be triggered under memory pressure");
+        _ = cleanupCount.Should().BeGreaterThan(0, "cleanup should be triggered under memory pressure");
 
         _output.WriteLine($"Cleanup triggered {cleanupCount} times");
     }
@@ -646,7 +644,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
 
         // Act & Assert
         var act = () => provider.RecordMetric("test", 100);
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -655,11 +653,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         // Act & Assert - Should not throw
         var act = () => _telemetryProvider.TrackEvent("null_props_test", null);
-        act.Should().NotThrow();
+        _ = act.Should().NotThrow();
 
         var events = _telemetryProvider.GetEvents();
-        events.Last().Properties.Should().NotBeNull();
-        events.Last().Properties.Should().BeEmpty();
+        _ = events.Last().Properties.Should().NotBeNull();
+        _ = events.Last().Properties.Should().BeEmpty();
     }
 
     [Fact]
@@ -670,7 +668,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var stats = _telemetryProvider.GetMetricStatistics("non_existent_metric");
 
         // Assert
-        stats.Should().BeNull();
+        _ = stats.Should().BeNull();
     }
 
     [Fact]
@@ -682,13 +680,15 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var timer2 = _telemetryProvider.StartTimer("duplicate_timer");
 
         Thread.Sleep(10);
-        timer1.Stop();
+
+
         Thread.Sleep(10);
-        timer2.Stop();
+
 
         // Assert
+
         var timers = _telemetryProvider.GetTimers();
-        timers["duplicate_timer"].Should().HaveCount(2);
+        _ = timers["duplicate_timer"].Should().HaveCount(2);
 
         timer1.Dispose();
         timer2.Dispose();
@@ -703,7 +703,7 @@ public sealed class BaseTelemetryProviderTests : IDisposable
     {
         // Act & Assert
         var act = () => _telemetryProvider.SetSamplingRate(invalidRate);
-        act.Should().Throw<ArgumentException>();
+        _ = act.Should().Throw<ArgumentException>();
     }
 
     #endregion
@@ -722,11 +722,11 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var jsonData = _telemetryProvider.ExportMetricsAsJson();
 
         // Assert
-        jsonData.Should().NotBeNullOrEmpty();
-        jsonData.Should().Contain("export_test_1");
-        jsonData.Should().Contain("export_test_2");
-        jsonData.Should().Contain("100.5");
-        jsonData.Should().Contain("200.75");
+        _ = jsonData.Should().NotBeNullOrEmpty();
+        _ = jsonData.Should().Contain("export_test_1");
+        _ = jsonData.Should().Contain("export_test_2");
+        _ = jsonData.Should().Contain("100.5");
+        _ = jsonData.Should().Contain("200.75");
 
         _output.WriteLine($"Exported JSON: {jsonData}");
     }
@@ -750,12 +750,12 @@ public sealed class BaseTelemetryProviderTests : IDisposable
         var jsonData = _telemetryProvider.ExportEventsAsJson();
 
         // Assert
-        jsonData.Should().NotBeNullOrEmpty();
-        jsonData.Should().Contain("export_event_test");
-        jsonData.Should().Contain("test_value");
-        jsonData.Should().Contain("42");
-        jsonData.Should().Contain("3.14");
-        jsonData.Should().Contain("true");
+        _ = jsonData.Should().NotBeNullOrEmpty();
+        _ = jsonData.Should().Contain("export_event_test");
+        _ = jsonData.Should().Contain("test_value");
+        _ = jsonData.Should().Contain("42");
+        _ = jsonData.Should().Contain("3.14");
+        _ = jsonData.Should().Contain("true");
     }
 
     #endregion
@@ -928,7 +928,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
         lock (_lock)
         {
-            _counters.TryGetValue(counterName, out var currentValue);
+            _ = _counters.TryGetValue(counterName, out var currentValue);
             _counters[counterName] = currentValue + increment;
         }
     }
@@ -1074,7 +1074,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     {
         lock (_lock)
         {
-            return System.Text.Json.JsonSerializer.Serialize(_metrics, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_metrics, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
     }
 
@@ -1082,7 +1082,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
     {
         lock (_lock)
         {
-            return System.Text.Json.JsonSerializer.Serialize(_events, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            return global::System.Text.Json.JsonSerializer.Serialize(_events, new global::System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         }
     }
 
@@ -1104,7 +1104,7 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
         if (_retentionPeriod != TimeSpan.MaxValue)
         {
             var cutoff = DateTimeOffset.UtcNow - _retentionPeriod;
-            metricList.RemoveAll(m => m.Timestamp < cutoff);
+            _ = metricList.RemoveAll(m => m.Timestamp < cutoff);
         }
 
         if (metricList.Count > _maxRetentionCount)
@@ -1125,10 +1125,10 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
 
             foreach (var metricList in _metrics.Values)
             {
-                metricList.RemoveAll(m => m.Timestamp < cutoff);
+                _ = metricList.RemoveAll(m => m.Timestamp < cutoff);
             }
 
-            _events.RemoveAll(e => e.Timestamp < cutoff);
+            _ = _events.RemoveAll(e => e.Timestamp < cutoff);
         }
 
         GC.Collect();
@@ -1324,7 +1324,7 @@ internal class TestTelemetryTimer : IOperationTimer
 
     public void ClearStatistics(string operationName)
     {
-        _statistics.Remove(operationName);
+        _ = _statistics.Remove(operationName);
     }
 
     public void ClearAllStatistics()
@@ -1337,7 +1337,7 @@ internal class TestTelemetryTimer : IOperationTimer
         var filteredStats = _statistics.Where(kvp => operationFilter?.Invoke(kvp.Key) ?? true);
         return format switch
         {
-            MetricsExportFormat.Json => System.Text.Json.JsonSerializer.Serialize(filteredStats),
+            MetricsExportFormat.Json => global::System.Text.Json.JsonSerializer.Serialize(filteredStats),
             MetricsExportFormat.Csv => string.Join("\n", filteredStats.Select(kvp => $"{kvp.Key},{kvp.Value.ExecutionCount},{kvp.Value.AverageDuration.TotalMilliseconds}")),
             _ => string.Join("\n", filteredStats.Select(kvp => $"{kvp.Key}: {kvp.Value.ExecutionCount} executions, avg {kvp.Value.AverageDuration.TotalMilliseconds}ms"))
         };
@@ -1408,7 +1408,7 @@ internal class TestTimerHandle : ITimerHandle
     {
         if (!_disposed)
         {
-            Stop();
+            _ = Stop();
             _disposed = true;
         }
     }

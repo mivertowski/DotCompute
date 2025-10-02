@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Logging;
@@ -759,6 +758,7 @@ public sealed class FileSink : ILogSink, IHealthCheckable
 
     public Task FlushAsync(CancellationToken cancellationToken = default)
         // File writes are immediately flushed
+
 
 
 

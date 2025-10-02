@@ -1,16 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.SharedTestUtilities.Cuda;

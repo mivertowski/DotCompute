@@ -1,17 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Tests.TestImplementations;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Accelerators;
 
@@ -54,11 +47,11 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
     public void Constructor_InitializesProperties_Correctly()
     {
         // Assert
-        _accelerator.Info.Should().NotBeNull();
-        _accelerator.Type.Should().Be(AcceleratorType.CPU);
-        _accelerator.Memory.Should().Be(_mockMemory.Object);
-        _accelerator.IsDisposed.Should().BeFalse();
-        _accelerator.Context.Should().NotBeNull();
+        _ = _accelerator.Info.Should().NotBeNull();
+        _ = _accelerator.Type.Should().Be(AcceleratorType.CPU);
+        _ = _accelerator.Memory.Should().Be(_mockMemory.Object);
+        _ = _accelerator.IsDisposed.Should().BeFalse();
+        _ = _accelerator.Context.Should().NotBeNull();
     }
 
     [Theory]
@@ -80,11 +73,11 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _accelerators.Add(accelerator);
 
         // Assert
-        accelerator.Info.Name.Should().Be(name);
-        accelerator.Type.Should().Be(type);
-        accelerator.Memory.Should().Be(mockMemory.Object);
-        accelerator.IsDisposed.Should().BeFalse();
-        accelerator.InitializeCoreCalled.Should().BeTrue();
+        _ = accelerator.Info.Name.Should().Be(name);
+        _ = accelerator.Type.Should().Be(type);
+        _ = accelerator.Memory.Should().Be(mockMemory.Object);
+        _ = accelerator.IsDisposed.Should().BeFalse();
+        _ = accelerator.InitializeCoreCalled.Should().BeTrue();
     }
 
     [Fact]
@@ -94,8 +87,8 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _accelerator.Dispose();
 
         // Assert
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
 
@@ -108,8 +101,8 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _accelerator.Dispose();
 
         // Assert
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
 
@@ -120,8 +113,8 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         await _accelerator.DisposeAsync();
 
         // Assert
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
 
@@ -134,8 +127,8 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         await _accelerator.DisposeAsync();
 
         // Assert
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
 
@@ -143,19 +136,19 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
     public void Context_ReturnsNonNullContext()
     {
         // Assert
-        _accelerator.Context.Should().NotBeNull();
-        _accelerator.Context.Should().BeOfType<AcceleratorContext>();
+        _ = _accelerator.Context.Should().NotBeNull();
+        _ = _accelerator.Context.Should().BeOfType<AcceleratorContext>();
     }
 
     [Fact]
     public void Synchronize_WhenNotDisposed_CompletesSuccessfully()
     {
         // Act
-        var act = () => _accelerator.Synchronize();
+        var act = _accelerator.Synchronize;
 
         // Assert
-        act.Should().NotThrow();
-        _accelerator.SynchronizeCalled.Should().BeTrue();
+        _ = act.Should().NotThrow();
+        _ = _accelerator.SynchronizeCalled.Should().BeTrue();
     }
 
     [Fact]
@@ -165,10 +158,10 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         _accelerator.Dispose();
 
         // Act
-        var act = () => _accelerator.Synchronize();
+        var act = _accelerator.Synchronize;
 
         // Assert
-        act.Should().Throw<ObjectDisposedException>();
+        _ = act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
@@ -191,8 +184,8 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert - Should only dispose once despite concurrent calls
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
         _mockMemory.Verify(m => m.Dispose(), Times.Once);
     }
 
@@ -200,19 +193,19 @@ public sealed class BaseAcceleratorLifecycleTests : IDisposable
     public void DisposalState_TrackedCorrectly()
     {
         // Assert initial state
-        _accelerator.IsDisposed.Should().BeFalse();
-        _accelerator.DisposedCount.Should().Be(0);
+        _ = _accelerator.IsDisposed.Should().BeFalse();
+        _ = _accelerator.DisposedCount.Should().Be(0);
 
         // Act - Dispose
         _accelerator.Dispose();
 
         // Assert final state
-        _accelerator.IsDisposed.Should().BeTrue();
-        _accelerator.DisposedCount.Should().Be(1);
+        _ = _accelerator.IsDisposed.Should().BeTrue();
+        _ = _accelerator.DisposedCount.Should().Be(1);
 
         // Act - Try to use after disposal
-        var act = () => _accelerator.TestThrowIfDisposed();
-        act.Should().Throw<ObjectDisposedException>()
+        var act = _accelerator.TestThrowIfDisposed;
+        _ = act.Should().Throw<ObjectDisposedException>()
             .WithMessage($"*{nameof(TestAccelerator)}*");
     }
 

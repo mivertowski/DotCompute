@@ -4,8 +4,6 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
-using System;
 namespace DotCompute.Core.Compute
 {
 

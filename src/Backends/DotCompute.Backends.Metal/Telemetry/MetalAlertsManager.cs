@@ -71,7 +71,8 @@ public sealed class MetalAlertsManager : IDisposable
 
         // Check if we've exceeded the threshold
         var recentFailures = history.GetEventsInWindow(TimeSpan.FromMinutes(5));
-        
+
+
         if (recentFailures.Count >= threshold.MaxFailuresPerWindow)
         {
             TriggerAlert(new Alert
@@ -113,7 +114,8 @@ public sealed class MetalAlertsManager : IDisposable
 
         var alertKey = $"kernel_execution_failure_{kernelName}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
-        
+
+
         history.RecordEvent(DateTimeOffset.UtcNow, new Dictionary<string, object>
         {
             ["kernel_name"] = kernelName,
@@ -122,7 +124,8 @@ public sealed class MetalAlertsManager : IDisposable
 
         var recentFailures = history.GetEventsInWindow(TimeSpan.FromMinutes(10));
         var threshold = _options.KernelExecutionFailureThreshold;
-        
+
+
         if (recentFailures.Count >= threshold.MaxFailuresPerWindow)
         {
             TriggerAlert(new Alert
@@ -170,7 +173,8 @@ public sealed class MetalAlertsManager : IDisposable
 
         var alertKey = $"slow_operation_{operationName}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
-        
+
+
         history.RecordEvent(DateTimeOffset.UtcNow, new Dictionary<string, object>
         {
             ["operation_name"] = operationName,
@@ -179,11 +183,13 @@ public sealed class MetalAlertsManager : IDisposable
         });
 
         var recentSlowOps = history.GetEventsInWindow(TimeSpan.FromMinutes(15));
-        
+
+
         if (recentSlowOps.Count >= _options.SlowOperationAlertThreshold)
         {
             var avgDuration = recentSlowOps.Average(e => (double)(e.Properties?.GetValueOrDefault("duration_ms") ?? 0.0));
-            
+
+
             TriggerAlert(new Alert
             {
                 Id = Guid.NewGuid().ToString(),
@@ -230,20 +236,24 @@ public sealed class MetalAlertsManager : IDisposable
 
         var alertKey = "high_gpu_utilization";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
-        
+
+
         history.RecordEvent(DateTimeOffset.UtcNow, new Dictionary<string, object>
         {
             ["utilization_percentage"] = utilizationPercentage
         });
 
         var recentHighUtil = history.GetEventsInWindow(TimeSpan.FromMinutes(5));
-        
+
+
         if (recentHighUtil.Count >= 10) // Sustained high utilization
         {
             var avgUtilization = recentHighUtil.Average(e => (double)(e.Properties?.GetValueOrDefault("utilization_percentage") ?? 0.0));
-            
+
+
             var severity = avgUtilization > 95 ? AlertSeverity.High : AlertSeverity.Medium;
-            
+
+
             TriggerAlert(new Alert
             {
                 Id = Guid.NewGuid().ToString(),
@@ -288,7 +298,8 @@ public sealed class MetalAlertsManager : IDisposable
 
 
         var alertKey = "high_memory_utilization";
-        
+
+
         var severity = utilizationPercentage switch
         {
             > 95 => AlertSeverity.Critical,
@@ -337,7 +348,8 @@ public sealed class MetalAlertsManager : IDisposable
 
 
         var alertKey = $"high_resource_utilization_{resourceType}";
-        
+
+
         var severity = utilizationPercentage switch
         {
             > 95 => AlertSeverity.Critical,
@@ -375,7 +387,8 @@ public sealed class MetalAlertsManager : IDisposable
 
 
         var alertKey = "high_memory_pressure";
-        
+
+
         var severity = level switch
         {
             MemoryPressureLevel.Critical => AlertSeverity.Critical,
@@ -420,14 +433,16 @@ public sealed class MetalAlertsManager : IDisposable
 
         var alertKey = $"error_rate_{error}";
         var history = _alertHistory.GetOrAdd(alertKey, _ => new AlertHistory(alertKey));
-        
+
+
         history.RecordEvent(DateTimeOffset.UtcNow, new Dictionary<string, object>
         {
             ["error_code"] = error.ToString()
         });
 
         var recentErrors = history.GetEventsInWindow(TimeSpan.FromMinutes(_options.ErrorRateWindowMinutes));
-        
+
+
         if (recentErrors.Count >= _options.ErrorRateAlertThreshold)
         {
             var severity = error switch
@@ -482,7 +497,8 @@ public sealed class MetalAlertsManager : IDisposable
             {
                 // Check if alert conditions are still met
                 var shouldResolve = ShouldResolveAlert(alert, snapshot);
-                
+
+
                 if (shouldResolve)
                 {
                     ResolveAlert(alert.Id, "Conditions no longer met");
@@ -523,7 +539,8 @@ public sealed class MetalAlertsManager : IDisposable
             new AlertRule
             {
                 Id = "high_memory_utilization",
-                Name = "High Memory Utilization", 
+                Name = "High Memory Utilization",
+
                 Description = "Triggers when memory utilization exceeds threshold",
                 Severity = AlertSeverity.High,
                 Enabled = true
@@ -548,13 +565,15 @@ public sealed class MetalAlertsManager : IDisposable
     {
         // Check if we already have an active alert for this rule
         var existingAlert = _activeAlerts.Values.FirstOrDefault(a => a.RuleId == alert.RuleId);
-        
+
+
         if (existingAlert != null)
         {
             // Update existing alert
             existingAlert.LastOccurrence = alert.Timestamp;
             existingAlert.OccurrenceCount++;
-            
+
+
             if (existingAlert.Properties != null && alert.Properties != null)
             {
                 foreach (var property in alert.Properties)
@@ -562,7 +581,8 @@ public sealed class MetalAlertsManager : IDisposable
                     existingAlert.Properties[property.Key] = property.Value;
                 }
             }
-            
+
+
             _logger.LogWarning("Alert updated: {Title} (#{OccurrenceCount})", alert.Title, existingAlert.OccurrenceCount);
         }
         else
@@ -571,10 +591,12 @@ public sealed class MetalAlertsManager : IDisposable
             alert.OccurrenceCount = 1;
             alert.LastOccurrence = alert.Timestamp;
             _activeAlerts[alert.Id] = alert;
-            
+
+
             _logger.LogWarning("Alert triggered: {Title} - {Description}", alert.Title, alert.Description);
-            
+
             // Send notifications if configured
+
             if (_options.EnableNotifications)
             {
                 _ = Task.Run(() => SendNotification(alert));
@@ -588,7 +610,8 @@ public sealed class MetalAlertsManager : IDisposable
         {
             alert.ResolvedAt = DateTimeOffset.UtcNow;
             alert.Resolution = resolution;
-            
+
+
             _logger.LogInformation("Alert resolved: {Title} - {Resolution}", alert.Title, resolution);
 
             // Archive resolved alert
@@ -601,13 +624,15 @@ public sealed class MetalAlertsManager : IDisposable
     {
         // Update alert with current telemetry data
         alert.LastOccurrence = DateTimeOffset.UtcNow;
-        
+
         // Add current snapshot data to alert properties
+
         if (alert.Properties == null)
         {
             alert.Properties = [];
         }
-        
+
+
         alert.Properties["last_update"] = DateTimeOffset.UtcNow;
         alert.Properties["total_operations"] = snapshot.TotalOperations;
         alert.Properties["error_rate"] = snapshot.ErrorRate;
@@ -650,7 +675,8 @@ public sealed class MetalAlertsManager : IDisposable
         // - Email
         // - PagerDuty
         // - Custom webhooks
-        
+
+
         await Task.Delay(100); // Simulate async notification
         _logger.LogDebug("Notification sent to {Endpoint} for alert: {AlertTitle}", endpoint, alert.Title);
     }
@@ -662,7 +688,8 @@ public sealed class MetalAlertsManager : IDisposable
             ResourceType.Memory => new[]
             {
                 "Implement memory pooling",
-                "Reduce allocation sizes", 
+                "Reduce allocation sizes",
+
                 "Free unused resources",
                 "Check for memory leaks"
             },
@@ -730,7 +757,8 @@ public sealed class MetalAlertsManager : IDisposable
             // Periodic alert evaluation
             var activeAlertCount = _activeAlerts.Count;
             var ruleCount = _alertRules.Count;
-            
+
+
             _logger.LogTrace("Alert evaluation completed: {ActiveAlerts} active alerts, {Rules} rules configured",
                 activeAlertCount, ruleCount);
         }
@@ -751,8 +779,9 @@ public sealed class MetalAlertsManager : IDisposable
         try
         {
             var cutoffTime = DateTimeOffset.UtcNow.Subtract(_options.AlertRetentionPeriod);
-            
+
             // Clean up old alert history
+
             var expiredHistoryKeys = _alertHistory
                 .Where(kvp => kvp.Value.GetEventsInWindow(TimeSpan.MaxValue).All(e => e.Timestamp < cutoffTime))
                 .Select(kvp => kvp.Key)
@@ -760,7 +789,7 @@ public sealed class MetalAlertsManager : IDisposable
 
             foreach (var key in expiredHistoryKeys)
             {
-                _alertHistory.TryRemove(key, out _);
+                _ = _alertHistory.TryRemove(key, out _);
             }
 
             if (expiredHistoryKeys.Count > 0)
@@ -795,7 +824,8 @@ public sealed class MetalAlertsManager : IDisposable
             _cleanupTimer?.Dispose();
 
             var activeAlertCount = _activeAlerts.Count;
-            
+
+
             _logger.LogInformation("Metal alerts manager disposed with {ActiveAlerts} active alerts", activeAlertCount);
         }
     }

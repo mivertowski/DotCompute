@@ -2,9 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests;
 

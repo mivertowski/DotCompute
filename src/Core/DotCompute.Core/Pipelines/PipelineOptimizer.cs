@@ -1,11 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
 using DotCompute.Core.Pipelines.Optimization.Strategies;
 using DotCompute.Core.Pipelines.Stages;
@@ -15,10 +13,6 @@ using IOptimizationStrategy = DotCompute.Abstractions.Pipelines.Models.IOptimiza
 using IOptimizationPass = DotCompute.Abstractions.Pipelines.Models.IOptimizationPass;
 
 // Use the same type aliases as existing KernelStage for consistency
-using PipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
-using StageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
-using StageValidationResult = DotCompute.Abstractions.Pipelines.Models.StageValidationResult;
-using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -787,8 +781,8 @@ namespace DotCompute.Core.Pipelines
 
         private static bool HasCycleRecursive(string stageId, Dictionary<string, IPipelineStage> stageMap, HashSet<string> visited, HashSet<string> recursionStack)
         {
-            visited.Add(stageId);
-            recursionStack.Add(stageId);
+            _ = visited.Add(stageId);
+            _ = recursionStack.Add(stageId);
 
             if (stageMap.TryGetValue(stageId, out var stage))
             {
@@ -808,7 +802,7 @@ namespace DotCompute.Core.Pipelines
                 }
             }
 
-            recursionStack.Remove(stageId);
+            _ = recursionStack.Remove(stageId);
             return false;
         }
 

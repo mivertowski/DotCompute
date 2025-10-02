@@ -13,7 +13,6 @@ using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -452,7 +451,7 @@ namespace DotCompute.Core.Execution
             if (options.TargetDevices != null)
             {
                 return [.. options.TargetDevices
-                .Select(id => _acceleratorManager.GetAcceleratorById(id))
+                .Select(_acceleratorManager.GetAcceleratorById)
                 .Where(a => a != null)
                 .Cast<IAccelerator>()];
             }

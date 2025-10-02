@@ -4,12 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Execution;
-using DotCompute.Backends.CUDA.Types;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
@@ -568,5 +564,6 @@ internal sealed class KernelConfigurationOptimizer : IDisposable
         }
     }
 }
+
 
 #endregion

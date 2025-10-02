@@ -451,7 +451,7 @@ internal static partial class NumaPlatformDetector
                 }
             };
 
-            process.Start();
+            _ = process.Start();
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
 

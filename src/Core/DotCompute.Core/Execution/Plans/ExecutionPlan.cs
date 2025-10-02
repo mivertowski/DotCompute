@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Execution.Types;
 
 namespace DotCompute.Core.Execution.Plans
 {

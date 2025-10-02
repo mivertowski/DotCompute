@@ -210,7 +210,7 @@ public sealed class PluginRecoveryLogger : IDisposable
         {
             while (_auditTrail.Count > MaxAuditEntries)
             {
-                _auditTrail.TryDequeue(out _);
+                _ = _auditTrail.TryDequeue(out _);
             }
 
             // Also remove entries older than 7 days

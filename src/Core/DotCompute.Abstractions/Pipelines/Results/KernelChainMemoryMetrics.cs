@@ -204,26 +204,26 @@ namespace DotCompute.Abstractions.Pipelines.Results
         public string GetSummaryReport()
         {
             var report = new System.Text.StringBuilder();
-            report.AppendLine($"Peak Memory Usage: {FormatBytes(PeakMemoryUsage)}");
-            report.AppendLine($"Total Allocated: {FormatBytes(TotalMemoryAllocated)}");
-            report.AppendLine($"Total Freed: {FormatBytes(TotalMemoryFreed)}");
-            report.AppendLine($"Garbage Collections: {GarbageCollections}");
-            report.AppendLine($"Memory Pooling: {(MemoryPoolingUsed ? "Enabled" : "Disabled")}");
+            _ = report.AppendLine($"Peak Memory Usage: {FormatBytes(PeakMemoryUsage)}");
+            _ = report.AppendLine($"Total Allocated: {FormatBytes(TotalMemoryAllocated)}");
+            _ = report.AppendLine($"Total Freed: {FormatBytes(TotalMemoryFreed)}");
+            _ = report.AppendLine($"Garbage Collections: {GarbageCollections}");
+            _ = report.AppendLine($"Memory Pooling: {(MemoryPoolingUsed ? "Enabled" : "Disabled")}");
 
             if (NetMemoryChange.HasValue)
             {
                 var change = NetMemoryChange.Value;
-                report.AppendLine($"Net Memory Change: {(change >= 0 ? "+" : "")}{FormatBytes(Math.Abs(change))}");
+                _ = report.AppendLine($"Net Memory Change: {(change >= 0 ? "+" : "")}{FormatBytes(Math.Abs(change))}");
             }
 
             if (MemoryEfficiency.HasValue)
             {
-                report.AppendLine($"Memory Efficiency: {MemoryEfficiency.Value:P2}");
+                _ = report.AppendLine($"Memory Efficiency: {MemoryEfficiency.Value:P2}");
             }
 
             if (PoolCacheHitRatio.HasValue)
             {
-                report.AppendLine($"Pool Cache Hit Ratio: {PoolCacheHitRatio.Value:P2}");
+                _ = report.AppendLine($"Pool Cache Hit Ratio: {PoolCacheHitRatio.Value:P2}");
             }
 
             return report.ToString();

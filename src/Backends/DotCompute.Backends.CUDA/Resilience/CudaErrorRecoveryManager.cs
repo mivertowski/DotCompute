@@ -1,12 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -84,14 +79,8 @@ namespace DotCompute.Backends.CUDA.Resilience
                             "Circuit breaker opened due to excessive failures. Breaking for {Duration} seconds",
                             duration.TotalSeconds);
                     },
-                    onReset: () =>
-                    {
-                        _logger.LogInfoMessage("Circuit breaker reset, resuming operations");
-                    },
-                    onHalfOpen: () =>
-                    {
-                        _logger.LogInfoMessage("Circuit breaker half-open, testing with next operation");
-                    });
+                    onReset: () => _logger.LogInfoMessage("Circuit breaker reset, resuming operations"),
+                    onHalfOpen: () => _logger.LogInfoMessage("Circuit breaker half-open, testing with next operation"));
 
             // Combine policies
             _combinedPolicy = Policy.WrapAsync(_retryPolicy, _circuitBreakerPolicy);

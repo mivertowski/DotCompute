@@ -6,7 +6,6 @@ using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
 using DotCompute.Runtime.Logging;
 using DotCompute.Runtime.Services.Memory.Pool;
-using DotCompute.Runtime.Services.Statistics;
 using DotCompute.Runtime.Services.Buffers;
 using DotCompute.Runtime.Services.Buffers.Views;
 using Microsoft.Extensions.Logging;

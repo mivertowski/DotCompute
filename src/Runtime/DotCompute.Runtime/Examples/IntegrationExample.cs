@@ -25,13 +25,13 @@ public static class IntegrationExample
             .ConfigureServices((context, services) =>
             {
                 // Add DotCompute runtime services
-                services.AddDotComputeRuntime(context.Configuration);
+                _ = services.AddDotComputeRuntime(context.Configuration);
 
                 // Add logging
-                services.AddLogging(builder =>
+                _ = services.AddLogging(builder =>
                 {
-                    builder.AddConsole();
-                    builder.SetMinimumLevel(LogLevel.Debug);
+                    _ = builder.AddConsole();
+                    _ = builder.SetMinimumLevel(LogLevel.Debug);
                 });
             })
             .Build();
@@ -151,7 +151,9 @@ public static class ExampleKernels
 
         // This demonstrates the integration pattern:
 
-        await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd"
+        _ = await orchestrator.ExecuteAsync<object>("MyNamespace.VectorAdd"
+
+
 
             /* inputA, inputB, output, length */);
     }

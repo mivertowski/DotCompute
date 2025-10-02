@@ -4,8 +4,6 @@
 using DotCompute.Abstractions.Memory;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Memory.Tests;
 

@@ -100,7 +100,7 @@ public sealed class MetalHealthMonitor : IDisposable
 
         // Update component health
         var componentName = GetErrorComponent(error);
-        _componentHealth.AddOrUpdate(componentName,
+        _ = _componentHealth.AddOrUpdate(componentName,
             new ComponentHealth(componentName) { Status = HealthStatus.Degraded },
             (_, existing) =>
             {
@@ -110,7 +110,8 @@ public sealed class MetalHealthMonitor : IDisposable
 
         if (healthEvent.Severity >= HealthSeverity.High)
         {
-            _logger.LogWarning("High severity health event recorded: {Component} - {Message}", 
+            _logger.LogWarning("High severity health event recorded: {Component} - {Message}",
+
                 healthEvent.Component, healthEvent.Message);
         }
     }
@@ -152,7 +153,7 @@ public sealed class MetalHealthMonitor : IDisposable
         RecordHealthEvent(healthEvent);
 
         // Update memory component health
-        _componentHealth.AddOrUpdate("Memory",
+        _ = _componentHealth.AddOrUpdate("Memory",
             new ComponentHealth("Memory"),
             (_, existing) =>
             {
@@ -198,7 +199,7 @@ public sealed class MetalHealthMonitor : IDisposable
         RecordHealthEvent(healthEvent);
 
         // Update component health
-        _componentHealth.AddOrUpdate(component,
+        _ = _componentHealth.AddOrUpdate(component,
             new ComponentHealth(component),
             (_, existing) =>
             {
@@ -232,7 +233,8 @@ public sealed class MetalHealthMonitor : IDisposable
         }
 
         var componentStatuses = _componentHealth.Values.Select(c => c.Status).ToList();
-        
+
+
         if (componentStatuses.Any(s => s == HealthStatus.Critical))
         {
             return HealthStatus.Critical;
@@ -312,17 +314,21 @@ public sealed class MetalHealthMonitor : IDisposable
 
         // Analyze error patterns
         analysis.ErrorPatterns = AnalyzeErrorPatterns(recentEvents);
-        
+
         // Analyze performance degradation
+
         analysis.PerformanceDegradation = AnalyzePerformanceDegradation(recentEvents);
-        
+
         // Analyze resource pressure trends
+
         analysis.ResourcePressureTrends = AnalyzeResourcePressure(recentEvents);
-        
+
         // Calculate health score
+
         analysis.HealthScore = CalculateHealthScore(recentEvents);
-        
+
         // Predict potential issues
+
         analysis.PredictedIssues = PredictPotentialIssues(recentEvents);
 
         return analysis;
@@ -360,7 +366,8 @@ public sealed class MetalHealthMonitor : IDisposable
     private void InitializeComponentHealth()
     {
         var components = new[] { "Memory", "Device", "Kernel", "Compiler", "CommandQueue", "Pipeline" };
-        
+
+
         foreach (var component in components)
         {
             _componentHealth[component] = new ComponentHealth(component);
@@ -374,7 +381,7 @@ public sealed class MetalHealthMonitor : IDisposable
         // Maintain event queue size
         while (_healthEvents.Count > _options.MaxHealthEvents)
         {
-            _healthEvents.TryDequeue(out _);
+            _ = _healthEvents.TryDequeue(out _);
         }
 
         // Log significant health events
@@ -404,16 +411,20 @@ public sealed class MetalHealthMonitor : IDisposable
         {
             // Check Metal device availability
             CheckDeviceHealth();
-            
+
             // Check memory health
+
             CheckMemoryHealth();
-            
+
             // Check system resources
+
             CheckSystemResourceHealth();
-            
+
             // Update overall health status
+
             var overallHealth = GetCurrentHealth();
-            
+
+
             if (overallHealth != HealthStatus.Healthy)
             {
                 _logger.LogWarning("Health check completed with status: {Health}", overallHealth);
@@ -446,11 +457,13 @@ public sealed class MetalHealthMonitor : IDisposable
 
             // Detect error rate anomalies
             DetectErrorRateAnomalies(recentEvents);
-            
+
             // Detect performance anomalies
+
             DetectPerformanceAnomalies(recentEvents);
-            
+
             // Detect resource usage anomalies
+
             DetectResourceAnomalies(recentEvents);
 
             _logger.LogTrace("Anomaly detection completed for {EventCount} recent events", recentEvents.Count);
@@ -466,7 +479,8 @@ public sealed class MetalHealthMonitor : IDisposable
         try
         {
             var deviceCount = MetalNative.GetDeviceCount();
-            
+
+
             if (deviceCount == 0)
             {
                 ReportError(MetalError.DeviceUnavailable, "no_devices_available");
@@ -501,9 +515,11 @@ public sealed class MetalHealthMonitor : IDisposable
         {
             var totalMemory = GC.GetTotalMemory(false);
             var workingSet = Environment.WorkingSet;
-            
+
+
             var memoryPressure = (double)totalMemory / workingSet;
-            
+
+
             if (memoryPressure > 0.9) // > 90% memory usage
             {
                 ReportMemoryPressure(MemoryPressureLevel.High, memoryPressure * 100);
@@ -529,11 +545,13 @@ public sealed class MetalHealthMonitor : IDisposable
         {
             // Check available disk space (for shader caches, logs, etc.)
             var drives = DriveInfo.GetDrives().Where(d => d.IsReady).ToList();
-            
+
+
             foreach (var drive in drives.Take(2)) // Check system drives
             {
                 var freePercentage = (double)drive.AvailableFreeSpace / drive.TotalSize * 100;
-                
+
+
                 if (freePercentage < 10) // < 10% free space
                 {
                     var healthEvent = new HealthEvent
@@ -551,7 +569,8 @@ public sealed class MetalHealthMonitor : IDisposable
                             ["total_bytes"] = drive.TotalSize
                         }
                     };
-                    
+
+
                     RecordHealthEvent(healthEvent);
                 }
             }
@@ -571,11 +590,13 @@ public sealed class MetalHealthMonitor : IDisposable
         {
             var windowErrors = errorEvents.Where(e => IsInTimeWindow(e, window)).Count();
             var windowTotal = recentEvents.Where(e => IsInTimeWindow(e, window)).Count();
-            
+
+
             if (windowTotal > 0)
             {
                 var errorRate = (double)windowErrors / windowTotal;
-                
+
+
                 if (errorRate > _options.AnomalyErrorRateThreshold)
                 {
                     var anomalyEvent = new HealthEvent
@@ -595,7 +616,8 @@ public sealed class MetalHealthMonitor : IDisposable
                             ["total_count"] = windowTotal
                         }
                     };
-                    
+
+
                     RecordHealthEvent(anomalyEvent);
                 }
             }
@@ -605,7 +627,8 @@ public sealed class MetalHealthMonitor : IDisposable
     private void DetectPerformanceAnomalies(List<HealthEvent> recentEvents)
     {
         var successEvents = recentEvents.Where(e => e.EventType == HealthEventType.Success).ToList();
-        
+
+
         if (successEvents.Count < 10)
         {
             return; // Need sufficient data
@@ -616,7 +639,8 @@ public sealed class MetalHealthMonitor : IDisposable
             .Where(e => e.Data.ContainsKey("duration_ms"))
             .Select(e => (double)e.Data["duration_ms"])
             .ToList();
-        
+
+
         if (durations.Count < 10)
         {
             return;
@@ -626,9 +650,11 @@ public sealed class MetalHealthMonitor : IDisposable
         var mean = durations.Average();
         var stdDev = Math.Sqrt(durations.Select(d => Math.Pow(d - mean, 2)).Average());
         var threshold = mean + (2 * stdDev); // 2 standard deviations
-        
+
+
         var recentAnomalies = durations.TakeLast(10).Count(d => d > threshold);
-        
+
+
         if (recentAnomalies > 3) // More than 30% of recent operations are anomalous
         {
             var anomalyEvent = new HealthEvent
@@ -647,7 +673,8 @@ public sealed class MetalHealthMonitor : IDisposable
                     ["anomalous_operations"] = recentAnomalies
                 }
             };
-            
+
+
             RecordHealthEvent(anomalyEvent);
         }
     }
@@ -655,13 +682,17 @@ public sealed class MetalHealthMonitor : IDisposable
     private void DetectResourceAnomalies(List<HealthEvent> recentEvents)
     {
         var memoryEvents = recentEvents.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
-        
+
         // Detect sustained high memory pressure
+
         var recentMemoryEvents = memoryEvents.TakeLast(10).ToList();
-        var highPressureEvents = recentMemoryEvents.Count(e => 
-            e.Data.ContainsKey("pressure_level") && 
+        var highPressureEvents = recentMemoryEvents.Count(e =>
+
+            e.Data.ContainsKey("pressure_level") &&
+
             Enum.Parse<MemoryPressureLevel>(e.Data["pressure_level"]?.ToString() ?? "Low") >= MemoryPressureLevel.High);
-        
+
+
         if (highPressureEvents > 7) // 70% of recent memory events are high pressure
         {
             var anomalyEvent = new HealthEvent
@@ -678,7 +709,8 @@ public sealed class MetalHealthMonitor : IDisposable
                     ["total_recent_events"] = recentMemoryEvents.Count
                 }
             };
-            
+
+
             RecordHealthEvent(anomalyEvent);
         }
     }
@@ -718,7 +750,8 @@ public sealed class MetalHealthMonitor : IDisposable
         var windows = new List<TimeWindow>();
         var startTime = events.Min(e => e.Timestamp);
         var endTime = events.Max(e => e.Timestamp);
-        
+
+
         var currentStart = startTime;
         while (currentStart < endTime)
         {
@@ -726,7 +759,8 @@ public sealed class MetalHealthMonitor : IDisposable
             windows.Add(new TimeWindow { Start = currentStart, End = currentEnd, Duration = windowSize });
             currentStart = currentEnd;
         }
-        
+
+
         return windows;
     }
 
@@ -745,8 +779,9 @@ public sealed class MetalHealthMonitor : IDisposable
             metrics["working_set_bytes"] = Environment.WorkingSet;
             metrics["processor_count"] = Environment.ProcessorCount;
             metrics["uptime_ticks"] = Environment.TickCount64;
-            
+
             // Add Metal-specific metrics
+
             metrics["metal_device_count"] = MetalNative.GetDeviceCount();
         }
         catch
@@ -791,7 +826,8 @@ public sealed class MetalHealthMonitor : IDisposable
     private static Dictionary<string, object> AnalyzeErrorPatterns(List<HealthEvent> events)
     {
         var errorEvents = events.Where(e => e.EventType == HealthEventType.Error).ToList();
-        
+
+
         return new Dictionary<string, object>
         {
             ["total_errors"] = errorEvents.Count,
@@ -804,7 +840,8 @@ public sealed class MetalHealthMonitor : IDisposable
     private static Dictionary<string, object> AnalyzePerformanceDegradation(List<HealthEvent> events)
     {
         var successEvents = events.Where(e => e.EventType == HealthEventType.Success).ToList();
-        
+
+
         var durations = successEvents
             .Where(e => e.Data.ContainsKey("duration_ms"))
             .Select(e => (double)e.Data["duration_ms"])
@@ -828,7 +865,8 @@ public sealed class MetalHealthMonitor : IDisposable
     private static Dictionary<string, object> AnalyzeResourcePressure(List<HealthEvent> events)
     {
         var pressureEvents = events.Where(e => e.EventType == HealthEventType.MemoryPressure).ToList();
-        
+
+
         if (pressureEvents.Count == 0)
         {
             return new Dictionary<string, object> { ["status"] = "no_pressure_events" };
@@ -857,22 +895,27 @@ public sealed class MetalHealthMonitor : IDisposable
 
 
         var score = 100.0;
-        
+
         // Penalize errors
+
         var errorCount = events.Count(e => e.EventType == HealthEventType.Error);
         score -= errorCount * 5; // -5 points per error
-        
+
         // Penalize high severity events
+
         var criticalEvents = events.Count(e => e.Severity == HealthSeverity.Critical);
         var highSeverityEvents = events.Count(e => e.Severity == HealthSeverity.High);
-        
+
+
         score -= criticalEvents * 20; // -20 points per critical event
         score -= highSeverityEvents * 10; // -10 points per high severity event
-        
+
         // Bonus for successful operations
+
         var successCount = events.Count(e => e.EventType == HealthEventType.Success);
         score += Math.Min(20, successCount * 0.1); // Up to 20 bonus points
-        
+
+
         return Math.Max(0, Math.Min(100, score));
     }
 
@@ -895,8 +938,10 @@ public sealed class MetalHealthMonitor : IDisposable
             .Where(e => e.EventType == HealthEventType.MemoryPressure && e.Timestamp > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(30)))
             .ToList();
 
-        var highPressureEvents = recentMemoryEvents.Count(e => 
-            e.Data.ContainsKey("pressure_level") && 
+        var highPressureEvents = recentMemoryEvents.Count(e =>
+
+            e.Data.ContainsKey("pressure_level") &&
+
             Enum.Parse<MemoryPressureLevel>(e.Data["pressure_level"]?.ToString() ?? "Low") >= MemoryPressureLevel.High);
 
         if (highPressureEvents > recentMemoryEvents.Count * 0.7)

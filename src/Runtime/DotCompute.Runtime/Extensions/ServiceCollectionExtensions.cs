@@ -7,9 +7,6 @@ using DotCompute.Runtime.Services.Interfaces;
 using DotCompute.Runtime.Services.Implementation;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Runtime.Services.Performance.Metrics;
-using DotCompute.Runtime.Services.Performance.Results;
-using DotCompute.Runtime.Services.Performance.Types;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Services;
 using DotCompute.Core.Pipelines.Services.Implementation;
@@ -40,51 +37,51 @@ public static class ServiceCollectionExtensions
         // Add configuration
         if (configuration != null)
         {
-            services.Configure<DotComputeRuntimeOptions>(
+            _ = services.Configure<DotComputeRuntimeOptions>(
                 configuration.GetSection(DotComputeRuntimeOptions.SectionName));
-            services.Configure<DotComputePluginOptions>(
+            _ = services.Configure<DotComputePluginOptions>(
                 configuration.GetSection(DotComputePluginOptions.SectionName));
-            services.Configure<AdvancedMemoryOptions>(
+            _ = services.Configure<AdvancedMemoryOptions>(
                 configuration.GetSection("DotCompute:Memory"));
-            services.Configure<PerformanceMonitoringOptions>(
+            _ = services.Configure<PerformanceMonitoringOptions>(
                 configuration.GetSection("DotCompute:Performance"));
         }
         else
         {
             // Add default options
-            services.Configure<DotComputeRuntimeOptions>(options => { });
-            services.Configure<DotComputePluginOptions>(options => { });
-            services.Configure<AdvancedMemoryOptions>(options => { });
-            services.Configure<PerformanceMonitoringOptions>(options => { });
+            _ = services.Configure<DotComputeRuntimeOptions>(options => { });
+            _ = services.Configure<DotComputePluginOptions>(options => { });
+            _ = services.Configure<AdvancedMemoryOptions>(options => { });
+            _ = services.Configure<PerformanceMonitoringOptions>(options => { });
         }
 
         // Add options validation
-        services.AddSingleton<IValidateOptions<DotComputeRuntimeOptions>, RuntimeOptionsValidator>();
+        _ = services.AddSingleton<IValidateOptions<DotComputeRuntimeOptions>, RuntimeOptionsValidator>();
 
         // Add core runtime services
-        services.AddSingleton<AcceleratorRuntime>();
+        _ = services.AddSingleton<AcceleratorRuntime>();
 
         // Add the integration services (core bridge between generator and runtime)
 
-        services.AddSingleton<GeneratedKernelDiscoveryService>();
+        _ = services.AddSingleton<GeneratedKernelDiscoveryService>();
 
         // Add production kernel services
 
         // Register the unified kernel compiler interface only
-        services.AddSingleton<IUnifiedKernelCompiler, DefaultKernelCompiler>();
-        services.AddSingleton<IKernelCache, MemoryKernelCache>();
-        services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
+        _ = services.AddSingleton<IUnifiedKernelCompiler, DefaultKernelCompiler>();
+        _ = services.AddSingleton<IKernelCache, MemoryKernelCache>();
+        _ = services.AddSingleton<IKernelProfiler, DefaultKernelProfiler>();
 
         // Register the production kernel execution service
 
-        services.AddSingleton<KernelExecutionService>();
-        services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider =>
+        _ = services.AddSingleton<KernelExecutionService>();
+        _ = services.AddSingleton<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>(provider =>
 
             provider.GetRequiredService<KernelExecutionService>());
 
         // Keep simplified version available for backward compatibility
 
-        services.AddSingleton<KernelExecutionServiceSimplified>();
+        _ = services.AddSingleton<KernelExecutionServiceSimplified>();
 
         return services;
     }
@@ -99,7 +96,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<DotComputeRuntimeOptions> configureOptions)
     {
-        services.Configure(configureOptions);
+        _ = services.Configure(configureOptions);
         return services.AddDotComputeRuntime(configuration: null);
     }
 
@@ -121,22 +118,22 @@ public static class ServiceCollectionExtensions
     {
         if (configureRuntime != null)
         {
-            services.Configure(configureRuntime);
+            _ = services.Configure(configureRuntime);
         }
 
         if (configurePlugins != null)
         {
-            services.Configure(configurePlugins);
+            _ = services.Configure(configurePlugins);
         }
 
         if (configureMemory != null)
         {
-            services.Configure(configureMemory);
+            _ = services.Configure(configureMemory);
         }
 
         if (configurePerformance != null)
         {
-            services.Configure(configurePerformance);
+            _ = services.Configure(configurePerformance);
         }
 
 
@@ -177,17 +174,17 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddKernelChaining(this IServiceCollection services)
     {
         // Add memory caching for kernel chain cache service
-        services.AddMemoryCache();
+        _ = services.AddMemoryCache();
 
         // Add kernel chaining services
 
-        services.AddSingleton<IKernelResolver, DefaultKernelResolver>();
-        services.AddSingleton<IKernelChainValidator, DefaultKernelChainValidator>();
-        services.AddSingleton<IKernelChainProfiler, DefaultKernelChainProfiler>();
-        services.AddSingleton<IKernelChainCacheService, DefaultKernelChainCacheService>();
+        _ = services.AddSingleton<IKernelResolver, DefaultKernelResolver>();
+        _ = services.AddSingleton<IKernelChainValidator, DefaultKernelChainValidator>();
+        _ = services.AddSingleton<IKernelChainProfiler, DefaultKernelChainProfiler>();
+        _ = services.AddSingleton<IKernelChainCacheService, DefaultKernelChainCacheService>();
 
         // Register factory for creating kernel chain builders
-        services.AddTransient<IKernelChainBuilder>(provider =>
+        _ = services.AddTransient<IKernelChainBuilder>(provider =>
 
         {
             var orchestrator = provider.GetRequiredService<DotCompute.Abstractions.Interfaces.IComputeOrchestrator>();
@@ -219,7 +216,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<KernelChainingOptions> configureOptions)
     {
-        services.Configure(configureOptions);
+        _ = services.Configure(configureOptions);
         return services.AddKernelChaining();
     }
 
@@ -234,8 +231,8 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration? configuration = null)
     {
-        services.AddDotComputeRuntime(configuration);
-        services.AddKernelChaining();
+        _ = services.AddDotComputeRuntime(configuration);
+        _ = services.AddKernelChaining();
         return services;
     }
 
@@ -260,5 +257,6 @@ public static class ServiceCollectionExtensions
 }
 
 // Note: Service implementations should be provided by backend-specific projects
+
 
 // The integration layer provides the orchestration, while backends provide the actual services

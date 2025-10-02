@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json;
 using System.Xml;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Security;
 using DotCompute.Core.Logging;
 using System.Globalization;
 
@@ -81,7 +80,7 @@ public sealed class SecurityAuditLogger
             var exportDir = Path.GetDirectoryName(exportPath);
             if (!string.IsNullOrEmpty(exportDir))
             {
-                Directory.CreateDirectory(exportDir);
+                _ = Directory.CreateDirectory(exportDir);
             }
 
             // Read and filter audit logs
@@ -145,8 +144,9 @@ public sealed class SecurityAuditLogger
         try
         {
             var entriesToFlush = new List<SecurityLogEntry>();
-            
+
             // Dequeue all pending entries
+
             while (_auditQueue.TryDequeue(out var entry))
             {
                 entriesToFlush.Add(entry);
@@ -171,7 +171,7 @@ public sealed class SecurityAuditLogger
         }
         finally
         {
-            _logWriteLock.Release();
+            _ = _logWriteLock.Release();
         }
     }
 
@@ -211,7 +211,8 @@ public sealed class SecurityAuditLogger
     {
         var entries = new List<SecurityLogEntry>();
         var auditDirectory = Path.GetDirectoryName(_auditLogPath) ?? "";
-        
+
+
         try
         {
             // Get all audit log files that might contain entries in the date range
@@ -241,8 +242,10 @@ public sealed class SecurityAuditLogger
                             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                         });
 
-                        if (entry != null && 
-                            entry.Timestamp >= startDate && 
+                        if (entry != null &&
+
+                            entry.Timestamp >= startDate &&
+
                             entry.Timestamp <= endDate &&
                             (additionalFilter?.Invoke(entry) ?? true))
                         {
@@ -295,14 +298,16 @@ public sealed class SecurityAuditLogger
     private static async Task ExportAsCsvAsync(List<SecurityLogEntry> entries, string exportPath)
     {
         var csv = new StringBuilder();
-        
+
         // Write header
-        csv.AppendLine("Id,SequenceNumber,Timestamp,EventType,Level,Message,UserId,ResourceId,CorrelationId,CallerName");
-        
+
+        _ = csv.AppendLine("Id,SequenceNumber,Timestamp,EventType,Level,Message,UserId,ResourceId,CorrelationId,CallerName");
+
         // Write entries
+
         foreach (var entry in entries)
         {
-            csv.AppendLine($"{EscapeCsv(entry.Id.ToString())}," +
+            _ = csv.AppendLine($"{EscapeCsv(entry.Id.ToString())}," +
                           $"{entry.SequenceNumber}," +
                           $"{EscapeCsv(entry.Timestamp.ToString("O"))}," +
                           $"{EscapeCsv(entry.EventType.ToString())}," +
@@ -313,7 +318,8 @@ public sealed class SecurityAuditLogger
                           $"{EscapeCsv(entry.CorrelationId ?? "")}," +
                           $"{EscapeCsv(entry.CallerName ?? "")}");
         }
-        
+
+
         await File.WriteAllTextAsync(exportPath, csv.ToString());
     }
 
@@ -327,10 +333,12 @@ public sealed class SecurityAuditLogger
 
         await using var fileStream = new FileStream(exportPath, FileMode.Create);
         await using var xmlWriter = XmlWriter.Create(fileStream, settings);
-        
+
+
         await xmlWriter.WriteStartDocumentAsync();
         await xmlWriter.WriteStartElementAsync(null, "SecurityAuditLog", null);
-        
+
+
         foreach (var entry in entries)
         {
             await xmlWriter.WriteStartElementAsync(null, "Entry", null);
@@ -381,8 +389,10 @@ public sealed class SecurityAuditLogger
     {
         var fileName = Path.GetFileNameWithoutExtension(filePath);
         var datePart = fileName.Replace("security_audit_", "");
-        
-        if (DateTime.TryParseExact(datePart, "yyyyMMdd", null, 
+
+
+        if (DateTime.TryParseExact(datePart, "yyyyMMdd", null,
+
             DateTimeStyles.None, out var fileDate))
         {
             return fileDate >= startDate.Date && fileDate <= endDate.Date;

@@ -5,7 +5,6 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.Metal.Kernels;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using DotCompute.Core;
@@ -111,13 +110,16 @@ public sealed class MetalAccelerator : BaseAccelerator
         {
             // Compile kernel using Metal Shading Language
             var result = await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Record telemetry for successful compilation
+
             var duration = DateTimeOffset.UtcNow - startTime;
             _telemetryManager?.RecordKernelExecution(
-                definition.Name, 
-                duration, 
-                definition.Code?.Length ?? 0, 
+                definition.Name,
+                duration,
+
+                definition.Code?.Length ?? 0,
+
                 true,
                 new Dictionary<string, object>
                 {
@@ -125,19 +127,23 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["compilation_options"] = options.ToString(),
                     ["code_length"] = definition.Code?.Length ?? 0
                 });
-            
+
+
             return result;
         }
         catch (Exception ex)
         {
             compilationException = ex;
-            
+
             // Record telemetry for failed compilation
+
             var duration = DateTimeOffset.UtcNow - startTime;
             _telemetryManager?.RecordKernelExecution(
-                definition.Name, 
-                duration, 
-                definition.Code?.Length ?? 0, 
+                definition.Name,
+                duration,
+
+                definition.Code?.Length ?? 0,
+
                 false,
                 new Dictionary<string, object>
                 {
@@ -146,7 +152,8 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["code_length"] = definition.Code?.Length ?? 0,
                     ["error"] = ex.Message
                 });
-                
+
+
             _telemetryManager?.RecordErrorEvent(
                 MetalError.CompilationError,
                 $"kernel_compilation_{definition.Name}",
@@ -156,7 +163,8 @@ public sealed class MetalAccelerator : BaseAccelerator
                     ["exception_type"] = ex.GetType().Name,
                     ["exception_message"] = ex.Message
                 });
-            
+
+
             throw;
         }
     }
@@ -215,8 +223,9 @@ public sealed class MetalAccelerator : BaseAccelerator
         finally
         {
             _commandBufferPool.ReturnCommandBuffer(commandBuffer);
-            
+
             // Record telemetry for synchronization operation
+
             if (success)
             {
                 var duration = DateTimeOffset.UtcNow - startTime;

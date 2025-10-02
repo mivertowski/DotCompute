@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DotCompute.Core.Telemetry.System;
 
 namespace DotCompute.Core.Optimization.Performance;
@@ -30,7 +27,7 @@ public class BackendPerformanceState
             // Keep only last 100 results
             while (RecentResults.Count > 100)
             {
-                RecentResults.Dequeue();
+                _ = RecentResults.Dequeue();
             }
 
             UpdateAverages();

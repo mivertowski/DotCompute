@@ -1,16 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Execution;
-using DotCompute.Abstractions.Memory;
 // using DotCompute.Backends.CUDA.Kernels; // Not available
 using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Persistent.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;

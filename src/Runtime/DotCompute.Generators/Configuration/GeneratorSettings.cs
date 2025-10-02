@@ -4,8 +4,6 @@
 // This file is maintained for backward compatibility.
 // Individual types have been moved to their respective files in the Settings folder structure.
 
-using DotCompute.Generators.Configuration.Settings;
-
 namespace DotCompute.Generators.Configuration;
 
 // Re-export the main settings class for backward compatibility

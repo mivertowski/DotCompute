@@ -6,7 +6,6 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Extensions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 
 namespace DotCompute.Backends.CUDA.Memory
@@ -277,6 +276,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Optimization not implemented
+
 
 
             => ValueTask.CompletedTask;

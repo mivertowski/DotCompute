@@ -95,7 +95,7 @@ namespace DotCompute.Core.Security
             }
             finally
             {
-                _operationLock.Release();
+                _ = _operationLock.Release();
             }
         }
 

@@ -4,15 +4,11 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Optimization.Performance;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Core.Debugging.Types;
-using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
-using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Analytics;

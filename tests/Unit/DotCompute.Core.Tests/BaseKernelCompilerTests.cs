@@ -11,11 +11,8 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Kernels;
 using DotCompute.Tests.Common;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
 // Resolve ICompiledKernel ambiguity
 using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
@@ -38,8 +35,9 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         _mockLogger = new Mock<ILogger>();
         _compiler = new TestKernelCompiler(_mockLogger.Object);
         _compilers.Add(_compiler);
-        
+
         // Track compiler for cleanup
+
         TrackDisposable(_compiler);
     }
 

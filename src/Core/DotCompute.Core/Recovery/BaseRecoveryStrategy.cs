@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using DotCompute.Abstractions.Interfaces.Recovery;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Recovery;
@@ -105,7 +104,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         var stopwatch = Stopwatch.StartNew();
         var contextKey = GetContextKey(context);
 
-        Interlocked.Increment(ref _totalRecoveryAttempts);
+        _ = Interlocked.Increment(ref _totalRecoveryAttempts);
 
         Logger.LogInformation("Starting recovery attempt for error: {ErrorType} with strategy: {StrategyType}",
             error.GetType().Name, GetType().Name);
@@ -139,13 +138,13 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
             if (recoveryResult.Success)
             {
-                Interlocked.Increment(ref _successfulRecoveries);
+                _ = Interlocked.Increment(ref _successfulRecoveries);
                 Logger.LogInformation("Recovery successful for {ErrorType} in {Duration}ms",
                     error.GetType().Name, stopwatch.ElapsedMilliseconds);
             }
             else
             {
-                Interlocked.Increment(ref _failedRecoveries);
+                _ = Interlocked.Increment(ref _failedRecoveries);
                 Logger.LogWarning("Recovery failed for {ErrorType}: {Message}",
                     error.GetType().Name, recoveryResult.Message);
             }
@@ -158,7 +157,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
             var result = CreateFailureResult("Recovery cancelled", error);
             result.Duration = stopwatch.Elapsed;
             RecordRecoveryAttempt(contextKey, result, stopwatch.Elapsed);
-            Interlocked.Increment(ref _failedRecoveries);
+            _ = Interlocked.Increment(ref _failedRecoveries);
             return result;
         }
         catch (Exception recoveryException)
@@ -170,12 +169,12 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
                 error, recoveryException);
             result.Duration = stopwatch.Elapsed;
             RecordRecoveryAttempt(contextKey, result, stopwatch.Elapsed);
-            Interlocked.Increment(ref _failedRecoveries);
+            _ = Interlocked.Increment(ref _failedRecoveries);
             return result;
         }
         finally
         {
-            _recoveryLock.Release();
+            _ = _recoveryLock.Release();
         }
     }
 
@@ -521,7 +520,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         // Limit recent metrics queue size
         while (_recentMetrics.Count > 1000)
         {
-            _recentMetrics.TryDequeue(out _);
+            _ = _recentMetrics.TryDequeue(out _);
         }
     }
 
@@ -565,7 +564,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
             foreach (var key in keysToRemove)
             {
-                _recoveryHistory.TryRemove(key, out _);
+                _ = _recoveryHistory.TryRemove(key, out _);
             }
 
             // Clean up old metrics
@@ -647,14 +646,14 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         if (!_disposed)
         {
             // Await any pending recovery operations
-            await _recoveryLock.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = await _recoveryLock.WaitAsync(TimeSpan.FromSeconds(5));
             try
             {
                 Dispose();
             }
             finally
             {
-                _recoveryLock.Release();
+                _ = _recoveryLock.Release();
             }
         }
     }
@@ -716,7 +715,7 @@ public sealed class RecoveryAttemptHistory
             // Limit history size
             while (_attempts.Count > MaxHistorySize)
             {
-                _attempts.Dequeue();
+                _ = _attempts.Dequeue();
             }
         }
     }
@@ -847,5 +846,6 @@ public interface IRecoveryStrategy<in TContext> where TContext : class
         CancellationToken cancellationToken = default);
     public RecoveryStatistics GetStatistics();
 }
+
 
 #endregion

@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Memory;
-using FluentAssertions;
 using DotCompute.Tests.Common;
 using System.Diagnostics;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Memory.Tests;
 

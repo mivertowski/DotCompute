@@ -98,7 +98,8 @@ namespace DotCompute.Backends.Metal.Factory
             {
                 var acceleratorLogger = _loggerFactory.CreateLogger<MetalAccelerator>();
                 var accelerator = new MetalAccelerator(_options, acceleratorLogger);
-                
+
+
                 _logger.LogInformation("Created default Metal accelerator: {Name}", accelerator.Info.Name);
                 return accelerator;
             }
@@ -129,15 +130,18 @@ namespace DotCompute.Backends.Metal.Factory
                 var accelerators = backend.GetAccelerators();
                 if (deviceIndex < 0 || deviceIndex >= accelerators.Count)
                 {
-                    _logger.LogError("Invalid device index {Index}. Available devices: {Count}", 
+                    _logger.LogError("Invalid device index {Index}. Available devices: {Count}",
+
                         deviceIndex, accelerators.Count);
                     return null;
                 }
 
                 var accelerator = accelerators[deviceIndex];
-                _logger.LogInformation("Created Metal accelerator for device {Index}: {Name}", 
+                _logger.LogInformation("Created Metal accelerator for device {Index}: {Name}",
+
                     deviceIndex, accelerator.Info.Name);
-                
+
+
                 return accelerator;
             }
             catch (Exception ex)
@@ -207,7 +211,8 @@ namespace DotCompute.Backends.Metal.Factory
             try
             {
                 var accelerators = backend.GetAccelerators();
-                
+
+
                 foreach (var accelerator in accelerators)
                 {
                     var info = accelerator.Info;

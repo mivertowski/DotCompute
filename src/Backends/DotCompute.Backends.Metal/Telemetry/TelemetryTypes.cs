@@ -38,8 +38,10 @@ public sealed class MetalOperationMetrics
     public DateTimeOffset LastUpdated { get; private set; }
 
     public double SuccessRate => TotalExecutions > 0 ? (double)SuccessfulExecutions / TotalExecutions : 0.0;
-    public TimeSpan AverageExecutionTime => TotalExecutions > 0 
-        ? TimeSpan.FromMilliseconds(TotalExecutionTime.TotalMilliseconds / TotalExecutions) 
+    public TimeSpan AverageExecutionTime => TotalExecutions > 0
+
+        ? TimeSpan.FromMilliseconds(TotalExecutionTime.TotalMilliseconds / TotalExecutions)
+
         : TimeSpan.Zero;
 
     public MetalOperationMetrics(string operationName, TimeSpan duration, bool success)
@@ -349,8 +351,10 @@ public sealed class ComponentHealth
     public string? LastError { get; set; }
     public Dictionary<string, object> Properties { get; set; } = [];
 
-    public double SuccessRate => (ErrorCount + SuccessCount) > 0 
-        ? (double)SuccessCount / (ErrorCount + SuccessCount) 
+    public double SuccessRate => (ErrorCount + SuccessCount) > 0
+
+        ? (double)SuccessCount / (ErrorCount + SuccessCount)
+
         : 1.0;
 
     public ComponentHealth(string componentName)
@@ -459,7 +463,8 @@ public sealed class AlertHistory
     public List<HealthEvent> GetEventsInWindow(TimeSpan window)
     {
         var cutoffTime = DateTimeOffset.UtcNow.Subtract(window);
-        
+
+
         lock (_lock)
         {
             return _events.Where(e => e.Timestamp >= cutoffTime).ToList();
@@ -649,5 +654,6 @@ public sealed class ThresholdConfiguration
     public int MaxFailuresPerWindow { get; set; }
     public TimeSpan WindowDuration { get; set; } = TimeSpan.FromMinutes(5);
 }
+
 
 #endregion

@@ -1,14 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
-using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Tests.TestImplementations;
@@ -76,13 +71,13 @@ public class TestAccelerator : BaseAccelerator
         var cacheKey = $"{kernelDefinition.Name}_{options.OptimizationLevel}_{options.GenerateDebugInfo}";
         if (_kernelCache.TryGetValue(cacheKey, out var cachedKernel))
         {
-            Interlocked.Increment(ref _cacheHits);
+            _ = Interlocked.Increment(ref _cacheHits);
             return new ValueTask<ICompiledKernel>(cachedKernel);
         }
 
         // Simulate compilation
         Thread.Sleep(10); // Simulate compilation time
-        Interlocked.Increment(ref _compilationCount);
+        _ = Interlocked.Increment(ref _compilationCount);
 
         var compiledKernel = new TestCompiledKernel(
             kernelDefinition.Name,
@@ -93,7 +88,7 @@ public class TestAccelerator : BaseAccelerator
         TestLogCompilationMetrics(kernelDefinition.Name, TimeSpan.FromMilliseconds(10), compiledKernel.ByteCode.Length);
 
         // Cache the result
-        _kernelCache.TryAdd(cacheKey, compiledKernel);
+        _ = _kernelCache.TryAdd(cacheKey, compiledKernel);
 
         return new ValueTask<ICompiledKernel>(compiledKernel);
     }
@@ -150,7 +145,7 @@ public class TestCompiledKernel : ICompiledKernel
     public string Name { get; }
     public string EntryFunction { get; }
     public byte[] ByteCode { get; }
-    public bool IsReady => ByteCode.Length > 0;
+    public bool IsValid => ByteCode.Length > 0;
     public int MaxThreadsPerBlock => 1024;
     public int RequiredSharedMemory => 0;
     public int RegistersPerThread => 32;

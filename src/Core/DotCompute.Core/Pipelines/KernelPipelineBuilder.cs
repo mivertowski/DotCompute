@@ -2,17 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Core.Pipelines.Types;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using System.Collections.Generic;
 
 // Type aliases to resolve ambiguous references
-using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 using AbstractionsPipelineEvent = DotCompute.Abstractions.Pipelines.Enums.PipelineEvent;
 using CorePipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
 using ErrorHandlingResult = DotCompute.Abstractions.Pipelines.Models.ErrorHandlingResult;

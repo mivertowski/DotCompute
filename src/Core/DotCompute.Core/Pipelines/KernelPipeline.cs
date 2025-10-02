@@ -1,22 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using System.Diagnostics;
 using DotCompute.Core.Pipelines.Exceptions;
-using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Core.Pipelines.Types;
 using DotCompute.Abstractions.Models.Pipelines;
 using PipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
 using DotCompute.Core.Validation;
 using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Types;
-using DotCompute.Abstractions.Pipelines;
 using AbstractionsPipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
-using System.Linq;
 using CorePipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
-using AbstractPipelineError = DotCompute.Abstractions.Models.Pipelines.PipelineError;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using ValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
@@ -687,7 +680,8 @@ namespace DotCompute.Core.Pipelines
                 issue.Code,
                 issue.Message,
                 (DotCompute.Abstractions.Validation.ValidationSeverity)(int)issue.Severity
-            ) { Source = issue.Source }).ToList();
+            )
+            { Source = issue.Source }).ToList();
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));

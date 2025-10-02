@@ -5,7 +5,6 @@ using System.Numerics;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
 using global::System.Runtime.Intrinsics;
-using global::System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Kernels.Generators.Utilities;
 using DotCompute.Backends.CPU.Kernels.Models;

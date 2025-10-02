@@ -37,8 +37,9 @@ public sealed partial class MetalBackend : IDisposable
     {
         System.Console.WriteLine($"DEBUG: IsAvailable() called");
         System.Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
-        
+
         // Metal is only available on macOS
+
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             System.Console.WriteLine($"DEBUG: Not on macOS, returning false");

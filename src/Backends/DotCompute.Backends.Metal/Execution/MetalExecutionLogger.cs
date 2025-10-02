@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using System.Collections.Concurrent;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -433,7 +432,7 @@ public sealed class MetalExecutionTelemetry : IDisposable
         }
 
 
-        _metrics.AddOrUpdate(name, value, (_, _) => value);
+        _ = _metrics.AddOrUpdate(name, value, (_, _) => value);
     }
 
     /// <summary>
@@ -626,5 +625,6 @@ public sealed class MetalTelemetryReport
     public Dictionary<string, int> EventSummary { get; set; } = [];
     public Dictionary<string, object> MetricSummary { get; set; } = [];
 }
+
 
 #endregion

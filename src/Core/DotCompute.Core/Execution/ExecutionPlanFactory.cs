@@ -13,8 +13,6 @@ using DotCompute.Core.Execution.Optimization;
 using DotCompute.Core.Execution.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
-using System;
 namespace DotCompute.Core.Execution
 {
     /// <summary>

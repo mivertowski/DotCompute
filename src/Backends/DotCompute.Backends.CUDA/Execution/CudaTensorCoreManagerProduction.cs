@@ -2,15 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Numerics;
 using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Backends.CUDA.DeviceManagement;
-using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Native.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -471,6 +467,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // TODO
         // This would use NVRTC to compile PTX to cubin
         // For now, return placeholder
+
 
 
         => Encoding.UTF8.GetBytes(ptxCode);

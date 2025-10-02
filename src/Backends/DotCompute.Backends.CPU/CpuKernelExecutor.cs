@@ -1,18 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Kernels.Generators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Abstractions.Debugging;
@@ -322,7 +317,7 @@ internal sealed class CpuKernelExecutor : IDisposable
         {
             // Execute using the compiled delegate
             // This would need to be properly implemented based on delegate signature
-            _compiledDelegate?.DynamicInvoke(context, workItemId);
+            _ = (_compiledDelegate?.DynamicInvoke(context, workItemId));
         }
         catch (Exception ex)
         {
@@ -388,7 +383,7 @@ internal sealed class CpuKernelExecutor : IDisposable
 
     private void UpdatePerformanceMetrics(double executionTimeMs)
     {
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
         _totalExecutionTimeMs += executionTimeMs;
         var newTotal = _totalExecutionTimeMs;
 

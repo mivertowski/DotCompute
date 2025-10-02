@@ -681,6 +681,7 @@ public sealed class InputSanitizer : IDisposable
 
 
 
+
         => Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
 
     private static string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);

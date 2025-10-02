@@ -1,12 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
 using DotCompute.Core.Pipelines.Optimization.Calculators;
 
@@ -103,6 +101,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
     private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2)
         // Create a new fused kernel that combines both stages into a single execution unit
         // This optimization reduces kernel launch overhead and intermediate memory transfers
+
 
         => new FusedKernelStage(stage1, stage2);
 

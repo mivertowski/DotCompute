@@ -7,7 +7,6 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Abstractions.Interfaces;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
 
@@ -257,7 +256,7 @@ public sealed class KernelValidator : IDisposable
         ArgumentException.ThrowIfNullOrEmpty(backendType);
         ArgumentNullException.ThrowIfNull(accelerator);
 
-        _accelerators.TryAdd(backendType, accelerator);
+        _ = _accelerators.TryAdd(backendType, accelerator);
         _logger.LogDebug("Registered accelerator for backend: {BackendType}", backendType);
     }
 

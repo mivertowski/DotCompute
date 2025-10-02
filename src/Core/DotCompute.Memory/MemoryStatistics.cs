@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Memory;
@@ -175,8 +173,8 @@ public sealed class MemoryStatistics
         ArgumentOutOfRangeException.ThrowIfNegative(bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(timeMs);
 
-        Interlocked.Increment(ref _totalAllocations);
-        Interlocked.Add(ref _totalBytesAllocated, bytes);
+        _ = Interlocked.Increment(ref _totalAllocations);
+        _ = Interlocked.Add(ref _totalBytesAllocated, bytes);
 
         var newCurrentBytes = Interlocked.Add(ref _currentlyAllocatedBytes, bytes);
 
@@ -196,11 +194,11 @@ public sealed class MemoryStatistics
 
         if (fromPool)
         {
-            Interlocked.Increment(ref _poolHits);
+            _ = Interlocked.Increment(ref _poolHits);
         }
         else
         {
-            Interlocked.Increment(ref _poolMisses);
+            _ = Interlocked.Increment(ref _poolMisses);
         }
 
         lock (this)
@@ -219,9 +217,9 @@ public sealed class MemoryStatistics
         ArgumentOutOfRangeException.ThrowIfNegative(bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(timeMs);
 
-        Interlocked.Increment(ref _totalDeallocations);
-        Interlocked.Add(ref _totalBytesFreed, bytes);
-        Interlocked.Add(ref _currentlyAllocatedBytes, -bytes);
+        _ = Interlocked.Increment(ref _totalDeallocations);
+        _ = Interlocked.Add(ref _totalBytesFreed, bytes);
+        _ = Interlocked.Add(ref _currentlyAllocatedBytes, -bytes);
 
         if (timeMs > 0)
         {
@@ -239,7 +237,7 @@ public sealed class MemoryStatistics
     public void RecordFailedAllocation(long requestedBytes)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(requestedBytes);
-        Interlocked.Increment(ref _failedAllocations);
+        _ = Interlocked.Increment(ref _failedAllocations);
     }
 
     /// <summary>
@@ -253,7 +251,7 @@ public sealed class MemoryStatistics
         ArgumentOutOfRangeException.ThrowIfNegative(bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(timeMs);
 
-        Interlocked.Increment(ref _copyOperations);
+        _ = Interlocked.Increment(ref _copyOperations);
 
         lock (this)
         {
@@ -307,16 +305,16 @@ public sealed class MemoryStatistics
     {
         lock (this)
         {
-            Interlocked.Exchange(ref _totalAllocations, 0);
-            Interlocked.Exchange(ref _totalDeallocations, 0);
-            Interlocked.Exchange(ref _totalBytesAllocated, 0);
-            Interlocked.Exchange(ref _totalBytesFreed, 0);
-            Interlocked.Exchange(ref _currentlyAllocatedBytes, 0);
-            Interlocked.Exchange(ref _peakAllocatedBytes, 0);
-            Interlocked.Exchange(ref _poolHits, 0);
-            Interlocked.Exchange(ref _poolMisses, 0);
-            Interlocked.Exchange(ref _failedAllocations, 0);
-            Interlocked.Exchange(ref _copyOperations, 0);
+            _ = Interlocked.Exchange(ref _totalAllocations, 0);
+            _ = Interlocked.Exchange(ref _totalDeallocations, 0);
+            _ = Interlocked.Exchange(ref _totalBytesAllocated, 0);
+            _ = Interlocked.Exchange(ref _totalBytesFreed, 0);
+            _ = Interlocked.Exchange(ref _currentlyAllocatedBytes, 0);
+            _ = Interlocked.Exchange(ref _peakAllocatedBytes, 0);
+            _ = Interlocked.Exchange(ref _poolHits, 0);
+            _ = Interlocked.Exchange(ref _poolMisses, 0);
+            _ = Interlocked.Exchange(ref _failedAllocations, 0);
+            _ = Interlocked.Exchange(ref _copyOperations, 0);
             _totalAllocationTimeMs = 0.0;
             _totalDeallocationTimeMs = 0.0;
             _totalCopyTimeMs = 0.0;

@@ -152,7 +152,7 @@ public sealed class NumaScheduler : IDisposable
         };
 
         _nodeQueues[nodeId].Enqueue(scheduledTask);
-        _nodeSignals[nodeId].Release();
+        _ = _nodeSignals[nodeId].Release();
 
         return taskCompletionSource.Task;
     }
@@ -300,7 +300,7 @@ public sealed class NumaScheduler : IDisposable
         var token = _cancellationTokenSource.Token;
 
         // Set thread affinity to this node
-        _affinityManager.RunCurrentThreadOnNode(nodeId);
+        _ = _affinityManager.RunCurrentThreadOnNode(nodeId);
 
         try
         {
@@ -404,7 +404,7 @@ public sealed class NumaScheduler : IDisposable
             // Wait for all scheduler tasks to complete
             try
             {
-                Task.WaitAll(_schedulerTasks, TimeSpan.FromSeconds(5));
+                _ = Task.WaitAll(_schedulerTasks, TimeSpan.FromSeconds(5));
             }
             catch (AggregateException)
             {

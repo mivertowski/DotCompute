@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Abstractions.Performance;
 
 namespace DotCompute.Core.Optimization.Performance;
@@ -20,6 +19,13 @@ public class BackendPerformanceStats
     public double AverageMemoryUsage { get; set; }
     public float ReliabilityScore { get; set; } // 0-1 based on success rate
     public DateTimeOffset LastUpdated { get; set; }
+
+    // Compatibility properties for tests
+    public double ThroughputOpsPerSecond { get; set; }
+    public double SuccessRate { get; set; }
+    public double LoadFactor { get; set; }
+    public bool IsAvailable { get; set; } = true;
+
 
     /// <summary>
     /// Converts this BackendPerformanceStats to a PerformanceMetrics instance.

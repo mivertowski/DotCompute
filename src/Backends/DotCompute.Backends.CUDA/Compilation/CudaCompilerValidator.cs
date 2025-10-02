@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
-using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
@@ -138,14 +137,16 @@ internal static class CudaCompilerValidator
     private static void ValidatePerformancePatterns(string cudaSource, List<string> warnings)
     {
         // Check for excessive register usage indicators
-        if (cudaSource.Contains("register", StringComparison.Ordinal) && 
+        if (cudaSource.Contains("register", StringComparison.Ordinal) &&
+
             System.Text.RegularExpressions.Regex.Matches(cudaSource, @"register\s+\w+").Count > 10)
         {
             warnings.Add("Excessive register usage detected - may reduce occupancy");
         }
 
         // Check for uncoalesced memory access patterns
-        if (cudaSource.Contains("[threadIdx.x + ", StringComparison.Ordinal) && 
+        if (cudaSource.Contains("[threadIdx.x + ", StringComparison.Ordinal) &&
+
             !cudaSource.Contains("* blockDim.x", StringComparison.Ordinal))
         {
             warnings.Add("Potential uncoalesced memory access pattern detected");
@@ -169,7 +170,8 @@ internal static class CudaCompilerValidator
         }
 
         // Check for atomic operations without proper considerations
-        if (cudaSource.Contains("atomic", StringComparison.Ordinal) && 
+        if (cudaSource.Contains("atomic", StringComparison.Ordinal) &&
+
             !cudaSource.Contains("__shared__", StringComparison.Ordinal))
         {
             warnings.Add("Global memory atomics without shared memory staging may be inefficient");
@@ -185,21 +187,24 @@ internal static class CudaCompilerValidator
     private static void ValidateSecurityPatterns(string cudaSource, List<string> warnings)
     {
         // Check for buffer overflow risks
-        if (cudaSource.Contains("char[", StringComparison.Ordinal) && 
+        if (cudaSource.Contains("char[", StringComparison.Ordinal) &&
+
             !cudaSource.Contains("sizeof", StringComparison.Ordinal))
         {
             warnings.Add("Fixed-size character arrays without size checks may be vulnerable to buffer overflows");
         }
 
         // Check for unchecked array access
-        if (System.Text.RegularExpressions.Regex.IsMatch(cudaSource, @"\w+\[\w+\]\s*=") && 
+        if (System.Text.RegularExpressions.Regex.IsMatch(cudaSource, @"\w+\[\w+\]\s*=") &&
+
             !cudaSource.Contains("if (", StringComparison.Ordinal))
         {
             warnings.Add("Array access without bounds checking detected");
         }
 
         // Check for potential integer overflow
-        if (cudaSource.Contains("int ", StringComparison.Ordinal) && 
+        if (cudaSource.Contains("int ", StringComparison.Ordinal) &&
+
             (cudaSource.Contains(" + ", StringComparison.Ordinal) || cudaSource.Contains(" * ", StringComparison.Ordinal)) &&
             !cudaSource.Contains("overflow", StringComparison.Ordinal))
         {
@@ -213,7 +218,8 @@ internal static class CudaCompilerValidator
         }
 
         // Check for unsafe pointer operations
-        if (cudaSource.Contains("reinterpret_cast", StringComparison.Ordinal) || 
+        if (cudaSource.Contains("reinterpret_cast", StringComparison.Ordinal) ||
+
             cudaSource.Contains("(void*)", StringComparison.Ordinal))
         {
             warnings.Add("Unsafe pointer casting detected - ensure type safety");
@@ -247,7 +253,8 @@ internal static class CudaCompilerValidator
             // Check for proper extern "C" usage
             var hasGlobalFunctions = cudaSource.Contains("__global__", StringComparison.Ordinal);
             var hasExternC = cudaSource.Contains("extern \"C\"", StringComparison.Ordinal);
-            
+
+
             if (hasGlobalFunctions && !hasExternC)
             {
                 warnings.Add("Consider using extern \"C\" to prevent C++ name mangling issues");
@@ -260,7 +267,8 @@ internal static class CudaCompilerValidator
             }
 
             // Check for proper error handling patterns
-            if (!cudaSource.Contains("return", StringComparison.Ordinal) && 
+            if (!cudaSource.Contains("return", StringComparison.Ordinal) &&
+
                 !cudaSource.Contains("assert", StringComparison.Ordinal))
             {
                 warnings.Add("Consider adding error handling or assertions for robustness");
@@ -288,13 +296,15 @@ internal static class CudaCompilerValidator
         try
         {
             // Check for features requiring specific compute capabilities
-            if (cudaSource.Contains("cooperative_groups", StringComparison.Ordinal) && 
+            if (cudaSource.Contains("cooperative_groups", StringComparison.Ordinal) &&
+
                 (computeCapability.major < 6 || (computeCapability.major == 6 && computeCapability.minor < 0)))
             {
                 warnings.Add("Cooperative groups require compute capability 6.0 or higher");
             }
 
-            if (cudaSource.Contains("__half", StringComparison.Ordinal) && 
+            if (cudaSource.Contains("__half", StringComparison.Ordinal) &&
+
                 (computeCapability.major < 5 || (computeCapability.major == 5 && computeCapability.minor < 3)))
             {
                 warnings.Add("Half-precision types require compute capability 5.3 or higher");
@@ -305,15 +315,18 @@ internal static class CudaCompilerValidator
                 warnings.Add("Tensor core operations require compute capability 7.0 or higher");
             }
 
-            if (cudaSource.Contains("__ldg", StringComparison.Ordinal) && 
+            if (cudaSource.Contains("__ldg", StringComparison.Ordinal) &&
+
                 (computeCapability.major < 3 || (computeCapability.major == 3 && computeCapability.minor < 5)))
             {
                 warnings.Add("Read-only data cache load (__ldg) requires compute capability 3.5 or higher");
             }
 
             // Check for dynamic parallelism
-            if (cudaSource.Contains("<<<", StringComparison.Ordinal) && 
-                cudaSource.Contains(">>>", StringComparison.Ordinal) && 
+            if (cudaSource.Contains("<<<", StringComparison.Ordinal) &&
+
+                cudaSource.Contains(">>>", StringComparison.Ordinal) &&
+
                 computeCapability.major < 3)
             {
                 warnings.Add("Dynamic parallelism requires compute capability 3.5 or higher");

@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
-using ManagedCompiledKernel = DotCompute.Core.Execution.ManagedCompiledKernel;
 
 namespace DotCompute.Core.Execution.Plans
 {

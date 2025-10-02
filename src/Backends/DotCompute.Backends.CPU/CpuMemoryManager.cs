@@ -8,7 +8,6 @@ using DotCompute.Backends.CPU.Extensions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -711,6 +710,7 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
 
     public ValueTask DisposeAsync()
         // View doesn't own the memory, parent does
+
 
 
         => ValueTask.CompletedTask;

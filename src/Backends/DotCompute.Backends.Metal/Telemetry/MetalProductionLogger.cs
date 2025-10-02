@@ -58,9 +58,11 @@ public sealed class MetalProductionLogger : IDisposable
 
 
         correlationId ??= GenerateCorrelationId();
-        
+
+
         var context = new LogContext(correlationId, operationType, DateTimeOffset.UtcNow);
-        
+
+
         if (_options.EnableCorrelationTracking)
         {
             _activeContexts[correlationId] = context;
@@ -88,7 +90,8 @@ public sealed class MetalProductionLogger : IDisposable
 
 
         var duration = DateTimeOffset.UtcNow - context.StartTime;
-        
+
+
         var properties = new Dictionary<string, object>
         {
             ["operation_type"] = context.OperationType,
@@ -111,7 +114,7 @@ public sealed class MetalProductionLogger : IDisposable
 
         if (_options.EnableCorrelationTracking)
         {
-            _activeContexts.TryRemove(context.CorrelationId, out _);
+            _ = _activeContexts.TryRemove(context.CorrelationId, out _);
         }
     }
 
@@ -140,7 +143,8 @@ public sealed class MetalProductionLogger : IDisposable
         };
 
         var logLevel = success ? LogLevel.Debug : LogLevel.Error;
-        
+
+
         if (duration.TotalMilliseconds > _options.SlowOperationThresholdMs)
         {
             logLevel = LogLevel.Warning;
@@ -153,7 +157,8 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs kernel execution with comprehensive metrics
     /// </summary>
-    public void LogKernelExecution(string correlationId, string kernelName, TimeSpan duration, long dataSize, 
+    public void LogKernelExecution(string correlationId, string kernelName, TimeSpan duration, long dataSize,
+
         bool success, Dictionary<string, object>? additionalProperties = null)
     {
         if (_disposed)
@@ -162,8 +167,10 @@ public sealed class MetalProductionLogger : IDisposable
         }
 
 
-        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0 
-            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds 
+        var throughputMBps = dataSize > 0 && duration.TotalSeconds > 0
+
+            ? (dataSize / (1024.0 * 1024.0)) / duration.TotalSeconds
+
             : 0;
 
         var properties = new Dictionary<string, object>
@@ -187,7 +194,8 @@ public sealed class MetalProductionLogger : IDisposable
         }
 
         var logLevel = success ? LogLevel.Information : LogLevel.Error;
-        
+
+
         if (success && duration.TotalMilliseconds > _options.SlowOperationThresholdMs)
         {
             logLevel = LogLevel.Warning;
@@ -307,7 +315,8 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs resource usage metrics
     /// </summary>
-    public void LogResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit, 
+    public void LogResourceUsage(ResourceType type, long currentUsage, long peakUsage, long limit,
+
         double utilizationPercentage, string? correlationId = null)
     {
         if (_disposed)
@@ -428,7 +437,7 @@ public sealed class MetalProductionLogger : IDisposable
         // Maintain buffer size
         while (_logBuffer.Count > _options.MaxBufferSize)
         {
-            _logBuffer.TryDequeue(out _);
+            _ = _logBuffer.TryDequeue(out _);
         }
 
         // Immediate flush for high-priority entries
@@ -443,7 +452,8 @@ public sealed class MetalProductionLogger : IDisposable
         try
         {
             // Format message based on configuration
-            var message = _options.UseJsonFormat 
+            var message = _options.UseJsonFormat
+
                 ? JsonSerializer.Serialize(entry.Properties)
                 : entry.Message;
 
@@ -479,7 +489,8 @@ public sealed class MetalProductionLogger : IDisposable
 
 
         var entriesToFlush = new List<StructuredLogEntry>();
-        
+
+
         while (_logBuffer.TryDequeue(out var entry))
         {
             entriesToFlush.Add(entry);
@@ -526,7 +537,8 @@ public sealed class MetalProductionLogger : IDisposable
         // - Application Insights
         // - DataDog
         // - Custom log aggregation services
-        
+
+
         await Task.Delay(10); // Simulate async operation
     }
 
@@ -548,7 +560,7 @@ public sealed class MetalProductionLogger : IDisposable
 
         foreach (var contextId in expiredContexts)
         {
-            _activeContexts.TryRemove(contextId, out _);
+            _ = _activeContexts.TryRemove(contextId, out _);
         }
 
         if (expiredContexts.Count > 0)
@@ -576,7 +588,8 @@ public sealed class MetalProductionLogger : IDisposable
         var sizeBytes = (long)properties["size_bytes"];
         var durationMs = (double)properties["duration_ms"];
 
-        return success 
+        return success
+
             ? $"Allocated {FormatBytes(sizeBytes)} in {durationMs:F2}ms"
             : $"Failed to allocate {FormatBytes(sizeBytes)} after {durationMs:F2}ms";
     }
@@ -759,7 +772,8 @@ public sealed class MetalProductionLogger : IDisposable
 
             // Flush any remaining buffered entries
             FlushLogBuffer(null);
-            
+
+
             _bufferFlushTimer?.Dispose();
 
             _logger.LogInformation("Metal production logger disposed - Active contexts: {ActiveContexts}, Buffer size: {BufferSize}",

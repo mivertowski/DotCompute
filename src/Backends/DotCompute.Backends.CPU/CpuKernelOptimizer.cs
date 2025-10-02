@@ -1,16 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Backends.CPU.Intrinsics;
@@ -75,7 +68,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             {
                 _logger.LogDebug("Using cached optimization profile for kernel {kernelName}", definition.Name);
                 return cachedProfile.ExecutionPlan;
-    }
+            }
 
             // Analyze kernel characteristics
             var analysis = await AnalyzeKernelAsync(definition, workDimensions);
@@ -101,13 +94,13 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 definition.Name, stopwatch.Elapsed.TotalMilliseconds);
 
             return executionPlan;
-            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create optimization plan for kernel {kernelName}", definition.Name);
             throw;
         }
-        }
+    }
 
     /// <summary>
     /// Analyzes kernel performance and suggests optimizations.
@@ -151,14 +144,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 definition.Name, recommendations.Suggestions.Count);
 
             return recommendations;
-    }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Performance analysis failed for kernel {kernelName}", definition.Name);
             recommendations.ErrorMessage = ex.Message;
             return recommendations;
         }
-        }
+    }
 
     /// <summary>
     /// Benchmarks different execution strategies to find the optimal configuration.
@@ -192,7 +185,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             {
                 var vectorizedPlan = CreateBasicExecutionPlan(definition, workDimensions, true);
                 results.VectorizedPerformance = await BenchmarkExecutionPlanAsync(vectorizedPlan, iterations);
-    }
+            }
 
             // Benchmark different thread counts
             results.ParallelizationResults = await BenchmarkParallelizationAsync(definition, workDimensions, iterations);
@@ -204,14 +197,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 definition.Name, results.OptimalConfiguration.Description);
 
             return results;
-            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Benchmarking failed for kernel {kernelName}", definition.Name);
             results.ErrorMessage = ex.Message;
             return results;
         }
-        }
+    }
 
     /// <summary>
     /// Applies dynamic optimizations based on runtime performance feedback.
@@ -240,7 +233,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 {
                     optimizationsApplied = true;
                     _logger.LogDebug("Thread pool configuration optimized for kernel {kernelName}", kernelName);
-    }
+                }
 
                 // Attempt to adjust vectorization settings
                 if (await OptimizeVectorizationSettingsAsync(currentPlan, currentStats))
@@ -248,16 +241,16 @@ internal sealed class CpuKernelOptimizer : IDisposable
                     optimizationsApplied = true;
                     _logger.LogDebug("Vectorization settings optimized for kernel {kernelName}", kernelName);
                 }
-                }
+            }
 
             return optimizationsApplied;
-            }
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Dynamic optimization failed for kernel {kernelName}", kernelName);
             return false;
         }
-        }
+    }
 
     // Private analysis methods
 
@@ -322,7 +315,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 ExpectedSpeedup = EstimateVectorizationSpeedup(definition),
                 Implementation = "Set UseVectorization = true in execution plan"
             });
-    }
+        }
         else if (statistics.UseVectorization && statistics.AverageExecutionTimeMs > 0)
         {
             // Analyze current vectorization efficiency
@@ -336,10 +329,10 @@ internal sealed class CpuKernelOptimizer : IDisposable
                     ExpectedSpeedup = 1.3,
                     Implementation = "Restructure data for better SIMD utilization"
                 });
-        }
             }
-        return Task.CompletedTask;
         }
+        return Task.CompletedTask;
+    }
 
     private Task AnalyzeParallelizationEfficiencyAsync(
         ExecutionStatistics statistics,
@@ -361,10 +354,10 @@ internal sealed class CpuKernelOptimizer : IDisposable
                     ExpectedSpeedup = EstimateParallelizationSpeedup(optimalThreads, currentThreads),
                     Implementation = $"Configure thread pool with {optimalThreads} threads"
                 });
-    }
             }
-        return Task.CompletedTask;
         }
+        return Task.CompletedTask;
+    }
 
     private static Task AnalyzeMemoryAccessPatternsAsync(
         KernelDefinition definition,
@@ -440,7 +433,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
 
             return MemoryAccessPattern.Random;
-    }
+        }
 
 
         if (definition.Name.Contains("Stride", StringComparison.OrdinalIgnoreCase))
@@ -451,7 +444,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
 
         return MemoryAccessPattern.Sequential;
-        }
+    }
 
     private static double EstimateComputeIntensity(KernelDefinition definition)
     {
@@ -467,7 +460,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         if (totalWorkItems < 100)
         {
             return 0.5;
-    }
+        }
 
 
         if (totalWorkItems < 1000)
@@ -477,7 +470,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
 
         return 0.1;
-        }
+    }
 
     private static long GetTotalWorkItems(WorkDimensions dimensions)
     {
@@ -537,7 +530,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
             stopwatch.Stop();
             executionTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
-    }
+        }
 
         metrics.AverageTimeMs = executionTimes.Average();
         metrics.MinTimeMs = executionTimes.Min();
@@ -545,7 +538,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         metrics.StandardDeviation = CalculateStandardDeviation(executionTimes);
 
         return metrics;
-        }
+    }
 
     private async Task<Dictionary<int, PerformanceMetrics>> BenchmarkParallelizationAsync(
         KernelDefinition definition,
@@ -575,10 +568,10 @@ internal sealed class CpuKernelOptimizer : IDisposable
             };
 
             results[threadCount] = await BenchmarkExecutionPlanAsync(plan, iterations);
-    }
+        }
 
         return results;
-        }
+    }
 
     private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
@@ -598,7 +591,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
             bestPerformance = results.VectorizedPerformance;
             bestDescription = "Vectorized execution";
-    }
+        }
 
         // Fallback if no performance metrics available
         bestPerformance ??= new PerformanceMetrics { AverageTimeMs = 0, Timestamp = DateTimeOffset.UtcNow };
@@ -610,7 +603,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             UseVectorization = bestDescription.Contains("Vectorized"),
             OptimalThreadCount = DetermineBestThreadCount(results.ParallelizationResults)
         };
-        }
+    }
 
     private static int DetermineBestThreadCount(Dictionary<int, PerformanceMetrics> parallelizationResults)
     {
@@ -691,16 +684,16 @@ internal sealed class CpuKernelOptimizer : IDisposable
             if (analysis.MemoryAccessPattern == MemoryAccessPattern.Random)
             {
                 optimizations.Add("EnableMemoryPrefetching");
-    }
+            }
 
             if (analysis.ComputeIntensity <= ComputeIntensity.Low)
             {
                 optimizations.Add("OptimizeDataLayout");
             }
-            }
+        }
 
         return optimizations;
-        }
+    }
 
     private static List<string> DetermineCacheOptimizations(KernelAnalysis analysis, OptimizationLevel level)
     {
@@ -710,10 +703,10 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
             optimizations.Add("EnableCachePrefetching");
             optimizations.Add("OptimizeDataLocality");
-    }
+        }
 
         return optimizations;
-        }
+    }
 
     private static double EstimateVectorizationSpeedup(KernelDefinition definition)
     {
@@ -747,8 +740,8 @@ internal sealed class CpuKernelOptimizer : IDisposable
         if (recommendations.Suggestions.Count > 5)
         {
             recommendations.Suggestions = recommendations.Suggestions.Take(5).ToList();
-    }
         }
+    }
 
     private static string GenerateCacheKey(KernelDefinition definition, WorkDimensions workDimensions, OptimizationLevel level)
     {
@@ -798,18 +791,18 @@ internal sealed class CpuKernelOptimizer : IDisposable
         var sets = new HashSet<string>();
         if (Vector.IsHardwareAccelerated)
         {
-            sets.Add("SIMD");
-    }
+            _ = sets.Add("SIMD");
+        }
         if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
         {
-            sets.Add("AVX2");
+            _ = sets.Add("AVX2");
         }
         if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported)
         {
-            sets.Add("AVX512");
+            _ = sets.Add("AVX512");
         }
         return sets;
-        }
+    }
 
     public void Dispose()
     {
@@ -817,9 +810,9 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
             _performanceCounter?.Dispose();
             _disposed = true;
-    }
         }
     }
+}
 
 // Supporting enums and classes for optimization
 

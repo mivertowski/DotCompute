@@ -1,10 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using DotCompute.Core.Optimization.Models;
 
 namespace DotCompute.Core.Optimization.Performance;
@@ -30,7 +27,7 @@ public class PerformanceHistory
 
     public void AddPerformanceResult(string backendId, PerformanceResult result)
     {
-        _backendResults.AddOrUpdate(backendId,
+        _ = _backendResults.AddOrUpdate(backendId,
             _ => [result],
             (_, existing) =>
             {

@@ -125,7 +125,8 @@ internal static partial class MetalNative
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetLibraryDataSize")]
     public static partial int GetLibraryDataSize(IntPtr library);
-    
+
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetLibraryData")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetLibraryData(IntPtr library, IntPtr buffer, int bufferSize);

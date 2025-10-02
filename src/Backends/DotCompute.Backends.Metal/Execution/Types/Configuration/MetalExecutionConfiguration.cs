@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.Metal.Execution.Types.Core;
-
 namespace DotCompute.Backends.Metal.Execution.Types.Configuration;
 
 /// <summary>

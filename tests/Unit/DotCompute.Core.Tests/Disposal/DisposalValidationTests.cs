@@ -1,11 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading.Tasks;
 using DotCompute.Tests.Common;
-using FluentAssertions;
-using Xunit;
 
 namespace DotCompute.Core.Tests.Disposal;
 

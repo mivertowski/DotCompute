@@ -1,15 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using DotCompute.Abstractions.Interfaces.Recovery;
-using DotCompute.Core.Recovery;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Core.Tests.Recovery;
 
@@ -68,10 +62,10 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await fallbackStrategy.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("FallbackToCPU");
-        result.Message.Should().Contain("CPU");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("FallbackToCPU");
+        _ = result.Message.Should().Contain("CPU");
 
         // Verify fallback was logged
         _mockLogger.Verify(
@@ -109,11 +103,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         }
 
         // Assert
-        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Later attempts should use more aggressive fallback strategies
         var lastResult = results.Last();
-        lastResult.RecoveryAction.Should().Contain("Aggressive");
+        _ = lastResult.RecoveryAction.Should().Contain("Aggressive");
     }
 
     [Fact]
@@ -135,9 +129,9 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await fallbackStrategy.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("not supported");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.Message.Should().Contain("not supported");
     }
 
     #endregion
@@ -168,12 +162,12 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await memoryRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("MemoryCleanup");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("MemoryCleanup");
 
-        memoryRecovery.CleanupPerformed.Should().BeTrue();
-        memoryRecovery.GCTriggered.Should().BeTrue();
+        _ = memoryRecovery.CleanupPerformed.Should().BeTrue();
+        _ = memoryRecovery.GCTriggered.Should().BeTrue();
 
         // Verify cleanup was logged
         _mockLogger.Verify(
@@ -210,11 +204,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await memoryRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("MemoryDefragmentation");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("MemoryDefragmentation");
 
-        memoryRecovery.DefragmentationPerformed.Should().BeTrue();
+        _ = memoryRecovery.DefragmentationPerformed.Should().BeTrue();
     }
 
     [Fact]
@@ -241,11 +235,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await memoryRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("LeakMitigation");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("LeakMitigation");
 
-        memoryRecovery.LeakMitigationPerformed.Should().BeTrue();
+        _ = memoryRecovery.LeakMitigationPerformed.Should().BeTrue();
     }
 
     [Fact]
@@ -272,11 +266,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await memoryRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("ReduceMemoryFootprint");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("ReduceMemoryFootprint");
 
-        memoryRecovery.MemoryFootprintReduced.Should().BeTrue();
+        _ = memoryRecovery.MemoryFootprintReduced.Should().BeTrue();
     }
 
     #endregion
@@ -309,11 +303,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await gpuRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("DeviceReset");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("DeviceReset");
 
-        gpuRecovery.DeviceResetPerformed.Should().BeTrue();
+        _ = gpuRecovery.DeviceResetPerformed.Should().BeTrue();
 
         // Verify device reset was logged
         _mockLogger.Verify(
@@ -351,11 +345,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await gpuRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("RebuildContext");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("RebuildContext");
 
-        gpuRecovery.ContextRebuilt.Should().BeTrue();
+        _ = gpuRecovery.ContextRebuilt.Should().BeTrue();
     }
 
     [Fact]
@@ -383,11 +377,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await gpuRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("ReduceWorkload");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("ReduceWorkload");
 
-        gpuRecovery.WorkloadReduced.Should().BeTrue();
+        _ = gpuRecovery.WorkloadReduced.Should().BeTrue();
     }
 
     [Fact]
@@ -414,11 +408,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await gpuRecovery.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("ReloadDriver");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("ReloadDriver");
 
-        gpuRecovery.DriverReloaded.Should().BeTrue();
+        _ = gpuRecovery.DriverReloaded.Should().BeTrue();
     }
 
     #endregion
@@ -451,11 +445,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await coordinator.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("MemoryCleanup"); // Should select memory recovery strategy
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("MemoryCleanup"); // Should select memory recovery strategy
 
-        coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
+        _ = coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
     }
 
     [Fact]
@@ -481,13 +475,13 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await coordinator.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.RecoveryAction.Should().Be("MemoryCleanup");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeTrue();
+        _ = result.RecoveryAction.Should().Be("MemoryCleanup");
 
-        coordinator.StrategiesAttempted.Should().HaveCount(2);
-        coordinator.StrategiesAttempted.Should().Contain("TestAlwaysFailingStrategy");
-        coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
+        _ = coordinator.StrategiesAttempted.Should().HaveCount(2);
+        _ = coordinator.StrategiesAttempted.Should().Contain("TestAlwaysFailingStrategy");
+        _ = coordinator.StrategiesAttempted.Should().Contain("TestMemoryRecoveryStrategy");
     }
 
     [Fact]
@@ -515,11 +509,11 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await coordinator.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("exhausted");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.Message.Should().Contain("exhausted");
 
-        coordinator.StrategiesAttempted.Should().HaveCount(2);
+        _ = coordinator.StrategiesAttempted.Should().HaveCount(2);
     }
 
     #endregion
@@ -543,14 +537,14 @@ public sealed class RecoveryStrategyTests : IDisposable
         }).ToArray();
 
         // Act - Attempt concurrent recoveries
-        var recoveryTasks = contexts.Select(ctx => memoryRecovery.AttemptRecoveryAsync(ctx));
+        var recoveryTasks = contexts.Select(ctx => memoryRecovery.AttemptRecoveryAsync(ctx).AsTask());
         var results = await Task.WhenAll(recoveryTasks);
 
         // Assert
-        results.Should().HaveCount(concurrentRecoveries);
-        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = results.Should().HaveCount(concurrentRecoveries);
+        _ = results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
-        memoryRecovery.ConcurrentRecoveryCount.Should().Be(concurrentRecoveries);
+        _ = memoryRecovery.ConcurrentRecoveryCount.Should().Be(concurrentRecoveries);
     }
 
     [Fact]
@@ -576,19 +570,19 @@ public sealed class RecoveryStrategyTests : IDisposable
         }).ToArray();
 
         // Act
-        var tasks = contexts.Select(ctx => coordinator.AttemptRecoveryAsync(ctx));
+        var tasks = contexts.Select(ctx => coordinator.AttemptRecoveryAsync(ctx).AsTask());
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        results.Should().HaveCount(concurrentOperations);
-        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = results.Should().HaveCount(concurrentOperations);
+        _ = results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Verify different strategies were used
         var memoryRecoveries = results.Count(r => r.RecoveryAction == "MemoryCleanup");
         var deviceResets = results.Count(r => r.RecoveryAction == "DeviceReset");
 
-        memoryRecoveries.Should().Be(concurrentOperations / 2);
-        deviceResets.Should().Be(concurrentOperations / 2);
+        _ = memoryRecoveries.Should().Be(concurrentOperations / 2);
+        _ = deviceResets.Should().Be(concurrentOperations / 2);
     }
 
     #endregion
@@ -616,7 +610,7 @@ public sealed class RecoveryStrategyTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
         for (var i = 0; i < iterations; i++)
         {
-            await memoryRecovery.AttemptRecoveryAsync(context);
+            _ = await memoryRecovery.AttemptRecoveryAsync(context);
         }
         stopwatch.Stop();
 
@@ -624,7 +618,7 @@ public sealed class RecoveryStrategyTests : IDisposable
         var avgRecoveryTime = stopwatch.ElapsedMilliseconds / (double)iterations;
         _output.WriteLine($"Average recovery time: {avgRecoveryTime:F3}ms");
 
-        avgRecoveryTime.Should().BeLessThan(10, "recovery should be fast to minimize impact");
+        _ = avgRecoveryTime.Should().BeLessThan(10, "recovery should be fast to minimize impact");
     }
 
     [Fact]
@@ -653,7 +647,7 @@ public sealed class RecoveryStrategyTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
         foreach (var context in contexts)
         {
-            await coordinator.AttemptRecoveryAsync(context);
+            _ = await coordinator.AttemptRecoveryAsync(context);
         }
         stopwatch.Stop();
 
@@ -662,8 +656,8 @@ public sealed class RecoveryStrategyTests : IDisposable
         _output.WriteLine($"Average coordination time: {avgCoordinationTime:F3}ms");
 
         // Each context should route to the first matching strategy (optimal routing)
-        coordinator.StrategiesAttempted.Should().HaveCount(3); // One strategy per context
-        avgCoordinationTime.Should().BeLessThan(5, "coordination should be efficient");
+        _ = coordinator.StrategiesAttempted.Should().HaveCount(3); // One strategy per context
+        _ = avgCoordinationTime.Should().BeLessThan(5, "coordination should be efficient");
     }
 
     #endregion
@@ -689,12 +683,12 @@ public sealed class RecoveryStrategyTests : IDisposable
         for (var i = 0; i < 5; i++)
         {
             context.FailureCount = i + 1;
-            await patternDetector.AttemptRecoveryAsync(context);
+            _ = await patternDetector.AttemptRecoveryAsync(context);
         }
 
         // Assert
-        patternDetector.PatternDetected.Should().BeTrue();
-        patternDetector.AdaptiveStrategy.Should().BeTrue();
+        _ = patternDetector.PatternDetected.Should().BeTrue();
+        _ = patternDetector.AdaptiveStrategy.Should().BeTrue();
 
         // Verify pattern detection was logged
         _mockLogger.Verify(
@@ -732,12 +726,12 @@ public sealed class RecoveryStrategyTests : IDisposable
         }
 
         // Assert
-        results[0].RecoveryAction.Should().Be("SoftReset");
-        results[1].RecoveryAction.Should().Be("HardReset");
-        results[2].RecoveryAction.Should().Be("DriverReload");
-        results[3].RecoveryAction.Should().Be("FallbackToCPU");
+        _ = results[0].RecoveryAction.Should().Be("SoftReset");
+        _ = results[1].RecoveryAction.Should().Be("HardReset");
+        _ = results[2].RecoveryAction.Should().Be("DriverReload");
+        _ = results[3].RecoveryAction.Should().Be("FallbackToCPU");
 
-        escalatingRecovery.EscalationLevel.Should().Be(4);
+        _ = escalatingRecovery.EscalationLevel.Should().Be(4);
     }
 
     #endregion
@@ -754,7 +748,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act & Assert
         var act = async () => await strategy.AttemptRecoveryAsync(null!);
-        await act.Should().ThrowAsync<ArgumentNullException>()
+        _ = await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
@@ -775,7 +769,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act & Assert
         var act = async () => await strategy.AttemptRecoveryAsync(context);
-        await act.Should().ThrowAsync<ObjectDisposedException>();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -797,9 +791,9 @@ public sealed class RecoveryStrategyTests : IDisposable
         var result = await coordinator.AttemptRecoveryAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("No recovery strategies");
+        _ = result.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.Message.Should().Contain("No recovery strategies");
     }
 
     [Fact]
@@ -822,7 +816,7 @@ public sealed class RecoveryStrategyTests : IDisposable
 
         // Act & Assert
         var act = async () => await strategy.AttemptRecoveryAsync(context, cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        _ = await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     #endregion
@@ -892,7 +886,7 @@ public class TestCompilationFallback : IRecoveryStrategy, IDisposable
     }
 }
 
-public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable
+public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable, IDisposable
 {
     private readonly ILogger _logger;
     private int _concurrentRecoveryCount;
@@ -920,7 +914,7 @@ public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable
         if (_disposed) throw new ObjectDisposedException(nameof(TestMemoryRecoveryStrategy));
         if (context == null) throw new ArgumentNullException(nameof(context));
 
-        Interlocked.Increment(ref _concurrentRecoveryCount);
+        _ = Interlocked.Increment(ref _concurrentRecoveryCount);
 
         try
         {
@@ -957,7 +951,16 @@ public class TestMemoryRecoveryStrategy : IRecoveryStrategy, IAsyncDisposable
         }
         finally
         {
-            Interlocked.Decrement(ref _concurrentRecoveryCount);
+            _ = Interlocked.Decrement(ref _concurrentRecoveryCount);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -1124,7 +1127,7 @@ public class TestPatternDetectingRecovery : IRecoveryStrategy, IDisposable
     public async ValueTask<RecoveryResult> AttemptRecoveryAsync(RecoveryContext context, CancellationToken cancellationToken = default)
     {
         var key = $"{context.FailureType}:{context.AttemptedOperation}";
-        _failurePatterns.TryGetValue(key, out var count);
+        _ = _failurePatterns.TryGetValue(key, out var count);
         _failurePatterns[key] = count + 1;
 
         if (_failurePatterns[key] >= 3)

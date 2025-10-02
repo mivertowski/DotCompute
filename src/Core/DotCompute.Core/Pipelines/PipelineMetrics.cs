@@ -7,10 +7,8 @@ using DotCompute.Core.Aot;
 using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Abstractions.Pipelines.Statistics;
 using AbsTimeSeriesMetric = DotCompute.Abstractions.Pipelines.Metrics.TimeSeriesMetric;
 using DotCompute.Abstractions.Pipelines.Metrics;
-using DotCompute.Core.Pipelines.Models;
 using CoreTimeSeriesMetric = DotCompute.Core.Pipelines.Metrics.TimeSeriesMetric;
 
 namespace DotCompute.Core.Pipelines

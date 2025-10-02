@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Execution.Types;
-
-using System;
 namespace DotCompute.Core.Execution.Analysis
 {
     /// <summary>
@@ -226,7 +224,8 @@ namespace DotCompute.Core.Execution.Analysis
             }
             return nodes;
         }
-        
+
+
         /// <summary>
         /// Clears all dependencies from the graph.
         /// </summary>

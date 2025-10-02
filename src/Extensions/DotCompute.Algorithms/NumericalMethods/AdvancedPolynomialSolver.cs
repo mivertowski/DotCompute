@@ -247,6 +247,7 @@ public static class AdvancedPolynomialSolver
 
 
 
+
         => SolveHighDegree(coeffs, 1e-10f, 1000);
 
     private static float[] SolveHighDegree(float[] coeffs, float tolerance, int maxIterations)

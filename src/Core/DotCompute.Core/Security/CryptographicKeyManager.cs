@@ -1,11 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 
@@ -124,7 +121,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -157,7 +154,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -226,7 +223,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -254,7 +251,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -291,7 +288,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -346,7 +343,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         finally
         {
-            _operationLock.Release();
+            _ = _operationLock.Release();
         }
     }
 
@@ -487,7 +484,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         {
             _ = Task.Run(async () =>
             {
-                await RotateKeysAsync();
+                _ = await RotateKeysAsync();
             });
         }
         catch (Exception ex)

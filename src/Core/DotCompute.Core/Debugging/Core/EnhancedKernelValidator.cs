@@ -3,11 +3,9 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.Linq;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
@@ -268,7 +266,7 @@ public sealed partial class EnhancedKernelValidator : IDisposable
         ArgumentNullException.ThrowIfNull(profile);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        _validationProfiles.AddOrUpdate(kernelName, profile, (key, existing) => profile);
+        _ = _validationProfiles.AddOrUpdate(kernelName, profile, (key, existing) => profile);
         LogValidationProfileUpdated(kernelName, profile.Level.ToString());
     }
 

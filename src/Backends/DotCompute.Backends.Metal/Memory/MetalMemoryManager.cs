@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Memory;
-using DotCompute.Core.Utilities;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -54,17 +53,20 @@ public sealed class MetalMemoryManager : BaseMemoryManager
         _device = GetOrCreateDevice();
         _isAppleSilicon = DetectAppleSilicon();
         _activeAllocations = new ConcurrentDictionary<IntPtr, MetalAllocationInfo>();
-        
+
+
         if (accelerator != null)
         {
             _acceleratorRef = new WeakReference<IAccelerator>(accelerator);
         }
-        
+
+
         var logger2 = logger as ILogger; // Access the base logger
         logger2?.LogInformation("Metal Memory Manager initialized for {Architecture} with device {DeviceId:X}",
             _isAppleSilicon ? "Apple Silicon" : "Intel Mac", _device.ToInt64());
     }
-    
+
+
     private static IntPtr GetOrCreateDevice()
     {
         var device = MetalNative.CreateSystemDefaultDevice();
@@ -138,7 +140,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             var totalAllocated = CurrentAllocatedMemory;
             var peakAllocated = Interlocked.Read(ref _peakAllocatedBytes);
             var totalAllocs = Interlocked.Read(ref _totalAllocations);
-            
+
+
             return new MemoryStatistics
             {
                 TotalAllocated = totalAllocated,
@@ -153,7 +156,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     protected override async ValueTask<IUnifiedMemoryBuffer> AllocateInternalAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (sizeInBytes <= 0)
         {
 
@@ -169,11 +173,13 @@ public sealed class MetalMemoryManager : BaseMemoryManager
 
 
         _ = Interlocked.Increment(ref _totalAllocations);
-        
+
         // Allocate Metal buffer directly with real Metal API
+
         var buffer = new MetalMemoryBuffer(sizeInBytes, options, _device);
         await buffer.InitializeAsync(cancellationToken);
-        
+
+
         TrackAllocation(buffer, sizeInBytes);
         return buffer;
     }
@@ -188,15 +194,18 @@ public sealed class MetalMemoryManager : BaseMemoryManager
 
 
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         // Track deallocation
-        if (buffer is MetalMemoryBuffer metalBuffer && 
+
+        if (buffer is MetalMemoryBuffer metalBuffer &&
+
             _activeAllocations.TryRemove(metalBuffer.NativeHandle, out var info))
         {
             _ = Interlocked.Add(ref _totalAllocatedBytes, -info.SizeInBytes);
         }
-        
+
         // Dispose the buffer
+
         buffer.Dispose();
         return ValueTask.CompletedTask;
     }
@@ -205,13 +214,15 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override async ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (source is MetalMemoryBuffer srcMetal && destination is MetalMemoryBuffer destMetal)
         {
             // Direct Metal buffer copy for optimal performance
             var elementSize = Unsafe.SizeOf<T>();
             var copySize = Math.Min(source.Length * elementSize, destination.Length * elementSize);
-            
+
+
             MetalNative.CopyBuffer(srcMetal.Buffer, 0, destMetal.Buffer, 0, copySize);
         }
         else
@@ -227,14 +238,16 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override async ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (source is MetalMemoryBuffer srcMetal && destination is MetalMemoryBuffer destMetal)
         {
             var elementSize = Unsafe.SizeOf<T>();
             var srcOffsetBytes = sourceOffset * elementSize;
             var destOffsetBytes = destinationOffset * elementSize;
             var copySize = count * elementSize;
-            
+
+
             MetalNative.CopyBuffer(srcMetal.Buffer, srcOffsetBytes, destMetal.Buffer, destOffsetBytes, copySize);
         }
         else
@@ -250,8 +263,9 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override async ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         // Standard device-to-host copy
+
         await source.CopyToAsync(destination, cancellationToken: cancellationToken);
     }
 
@@ -259,8 +273,9 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override async ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         // Standard host-to-device copy
+
         await destination.CopyFromAsync(source, cancellationToken: cancellationToken);
     }
 
@@ -268,27 +283,32 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (buffer == null)
         {
             throw new ArgumentNullException(nameof(buffer));
         }
-        
+
         // Calculate byte offsets
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var offsetBytes = (long)offset * elementSize;
         var lengthBytes = (long)count * elementSize;
-        
+
         // Use the non-generic CreateViewCore which handles the actual view creation
+
         var view = CreateViewCore(buffer, offsetBytes, lengthBytes);
-        
+
         // Wrap in a typed buffer wrapper if needed
+
         if (view is IUnifiedMemoryBuffer<T> typedView)
         {
             return typedView;
         }
-        
+
         // This shouldn't happen with our implementation, but handle it gracefully
+
         throw new InvalidOperationException($"Failed to create typed view for buffer of type {buffer.GetType()}");
     }
 
@@ -296,14 +316,16 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     public override void Clear()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         // Clear tracking information
+
         _activeAllocations.Clear();
-        
+
         // Reset statistics
-        Interlocked.Exchange(ref _totalAllocatedBytes, 0);
-        Interlocked.Exchange(ref _peakAllocatedBytes, 0);
-        Interlocked.Exchange(ref _totalAllocations, 0);
+
+        _ = Interlocked.Exchange(ref _totalAllocatedBytes, 0);
+        _ = Interlocked.Exchange(ref _peakAllocatedBytes, 0);
+        _ = Interlocked.Exchange(ref _totalAllocations, 0);
     }
 
     /// <inheritdoc/>
@@ -313,14 +335,16 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         return buffer switch
         {
             MetalMemoryBuffer metalBuffer => new MetalMemoryBufferView(metalBuffer, offset, length),
             _ => throw new ArgumentException("Buffer must be a Metal memory buffer", nameof(buffer))
         };
     }
-    
+
+
     /// <summary>
     /// Detects if running on Apple Silicon.
     /// </summary>
@@ -342,7 +366,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             return false;
         }
     }
-    
+
+
     /// <summary>
     /// Tracks a new allocation for statistics.
     /// </summary>
@@ -356,12 +381,15 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                 AllocatedAt = DateTimeOffset.UtcNow,
                 MemoryType = MetalMemoryType.Device
             };
-            
-            _activeAllocations.TryAdd(metalBuffer.NativeHandle, info);
-            
+
+
+            _ = _activeAllocations.TryAdd(metalBuffer.NativeHandle, info);
+
+
             var totalBytes = Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
-            
+
             // Update peak if necessary
+
             long currentPeak;
             do
             {
@@ -374,7 +402,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             } while (Interlocked.CompareExchange(ref _peakAllocatedBytes, totalBytes, currentPeak) != currentPeak);
         }
     }
-    
+
+
     /// <summary>
     /// Gets the unified memory size on Apple Silicon.
     /// </summary>
@@ -390,7 +419,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
 
         return 16L * 1024 * 1024 * 1024; // 16GB unified memory
     }
-    
+
+
     /// <summary>
     /// Disposes the memory manager and all resources.
     /// </summary>
@@ -408,8 +438,9 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             {
                 // Clear all resources
                 Clear();
-                
+
                 // Release Metal device
+
                 if (_device != IntPtr.Zero)
                 {
                     try
@@ -422,11 +453,13 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                         logger?.LogWarning(ex, "Failed to release Metal device during disposal");
                     }
                 }
-                
+
+
                 var logger2 = base.Logger as ILogger;
                 logger2?.LogInformation(
                     "MetalMemoryManager disposed - Total allocations: {TotalAllocs}, Peak usage: {PeakMB:F1} MB",
-                    _totalAllocations, 
+                    _totalAllocations,
+
                     _peakAllocatedBytes / (1024.0 * 1024.0));
             }
             catch (Exception ex)
@@ -435,7 +468,8 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                 logger?.LogError(ex, "Error during MetalMemoryManager disposal");
             }
         }
-        
+
+
         _disposed = true;
         base.Dispose(disposing);
     }
@@ -463,5 +497,6 @@ internal enum MetalMemoryType
     Unified,
     Mapped
 }
+
 
 #endregion

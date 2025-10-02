@@ -100,7 +100,7 @@ public class GeneratedKernelDiscoveryService
             // Also look for types with [Kernel] attribute directly
             var kernelMethods = assembly.GetTypes()
                 .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
-                .Where(method => HasKernelAttribute(method))
+                .Where(HasKernelAttribute)
                 .ToList();
 
             foreach (var method in kernelMethods)

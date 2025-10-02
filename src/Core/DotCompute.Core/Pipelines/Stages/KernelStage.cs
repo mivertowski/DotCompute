@@ -5,15 +5,12 @@ using System.Diagnostics;
 using DotCompute.Abstractions.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Models.Pipelines;
-using DotCompute.Core.Pipelines.Models;
 
 // Type aliases to resolve ambiguous references
 using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
 using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
-using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
@@ -287,6 +284,7 @@ namespace DotCompute.Core.Pipelines.Stages
             // Use the new BuildKernelParameters method
 
 
+
             => BuildKernelParameters(context);
 
         private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
@@ -322,6 +320,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
         private static double CalculateMemoryBandwidthUtilization()
             // Use performance monitor to get real memory bandwidth utilization
+
 
 
             => PerformanceMonitor.GetMemoryBandwidthUtilization();

@@ -322,7 +322,7 @@ public sealed class PerformanceMeasurement : IDisposable
         {
             if (_isRunning)
             {
-                Stop();
+                _ = Stop();
             }
 
             _memoryTracker?.Dispose();

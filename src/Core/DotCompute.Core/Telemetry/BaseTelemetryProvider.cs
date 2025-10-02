@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Interfaces.Telemetry;
-using DotCompute.Abstractions.Pipelines.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Telemetry;
@@ -89,7 +88,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
                 histogram.Record(value);
             }
 
-            Interlocked.Increment(ref _totalOperations);
+            _ = Interlocked.Increment(ref _totalOperations);
         }
         catch (Exception ex) when (!Configuration.ThrowOnTelemetryErrors)
         {
@@ -130,7 +129,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
                 counter.Add(increment);
             }
 
-            Interlocked.Increment(ref _totalOperations);
+            _ = Interlocked.Increment(ref _totalOperations);
         }
         catch (Exception ex) when (!Configuration.ThrowOnTelemetryErrors)
         {
@@ -171,7 +170,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
                 histogram.Record(value);
             }
 
-            Interlocked.Increment(ref _totalOperations);
+            _ = Interlocked.Increment(ref _totalOperations);
         }
         catch (Exception ex) when (!Configuration.ThrowOnTelemetryErrors)
         {
@@ -201,9 +200,9 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
             if (activity != null)
             {
                 // Add standard context
-                activity.SetTag("service.name", Configuration.ServiceName);
-                activity.SetTag("service.version", Configuration.ServiceVersion);
-                activity.SetTag("telemetry.provider", GetType().Name);
+                _ = activity.SetTag("service.name", Configuration.ServiceName);
+                _ = activity.SetTag("service.version", Configuration.ServiceVersion);
+                _ = activity.SetTag("telemetry.provider", GetType().Name);
 
                 // Add backend-specific context
                 AddBackendSpecificActivityContext(activity);
@@ -251,7 +250,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
                 ProcessEventSync(telemetryEvent);
             }
 
-            Interlocked.Increment(ref _totalOperations);
+            _ = Interlocked.Increment(ref _totalOperations);
         }
         catch (Exception ex) when (!Configuration.ThrowOnTelemetryErrors)
         {
@@ -590,7 +589,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     protected virtual void HandleTelemetryError(Exception ex, string operation, string context)
     {
-        Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _totalErrors);
 
         if (Configuration.LogTelemetryErrors)
         {
@@ -607,7 +606,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
         if (Configuration.TrackOverhead)
         {
             var overheadTicks = Stopwatch.GetTimestamp() - startTicks;
-            Interlocked.Add(ref _telemetryOverheadTicks, overheadTicks);
+            _ = Interlocked.Add(ref _telemetryOverheadTicks, overheadTicks);
         }
     }
 
@@ -620,13 +619,13 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
 
         if (activity != null)
         {
-            activity.SetTag("event.name", telemetryEvent.Name);
-            activity.SetTag("event.timestamp", telemetryEvent.Timestamp.ToString("O"));
-            activity.SetTag("event.source", telemetryEvent.Source);
+            _ = activity.SetTag("event.name", telemetryEvent.Name);
+            _ = activity.SetTag("event.timestamp", telemetryEvent.Timestamp.ToString("O"));
+            _ = activity.SetTag("event.source", telemetryEvent.Source);
 
             foreach (var attr in telemetryEvent.Attributes)
             {
-                activity.SetTag($"event.{attr.Key}", attr.Value?.ToString());
+                _ = activity.SetTag($"event.{attr.Key}", attr.Value?.ToString());
             }
         }
     }
@@ -663,20 +662,20 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     protected virtual void InitializeStandardMetrics()
     {
         // Pre-create commonly used metrics to reduce creation overhead
-        _counters.TryAdd("operation.timer.started",
+        _ = _counters.TryAdd("operation.timer.started",
             Meter.CreateCounter<long>("operation.timer.started", "count", "Operation timers started"));
-        _counters.TryAdd("memory.allocation.count",
+        _ = _counters.TryAdd("memory.allocation.count",
             Meter.CreateCounter<long>("memory.allocation.count", "count", "Memory allocations"));
-        _counters.TryAdd("kernel.execution.count",
+        _ = _counters.TryAdd("kernel.execution.count",
             Meter.CreateCounter<long>("kernel.execution.count", "count", "Kernel executions"));
-        _counters.TryAdd("memory.transfer.count",
+        _ = _counters.TryAdd("memory.transfer.count",
             Meter.CreateCounter<long>("memory.transfer.count", "count", "Memory transfers"));
 
-        _histograms.TryAdd("memory.allocation.bytes",
+        _ = _histograms.TryAdd("memory.allocation.bytes",
             Meter.CreateHistogram<double>("memory.allocation.bytes", "bytes", "Memory allocation size"));
-        _histograms.TryAdd("kernel.execution.duration.ms",
+        _ = _histograms.TryAdd("kernel.execution.duration.ms",
             Meter.CreateHistogram<double>("kernel.execution.duration.ms", "ms", "Kernel execution duration"));
-        _histograms.TryAdd("memory.transfer.bytes",
+        _ = _histograms.TryAdd("memory.transfer.bytes",
             Meter.CreateHistogram<double>("memory.transfer.bytes", "bytes", "Memory transfer size"));
     }
 

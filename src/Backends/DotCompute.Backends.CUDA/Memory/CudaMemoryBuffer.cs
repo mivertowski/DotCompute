@@ -1,14 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Native.Exceptions;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -765,6 +762,7 @@ namespace DotCompute.Backends.CUDA.Memory
             // CUDA buffers are device-only, so this would require explicit copy
 
 
+
             => throw new NotSupportedException("CUDA buffers are device-only. Use CopyToHost for host access.");
 
         /// <inheritdoc/>
@@ -781,13 +779,14 @@ namespace DotCompute.Backends.CUDA.Memory
             // Already on device
 
 
+
             => ValueTask.CompletedTask;
 
         /// <inheritdoc/>
         public void Synchronize() => _context.Synchronize();
 
         /// <inheritdoc/>
-        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => new(Task.Run(() => _context.Synchronize(), cancellationToken));
+        public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) => new(Task.Run(_context.Synchronize, cancellationToken));
 
         /// <inheritdoc/>
         public void MarkHostDirty()

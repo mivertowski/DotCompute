@@ -2,13 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Threading;
 using global::System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 
@@ -208,7 +205,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             var totalLaunches = _cooperativeKernels.Values.Sum(k => k.LaunchCount);
             var totalTime = _cooperativeKernels.Values.Sum(k => k.TotalExecutionTime.TotalMilliseconds);
-            var totalThreads = _cooperativeKernels.Values.Sum(k => CalculateThreadCount(k));
+            var totalThreads = _cooperativeKernels.Values.Sum(CalculateThreadCount);
 
             lock (_metricsLock)
             {

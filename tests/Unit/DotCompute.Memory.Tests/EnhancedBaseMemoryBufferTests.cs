@@ -3,11 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using FluentAssertions;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Memory.Tests;
 

@@ -4,8 +4,6 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Core.Logging;
-
-using System;
 namespace DotCompute.Core.Recovery.Gpu;
 
 /// <summary>

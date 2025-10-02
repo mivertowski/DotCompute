@@ -1,12 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
@@ -17,13 +12,11 @@ using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
+using ProductionPerfOptions = DotCompute.Core.Optimization.PerformanceOptimizationOptions;
 using DotCompute.Core.Telemetry;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Core.Tests.Optimization;
 
@@ -87,7 +80,7 @@ public class OptimizationStrategyTests : IDisposable
             Options.Create(_defaultOptions));
 
         // Assert
-        selector.Should().NotBeNull();
+        _ = selector.Should().NotBeNull();
         VerifyLoggerCalled(_mockSelectorLogger, "Adaptive backend selector initialized");
     }
 
@@ -95,7 +88,7 @@ public class OptimizationStrategyTests : IDisposable
     public void AdaptiveBackendSelector_Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new AdaptiveBackendSelector(null!, _mockProfiler.Object));
     }
 
@@ -103,7 +96,7 @@ public class OptimizationStrategyTests : IDisposable
     public void AdaptiveBackendSelector_Constructor_WithNullProfiler_ThrowsArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new AdaptiveBackendSelector(_mockSelectorLogger.Object, null!));
     }
 
@@ -120,11 +113,11 @@ public class OptimizationStrategyTests : IDisposable
             "TestKernel", workload, availableBackends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().NotBeNull();
-        result.ConfidenceScore.Should().BeGreaterThan(0f);
-        result.Reason.Should().NotBeNullOrEmpty();
-        result.SelectionStrategy.Should().NotBe(SelectionStrategy.Fallback);
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().NotBeNull();
+        _ = result.ConfidenceScore.Should().BeGreaterThan(0f);
+        _ = result.Reason.Should().NotBeNullOrEmpty();
+        _ = result.SelectionStrategy.Should().NotBe(SelectionStrategy.Fallback);
     }
 
     [Fact]
@@ -140,12 +133,12 @@ public class OptimizationStrategyTests : IDisposable
             "TestKernel", workload, emptyBackends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().BeNull();
-        result.BackendId.Should().Be("None");
-        result.ConfidenceScore.Should().Be(0f);
-        result.Reason.Should().Be("No backends available");
-        result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().BeNull();
+        _ = result.BackendId.Should().Be("None");
+        _ = result.ConfidenceScore.Should().Be(0f);
+        _ = result.Reason.Should().Be("No backends available");
+        _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
     }
 
     [Fact]
@@ -161,14 +154,14 @@ public class OptimizationStrategyTests : IDisposable
             "MemoryKernel", workload, availableBackends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().NotBeNull();
 
         // For memory-intensive workloads, should prefer backends with good memory characteristics
-        result.SelectionStrategy.Should().BeOneOf(
-            SelectionStrategy.MemoryOptimized,
-            SelectionStrategy.Performance,
-            SelectionStrategy.Learning);
+        _ = result.SelectionStrategy.Should().BeOneOf(
+            SelectionStrategy.Characteristics,
+            SelectionStrategy.RealTime,
+            SelectionStrategy.Historical);
     }
 
     [Fact]
@@ -181,9 +174,9 @@ public class OptimizationStrategyTests : IDisposable
 
         var constraints = new SelectionConstraints
         {
-            RequiredBackendType = "CPU",
-            MaxMemoryUsage = 1000000,
-            RequiredFeatures = new[] { "AVX2" }
+            AllowedBackends = new HashSet<string> { "CPU" },
+            MaxMemoryUsageMB = 1000,
+            MinConfidenceScore = 0.5f
         };
 
         // Act
@@ -191,10 +184,10 @@ public class OptimizationStrategyTests : IDisposable
             "ConstrainedKernel", workload, availableBackends, constraints);
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
         if (result.SelectedBackend != null)
         {
-            result.SelectedBackend.Name.Should().Contain("CPU");
+            _ = result.SelectedBackend.Info.Name.Should().Contain("CPU");
         }
     }
 
@@ -207,13 +200,13 @@ public class OptimizationStrategyTests : IDisposable
         var availableBackends = _mockAccelerators.Select(m => m.Object);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             selector.SelectOptimalBackendAsync("", workload, availableBackends));
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             selector.SelectOptimalBackendAsync("TestKernel", null!, availableBackends));
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             selector.SelectOptimalBackendAsync("TestKernel", workload, null!));
     }
 
@@ -239,9 +232,9 @@ public class OptimizationStrategyTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert
-        results.Should().HaveCount(concurrentCalls);
-        results.Should().OnlyContain(r => r != null);
-        results.Should().OnlyContain(r => r.ConfidenceScore >= 0f && r.ConfidenceScore <= 1f);
+        _ = results.Should().HaveCount(concurrentCalls);
+        _ = results.Should().OnlyContain(r => r != null);
+        _ = results.Should().OnlyContain(r => r.ConfidenceScore >= 0f && r.ConfidenceScore <= 1f);
     }
 
     #endregion
@@ -255,7 +248,7 @@ public class OptimizationStrategyTests : IDisposable
         using var orchestrator = CreatePerformanceOrchestrator();
 
         // Assert
-        orchestrator.Should().NotBeNull();
+        _ = orchestrator.Should().NotBeNull();
         VerifyLoggerCalled(_mockOrchestratorLogger, "Performance-optimized orchestrator initialized");
     }
 
@@ -263,11 +256,11 @@ public class OptimizationStrategyTests : IDisposable
     public void PerformanceOptimizedOrchestrator_Constructor_WithNullDependencies_ThrowsArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new PerformanceOptimizedOrchestrator(null!, CreateAdaptiveBackendSelector(),
                 _mockProfiler.Object, _mockOrchestratorLogger.Object));
 
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new PerformanceOptimizedOrchestrator(_mockBaseOrchestrator.Object, null!,
                 _mockProfiler.Object, _mockOrchestratorLogger.Object));
     }
@@ -279,14 +272,14 @@ public class OptimizationStrategyTests : IDisposable
         using var orchestrator = CreatePerformanceOrchestrator();
         const string expectedResult = "TestResult";
 
-        _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string>("TestKernel", It.IsAny<object[]>()))
+        _ = _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string>("TestKernel", It.IsAny<object[]>()))
             .ReturnsAsync(expectedResult);
 
         // Act
         var result = await orchestrator.ExecuteAsync<string>("TestKernel", new object[] { 1, 2, 3 });
 
         // Assert
-        result.Should().Be(expectedResult);
+        _ = result.Should().Be(expectedResult);
         _mockBaseOrchestrator.Verify(o => o.ExecuteAsync<string>("TestKernel", It.IsAny<object[]>()), Times.Once);
     }
 
@@ -297,7 +290,7 @@ public class OptimizationStrategyTests : IDisposable
         using var orchestrator = CreatePerformanceOrchestrator();
         const int expectedResult = 42;
 
-        _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<int>("BufferKernel", It.IsAny<object[]>()))
+        _ = _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<int>("BufferKernel", It.IsAny<object[]>()))
             .ReturnsAsync(expectedResult);
 
         var buffers = new object[] { new int[100], new float[100] };
@@ -307,7 +300,7 @@ public class OptimizationStrategyTests : IDisposable
         var result = await orchestrator.ExecuteWithBuffersAsync<int>("BufferKernel", buffers, scalarArgs);
 
         // Assert
-        result.Should().Be(expectedResult);
+        _ = result.Should().Be(expectedResult);
     }
 
     [Fact]
@@ -320,20 +313,20 @@ public class OptimizationStrategyTests : IDisposable
 
         var expectedAccelerator = _mockAccelerators.First(m => m.Object.IsAvailable).Object;
 
-        mockSelector.Setup(s => s.SelectOptimalBackendAsync(
+        _ = mockSelector.Setup(s => s.SelectOptimalBackendAsync(
                 It.IsAny<string>(), It.IsAny<WorkloadCharacteristics>(), It.IsAny<IEnumerable<IAccelerator>>(), null))
             .ReturnsAsync(new BackendSelection
             {
                 SelectedBackend = expectedAccelerator,
                 ConfidenceScore = 0.9f,
-                SelectionStrategy = SelectionStrategy.Performance
+                SelectionStrategy = SelectionStrategy.RealTime
             });
 
         // Act
         var result = await orchestrator.GetOptimalAcceleratorAsync("TestKernel");
 
         // Assert
-        result.Should().NotBeNull();
+        _ = result.Should().NotBeNull();
     }
 
     #endregion
@@ -352,12 +345,11 @@ public class OptimizationStrategyTests : IDisposable
         var workload = CreateTestWorkload(pattern, dataSize, memoryPattern);
 
         // Assert
-        workload.Should().NotBeNull();
-        workload.Pattern.Should().Be(pattern);
-        workload.DataSize.Should().Be(dataSize);
-        workload.MemoryAccessPattern.Should().Be(memoryPattern);
-        workload.ComputeIntensity.Should().BeGreaterThan(0f);
-        workload.MemoryIntensity.Should().BeGreaterThan(0f);
+        _ = workload.Should().NotBeNull();
+        _ = workload.AccessPattern.Should().Be(memoryPattern);
+        _ = workload.DataSize.Should().Be(dataSize * sizeof(float));
+        _ = workload.ComputeIntensity.Should().BeGreaterThan(0f);
+        _ = workload.MemoryIntensity.Should().BeGreaterThan(0f);
     }
 
     [Fact]
@@ -367,33 +359,39 @@ public class OptimizationStrategyTests : IDisposable
         var signature1 = new WorkloadSignature
         {
             KernelName = "TestKernel",
-            Pattern = WorkloadPattern.ComputeIntensive,
-            DataSizeCategory = "Large",
-            MemoryAccessPattern = MemoryAccessPattern.Sequential
+            WorkloadPattern = WorkloadPattern.ComputeIntensive,
+            DataSize = 10485760,
+            MemoryIntensity = 1.0,
+            ComputeIntensity = 0.5,
+            ParallelismLevel = 1.0, // was MemoryAccessPattern.Sequential
         };
 
         var signature2 = new WorkloadSignature
         {
             KernelName = "TestKernel",
-            Pattern = WorkloadPattern.ComputeIntensive,
-            DataSizeCategory = "Large",
-            MemoryAccessPattern = MemoryAccessPattern.Sequential
+            WorkloadPattern = WorkloadPattern.ComputeIntensive,
+            DataSize = 10485760,
+            MemoryIntensity = 1.0,
+            ComputeIntensity = 0.5,
+            ParallelismLevel = 1.0, // was MemoryAccessPattern.Sequential
         };
 
         var signature3 = new WorkloadSignature
         {
             KernelName = "DifferentKernel",
-            Pattern = WorkloadPattern.ComputeIntensive,
-            DataSizeCategory = "Large",
-            MemoryAccessPattern = MemoryAccessPattern.Sequential
+            WorkloadPattern = WorkloadPattern.ComputeIntensive,
+            DataSize = 10485760,
+            MemoryIntensity = 1.0,
+            ComputeIntensity = 0.5,
+            ParallelismLevel = 1.0, // was MemoryAccessPattern.Sequential
         };
 
         // Act & Assert
-        signature1.Equals(signature2).Should().BeTrue();
-        signature1.GetHashCode().Should().Be(signature2.GetHashCode());
+        _ = signature1.Equals(signature2).Should().BeTrue();
+        _ = signature1.GetHashCode().Should().Be(signature2.GetHashCode());
 
-        signature1.Equals(signature3).Should().BeFalse();
-        signature1.GetHashCode().Should().NotBe(signature3.GetHashCode());
+        _ = signature1.Equals(signature3).Should().BeFalse();
+        _ = signature1.GetHashCode().Should().NotBe(signature3.GetHashCode());
     }
 
     #endregion
@@ -404,31 +402,31 @@ public class OptimizationStrategyTests : IDisposable
     public void PerformanceHistory_AddResult_StoresCorrectly()
     {
         // Arrange
-        var history = new PerformanceHistory();
+        var history = new PerformanceHistory(new WorkloadSignature { KernelName = "Test", DataSize = 1000, ComputeIntensity = 0.5, MemoryIntensity = 0.5, ParallelismLevel = 1.0, WorkloadPattern = WorkloadPattern.ComputeIntensive });
         var result = new PerformanceResult
         {
             BackendId = "CPU",
             ExecutionTimeMs = 150.5,
             ThroughputOpsPerSecond = 10000,
-            MemoryUsageBytes = 1024000,
+            MemoryUsedBytes = 1024000,
             Success = true,
             Timestamp = DateTime.UtcNow
         };
 
         // Act
-        history.AddResult(result);
+        history.AddPerformanceResult("TestBackend", result);
 
         // Assert
-        history.Results.Should().HaveCount(1);
+        _ = history.GetPerformanceStats().Should().HaveCount(1);
         history.Results.First().Should().BeEquivalentTo(result);
-        history.GetAverageExecutionTime().Should().BeApproximately(150.5, 0.1);
+        _ = history.GetPerformanceStats()["TestBackend"].AverageExecutionTimeMs.Should().BeApproximately(150.5, 0.1);
     }
 
     [Fact]
     public void PerformanceHistory_CalculateStatistics_ReturnsCorrectValues()
     {
         // Arrange
-        var history = new PerformanceHistory();
+        var history = new PerformanceHistory(new WorkloadSignature { KernelName = "Test", DataSize = 1000, ComputeIntensity = 0.5, MemoryIntensity = 0.5, ParallelismLevel = 1.0, WorkloadPattern = WorkloadPattern.ComputeIntensive });
         var results = new[]
         {
             new PerformanceResult { BackendId = "CPU", ExecutionTimeMs = 100, Success = true },
@@ -439,18 +437,18 @@ public class OptimizationStrategyTests : IDisposable
 
         foreach (var result in results)
         {
-            history.AddResult(result);
+            history.AddPerformanceResult("TestBackend", result);
         }
 
         // Act
-        var avgTime = history.GetAverageExecutionTime();
-        var successRate = history.GetSuccessRate();
-        var stats = history.GetStatistics();
+        var avgTime = history.GetPerformanceStats()["TestBackend"].AverageExecutionTimeMs;
+        var successRate = history.GetPerformanceStats()["TestBackend"].ReliabilityScore;
+        var stats = history.GetPerformanceStats();
 
         // Assert
-        avgTime.Should().BeApproximately(150.0, 0.1); // Average of successful executions only
+        _ = avgTime.Should().BeApproximately(150.0, 0.1); // Average of successful executions only
         successRate.Should().BeApproximately(0.75, 0.01); // 3 out of 4 successful
-        stats.Should().NotBeNull();
+        _ = stats.Should().NotBeNull();
         stats.Mean.Should().BeApproximately(150.0, 0.1);
         stats.SampleCount.Should().Be(3); // Only successful executions
     }
@@ -466,17 +464,18 @@ public class OptimizationStrategyTests : IDisposable
         var state = new BackendPerformanceState
         {
             BackendId = "CUDA",
-            IsAvailable = true,
-            LastUpdateTime = DateTime.UtcNow.AddMinutes(-1)
+            CurrentUtilization = 0.7,
+            LastExecutionTime = DateTimeOffset.UtcNow.AddMinutes(-1)
         };
 
         var newMetrics = new BackendPerformanceStats
         {
             AverageExecutionTimeMs = 50.0,
             ThroughputOpsPerSecond = 50000,
-            MemoryUsageBytes = 2048000,
-            SuccessRate = 0.95f,
-            LoadFactor = 0.7f
+            AverageMemoryUsage = 2048000,
+            SuccessRate = 0.95,
+            LoadFactor = 0.7,
+            IsAvailable = true
         };
 
         // Act
@@ -497,26 +496,18 @@ public class OptimizationStrategyTests : IDisposable
             ["CPU"] = new BackendPerformanceState
             {
                 BackendId = "CPU",
-                IsAvailable = true,
-                CurrentMetrics = new BackendPerformanceStats
-                {
-                    AverageExecutionTimeMs = 200,
-                    ThroughputOpsPerSecond = 10000,
-                    SuccessRate = 0.9f,
-                    LoadFactor = 0.5f
-                }
+                CurrentUtilization = 0.5,
+                RecentAverageExecutionTimeMs = 200,
+                RecentExecutionCount = 100,
+                LastExecutionTime = DateTimeOffset.UtcNow
             },
             ["CUDA"] = new BackendPerformanceState
             {
                 BackendId = "CUDA",
-                IsAvailable = true,
-                CurrentMetrics = new BackendPerformanceStats
-                {
-                    AverageExecutionTimeMs = 50,
-                    ThroughputOpsPerSecond = 80000,
-                    SuccessRate = 0.95f,
-                    LoadFactor = 0.8f
-                }
+                CurrentUtilization = 0.8,
+                RecentAverageExecutionTimeMs = 50,
+                RecentExecutionCount = 500,
+                LastExecutionTime = DateTimeOffset.UtcNow
             }
         };
 
@@ -547,10 +538,10 @@ public class OptimizationStrategyTests : IDisposable
             "TestKernel", workload, unavailableBackends);
 
         // Assert
-        result.Should().NotBeNull();
-        result.SelectedBackend.Should().BeNull();
-        result.ConfidenceScore.Should().Be(0f);
-        result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
+        _ = result.Should().NotBeNull();
+        _ = result.SelectedBackend.Should().BeNull();
+        _ = result.ConfidenceScore.Should().Be(0f);
+        _ = result.SelectionStrategy.Should().Be(SelectionStrategy.Fallback);
     }
 
     [Fact]
@@ -564,7 +555,7 @@ public class OptimizationStrategyTests : IDisposable
 
         // Assert
         // Should not throw and should clean up timer
-        selector.Invoking(s => s.Dispose()).Should().NotThrow();
+        _ = selector.Invoking(s => s.Dispose()).Should().NotThrow();
     }
 
     [Fact]
@@ -572,14 +563,14 @@ public class OptimizationStrategyTests : IDisposable
     {
         // Arrange
         using var orchestrator = CreatePerformanceOrchestrator();
-        _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string>("NullKernel", It.IsAny<object[]>()))
+        _ = _mockBaseOrchestrator.Setup(o => o.ExecuteAsync<string>("NullKernel", It.IsAny<object[]>()))
             .ReturnsAsync((string?)null);
 
         // Act
         var result = await orchestrator.ExecuteAsync<string>("NullKernel");
 
         // Assert
-        result.Should().BeNull();
+        _ = result.Should().BeNull();
     }
 
     #endregion
@@ -600,7 +591,7 @@ public class OptimizationStrategyTests : IDisposable
         const int iterations = 100;
         for (var i = 0; i < iterations; i++)
         {
-            await selector.SelectOptimalBackendAsync($"PerfKernel_{i}", workload, availableBackends);
+            _ = await selector.SelectOptimalBackendAsync($"PerfKernel_{i}", workload, availableBackends);
         }
 
         stopwatch.Stop();
@@ -627,11 +618,11 @@ public class OptimizationStrategyTests : IDisposable
     private PerformanceOptimizedOrchestrator CreatePerformanceOrchestrator()
     {
         var selector = CreateAdaptiveBackendSelector();
-        var options = new PerformanceOptimizationOptions
+        var options = new ProductionPerfOptions
         {
-            OptimizationStrategy = OptimizationStrategy.Balanced,
-            EnablePerformancePrediction = true,
-            CacheWorkloadAnalysis = true
+            OptimizationStrategy = DotCompute.Core.Optimization.Enums.OptimizationStrategy.Balanced,
+            EnableLearning = true,
+            EnableConstraints = true
         };
 
         return new PerformanceOptimizedOrchestrator(
@@ -647,7 +638,7 @@ public class OptimizationStrategyTests : IDisposable
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Name).Returns(name);
         mock.Setup(a => a.Description).Returns(description);
-        mock.Setup(a => a.IsAvailable).Returns(isAvailable);
+        _ = mock.Setup(a => a.IsAvailable).Returns(isAvailable);
         mock.Setup(a => a.GetMemoryInfoAsync()).ReturnsAsync(new MemoryInfo
         {
             TotalMemory = performanceScore * 1024L * 1024L, // GB converted to bytes
@@ -664,14 +655,12 @@ public class OptimizationStrategyTests : IDisposable
     {
         return new WorkloadCharacteristics
         {
-            Pattern = pattern,
-            DataSize = dataSize,
-            MemoryAccessPattern = memoryPattern,
-            ComputeIntensity = pattern == WorkloadPattern.ComputeIntensive ? 0.9f : 0.3f,
-            MemoryIntensity = pattern == WorkloadPattern.MemoryIntensive ? 0.9f : 0.3f,
-            ParallelizationPotential = 0.8f,
-            DataTransferSize = dataSize * sizeof(float),
-            EstimatedComplexity = Math.Log10(dataSize)
+            DataSize = dataSize * sizeof(float),
+            AccessPattern = memoryPattern,
+            ComputeIntensity = Math.Log10(dataSize),
+            MemoryIntensity = pattern == WorkloadPattern.MemoryIntensive ? 0.9 : 0.3,
+            ParallelismLevel = 0.8,
+            OperationCount = dataSize
         };
     }
 

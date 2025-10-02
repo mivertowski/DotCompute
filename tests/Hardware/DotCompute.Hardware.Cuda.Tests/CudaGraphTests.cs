@@ -4,17 +4,10 @@
 using System.Diagnostics;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
-using DotCompute.SharedTestUtilities.Performance;
-using DotCompute.Tests.Common;
-using Xunit;
-using Xunit.Abstractions;
-using FluentAssertions;
 using DotCompute.Hardware.Cuda.Tests.Helpers;
 using CudaLaunchConfiguration = DotCompute.Backends.CUDA.Configuration.LaunchConfiguration;
-using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -289,7 +282,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Step 2: Scale C by 2.0, store in D  
 
-            CudaGraphTestWrapper.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
+            _ = CudaGraphTestWrapper.AddMemoryCopy(deviceC, deviceD, elementCount * sizeof(float));
             _ = CudaGraphTestWrapper.AddKernel(scaleKernel, testLaunchConfig, deviceD, 2.0f, elementCount);
 
 
@@ -481,7 +474,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Copy input to temp, then scale temp
 
-            CudaGraphTestWrapper.AddMemoryCopy(deviceInput, deviceTemp, elementCount * sizeof(float));
+            _ = CudaGraphTestWrapper.AddMemoryCopy(deviceInput, deviceTemp, elementCount * sizeof(float));
             var scaleNode = CudaGraphTestWrapper.AddKernel(scaleKernel, testLaunchConfig, deviceTemp, 2.0f, elementCount);
 
             // Add original input to scaled temp
@@ -547,11 +540,11 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Copy src -> dst1
 
-            CudaGraphTestWrapper.AddMemoryCopy(deviceSrc, deviceDst1, elementCount * sizeof(float));
+            _ = CudaGraphTestWrapper.AddMemoryCopy(deviceSrc, deviceDst1, elementCount * sizeof(float));
 
             // Copy dst1 -> dst2 
 
-            CudaGraphTestWrapper.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
+            _ = CudaGraphTestWrapper.AddMemoryCopy(deviceDst1, deviceDst2, elementCount * sizeof(float));
 
 
             var executableGraph = TestGraph.Instantiate();

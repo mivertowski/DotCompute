@@ -1,16 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
 using DotCompute.Abstractions.Types;
@@ -186,7 +181,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             {
                 // Remove oldest entry (simple LRU)
                 var oldestKey = _workloadCache.Keys.First();
-                _workloadCache.Remove(oldestKey);
+                _ = _workloadCache.Remove(oldestKey);
             }
 
 
@@ -226,7 +221,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         if (systemSnapshot.CpuUsage > _options.MaxCpuUtilizationThreshold)
         {
             constraints.DisallowedBackends ??= [];
-            constraints.DisallowedBackends.Add("CPU");
+            _ = constraints.DisallowedBackends.Add("CPU");
         }
 
         // Memory constraints
@@ -345,7 +340,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             // Finish profiling
             try
             {
-                await _performanceProfiler.FinishProfilingAsync(correlationId);
+                _ = await _performanceProfiler.FinishProfilingAsync(correlationId);
             }
             catch (Exception ex)
             {
@@ -572,7 +567,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         lock (_cacheLock)
         {
             var profile = GetOrCreateKernelProfile(kernelName);
-            profile.ExecutedOnBackends.Add(backendId);
+            _ = profile.ExecutedOnBackends.Add(backendId);
             profile.LastExecutionTime = result.Timestamp;
             profile.TotalExecutions++;
 

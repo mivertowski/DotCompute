@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Core.Memory.P2P
 {

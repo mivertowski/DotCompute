@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Types.Native.Enums;
 using DotCompute.Backends.CUDA.Types.Native.Structs;
 using DotCompute.Backends.CUDA.Types.Native.Delegates;

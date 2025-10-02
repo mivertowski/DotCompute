@@ -4,7 +4,6 @@
 using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace DotCompute.Backends.CPU.SIMD;
 
@@ -514,5 +513,6 @@ public sealed class StrategyRecommendation
     public string? Reason { get; init; }
     public List<SimdExecutionStrategy> AlternativeStrategies { get; init; } = [];
 }
+
 
 #endregion

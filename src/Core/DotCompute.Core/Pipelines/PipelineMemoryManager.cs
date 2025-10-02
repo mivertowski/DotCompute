@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Core.Memory;
 using DotCompute.Abstractions.Interfaces.Device;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Pipelines.Models;
 using MemoryLockMode = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLockMode;
 using MemoryLayoutHint = DotCompute.Abstractions.Interfaces.Pipelines.MemoryLayoutHint;
 using MemoryManagerStats = DotCompute.Abstractions.Interfaces.Pipelines.MemoryManagerStats;
@@ -569,7 +566,7 @@ namespace DotCompute.Core.Pipelines
             {
                 try
                 {
-                    await _lockSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100));
+                    _ = await _lockSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100));
                 }
                 catch (TimeoutException)
                 {

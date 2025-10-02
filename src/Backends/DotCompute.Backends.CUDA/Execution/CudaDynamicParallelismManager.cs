@@ -3,12 +3,9 @@
 
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
-using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Backends.CUDA.Advanced
@@ -162,6 +159,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Missing: Analysis of workload imbalance patterns
             // Missing: Support for device-side kernel launches
             // Simple heuristic: large problem sizes with irregular patterns benefit from dynamic parallelism
+
 
 
             => arguments.Any(arg => arg.Value is int size && size > 100000);

@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Types
@@ -126,13 +125,11 @@ namespace DotCompute.Backends.CUDA.Types
                 try
                 {
                     _logger?.LogDebug("Starting async disposal of CUDA memory manager for device {DeviceIndex}", DeviceIndex);
+                    // Reset and free all memory
 
                     // Perform cleanup operations asynchronously
-                    await Task.Run(() =>
-                    {
-                        // Reset and free all memory
-                        Reset();
-                    }).ConfigureAwait(false);
+
+                    await Task.Run(Reset).ConfigureAwait(false);
 
                     _disposed = true;
                     _logger?.LogDebug("Async disposal completed for CUDA memory manager device {DeviceIndex}", DeviceIndex);

@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using DotCompute.Abstractions.Types;
-
 namespace DotCompute.Backends.CUDA.Configuration
 {
     /// <summary>

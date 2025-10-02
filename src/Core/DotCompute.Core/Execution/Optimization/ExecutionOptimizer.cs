@@ -4,8 +4,6 @@
 using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
-using System;
 namespace DotCompute.Core.Execution.Optimization
 {
     /// <summary>

@@ -1,18 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Debugging;
 
@@ -165,48 +160,48 @@ internal sealed class KernelDebugReporter : IDisposable
         var report = new StringBuilder();
 
         // Header
-        report.AppendLine("=== Kernel Debug Report ===");
-        report.AppendLine($"Kernel: {validationResult.KernelName}");
-        report.AppendLine($"Generated: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss UTC}");
-        report.AppendLine($"Validation Status: {(validationResult.IsValid ? "PASSED" : "FAILED")}");
-        report.AppendLine();
+        _ = report.AppendLine("=== Kernel Debug Report ===");
+        _ = report.AppendLine($"Kernel: {validationResult.KernelName}");
+        _ = report.AppendLine($"Generated: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss UTC}");
+        _ = report.AppendLine($"Validation Status: {(validationResult.IsValid ? "PASSED" : "FAILED")}");
+        _ = report.AppendLine();
 
         // Executive Summary
-        report.AppendLine("--- Executive Summary ---");
+        _ = report.AppendLine("--- Executive Summary ---");
         if (validationResult.IsValid)
         {
-            report.AppendLine("✓ All cross-backend validations passed successfully");
-            report.AppendLine($"✓ Tested on {validationResult.BackendsTested.Length} backend(s): {string.Join(", ", validationResult.BackendsTested)}");
+            _ = report.AppendLine("✓ All cross-backend validations passed successfully");
+            _ = report.AppendLine($"✓ Tested on {validationResult.BackendsTested.Length} backend(s): {string.Join(", ", validationResult.BackendsTested)}");
         }
         else
         {
             var errorCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Error);
             var warningCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Warning);
-            report.AppendLine($"✗ Validation failed with {errorCount} error(s) and {warningCount} warning(s)");
+            _ = report.AppendLine($"✗ Validation failed with {errorCount} error(s) and {warningCount} warning(s)");
         }
-        report.AppendLine($"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms");
-        report.AppendLine();
+        _ = report.AppendLine($"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms");
+        _ = report.AppendLine();
 
         // Backend Results
         if (validationResult.Results?.Any() == true)
         {
-            report.AppendLine("--- Backend Execution Results ---");
+            _ = report.AppendLine("--- Backend Execution Results ---");
             foreach (var kvp in validationResult.Results)
             {
                 if (kvp.Value is KernelExecutionResult result)
                 {
-                    report.AppendLine($"Backend: {result.BackendType}");
-                    report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
-                    report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
+                    _ = report.AppendLine($"Backend: {result.BackendType}");
+                    _ = report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
+                    _ = report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
                     if (result.MemoryUsed > 0)
                     {
-                        report.AppendLine($"  Memory Usage: {result.MemoryUsed:N0} bytes");
+                        _ = report.AppendLine($"  Memory Usage: {result.MemoryUsed:N0} bytes");
                     }
                     if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
                     {
-                        report.AppendLine($"  Error: {result.ErrorMessage}");
+                        _ = report.AppendLine($"  Error: {result.ErrorMessage}");
                     }
-                    report.AppendLine();
+                    _ = report.AppendLine();
                 }
             }
         }
@@ -214,7 +209,7 @@ internal sealed class KernelDebugReporter : IDisposable
         // Cross-Backend Comparisons
         if (validationResult.Results?.Any() == true && validationResult.Results.Count > 1)
         {
-            report.AppendLine("--- Cross-Backend Comparisons ---");
+            _ = report.AppendLine("--- Cross-Backend Comparisons ---");
             var results = validationResult.Results.Values.OfType<KernelExecutionResult>().ToList();
             if (results.Count >= 2)
             {
@@ -222,34 +217,34 @@ internal sealed class KernelDebugReporter : IDisposable
                 var result2 = results[1];
                 var match = result1.Success == result2.Success;
                 var status = match ? "✓ MATCH" : "✗ DIFFER";
-                report.AppendLine($"{result1.BackendType} vs {result2.BackendType}: {status}");
+                _ = report.AppendLine($"{result1.BackendType} vs {result2.BackendType}: {status}");
                 if (!match)
                 {
                     var timeDiff = Math.Abs(result1.ExecutionTime.TotalMilliseconds - result2.ExecutionTime.TotalMilliseconds);
-                    report.AppendLine($"  Time Difference: {timeDiff:F6}ms");
+                    _ = report.AppendLine($"  Time Difference: {timeDiff:F6}ms");
                 }
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         // Issues and Recommendations
         if (validationResult.Issues.Any())
         {
-            report.AppendLine("--- Issues Found ---");
+            _ = report.AppendLine("--- Issues Found ---");
             var groupedIssues = validationResult.Issues.GroupBy(i => i.Severity);
             foreach (var group in groupedIssues.OrderBy(g => g.Key))
             {
-                report.AppendLine($"{group.Key}s:");
+                _ = report.AppendLine($"{group.Key}s:");
                 foreach (var issue in group)
                 {
-                    report.AppendLine($"  • {issue.Message}");
+                    _ = report.AppendLine($"  • {issue.Message}");
                     if (issue.Details?.Any() == true)
                     {
                         var details = issue.Details.TryGetValue("message", out var msg) ? msg?.ToString() : "No details available";
-                        report.AppendLine($"    Details: {issue.Context ?? details}");
+                        _ = report.AppendLine($"    Details: {issue.Context ?? details}");
                     }
                 }
-                report.AppendLine();
+                _ = report.AppendLine();
             }
         }
 
@@ -366,15 +361,15 @@ internal sealed class KernelDebugReporter : IDisposable
 
         if (report.ResultsMatch)
         {
-            summary.Append("Results match");
+            _ = summary.Append("Results match");
         }
         else
         {
-            summary.Append("Results differ");
+            _ = summary.Append("Results differ");
             if (report.Differences.Any())
             {
                 var maxDiff = report.Differences.Max(d => d.Difference);
-                summary.Append($" (max difference: {maxDiff:F6})");
+                _ = summary.Append($" (max difference: {maxDiff:F6})");
             }
         }
 
@@ -383,7 +378,7 @@ internal sealed class KernelDebugReporter : IDisposable
 
         if (errorCount > 0 || warningCount > 0)
         {
-            summary.Append($" - {errorCount} error(s), {warningCount} warning(s)");
+            _ = summary.Append($" - {errorCount} error(s), {warningCount} warning(s)");
         }
 
         return summary.ToString();
@@ -405,7 +400,7 @@ internal sealed class KernelDebugReporter : IDisposable
         if (report is KernelValidationResult validation)
         {
             var csv = new StringBuilder();
-            csv.AppendLine("Kernel,Backend,Success,ExecutionTimeMs,MemoryUsage");
+            _ = csv.AppendLine("Kernel,Backend,Success,ExecutionTimeMs,MemoryUsage");
 
             if (validation.Results != null)
             {
@@ -413,7 +408,7 @@ internal sealed class KernelDebugReporter : IDisposable
                 {
                     if (kvp.Value is KernelExecutionResult result)
                     {
-                        csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
+                        _ = csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
                                      $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsed}");
                     }
                 }

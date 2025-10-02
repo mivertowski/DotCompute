@@ -151,7 +151,7 @@ public sealed class NumaOptimizer : IDisposable
             IsActive = true
         };
 
-        _profiles.AddOrUpdate(profileName, profile, (_, _) => profile);
+        _ = _profiles.AddOrUpdate(profileName, profile, (_, _) => profile);
         return profile;
     }
 
@@ -171,7 +171,7 @@ public sealed class NumaOptimizer : IDisposable
 
         // Update last used time
         var updatedProfile = profile with { LastUsed = DateTime.UtcNow };
-        _profiles.TryUpdate(profileName, updatedProfile, profile);
+        _ = _profiles.TryUpdate(profileName, updatedProfile, profile);
 
         // Apply the profile's strategy
         var originalStrategy = Strategy;

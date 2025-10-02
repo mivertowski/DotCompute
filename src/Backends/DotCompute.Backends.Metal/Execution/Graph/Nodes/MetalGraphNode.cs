@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
 
@@ -274,8 +272,8 @@ public sealed class MetalGraphNode
             {
                 if (!visited.Contains(dep.Id))
                 {
-                    visited.Add(dep.Id);
-                    result.Add(dep);
+                    _ = visited.Add(dep.Id);
+                    _ = result.Add(dep);
                     CollectDependencies(dep);
                 }
             }
@@ -392,7 +390,8 @@ public sealed class MetalGraphNode
         }
 
         // Note: Dependencies are not copied to avoid circular references in cloning
-        
+
+
         return clone;
     }
 
@@ -428,16 +427,17 @@ public enum MetalNodeExecutionState
 {
     /// <summary>Node has not started execution.</summary>
     NotStarted,
-    
+
     /// <summary>Node is currently executing.</summary>
     Executing,
-    
+
     /// <summary>Node has completed successfully.</summary>
     Completed,
-    
+
     /// <summary>Node execution failed with an error.</summary>
     Failed,
-    
+
+
     /// <summary>Node execution was cancelled.</summary>
     Cancelled
 }
@@ -449,13 +449,16 @@ public enum MetalNodePriority
 {
     /// <summary>Low priority - execute when resources are available.</summary>
     Low = 0,
-    
+
+
     /// <summary>Normal priority - default execution priority.</summary>
     Normal = 1,
-    
+
+
     /// <summary>High priority - execute with elevated priority.</summary>
     High = 2,
-    
+
+
     /// <summary>Critical priority - execute as soon as possible.</summary>
     Critical = 3
 }
@@ -468,19 +471,24 @@ public enum MetalOptimizationHints
 {
     /// <summary>No specific optimization hints.</summary>
     None = 0,
-    
+
+
     /// <summary>Node can be optimized for memory bandwidth.</summary>
     MemoryBandwidthOptimized = 1 << 0,
-    
+
+
     /// <summary>Node can be optimized for compute throughput.</summary>
     ComputeThroughputOptimized = 1 << 1,
-    
+
+
     /// <summary>Node can benefit from kernel fusion.</summary>
     FusionCandidate = 1 << 2,
-    
+
+
     /// <summary>Node should be executed with minimal latency.</summary>
     LowLatency = 1 << 3,
-    
+
+
     /// <summary>Node has predictable memory access patterns.</summary>
     PredictableMemoryAccess = 1 << 4
 }

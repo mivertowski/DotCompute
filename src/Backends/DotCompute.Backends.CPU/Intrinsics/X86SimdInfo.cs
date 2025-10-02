@@ -73,7 +73,8 @@ public sealed class X86SimdInfo
     ///   <c>true</c> if this instance has avx2; otherwise, <c>false</c>.
     /// </value>
     public static bool HasAvx2 => Avx2.IsSupported;
-    
+
+
     /// <summary>
     /// Gets a value indicating whether this instance has avx512 f.
     /// </summary>

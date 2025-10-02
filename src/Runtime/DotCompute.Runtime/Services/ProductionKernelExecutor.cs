@@ -6,10 +6,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Runtime.Logging;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Runtime.Services
 {
@@ -63,7 +61,7 @@ namespace DotCompute.Runtime.Services
             try
             {
                 var executingKernel = new ExecutingKernel(executionId, kernel.Name, stopwatch);
-                _executingKernels.TryAdd(executionId, executingKernel);
+                _ = _executingKernels.TryAdd(executionId, executingKernel);
 
                 _logger.LogInfoMessage($"Starting kernel execution {executionId} for {kernel.Name}");
 
@@ -83,8 +81,8 @@ namespace DotCompute.Runtime.Services
                     executingKernel.Complete(stopwatch.Elapsed);
 
                     // Update statistics
-                    Interlocked.Increment(ref _statistics._successfulExecutions);
-                    Interlocked.Add(ref _statistics._totalExecutionTime, stopwatch.ElapsedTicks);
+                    _ = Interlocked.Increment(ref _statistics._successfulExecutions);
+                    _ = Interlocked.Add(ref _statistics._totalExecutionTime, stopwatch.ElapsedTicks);
 
                     _logger.LogInfoMessage($"Kernel execution {executionId} completed successfully in {stopwatch.Elapsed.TotalMilliseconds}ms");
 
@@ -95,7 +93,7 @@ namespace DotCompute.Runtime.Services
                     stopwatch.Stop();
                     executingKernel.Fail(ex, stopwatch.Elapsed);
 
-                    Interlocked.Increment(ref _statistics._failedExecutions);
+                    _ = Interlocked.Increment(ref _statistics._failedExecutions);
 
                     _logger.LogErrorMessage(ex, $"Kernel execution {executionId} failed after {stopwatch.Elapsed.TotalMilliseconds}ms");
 
@@ -112,7 +110,7 @@ namespace DotCompute.Runtime.Services
             }
             finally
             {
-                _executionSemaphore.Release();
+                _ = _executionSemaphore.Release();
             }
         }
 
@@ -150,7 +148,7 @@ namespace DotCompute.Runtime.Services
                     }
                     finally
                     {
-                        semaphore.Release();
+                        _ = semaphore.Release();
                     }
                 });
 
@@ -239,7 +237,7 @@ namespace DotCompute.Runtime.Services
 
                 foreach (var key in completedKeys)
                 {
-                    _executingKernels.TryRemove(key, out _);
+                    _ = _executingKernels.TryRemove(key, out _);
                 }
 
                 if (completedKeys.Count > 0)

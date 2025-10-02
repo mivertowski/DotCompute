@@ -3,10 +3,8 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
@@ -32,7 +30,8 @@ public sealed class CudaMemoryIntegration : IDisposable
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
+
         _memoryManager = new CudaMemoryManager(context, logger);
         _asyncAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
         _bufferRegistry = new Dictionary<IntPtr, CudaBufferInfo>();
@@ -70,12 +69,15 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             var buffer = await _asyncAdapter.AllocateAsync<T>(count, options, cancellationToken);
-            
+
             // Register buffer for monitoring
+
             RegisterBuffer(buffer);
-            
+
+
             _logger.LogDebugMessage($"Allocated optimized buffer: {count} elements of {typeof(T).Name}");
-            
+
+
             return buffer;
         }
         catch (Exception ex)
@@ -123,11 +125,13 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             var stats = _memoryManager.Statistics;
-            
+
             // Query current device memory
+
             _context.MakeCurrent();
             var result = CudaRuntime.cudaMemGetInfo(out var freeBytes, out var totalBytes);
-            
+
+
             var currentFree = result == CudaError.Success ? (long)freeBytes : 0;
             var totalMemory = result == CudaError.Success ? (long)totalBytes : 0;
 
@@ -167,14 +171,17 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             var stats = GetMemoryStatistics();
-            
+
             // Health is based on available memory and fragmentation
+
             var memoryUtilization = (double)(stats.TotalDeviceMemory - stats.FreeDeviceMemory) / stats.TotalDeviceMemory;
             var fragmentationHealth = 1.0 - Math.Min(stats.FragmentationRatio, 1.0);
-            
+
             // Memory is healthy if utilization is below 85% and fragmentation is low
+
             var utilizationHealth = memoryUtilization < 0.85 ? 1.0 : Math.Max(0.0, (0.95 - memoryUtilization) / 0.1);
-            
+
+
             return (utilizationHealth + fragmentationHealth) / 2.0;
         }
         catch (Exception ex)
@@ -200,8 +207,9 @@ public sealed class CudaMemoryIntegration : IDisposable
             {
                 // Perform garbage collection and defragmentation
                 _memoryManager.Clear();
-                
+
                 // Configure memory pool based on workload
+
                 if (profile.IsMemoryIntensive)
                 {
                     // Pre-allocate larger pools for memory-intensive workloads
@@ -212,7 +220,8 @@ public sealed class CudaMemoryIntegration : IDisposable
                     // Use default pool configuration
                     ConfigureMemoryPool(large: false);
                 }
-                
+
+
                 _logger.LogDebugMessage("Memory optimization completed");
             }
             catch (Exception ex)
@@ -236,10 +245,12 @@ public sealed class CudaMemoryIntegration : IDisposable
         {
             // Clean up any orphaned buffers
             CleanupOrphanedBuffers();
-            
+
             // Optimize memory layout
-            _asyncAdapter.OptimizeAsync().AsTask().Wait(TimeSpan.FromSeconds(30));
-            
+
+            _ = _asyncAdapter.OptimizeAsync().AsTask().Wait(TimeSpan.FromSeconds(30));
+
+
             _logger.LogDebugMessage("Memory maintenance completed");
         }
         catch (Exception ex)
@@ -261,12 +272,14 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             _memoryManager.Clear();
-            
+
             // Force .NET garbage collection as well
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
+
             _logger.LogDebugMessage("Forced garbage collection completed");
         }
         catch (Exception ex)
@@ -306,21 +319,25 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             var stats = _memoryManager.Statistics;
-            
+
             // Simple fragmentation estimation based on allocation patterns
+
             if (stats.TotalAllocations == 0)
             {
                 return 0.0;
             }
-            
+
+
             var averageAllocationSize = (double)stats.CurrentAllocatedMemory / Math.Max(1, stats.TotalAllocations - stats.TotalDeallocations);
             var expectedMemory = averageAllocationSize * Math.Max(1, stats.TotalAllocations - stats.TotalDeallocations);
-            
+
+
             if (expectedMemory == 0)
             {
                 return 0.0;
             }
-            
+
+
             return Math.Abs(stats.CurrentAllocatedMemory - expectedMemory) / expectedMemory;
         }
         catch
@@ -356,7 +373,7 @@ public sealed class CudaMemoryIntegration : IDisposable
 
                 foreach (var (key, _) in orphanedBuffers)
                 {
-                    _bufferRegistry.Remove(key);
+                    _ = _bufferRegistry.Remove(key);
                 }
 
                 if (orphanedBuffers.Count > 0)
@@ -381,12 +398,14 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             var health = GetMemoryHealth();
-            
+
+
             if (health < 0.5)
             {
                 _logger.LogWarning("Memory health degraded: {Health:F2}", health);
-                
+
                 // Trigger automatic cleanup
+
                 ForceGarbageCollection();
             }
             else
@@ -405,18 +424,22 @@ public sealed class CudaMemoryIntegration : IDisposable
         if (!_disposed)
         {
             _memoryMonitorTimer?.Dispose();
-            
+
             // Clean up registry
+
             lock (_registryLock)
             {
                 _bufferRegistry.Clear();
             }
-            
+
+
             _asyncAdapter?.Dispose();
             _memoryManager?.Dispose();
-            
+
+
             _disposed = true;
-            
+
+
             _logger.LogDebugMessage("CUDA Memory Integration disposed");
         }
     }

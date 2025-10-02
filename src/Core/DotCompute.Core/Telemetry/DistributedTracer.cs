@@ -536,6 +536,7 @@ public sealed class DistributedTracer : IDisposable
 
 
 
+
         => [.. spans.OrderByDescending(s => s.Duration).Take(5)];
 
     private static Dictionary<string, double> AnalyzeDeviceUtilization(

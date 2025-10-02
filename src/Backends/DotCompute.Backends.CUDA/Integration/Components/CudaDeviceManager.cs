@@ -3,9 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -563,5 +561,6 @@ internal sealed class CudaContextAcceleratorWrapper : IAccelerator
         GC.SuppressFinalize(this);
     }
 }
+
 
 #endregion

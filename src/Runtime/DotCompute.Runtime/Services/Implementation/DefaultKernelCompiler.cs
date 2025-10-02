@@ -8,7 +8,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Runtime.Logging;
-using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services.Implementation;

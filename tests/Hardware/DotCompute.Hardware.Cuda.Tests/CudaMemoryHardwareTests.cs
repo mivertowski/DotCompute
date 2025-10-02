@@ -8,12 +8,7 @@ using DotCompute.Core.Extensions;
 using DotCompute.Abstractions.Kernels;
 using static DotCompute.Tests.Common.TestCategories;
 using DotCompute.Tests.Common.Specialized;
-using DotCompute.Tests.Common.Utilities;
-using Xunit;
-using Xunit.Abstractions;
-using FluentAssertions;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.SharedTestUtilities.Performance;
 using Microsoft.Extensions.Logging;
 using MemoryTracker = DotCompute.SharedTestUtilities.Performance.MemoryTracker;
 
@@ -220,7 +215,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 perfMeasurement.Start();
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
-                perfMeasurement.Stop();
+                _ = perfMeasurement.Stop();
 
                 // Download and verify
 
@@ -287,10 +282,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 for (var i = 0; i < bufferCount; i++)
                 {
                     var bufferIndex = i; // Capture loop variable
-                    tasks[i] = Task.Run(async () =>
-                    {
-                        await buffers[bufferIndex].CopyFromAsync(testDataSets[bufferIndex]);
-                    });
+                    tasks[i] = Task.Run(async () => await buffers[bufferIndex].CopyFromAsync(testDataSets[bufferIndex]));
                 }
 
                 // Wait for all transfers to complete
@@ -777,7 +769,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             {
                 standardBuffers[i] = await accelerator.Memory.AllocateAsync<float>(elementCount);
             }
-            standardAllocTime.Stop();
+            _ = standardAllocTime.Stop();
 
             // Clean up
 
@@ -853,7 +845,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             await accelerator.SynchronizeAsync();
-            noPrefetchPerf.Stop();
+            _ = noPrefetchPerf.Stop();
 
 
             noPrefetchPerf.LogResults(dataSize);

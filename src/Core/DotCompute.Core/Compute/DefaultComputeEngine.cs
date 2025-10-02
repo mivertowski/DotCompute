@@ -3,16 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Compute.Enums;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Interfaces.Compute;
 using DotCompute.Abstractions.Compute.Options;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
-using System;
 using System.Diagnostics;
 namespace DotCompute.Core.Compute
 {
@@ -342,7 +338,7 @@ namespace DotCompute.Core.Compute
 
                     if (process.Start())
                     {
-                        process.WaitForExit(5000); // 5 second timeout
+                        _ = process.WaitForExit(5000); // 5 second timeout
                         if (process.ExitCode == 0)
                         {
                             var output = process.StandardOutput.ReadToEnd();

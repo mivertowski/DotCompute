@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
-using global::System.Buffers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 
@@ -30,8 +29,9 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
     private readonly ThreadLocal<LocalPool<T>> _threadLocal;
     private readonly Timer _maintenanceTimer;
     private readonly PoolConfiguration _config;
-    
+
     // Performance counters
+
     private long _totalGets;
     private long _totalReturns;
     private long _poolHits;
@@ -61,17 +61,20 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
         _logger = logger;
         _config = config ?? PoolConfiguration.Default;
         _objects = new ConcurrentStack<PooledObject<T>>();
-        _threadLocal = new ThreadLocal<LocalPool<T>>(() => new LocalPool<T>(_config.ThreadLocalCapacity), 
+        _threadLocal = new ThreadLocal<LocalPool<T>>(() => new LocalPool<T>(_config.ThreadLocalCapacity),
+
             trackAllValues: true);
 
         // Pre-populate the pool
         PrePopulatePool();
 
         // Setup maintenance timer
-        _maintenanceTimer = new Timer(PerformMaintenance, null, 
+        _maintenanceTimer = new Timer(PerformMaintenance, null,
+
             _config.MaintenanceInterval, _config.MaintenanceInterval);
 
-        _logger?.LogDebug("High-performance object pool initialized for {Type} with capacity {Capacity}", 
+        _logger?.LogDebug("High-performance object pool initialized for {Type} with capacity {Capacity}",
+
             typeof(T).Name, _config.MaxPoolSize);
     }
 
@@ -98,13 +101,13 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
     public override T Get()
     {
         ThrowIfDisposed();
-        Interlocked.Increment(ref _totalGets);
+        _ = Interlocked.Increment(ref _totalGets);
 
         // Try thread-local pool first (fastest path)
         var threadLocal = _threadLocal.Value;
         if (threadLocal?.TryPop(out var item) == true)
         {
-            Interlocked.Increment(ref _poolHits);
+            _ = Interlocked.Increment(ref _poolHits);
             if (item != null)
             {
                 return ValidateAndPrepareItem(item);
@@ -116,19 +119,19 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
         {
             if (IsObjectValid(pooledObject))
             {
-                Interlocked.Increment(ref _poolHits);
+                _ = Interlocked.Increment(ref _poolHits);
                 return ValidateAndPrepareItem(pooledObject.Object);
             }
             else
             {
                 // Object expired, destroy it
-                Interlocked.Increment(ref _totalDestroyed);
+                _ = Interlocked.Increment(ref _totalDestroyed);
             }
         }
 
         // Pool miss - create new object
-        Interlocked.Increment(ref _poolMisses);
-        Interlocked.Increment(ref _totalCreated);
+        _ = Interlocked.Increment(ref _poolMisses);
+        _ = Interlocked.Increment(ref _totalCreated);
         return CreateNewObject();
     }
 
@@ -143,12 +146,12 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             return;
         }
 
-        Interlocked.Increment(ref _totalReturns);
+        _ = Interlocked.Increment(ref _totalReturns);
 
         // Validate object before returning
         if (_validateFunc != null && !_validateFunc(obj))
         {
-            Interlocked.Increment(ref _totalDestroyed);
+            _ = Interlocked.Increment(ref _totalDestroyed);
             return;
         }
 
@@ -163,7 +166,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
         catch (Exception ex)
         {
             _logger?.LogWarning(ex, "Failed to reset object of type {Type}, discarding", typeof(T).Name);
-            Interlocked.Increment(ref _totalDestroyed);
+            _ = Interlocked.Increment(ref _totalDestroyed);
             return;
         }
 
@@ -182,7 +185,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
         else
         {
             // Pool is full, discard the object
-            Interlocked.Increment(ref _totalDestroyed);
+            _ = Interlocked.Increment(ref _totalDestroyed);
         }
     }
 
@@ -199,8 +202,8 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
     {
         if (_validateFunc != null && !_validateFunc(item))
         {
-            Interlocked.Increment(ref _totalDestroyed);
-            Interlocked.Increment(ref _totalCreated);
+            _ = Interlocked.Increment(ref _totalDestroyed);
+            _ = Interlocked.Increment(ref _totalCreated);
             return CreateNewObject();
         }
         return item;
@@ -250,7 +253,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             {
                 var obj = CreateNewObject();
                 _objects.Push(new PooledObject<T>(obj, DateTimeOffset.UtcNow));
-                Interlocked.Increment(ref _totalCreated);
+                _ = Interlocked.Increment(ref _totalCreated);
             }
 
             _logger?.LogDebug("Pre-populated pool with {Count} objects", _config.PrePopulateCount);
@@ -312,7 +315,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             else
             {
                 cleanedCount++;
-                Interlocked.Increment(ref _totalDestroyed);
+                _ = Interlocked.Increment(ref _totalDestroyed);
             }
         }
 
@@ -341,7 +344,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
                 {
                     var obj = CreateNewObject();
                     _objects.Push(new PooledObject<T>(obj, DateTimeOffset.UtcNow));
-                    Interlocked.Increment(ref _totalCreated);
+                    _ = Interlocked.Increment(ref _totalCreated);
                 }
                 catch
                 {
@@ -357,7 +360,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             var targetDecrease = Math.Min(5, stats.CurrentPoolSize - _config.MinPoolSize);
             for (var i = 0; i < targetDecrease && _objects.TryPop(out _); i++)
             {
-                Interlocked.Increment(ref _totalDestroyed);
+                _ = Interlocked.Increment(ref _totalDestroyed);
             }
 
             if (targetDecrease > 0)
@@ -405,7 +408,7 @@ public sealed class HighPerformanceObjectPool<T> : ObjectPool<T>, IDisposable wh
             // Clear the pool
             while (_objects.TryPop(out _))
             {
-                Interlocked.Increment(ref _totalDestroyed);
+                _ = Interlocked.Increment(ref _totalDestroyed);
             }
 
             _logger?.LogDebug("High-performance object pool disposed for {Type}", typeof(T).Name);

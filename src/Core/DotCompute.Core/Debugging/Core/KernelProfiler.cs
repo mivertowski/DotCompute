@@ -3,12 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Debugging.Types;
 using DotCompute.Abstractions.Performance;
@@ -529,7 +525,7 @@ public sealed class KernelProfiler : IDisposable
         {
             for (var i = 0; i < 1000; i++)
             {
-                _executionHistory.TryDequeue(out _);
+                _ = _executionHistory.TryDequeue(out _);
             }
         }
     }

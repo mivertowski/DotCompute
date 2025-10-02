@@ -81,7 +81,7 @@ namespace DotCompute.Core.Pipelines
         public static async Task Quick(string kernelName, params object[] args)
         {
             await using var chain = Create();
-            await chain.Kernel(kernelName, args).ExecuteAsync<object>();
+            _ = await chain.Kernel(kernelName, args).ExecuteAsync<object>();
         }
 
         /// <summary>

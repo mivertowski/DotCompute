@@ -23,7 +23,6 @@
 
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Memory.Tests.TestHelpers;

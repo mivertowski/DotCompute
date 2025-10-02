@@ -1,14 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Common.Helpers;
@@ -419,7 +415,8 @@ public static class UnifiedTestHelpers
         /// <summary>
         /// Verifies that a value is within expected range.
         /// </summary>
-        public static void VerifyValueInRange<T>(T value, T min, T max, string? context = null) 
+        public static void VerifyValueInRange<T>(T value, T min, T max, string? context = null)
+
             where T : IComparable<T>
         {
             if (value.CompareTo(min) < 0 || value.CompareTo(max) > 0)

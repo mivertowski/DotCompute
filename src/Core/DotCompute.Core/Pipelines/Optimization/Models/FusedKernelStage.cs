@@ -5,7 +5,6 @@ using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines.Stages;
-using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 
 // Using aliases to resolve IStageMetrics conflicts
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
@@ -102,6 +101,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
     public IStageMetrics GetMetrics()
         // Combine metrics from both stages
 
+
         => _stage1.GetMetrics(); // Simplified
 
     private static MemoryUsageStats? CombineMemoryStats(MemoryUsageStats? stats1, MemoryUsageStats? stats2)
@@ -129,5 +129,6 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
         };
     }
 }
+
 
 // MemoryUsageStats now uses the canonical version from DotCompute.Abstractions.Pipelines.Results

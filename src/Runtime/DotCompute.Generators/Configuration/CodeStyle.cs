@@ -23,5 +23,4 @@ global using IndentationStyle = DotCompute.Generators.Configuration.Style.Enums.
 global using BraceStyle = DotCompute.Generators.Configuration.Style.Enums.BraceStyle;
 global using LineEndingStyle = DotCompute.Generators.Configuration.Style.Enums.LineEndingStyle;
 global using NamingConventions = DotCompute.Generators.Configuration.Style.Conventions.NamingConventions;
-global using CommentStyle = DotCompute.Generators.Configuration.Style.CommentStyle;
 global using CommentDetailLevel = DotCompute.Generators.Configuration.Style.Enums.CommentDetailLevel;

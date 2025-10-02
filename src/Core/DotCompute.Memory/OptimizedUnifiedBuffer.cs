@@ -37,8 +37,9 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private IUnifiedMemoryBuffer<T>? _deviceBuffer;
     private BufferState _state;
     private volatile bool _disposed;
-    
+
     // Performance counters
+
     private long _transferCount;
     private long _totalTransferTime;
     private DateTimeOffset _lastAccessTime;
@@ -112,8 +113,10 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     public BufferPerformanceMetrics PerformanceMetrics => new()
     {
         TransferCount = Interlocked.Read(ref _transferCount),
-        AverageTransferTime = _transferCount > 0 ? 
-            TimeSpan.FromTicks(Interlocked.Read(ref _totalTransferTime) / _transferCount) : 
+        AverageTransferTime = _transferCount > 0 ?
+
+            TimeSpan.FromTicks(Interlocked.Read(ref _totalTransferTime) / _transferCount) :
+
             TimeSpan.Zero,
         LastAccessTime = _lastAccessTime,
         SizeInBytes = SizeInBytes,
@@ -149,7 +152,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         _deviceMemory = DeviceMemory.Invalid;
 
         // Lazy initialization for expensive pinning operation
-        _pinnedHandle = new Lazy<GCHandle>(() => 
+        _pinnedHandle = new Lazy<GCHandle>(() =>
+
         {
             AllocatePinnedHost();
             return GCHandle.Alloc(_hostArray, GCHandleType.Pinned);
@@ -356,7 +360,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -402,7 +406,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -519,12 +523,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
 
         var startTime = DateTimeOffset.UtcNow;
-        
+
+
         try
         {
             _deviceBuffer.CopyFromAsync(_hostArray.AsMemory())
                 .AsTask().GetAwaiter().GetResult();
-            
+
+
             RecordTransferTime(startTime);
         }
         catch (Exception ex)
@@ -543,12 +549,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
 
         var startTime = DateTimeOffset.UtcNow;
-        
+
+
         try
         {
             _deviceBuffer.CopyToAsync(_hostArray.AsMemory())
                 .AsTask().GetAwaiter().GetResult();
-            
+
+
             RecordTransferTime(startTime);
         }
         catch (Exception ex)
@@ -617,8 +625,8 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     private void RecordTransferTime(DateTimeOffset startTime)
     {
         var elapsed = (DateTimeOffset.UtcNow - startTime).Ticks;
-        Interlocked.Increment(ref _transferCount);
-        Interlocked.Add(ref _totalTransferTime, elapsed);
+        _ = Interlocked.Increment(ref _transferCount);
+        _ = Interlocked.Add(ref _totalTransferTime, elapsed);
     }
 
     #endregion
@@ -831,7 +839,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -882,7 +890,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -903,7 +911,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 

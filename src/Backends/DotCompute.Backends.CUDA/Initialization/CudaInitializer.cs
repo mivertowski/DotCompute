@@ -1,12 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA.Initialization
 {
@@ -181,15 +179,15 @@ namespace DotCompute.Backends.CUDA.Initialization
             lock (_initLock)
             {
                 var info = new System.Text.StringBuilder();
-                info.AppendLine("=== CUDA Initialization Diagnostics ===");
-                info.AppendLine($"Initialized: {_initialized}");
-                info.AppendLine($"Device Count: {_deviceCount ?? -1}");
+                _ = info.AppendLine("=== CUDA Initialization Diagnostics ===");
+                _ = info.AppendLine($"Initialized: {_initialized}");
+                _ = info.AppendLine($"Device Count: {_deviceCount ?? -1}");
 
 
                 if (_initializationError.HasValue)
                 {
-                    info.AppendLine($"Error Code: {_initializationError.Value}");
-                    info.AppendLine($"Error Message: {_initializationErrorMessage}");
+                    _ = info.AppendLine($"Error Code: {_initializationError.Value}");
+                    _ = info.AppendLine($"Error Message: {_initializationErrorMessage}");
                 }
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -202,7 +200,7 @@ namespace DotCompute.Backends.CUDA.Initialization
                             var version = System.IO.File.ReadAllText("/proc/version");
                             if (version.Contains("microsoft", StringComparison.OrdinalIgnoreCase))
                             {
-                                info.AppendLine("Environment: WSL detected");
+                                _ = info.AppendLine("Environment: WSL detected");
                             }
                         }
                         catch { }

@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
@@ -96,12 +94,14 @@ public static class MetalGraphExample
                 dependencies: new[] { postProcess }
             );
 
-            logger.LogInformation("Created complex matrix multiplication graph with {NodeCount} nodes", 
+            logger.LogInformation("Created complex matrix multiplication graph with {NodeCount} nodes",
+
                 graph.NodeCount);
 
             // Step 7: Build the graph (validates dependencies and creates execution plan)
             graph.Build();
-            logger.LogInformation("Graph built successfully with critical path length: {CriticalPath}", 
+            logger.LogInformation("Graph built successfully with critical path length: {CriticalPath}",
+
                 graph.Statistics.CriticalPathLength);
 
             // Step 8: Analyze optimization opportunities
@@ -110,7 +110,8 @@ public static class MetalGraphExample
             {
                 logger.LogInformation("Graph analysis - Fusion opportunities: {Fusion}, " +
                                     "Memory optimizations: {Memory}, Parallelism: {Parallel}",
-                    analysis.FusionOpportunities, analysis.MemoryCoalescingOpportunities, 
+                    analysis.FusionOpportunities, analysis.MemoryCoalescingOpportunities,
+
                     analysis.ParallelismOpportunities);
             }
 
@@ -126,7 +127,8 @@ public static class MetalGraphExample
 
             // Step 10: Execute the optimized graph
             var executionResult = await graphManager.ExecuteGraphAsync(
-                "MatrixMultiplicationPipeline", 
+                "MatrixMultiplicationPipeline",
+
                 commandQueue);
 
             if (executionResult?.Success == true)
@@ -141,7 +143,8 @@ public static class MetalGraphExample
                 // Log performance metrics
                 foreach (var metric in executionResult.PerformanceMetrics)
                 {
-                    logger.LogDebug("Performance metric - {MetricName}: {MetricValue}", 
+                    logger.LogDebug("Performance metric - {MetricName}: {MetricValue}",
+
                         metric.Key, metric.Value);
                 }
             }
@@ -212,7 +215,8 @@ public static class MetalGraphExample
 
             if (executionResult?.Success == true)
             {
-                logger.LogInformation("'{GraphName}' executed in {ExecutionTime:F2}ms", 
+                logger.LogInformation("'{GraphName}' executed in {ExecutionTime:F2}ms",
+
                     name, executionResult.ExecutionDuration.TotalMilliseconds);
             }
         }
@@ -228,12 +232,14 @@ public static class MetalGraphExample
         if (clonedGraph != null)
         {
             logger.LogInformation("Successfully cloned graph 'SimpleCompute' to 'SimpleComputeClone'");
-            
+
             // Execute the cloned graph
+
             var cloneResult = await graphManager.ExecuteGraphAsync("SimpleComputeClone", commandQueue);
             if (cloneResult?.Success == true)
             {
-                logger.LogInformation("Cloned graph executed in {ExecutionTime:F2}ms", 
+                logger.LogInformation("Cloned graph executed in {ExecutionTime:F2}ms",
+
                     cloneResult.ExecutionDuration.TotalMilliseconds);
             }
         }
@@ -241,9 +247,9 @@ public static class MetalGraphExample
         // Clean up
         foreach (var (name, _) in graphs)
         {
-            graphManager.RemoveGraph(name);
+            _ = graphManager.RemoveGraph(name);
         }
-        graphManager.RemoveGraph("SimpleComputeClone");
+        _ = graphManager.RemoveGraph("SimpleComputeClone");
     }
 
     /// <summary>
@@ -296,7 +302,8 @@ public static class MetalGraphExample
 
             // Attempt execution with timeout to demonstrate timeout handling
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-            
+
+
             try
             {
                 var result = await graphManager.ExecuteGraphAsync("ErrorHandlingDemo", commandQueue, cts.Token);
@@ -331,8 +338,9 @@ public static class MetalGraphExample
     {
         var graph = manager.CreateGraph("SimpleCompute");
         var kernel = CreateMockKernel("simple_add");
-        
-        graph.AddKernelNode(
+
+
+        _ = graph.AddKernelNode(
             kernel,
             MTLSize.Make(64, 64),
             MTLSize.Make(16, 16),
@@ -346,8 +354,9 @@ public static class MetalGraphExample
     private static MetalComputeGraph CreateComplexPipelineGraph(MetalGraphManager manager, ILogger logger)
     {
         var graph = manager.CreateGraph("ComplexPipeline");
-        
+
         // Create a multi-stage pipeline
+
         var stage1 = graph.AddKernelNode(
             CreateMockKernel("preprocess"),
             MTLSize.Make(32, 32),

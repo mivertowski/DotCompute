@@ -239,7 +239,7 @@ public sealed class PluginCircuitBreaker : IDisposable
                 {
                     if (circuitState.State == CircuitState.Open)
                     {
-                        ShouldAttemptReset(circuitState);
+                        _ = ShouldAttemptReset(circuitState);
                     }
                 }
             }

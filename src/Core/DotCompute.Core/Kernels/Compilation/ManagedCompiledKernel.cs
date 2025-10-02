@@ -3,14 +3,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces;
-
-using System;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 namespace DotCompute.Core.Kernels.Compilation;
 
@@ -216,7 +210,7 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
             }
 
             // Invoke the delegate
-            kernelDelegate.DynamicInvoke(args);
+            _ = kernelDelegate.DynamicInvoke(args);
 
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -255,7 +249,7 @@ public sealed class ManagedCompiledKernel : DotCompute.Abstractions.ICompiledKer
                 }
 
                 // Invoke the method
-                entryMethod.Invoke(null, args);
+                _ = entryMethod.Invoke(null, args);
             }
             catch (ReflectionTypeLoadException ex)
             {

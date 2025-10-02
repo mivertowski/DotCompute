@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
@@ -139,7 +136,7 @@ internal sealed class RegisterSpillingOptimizer
         // Add overhead for mathematical operations
         var mathOperations = body.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Count(inv => IsMathOperation(inv));
+            .Count(IsMathOperation);
 
 
         _estimatedRegisterCount += mathOperations * 2; // Math operations need temporary registers
@@ -215,41 +212,41 @@ internal sealed class RegisterSpillingOptimizer
         // Add spilling configuration if needed
         if (HasHighRegisterPressure)
         {
-            sb.AppendLine("// High register pressure detected - implementing spilling strategies");
-            sb.AppendLine($"// Estimated registers: {_estimatedRegisterCount}");
-            sb.AppendLine($"// Recommended max: {RecommendedMaxRegisters}");
-            sb.AppendLine();
+            _ = sb.AppendLine("// High register pressure detected - implementing spilling strategies");
+            _ = sb.AppendLine($"// Estimated registers: {_estimatedRegisterCount}");
+            _ = sb.AppendLine($"// Recommended max: {RecommendedMaxRegisters}");
+            _ = sb.AppendLine();
 
             // Generate shared memory spill buffer
             if (_spillableVariables.Count > 0)
             {
-                sb.AppendLine("// Shared memory buffer for spilling long-lived variables");
-                sb.AppendLine($"__shared__ float __spill_buffer[{_spillableVariables.Count * 256}];");
-                sb.AppendLine("#define SPILL_OFFSET(tid) ((tid) * " + _spillableVariables.Count + ")");
-                sb.AppendLine();
+                _ = sb.AppendLine("// Shared memory buffer for spilling long-lived variables");
+                _ = sb.AppendLine($"__shared__ float __spill_buffer[{_spillableVariables.Count * 256}];");
+                _ = sb.AppendLine("#define SPILL_OFFSET(tid) ((tid) * " + _spillableVariables.Count + ")");
+                _ = sb.AppendLine();
 
                 // Generate spill/reload macros for each variable
                 for (var i = 0; i < _spillableVariables.Count; i++)
                 {
                     var varName = _spillableVariables[i];
-                    sb.AppendLine($"#define SPILL_{varName}(val) __spill_buffer[SPILL_OFFSET(threadIdx.x) + {i}] = (val)");
-                    sb.AppendLine($"#define RELOAD_{varName}() __spill_buffer[SPILL_OFFSET(threadIdx.x) + {i}]");
+                    _ = sb.AppendLine($"#define SPILL_{varName}(val) __spill_buffer[SPILL_OFFSET(threadIdx.x) + {i}] = (val)");
+                    _ = sb.AppendLine($"#define RELOAD_{varName}() __spill_buffer[SPILL_OFFSET(threadIdx.x) + {i}]");
                 }
-                sb.AppendLine();
+                _ = sb.AppendLine();
             }
 
             // Add compiler hints
-            sb.AppendLine("// Compiler hints for register optimization");
-            sb.AppendLine("#pragma unroll 1  // Disable loop unrolling to save registers");
-            sb.AppendLine("#if __CUDA_ARCH__ >= 750");
-            sb.AppendLine("  // Use shared memory for spilling on Turing+");
-            sb.AppendLine("  #pragma nv_diag_suppress 177  // Suppress spilling warnings");
-            sb.AppendLine("#endif");
-            sb.AppendLine();
+            _ = sb.AppendLine("// Compiler hints for register optimization");
+            _ = sb.AppendLine("#pragma unroll 1  // Disable loop unrolling to save registers");
+            _ = sb.AppendLine("#if __CUDA_ARCH__ >= 750");
+            _ = sb.AppendLine("  // Use shared memory for spilling on Turing+");
+            _ = sb.AppendLine("  #pragma nv_diag_suppress 177  // Suppress spilling warnings");
+            _ = sb.AppendLine("#endif");
+            _ = sb.AppendLine();
         }
 
         // Add the base code with potential modifications
-        sb.Append(ModifyCodeForSpilling(baseCode));
+        _ = sb.Append(ModifyCodeForSpilling(baseCode));
 
         return sb.ToString();
     }
@@ -345,11 +342,11 @@ internal sealed class RegisterSpillingOptimizer
             {
                 var block = _blockStack.Pop();
                 // Cleanup spilled variables at block exit
-                foreach (var var in block.LocalVars.Where(v => _spillInfoMap.ContainsKey(v)))
+                foreach (var var in block.LocalVars.Where(_spillInfoMap.ContainsKey))
                 {
                     if (_spillInfoMap[var].IsSpilled)
                     {
-                        _output.AppendLine($"    // Cleanup spill slot for {var}");
+                        _ = _output.AppendLine($"    // Cleanup spill slot for {var}");
                         _spillInfoMap[var].IsSpilled = false;
                     }
                 }
@@ -367,10 +364,10 @@ internal sealed class RegisterSpillingOptimizer
                 if (_spillVars.Contains(varName) && !_processedDeclarations.Contains(varName))
                 {
                     ProcessSpillableDeclaration(line, varName, varType, initializer);
-                    _processedDeclarations.Add(varName);
+                    _ = _processedDeclarations.Add(varName);
                     if (_blockStack.Count > 0)
                     {
-                        _blockStack.Peek().LocalVars.Add(varName);
+                        _ = _blockStack.Peek().LocalVars.Add(varName);
                     }
                     return;
                 }
@@ -388,7 +385,7 @@ internal sealed class RegisterSpillingOptimizer
 
             // Process variable uses
             var processedLine = ProcessVariableUses(line);
-            _output.AppendLine(processedLine);
+            _ = _output.AppendLine(processedLine);
         }
 
         private static bool IsLoopConstruct(string line)
@@ -464,15 +461,15 @@ internal sealed class RegisterSpillingOptimizer
 
             if (shouldSpillImmediately)
             {
-                _output.AppendLine($"    // Spillable variable {varName} - using spill slot {info.SpillSlot}");
-                _output.AppendLine($"    {varType} {varName} = {initializer};");
-                _output.AppendLine($"    SPILL_{varName}({varName}); // Spill to shared memory");
+                _ = _output.AppendLine($"    // Spillable variable {varName} - using spill slot {info.SpillSlot}");
+                _ = _output.AppendLine($"    {varType} {varName} = {initializer};");
+                _ = _output.AppendLine($"    SPILL_{varName}({varName}); // Spill to shared memory");
                 info.IsSpilled = true;
             }
             else
             {
-                _output.AppendLine($"    // Spillable variable {varName} - keeping in register initially");
-                _output.AppendLine($"    {varType} {varName} = {initializer};");
+                _ = _output.AppendLine($"    // Spillable variable {varName} - keeping in register initially");
+                _ = _output.AppendLine($"    {varType} {varName} = {initializer};");
                 info.IsSpilled = false;
             }
         }
@@ -485,20 +482,20 @@ internal sealed class RegisterSpillingOptimizer
             if (info.IsSpilled)
             {
                 // Variable is spilled, need to reload, modify, and spill again
-                _output.AppendLine($"    {info.Type} {varName}_temp = RELOAD_{varName}(); // Reload from spill");
-                _output.AppendLine($"    {varName}_temp = {value};");
-                _output.AppendLine($"    SPILL_{varName}({varName}_temp); // Spill back");
+                _ = _output.AppendLine($"    {info.Type} {varName}_temp = RELOAD_{varName}(); // Reload from spill");
+                _ = _output.AppendLine($"    {varName}_temp = {value};");
+                _ = _output.AppendLine($"    SPILL_{varName}({varName}_temp); // Spill back");
             }
             else
             {
                 // Variable is in register
-                _output.AppendLine($"    {varName} = {value};");
+                _ = _output.AppendLine($"    {varName} = {value};");
 
                 // Consider spilling if register pressure is high
 
                 if (_blockStack.Any(b => b.IsLoop))
                 {
-                    _output.AppendLine($"    SPILL_{varName}({varName}); // Spill in loop context");
+                    _ = _output.AppendLine($"    SPILL_{varName}({varName}); // Spill in loop context");
                     info.IsSpilled = true;
                 }
             }
@@ -573,7 +570,7 @@ internal sealed class RegisterSpillingOptimizer
 
         var hasComplexMath = _kernelInfo.MethodDeclaration?.Body?.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Any(inv => IsMathOperation(inv)) ?? false;
+            .Any(IsMathOperation) ?? false;
 
         if (hasComplexMath && _estimatedRegisterCount > 48)
         {
@@ -594,40 +591,40 @@ internal sealed class RegisterSpillingOptimizer
 
         if (HasHighRegisterPressure)
         {
-            sb.AppendLine("// PTX optimization hints for high register pressure");
-            sb.AppendLine($"// .maxnreg {RecommendedMaxRegisters}");
+            _ = sb.AppendLine("// PTX optimization hints for high register pressure");
+            _ = sb.AppendLine($"// .maxnreg {RecommendedMaxRegisters}");
 
 
             if (_spillableVariables.Count > 0)
             {
-                sb.AppendLine("// Consider using .local memory for spilling:");
+                _ = sb.AppendLine("// Consider using .local memory for spilling:");
                 foreach (var var in _spillableVariables)
                 {
-                    sb.AppendLine($"//   .local .f32 spill_{var};");
+                    _ = sb.AppendLine($"//   .local .f32 spill_{var};");
                 }
             }
 
 
-            sb.AppendLine("// Use .pragma \"nounroll\" for loops to reduce register pressure");
-            sb.AppendLine("// Consider .volatile for frequently accessed shared memory");
+            _ = sb.AppendLine("// Use .pragma \"nounroll\" for loops to reduce register pressure");
+            _ = sb.AppendLine("// Consider .volatile for frequently accessed shared memory");
 
             // Generate specific PTX directives for spilling
 
-            sb.AppendLine();
-            sb.AppendLine("// PTX directives for explicit spilling:");
-            sb.AppendLine("// .reg .f32 %f<N>; // Limit float registers");
-            sb.AppendLine("// .reg .b32 %r<N>; // Limit integer registers");
-            sb.AppendLine("// .reg .b64 %rd<N>; // Limit 64-bit registers");
+            _ = sb.AppendLine();
+            _ = sb.AppendLine("// PTX directives for explicit spilling:");
+            _ = sb.AppendLine("// .reg .f32 %f<N>; // Limit float registers");
+            _ = sb.AppendLine("// .reg .b32 %r<N>; // Limit integer registers");
+            _ = sb.AppendLine("// .reg .b64 %rd<N>; // Limit 64-bit registers");
 
 
             if (_spillableVariables.Count > 0)
             {
-                sb.AppendLine();
-                sb.AppendLine("// Explicit spill/fill operations:");
+                _ = sb.AppendLine();
+                _ = sb.AppendLine("// Explicit spill/fill operations:");
                 foreach (var var in _spillableVariables)
                 {
-                    sb.AppendLine($"// st.local.f32 [spill_{var}], %f_reg; // Spill {var}");
-                    sb.AppendLine($"// ld.local.f32 %f_reg, [spill_{var}]; // Reload {var}");
+                    _ = sb.AppendLine($"// st.local.f32 [spill_{var}], %f_reg; // Spill {var}");
+                    _ = sb.AppendLine($"// ld.local.f32 %f_reg, [spill_{var}]; // Reload {var}");
                 }
             }
         }
@@ -732,7 +729,7 @@ internal sealed class RegisterSpillingOptimizer
                         var leftSide = assignment.Left.ToString();
                         if (_flowInfo.ContainsKey(leftSide))
                         {
-                            _flowInfo[leftSide].Dependencies.Add(name);
+                            _ = _flowInfo[leftSide].Dependencies.Add(name);
                         }
                     }
                 }
@@ -772,7 +769,7 @@ internal sealed class RegisterSpillingOptimizer
                 var modifiedVars = loopBody.DescendantNodes()
                     .OfType<AssignmentExpressionSyntax>()
                     .Select(a => a.Left.ToString())
-                    .Where(v => _flowInfo.ContainsKey(v))
+                    .Where(_flowInfo.ContainsKey)
                     .ToList();
                 var modifiedVarsSet = new HashSet<string>(modifiedVars);
 
@@ -781,7 +778,7 @@ internal sealed class RegisterSpillingOptimizer
                 var usedVars = loopBody.DescendantNodes()
                     .OfType<IdentifierNameSyntax>()
                     .Select(i => i.Identifier.Text)
-                    .Where(v => _flowInfo.ContainsKey(v))
+                    .Where(_flowInfo.ContainsKey)
                     .ToList();
                 var usedVarsSet = new HashSet<string>(usedVars);
 

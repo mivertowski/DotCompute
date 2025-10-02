@@ -44,7 +44,7 @@ public sealed class PluginStateManager : IDisposable
             IsValid = true
         };
 
-        _stateSnapshots.AddOrUpdate(pluginId, snapshot, (key, existing) => snapshot);
+        _ = _stateSnapshots.AddOrUpdate(pluginId, snapshot, (key, existing) => snapshot);
 
         _logger.LogDebugMessage($"State snapshot created for plugin {pluginId}");
         return snapshot;
@@ -141,7 +141,7 @@ public sealed class PluginStateManager : IDisposable
             {
                 foreach (var state in states)
                 {
-                    _stateSnapshots.TryAdd(state.PluginId, state);
+                    _ = _stateSnapshots.TryAdd(state.PluginId, state);
                 }
 
                 _logger.LogInformation("Imported {Count} plugin state snapshots", states.Count);

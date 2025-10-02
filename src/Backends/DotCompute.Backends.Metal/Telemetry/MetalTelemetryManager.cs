@@ -26,19 +26,22 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     private readonly MetalProductionLogger _productionLogger;
     private readonly MetalMetricsExporter _metricsExporter;
     private readonly MetalAlertsManager _alertsManager;
-    
+
+
     private readonly ConcurrentDictionary<string, MetalOperationMetrics> _operationMetrics;
     private readonly ConcurrentDictionary<string, MetalResourceMetrics> _resourceMetrics;
     private readonly Timer? _reportingTimer;
     private readonly Timer? _cleanupTimer;
-    
+
+
     private readonly Meter _meter;
     private readonly Counter<long> _operationCounter;
     private readonly Counter<long> _errorCounter;
     private readonly Histogram<double> _operationDuration;
     private readonly Gauge<long> _memoryUsage;
     private readonly Gauge<double> _gpuUtilization;
-    
+
+
     private volatile bool _disposed;
     private long _totalOperations;
     private long _totalErrors;
@@ -50,51 +53,61 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     {
         _options = options.Value;
         _logger = logger;
-        
+
         // Initialize telemetry components
+
         _performanceCounters = new MetalPerformanceCounters(
             loggerFactory.CreateLogger<MetalPerformanceCounters>(),
             _options.PerformanceCountersOptions);
-            
+
+
         _healthMonitor = new MetalHealthMonitor(
             loggerFactory.CreateLogger<MetalHealthMonitor>(),
             _options.HealthMonitorOptions);
-            
+
+
         _productionLogger = new MetalProductionLogger(
             loggerFactory.CreateLogger<MetalProductionLogger>(),
             _options.LoggingOptions);
-            
+
+
         _metricsExporter = new MetalMetricsExporter(
             loggerFactory.CreateLogger<MetalMetricsExporter>(),
             _options.ExportOptions);
-            
+
+
         _alertsManager = new MetalAlertsManager(
             loggerFactory.CreateLogger<MetalAlertsManager>(),
             _options.AlertsOptions);
-        
+
         // Initialize collections
+
         _operationMetrics = new ConcurrentDictionary<string, MetalOperationMetrics>();
         _resourceMetrics = new ConcurrentDictionary<string, MetalResourceMetrics>();
-        
+
         // Initialize OpenTelemetry metrics
+
         _meter = new Meter("DotCompute.Backends.Metal", "1.0.0");
         _operationCounter = _meter.CreateCounter<long>("metal_operations_total", "count", "Total number of Metal operations");
         _errorCounter = _meter.CreateCounter<long>("metal_errors_total", "count", "Total number of Metal errors");
         _operationDuration = _meter.CreateHistogram<double>("metal_operation_duration_ms", "ms", "Duration of Metal operations in milliseconds");
         _memoryUsage = _meter.CreateGauge<long>("metal_memory_usage_bytes", "bytes", "Current Metal memory usage");
         _gpuUtilization = _meter.CreateGauge<double>("metal_gpu_utilization_percent", "%", "Current GPU utilization percentage");
-        
+
         // Start periodic tasks
+
         if (_options.ReportingInterval > TimeSpan.Zero)
         {
             _reportingTimer = new Timer(GeneratePeriodicReport, null, _options.ReportingInterval, _options.ReportingInterval);
         }
-        
+
+
         if (_options.CleanupInterval > TimeSpan.Zero)
         {
             _cleanupTimer = new Timer(PerformCleanup, null, _options.CleanupInterval, _options.CleanupInterval);
         }
-        
+
+
         _logger.LogInformation("Metal telemetry manager initialized with reporting interval: {ReportingInterval}, cleanup interval: {CleanupInterval}",
             _options.ReportingInterval, _options.CleanupInterval);
     }
@@ -130,10 +143,10 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         _performanceCounters.RecordMemoryAllocation(sizeBytes, duration, success);
         _productionLogger.LogMemoryAllocation(sizeBytes, duration, success);
 
-        Interlocked.Increment(ref _totalOperations);
+        _ = Interlocked.Increment(ref _totalOperations);
         if (!success)
         {
-            Interlocked.Increment(ref _totalErrors);
+            _ = Interlocked.Increment(ref _totalErrors);
         }
 
     }
@@ -150,7 +163,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
         var correlationId = MetalProductionLogger.GenerateCorrelationId();
-        
+
+
         var tags = new Dictionary<string, object?>
         {
             ["operation"] = "kernel_execution",
@@ -171,7 +185,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
         // Update operation metrics
         var operationKey = $"kernel_{kernelName}";
-        _operationMetrics.AddOrUpdate(operationKey,
+        _ = _operationMetrics.AddOrUpdate(operationKey,
             new MetalOperationMetrics(operationKey, duration, success),
             (_, existing) =>
             {
@@ -188,10 +202,10 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
             _alertsManager.CheckSlowOperation(operationKey, duration);
         }
 
-        Interlocked.Increment(ref _totalOperations);
+        _ = Interlocked.Increment(ref _totalOperations);
         if (!success)
         {
-            Interlocked.Increment(ref _totalErrors);
+            _ = Interlocked.Increment(ref _totalErrors);
         }
 
     }
@@ -235,7 +249,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
         // Update resource metrics
         var resourceKey = "gpu_device";
-        _resourceMetrics.AddOrUpdate(resourceKey,
+        _ = _resourceMetrics.AddOrUpdate(resourceKey,
             new MetalResourceMetrics(resourceKey, usedMemory, totalMemory),
             (_, existing) =>
             {
@@ -256,16 +270,18 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
         var correlationId = MetalProductionLogger.GenerateCorrelationId();
-        
+
+
         _errorCounter.Add(1, new KeyValuePair<string, object?>("error_code", error.ToString()));
 
         _performanceCounters.RecordError(error, context);
         _productionLogger.LogError(correlationId, error, context, additionalContext);
         _alertsManager.CheckErrorRate(error);
-        
+
+
         _healthMonitor.ReportError(error, context);
 
-        Interlocked.Increment(ref _totalErrors);
+        _ = Interlocked.Increment(ref _totalErrors);
     }
 
     /// <summary>
@@ -302,13 +318,14 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
         var utilizationPercentage = limit > 0 ? (double)currentUsage / limit * 100.0 : 0.0;
-        
+
+
         _performanceCounters.RecordResourceUsage(type, currentUsage, peakUsage, limit);
         _productionLogger.LogResourceUsage(type, currentUsage, peakUsage, limit, utilizationPercentage);
 
         // Update resource metrics
         var resourceKey = $"resource_{type}";
-        _resourceMetrics.AddOrUpdate(resourceKey,
+        _ = _resourceMetrics.AddOrUpdate(resourceKey,
             new MetalResourceMetrics(resourceKey, currentUsage, limit),
             (_, existing) =>
             {
@@ -359,7 +376,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
         var snapshot = GetCurrentSnapshot();
-        
+
+
         return new MetalProductionReport
         {
             Snapshot = snapshot,
@@ -386,7 +404,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         {
             var snapshot = GetCurrentSnapshot();
             await _metricsExporter.ExportAsync(snapshot, cancellationToken);
-            
+
+
             _logger.LogDebug("Successfully exported metrics to monitoring systems");
         }
         catch (Exception ex)
@@ -407,7 +426,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         try
         {
             var report = GenerateProductionReport();
-            
+
+
             _logger.LogInformation("Metal telemetry report - Operations: {Operations}, Errors: {Errors}, Error Rate: {ErrorRate:P2}, Health: {Health}",
                 report.Snapshot.TotalOperations, report.Snapshot.TotalErrors, report.Snapshot.ErrorRate, report.Snapshot.HealthStatus);
 
@@ -447,7 +467,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
             foreach (var key in oldOperations)
             {
-                _operationMetrics.TryRemove(key, out _);
+                _ = _operationMetrics.TryRemove(key, out _);
             }
 
             // Clean up old resource metrics
@@ -458,7 +478,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
             foreach (var key in oldResources)
             {
-                _resourceMetrics.TryRemove(key, out _);
+                _ = _resourceMetrics.TryRemove(key, out _);
             }
 
             _performanceCounters.PerformCleanup(cutoffTime);
@@ -481,7 +501,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     {
         var totalOps = Interlocked.Read(ref _totalOperations);
         var totalErrors = Interlocked.Read(ref _totalErrors);
-        
+
+
         return totalOps > 0 ? (double)totalErrors / totalOps : 0.0;
     }
 

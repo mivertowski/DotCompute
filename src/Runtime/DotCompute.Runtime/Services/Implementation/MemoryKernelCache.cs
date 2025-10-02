@@ -57,19 +57,19 @@ public class MemoryKernelCache : IKernelCache, IDisposable
         CompilationOptions? compilationOptions)
     {
         var keyBuilder = new StringBuilder();
-        keyBuilder.Append(kernelDefinition.Name);
-        keyBuilder.Append('_');
-        keyBuilder.Append(accelerator.Info.DeviceType);
-        keyBuilder.Append('_');
-        keyBuilder.Append(accelerator.Info.Id);
+        _ = keyBuilder.Append(kernelDefinition.Name);
+        _ = keyBuilder.Append('_');
+        _ = keyBuilder.Append(accelerator.Info.DeviceType);
+        _ = keyBuilder.Append('_');
+        _ = keyBuilder.Append(accelerator.Info.Id);
 
 
         if (compilationOptions != null)
         {
-            keyBuilder.Append('_');
-            keyBuilder.Append(compilationOptions.OptimizationLevel);
-            keyBuilder.Append('_');
-            keyBuilder.Append(compilationOptions.TargetArchitecture);
+            _ = keyBuilder.Append('_');
+            _ = keyBuilder.Append(compilationOptions.OptimizationLevel);
+            _ = keyBuilder.Append('_');
+            _ = keyBuilder.Append(compilationOptions.TargetArchitecture);
         }
 
         // Add kernel source hash for cache invalidation on kernel changes
@@ -78,8 +78,8 @@ public class MemoryKernelCache : IKernelCache, IDisposable
             var sourceBytes = Encoding.UTF8.GetBytes(kernelDefinition.Source);
             var hashBytes = SHA256.HashData(sourceBytes);
             var hashString = Convert.ToBase64String(hashBytes)[..8]; // Use first 8 chars of hash
-            keyBuilder.Append('_');
-            keyBuilder.Append(hashString);
+            _ = keyBuilder.Append('_');
+            _ = keyBuilder.Append(hashString);
         }
 
         return keyBuilder.ToString();
@@ -103,7 +103,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
             // Remove expired entry
 
-            _cache.TryRemove(cacheKey, out _);
+            _ = _cache.TryRemove(cacheKey, out _);
         }
 
         IncrementMissCount();
@@ -247,7 +247,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
         if (!string.IsNullOrEmpty(lruEntry.Key))
         {
-            _cache.TryRemove(lruEntry.Key, out _);
+            _ = _cache.TryRemove(lruEntry.Key, out _);
             _logger.CacheEvicted(lruEntry.Key);
         }
     }
@@ -261,7 +261,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
         foreach (var key in expiredKeys)
         {
-            _cache.TryRemove(key, out _);
+            _ = _cache.TryRemove(key, out _);
         }
 
         if (expiredKeys.Count > 0)

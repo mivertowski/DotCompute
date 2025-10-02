@@ -2,9 +2,6 @@ using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Backends.CUDA.Initialization;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Tests.Common;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -96,7 +93,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== CudaDevice Class Test ===");
@@ -136,7 +133,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== Accelerator Creation Test ===");
@@ -225,7 +222,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Ensure CUDA is initialized
 
-            CudaInitializer.EnsureInitialized();
+            _ = CudaInitializer.EnsureInitialized();
 
 
             Output.WriteLine("=== Multiple Calls Consistency Test ===");

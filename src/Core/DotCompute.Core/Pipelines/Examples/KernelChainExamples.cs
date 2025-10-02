@@ -1,9 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Pipelines.Results;
-using DotCompute.Core.Pipelines;
 using DotCompute.Core.Pipelines.Examples.Models;
 using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 // Type aliases to resolve ambiguous references
-using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 using KernelChainExecutionResult = DotCompute.Abstractions.Pipelines.Results.KernelChainExecutionResult;
 using KernelStepMetrics = DotCompute.Abstractions.Pipelines.Results.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Pipelines.Results.KernelChainMemoryMetrics;
@@ -173,7 +170,7 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 try
                 {
-                    await KernelChain.Create()
+                    _ = await KernelChain.Create()
                         .Kernel("ValidateChunk", chunk)
                         .Then("DecompressData")
                         .Then("ApplyRealTimeFilter")
@@ -277,9 +274,9 @@ namespace DotCompute.Core.Pipelines.Examples
             // where DotCompute.Runtime.Extensions is available
 
             // Add application-specific services that use kernel chains
-            services.AddScoped<ImageProcessingService>();
-            services.AddScoped<DataAnalysisService>();
-            services.AddSingleton<MLInferenceService>();
+            _ = services.AddScoped<ImageProcessingService>();
+            _ = services.AddScoped<DataAnalysisService>();
+            _ = services.AddSingleton<MLInferenceService>();
         }
 
         /// <summary>

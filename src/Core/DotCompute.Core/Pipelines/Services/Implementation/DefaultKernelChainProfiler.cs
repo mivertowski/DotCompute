@@ -47,7 +47,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                 };
 
 
-                _profiles.TryAdd(_currentProfile, result);
+                _ = _profiles.TryAdd(_currentProfile, result);
                 _logger?.LogDebug("Stopped profiling session '{ProfileName}'", _currentProfile);
                 _currentProfile = null;
             }
@@ -56,7 +56,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
         public async Task<KernelChainProfilingResult?> GetProfilingResultAsync(string profileName, CancellationToken cancellationToken = default)
         {
-            _profiles.TryGetValue(profileName, out var result);
+            _ = _profiles.TryGetValue(profileName, out var result);
             await Task.CompletedTask;
             return result;
         }

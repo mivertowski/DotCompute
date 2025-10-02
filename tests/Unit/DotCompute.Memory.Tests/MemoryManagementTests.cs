@@ -3,12 +3,9 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using FluentAssertions;
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Memory.Tests;
 
@@ -601,11 +598,13 @@ public class MemoryManagementTests
         _output.WriteLine($"Time: {elapsedMs:F3} ms");
 
         _ = destination.Should().Equal(source, "data should be copied correctly");
-        
+
         // Performance assertion - should complete in reasonable time (< 10ms for 1MB)
+
         _ = elapsedMs.Should().BeLessThan(10, "1MB copy should complete quickly");
-        
+
         // If copy is very fast (< 0.1ms), throughput calculation may be unreliable
+
         if (elapsedMs > 0.1)
         {
             _ = throughputMBps.Should().BeGreaterThan(100, "should achieve reasonable throughput");
@@ -754,6 +753,7 @@ public class MemoryManagementTests
 
         public ValueTask OptimizeAsync(CancellationToken cancellationToken = default)
             // Simulate memory optimization
+
 
 
             => ValueTask.CompletedTask;

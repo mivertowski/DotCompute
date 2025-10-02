@@ -25,19 +25,19 @@ public static class MetalTelemetryExtensions
         // Configure telemetry options
         if (configureOptions != null)
         {
-            services.Configure(configureOptions);
+            _ = services.Configure(configureOptions);
         }
 
         // Register core telemetry services
-        services.AddSingleton<MetalTelemetryManager>();
-        services.AddSingleton<MetalPerformanceCounters>();
-        services.AddSingleton<MetalHealthMonitor>();
-        services.AddSingleton<MetalProductionLogger>();
-        services.AddSingleton<MetalMetricsExporter>();
-        services.AddSingleton<MetalAlertsManager>();
+        _ = services.AddSingleton<MetalTelemetryManager>();
+        _ = services.AddSingleton<MetalPerformanceCounters>();
+        _ = services.AddSingleton<MetalHealthMonitor>();
+        _ = services.AddSingleton<MetalProductionLogger>();
+        _ = services.AddSingleton<MetalMetricsExporter>();
+        _ = services.AddSingleton<MetalAlertsManager>();
 
         // Register hosted service for background telemetry tasks
-        services.AddHostedService<MetalTelemetryHostedService>();
+        _ = services.AddHostedService<MetalTelemetryHostedService>();
 
         return services;
     }
@@ -51,7 +51,7 @@ public static class MetalTelemetryExtensions
         string sectionName = "MetalTelemetry")
     {
         // Bind configuration
-        services.Configure<MetalTelemetryOptions>(configuration.GetSection(sectionName));
+        _ = services.Configure<MetalTelemetryOptions>(configuration.GetSection(sectionName));
 
         return services.AddMetalTelemetry();
     }
@@ -238,7 +238,8 @@ public static class MetalTelemetryExtensions
         options.LoggingOptions.UseJsonFormat = useJsonFormat;
         options.LoggingOptions.EnableCorrelationTracking = enableCorrelationTracking;
         options.LoggingOptions.EnablePerformanceLogging = true;
-        
+
+
         if (externalEndpoints.Length > 0)
         {
             options.LoggingOptions.ExternalLogEndpoints = externalEndpoints.ToList();
@@ -281,7 +282,8 @@ internal sealed class MetalTelemetryHostedService : BackgroundService
                 {
                     // Generate periodic health report
                     var report = _telemetryManager.GenerateProductionReport();
-                    
+
+
                     _logger.LogInformation("Telemetry health check - Operations: {Operations}, Errors: {Errors}, Health: {Health}",
                         report.Snapshot.TotalOperations, report.Snapshot.TotalErrors, report.Snapshot.HealthStatus);
 
@@ -330,7 +332,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddPrometheus(string endpoint, Dictionary<string, string>? headers = null)
     {
-        _options.UsePrometheusExport(endpoint, headers);
+        _ = _options.UsePrometheusExport(endpoint, headers);
         return this;
     }
 
@@ -339,7 +341,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddApplicationInsights(string endpoint, string instrumentationKey)
     {
-        _options.UseApplicationInsights(endpoint, instrumentationKey);
+        _ = _options.UseApplicationInsights(endpoint, instrumentationKey);
         return this;
     }
 
@@ -348,7 +350,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder AddDataDog(string endpoint, string apiKey)
     {
-        _options.UseDataDog(endpoint, apiKey);
+        _ = _options.UseDataDog(endpoint, apiKey);
         return this;
     }
 
@@ -360,7 +362,7 @@ public sealed class MetalTelemetryBuilder
         double highGpuUtilization = 85.0,
         double highMemoryUtilization = 80.0)
     {
-        _options.SetPerformanceThresholds(slowOperationMs, highGpuUtilization, highMemoryUtilization);
+        _ = _options.SetPerformanceThresholds(slowOperationMs, highGpuUtilization, highMemoryUtilization);
         return this;
     }
 
@@ -369,7 +371,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public MetalTelemetryBuilder EnableAlerts(params string[] notificationEndpoints)
     {
-        _options.EnableAlerts(notificationEndpoints);
+        _ = _options.EnableAlerts(notificationEndpoints);
         return this;
     }
 
@@ -378,7 +380,7 @@ public sealed class MetalTelemetryBuilder
     /// </summary>
     public IServiceCollection Build()
     {
-        _services.Configure<MetalTelemetryOptions>(opts =>
+        _ = _services.Configure<MetalTelemetryOptions>(opts =>
         {
             opts.ReportingInterval = _options.ReportingInterval;
             opts.CleanupInterval = _options.CleanupInterval;

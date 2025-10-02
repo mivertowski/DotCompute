@@ -1,4 +1,3 @@
-using System;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Pipelines.Optimization.Utilities;

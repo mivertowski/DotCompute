@@ -1,14 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Core.Memory;
 using DotCompute.Runtime.Services.Interfaces;
 using Microsoft.Extensions.Logging;
-using KernelValidationResult = DotCompute.Runtime.Services.Types.KernelValidationResult;
 
 namespace DotCompute.Runtime.Services;
 
@@ -173,7 +170,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
             return await ExecuteAsync<T>(kernelName, args);
         }
 
-        var accelerator = accelerators.OrderBy(a => GetAcceleratorLoad(a)).FirstOrDefault();
+        var accelerator = accelerators.OrderBy(GetAcceleratorLoad).FirstOrDefault();
         if (accelerator == null)
         {
             throw new InvalidOperationException($"No suitable {preferredBackend} accelerator found");
@@ -628,7 +625,7 @@ public class KernelExecutionService : DotCompute.Abstractions.Interfaces.IComput
         {
             if (!_disposed)
             {
-                _disposeLock?.Release();
+                _ = (_disposeLock?.Release());
             }
         }
     }
@@ -811,6 +808,7 @@ internal class MockUnifiedBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
     public void Dispose() { }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
+
 
 
 

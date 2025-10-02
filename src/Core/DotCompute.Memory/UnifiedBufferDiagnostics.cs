@@ -1,12 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
 namespace DotCompute.Memory;
 
@@ -36,8 +33,10 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
             DeviceToHostTransfers = _deviceToHostTransfers,
             TotalTransfers = _hostToDeviceTransfers + _deviceToHostTransfers,
             TotalTransferTimeMs = _totalTransferTime,
-            AverageTransferTimeMs = (_hostToDeviceTransfers + _deviceToHostTransfers) > 0 
-                ? _totalTransferTime / (_hostToDeviceTransfers + _deviceToHostTransfers) 
+            AverageTransferTimeMs = (_hostToDeviceTransfers + _deviceToHostTransfers) > 0
+
+                ? _totalTransferTime / (_hostToDeviceTransfers + _deviceToHostTransfers)
+
                 : 0,
             LastAccessTime = _lastAccessTime,
             CurrentState = _state
@@ -78,22 +77,28 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
             {
                 case BufferState.HostOnly:
                     return _hostArray != null && _pinnedHandle.IsAllocated && _deviceMemory.Handle == IntPtr.Zero;
-                
+
+
                 case BufferState.DeviceOnly:
                     return _deviceMemory.Handle != IntPtr.Zero;
-                
+
+
                 case BufferState.Synchronized:
                     return _hostArray != null && _pinnedHandle.IsAllocated && _deviceMemory.Handle != IntPtr.Zero;
-                
+
+
                 case BufferState.HostDirty:
                     return _hostArray != null && _pinnedHandle.IsAllocated;
-                
+
+
                 case BufferState.DeviceDirty:
                     return _deviceMemory.Handle != IntPtr.Zero;
-                
+
+
                 case BufferState.Uninitialized:
                     return _hostArray == null && _deviceMemory.Handle == IntPtr.Zero;
-                
+
+
                 default:
                     return false;
             }
@@ -135,8 +140,8 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
     /// </summary>
     private void TrackHostToDeviceTransfer(TimeSpan duration)
     {
-        Interlocked.Increment(ref _hostToDeviceTransfers);
-        Interlocked.Add(ref _totalTransferTime, duration.Milliseconds);
+        _ = Interlocked.Increment(ref _hostToDeviceTransfers);
+        _ = Interlocked.Add(ref _totalTransferTime, duration.Milliseconds);
         _lastAccessTime = DateTime.UtcNow;
     }
 
@@ -145,8 +150,8 @@ public sealed partial class UnifiedBuffer<T> : IDisposable
     /// </summary>
     private void TrackDeviceToHostTransfer(TimeSpan duration)
     {
-        Interlocked.Increment(ref _deviceToHostTransfers);
-        Interlocked.Add(ref _totalTransferTime, duration.Milliseconds);
+        _ = Interlocked.Increment(ref _deviceToHostTransfers);
+        _ = Interlocked.Add(ref _totalTransferTime, duration.Milliseconds);
         _lastAccessTime = DateTime.UtcNow;
     }
 

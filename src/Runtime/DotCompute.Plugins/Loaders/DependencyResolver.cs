@@ -233,7 +233,7 @@ public class DependencyResolver
         var versionConstraint = ParseVersionRange(versionRange);
         var compatibleVersions = availableVersions
             .Where(v => IsVersionCompatible(v, versionConstraint))
-            .OrderByDescending(v => Version.Parse(v))
+            .OrderByDescending(Version.Parse)
             .ToList();
 
         return compatibleVersions.FirstOrDefault();
@@ -491,6 +491,7 @@ public class DependencyResolver
     private static bool IsPlatformCompatible(ResolvedDependency dependency)
         // Simplified platform compatibility check
         // In a real implementation, this would check the package's supported frameworks
+
 
 
 

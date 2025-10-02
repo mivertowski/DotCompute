@@ -6,7 +6,6 @@ using System.Diagnostics;
 using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Monitoring;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -15,7 +14,6 @@ using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Types;
-using DotCompute.Core.Pipelines.Analysis;
 namespace DotCompute.Backends.CUDA.Advanced
 {
 
@@ -451,6 +449,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private static IntPtr PrepareKernelArguments(KernelArguments arguments)
             // KernelArguments is a wrapper for kernel parameters
             // For now, return a placeholder since actual implementation depends on the structure
+
 
 
             => IntPtr.Zero;

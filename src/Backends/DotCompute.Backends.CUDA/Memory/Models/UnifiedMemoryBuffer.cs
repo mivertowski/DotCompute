@@ -1,4 +1,3 @@
-using System;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;

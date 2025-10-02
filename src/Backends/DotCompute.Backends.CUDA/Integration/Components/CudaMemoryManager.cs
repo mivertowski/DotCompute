@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.CUDA.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Integration.Components;
@@ -267,7 +266,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 
         try
         {
-            _memoryPool.Clear();
+            _ = _memoryPool.Clear();
             _asyncAdapter.Clear();
             _usageTracker.Reset();
         }
@@ -762,8 +761,8 @@ internal sealed class MemoryUsageTracker
 
     public void RecordAllocationRequest(long sizeInBytes)
     {
-        Interlocked.Increment(ref _totalAllocations);
-        Interlocked.Add(ref _totalBytesAllocated, sizeInBytes);
+        _ = Interlocked.Increment(ref _totalAllocations);
+        _ = Interlocked.Add(ref _totalBytesAllocated, sizeInBytes);
 
         var newUsage = Interlocked.Add(ref _currentMemoryUsage, sizeInBytes);
         UpdatePeakUsage(newUsage);
@@ -771,28 +770,28 @@ internal sealed class MemoryUsageTracker
 
     public void RecordAllocationFailure(long sizeInBytes)
     {
-        Interlocked.Increment(ref _failedAllocations);
+        _ = Interlocked.Increment(ref _failedAllocations);
     }
 
     public void RecordDeallocation()
     {
-        Interlocked.Increment(ref _totalDeallocations);
+        _ = Interlocked.Increment(ref _totalDeallocations);
     }
 
     public void RecordTransfer(long sizeInBytes, MemoryTransferDirection direction)
     {
-        Interlocked.Add(ref _totalBytesTransferred, sizeInBytes);
+        _ = Interlocked.Add(ref _totalBytesTransferred, sizeInBytes);
     }
 
     public void Reset()
     {
-        Interlocked.Exchange(ref _totalAllocations, 0);
-        Interlocked.Exchange(ref _totalDeallocations, 0);
-        Interlocked.Exchange(ref _totalBytesAllocated, 0);
-        Interlocked.Exchange(ref _totalBytesTransferred, 0);
-        Interlocked.Exchange(ref _failedAllocations, 0);
-        Interlocked.Exchange(ref _peakMemoryUsage, 0);
-        Interlocked.Exchange(ref _currentMemoryUsage, 0);
+        _ = Interlocked.Exchange(ref _totalAllocations, 0);
+        _ = Interlocked.Exchange(ref _totalDeallocations, 0);
+        _ = Interlocked.Exchange(ref _totalBytesAllocated, 0);
+        _ = Interlocked.Exchange(ref _totalBytesTransferred, 0);
+        _ = Interlocked.Exchange(ref _failedAllocations, 0);
+        _ = Interlocked.Exchange(ref _peakMemoryUsage, 0);
+        _ = Interlocked.Exchange(ref _currentMemoryUsage, 0);
     }
 
     public static void Configure(MemoryTrackingPolicy policy)
@@ -867,7 +866,7 @@ internal sealed class MemoryPool : IDisposable
         CancellationToken cancellationToken) where T : unmanaged
     {
         // Simplified pool implementation - in production would have size matching
-        Interlocked.Increment(ref _missCount);
+        _ = Interlocked.Increment(ref _missCount);
         return _memoryManager.AllocateAsync<T>(count, options, cancellationToken);
     }
 
@@ -877,7 +876,7 @@ internal sealed class MemoryPool : IDisposable
         CancellationToken cancellationToken)
     {
         // Simplified pool implementation
-        Interlocked.Increment(ref _missCount);
+        _ = Interlocked.Increment(ref _missCount);
         return _memoryManager.AllocateRawAsync(sizeInBytes, options, cancellationToken);
     }
 
@@ -957,9 +956,10 @@ internal sealed class MemoryPool : IDisposable
         if (!_disposed)
         {
             _disposed = true;
-            Clear();
+            _ = Clear();
         }
     }
 }
+
 
 #endregion

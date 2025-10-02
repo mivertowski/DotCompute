@@ -55,7 +55,7 @@ internal sealed class CudaCompilationCache : IDisposable
         _cacheMetadata = new ConcurrentDictionary<string, KernelCacheMetadata>();
 
         // Ensure cache directory exists
-        Directory.CreateDirectory(_cacheDirectory);
+        _ = Directory.CreateDirectory(_cacheDirectory);
 
         // Load persistent cache on initialization
         _ = Task.Run(LoadPersistentCacheAsync);
@@ -126,8 +126,8 @@ internal sealed class CudaCompilationCache : IDisposable
             };
 
             // Add to in-memory cache
-            _kernelCache.TryAdd(cacheKey, compiledKernel);
-            _cacheMetadata.TryAdd(cacheKey, metadata);
+            _ = _kernelCache.TryAdd(cacheKey, compiledKernel);
+            _ = _cacheMetadata.TryAdd(cacheKey, metadata);
 
             // Persist to disk asynchronously
             await PersistKernelToDiskAsync(cacheKey, compiledKernel, metadata).ConfigureAwait(false);
@@ -188,7 +188,7 @@ internal sealed class CudaCompilationCache : IDisposable
                     var kernelFile = Path.Combine(_cacheDirectory, SanitizeFileName(cacheKey) + ".cache");
                     if (File.Exists(kernelFile))
                     {
-                        _cacheMetadata.TryAdd(cacheKey, metadata);
+                        _ = _cacheMetadata.TryAdd(cacheKey, metadata);
                         loadedCount++;
                     }
                     else
@@ -269,8 +269,8 @@ internal sealed class CudaCompilationCache : IDisposable
     {
         try
         {
-            _kernelCache.TryRemove(cacheKey, out _);
-            _cacheMetadata.TryRemove(cacheKey, out _);
+            _ = _kernelCache.TryRemove(cacheKey, out _);
+            _ = _cacheMetadata.TryRemove(cacheKey, out _);
 
             var sanitizedKey = SanitizeFileName(cacheKey);
             var kernelFile = Path.Combine(_cacheDirectory, sanitizedKey + ".cache");

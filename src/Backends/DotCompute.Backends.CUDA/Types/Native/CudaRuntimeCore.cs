@@ -2,13 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text;
-using Microsoft.Win32.SafeHandles;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
-using System.Runtime.Loader;
 
 namespace DotCompute.Backends.CUDA.Native
 {
@@ -97,7 +92,8 @@ namespace DotCompute.Backends.CUDA.Native
                 Environment.GetEnvironmentVariable("CUDA_PATH") ?? ""
             };
 
-            return candidatePaths.FirstOrDefault(path => 
+            return candidatePaths.FirstOrDefault(path =>
+
                 !string.IsNullOrEmpty(path) && Directory.Exists(Path.Combine(path, "lib64"))) ?? "";
         }
 

@@ -1,11 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
@@ -14,7 +10,6 @@ using DotCompute.Core.Telemetry;
 using DotCompute.Core.Telemetry.System;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Optimization.Configuration;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Enums;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
@@ -165,7 +160,7 @@ public class AdaptiveBackendSelector : IDisposable
         }
 
         // Invalidate workload analysis cache for this signature
-        _workloadAnalysisCache.TryRemove(GetWorkloadCacheKey(workloadSignature), out _);
+        _ = _workloadAnalysisCache.TryRemove(GetWorkloadCacheKey(workloadSignature), out _);
 
         _logger.LogTrace("Recorded performance result for {Kernel} on {Backend}: {ExecutionTime}ms, {Throughput} ops/sec",
             kernelName, selectedBackend, performanceResult.ExecutionTimeMs, performanceResult.ThroughputOpsPerSecond);
@@ -453,7 +448,7 @@ public class AdaptiveBackendSelector : IDisposable
             analysis.HasSufficientHistory = analysis.TotalHistoryEntries >= _options.MinHistoryForLearning;
         }
 
-        _workloadAnalysisCache.TryAdd(cacheKey, analysis);
+        _ = _workloadAnalysisCache.TryAdd(cacheKey, analysis);
         await Task.CompletedTask;
 
         return analysis;

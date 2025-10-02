@@ -4,16 +4,12 @@
 using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve LogLevel conflicts
 using DebugLogLevel = DotCompute.Abstractions.Debugging.Types.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using static DotCompute.Abstractions.Debugging.BottleneckSeverity;
-using AbstractionsBottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
@@ -470,25 +466,25 @@ public sealed class KernelDebugLogger : IDisposable
         var relevantEntries = GetRelevantLogEntries(kernelName, cutoffTime);
 
         var report = new StringBuilder();
-        report.AppendLine($"# Debug Report for Kernel: {kernelName}");
-        report.AppendLine($"Generated at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        report.AppendLine($"Time window: {timeWindow?.ToString() ?? "24 hours"}");
-        report.AppendLine($"Total log entries: {relevantEntries.Count}");
-        report.AppendLine();
+        _ = report.AppendLine($"# Debug Report for Kernel: {kernelName}");
+        _ = report.AppendLine($"Generated at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = report.AppendLine($"Time window: {timeWindow?.ToString() ?? "24 hours"}");
+        _ = report.AppendLine($"Total log entries: {relevantEntries.Count}");
+        _ = report.AppendLine();
 
         // Group entries by operation
         var operationGroups = relevantEntries.GroupBy(e => e.Operation).ToList();
 
         foreach (var group in operationGroups)
         {
-            report.AppendLine($"## {group.Key} Operations ({group.Count()})");
+            _ = report.AppendLine($"## {group.Key} Operations ({group.Count()})");
 
             foreach (var entry in group.OrderBy(e => e.Timestamp))
             {
-                report.AppendLine($"- {entry.Timestamp:HH:mm:ss.fff}: {FormatLogEntryData(entry.Data)}");
+                _ = report.AppendLine($"- {entry.Timestamp:HH:mm:ss.fff}: {FormatLogEntryData(entry.Data)}");
             }
 
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         return report.ToString();
@@ -538,7 +534,7 @@ public sealed class KernelDebugLogger : IDisposable
         lock (_lock)
         {
             var cutoffTime = DateTime.UtcNow - maxAge;
-            _debugHistory.RemoveAll(entry => entry.Timestamp < cutoffTime);
+            _ = _debugHistory.RemoveAll(entry => entry.Timestamp < cutoffTime);
         }
 
         _logger.LogDebug("Cleared debug history older than {MaxAge}", maxAge);

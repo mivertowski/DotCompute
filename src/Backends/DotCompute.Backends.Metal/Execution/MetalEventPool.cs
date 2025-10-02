@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -64,7 +63,8 @@ public sealed class MetalEventPool : IDisposable
         {
             _ = Interlocked.Decrement(ref _timingPoolSize);
             _ = Interlocked.Increment(ref _totalReused);
-            
+
+
             var info = new MetalEventPoolInfo
             {
                 EventType = MetalEventType.Timing,
@@ -200,8 +200,9 @@ public sealed class MetalEventPool : IDisposable
         {
             // Clean timing event pool
             var timingCleaned = CleanPool(_timingEventPool, ref _timingPoolSize, MIN_TIMING_POOL_SIZE);
-            
+
             // Clean sync event pool
+
             var syncCleaned = CleanPool(_syncEventPool, ref _syncPoolSize, MIN_SYNC_POOL_SIZE);
 
             var totalCleaned = timingCleaned + syncCleaned;
@@ -239,7 +240,7 @@ public sealed class MetalEventPool : IDisposable
     private void Initialize()
     {
         // Pre-populate pools with minimum sizes
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -273,10 +274,12 @@ public sealed class MetalEventPool : IDisposable
         // For Metal, we would create an MTLSharedEvent or similar for timing
         // This is a placeholder implementation
         await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
-        
+
         // In a real implementation, this would call Metal APIs to create a shared event
+
         var eventHandle = new IntPtr(Random.Shared.Next(1000, 9999)); // Placeholder
-        
+
+
         return eventHandle;
     }
 
@@ -285,10 +288,12 @@ public sealed class MetalEventPool : IDisposable
         // For Metal, we would create an MTLSharedEvent for synchronization
         // This is a placeholder implementation
         await Task.Delay(1, cancellationToken).ConfigureAwait(false); // Simulate async creation
-        
+
         // In a real implementation, this would call Metal APIs to create a shared event
+
         var eventHandle = new IntPtr(Random.Shared.Next(10000, 99999)); // Placeholder
-        
+
+
         return eventHandle;
     }
 
@@ -317,8 +322,9 @@ public sealed class MetalEventPool : IDisposable
     {
         var cleaned = 0;
         var currentSize = poolSize;
-        
+
         // Only clean if we have more than minimum
+
         if (currentSize <= minSize)
         {
             return 0;

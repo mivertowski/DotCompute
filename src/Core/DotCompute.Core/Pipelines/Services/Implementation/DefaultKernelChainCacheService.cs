@@ -30,13 +30,13 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         {
             if (_cache.TryGetValue(key, out var value) && value is T typedValue)
             {
-                Interlocked.Increment(ref _hits);
+                _ = Interlocked.Increment(ref _hits);
                 _logger?.LogDebug("Cache hit for key '{Key}'", key);
                 await Task.CompletedTask;
                 return typedValue;
             }
 
-            Interlocked.Increment(ref _misses);
+            _ = Interlocked.Increment(ref _misses);
             _logger?.LogDebug("Cache miss for key '{Key}'", key);
             await Task.CompletedTask;
             return null;
@@ -56,7 +56,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             options.Size = 1; // Simple size tracking
 
 
-            _cache.Set(key, value, options);
+            _ = _cache.Set(key, value, options);
             _logger?.LogDebug("Cached value for key '{Key}' with TTL {TTL}", key, ttl);
             await Task.CompletedTask;
         }

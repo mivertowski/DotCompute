@@ -1,11 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Numerics;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics;
 using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Kernels.Simd;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.SIMD;

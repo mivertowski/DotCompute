@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging;
 
@@ -31,4 +29,5 @@ public class Bottleneck
 }
 
 // BottleneckSeverity enum consolidated to DotCompute.Abstractions.Debugging.PerformanceAnalysisResult
+
 // Use: using static DotCompute.Abstractions.Debugging.BottleneckSeverity;

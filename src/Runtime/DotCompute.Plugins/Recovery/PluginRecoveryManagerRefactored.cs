@@ -135,7 +135,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
         }
         finally
         {
-            _recoveryLock.Release();
+            _ = _recoveryLock.Release();
         }
     }
 

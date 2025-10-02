@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -89,11 +87,13 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
 
 
+
         => await ValueTask.CompletedTask;
 
     public async ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
         // Copy from buffer to host memory
         // Since the underlying buffer doesn't have typed methods, we'll need to handle this
+
 
 
         => await ValueTask.CompletedTask;
@@ -109,6 +109,7 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
 
     public DeviceMemory GetDeviceMemory()
         // Return a default device memory handle
+
 
 
         => new(IntPtr.Zero, SizeInBytes);
@@ -144,11 +145,13 @@ internal class TypedMemoryBufferWrapper<T> : IUnifiedMemoryBuffer<T> where T : u
         // Default implementation - derived classes can override for better performance
 
 
+
         => ValueTask.CompletedTask;
 
 
     public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
         // Default implementation - derived classes can override for better performance
+
 
 
         => ValueTask.CompletedTask;

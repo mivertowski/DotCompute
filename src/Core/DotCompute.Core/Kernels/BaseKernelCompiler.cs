@@ -3,24 +3,17 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Validation;
-using DotCompute.Core.Kernels.Compilation;
-using DotCompute.Core.Kernels.Validation;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 // Using aliases to resolve ValidationIssue conflicts
-using CoreValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
-using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
-using ValidationValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 
 namespace DotCompute.Core.Kernels;
 
@@ -478,6 +471,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Derived classes can override for async validation
 
 
+
         => await ValueTask.FromResult(Validate(source));
 
 
@@ -507,6 +501,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization
+
 
 
         => ValueTask.FromResult(kernel);

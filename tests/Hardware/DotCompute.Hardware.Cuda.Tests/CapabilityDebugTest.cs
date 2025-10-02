@@ -1,6 +1,4 @@
 using DotCompute.Backends.CUDA.Configuration;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {

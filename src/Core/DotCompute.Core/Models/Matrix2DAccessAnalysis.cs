@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Core.Models

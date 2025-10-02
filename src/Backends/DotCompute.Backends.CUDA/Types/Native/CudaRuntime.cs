@@ -2,15 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
-using Microsoft.Win32.SafeHandles;
-using DotCompute.Backends.CUDA.Native.Types;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Backends.CUDA.Types.Native.Enums;
-using System.Runtime.Loader;
 using CudaMemPoolAttribute = DotCompute.Backends.CUDA.Types.Native.Enums.CudaMemPoolAttribute;
 
 namespace DotCompute.Backends.CUDA.Native

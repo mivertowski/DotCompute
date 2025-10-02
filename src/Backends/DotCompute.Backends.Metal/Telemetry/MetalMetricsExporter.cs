@@ -25,7 +25,8 @@ public sealed class MetalMetricsExporter : IDisposable
         _logger = logger;
         _options = options;
         _httpClient = new HttpClient();
-        
+
+
         ConfigureHttpClient();
 
         if (_options.AutoExportInterval > TimeSpan.Zero)
@@ -69,7 +70,8 @@ public sealed class MetalMetricsExporter : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initiate export to {ExporterType}: {ExporterName}", 
+                _logger.LogError(ex, "Failed to initiate export to {ExporterType}: {ExporterName}",
+
                     exporter.Type, exporter.Name);
             }
         }
@@ -126,18 +128,22 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var prometheusFormat = ConvertToPrometheusFormat(snapshot);
-            
+
+
             var content = new StringContent(prometheusFormat, Encoding.UTF8, "text/plain");
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to Prometheus: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Prometheus: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to Prometheus: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -153,19 +159,23 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var otlpData = ConvertToOTLPFormat(snapshot);
-            
+
+
             var json = JsonSerializer.Serialize(otlpData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to OpenTelemetry: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -181,25 +191,30 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var appInsightsData = ConvertToApplicationInsightsFormat(snapshot, exporter);
-            
+
+
             var json = JsonSerializer.Serialize(appInsightsData);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             // Add instrumentation key header
+
             if (exporter.Headers?.ContainsKey("instrumentationKey") == true)
             {
                 _httpClient.DefaultRequestHeaders.Add("instrumentationKey", exporter.Headers["instrumentationKey"]);
             }
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to Application Insights: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Application Insights: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to Application Insights: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -215,25 +230,30 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var dataDogMetrics = ConvertToDataDogFormat(snapshot);
-            
+
+
             var json = JsonSerializer.Serialize(dataDogMetrics);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             // Add API key header
+
             if (exporter.Headers?.ContainsKey("DD-API-KEY") == true)
             {
                 content.Headers.Add("DD-API-KEY", exporter.Headers["DD-API-KEY"]);
             }
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to DataDog: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to DataDog: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to DataDog: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -249,19 +269,23 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var grafanaData = ConvertToGrafanaFormat(snapshot);
-            
+
+
             var json = JsonSerializer.Serialize(grafanaData);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to Grafana: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Grafana: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to Grafana: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -277,19 +301,23 @@ public sealed class MetalMetricsExporter : IDisposable
         try
         {
             var customData = ConvertToCustomFormat(snapshot, exporter);
-            
+
+
             var json = JsonSerializer.Serialize(customData);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
+
             var response = await _httpClient.PostAsync(exporter.Endpoint, content, cancellationToken);
-            
+
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogTrace("Successfully exported metrics to custom endpoint: {Endpoint}", exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}", 
+                _logger.LogWarning("Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}",
+
                     response.StatusCode, response.ReasonPhrase);
             }
         }
@@ -306,44 +334,48 @@ public sealed class MetalMetricsExporter : IDisposable
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         // System metrics
-        sb.AppendLine($"# HELP metal_operations_total Total number of Metal operations");
-        sb.AppendLine($"# TYPE metal_operations_total counter");
-        sb.AppendLine($"metal_operations_total {snapshot.TotalOperations} {timestamp}");
+        _ = sb.AppendLine($"# HELP metal_operations_total Total number of Metal operations");
+        _ = sb.AppendLine($"# TYPE metal_operations_total counter");
+        _ = sb.AppendLine($"metal_operations_total {snapshot.TotalOperations} {timestamp}");
 
-        sb.AppendLine($"# HELP metal_errors_total Total number of Metal errors");
-        sb.AppendLine($"# TYPE metal_errors_total counter");
-        sb.AppendLine($"metal_errors_total {snapshot.TotalErrors} {timestamp}");
+        _ = sb.AppendLine($"# HELP metal_errors_total Total number of Metal errors");
+        _ = sb.AppendLine($"# TYPE metal_errors_total counter");
+        _ = sb.AppendLine($"metal_errors_total {snapshot.TotalErrors} {timestamp}");
 
-        sb.AppendLine($"# HELP metal_error_rate Current error rate");
-        sb.AppendLine($"# TYPE metal_error_rate gauge");
-        sb.AppendLine($"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
+        _ = sb.AppendLine($"# HELP metal_error_rate Current error rate");
+        _ = sb.AppendLine($"# TYPE metal_error_rate gauge");
+        _ = sb.AppendLine($"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
 
         // Operation metrics
         foreach (var operation in snapshot.OperationMetrics)
         {
             var safeName = SanitizePrometheusName(operation.Key);
-            
-            sb.AppendLine($"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
-            sb.AppendLine($"# TYPE metal_operation_duration_ms_{safeName} gauge");
-            sb.AppendLine($"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
-            
-            sb.AppendLine($"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
-            sb.AppendLine($"# TYPE metal_operation_count_{safeName} counter");
-            sb.AppendLine($"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
+
+
+            _ = sb.AppendLine($"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
+            _ = sb.AppendLine($"# TYPE metal_operation_duration_ms_{safeName} gauge");
+            _ = sb.AppendLine($"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
+
+
+            _ = sb.AppendLine($"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
+            _ = sb.AppendLine($"# TYPE metal_operation_count_{safeName} counter");
+            _ = sb.AppendLine($"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
         }
 
         // Resource metrics
         foreach (var resource in snapshot.ResourceMetrics)
         {
             var safeName = SanitizePrometheusName(resource.Key);
-            
-            sb.AppendLine($"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
-            sb.AppendLine($"# TYPE metal_resource_utilization_{safeName} gauge");
-            sb.AppendLine($"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
-            
-            sb.AppendLine($"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
-            sb.AppendLine($"# TYPE metal_resource_usage_{safeName} gauge");
-            sb.AppendLine($"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
+
+
+            _ = sb.AppendLine($"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
+            _ = sb.AppendLine($"# TYPE metal_resource_utilization_{safeName} gauge");
+            _ = sb.AppendLine($"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
+
+
+            _ = sb.AppendLine($"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
+            _ = sb.AppendLine($"# TYPE metal_resource_usage_{safeName} gauge");
+            _ = sb.AppendLine($"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
         }
 
         return sb.ToString();
@@ -569,8 +601,9 @@ public sealed class MetalMetricsExporter : IDisposable
     {
         _httpClient.Timeout = _options.ExportTimeout;
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "DotCompute.Metal.MetricsExporter/1.0");
-        
+
         // Add common headers
+
         foreach (var exporter in _options.Exporters)
         {
             if (exporter.Headers != null)
@@ -583,7 +616,8 @@ public sealed class MetalMetricsExporter : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to add header {HeaderKey} for exporter {ExporterName}", 
+                        _logger.LogWarning(ex, "Failed to add header {HeaderKey} for exporter {ExporterName}",
+
                             header.Key, exporter.Name);
                     }
                 }
@@ -619,11 +653,11 @@ public sealed class MetalMetricsExporter : IDisposable
         {
             if (char.IsLetterOrDigit(c))
             {
-                sb.Append(c);
+                _ = sb.Append(c);
             }
             else
             {
-                sb.Append('_');
+                _ = sb.Append('_');
             }
         }
         return sb.ToString();

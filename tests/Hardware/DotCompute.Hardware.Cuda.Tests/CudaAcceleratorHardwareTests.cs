@@ -3,18 +3,12 @@
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Backends.CUDA.Factory;
-using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
 using static DotCompute.Tests.Common.TestCategories;
 using DotCompute.Tests.Common.Specialized;
-using DotCompute.Tests.Common.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
-using Xunit.Abstractions;
-using FluentAssertions;
 using DotCompute.Tests.Common.Helpers;
-using DotCompute.SharedTestUtilities.Performance;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -169,7 +163,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             await accelerator.SynchronizeAsync();
-            perfMeasurement.Stop();
+            _ = perfMeasurement.Stop();
 
             // Download results
 

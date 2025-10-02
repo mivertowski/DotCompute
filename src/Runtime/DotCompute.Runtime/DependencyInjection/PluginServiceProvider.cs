@@ -168,6 +168,7 @@ public class PluginServiceProvider : IPluginServiceProvider, IDisposable
 
 
 
+
         => parentProvider;
 
     private static IEnumerable<ServiceDescriptor> GetServiceDescriptors(IServiceProvider provider)
@@ -382,10 +383,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
 
     private PropertyInfo[] GetInjectableProperties(Type type)
     {
-        return _propertyCache.GetOrAdd(type, t =>
-        {
-            return [.. t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any())];
-        });
+        return _propertyCache.GetOrAdd(type, t => [.. t.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any())]);
     }
 
     private static bool IsOptionalParameter(ParameterInfo parameter)

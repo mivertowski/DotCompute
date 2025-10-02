@@ -26,9 +26,9 @@ public static class ServiceCollectionExtensions
         // where DotCompute.Runtime.Extensions is available
 
         // Add application-specific services that use kernel chains
-        services.AddScoped<ImageProcessingService>();
-        services.AddScoped<DataAnalysisService>();
-        services.AddSingleton<MLInferenceService>();
+        _ = services.AddScoped<ImageProcessingService>();
+        _ = services.AddScoped<DataAnalysisService>();
+        _ = services.AddSingleton<MLInferenceService>();
     }
 
     /// <summary>

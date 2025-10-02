@@ -6,7 +6,6 @@ using global::System.Runtime.CompilerServices;
 using global::System.Runtime.Intrinsics;
 using global::System.Runtime.Intrinsics.Arm;
 using global::System.Runtime.Intrinsics.X86;
-using DotCompute.Backends.CPU.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Kernels.Simd;
 

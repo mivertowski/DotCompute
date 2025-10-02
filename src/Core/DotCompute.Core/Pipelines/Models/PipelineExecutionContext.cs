@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Models.Pipelines;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Interfaces.Pipelines.Profiling;
-using DotCompute.Core.Pipelines;
 
 namespace DotCompute.Core.Pipelines.Models;
 

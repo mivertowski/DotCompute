@@ -1,8 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-
 namespace DotCompute.Core.Pipelines.Stages;
 
 /// <summary>
@@ -136,10 +131,7 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
         }
 
 
-        return Task.Run(() =>
-        {
-            _barrier.SignalAndWait(cancellationToken);
-        }, cancellationToken);
+        return Task.Run(() => _barrier.SignalAndWait(cancellationToken), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -191,7 +183,7 @@ public sealed class CountdownSyncStrategy : CustomSyncStrategy
 
         return Task.Run(() =>
         {
-            _countdown.Signal();
+            _ = _countdown.Signal();
             _countdown.Wait(cancellationToken);
         }, cancellationToken);
     }

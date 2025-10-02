@@ -3,18 +3,11 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Models.Device;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using DotCompute.Core.Kernels;
 using DotCompute.Core.Execution.Models;
 using DotCompute.Core.Execution.Metrics;
-using DotCompute.Core.Execution.Workload;
-using DotCompute.Core.Execution.Pipeline;
-using DotCompute.Core.Execution.Types;
-using DotCompute.Abstractions.Types;
 using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
-using DotCompute.Core.Execution.Plans;
 
 namespace DotCompute.Core.Execution
 {
@@ -85,7 +78,7 @@ namespace DotCompute.Core.Execution
             // Trigger analysis if we have enough data
             if (_executionHistory.Count % AnalysisWindowSize == 0)
             {
-                _ = Task.Run(() => AnalyzePerformanceAsync());
+                _ = Task.Run(AnalyzePerformanceAsync);
             }
 
             _logger.LogDebugMessage($"Recorded execution: Strategy={result.Strategy}, Success={result.Success}, Time={result.TotalExecutionTimeMs}ms, Efficiency={result.EfficiencyPercentage}%");

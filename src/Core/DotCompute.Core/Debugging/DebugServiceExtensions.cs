@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces;
 
 namespace DotCompute.Core.Debugging;
@@ -31,7 +30,7 @@ public static class DebugServiceExtensions
         // Configure debug service options
         if (configureOptions != null)
         {
-            services.Configure<DebugServiceOptions>(configureOptions);
+            _ = services.Configure<DebugServiceOptions>(configureOptions);
         }
 
         return services;
@@ -53,7 +52,7 @@ public static class DebugServiceExtensions
         configureOptions?.Invoke(options);
 
         // Wrap the existing orchestrator with debug capabilities
-        services.Decorate<IComputeOrchestrator>((inner, provider) =>
+        _ = services.Decorate<IComputeOrchestrator>((inner, provider) =>
         {
             var debugService = provider.GetRequiredService<IKernelDebugService>();
             var logger = provider.GetRequiredService<ILogger<DebugIntegratedOrchestrator>>();
@@ -238,7 +237,7 @@ public static class ServiceDecoratorExtensions
             existingDescriptor.Lifetime);
 
         // Replace the existing registration
-        services.Remove(existingDescriptor);
+        _ = services.Remove(existingDescriptor);
         services.Add(decoratedDescriptor);
 
         return services;

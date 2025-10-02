@@ -1,17 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Memory;
 using MapMode = DotCompute.Abstractions.Memory.MapMode;
 using AcceleratorContext = DotCompute.Abstractions.AcceleratorContext;
-using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 
 namespace DotCompute.Tests.Common;
 
@@ -595,7 +591,7 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
 
     private void IncrementOperationCount()
     {
-        Interlocked.Increment(ref _operationCount);
+        _ = Interlocked.Increment(ref _operationCount);
 
         if (_options.FailAfterOperations > 0 && _operationCount >= _options.FailAfterOperations)
         {

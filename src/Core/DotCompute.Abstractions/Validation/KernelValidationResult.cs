@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Abstractions.Validation;
@@ -91,4 +89,5 @@ public sealed class KernelValidationResult
 }
 
 // ValidationWarning, ValidationIssue, WarningSeverity, and ResourceUsageEstimate
+
 // are defined in other files in this namespace

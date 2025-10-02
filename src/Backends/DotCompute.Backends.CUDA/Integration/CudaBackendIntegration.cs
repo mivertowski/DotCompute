@@ -3,9 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Backends.CUDA.Advanced;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
 using DotCompute.Backends.CUDA.Integration.Components;
@@ -13,7 +10,6 @@ using DotCompute.Backends.CUDA.Integration.Components.Health;
 using DotCompute.Backends.CUDA.P2P;
 using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -344,7 +340,7 @@ public sealed class CudaBackendIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _errorHandler.HandleError(CudaError.Unknown, "GetSystemHealth", ex.Message);
+            _ = _errorHandler.HandleError(CudaError.Unknown, "GetSystemHealth", ex.Message);
 
             return new CudaSystemHealth
             {
@@ -409,7 +405,7 @@ public sealed class CudaBackendIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _errorHandler.HandleError(CudaError.Unknown, "OptimizeForWorkload", ex.Message);
+            _ = _errorHandler.HandleError(CudaError.Unknown, "OptimizeForWorkload", ex.Message);
 
             summary.Success = false;
             summary.ErrorMessage = ex.Message;
@@ -640,7 +636,7 @@ public sealed class CudaBackendIntegration : IDisposable
             {
                 try
                 {
-                    await _memoryManager.PerformCleanupAsync().ConfigureAwait(false);
+                    _ = await _memoryManager.PerformCleanupAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -652,7 +648,7 @@ public sealed class CudaBackendIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _errorHandler.HandleError(CudaError.Unknown, "PerformMaintenance", ex.Message);
+            _ = _errorHandler.HandleError(CudaError.Unknown, "PerformMaintenance", ex.Message);
         }
     }
 
@@ -859,5 +855,6 @@ public sealed class CudaPerformanceMonitor : IDisposable
         }
     }
 }
+
 
 #endregion

@@ -1,13 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Core.Pipelines.Optimization.Models;
-using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 
 // Using aliases to resolve IStageMetrics conflicts
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
@@ -69,6 +66,7 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         // - Memory pooling for reduced allocations
         // - Prefetching for improved cache performance
         // - Alignment optimizations for SIMD operations
+
 
         => new MemoryOptimizedStageWrapper(stage);
 

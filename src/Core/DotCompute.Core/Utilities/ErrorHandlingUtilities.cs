@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -41,7 +40,7 @@ public static class ErrorHandlingUtilities
         }
 
         var classification = ClassifyErrorInternal(exception);
-        ErrorClassificationCache.TryAdd(exceptionType, classification);
+        _ = ErrorClassificationCache.TryAdd(exceptionType, classification);
         return classification;
     }
 
@@ -285,13 +284,13 @@ public static class ErrorHandlingUtilities
         }
 
         var message = new StringBuilder();
-        message.AppendLine($"Multiple errors occurred during {operation}:");
+        _ = message.AppendLine($"Multiple errors occurred during {operation}:");
 
         for (var i = 0; i < errorList.Count; i++)
         {
             var error = errorList[i];
             var classification = ClassifyError(error);
-            message.AppendLine($"  {i + 1}. [{classification}] {error.Message}");
+            _ = message.AppendLine($"  {i + 1}. [{classification}] {error.Message}");
         }
 
         var aggregateException = new AggregateException(message.ToString(), errorList);
@@ -438,29 +437,29 @@ public static class ErrorHandlingUtilities
     private static void LogDetailedErrorContext(ILogger logger, ErrorContext errorContext)
     {
         var details = new StringBuilder();
-        details.AppendLine($"Detailed Error Context for {errorContext.ErrorId}:");
-        details.AppendLine($"  Operation: {errorContext.Operation}");
-        details.AppendLine($"  Backend: {errorContext.BackendType}");
-        details.AppendLine($"  Classification: {errorContext.Classification}");
-        details.AppendLine($"  Severity: {errorContext.Severity}");
-        details.AppendLine($"  Timestamp: {errorContext.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC");
+        _ = details.AppendLine($"Detailed Error Context for {errorContext.ErrorId}:");
+        _ = details.AppendLine($"  Operation: {errorContext.Operation}");
+        _ = details.AppendLine($"  Backend: {errorContext.BackendType}");
+        _ = details.AppendLine($"  Classification: {errorContext.Classification}");
+        _ = details.AppendLine($"  Severity: {errorContext.Severity}");
+        _ = details.AppendLine($"  Timestamp: {errorContext.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC");
 
         if (errorContext.InnerExceptions.Count > 0)
         {
-            details.AppendLine($"  Inner Exceptions ({errorContext.InnerExceptions.Count}):");
+            _ = details.AppendLine($"  Inner Exceptions ({errorContext.InnerExceptions.Count}):");
             for (var i = 0; i < errorContext.InnerExceptions.Count; i++)
             {
                 var inner = errorContext.InnerExceptions[i];
-                details.AppendLine($"    {i + 1}. {inner.GetType().Name}: {inner.Message}");
+                _ = details.AppendLine($"    {i + 1}. {inner.GetType().Name}: {inner.Message}");
             }
         }
 
         if (errorContext.AdditionalContext.Count > 0)
         {
-            details.AppendLine("  Additional Context:");
+            _ = details.AppendLine("  Additional Context:");
             foreach (var kvp in errorContext.AdditionalContext)
             {
-                details.AppendLine($"    {kvp.Key}: {kvp.Value}");
+                _ = details.AppendLine($"    {kvp.Key}: {kvp.Value}");
             }
         }
 

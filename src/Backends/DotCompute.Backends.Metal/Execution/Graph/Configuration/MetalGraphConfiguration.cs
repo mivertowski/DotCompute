@@ -249,13 +249,16 @@ public enum MetalExecutionPriority
 {
     /// <summary>Low priority execution.</summary>
     Low = 0,
-    
+
+
     /// <summary>Normal priority execution.</summary>
     Normal = 1,
-    
+
+
     /// <summary>High priority execution.</summary>
     High = 2,
-    
+
+
     /// <summary>Real-time priority execution.</summary>
     RealTime = 3
 }

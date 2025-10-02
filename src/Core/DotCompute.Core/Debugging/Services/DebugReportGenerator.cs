@@ -161,7 +161,7 @@ public sealed partial class DebugReportGenerator : IDisposable
             var directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
-                Directory.CreateDirectory(directory);
+                _ = Directory.CreateDirectory(directory);
             }
 
             await File.WriteAllTextAsync(filePath, report.Content).ConfigureAwait(false);
@@ -198,30 +198,30 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var summary = new StringBuilder();
 
-        summary.AppendLine($"Debug Summary for Kernel: {debugData.KernelName}");
-        summary.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = summary.AppendLine($"Debug Summary for Kernel: {debugData.KernelName}");
+        _ = summary.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
 
         if (debugData.CrossValidationResult != null)
         {
-            summary.AppendLine($"Cross-Validation: {(debugData.CrossValidationResult.IsValid ? "PASSED" : "FAILED")}");
-            summary.AppendLine($"Validation Issues: {debugData.CrossValidationResult.ValidationIssues.Count}");
+            _ = summary.AppendLine($"Cross-Validation: {(debugData.CrossValidationResult.IsValid ? "PASSED" : "FAILED")}");
+            _ = summary.AppendLine($"Validation Issues: {debugData.CrossValidationResult.ValidationIssues.Count}");
         }
 
         if (debugData.PerformanceAnalysis != null)
         {
-            summary.AppendLine($"Performance Analysis: {debugData.PerformanceAnalysis.DataPoints} data points");
-            summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
+            _ = summary.AppendLine($"Performance Analysis: {debugData.PerformanceAnalysis.DataPoints} data points");
+            _ = summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
             // Success rate not available in PerformanceAnalysis
         }
 
         if (debugData.DeterminismResult != null)
         {
-            summary.AppendLine($"Determinism Test: {(debugData.DeterminismResult.IsDeterministic ? "PASSED" : "FAILED")}");
+            _ = summary.AppendLine($"Determinism Test: {(debugData.DeterminismResult.IsDeterministic ? "PASSED" : "FAILED")}");
         }
 
         if (debugData.MemoryAnalysis != null)
         {
-            summary.AppendLine($"Memory Analysis: {(debugData.MemoryAnalysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}");
+            _ = summary.AppendLine($"Memory Analysis: {(debugData.MemoryAnalysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}");
         }
 
         return summary.ToString();
@@ -279,27 +279,27 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var md = new StringBuilder();
 
-        md.AppendLine($"# Debug Report: {debugData.KernelName}");
-        md.AppendLine();
-        md.AppendLine($"**Generated:** {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        md.AppendLine();
+        _ = md.AppendLine($"# Debug Report: {debugData.KernelName}");
+        _ = md.AppendLine();
+        _ = md.AppendLine($"**Generated:** {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine();
 
         if (debugData.CrossValidationResult != null)
         {
-            md.AppendLine("## Cross-Validation Results");
-            md.AppendLine($"- **Status:** {(debugData.CrossValidationResult.IsValid ? "✅ PASSED" : "❌ FAILED")}");
-            md.AppendLine($"- **Validation Time:** {debugData.CrossValidationResult.ValidationTime:yyyy-MM-dd HH:mm:ss}");
-            md.AppendLine($"- **Issues Found:** {debugData.CrossValidationResult.ValidationIssues.Count}");
-            md.AppendLine();
+            _ = md.AppendLine("## Cross-Validation Results");
+            _ = md.AppendLine($"- **Status:** {(debugData.CrossValidationResult.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+            _ = md.AppendLine($"- **Validation Time:** {debugData.CrossValidationResult.ValidationTime:yyyy-MM-dd HH:mm:ss}");
+            _ = md.AppendLine($"- **Issues Found:** {debugData.CrossValidationResult.ValidationIssues.Count}");
+            _ = md.AppendLine();
         }
 
         if (debugData.PerformanceAnalysis != null)
         {
-            md.AppendLine("## Performance Analysis");
-            md.AppendLine($"- **Data Points:** {debugData.PerformanceAnalysis.DataPoints}");
-            md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
+            _ = md.AppendLine("## Performance Analysis");
+            _ = md.AppendLine($"- **Data Points:** {debugData.PerformanceAnalysis.DataPoints}");
+            _ = md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTimeMs:F2} ms");
             // Success rate not available in PerformanceAnalysis
-            md.AppendLine();
+            _ = md.AppendLine();
         }
 
         return md.ToString();
@@ -309,34 +309,34 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var md = new StringBuilder();
 
-        md.AppendLine($"# Cross-Validation Report: {result.KernelName}");
-        md.AppendLine();
-        md.AppendLine($"**Status:** {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
-        md.AppendLine($"**Validation Time:** {result.ValidationTime:yyyy-MM-dd HH:mm:ss} UTC");
-        md.AppendLine();
+        _ = md.AppendLine($"# Cross-Validation Report: {result.KernelName}");
+        _ = md.AppendLine();
+        _ = md.AppendLine($"**Status:** {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+        _ = md.AppendLine($"**Validation Time:** {result.ValidationTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine();
 
-        md.AppendLine("## Execution Results");
+        _ = md.AppendLine("## Execution Results");
         foreach (var execResult in result.ExecutionResults)
         {
-            md.AppendLine($"- **{execResult.BackendType}** execution:");
-            md.AppendLine($"  - Success: {(execResult.Success ? "✅" : "❌")}");
-            md.AppendLine($"  - Execution Time: {execResult.ExecutionTime.TotalMilliseconds:F2} ms");
+            _ = md.AppendLine($"- **{execResult.BackendType}** execution:");
+            _ = md.AppendLine($"  - Success: {(execResult.Success ? "✅" : "❌")}");
+            _ = md.AppendLine($"  - Execution Time: {execResult.ExecutionTime.TotalMilliseconds:F2} ms");
             if (!execResult.Success && !string.IsNullOrEmpty(execResult.ErrorMessage))
             {
-                md.AppendLine($"  - Error: {execResult.ErrorMessage}");
+                _ = md.AppendLine($"  - Error: {execResult.ErrorMessage}");
             }
         }
 
         if (result.ValidationIssues.Any())
         {
-            md.AppendLine();
-            md.AppendLine("## Validation Issues");
+            _ = md.AppendLine();
+            _ = md.AppendLine("## Validation Issues");
             foreach (var issue in result.ValidationIssues)
             {
-                md.AppendLine($"- **{issue.Severity}:** {issue.Message}");
+                _ = md.AppendLine($"- **{issue.Severity}:** {issue.Message}");
                 if (!string.IsNullOrEmpty(issue.Context))
                 {
-                    md.AppendLine($"  - Context: {issue.Context}");
+                    _ = md.AppendLine($"  - Context: {issue.Context}");
                 }
             }
         }
@@ -348,28 +348,28 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var md = new StringBuilder();
 
-        md.AppendLine($"# Performance Analysis: {performance.KernelName}");
-        md.AppendLine();
-        md.AppendLine($"**Analysis Time:** {performance.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
-        md.AppendLine($"**Data Points:** {performance.DataPoints}");
-        md.AppendLine();
+        _ = md.AppendLine($"# Performance Analysis: {performance.KernelName}");
+        _ = md.AppendLine();
+        _ = md.AppendLine($"**Analysis Time:** {performance.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine($"**Data Points:** {performance.DataPoints}");
+        _ = md.AppendLine();
 
-        md.AppendLine("## Execution Time Statistics");
-        md.AppendLine($"- **Average:** {performance.AverageExecutionTimeMs:F2} ms");
-        md.AppendLine($"- **Median:** {performance.AverageExecutionTimeMs:F2} ms"); // Median not available, using average
-        md.AppendLine($"- **Minimum:** {performance.MinExecutionTimeMs:F2} ms");
-        md.AppendLine($"- **Maximum:** {performance.MaxExecutionTimeMs:F2} ms");
-        md.AppendLine($"- **Standard Deviation:** {performance.ExecutionTimeStdDev:F2} ms");
-        md.AppendLine();
+        _ = md.AppendLine("## Execution Time Statistics");
+        _ = md.AppendLine($"- **Average:** {performance.AverageExecutionTimeMs:F2} ms");
+        _ = md.AppendLine($"- **Median:** {performance.AverageExecutionTimeMs:F2} ms"); // Median not available, using average
+        _ = md.AppendLine($"- **Minimum:** {performance.MinExecutionTimeMs:F2} ms");
+        _ = md.AppendLine($"- **Maximum:** {performance.MaxExecutionTimeMs:F2} ms");
+        _ = md.AppendLine($"- **Standard Deviation:** {performance.ExecutionTimeStdDev:F2} ms");
+        _ = md.AppendLine();
 
-        md.AppendLine("## Memory Statistics");
-        md.AppendLine($"- **Average Usage:** {performance.AverageMemoryUsage:F0} bytes");
-        md.AppendLine($"- **Peak Usage:** {performance.PeakMemoryUsage:F0} bytes");
-        md.AppendLine();
+        _ = md.AppendLine("## Memory Statistics");
+        _ = md.AppendLine($"- **Average Usage:** {performance.AverageMemoryUsage:F0} bytes");
+        _ = md.AppendLine($"- **Peak Usage:** {performance.PeakMemoryUsage:F0} bytes");
+        _ = md.AppendLine();
 
-        md.AppendLine("## Reliability");
-        md.AppendLine($"- **Data Points:** {performance.DataPointCount}");
-        md.AppendLine($"- **Analysis Range:** {performance.AnalysisTimeRange.TotalSeconds:F1} seconds");
+        _ = md.AppendLine("## Reliability");
+        _ = md.AppendLine($"- **Data Points:** {performance.DataPointCount}");
+        _ = md.AppendLine($"- **Analysis Range:** {performance.AnalysisTimeRange.TotalSeconds:F1} seconds");
 
         return md.ToString();
     }
@@ -378,20 +378,20 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var md = new StringBuilder();
 
-        md.AppendLine($"# Determinism Test: {result.KernelName}");
-        md.AppendLine();
-        md.AppendLine($"**Status:** {(result.IsDeterministic ? "✅ DETERMINISTIC" : "❌ NON-DETERMINISTIC")}");
-        md.AppendLine($"**Accelerator:** {result.AcceleratorType}");
-        md.AppendLine($"**Iterations:** {result.Iterations}");
-        md.AppendLine($"**Test Time:** {result.TestTime:yyyy-MM-dd HH:mm:ss} UTC");
-        md.AppendLine();
+        _ = md.AppendLine($"# Determinism Test: {result.KernelName}");
+        _ = md.AppendLine();
+        _ = md.AppendLine($"**Status:** {(result.IsDeterministic ? "✅ DETERMINISTIC" : "❌ NON-DETERMINISTIC")}");
+        _ = md.AppendLine($"**Accelerator:** {result.AcceleratorType}");
+        _ = md.AppendLine($"**Iterations:** {result.Iterations}");
+        _ = md.AppendLine($"**Test Time:** {result.TestTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine();
 
         if (result.Issues.Any())
         {
-            md.AppendLine("## Issues and Recommendations");
+            _ = md.AppendLine("## Issues and Recommendations");
             foreach (var issue in result.Issues)
             {
-                md.AppendLine($"- {issue}");
+                _ = md.AppendLine($"- {issue}");
             }
         }
 
@@ -402,33 +402,33 @@ public sealed partial class DebugReportGenerator : IDisposable
     {
         var md = new StringBuilder();
 
-        md.AppendLine($"# Memory Analysis: {analysis.KernelName}");
-        md.AppendLine();
-        md.AppendLine($"**Status:** {(analysis.IsMemorySafe ? "✅ SAFE" : "⚠️ ISSUES DETECTED")}");
-        md.AppendLine($"**Analysis Time:** {analysis.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
-        md.AppendLine($"**Total Input Memory:** {analysis.TotalInputMemory:N0} bytes");
-        md.AppendLine();
+        _ = md.AppendLine($"# Memory Analysis: {analysis.KernelName}");
+        _ = md.AppendLine();
+        _ = md.AppendLine($"**Status:** {(analysis.IsMemorySafe ? "✅ SAFE" : "⚠️ ISSUES DETECTED")}");
+        _ = md.AppendLine($"**Analysis Time:** {analysis.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine($"**Total Input Memory:** {analysis.TotalInputMemory:N0} bytes");
+        _ = md.AppendLine();
 
         if (analysis.Issues.Any())
         {
-            md.AppendLine("## Memory Issues");
+            _ = md.AppendLine("## Memory Issues");
             foreach (var issue in analysis.Issues)
             {
-                md.AppendLine($"- **{issue.Severity} - {issue.Type}:** {issue.Description}");
+                _ = md.AppendLine($"- **{issue.Severity} - {issue.Type}:** {issue.Description}");
                 if (!string.IsNullOrEmpty(issue.Context))
                 {
-                    md.AppendLine($"  - Context: {issue.Context}");
+                    _ = md.AppendLine($"  - Context: {issue.Context}");
                 }
             }
-            md.AppendLine();
+            _ = md.AppendLine();
         }
 
         if (analysis.Recommendations.Any())
         {
-            md.AppendLine("## Recommendations");
+            _ = md.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
             {
-                md.AppendLine($"- {recommendation}");
+                _ = md.AppendLine($"- {recommendation}");
             }
         }
 

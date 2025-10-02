@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CPU.Threading.NUMA;
 
@@ -59,7 +58,7 @@ public sealed class NumaAffinityManager : IDisposable
                     IsActive = true
                 };
 
-                _threadAffinities.AddOrUpdate(threadId, affinityInfo, (_, _) => affinityInfo);
+                _ = _threadAffinities.AddOrUpdate(threadId, affinityInfo, (_, _) => affinityInfo);
                 return true;
             }
         }
@@ -101,7 +100,7 @@ public sealed class NumaAffinityManager : IDisposable
                     IsActive = true
                 };
 
-                _threadAffinities.AddOrUpdate(threadId, affinityInfo, (_, _) => affinityInfo);
+                _ = _threadAffinities.AddOrUpdate(threadId, affinityInfo, (_, _) => affinityInfo);
                 return true;
             }
         }
@@ -143,7 +142,7 @@ public sealed class NumaAffinityManager : IDisposable
                     IsActive = true
                 };
 
-                _processAffinities.AddOrUpdate(processId, affinityInfo, (_, _) => affinityInfo);
+                _ = _processAffinities.AddOrUpdate(processId, affinityInfo, (_, _) => affinityInfo);
                 return true;
             }
         }
@@ -183,7 +182,7 @@ public sealed class NumaAffinityManager : IDisposable
                 };
 
                 var currentThreadId = Environment.CurrentManagedThreadId;
-                _threadAffinities.AddOrUpdate(currentThreadId, affinityInfo, (_, _) => affinityInfo);
+                _ = _threadAffinities.AddOrUpdate(currentThreadId, affinityInfo, (_, _) => affinityInfo);
                 return true;
             }
 
@@ -252,7 +251,7 @@ public sealed class NumaAffinityManager : IDisposable
 
             if (SetThreadAffinityMask(threadId, allProcessorsMask))
             {
-                _threadAffinities.TryRemove(threadId, out _);
+                _ = _threadAffinities.TryRemove(threadId, out _);
                 return true;
             }
         }
@@ -417,7 +416,7 @@ public sealed class NumaAffinityManager : IDisposable
             // Clear all managed affinities
             foreach (var threadId in _threadAffinities.Keys.ToArray())
             {
-                ClearThreadAffinity(threadId);
+                _ = ClearThreadAffinity(threadId);
             }
 
             _threadAffinities.Clear();
@@ -500,7 +499,7 @@ internal sealed class AffinityScope : IDisposable
         _originalAffinity = manager.GetThreadAffinity(_threadId);
 
         // Set new affinity
-        manager.SetThreadAffinity(_threadId, nodeId);
+        _ = manager.SetThreadAffinity(_threadId, nodeId);
     }
 
     public void Dispose()
@@ -510,11 +509,11 @@ internal sealed class AffinityScope : IDisposable
             // Restore original affinity
             if (_originalAffinity != null)
             {
-                _manager.SetThreadAffinityMask(_threadId, _originalAffinity.ProcessorMask);
+                _ = _manager.SetThreadAffinityMask(_threadId, _originalAffinity.ProcessorMask);
             }
             else
             {
-                _manager.ClearThreadAffinity(_threadId);
+                _ = _manager.ClearThreadAffinity(_threadId);
             }
 
             _disposed = true;

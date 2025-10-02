@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Common;
@@ -17,7 +16,8 @@ public static class ConsolidatedTestUtilities
     /// <summary>
     /// Standard test data sizes for comprehensive testing.
     /// </summary>
-    public static readonly int[] StandardTestSizes = 
+    public static readonly int[] StandardTestSizes =
+
     {
         4,          // Single element (4 bytes for float)
         1024,       // Small buffer (1KB)
@@ -156,7 +156,8 @@ public static class ConsolidatedTestUtilities
         string? context = null)
         where T : unmanaged, IEquatable<T>
     {
-        expected.Length.Should().Be(actual.Length, 
+        _ = expected.Length.Should().Be(actual.Length,
+
             $"Array lengths should match{(context != null ? $" - {context}" : "")}");
 
         var elementsToCheck = Math.Min(maxElementsToCheck, expected.Length);
@@ -170,7 +171,8 @@ public static class ConsolidatedTestUtilities
                 var expectedFloat = Unsafe.As<T, float>(ref expected[i]);
                 var actualFloat = Unsafe.As<T, float>(ref actual[i]);
                 var diff = Math.Abs(expectedFloat - actualFloat);
-                
+
+
                 if (diff > tolerance)
                 {
                     if (errorCount < maxErrorsToReport)
@@ -190,7 +192,8 @@ public static class ConsolidatedTestUtilities
                 var expectedDouble = Unsafe.As<T, double>(ref expected[i]);
                 var actualDouble = Unsafe.As<T, double>(ref actual[i]);
                 var diff = Math.Abs(expectedDouble - actualDouble);
-                
+
+
                 if (diff > tolerance)
                 {
                     if (errorCount < maxErrorsToReport)
@@ -293,7 +296,8 @@ public static class ConsolidatedTestUtilities
         stopwatch.Stop();
 
         var throughputGBps = dataSize / (stopwatch.Elapsed.TotalSeconds * 1024.0 * 1024.0 * 1024.0);
-        
+
+
         output.WriteLine($"{operationName}: {stopwatch.Elapsed.TotalMilliseconds:F2}ms, " +
                         $"Throughput: {throughputGBps:F2} GB/s");
 
@@ -310,7 +314,8 @@ public static class ConsolidatedTestUtilities
     public static class Categories
     {
         public const string MemoryAllocation = "MemoryAllocation";
-        public const string BufferTypes = "BufferTypes"; 
+        public const string BufferTypes = "BufferTypes";
+
         public const string Performance = "Performance";
         public const string Hardware = "Hardware";
         public const string Unit = "Unit";

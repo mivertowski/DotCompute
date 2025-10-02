@@ -1,17 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Core.Extensions;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Core.Tests;
 
@@ -107,9 +102,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
 
         // Setup Statistics property with correct property names
         var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
-        mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
-        mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
-        mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
+        _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(totalMemory);
+        _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => currentMemoryUsage);
+        _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => totalMemory - currentMemoryUsage);
 
         _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
 
@@ -168,9 +163,9 @@ public sealed class BaseAcceleratorMemoryTests : IDisposable
 
         // Setup Statistics property with correct property names
         var mockStats = new Mock<DotCompute.Abstractions.Memory.MemoryStatistics>();
-        mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
-        mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
-        mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
+        _ = mockStats.Setup(s => s.UsedMemoryBytes).Returns(() => allocationSize);
+        _ = mockStats.Setup(s => s.TotalMemoryBytes).Returns(1024L * 1024 * 1024);
+        _ = mockStats.Setup(s => s.AvailableMemoryBytes).Returns(() => 1024L * 1024 * 1024 - allocationSize);
 
         _ = memoryManager.Setup(m => m.Statistics).Returns(mockStats.Object);
 

@@ -5,7 +5,6 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Abstractions.Execution;

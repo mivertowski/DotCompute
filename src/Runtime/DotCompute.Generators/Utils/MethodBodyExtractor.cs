@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
-using DotCompute.Generators.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -385,7 +384,7 @@ public static class MethodBodyExtractor
 
         analysis.HasLinqOperations = searchRoot.DescendantNodes().OfType<QueryExpressionSyntax>().Any() ||
                                     searchRoot.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                                        .Any(i => IsLinqMethod(i));
+                                        .Any(IsLinqMethod);
 
 
         return analysis;

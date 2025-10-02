@@ -2,11 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions;
-using DotCompute.Abstractions.Types;
 using DotCompute.Runtime.Logging;
 
 namespace DotCompute.Runtime.Services
@@ -22,10 +18,10 @@ namespace DotCompute.Runtime.Services
         private readonly Timer _monitoringTimer;
         private readonly Timer _cleanupTimer;
         private readonly SystemMonitoringStatistics _statistics = new();
-        #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
         private readonly PerformanceCounter? _cpuCounter;
         private readonly PerformanceCounter? _memoryCounter;
-        #pragma warning restore CS0649
+#pragma warning restore CS0649
         private bool _disposed;
 
         public SystemMonitoringStatistics Statistics => _statistics;
@@ -92,10 +88,10 @@ namespace DotCompute.Runtime.Services
             // Maintain history size
             while (_healthCheckHistory.Count > 100)
             {
-                _healthCheckHistory.TryDequeue(out _);
+                _ = _healthCheckHistory.TryDequeue(out _);
             }
 
-            Interlocked.Increment(ref _statistics._totalHealthChecks);
+            _ = Interlocked.Increment(ref _statistics._totalHealthChecks);
 
             _logger.LogInfoMessage($"Health check completed: {overallHealth}, {healthChecks.Count} checks performed");
 
@@ -118,7 +114,7 @@ namespace DotCompute.Runtime.Services
             var counter = _performanceCounters.GetOrAdd(metricName, _ => new PerformanceCounter(metricName));
             counter.RecordValue(value, unit);
 
-            Interlocked.Increment(ref _statistics._totalMetricsRecorded);
+            _ = Interlocked.Increment(ref _statistics._totalMetricsRecorded);
 
             _logger.LogDebugMessage($"Recorded performance metric {metricName}: {value} {unit ?? ""}");
         }
@@ -420,8 +416,8 @@ namespace DotCompute.Runtime.Services
             {
                 try
                 {
-                    await PerformHealthCheckAsync().ConfigureAwait(false);
-                    Interlocked.Increment(ref _statistics._totalMonitoringCycles);
+                    _ = await PerformHealthCheckAsync().ConfigureAwait(false);
+                    _ = Interlocked.Increment(ref _statistics._totalMonitoringCycles);
                 }
                 catch (Exception ex)
                 {
@@ -452,7 +448,7 @@ namespace DotCompute.Runtime.Services
                 // Limit health check history size
                 while (_healthCheckHistory.Count > 100)
                 {
-                    _healthCheckHistory.TryDequeue(out _);
+                    _ = _healthCheckHistory.TryDequeue(out _);
                 }
 
                 _logger.LogDebugMessage("Periodic cleanup completed");
@@ -557,7 +553,7 @@ namespace DotCompute.Runtime.Services
                 var cutoffTime = DateTime.UtcNow - _maxAge;
                 while (_samples.Count > 0 && _samples.Peek().Timestamp < cutoffTime)
                 {
-                    _samples.Dequeue();
+                    _ = _samples.Dequeue();
                 }
 
                 // Recalculate min/max from remaining samples

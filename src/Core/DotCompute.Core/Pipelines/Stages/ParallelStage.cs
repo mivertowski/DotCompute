@@ -3,11 +3,6 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Models.Pipelines;
-using DotCompute.Abstractions.Types;
-using DotCompute.Core.Telemetry;
-using DotCompute.Core.Models;
-using DotCompute.Core.Pipelines.Types;
 // using DotCompute.Core.Pipelines.Models; // Removed to avoid ambiguity - using alias instead
 
 // Type aliases to resolve ambiguous references
@@ -17,7 +12,6 @@ using DotCompute.Abstractions.Validation;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;
 using AbsStageExecutionResult = DotCompute.Abstractions.Models.Pipelines.StageExecutionResult;
 using SynchronizationStrategyEnum = DotCompute.Core.Pipelines.Types.SynchronizationStrategy;
-using CoreStageExecutionResult = DotCompute.Core.Pipelines.Models.StageExecutionResult;
 using PipelineStageType = DotCompute.Abstractions.Pipelines.Enums.PipelineStageType;
 using IStageMetrics = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IStageMetrics;
 using StageValidationResult = DotCompute.Abstractions.Models.Pipelines.StageValidationResult;

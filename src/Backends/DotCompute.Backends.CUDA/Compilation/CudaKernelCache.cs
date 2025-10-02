@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -62,7 +61,7 @@ public sealed class CudaKernelCache : IDisposable
             throw new ArgumentException("Key cannot be null or empty.", nameof(key));
         }
 
-        _cache.AddOrUpdate(key, kernel, (_, _) => kernel);
+        _ = _cache.AddOrUpdate(key, kernel, (_, _) => kernel);
     }
 
     /// <summary>

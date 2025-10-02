@@ -1,25 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Execution;
-using DotCompute.Backends.CUDA.Memory;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.P2P;
-using DotCompute.Backends.CUDA.Advanced;
-using DotCompute.Backends.CUDA.Types;
-using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Memory;
-using System.Linq;
-using AbstractionsCompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using AbstractionsKernelArgument = DotCompute.Abstractions.Kernels.KernelArgument;
-using InterfacesKernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Backends.CUDA.Integration;
 
@@ -49,7 +37,8 @@ public sealed class CudaIntegrationOrchestrator : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-        
+
+
         _deviceManager = new CudaDeviceManager(loggerFactory.CreateLogger<CudaDeviceManager>());
         _contextManager = new CudaContextManager(context, loggerFactory.CreateLogger<CudaContextManager>());
         _memoryIntegration = new CudaMemoryIntegration(context, loggerFactory.CreateLogger<CudaMemoryIntegration>());

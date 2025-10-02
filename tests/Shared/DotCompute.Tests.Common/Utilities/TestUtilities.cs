@@ -1,21 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Extensions;
-using DotCompute.Memory;
-using DotCompute.SharedTestUtilities.Performance;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -142,7 +132,7 @@ public static class TestUtilities
         }
         finally
         {
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            _ = timer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         var finalMemory = GC.GetTotalMemory(true);
@@ -224,7 +214,7 @@ public static class TestUtilities
                 {
                     var result = await action(threadId * operationsPerThread + i);
                     results.Add(result);
-                    Interlocked.Increment(ref completedOperations);
+                    _ = Interlocked.Increment(ref completedOperations);
                 }
             }
             catch (Exception ex)
@@ -306,8 +296,8 @@ public static class TestUtilities
             AvailableMemory = (long)(totalMemory * availableMemoryRatio)
         };
 
-        mock.Setup(a => a.Info).Returns(acceleratorInfo);
-        mock.Setup(a => a.DeviceType).Returns(description);
+        _ = mock.Setup(a => a.Info).Returns(acceleratorInfo);
+        _ = mock.Setup(a => a.DeviceType).Returns(description);
 
         // The IAccelerator interface doesn't have GetMemoryInfoAsync - memory info is in Info property
 
@@ -322,7 +312,7 @@ public static class TestUtilities
         var mock = new Mock<ILogger<T>>();
         var logEntries = new List<LogEntry>();
 
-        mock.Setup(l => l.Log(
+        _ = mock.Setup(l => l.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
@@ -365,13 +355,13 @@ public static class TestUtilities
         var mock = new Mock<IUnifiedMemoryBuffer<T>>();
         var data = new T[size];
 
-        mock.Setup(b => b.Length).Returns(size);
-        mock.Setup(b => b.SizeInBytes).Returns(size * Marshal.SizeOf<T>());
-        mock.Setup(b => b.IsDisposed).Returns(false);
+        _ = mock.Setup(b => b.Length).Returns(size);
+        _ = mock.Setup(b => b.SizeInBytes).Returns(size * Marshal.SizeOf<T>());
+        _ = mock.Setup(b => b.IsDisposed).Returns(false);
         // Note: Cannot directly mock Span<T> returns as they are ref structs
         // Use AsMemory() instead which returns Memory<T> and can be mocked
-        mock.Setup(b => b.AsMemory()).Returns(data.AsMemory());
-        mock.Setup(b => b.AsReadOnlyMemory()).Returns(data.AsMemory());
+        _ = mock.Setup(b => b.AsMemory()).Returns(data.AsMemory());
+        _ = mock.Setup(b => b.AsReadOnlyMemory()).Returns(data.AsMemory());
 
         return mock;
     }

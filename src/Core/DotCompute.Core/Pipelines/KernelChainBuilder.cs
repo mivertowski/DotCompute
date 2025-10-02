@@ -5,18 +5,15 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Abstractions.Models.Pipelines;
-using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Pipelines.Results;
 using DotCompute.Core.Pipelines.Services;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 
 // Type aliases to resolve ambiguous references
 using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
 using KernelStepMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelStepMetrics;
 using KernelChainMemoryMetrics = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainMemoryMetrics;
-using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
+using ErrorHandlingStrategy = DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy;
 using KernelChainValidationResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainValidationResult;
 
 namespace DotCompute.Core.Pipelines
@@ -147,13 +144,13 @@ namespace DotCompute.Core.Pipelines
             ArgumentNullException.ThrowIfNull(truePath);
 
             var trueChain = new KernelChainBuilder(_orchestrator, _kernelResolver, _profiler, _validator, _cacheService, _logger);
-            truePath(trueChain);
+            _ = truePath(trueChain);
 
             KernelChainBuilder? falseChain = null;
             if (falsePath != null)
             {
                 falseChain = new KernelChainBuilder(_orchestrator, _kernelResolver, _profiler, _validator, _cacheService, _logger);
-                falsePath(falseChain);
+                _ = falsePath(falseChain);
             }
 
             var branchStep = new KernelChainStep

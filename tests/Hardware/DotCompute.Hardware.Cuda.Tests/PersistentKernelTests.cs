@@ -3,10 +3,7 @@
 
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Tests.Common.Specialized;
-using Xunit.Abstractions;
-using DotCompute.Hardware.Cuda.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace DotCompute.Hardware.Cuda.Tests
 {
@@ -67,7 +64,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
 
 
-            kernel.Should().NotBeNull();
+            _ = kernel.Should().NotBeNull();
             Output.WriteLine("Ring buffer pattern kernel compiled successfully");
 
 
@@ -143,7 +140,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var stepResult = new int[1];
             await stepBuffer.CopyToAsync(stepResult.AsMemory());
-            stepResult[0].Should().Be(timeSteps, "Step counter should match execution count");
+            _ = stepResult[0].Should().Be(timeSteps, "Step counter should match execution count");
 
 
             Output.WriteLine($"Time-stepping kernel executed {timeSteps} steps successfully");
@@ -196,7 +193,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var kernel = await accelerator.CompileKernelAsync(kernelDef, new DotCompute.Abstractions.CompilationOptions());
 
 
-            kernel.Should().NotBeNull();
+            _ = kernel.Should().NotBeNull();
             Output.WriteLine("Wave simulation kernel compiled successfully");
 
 
@@ -217,7 +214,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var isValid = ringBufferDepth >= 2 && blockSize > 0 && blockSize <= 1024;
 
 
-            isValid.Should().Be(shouldBeValid,
+            _ = isValid.Should().Be(shouldBeValid,
 
                 $"Configuration with depth={ringBufferDepth}, blockSize={blockSize} should be {(shouldBeValid ? "valid" : "invalid")}");
         }
@@ -291,7 +288,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var iterResult = new int[1];
             await iterBuffer.CopyToAsync(iterResult.AsMemory());
-            iterResult[0].Should().Be(maxIterations, "Should complete all iterations");
+            _ = iterResult[0].Should().Be(maxIterations, "Should complete all iterations");
 
 
             Output.WriteLine($"Persistent pattern kernel executed {maxIterations} iterations successfully");
@@ -360,7 +357,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             var totalElements = (long)width * height * depth;
 
 
-            totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");
+            _ = totalElements.Should().BeGreaterThan(0, $"{dimensionType} grid should have positive element count");
 
 
             Output.WriteLine($"{dimensionType} grid: {width}x{height}x{depth} = {totalElements} elements");

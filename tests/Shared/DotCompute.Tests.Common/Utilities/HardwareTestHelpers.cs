@@ -1,19 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Intrinsics.X86;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Interfaces;
 // using DotCompute.SharedTestUtilities.Performance; // Removed to avoid confusion with PerformanceStats
 using DotCompute.Core.Extensions;
 using DotCompute.Tests.Common.Helpers;
-using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace DotCompute.Tests.Common.Utilities;
 
@@ -202,22 +195,22 @@ public static class HardwareTestHelpers
         // CUDA accelerator
         var cudaMock = TestUtilities.CreateMockAccelerator(
             "CUDA", "NVIDIA RTX 4090", true, 24L * 1024L * 1024L * 1024L); // 24GB
-        cudaMock.Setup(a => a.SupportsFeature("CUDA")).Returns(true);
-        cudaMock.Setup(a => a.SupportsFeature("DoublePrecision")).Returns(true);
+        _ = cudaMock.Setup(a => a.SupportsFeature("CUDA")).Returns(true);
+        _ = cudaMock.Setup(a => a.SupportsFeature("DoublePrecision")).Returns(true);
         mocks.Add(cudaMock);
 
         // OpenCL accelerator
         var openclMock = TestUtilities.CreateMockAccelerator(
             "OpenCL", "AMD RX 7900 XTX", true, 20L * 1024L * 1024L * 1024L); // 20GB
-        openclMock.Setup(a => a.SupportsFeature("OpenCL")).Returns(true);
-        openclMock.Setup(a => a.SupportsFeature("ImageSupport")).Returns(true);
+        _ = openclMock.Setup(a => a.SupportsFeature("OpenCL")).Returns(true);
+        _ = openclMock.Setup(a => a.SupportsFeature("ImageSupport")).Returns(true);
         mocks.Add(openclMock);
 
         // Metal accelerator
         var metalMock = TestUtilities.CreateMockAccelerator(
             "Metal", "Apple M3 Max", true, 128L * 1024L * 1024L * 1024L); // 128GB unified memory
-        metalMock.Setup(a => a.SupportsFeature("Metal")).Returns(true);
-        metalMock.Setup(a => a.SupportsFeature("UnifiedMemory")).Returns(true);
+        _ = metalMock.Setup(a => a.SupportsFeature("Metal")).Returns(true);
+        _ = metalMock.Setup(a => a.SupportsFeature("UnifiedMemory")).Returns(true);
         mocks.Add(metalMock);
 
         return mocks;
@@ -515,5 +508,6 @@ public class GpuPerformanceResult
     public PerformanceStats CpuResult { get; set; } = new();
     public PerformanceStats GpuResult { get; set; } = new();
 }
+
 
 #endregion

@@ -3,15 +3,11 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
-using DotCompute.Abstractions.Interfaces;
-using DotCompute.Abstractions.Types;
-using DotCompute.Core.Debugging.Enums;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
 using TimeRange = DotCompute.Core.Debugging.Enums.TimeRange;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Analytics;
@@ -131,7 +127,7 @@ public sealed partial class KernelProfiler : IDisposable
 
         // Store historical data
         var kernelKey = $"{session.KernelName}_{session.AcceleratorType}";
-        _historicalData.AddOrUpdate(kernelKey,
+        _ = _historicalData.AddOrUpdate(kernelKey,
             [profilingData],
             (key, existing) =>
             {
@@ -415,7 +411,7 @@ public sealed partial class KernelProfiler : IDisposable
 
             foreach (var key in keysToRemove)
             {
-                _historicalData.TryRemove(key, out _);
+                _ = _historicalData.TryRemove(key, out _);
             }
 
             LogKernelDataCleared(kernelName);

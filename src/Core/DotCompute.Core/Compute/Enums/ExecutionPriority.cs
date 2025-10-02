@@ -4,8 +4,6 @@
 // This file is now a type alias to the canonical ExecutionPriority in DotCompute.Abstractions.Execution
 // All compute engine execution priorities now use the unified type.
 
-using DotCompute.Abstractions.Execution;
-
 namespace DotCompute.Core.Compute.Enums;
 
 // Type alias for backward compatibility

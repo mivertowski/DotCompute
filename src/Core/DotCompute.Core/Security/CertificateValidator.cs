@@ -417,7 +417,7 @@ public sealed class CertificateValidator : IDisposable
 
                 foreach (var (key, _) in expiredEntries)
                 {
-                    _validationCache.Remove(key);
+                    _ = _validationCache.Remove(key);
                 }
 
                 if (expiredEntries.Count > 0)
@@ -437,12 +437,14 @@ public sealed class CertificateValidator : IDisposable
         if (!_disposed)
         {
             _cacheCleanupTimer?.Dispose();
-            
+
+
             lock (_cacheLock)
             {
                 _validationCache.Clear();
             }
-            
+
+
             _disposed = true;
             _logger.LogDebugMessage("Certificate Validator disposed");
         }

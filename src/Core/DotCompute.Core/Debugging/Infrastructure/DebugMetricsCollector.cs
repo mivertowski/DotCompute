@@ -52,7 +52,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
             Tags = tags ?? new Dictionary<string, string>()
         };
 
-        _metricsData.AddOrUpdate(name,
+        _ = _metricsData.AddOrUpdate(name,
             new MetricsSeries { Name = name, Points = [metricPoint] },
             (key, existing) =>
             {
@@ -330,7 +330,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         }
         else
         {
-            _metricsData.TryRemove(metricName, out _);
+            _ = _metricsData.TryRemove(metricName, out _);
             LogMetricCleared(metricName);
         }
     }

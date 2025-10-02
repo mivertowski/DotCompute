@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
-using DotCompute.Backends.CUDA.Execution.Graph.Nodes;
 using DotCompute.Backends.CUDA.Execution.Graph.Results;
 using CudaGraphCaptureMode = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
 using CudaGraphNode = DotCompute.Backends.CUDA.Execution.Graph.Types.CudaGraphNode;
@@ -15,7 +14,6 @@ using MemsetNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemsetNo
 using KernelNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.KernelNodeParams;
 using MemcpyNodeParams = DotCompute.Backends.CUDA.Execution.Graph.Types.MemcpyNodeParams;
 using DotCompute.Backends.CUDA.Graphs.Models;
-using DotCompute.Backends.CUDA.Models;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Native.Exceptions;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -802,7 +800,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
             return graph.Nodes.Count > 0
 
-                ? graph.Nodes.Max(n => CalculatePathLength(n))
+                ? graph.Nodes.Max(CalculatePathLength)
                 : 0;
         }
 

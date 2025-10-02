@@ -126,10 +126,7 @@ public sealed class CudaErrorHandler : IDisposable
                     _logger.LogInfoMessage("Circuit breaker reset, GPU operations resuming");
                     _gpuAvailable = true;
                 },
-                onHalfOpen: () =>
-                {
-                    _logger.LogInfoMessage("Circuit breaker half-open, testing GPU availability");
-                });
+                onHalfOpen: () => _logger.LogInfoMessage("Circuit breaker half-open, testing GPU availability"));
     }
 
     /// <summary>
@@ -303,6 +300,7 @@ public sealed class CudaErrorHandler : IDisposable
 
         throw new CudaDeviceException(0, $"Device error in operation '{operationName}'");
     }
+
 
 
 
@@ -516,6 +514,7 @@ public sealed class CudaErrorHandler : IDisposable
     public void Dispose()
         // CudaErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
+
 
 
         => ClearStatistics();

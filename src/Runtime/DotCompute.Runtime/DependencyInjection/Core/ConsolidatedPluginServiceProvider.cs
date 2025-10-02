@@ -540,6 +540,7 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
     private static IServiceProvider CreatePluginServiceProvider(IServiceCollection pluginServices, IServiceProvider parentProvider)
         // Simple fallback implementation - return the parent provider for now
         // TODO: Implement proper plugin service isolation when ServiceCollection extensions are available
+
         => parentProvider;
 
     #endregion

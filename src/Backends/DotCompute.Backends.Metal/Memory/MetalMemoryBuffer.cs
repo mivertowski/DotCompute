@@ -86,15 +86,18 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             // Determine storage mode based on options
             var storageMode = GetStorageMode(Options);
-            
+
             // Allocate actual Metal buffer
+
             Buffer = MetalNative.CreateBuffer(Device, (nuint)SizeInBytes, storageMode);
-            
+
+
             if (Buffer == IntPtr.Zero)
             {
                 throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes");
             }
-            
+
+
             State = BufferState.Allocated;
         }, cancellationToken);
     }
@@ -113,20 +116,23 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             var elementSize = Marshal.SizeOf<T>();
             var totalBytes = source.Length * elementSize;
-            
+
+
             if (offset + totalBytes > SizeInBytes)
             {
                 throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
             }
-            
+
             // Get buffer contents pointer
+
             var bufferContents = MetalNative.GetBufferContents(Buffer);
             if (bufferContents == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
             }
-            
+
             // Copy data from source to Metal buffer
+
             unsafe
             {
                 var sourceHandle = source.Pin();
@@ -141,8 +147,9 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
                     sourceHandle.Dispose();
                 }
             }
-            
+
             // Mark the modified range if using managed storage
+
             var storageMode = GetStorageMode(Options);
             if (storageMode == MetalStorageMode.Managed)
             {
@@ -165,20 +172,23 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             var elementSize = Marshal.SizeOf<T>();
             var totalBytes = destination.Length * elementSize;
-            
+
+
             if (offset + totalBytes > SizeInBytes)
             {
                 throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
             }
-            
+
             // Get buffer contents pointer
+
             var bufferContents = MetalNative.GetBufferContents(Buffer);
             if (bufferContents == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
             }
-            
+
             // Copy data from Metal buffer to destination
+
             unsafe
             {
                 var destHandle = destination.Pin();
@@ -215,8 +225,9 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
         {
             State = BufferState.Disposed;
             IsDisposed = true;
-            
+
             // Release native Metal buffer
+
             if (Buffer != IntPtr.Zero)
             {
                 try
@@ -286,10 +297,12 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
         var clone = new MetalMemoryBuffer(SizeInBytes, Options, Device);
         await clone.InitializeAsync(cancellationToken);
-        
+
         // Copy buffer contents using Metal API
+
         MetalNative.CopyBuffer(Buffer, 0, clone.Buffer, 0, SizeInBytes);
-        
+
+
         return clone;
     }
 }

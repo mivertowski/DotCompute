@@ -3,8 +3,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using DotCompute.Abstractions.Analysis;
 
 namespace DotCompute.Core.Kernels;

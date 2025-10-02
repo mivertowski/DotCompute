@@ -4,8 +4,6 @@
 using System.Collections.Concurrent;
 using global::System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using DotCompute.Abstractions.Security;
-using DotCompute.Core.Logging;
 
 namespace DotCompute.Core.Security;
 
@@ -22,7 +20,8 @@ public sealed class SecurityEventLogger
     private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts;
     private long _sequenceNumber;
 
-    public SecurityEventLogger(ILogger<SecurityEventLogger> logger, 
+    public SecurityEventLogger(ILogger<SecurityEventLogger> logger,
+
         SecurityLoggingConfiguration configuration,
         ConcurrentQueue<SecurityLogEntry> auditQueue,
         SemaphoreSlim logWriteLock,
@@ -51,13 +50,14 @@ public sealed class SecurityEventLogger
         try
         {
             _auditQueue.Enqueue(entry);
-            
+
             // Log based on severity
+
             LogSecurityEventByLevel(entry);
         }
         finally
         {
-            _logWriteLock.Release();
+            _ = _logWriteLock.Release();
         }
     }
 
@@ -274,12 +274,15 @@ public sealed class SecurityEventLogger
         // Update correlation context if enabled
         if (_configuration.EnableCorrelationTracking && !string.IsNullOrEmpty(correlationId))
         {
-            _correlationContexts.AddOrUpdate(correlationId,
+            _ = _correlationContexts.AddOrUpdate(correlationId,
                 new CorrelationContext { StartTime = entry.Timestamp, EventCount = 1 },
-                (key, existing) => new CorrelationContext 
-                { 
-                    StartTime = existing.StartTime, 
-                    EventCount = existing.EventCount + 1 
+                (key, existing) => new CorrelationContext
+                {
+
+                    StartTime = existing.StartTime,
+
+                    EventCount = existing.EventCount + 1
+
                 });
         }
 

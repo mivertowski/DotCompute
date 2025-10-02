@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
 
 namespace DotCompute.Plugins.Logging;
 

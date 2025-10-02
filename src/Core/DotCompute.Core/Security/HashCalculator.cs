@@ -323,11 +323,13 @@ public sealed class HashCalculator : IDisposable
             {
                 using var hashAlgorithm = CreateHashAlgorithm(algorithm);
                 var hash = hashAlgorithm.ComputeHash(data.ToArray());
-                
+
+
                 result.HashValue = hash;
                 result.HashSize = hash.Length;
                 result.IsSuccessful = true;
-                
+
+
                 return result;
             }
             catch (Exception ex)
@@ -408,7 +410,7 @@ public sealed class HashCalculator : IDisposable
 
                 foreach (var (key, _) in expiredEntries)
                 {
-                    _hashCache.Remove(key);
+                    _ = _hashCache.Remove(key);
                 }
 
                 if (expiredEntries.Count > 0)
@@ -428,12 +430,14 @@ public sealed class HashCalculator : IDisposable
         if (!_disposed)
         {
             _cacheCleanupTimer?.Dispose();
-            
+
+
             lock (_cacheLock)
             {
                 _hashCache.Clear();
             }
-            
+
+
             _disposed = true;
             _logger.LogDebugMessage("Hash Calculator disposed");
         }

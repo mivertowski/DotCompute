@@ -71,7 +71,7 @@ namespace DotCompute.Generators.Models
 
             // Additional validation: buffer types should be marked as buffers
             var bufferTypeIndicators = new[] { "[]", "*", "Span", "Memory", "ReadOnlySpan", "ReadOnlyMemory" };
-            var shouldBeBuffer = bufferTypeIndicators.Any(indicator => Type.Contains(indicator));
+            var shouldBeBuffer = bufferTypeIndicators.Any(Type.Contains);
 
             if (shouldBeBuffer && !IsBuffer)
             {

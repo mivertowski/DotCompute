@@ -13,7 +13,6 @@ using ValidationResult = DotCompute.Abstractions.Validation.UnifiedValidationRes
 // Fully qualified type names used to avoid ambiguity with Metal-specific UnifiedValidationResult
 
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces.Kernels;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Abstractions.Kernels.Types;
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -33,11 +32,15 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private readonly MetalKernelCache _kernelCache;
     private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
     private int _disposed;
-    
+
+
     public MetalKernelCompiler(
-        IntPtr device, 
-        IntPtr commandQueue, 
-        ILogger logger, 
+        IntPtr device,
+
+        IntPtr commandQueue,
+
+        ILogger logger,
+
         MetalCommandBufferPool? commandBufferPool = null,
         MetalKernelCache? kernelCache = null)
     {
@@ -45,18 +48,21 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         _commandQueue = commandQueue;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _commandBufferPool = commandBufferPool;
-        
+
         // Create or use provided kernel cache
+
         if (kernelCache != null)
         {
             _kernelCache = kernelCache;
         }
         else
         {
-            var cacheLogger = logger is ILogger<MetalKernelCache> cacheTypedLogger 
-                ? cacheTypedLogger 
+            var cacheLogger = logger is ILogger<MetalKernelCache> cacheTypedLogger
+                ? cacheTypedLogger
+
                 : new LoggerFactory().CreateLogger<MetalKernelCache>();
-                
+
+
             _kernelCache = new MetalKernelCache(
                 cacheLogger,
                 maxCacheSize: 500,
@@ -67,6 +73,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
     /// <inheritdoc/>
     public string Name => "Metal Shader Compiler";
+
 
 
 
@@ -111,18 +118,21 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         if (_kernelCache.TryGetKernel(definition, options, out _, out _, out var cachedPipelineState))
         {
             _logger.LogDebug("Cache hit for kernel '{Name}' - using cached pipeline state", definition.Name);
-            
+
             // Get metadata from cached pipeline state
+
             var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(cachedPipelineState);
             var threadExecutionWidth = MetalNative.GetThreadExecutionWidthTuple(cachedPipelineState);
-            
+
+
             var metadata = new CompilationMetadata
             {
                 CompilationTimeMs = 0, // No compilation time for cached kernel
                 MemoryUsage = { ["MaxThreadsPerThreadgroup"] = maxThreadsPerThreadgroup },
                 Warnings = { "Kernel loaded from cache" }
             };
-            
+
+
             return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 cachedPipelineState,
@@ -145,15 +155,17 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             // Compile Metal code
             _logger.LogDebug("Compiling kernel '{Name}' from source", definition.Name);
             var library = await CompileMetalCodeAsync(metalCode, definition.Name, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Create function and pipeline state
+
             var function = MetalNative.GetFunction(library, definition.EntryPoint ?? definition.Name);
             if (function == IntPtr.Zero)
             {
                 MetalNative.ReleaseLibrary(library);
                 throw new InvalidOperationException($"Failed to get function '{definition.EntryPoint ?? definition.Name}' from Metal library");
             }
-            
+
+
             var pipelineState = MetalNative.CreateComputePipelineState(_device, function);
             if (pipelineState == IntPtr.Zero)
             {
@@ -161,11 +173,13 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                 MetalNative.ReleaseLibrary(library);
                 throw new InvalidOperationException($"Failed to create compute pipeline state for kernel '{definition.Name}'");
             }
-            
+
+
             stopwatch.Stop();
             var compilationTimeMs = (long)stopwatch.Elapsed.TotalMilliseconds;
-            
+
             // Add to cache
+
             byte[]? binaryData = null;
             try
             {
@@ -177,7 +191,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
                     var handle = GCHandle.Alloc(binaryData, GCHandleType.Pinned);
                     try
                     {
-                        MetalNative.GetLibraryData(library, handle.AddrOfPinnedObject(), dataSize);
+                        _ = MetalNative.GetLibraryData(library, handle.AddrOfPinnedObject(), dataSize);
                     }
                     finally
                     {
@@ -189,24 +203,29 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             {
                 _logger.LogWarning(ex, "Failed to extract binary data for kernel '{Name}'", definition.Name);
             }
-            
+
+
             _kernelCache.AddKernel(definition, options, library, function, pipelineState, binaryData, compilationTimeMs);
             _logger.LogInformation("Compiled and cached kernel '{Name}' in {Time}ms", definition.Name, compilationTimeMs);
-            
+
             // Get metadata
+
             var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(pipelineState);
             var threadExecutionWidth = MetalNative.GetThreadExecutionWidthTuple(pipelineState);
-            
+
+
             var metadata = new CompilationMetadata
             {
                 CompilationTimeMs = compilationTimeMs,
                 MemoryUsage = { ["MaxThreadsPerThreadgroup"] = maxThreadsPerThreadgroup },
                 Warnings = { $"Max threads per threadgroup: {maxThreadsPerThreadgroup}" }
             };
-            
+
             // Release function reference (pipeline state retains it)
+
             MetalNative.ReleaseFunction(function);
-            
+
+
             return (DotCompute.Abstractions.ICompiledKernel)new MetalCompiledKernel(
                 definition,
                 pipelineState,
@@ -261,16 +280,19 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
         // Get the source code
         var code = definition.Code ?? string.Empty;
-        
+
         // Check if this is already MSL code (generated from C# or handwritten)
-        if (code.Contains("#include <metal_stdlib>", StringComparison.Ordinal) || 
+
+        if (code.Contains("#include <metal_stdlib>", StringComparison.Ordinal) ||
+
             code.Contains("kernel void", StringComparison.Ordinal))
         {
             // Already Metal code, return as-is
             return code;
         }
-        
+
         // Check if the language is specified as Metal
+
         if (definition.Language == KernelLanguage.Metal)
         {
             // If Metal is specified but headers are missing, add them
@@ -286,10 +308,12 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
             }
             return code;
         }
-        
+
         // If it's OpenCL C or unspecified, we would need translation
         // For now, throw an error indicating MSL is required
-        if (code.Contains("__kernel", StringComparison.Ordinal) || 
+
+        if (code.Contains("__kernel", StringComparison.Ordinal) ||
+
             code.Contains("__global", StringComparison.Ordinal) ||
             definition.Language == KernelLanguage.OpenCL)
         {

@@ -96,6 +96,7 @@ internal static class NeonOperationHelpers
         // Note: ARM order is (accumulator, multiplicand, multiplier)
 
 
+
         => AdvSimd.FusedMultiplyAdd(c, a, b);
 
     /// <summary>

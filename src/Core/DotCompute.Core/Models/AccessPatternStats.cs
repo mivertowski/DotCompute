@@ -1,5 +1,3 @@
-using System;
-
 namespace DotCompute.Core.Models
 {
     /// <summary>

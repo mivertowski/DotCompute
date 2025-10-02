@@ -63,8 +63,8 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordExecutionStart(long elementCount)
     {
-        Interlocked.Increment(ref _totalExecutions);
-        Interlocked.Add(ref _totalElements, elementCount);
+        _ = Interlocked.Increment(ref _totalExecutions);
+        _ = Interlocked.Add(ref _totalElements, elementCount);
     }
 
     /// <summary>
@@ -75,8 +75,8 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     /// <param name="strategy">Strategy used for execution.</param>
     public void RecordExecutionComplete(long elementCount, TimeSpan executionTime, SimdExecutionStrategy strategy)
     {
-        Interlocked.Add(ref _totalExecutionTime, executionTime.Ticks);
-        _strategyUsage.AddOrUpdate(strategy, 1, (key, old) => old + 1);
+        _ = Interlocked.Add(ref _totalExecutionTime, executionTime.Ticks);
+        _ = _strategyUsage.AddOrUpdate(strategy, 1, (key, old) => old + 1);
 
         // Record detailed metrics for analysis
         var metricKey = $"execution_{strategy}_{GetElementCountCategory(elementCount)}";
@@ -91,7 +91,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordVectorizedElements(long elements)
     {
-        Interlocked.Add(ref _vectorizedElements, elements);
+        _ = Interlocked.Add(ref _vectorizedElements, elements);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordScalarElements(long elements)
     {
-        Interlocked.Add(ref _scalarElements, elements);
+        _ = Interlocked.Add(ref _scalarElements, elements);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RecordReductionStart(int elementCount)
     {
-        Interlocked.Increment(ref _totalReductions);
+        _ = Interlocked.Increment(ref _totalReductions);
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     /// <param name="operation">Type of reduction operation.</param>
     public void RecordReductionComplete(int elementCount, TimeSpan executionTime, ReductionOperation operation)
     {
-        _reductionUsage.AddOrUpdate(operation, 1, (key, old) => old + 1);
+        _ = _reductionUsage.AddOrUpdate(operation, 1, (key, old) => old + 1);
 
         var metricKey = $"reduction_{operation}_{GetElementCountCategory(elementCount)}";
         var metric = _metrics.GetOrAdd(metricKey, k => new PerformanceMetric(k));
@@ -187,12 +187,12 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     /// </summary>
     public void Reset()
     {
-        Interlocked.Exchange(ref _totalExecutions, 0);
-        Interlocked.Exchange(ref _totalElements, 0);
-        Interlocked.Exchange(ref _vectorizedElements, 0);
-        Interlocked.Exchange(ref _scalarElements, 0);
-        Interlocked.Exchange(ref _totalExecutionTime, 0);
-        Interlocked.Exchange(ref _totalReductions, 0);
+        _ = Interlocked.Exchange(ref _totalExecutions, 0);
+        _ = Interlocked.Exchange(ref _totalElements, 0);
+        _ = Interlocked.Exchange(ref _vectorizedElements, 0);
+        _ = Interlocked.Exchange(ref _scalarElements, 0);
+        _ = Interlocked.Exchange(ref _totalExecutionTime, 0);
+        _ = Interlocked.Exchange(ref _totalReductions, 0);
 
         _metrics.Clear();
 
@@ -355,9 +355,9 @@ public sealed class PerformanceMetric
     {
         var ticks = executionTime.Ticks;
 
-        Interlocked.Increment(ref _executionCount);
-        Interlocked.Add(ref _totalTime, ticks);
-        Interlocked.Add(ref _totalElements, elementCount);
+        _ = Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Add(ref _totalTime, ticks);
+        _ = Interlocked.Add(ref _totalElements, elementCount);
 
         // Update min/max with thread-safe compare-exchange
         var currentMin = Interlocked.Read(ref _minTime);
@@ -448,5 +448,6 @@ public enum PerformanceGainTrend
     Good,
     Excellent
 }
+
 
 #endregion

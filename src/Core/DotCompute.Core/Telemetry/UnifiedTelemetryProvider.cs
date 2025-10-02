@@ -151,9 +151,9 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             var activity = _activitySource.StartActivity(name, kind);
 
             // Add standard tags
-            activity?.SetTag("service.name", _configuration.ServiceName);
-            activity?.SetTag("service.version", _configuration.ServiceVersion);
-            activity?.SetTag("dotcompute.component", "telemetry");
+            _ = (activity?.SetTag("service.name", _configuration.ServiceName));
+            _ = (activity?.SetTag("service.version", _configuration.ServiceVersion));
+            _ = (activity?.SetTag("dotcompute.component", "telemetry"));
 
             return activity;
         }
@@ -179,19 +179,19 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
             if (activity != null)
             {
-                activity.SetTag("event.name", name);
-                activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O"));
+                _ = activity.SetTag("event.name", name);
+                _ = activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O"));
 
                 if (attributes != null)
                 {
                     foreach (var attr in attributes)
                     {
-                        activity.SetTag($"event.{attr.Key}", attr.Value?.ToString());
+                        _ = activity.SetTag($"event.{attr.Key}", attr.Value?.ToString());
                     }
                 }
 
                 // Add event to activity
-                activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, new ActivityTagsCollection(
+                _ = activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, new ActivityTagsCollection(
                     attributes?.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value)) ?? Enumerable.Empty<KeyValuePair<string, object?>>())
                 ));
             }
@@ -474,17 +474,17 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
     private void InitializeStandardMetrics()
     {
         // Initialize commonly used metrics to avoid creation overhead
-        _counters.TryAdd("operation.timer.started", _meter.CreateCounter<long>("operation.timer.started", "count", "Number of operation timers started"));
-        _counters.TryAdd("memory.allocation.count", _meter.CreateCounter<long>("memory.allocation.count", "count", "Number of memory allocations"));
-        _counters.TryAdd("gc.count", _meter.CreateCounter<long>("gc.count", "count", "Number of garbage collections"));
-        _counters.TryAdd("accelerator.utilization.samples", _meter.CreateCounter<long>("accelerator.utilization.samples", "count", "Number of accelerator utilization samples"));
-        _counters.TryAdd("kernel.execution.count", _meter.CreateCounter<long>("kernel.execution.count", "count", "Number of kernel executions"));
-        _counters.TryAdd("memory.transfer.count", _meter.CreateCounter<long>("memory.transfer.count", "count", "Number of memory transfers"));
+        _ = _counters.TryAdd("operation.timer.started", _meter.CreateCounter<long>("operation.timer.started", "count", "Number of operation timers started"));
+        _ = _counters.TryAdd("memory.allocation.count", _meter.CreateCounter<long>("memory.allocation.count", "count", "Number of memory allocations"));
+        _ = _counters.TryAdd("gc.count", _meter.CreateCounter<long>("gc.count", "count", "Number of garbage collections"));
+        _ = _counters.TryAdd("accelerator.utilization.samples", _meter.CreateCounter<long>("accelerator.utilization.samples", "count", "Number of accelerator utilization samples"));
+        _ = _counters.TryAdd("kernel.execution.count", _meter.CreateCounter<long>("kernel.execution.count", "count", "Number of kernel executions"));
+        _ = _counters.TryAdd("memory.transfer.count", _meter.CreateCounter<long>("memory.transfer.count", "count", "Number of memory transfers"));
 
-        _histograms.TryAdd("memory.allocation.bytes", _meter.CreateHistogram<double>("memory.allocation.bytes", "bytes", "Memory allocation size"));
-        _histograms.TryAdd("kernel.execution.duration.ms", _meter.CreateHistogram<double>("kernel.execution.duration.ms", "ms", "Kernel execution duration"));
-        _histograms.TryAdd("memory.transfer.bytes", _meter.CreateHistogram<double>("memory.transfer.bytes", "bytes", "Memory transfer size"));
-        _histograms.TryAdd("memory.transfer.duration.ms", _meter.CreateHistogram<double>("memory.transfer.duration.ms", "ms", "Memory transfer duration"));
+        _ = _histograms.TryAdd("memory.allocation.bytes", _meter.CreateHistogram<double>("memory.allocation.bytes", "bytes", "Memory allocation size"));
+        _ = _histograms.TryAdd("kernel.execution.duration.ms", _meter.CreateHistogram<double>("kernel.execution.duration.ms", "ms", "Kernel execution duration"));
+        _ = _histograms.TryAdd("memory.transfer.bytes", _meter.CreateHistogram<double>("memory.transfer.bytes", "bytes", "Memory transfer size"));
+        _ = _histograms.TryAdd("memory.transfer.duration.ms", _meter.CreateHistogram<double>("memory.transfer.duration.ms", "ms", "Memory transfer duration"));
     }
 
     private static string ExtractKernelCategory(string kernelName)
@@ -549,7 +549,7 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
         {
             foreach (var tag in tags)
             {
-                _activity.SetTag(tag.Key, tag.Value?.ToString());
+                _ = _activity.SetTag(tag.Key, tag.Value?.ToString());
             }
         }
     }
@@ -644,8 +644,8 @@ internal sealed class ProductionOperationTimer : Abstractions.Interfaces.Telemet
             RecordTiming(_operationName, _stopwatch.Elapsed);
 
             // Complete the activity
-            _activity?.SetTag("duration.ms", _stopwatch.Elapsed.TotalMilliseconds);
-            _activity?.SetStatus(ActivityStatusCode.Ok);
+            _ = (_activity?.SetTag("duration.ms", _stopwatch.Elapsed.TotalMilliseconds));
+            _ = (_activity?.SetStatus(ActivityStatusCode.Ok));
 
             // Fire completion event
             OperationCompleted?.Invoke(this, new OperationTimingEventArgs

@@ -6,7 +6,6 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Tests.Common;
-using Xunit;
 
 namespace DotCompute.Backends.CPU.Tests;
 

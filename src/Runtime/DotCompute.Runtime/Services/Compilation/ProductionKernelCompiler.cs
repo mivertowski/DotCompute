@@ -81,7 +81,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
             _statistics.RecordCompilation(elapsedMs, success: true);
 
             // Cache the compiled kernel
-            _kernelCache.TryAdd(cacheKey, new WeakReference<ProductionCompiledKernel>(compiledKernel));
+            _ = _kernelCache.TryAdd(cacheKey, new WeakReference<ProductionCompiledKernel>(compiledKernel));
 
             _logger.LogDebugMessage($"Compiled kernel {definition.Name} in {elapsedMs}ms");
             return compiledKernel;

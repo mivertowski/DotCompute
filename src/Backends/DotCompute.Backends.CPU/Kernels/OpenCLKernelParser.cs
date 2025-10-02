@@ -4,7 +4,6 @@
 using System.Text.RegularExpressions;
 using DotCompute.Backends.CPU.Kernels.Types;
 using Microsoft.Extensions.Logging;
-using DotCompute.Backends.CPU.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
 

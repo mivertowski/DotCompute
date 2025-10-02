@@ -3,9 +3,7 @@
 
 using global::System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
-using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-using DeviceMemory = DotCompute.Abstractions.DeviceMemory;
 
 namespace DotCompute.Memory;
 
@@ -102,12 +100,14 @@ public sealed partial class UnifiedBuffer<T>
         if (_hostArray == null)
         {
             _hostArray = new T[Length];
-            
+
+
             if (_pinnedHandle.IsAllocated)
             {
                 _pinnedHandle.Free();
             }
-            
+
+
             _pinnedHandle = GCHandle.Alloc(_hostArray, GCHandleType.Pinned);
         }
         else if (!_pinnedHandle.IsAllocated)
@@ -186,7 +186,8 @@ public sealed partial class UnifiedBuffer<T>
     public void Resize(int newLength)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         if (newLength <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(newLength), "Length must be positive");
@@ -213,13 +214,17 @@ public sealed partial class UnifiedBuffer<T>
 
             // Update length and recalculate size
             var newSizeInBytes = newLength * Unsafe.SizeOf<T>();
-            
+
             // Use reflection to update readonly properties
-            var lengthField = typeof(UnifiedBuffer<T>).GetField("<Length>k__BackingField", 
+
+            var lengthField = typeof(UnifiedBuffer<T>).GetField("<Length>k__BackingField",
+
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             lengthField?.SetValue(this, newLength);
-            
-            var sizeField = typeof(UnifiedBuffer<T>).GetField("<SizeInBytes>k__BackingField", 
+
+
+            var sizeField = typeof(UnifiedBuffer<T>).GetField("<SizeInBytes>k__BackingField",
+
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             sizeField?.SetValue(this, newSizeInBytes);
 
@@ -272,7 +277,7 @@ public sealed partial class UnifiedBuffer<T>
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 
@@ -293,7 +298,7 @@ public sealed partial class UnifiedBuffer<T>
         }
         finally
         {
-            _asyncLock.Release();
+            _ = _asyncLock.Release();
         }
     }
 }

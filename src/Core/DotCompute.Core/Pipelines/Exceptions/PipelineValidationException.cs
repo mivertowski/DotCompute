@@ -4,7 +4,6 @@
 // </copyright>
 
 using DotCompute.Abstractions.Validation;
-using DotCompute.Abstractions.Models.Pipelines;
 using ValidationWarning = DotCompute.Abstractions.Validation.ValidationWarning;
 
 namespace DotCompute.Core.Pipelines.Exceptions;

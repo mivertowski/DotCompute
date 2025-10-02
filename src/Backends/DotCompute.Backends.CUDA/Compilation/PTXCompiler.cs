@@ -286,7 +286,7 @@ internal static class PTXCompiler
     /// </summary>
     private static void StoreMangledNames(string kernelName, Dictionary<string, string> mangledNames)
     {
-        _mangledNamesCache.AddOrUpdate(kernelName, mangledNames, (_, _) => mangledNames);
+        _ = _mangledNamesCache.AddOrUpdate(kernelName, mangledNames, (_, _) => mangledNames);
     }
 
     /// <summary>

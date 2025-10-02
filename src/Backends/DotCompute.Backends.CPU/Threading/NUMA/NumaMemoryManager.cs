@@ -72,8 +72,8 @@ public sealed class NumaMemoryManager : IDisposable
                     IsActive = true
                 };
 
-                _allocations.TryAdd(ptr, allocationInfo);
-                Interlocked.Add(ref _totalAllocatedBytes, (long)size);
+                _ = _allocations.TryAdd(ptr, allocationInfo);
+                _ = Interlocked.Add(ref _totalAllocatedBytes, (long)size);
 
                 return ptr;
             }
@@ -193,7 +193,7 @@ public sealed class NumaMemoryManager : IDisposable
                     if (_allocations.TryGetValue(ptr, out var info))
                     {
                         var updatedInfo = info with { AllocationMethod = AllocationType.Interleaved };
-                        _allocations.TryUpdate(ptr, updatedInfo, info);
+                        _ = _allocations.TryUpdate(ptr, updatedInfo, info);
                     }
                     return ptr;
                 }
@@ -235,8 +235,8 @@ public sealed class NumaMemoryManager : IDisposable
                     IsActive = true
                 };
 
-                _allocations.TryAdd(ptr, allocationInfo);
-                Interlocked.Add(ref _totalAllocatedBytes, (long)size);
+                _ = _allocations.TryAdd(ptr, allocationInfo);
+                _ = Interlocked.Add(ref _totalAllocatedBytes, (long)size);
             }
 
             return ptr;
@@ -278,7 +278,7 @@ public sealed class NumaMemoryManager : IDisposable
                         break;
                 }
 
-                Interlocked.Add(ref _totalAllocatedBytes, -(long)allocationInfo.Size);
+                _ = Interlocked.Add(ref _totalAllocatedBytes, -(long)allocationInfo.Size);
                 return true;
             }
         }
@@ -444,7 +444,7 @@ public sealed class NumaMemoryManager : IDisposable
             // Free all managed allocations
             foreach (var ptr in _allocations.Keys.ToArray())
             {
-                Free(ptr);
+                _ = Free(ptr);
             }
 
             _allocations.Clear();

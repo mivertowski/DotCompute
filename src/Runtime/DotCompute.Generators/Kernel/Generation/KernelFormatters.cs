@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace DotCompute.Generators.Kernel.Generation;
@@ -453,15 +452,15 @@ public sealed class KernelFormatters
             if (currentLine.Length + word.Length + 1 > maxLength && currentLine.Length > 0)
             {
                 lines.Add(currentLine.ToString());
-                currentLine.Clear();
+                _ = currentLine.Clear();
             }
 
             if (currentLine.Length > 0)
             {
-                currentLine.Append(' ');
+                _ = currentLine.Append(' ');
             }
 
-            currentLine.Append(word);
+            _ = currentLine.Append(word);
         }
 
         if (currentLine.Length > 0)

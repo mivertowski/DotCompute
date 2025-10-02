@@ -1,11 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Interfaces.Pipelines;
-using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Pipelines.Models;
 
@@ -177,5 +174,6 @@ public interface IOptimizationStrategy
     public Task<IKernelPipeline> OptimizeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
     public Task<IKernelPipeline> ApplyAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default);
 }
+
 
 // IKernelPipeline is defined in DotCompute.Abstractions.Interfaces.Pipelines namespace

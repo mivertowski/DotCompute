@@ -295,7 +295,7 @@ public class SecurityManager : IDisposable
                 var typeRef = metadataReader.GetTypeReference((TypeReferenceHandle)memberRef.Parent);
                 var typeName = metadataReader.GetString(typeRef.Name);
 
-                if (dangerousAttributes.Any(dangerous => typeName.Contains(dangerous)))
+                if (dangerousAttributes.Any(typeName.Contains))
                 {
                     analysis.SuspiciousPatterns.Add($"Dangerous attribute: {typeName}");
                 }

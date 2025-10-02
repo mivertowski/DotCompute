@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
-using DotCompute.Backends.CUDA.Execution.Graph.Enums;
 using CudaGraphCaptureModeCanonical = DotCompute.Backends.CUDA.Types.CudaGraphCaptureMode;
 
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types

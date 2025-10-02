@@ -1,15 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DotCompute.Generators.Models.Kernel;
-using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Kernel;
 
@@ -83,11 +79,11 @@ internal sealed class CSharpToCudaTranslator
         {
             if (IsSharedMemoryCandidate(variable))
             {
-                _sharedMemoryVariables.Add(variable.Name);
+                _ = _sharedMemoryVariables.Add(variable.Name);
             }
             else if (IsConstantMemoryCandidate(variable))
             {
-                _constantMemoryVariables.Add(variable.Name);
+                _ = _constantMemoryVariables.Add(variable.Name);
             }
         }
     }
@@ -172,12 +168,12 @@ internal sealed class CSharpToCudaTranslator
 
             if (variable.Initializer != null)
             {
-                _output.Append(" = ");
+                _ = _output.Append(" = ");
                 TranslateExpression(variable.Initializer.Value);
             }
 
 
-            _output.AppendLine(";");
+            _ = _output.AppendLine(";");
         }
     }
 
@@ -185,7 +181,7 @@ internal sealed class CSharpToCudaTranslator
     {
         WriteIndented("");
         TranslateExpression(exprStmt.Expression);
-        _output.AppendLine(";");
+        _ = _output.AppendLine(";");
     }
 
     private void TranslateForStatement(ForStatementSyntax forStmt)
@@ -206,15 +202,15 @@ internal sealed class CSharpToCudaTranslator
             var type = ConvertToCudaType(forStmt.Declaration.Type.ToString());
             foreach (var variable in forStmt.Declaration.Variables)
             {
-                _output.Append($"{type} {variable.Identifier.Text}");
+                _ = _output.Append($"{type} {variable.Identifier.Text}");
                 if (variable.Initializer != null)
                 {
-                    _output.Append(" = ");
+                    _ = _output.Append(" = ");
                     TranslateExpression(variable.Initializer.Value);
                 }
             }
         }
-        _output.Append("; ");
+        _ = _output.Append("; ");
 
         // Condition
 
@@ -222,7 +218,7 @@ internal sealed class CSharpToCudaTranslator
         {
             TranslateExpression(forStmt.Condition);
         }
-        _output.Append("; ");
+        _ = _output.Append("; ");
 
         // Incrementors
 
@@ -232,7 +228,7 @@ internal sealed class CSharpToCudaTranslator
             {
                 if (i > 0)
                 {
-                    _output.Append(", ");
+                    _ = _output.Append(", ");
                 }
 
 
@@ -241,7 +237,7 @@ internal sealed class CSharpToCudaTranslator
         }
 
 
-        _output.AppendLine(") {");
+        _ = _output.AppendLine(") {");
         _indentLevel++;
         TranslateStatement(forStmt.Statement);
         _indentLevel--;
@@ -277,7 +273,7 @@ internal sealed class CSharpToCudaTranslator
     {
         WriteIndented("if (");
         TranslateExpression(ifStmt.Condition);
-        _output.AppendLine(") {");
+        _ = _output.AppendLine(") {");
 
 
         _indentLevel++;
@@ -295,7 +291,7 @@ internal sealed class CSharpToCudaTranslator
             }
             else
             {
-                _output.AppendLine("{");
+                _ = _output.AppendLine("{");
                 _indentLevel++;
                 TranslateStatement(ifStmt.Else.Statement);
                 _indentLevel--;
@@ -312,7 +308,7 @@ internal sealed class CSharpToCudaTranslator
     {
         WriteIndented("while (");
         TranslateExpression(whileStmt.Condition);
-        _output.AppendLine(") {");
+        _ = _output.AppendLine(") {");
 
 
         _indentLevel++;
@@ -328,10 +324,10 @@ internal sealed class CSharpToCudaTranslator
         WriteIndented("return");
         if (returnStmt.Expression != null)
         {
-            _output.Append(" ");
+            _ = _output.Append(" ");
             TranslateExpression(returnStmt.Expression);
         }
-        _output.AppendLine(";");
+        _ = _output.AppendLine(";");
     }
 
     private void TranslateExpression(ExpressionSyntax expression)
@@ -360,31 +356,31 @@ internal sealed class CSharpToCudaTranslator
                 TranslateAssignment(assignment);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _output.Append("(");
+                _ = _output.Append("(");
                 TranslateExpression(parenthesized.Expression);
-                _output.Append(")");
+                _ = _output.Append(")");
                 break;
             case PostfixUnaryExpressionSyntax postfix:
                 TranslateExpression(postfix.Operand);
-                _output.Append(GetOperatorString(postfix.OperatorToken));
+                _ = _output.Append(GetOperatorString(postfix.OperatorToken));
                 break;
             case PrefixUnaryExpressionSyntax prefix:
-                _output.Append(GetOperatorString(prefix.OperatorToken));
+                _ = _output.Append(GetOperatorString(prefix.OperatorToken));
                 TranslateExpression(prefix.Operand);
                 break;
             case CastExpressionSyntax cast:
-                _output.Append($"({ConvertToCudaType(cast.Type.ToString())})");
+                _ = _output.Append($"({ConvertToCudaType(cast.Type.ToString())})");
                 TranslateExpression(cast.Expression);
                 break;
             case ConditionalExpressionSyntax conditional:
                 TranslateExpression(conditional.Condition);
-                _output.Append(" ? ");
+                _ = _output.Append(" ? ");
                 TranslateExpression(conditional.WhenTrue);
-                _output.Append(" : ");
+                _ = _output.Append(" : ");
                 TranslateExpression(conditional.WhenFalse);
                 break;
             default:
-                _output.Append($"/* Unsupported expression: {expression.Kind()} */");
+                _ = _output.Append($"/* Unsupported expression: {expression.Kind()} */");
                 break;
         }
     }
@@ -392,7 +388,7 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateBinaryExpression(BinaryExpressionSyntax binary)
     {
         TranslateExpression(binary.Left);
-        _output.Append($" {GetOperatorString(binary.OperatorToken)} ");
+        _ = _output.Append($" {GetOperatorString(binary.OperatorToken)} ");
         TranslateExpression(binary.Right);
     }
 
@@ -405,15 +401,15 @@ internal sealed class CSharpToCudaTranslator
 
         if (literal.Token.Text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
         {
-            _output.Append(literal.Token.Text);
+            _ = _output.Append(literal.Token.Text);
         }
         else if (literal.Token.Value is float || literal.Token.Value is double)
         {
-            _output.Append($"{value}f");
+            _ = _output.Append($"{value}f");
         }
         else
         {
-            _output.Append(value);
+            _ = _output.Append(value);
         }
     }
 
@@ -427,22 +423,22 @@ internal sealed class CSharpToCudaTranslator
         {
             case "Math":
                 // Will be handled in member access
-                _output.Append(name);
+                _ = _output.Append(name);
                 break;
             case "length":
             case "Length":
                 // Map to our kernel's length parameter
-                _output.Append("length");
+                _ = _output.Append("length");
                 break;
             default:
                 // Check if this is a parameter that needs special handling
                 if (_variableMapping.TryGetValue(name, out var mappedName))
                 {
-                    _output.Append(mappedName);
+                    _ = _output.Append(mappedName);
                 }
                 else
                 {
-                    _output.Append(name);
+                    _ = _output.Append(name);
                 }
                 break;
         }
@@ -451,14 +447,14 @@ internal sealed class CSharpToCudaTranslator
     private void TranslateElementAccess(ElementAccessExpressionSyntax elementAccess)
     {
         TranslateExpression(elementAccess.Expression);
-        _output.Append("[");
+        _ = _output.Append("[");
 
 
         for (var i = 0; i < elementAccess.ArgumentList.Arguments.Count; i++)
         {
             if (i > 0)
             {
-                _output.Append(", ");
+                _ = _output.Append(", ");
             }
 
 
@@ -466,7 +462,7 @@ internal sealed class CSharpToCudaTranslator
         }
 
 
-        _output.Append("]");
+        _ = _output.Append("]");
     }
 
     private void TranslateInvocation(InvocationExpressionSyntax invocation)
@@ -482,7 +478,7 @@ internal sealed class CSharpToCudaTranslator
             {
                 // Translate Math functions to CUDA equivalents
                 var cudaFunction = TranslateMathFunction(methodName);
-                _output.Append(cudaFunction);
+                _ = _output.Append(cudaFunction);
             }
             else if (IsAtomicOperation(methodName))
             {
@@ -501,18 +497,18 @@ internal sealed class CSharpToCudaTranslator
         }
 
 
-        _output.Append("(");
+        _ = _output.Append("(");
         for (var i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
         {
             if (i > 0)
             {
-                _output.Append(", ");
+                _ = _output.Append(", ");
             }
 
 
             TranslateExpression(invocation.ArgumentList.Arguments[i].Expression);
         }
-        _output.Append(")");
+        _ = _output.Append(")");
     }
 
     private void TranslateMemberAccess(MemberAccessExpressionSyntax memberAccess)
@@ -524,20 +520,20 @@ internal sealed class CSharpToCudaTranslator
         if (memberName == "Length" || memberName == "Count")
         {
             // For arrays and spans, this maps to our length parameter
-            _output.Append("length");
+            _ = _output.Append("length");
         }
         else
         {
             TranslateExpression(memberAccess.Expression);
-            _output.Append(".");
-            _output.Append(memberName);
+            _ = _output.Append(".");
+            _ = _output.Append(memberName);
         }
     }
 
     private void TranslateAssignment(AssignmentExpressionSyntax assignment)
     {
         TranslateExpression(assignment.Left);
-        _output.Append($" {GetOperatorString(assignment.OperatorToken)} ");
+        _ = _output.Append($" {GetOperatorString(assignment.OperatorToken)} ");
         TranslateExpression(assignment.Right);
     }
 
@@ -567,19 +563,19 @@ internal sealed class CSharpToCudaTranslator
         };
 
 
-        _output.Append(atomicOp);
-        _output.Append("(");
+        _ = _output.Append(atomicOp);
+        _ = _output.Append("(");
 
 
         if (methodName == "InterlockedIncrement")
         {
             TranslateExpression(arguments.Arguments[0].Expression);
-            _output.Append(", 1");
+            _ = _output.Append(", 1");
         }
         else if (methodName == "InterlockedDecrement")
         {
             TranslateExpression(arguments.Arguments[0].Expression);
-            _output.Append(", 1");
+            _ = _output.Append(", 1");
         }
         else
         {
@@ -587,7 +583,7 @@ internal sealed class CSharpToCudaTranslator
             {
                 if (i > 0)
                 {
-                    _output.Append(", ");
+                    _ = _output.Append(", ");
                 }
 
 
@@ -596,7 +592,7 @@ internal sealed class CSharpToCudaTranslator
         }
 
 
-        _output.Append(")");
+        _ = _output.Append(")");
     }
 
     private static string TranslateMathFunction(string methodName)
@@ -705,11 +701,11 @@ internal sealed class CSharpToCudaTranslator
     {
         for (var i = 0; i < _indentLevel * 4; i++)
         {
-            _output.Append(' ');
+            _ = _output.Append(' ');
         }
         if (!string.IsNullOrEmpty(text))
         {
-            _output.Append(text);
+            _ = _output.Append(text);
         }
     }
 
@@ -727,50 +723,50 @@ internal sealed class CSharpToCudaTranslator
         if (inputBuffers.Count > 0 && outputBuffers.Count > 0)
         {
             // Element-wise operation pattern
-            sb.AppendLine("            // Element-wise kernel operation");
-            sb.AppendLine($"            if (i < length) {{");
+            _ = sb.AppendLine("            // Element-wise kernel operation");
+            _ = sb.AppendLine($"            if (i < length) {{");
 
 
             if (inputBuffers.Count == 2 && outputBuffers.Count == 1)
             {
                 // Binary operation
-                sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i] + {inputBuffers[1].Name}[i];");
+                _ = sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i] + {inputBuffers[1].Name}[i];");
             }
             else if (inputBuffers.Count == 1 && outputBuffers.Count == 1)
             {
                 // Unary operation
                 if (scalarParams.Count > 0)
                 {
-                    sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i] * {scalarParams[0].Name};");
+                    _ = sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i] * {scalarParams[0].Name};");
                 }
                 else
                 {
-                    sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i];");
+                    _ = sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i];");
                 }
             }
             else
             {
                 // Generic pattern
-                sb.AppendLine($"                // Process element at index i");
-                sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i];");
+                _ = sb.AppendLine($"                // Process element at index i");
+                _ = sb.AppendLine($"                {outputBuffers[0].Name}[i] = {inputBuffers[0].Name}[i];");
             }
 
 
-            sb.AppendLine("            }");
+            _ = sb.AppendLine("            }");
         }
         else if (outputBuffers.Count > 0)
         {
             // Generation pattern
-            sb.AppendLine("            // Generation kernel operation");
-            sb.AppendLine($"            if (i < length) {{");
-            sb.AppendLine($"                {outputBuffers[0].Name}[i] = (float)i;");
-            sb.AppendLine("            }");
+            _ = sb.AppendLine("            // Generation kernel operation");
+            _ = sb.AppendLine($"            if (i < length) {{");
+            _ = sb.AppendLine($"                {outputBuffers[0].Name}[i] = (float)i;");
+            _ = sb.AppendLine("            }");
         }
         else
         {
             // Reduction or custom pattern
-            sb.AppendLine("            // Custom kernel operation");
-            sb.AppendLine("            // Implement kernel logic here");
+            _ = sb.AppendLine("            // Custom kernel operation");
+            _ = sb.AppendLine("            // Implement kernel logic here");
         }
 
 

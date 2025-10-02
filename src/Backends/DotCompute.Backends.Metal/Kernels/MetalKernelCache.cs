@@ -1,17 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Interfaces.Kernels;
-using ICompiledKernel = DotCompute.Abstractions.Interfaces.Kernels.ICompiledKernel;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Kernels;
@@ -29,8 +23,9 @@ public sealed class MetalKernelCache : IDisposable
     private readonly Timer _cleanupTimer;
     private readonly string? _persistentCachePath;
     private readonly object _statsLock = new();
-    
+
     // Performance metrics
+
     private long _hitCount;
     private long _missCount;
     private long _evictionCount;
@@ -68,13 +63,14 @@ public sealed class MetalKernelCache : IDisposable
         _maxCacheSize = maxCacheSize;
         _defaultTtl = defaultTtl ?? TimeSpan.FromHours(1);
         _persistentCachePath = persistentCachePath;
-        
+
         // Initialize persistent cache directory if specified
+
         if (!string.IsNullOrEmpty(_persistentCachePath))
         {
             try
             {
-                Directory.CreateDirectory(_persistentCachePath);
+                _ = Directory.CreateDirectory(_persistentCachePath);
                 LoadPersistentCache();
             }
             catch (Exception ex)
@@ -82,14 +78,16 @@ public sealed class MetalKernelCache : IDisposable
                 _logger.LogWarning(ex, "Failed to initialize persistent cache at {Path}", _persistentCachePath);
             }
         }
-        
+
         // Setup periodic cleanup every 5 minutes
+
         _cleanupTimer = new Timer(
             PerformCleanup,
             null,
             TimeSpan.FromMinutes(5),
             TimeSpan.FromMinutes(5));
-        
+
+
         _logger.LogInformation(
             "Metal kernel cache initialized with max size {MaxSize}, TTL {TTL}, persistent path: {Path}",
             maxCacheSize, _defaultTtl, _persistentCachePath ?? "none");
@@ -106,14 +104,17 @@ public sealed class MetalKernelCache : IDisposable
         out IntPtr pipelineState)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var startTime = Environment.TickCount64;
         library = IntPtr.Zero;
         function = IntPtr.Zero;
         pipelineState = IntPtr.Zero;
-        
+
+
         var cacheKey = ComputeCacheKey(definition, options);
-        
+
+
         _cacheLock.EnterReadLock();
         try
         {
@@ -125,26 +126,31 @@ public sealed class MetalKernelCache : IDisposable
                     // Update access time and count for LRU
                     entry.LastAccessTime = DateTimeOffset.UtcNow;
                     entry.AccessCount = entry.AccessCount + 1;
-                    
+
+
                     library = entry.Library;
                     function = entry.Function;
                     pipelineState = entry.PipelineState;
-                    
-                    Interlocked.Increment(ref _hitCount);
-                    
+
+
+                    _ = Interlocked.Increment(ref _hitCount);
+
+
                     var elapsed = Environment.TickCount64 - startTime;
-                    Interlocked.Add(ref _totalCacheTimeMs, elapsed);
-                    
+                    _ = Interlocked.Add(ref _totalCacheTimeMs, elapsed);
+
+
                     _logger.LogDebug(
                         "Cache hit for kernel '{Name}' (key: {Key}, access count: {Count})",
                         definition.Name, cacheKey[..8], entry.AccessCount);
-                    
+
+
                     return true;
                 }
                 else
                 {
                     // Entry is expired or invalid, remove it
-                    _cache.TryRemove(cacheKey, out _);
+                    _ = _cache.TryRemove(cacheKey, out _);
                 }
             }
         }
@@ -152,23 +158,27 @@ public sealed class MetalKernelCache : IDisposable
         {
             _cacheLock.ExitReadLock();
         }
-        
+
         // Try to load from persistent cache if available
+
         if (TryLoadFromPersistentCache(cacheKey, out var persistentEntry))
         {
             library = persistentEntry.Library;
             function = persistentEntry.Function;
             pipelineState = persistentEntry.PipelineState;
-            
+
             // Re-add to memory cache
+
             AddToMemoryCache(definition, options, library, function, pipelineState, persistentEntry.BinaryData);
-            
-            Interlocked.Increment(ref _hitCount);
+
+
+            _ = Interlocked.Increment(ref _hitCount);
             _logger.LogDebug("Cache hit from persistent storage for kernel '{Name}'", definition.Name);
             return true;
         }
-        
-        Interlocked.Increment(ref _missCount);
+
+
+        _ = Interlocked.Increment(ref _missCount);
         _logger.LogDebug("Cache miss for kernel '{Name}' (key: {Key})", definition.Name, cacheKey[..8]);
         return false;
     }
@@ -186,10 +196,12 @@ public sealed class MetalKernelCache : IDisposable
         long compilationTimeMs = 0)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var cacheKey = ComputeCacheKey(definition, options);
         var expirationTime = DateTimeOffset.UtcNow.Add(_defaultTtl);
-        
+
+
         var entry = new CacheEntry
         {
             Library = library,
@@ -205,7 +217,8 @@ public sealed class MetalKernelCache : IDisposable
             CompilationTimeMs = compilationTimeMs,
             SizeInBytes = EstimateKernelSize(definition, binaryData)
         };
-        
+
+
         _cacheLock.EnterWriteLock();
         try
         {
@@ -214,21 +227,25 @@ public sealed class MetalKernelCache : IDisposable
             {
                 EvictLeastRecentlyUsed();
             }
-            
+
             // Add or update the cache entry
-            _cache.AddOrUpdate(cacheKey, entry, (key, oldEntry) => entry);
-            
+
+            _ = _cache.AddOrUpdate(cacheKey, entry, (key, oldEntry) => entry);
+
             // Record compilation time for metrics
+
             if (compilationTimeMs > 0)
             {
-                Interlocked.Add(ref _totalCompilationTimeMs, compilationTimeMs);
+                _ = Interlocked.Add(ref _totalCompilationTimeMs, compilationTimeMs);
             }
-            
+
+
             _logger.LogDebug(
                 "Cached kernel '{Name}' (key: {Key}, size: {Size} bytes, compilation: {Time}ms)",
                 definition.Name, cacheKey[..8], entry.SizeInBytes, compilationTimeMs);
-            
+
             // Save to persistent cache if enabled
+
             if (!string.IsNullOrEmpty(_persistentCachePath) && binaryData != null)
             {
                 SaveToPersistentCache(cacheKey, entry);
@@ -246,9 +263,11 @@ public sealed class MetalKernelCache : IDisposable
     public bool InvalidateKernel(KernelDefinition definition, CompilationOptions options)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         var cacheKey = ComputeCacheKey(definition, options);
-        
+
+
         _cacheLock.EnterWriteLock();
         try
         {
@@ -256,8 +275,10 @@ public sealed class MetalKernelCache : IDisposable
             {
                 // Remove from persistent cache
                 RemoveFromPersistentCache(cacheKey);
-                
-                _logger.LogInformation("Invalidated cached kernel '{Name}' (key: {Key})", 
+
+
+                _logger.LogInformation("Invalidated cached kernel '{Name}' (key: {Key})",
+
                     definition.Name, cacheKey[..8]);
                 return true;
             }
@@ -266,7 +287,8 @@ public sealed class MetalKernelCache : IDisposable
         {
             _cacheLock.ExitWriteLock();
         }
-        
+
+
         return false;
     }
 
@@ -276,14 +298,16 @@ public sealed class MetalKernelCache : IDisposable
     public void Clear()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
+
         _cacheLock.EnterWriteLock();
         try
         {
             var count = _cache.Count;
             _cache.Clear();
-            
+
             // Clear persistent cache
+
             if (!string.IsNullOrEmpty(_persistentCachePath))
             {
                 try
@@ -298,7 +322,8 @@ public sealed class MetalKernelCache : IDisposable
                     _logger.LogWarning(ex, "Failed to clear persistent cache");
                 }
             }
-            
+
+
             _logger.LogInformation("Cleared {Count} kernels from cache", count);
         }
         finally
@@ -317,13 +342,15 @@ public sealed class MetalKernelCache : IDisposable
             var hits = Interlocked.Read(ref _hitCount);
             var misses = Interlocked.Read(ref _missCount);
             var total = hits + misses;
-            
+
+
             long totalMemory = 0;
             foreach (var entry in _cache.Values)
             {
                 totalMemory += entry.SizeInBytes;
             }
-            
+
+
             return new CacheStatistics
             {
                 HitCount = hits,
@@ -346,29 +373,29 @@ public sealed class MetalKernelCache : IDisposable
         var inputBuilder = new StringBuilder();
 
         // Include all relevant properties in the cache key
-        inputBuilder.Append(definition.Name);
-        inputBuilder.Append('|');
-        inputBuilder.Append(definition.Source);
-        inputBuilder.Append('|');
-        inputBuilder.Append(definition.EntryPoint);
-        inputBuilder.Append('|');
-        inputBuilder.Append(definition.Language);
-        inputBuilder.Append('|');
-        inputBuilder.Append(options.OptimizationLevel);
-        inputBuilder.Append('|');
-        inputBuilder.Append(options.GenerateDebugInfo);
-        inputBuilder.Append('|');
-        inputBuilder.Append(options.FastMath);
-        inputBuilder.Append('|');
-        inputBuilder.Append(options.TargetArchitecture ?? "default");
+        _ = inputBuilder.Append(definition.Name);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(definition.Source);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(definition.EntryPoint);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(definition.Language);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(options.OptimizationLevel);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(options.GenerateDebugInfo);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(options.FastMath);
+        _ = inputBuilder.Append('|');
+        _ = inputBuilder.Append(options.TargetArchitecture ?? "default");
 
         // Add additional flags if any
         if (options.AdditionalFlags != null)
         {
             foreach (var flag in options.AdditionalFlags)
             {
-                inputBuilder.Append('|');
-                inputBuilder.Append(flag);
+                _ = inputBuilder.Append('|');
+                _ = inputBuilder.Append(flag);
             }
         }
 
@@ -384,19 +411,23 @@ public sealed class MetalKernelCache : IDisposable
     {
         // Base size for object overhead
         long size = 256;
-        
+
         // Add binary data size if available
+
         if (binaryData != null)
         {
             size += binaryData.Length;
         }
-        
+
         // Add source code size
+
         size += definition.Source?.Length ?? 0;
-        
+
         // Add estimated metadata size
+
         size += 2048; // Pipeline state and function metadata
-        
+
+
         return size;
     }
 
@@ -406,22 +437,26 @@ public sealed class MetalKernelCache : IDisposable
     private void EvictLeastRecentlyUsed()
     {
         const int evictionBatchSize = 10; // Evict 10 entries at a time
-        
+
+
         var entriesToEvict = _cache.Values
             .OrderBy(e => e.LastAccessTime)
             .ThenBy(e => e.AccessCount)
             .Take(evictionBatchSize)
             .ToList();
-        
+
+
         foreach (var entry in entriesToEvict)
         {
             if (_cache.TryRemove(entry.CacheKey, out _))
             {
-                Interlocked.Increment(ref _evictionCount);
-                
+                _ = Interlocked.Increment(ref _evictionCount);
+
+
                 _logger.LogDebug(
                     "Evicted kernel '{Name}' (key: {Key}, last access: {LastAccess})",
-                    entry.Definition.Name, 
+                    entry.Definition.Name,
+
                     entry.CacheKey[..8],
                     entry.LastAccessTime);
             }
@@ -454,8 +489,9 @@ public sealed class MetalKernelCache : IDisposable
             BinaryData = binaryData,
             SizeInBytes = EstimateKernelSize(definition, binaryData)
         };
-        
-        _cache.TryAdd(cacheKey, entry);
+
+
+        _ = _cache.TryAdd(cacheKey, entry);
     }
 
     /// <summary>
@@ -464,7 +500,8 @@ public sealed class MetalKernelCache : IDisposable
     private bool TryLoadFromPersistentCache(string cacheKey, out CacheEntry entry)
     {
         entry = null!;
-        
+
+
         if (string.IsNullOrEmpty(_persistentCachePath))
         {
             return false;
@@ -473,7 +510,8 @@ public sealed class MetalKernelCache : IDisposable
 
         var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
         var metaPath = Path.Combine(_persistentCachePath, $"{cacheKey}.meta");
-        
+
+
         if (!File.Exists(filePath) || !File.Exists(metaPath))
         {
 
@@ -485,11 +523,12 @@ public sealed class MetalKernelCache : IDisposable
         {
             var binaryData = File.ReadAllBytes(filePath);
             var metaJson = File.ReadAllText(metaPath);
-            
+
             // TODO: Deserialize metadata and reconstruct Metal objects from binary
             // This requires runtime compilation from the binary data
             // For now, return false as we can't fully reconstruct the kernel
-            
+
+
             return false;
         }
         catch (Exception ex)
@@ -514,11 +553,13 @@ public sealed class MetalKernelCache : IDisposable
         {
             var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
             var metaPath = Path.Combine(_persistentCachePath, $"{cacheKey}.meta");
-            
+
             // Save binary data
+
             File.WriteAllBytes(filePath, entry.BinaryData);
-            
+
             // Save metadata
+
             var metadata = new
             {
                 entry.Definition.Name,
@@ -526,10 +567,12 @@ public sealed class MetalKernelCache : IDisposable
                 CompilationTime = entry.CompilationTimeMs,
                 CreatedTime = entry.CreatedTime
             };
-            
+
+
             var metaJson = System.Text.Json.JsonSerializer.Serialize(metadata);
             File.WriteAllText(metaPath, metaJson);
-            
+
+
             _logger.LogDebug("Saved kernel to persistent cache: {Key}", cacheKey[..8]);
         }
         catch (Exception ex)
@@ -553,7 +596,8 @@ public sealed class MetalKernelCache : IDisposable
         {
             var filePath = Path.Combine(_persistentCachePath, $"{cacheKey}.metallib");
             var metaPath = Path.Combine(_persistentCachePath, $"{cacheKey}.meta");
-            
+
+
             if (File.Exists(filePath))
             {
                 File.Delete(filePath);
@@ -586,9 +630,10 @@ public sealed class MetalKernelCache : IDisposable
         {
             var metaFiles = Directory.GetFiles(_persistentCachePath, "*.meta");
             _logger.LogInformation("Found {Count} cached kernels in persistent storage", metaFiles.Length);
-            
+
             // Note: We can't fully reconstruct Metal objects from binary data at startup
             // This would require deferred loading when the kernel is first requested
+
         }
         catch (Exception ex)
         {
@@ -614,7 +659,8 @@ public sealed class MetalKernelCache : IDisposable
             var expiredEntries = _cache.Values
                 .Where(e => e.IsExpired)
                 .ToList();
-            
+
+
             foreach (var entry in expiredEntries)
             {
                 if (_cache.TryRemove(entry.CacheKey, out _))
@@ -625,7 +671,8 @@ public sealed class MetalKernelCache : IDisposable
                         entry.Definition.Name, entry.CacheKey[..8]);
                 }
             }
-            
+
+
             if (expiredEntries.Count > 0)
             {
                 _logger.LogInformation("Cleaned up {Count} expired kernel cache entries", expiredEntries.Count);
@@ -653,7 +700,8 @@ public sealed class MetalKernelCache : IDisposable
 
 
         _cleanupTimer?.Dispose();
-        
+
+
         _cacheLock.EnterWriteLock();
         try
         {
@@ -663,14 +711,17 @@ public sealed class MetalKernelCache : IDisposable
         {
             _cacheLock.ExitWriteLock();
         }
-        
+
+
         _cacheLock.Dispose();
-        
+
+
         var stats = GetStatistics();
         _logger.LogInformation(
             "Metal kernel cache disposed - Hit rate: {HitRate:P2}, Total hits: {Hits}, Total misses: {Misses}, Evictions: {Evictions}",
             stats.HitRate, stats.HitCount, stats.MissCount, stats.EvictionCount);
-        
+
+
         _disposed = true;
     }
 
@@ -692,7 +743,8 @@ public sealed class MetalKernelCache : IDisposable
         public byte[]? BinaryData { get; init; }
         public long CompilationTimeMs { get; init; }
         public long AccessCount { get; set; }
-        
+
+
         public bool IsExpired => DateTimeOffset.UtcNow > ExpirationTime;
     }
 }

@@ -3,8 +3,6 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
 using DotCompute.Backends.CUDA.Factory;
 using DotCompute.Tests.Common.Specialized;
-using Xunit.Abstractions;
-using Xunit;
 using DotCompute.Core.Extensions;
 
 namespace DotCompute.Hardware.Cuda.Tests;

@@ -345,7 +345,8 @@ public class MetalGraphStatistics
             // Update performance metrics
             TotalGpuExecutionTimeMs += executionTimeMs;
             AverageGpuExecutionTimeMs = TotalGpuExecutionTimeMs / SuccessfulExecutions;
-            
+
+
             MinGpuExecutionTimeMs = Math.Min(MinGpuExecutionTimeMs, executionTimeMs);
             MaxGpuExecutionTimeMs = Math.Max(MaxGpuExecutionTimeMs, executionTimeMs);
 
@@ -395,7 +396,8 @@ public class MetalGraphStatistics
         MemoryCoalescingsApplied += coalescingsApplied;
         CommandBufferBatchingsApplied += batchingsApplied;
         OptimizationSpeedup = Math.Max(OptimizationSpeedup, speedupFactor);
-        
+
+
         LastUpdated = DateTime.UtcNow;
     }
 
@@ -426,8 +428,9 @@ public class MetalGraphStatistics
         if (!string.IsNullOrEmpty(errorMessage))
         {
             ErrorFrequency[errorMessage] = ErrorFrequency.GetValueOrDefault(errorMessage, 0) + 1;
-            
+
             // Update most common error
+
             if (MostCommonError == null || ErrorFrequency[errorMessage] > ErrorFrequency.GetValueOrDefault(MostCommonError, 0))
             {
                 MostCommonError = errorMessage;
@@ -447,7 +450,8 @@ public class MetalGraphStatistics
         FailedExecutions = 0;
         LastExecutedAt = null;
         LastSuccessfulExecutionAt = null;
-        
+
+
         TotalGpuExecutionTimeMs = 0;
         AverageGpuExecutionTimeMs = 0;
         MinGpuExecutionTimeMs = double.MaxValue;
@@ -455,34 +459,39 @@ public class MetalGraphStatistics
         LastExecutionTimeMs = 0;
         TotalCpuOverheadTimeMs = 0;
         AverageCpuOverheadTimeMs = 0;
-        
+
+
         TotalMemoryTransferred = 0;
         AverageMemoryTransferred = 0;
         PeakMemoryUsage = 0;
         TotalMemoryAllocations = 0;
         AverageMemoryBandwidthGBps = 0;
         PeakMemoryBandwidthGBps = 0;
-        
+
+
         TotalCommandBuffers = 0;
         AverageCommandBuffersPerExecution = 0;
         TotalComputeEncoders = 0;
         TotalBlitEncoders = 0;
         AverageCommandBufferUtilization = 0;
-        
+
+
         OptimizationPasses = 0;
         KernelFusionsApplied = 0;
         MemoryCoalescingsApplied = 0;
         CommandBufferBatchingsApplied = 0;
         OptimizationSpeedup = 1.0;
         MemoryReductionFactor = 1.0;
-        
+
+
         NodeExecutionFailures = 0;
         MemoryAllocationFailures = 0;
         CommandBufferCreationFailures = 0;
         TimeoutOccurrences = 0;
         MostCommonError = null;
         ErrorFrequency.Clear();
-        
+
+
         LastUpdated = DateTime.UtcNow;
     }
 
@@ -493,61 +502,69 @@ public class MetalGraphStatistics
     public string GenerateReport()
     {
         var report = new System.Text.StringBuilder();
-        
-        report.AppendLine($"Metal Graph Statistics Report for '{Name}'");
-        report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        report.AppendLine(new string('=', 60));
-        
+
+
+        _ = report.AppendLine($"Metal Graph Statistics Report for '{Name}'");
+        _ = report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = report.AppendLine(new string('=', 60));
+
         // Graph structure
-        report.AppendLine("\nGraph Structure:");
-        report.AppendLine($"  Total Nodes: {NodeCount:N0}");
-        report.AppendLine($"  Kernel Nodes: {KernelNodeCount:N0}");
-        report.AppendLine($"  Memory Operation Nodes: {MemoryOperationNodeCount:N0}");
-        report.AppendLine($"  Critical Path Length: {CriticalPathLength:N0}");
-        report.AppendLine($"  Parallelism Opportunities: {ParallelismOpportunities:N0}");
-        
+
+        _ = report.AppendLine("\nGraph Structure:");
+        _ = report.AppendLine($"  Total Nodes: {NodeCount:N0}");
+        _ = report.AppendLine($"  Kernel Nodes: {KernelNodeCount:N0}");
+        _ = report.AppendLine($"  Memory Operation Nodes: {MemoryOperationNodeCount:N0}");
+        _ = report.AppendLine($"  Critical Path Length: {CriticalPathLength:N0}");
+        _ = report.AppendLine($"  Parallelism Opportunities: {ParallelismOpportunities:N0}");
+
         // Execution statistics
-        report.AppendLine("\nExecution Statistics:");
-        report.AppendLine($"  Total Executions: {TotalExecutions:N0}");
-        report.AppendLine($"  Success Rate: {SuccessRate:F1}%");
-        report.AppendLine($"  Last Executed: {LastExecutedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never"}");
-        
+
+        _ = report.AppendLine("\nExecution Statistics:");
+        _ = report.AppendLine($"  Total Executions: {TotalExecutions:N0}");
+        _ = report.AppendLine($"  Success Rate: {SuccessRate:F1}%");
+        _ = report.AppendLine($"  Last Executed: {LastExecutedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never"}");
+
         // Performance metrics
-        report.AppendLine("\nPerformance Metrics:");
-        report.AppendLine($"  Average GPU Time: {AverageGpuExecutionTimeMs:F2} ms");
-        report.AppendLine($"  Min/Max GPU Time: {MinGpuExecutionTimeMs:F2} / {MaxGpuExecutionTimeMs:F2} ms");
-        report.AppendLine($"  Throughput: {ThroughputExecutionsPerSec:F2} executions/sec");
-        report.AppendLine($"  Efficiency Ratio: {EfficiencyRatio:F2}");
-        report.AppendLine($"  Resource Utilization: {ResourceUtilizationScore:F1}%");
-        
+
+        _ = report.AppendLine("\nPerformance Metrics:");
+        _ = report.AppendLine($"  Average GPU Time: {AverageGpuExecutionTimeMs:F2} ms");
+        _ = report.AppendLine($"  Min/Max GPU Time: {MinGpuExecutionTimeMs:F2} / {MaxGpuExecutionTimeMs:F2} ms");
+        _ = report.AppendLine($"  Throughput: {ThroughputExecutionsPerSec:F2} executions/sec");
+        _ = report.AppendLine($"  Efficiency Ratio: {EfficiencyRatio:F2}");
+        _ = report.AppendLine($"  Resource Utilization: {ResourceUtilizationScore:F1}%");
+
         // Memory statistics
-        report.AppendLine("\nMemory Statistics:");
-        report.AppendLine($"  Total Memory Transferred: {TotalMemoryTransferred:N0} bytes");
-        report.AppendLine($"  Average Memory Bandwidth: {AverageMemoryBandwidthGBps:F2} GB/s");
-        report.AppendLine($"  Peak Memory Bandwidth: {PeakMemoryBandwidthGBps:F2} GB/s");
-        
+
+        _ = report.AppendLine("\nMemory Statistics:");
+        _ = report.AppendLine($"  Total Memory Transferred: {TotalMemoryTransferred:N0} bytes");
+        _ = report.AppendLine($"  Average Memory Bandwidth: {AverageMemoryBandwidthGBps:F2} GB/s");
+        _ = report.AppendLine($"  Peak Memory Bandwidth: {PeakMemoryBandwidthGBps:F2} GB/s");
+
         // Optimization results
+
         if (OptimizationPasses > 0)
         {
-            report.AppendLine("\nOptimization Results:");
-            report.AppendLine($"  Optimization Passes: {OptimizationPasses:N0}");
-            report.AppendLine($"  Kernel Fusions Applied: {KernelFusionsApplied:N0}");
-            report.AppendLine($"  Performance Speedup: {OptimizationSpeedup:F2}x");
+            _ = report.AppendLine("\nOptimization Results:");
+            _ = report.AppendLine($"  Optimization Passes: {OptimizationPasses:N0}");
+            _ = report.AppendLine($"  Kernel Fusions Applied: {KernelFusionsApplied:N0}");
+            _ = report.AppendLine($"  Performance Speedup: {OptimizationSpeedup:F2}x");
         }
-        
+
         // Error summary
+
         if (FailedExecutions > 0)
         {
-            report.AppendLine("\nError Summary:");
-            report.AppendLine($"  Failed Executions: {FailedExecutions:N0}");
-            report.AppendLine($"  Node Execution Failures: {NodeExecutionFailures:N0}");
-            report.AppendLine($"  Memory Allocation Failures: {MemoryAllocationFailures:N0}");
+            _ = report.AppendLine("\nError Summary:");
+            _ = report.AppendLine($"  Failed Executions: {FailedExecutions:N0}");
+            _ = report.AppendLine($"  Node Execution Failures: {NodeExecutionFailures:N0}");
+            _ = report.AppendLine($"  Memory Allocation Failures: {MemoryAllocationFailures:N0}");
             if (!string.IsNullOrEmpty(MostCommonError))
             {
-                report.AppendLine($"  Most Common Error: {MostCommonError}");
+                _ = report.AppendLine($"  Most Common Error: {MostCommonError}");
             }
         }
-        
+
+
         return report.ToString();
     }
 

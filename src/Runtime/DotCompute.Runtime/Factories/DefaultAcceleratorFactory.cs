@@ -295,6 +295,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
 
 
+
         => _logger.LogDebugMessage("Registered default accelerator providers");
 
     private async Task<IAcceleratorProvider> GetOrCreateProviderAsync(AcceleratorType type, IServiceProvider serviceProvider, CancellationToken cancellationToken)

@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Core.Pipelines;
-using DotCompute.Core.Pipelines.Models;
 using DotCompute.Tests.Common.Generators;
 using DotCompute.Tests.Common.Mocks;
 using Microsoft.Extensions.DependencyInjection;
@@ -229,16 +228,16 @@ public abstract class PipelineTestBase : IDisposable
     /// <param name="services">Service collection to configure</param>
     private void ConfigureServicesInternal(IServiceCollection services)
     {
-        services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<PipelineTestDataGenerator>();
+        _ = services.AddLogging(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Debug));
+        _ = services.AddSingleton<PipelineTestDataGenerator>();
 
         // Register core DotCompute services (would normally be done by extension methods)
 
-        services.AddSingleton<IKernelChainBuilder, KernelChainBuilder>();
+        _ = services.AddSingleton<IKernelChainBuilder, KernelChainBuilder>();
 
         // Mock services for testing
 
-        services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
+        _ = services.AddSingleton<IComputeOrchestrator, MockComputeOrchestrator>();
 
         // Call virtual method for derived class customization
 

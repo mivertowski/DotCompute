@@ -2,8 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Core.Recovery.Types;
-using DotCompute.Core.Recovery.Configuration;
 
 namespace DotCompute.Core.Recovery.Models;
 

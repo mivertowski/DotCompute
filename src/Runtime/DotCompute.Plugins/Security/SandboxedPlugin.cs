@@ -147,6 +147,7 @@ public class SandboxedPlugin : IDisposable
 
 
 
+
         => await Task.CompletedTask.ConfigureAwait(false);
 
     /// <summary>

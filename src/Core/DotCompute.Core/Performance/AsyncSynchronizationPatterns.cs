@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
-using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Performance;
 
@@ -185,11 +184,11 @@ public sealed class AsyncChannel<T> : IDisposable
     {
         if (error != null)
         {
-            _writer.TryComplete(error);
+            _ = _writer.TryComplete(error);
         }
         else
         {
-            _writer.TryComplete();
+            _ = _writer.TryComplete();
         }
 
     }
@@ -254,7 +253,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
 
 
         _workQueues[preferredWorker].Enqueue(work);
-        _workAvailable[preferredWorker].Release();
+        _ = _workAvailable[preferredWorker].Release();
     }
 
     /// <summary>
@@ -315,7 +314,7 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
         foreach (var work in workItems)
         {
             _workQueues[currentWorker].Enqueue(work);
-            _workAvailable[currentWorker].Release();
+            _ = _workAvailable[currentWorker].Release();
             currentWorker = (currentWorker + 1) % _workerCount;
         }
     }
@@ -437,7 +436,7 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
             _resources.Push(resource);
         }
 
-        _semaphore.Release();
+        _ = _semaphore.Release();
     }
 
     /// <summary>
@@ -612,7 +611,7 @@ public sealed class AsyncBarrier : IDisposable
         }
         else
         {
-            await currentCompletion.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            _ = await currentCompletion.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

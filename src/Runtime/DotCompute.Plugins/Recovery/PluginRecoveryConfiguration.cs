@@ -164,4 +164,5 @@ public sealed class PluginRecoveryConfiguration
     public static PluginRecoveryConfiguration Default { get; } = new PluginRecoveryConfiguration();
 }
 
+
 // CircuitBreakerState enum moved to PluginRecoveryTypes.cs to avoid duplication

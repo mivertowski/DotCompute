@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Debugging;
@@ -212,7 +211,7 @@ public sealed class MemoryProfilingData
 /// <summary>
 /// Represents CPU profiling data for kernel execution.
 /// </summary>
- public sealed class CpuProfilingData
+public sealed class CpuProfilingData
 {
     /// <summary>
     /// Gets the CPU usage percentage (0-100).

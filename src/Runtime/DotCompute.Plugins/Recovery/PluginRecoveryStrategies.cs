@@ -4,8 +4,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.Loader;
-using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using RecoveryResult = DotCompute.Abstractions.Interfaces.Recovery.RecoveryResult;
@@ -200,7 +198,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
             var container = new IsolatedPluginContainer(context.PluginId, plugin, _logger, _config);
             await container.InitializeAsync(cancellationToken);
 
-            _isolatedPlugins.TryAdd(context.PluginId, container);
+            _ = _isolatedPlugins.TryAdd(context.PluginId, container);
 
             stopwatch.Stop();
 
@@ -283,7 +281,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
             }
 
             // Unload current version
-            await UnloadPluginAsync(context.PluginId, cancellationToken);
+            _ = await UnloadPluginAsync(context.PluginId, cancellationToken);
 
             // Load stable version
             var rollbackResult = await LoadPluginVersionAsync(context.PluginId, stableVersion, cancellationToken);
@@ -401,12 +399,12 @@ public sealed class PluginRecoveryStrategies : IDisposable
         // Filter based on constraints
         if (healthState.RestartCount >= _config.MaxRestarts)
         {
-            candidates.Remove(PluginRecoveryStrategy.RestartPlugin);
+            _ = candidates.Remove(PluginRecoveryStrategy.RestartPlugin);
         }
 
         if (!_config.EnablePluginIsolation)
         {
-            candidates.Remove(PluginRecoveryStrategy.IsolatePlugin);
+            _ = candidates.Remove(PluginRecoveryStrategy.IsolatePlugin);
         }
 
         // Add shutdown as last resort
@@ -465,7 +463,7 @@ public sealed class PluginRecoveryStrategies : IDisposable
 
     private void RecordStrategyResult(string strategyKey, bool success, TimeSpan executionTime)
     {
-        _strategyMetrics.AddOrUpdate(strategyKey,
+        _ = _strategyMetrics.AddOrUpdate(strategyKey,
             new StrategyEffectiveness
             {
                 TotalAttempts = 1,
@@ -581,5 +579,6 @@ public sealed record StrategyEffectiveness
     public TimeSpan AverageExecutionTime { get; init; }
     public DateTimeOffset LastUsed { get; init; }
 }
+
 
 // PluginRecoveryStrategy enum already defined in PluginRecoveryTypes.cs

@@ -4,12 +4,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using global::System.Runtime.Loader;
 using DotCompute.Core.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
-using DotCompute.Plugins.Logging;
-using CorePluginHealthStatus = DotCompute.Core.Recovery.PluginHealthStatus;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -374,7 +371,7 @@ public sealed class PluginRecoveryOrchestrator : BaseRecoveryStrategy<PluginReco
         {
             if (context.Plugin is IBackendPlugin backendPlugin)
             {
-                await IsolatePluginAsync(context.PluginId, backendPlugin, cancellationToken);
+                _ = await IsolatePluginAsync(context.PluginId, backendPlugin, cancellationToken);
                 return RecoveryResult.CreateSuccess("Plugin isolated successfully", "IsolatePlugin");
             }
             return RecoveryResult.CreateFailure("No plugin instance available for isolation", "IsolatePlugin");

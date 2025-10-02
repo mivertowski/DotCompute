@@ -3,7 +3,6 @@
 
 using System.Text;
 using DotCompute.Generators.Models;
-using DotCompute.Generators.Utils;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DotCompute.Generators.Backend.CPU;

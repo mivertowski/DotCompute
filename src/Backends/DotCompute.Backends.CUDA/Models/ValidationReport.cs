@@ -1,6 +1,3 @@
-using DotCompute.Abstractions;
-using System;
-using System.Collections.Generic;
 using DotCompute.Backends.CUDA.Types;
 
 namespace DotCompute.Backends.CUDA.Models

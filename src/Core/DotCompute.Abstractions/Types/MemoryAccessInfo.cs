@@ -1,5 +1,3 @@
-using System;
-
 namespace DotCompute.Abstractions.Types
 {
     /// <summary>

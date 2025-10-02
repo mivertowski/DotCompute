@@ -1,13 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Logging;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Telemetry.Options;
 using DotCompute.Abstractions.Telemetry.Types;
 using DotCompute.Abstractions.Telemetry.Context;
 using DotCompute.Abstractions.Telemetry.Traces;
 using DotCompute.Abstractions.Telemetry.Profiles;
-using DotCompute.Abstractions.Telemetry.Providers;
 
 namespace DotCompute.Abstractions.Interfaces.Telemetry;
 
@@ -195,4 +192,5 @@ public interface ILogSink : IDisposable
 
 // TODO: Default implementation of the telemetry service should be moved to DotCompute.Core.
 // This concrete implementation is temporarily removed from abstractions project.
+
 // internal sealed class TelemetryService : ITelemetryService, IDisposable - MOVED TO IMPLEMENTATION PROJECT

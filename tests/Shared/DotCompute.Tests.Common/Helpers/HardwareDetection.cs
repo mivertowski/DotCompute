@@ -1181,7 +1181,8 @@ public static class HardwareDetection
             if (Directory.Exists("/sys/class/drm"))
             {
                 return Directory.GetDirectories("/sys/class/drm", "card*")
-                    .Count(dir => {
+                    .Count(dir =>
+                    {
                         try
                         {
                             var devicePath = Path.Combine(dir, "device", "vendor");
@@ -1248,7 +1249,8 @@ public static class HardwareDetection
             if (Directory.Exists("/sys/class/drm"))
             {
                 return Directory.GetDirectories("/sys/class/drm", "card*")
-                    .Count(dir => {
+                    .Count(dir =>
+                    {
                         try
                         {
                             var devicePath = Path.Combine(dir, "device", "vendor");

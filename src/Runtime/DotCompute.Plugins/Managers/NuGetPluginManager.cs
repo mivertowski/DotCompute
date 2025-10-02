@@ -221,7 +221,7 @@ public class NuGetPluginManager : IDisposable
             }
 
             // Unload from the loader
-            await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
+            _ = await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
 
             // Remove from managed plugins
             _ = _managedPlugins.TryRemove(pluginId, out _);

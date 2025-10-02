@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using DotCompute.Backends.CUDA.ErrorHandling.Types;
 
 namespace DotCompute.Core.Models

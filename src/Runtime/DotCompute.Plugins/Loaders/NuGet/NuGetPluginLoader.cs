@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Reflection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Loaders.NuGet.Types;
@@ -36,38 +35,38 @@ internal sealed class NuGetPluginLoader : IDisposable
             {
                 _logger.LogInformation("Loading NuGet plugin: {PackageId} from {Path}", packageId, packagePath);
 
-            // Create isolated load context
-            var contextName = $"NuGetPlugin_{packageId}_{Guid.NewGuid():N}";
-            var loadContext = new NuGetPluginLoadContext(packagePath, contextName, isCollectible: true);
+                // Create isolated load context
+                var contextName = $"NuGetPlugin_{packageId}_{Guid.NewGuid():N}";
+                var loadContext = new NuGetPluginLoadContext(packagePath, contextName, isCollectible: true);
 
-            _loadContexts[packageId] = loadContext;
+                _loadContexts[packageId] = loadContext;
 
-            // Load the plugin assembly
-            var assemblyPath = Path.Combine(packagePath, $"{packageId}.dll");
-            if (!File.Exists(assemblyPath))
-            {
-                _logger.LogError("Plugin assembly not found: {AssemblyPath}", assemblyPath);
-                return null;
-            }
+                // Load the plugin assembly
+                var assemblyPath = Path.Combine(packagePath, $"{packageId}.dll");
+                if (!File.Exists(assemblyPath))
+                {
+                    _logger.LogError("Plugin assembly not found: {AssemblyPath}", assemblyPath);
+                    return null;
+                }
 
-            var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+                var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
 
-            // Find and instantiate plugin type
-            var pluginType = assembly.GetTypes()
-                .FirstOrDefault(t => typeof(IBackendPlugin).IsAssignableFrom(t) && !t.IsAbstract);
+                // Find and instantiate plugin type
+                var pluginType = assembly.GetTypes()
+                    .FirstOrDefault(t => typeof(IBackendPlugin).IsAssignableFrom(t) && !t.IsAbstract);
 
-            if (pluginType == null)
-            {
-                _logger.LogError("No IBackendPlugin implementation found in assembly: {AssemblyName}", assembly.FullName);
-                return null;
-            }
+                if (pluginType == null)
+                {
+                    _logger.LogError("No IBackendPlugin implementation found in assembly: {AssemblyName}", assembly.FullName);
+                    return null;
+                }
 
-            var plugin = Activator.CreateInstance(pluginType) as IBackendPlugin;
-            if (plugin == null)
-            {
-                _logger.LogError("Failed to create plugin instance of type: {PluginType}", pluginType.FullName);
-                return null;
-            }
+                var plugin = Activator.CreateInstance(pluginType) as IBackendPlugin;
+                if (plugin == null)
+                {
+                    _logger.LogError("Failed to create plugin instance of type: {PluginType}", pluginType.FullName);
+                    return null;
+                }
 
                 _logger.LogInformation("Successfully loaded plugin: {PackageId}", packageId);
                 return plugin;
@@ -127,7 +126,7 @@ internal sealed class NuGetPluginLoader : IDisposable
         if (_loadContexts.TryGetValue(packageId, out var context))
         {
             context.Unload();
-            _loadContexts.Remove(packageId);
+            _ = _loadContexts.Remove(packageId);
             _logger.LogInformation("Unloaded plugin: {PackageId}", packageId);
         }
     }
@@ -300,7 +299,7 @@ internal sealed class NuGetPluginLoader : IDisposable
                 if (_loadContexts.TryGetValue(packageId, out var context))
                 {
                     context.Unload();
-                    _loadContexts.Remove(packageId);
+                    _ = _loadContexts.Remove(packageId);
                     _logger.LogInformation("Unloaded plugin: {PackageId}", packageId);
                 }
             }, cancellationToken);

@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Execution;
@@ -225,11 +224,9 @@ public sealed class MetalEventManager : IDisposable
             try
             {
                 await Task.Run(() =>
-                {
                     // Wait for Metal event completion
                     // This would use MTLSharedEvent waiting mechanisms
-                    Thread.SpinWait(1000); // Placeholder
-                }, combinedCts.Token).ConfigureAwait(false);
+                    Thread.SpinWait(1000), combinedCts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
             {
@@ -239,10 +236,8 @@ public sealed class MetalEventManager : IDisposable
         else
         {
             await Task.Run(() =>
-            {
                 // Wait for Metal event completion without timeout
-                Thread.SpinWait(1000); // Placeholder
-            }, cancellationToken).ConfigureAwait(false);
+                Thread.SpinWait(1000), cancellationToken).ConfigureAwait(false);
         }
 
         eventInfo.CompletedAt = DateTimeOffset.UtcNow;

@@ -5,7 +5,6 @@ using global::System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Kernels.Types;
-using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Kernels.Models;
@@ -117,6 +116,7 @@ public sealed class CpuAccelerator : BaseAccelerator
     /// <inheritdoc/>
     protected override ValueTask SynchronizeCoreAsync(CancellationToken cancellationToken)
         // CPU operations are synchronous by default
+
 
 
         => ValueTask.CompletedTask;

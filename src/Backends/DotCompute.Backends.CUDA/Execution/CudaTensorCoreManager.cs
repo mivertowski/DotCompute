@@ -3,10 +3,8 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
-using DotCompute.Backends.CUDA.Execution.Metrics;
 using DotCompute.Backends.CUDA.Advanced.Features.Models;
 using DotCompute.Backends.CUDA.Types.Native;
 using DotCompute.Abstractions.Interfaces.Kernels;

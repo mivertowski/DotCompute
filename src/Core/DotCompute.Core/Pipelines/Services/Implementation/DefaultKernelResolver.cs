@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
@@ -63,7 +62,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
                 // Cache the result (even if null to avoid repeated lookups)
 
-                _kernelCache.TryAdd(kernelName, kernel);
+                _ = _kernelCache.TryAdd(kernelName, kernel);
 
 
                 if (kernel != null)
@@ -176,7 +175,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                     {
                         // Pre-resolve kernels for better performance
                         var kernel = await ResolveKernelFromDiscoveryServiceAsync(kernelName, cancellationToken);
-                        _kernelCache.TryAdd(kernelName, kernel);
+                        _ = _kernelCache.TryAdd(kernelName, kernel);
                     }
                 }
 

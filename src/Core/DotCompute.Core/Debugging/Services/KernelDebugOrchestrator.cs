@@ -5,17 +5,13 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
-using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Debugging.Analytics;
-using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
-using KernelDebugProfiler = DotCompute.Core.Debugging.KernelDebugProfiler;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve type conflicts
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
-using CoreKernelProfiler = DotCompute.Core.Debugging.Core.KernelProfiler;
 
 namespace DotCompute.Core.Debugging.Services;
 
@@ -375,7 +371,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         ArgumentException.ThrowIfNullOrEmpty(backendType);
         ArgumentNullException.ThrowIfNull(accelerator);
 
-        _accelerators.TryAdd(backendType, accelerator);
+        _ = _accelerators.TryAdd(backendType, accelerator);
         _validator.RegisterAccelerator(backendType, accelerator);
 
         _logger.LogDebug("Registered accelerator for backend: {BackendType}", backendType);
@@ -394,7 +390,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         var removed = _accelerators.TryRemove(backendType, out _);
         if (removed)
         {
-            _validator.UnregisterAccelerator(backendType);
+            _ = _validator.UnregisterAccelerator(backendType);
             _logger.LogDebug("Unregistered accelerator for backend: {BackendType}", backendType);
         }
 

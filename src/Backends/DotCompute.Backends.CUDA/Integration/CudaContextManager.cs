@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Backends.CUDA.Types;
 using DotCompute.Backends.CUDA.Types.Native;
-using DotCompute.Backends.CUDA.Types.Native.Enums;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Logging;
@@ -234,13 +232,16 @@ public sealed class CudaContextManager : IDisposable
                     {
                         // Switch to context and perform cleanup
                         SwitchToDevice(deviceId);
-                        
+
                         // Clear any pending errors
-                        CudaRuntime.cudaGetLastError();
-                        
+
+                        _ = CudaRuntime.cudaGetLastError();
+
                         // Synchronize to ensure all operations complete
+
                         Synchronize();
-                        
+
+
                         _logger.LogDebugMessage($"Maintenance completed for device {deviceId}");
                     }
                     catch (Exception ex)
@@ -292,7 +293,7 @@ public sealed class CudaContextManager : IDisposable
         result = CudaRuntime.cudaSetDevice(deviceId);
         if (result != CudaError.Success)
         {
-            CudaRuntime.cudaDevicePrimaryCtxRelease(deviceId); // Cleanup on failure
+            _ = CudaRuntime.cudaDevicePrimaryCtxRelease(deviceId); // Cleanup on failure
             throw new InvalidOperationException($"Failed to make context current for device {deviceId}: {result}");
         }
 
@@ -306,8 +307,9 @@ public sealed class CudaContextManager : IDisposable
             // Check if context is valid and responsive
             var originalDevice = -1;
             var getDeviceResult = CudaRuntime.cudaGetDevice(out originalDevice);
-            
+
             // Switch to the context's device
+
             var setDeviceResult = CudaRuntime.cudaSetDevice(deviceId);
             if (setDeviceResult != CudaError.Success)
             {
@@ -316,11 +318,12 @@ public sealed class CudaContextManager : IDisposable
 
             // Check for any pending errors
             var lastError = CudaRuntime.cudaGetLastError();
-            
+
             // Restore original device
+
             if (getDeviceResult == CudaError.Success)
             {
-                CudaRuntime.cudaSetDevice(originalDevice);
+                _ = CudaRuntime.cudaSetDevice(originalDevice);
             }
 
             // Context is healthy if no errors
@@ -343,27 +346,27 @@ public sealed class CudaContextManager : IDisposable
             if (profile.HasMatrixOperations)
             {
                 // Prefer shared memory for matrix operations
-                CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferShared);
+                _ = CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferShared);
             }
             else if (profile.IsMemoryIntensive)
             {
                 // Prefer L1 cache for memory-intensive workloads
-                CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferCache);
+                _ = CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferCache);
             }
             else
             {
                 // Use default cache configuration
-                CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferNone);
+                _ = CudaRuntime.cudaDeviceSetCacheConfig(CudaFuncCache.PreferNone);
             }
 
             // Set shared memory bank size for high-precision workloads
             if (profile.RequiresHighPrecision)
             {
-                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeEightByte);
+                _ = CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeEightByte);
             }
             else
             {
-                CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeFourByte);
+                _ = CudaRuntime.cudaDeviceSetSharedMemConfig(CudaSharedMemConfig.BankSizeFourByte);
             }
         }
         catch (Exception ex)
@@ -386,7 +389,7 @@ public sealed class CudaContextManager : IDisposable
                         try
                         {
                             // Release primary context
-                            CudaRuntime.cudaDevicePrimaryCtxRelease(deviceId);
+                            _ = CudaRuntime.cudaDevicePrimaryCtxRelease(deviceId);
                         }
                         catch (Exception ex)
                         {
@@ -394,7 +397,8 @@ public sealed class CudaContextManager : IDisposable
                         }
                     }
                 }
-                
+
+
                 _deviceContexts.Clear();
             }
 

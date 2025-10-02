@@ -62,7 +62,8 @@ public sealed class MetalCommandEncoder : IDisposable
         }
 
         MetalNative.SetComputePipelineState(_encoder, pipelineState);
-        
+
+
         var command = new MetalEncoderCommand
         {
             Type = MetalCommandType.SetPipelineState,
@@ -105,7 +106,8 @@ public sealed class MetalCommandEncoder : IDisposable
         };
         _commands.Add(command);
 
-        _logger.LogTrace("Bound buffer {Buffer} at offset {Offset} to index {Index} on encoder {Encoder}", 
+        _logger.LogTrace("Bound buffer {Buffer} at offset {Offset} to index {Index} on encoder {Encoder}",
+
             buffer, offset, index, _encoder);
     }
 
@@ -184,18 +186,26 @@ public sealed class MetalCommandEncoder : IDisposable
         ValidateDispatchSize(gridSize, nameof(gridSize));
         ValidateDispatchSize(threadgroupSize, nameof(threadgroupSize));
 
-        var nativeGridSize = new MetalSize 
-        { 
-            width = (nuint)gridSize.Width, 
-            height = (nuint)gridSize.Height, 
-            depth = (nuint)gridSize.Depth 
+        var nativeGridSize = new MetalSize
+        {
+
+            width = (nuint)gridSize.Width,
+
+            height = (nuint)gridSize.Height,
+
+            depth = (nuint)gridSize.Depth
         };
-        
-        var nativeThreadgroupSize = new MetalSize 
-        { 
-            width = (nuint)threadgroupSize.Width, 
-            height = (nuint)threadgroupSize.Height, 
-            depth = (nuint)threadgroupSize.Depth 
+
+
+        var nativeThreadgroupSize = new MetalSize
+        {
+
+            width = (nuint)threadgroupSize.Width,
+
+            height = (nuint)threadgroupSize.Height,
+
+            depth = (nuint)threadgroupSize.Depth
+
         };
 
         MetalNative.DispatchThreadgroups(_encoder, nativeGridSize, nativeThreadgroupSize);
@@ -383,7 +393,7 @@ public sealed class MetalCommandEncoderFactory
     public MetalCommandEncoder CreateEncoder(IntPtr commandBuffer)
     {
         var encoder = new MetalCommandEncoder(commandBuffer, _logger);
-        _activeEncoders.AddOrUpdate(commandBuffer, 1, (_, count) => count + 1);
+        _ = _activeEncoders.AddOrUpdate(commandBuffer, 1, (_, count) => count + 1);
         return encoder;
     }
 
@@ -397,10 +407,10 @@ public sealed class MetalCommandEncoderFactory
 
     internal void NotifyEncoderDisposed(IntPtr commandBuffer)
     {
-        _activeEncoders.AddOrUpdate(commandBuffer, 0, (_, count) => Math.Max(0, count - 1));
+        _ = _activeEncoders.AddOrUpdate(commandBuffer, 0, (_, count) => Math.Max(0, count - 1));
         if (_activeEncoders[commandBuffer] == 0)
         {
-            _activeEncoders.TryRemove(commandBuffer, out _);
+            _ = _activeEncoders.TryRemove(commandBuffer, out _);
         }
     }
 }
@@ -479,5 +489,6 @@ public sealed class MetalEncodingStats
     public TimeSpan? EncodingDuration { get; set; }
     public Dictionary<MetalCommandType, int> CommandTypeCounts { get; set; } = [];
 }
+
 
 #endregion

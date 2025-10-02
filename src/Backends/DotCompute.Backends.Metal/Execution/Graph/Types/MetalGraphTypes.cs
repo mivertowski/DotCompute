@@ -10,22 +10,23 @@ public enum MetalNodeType
 {
     /// <summary>A compute kernel execution node.</summary>
     Kernel,
-    
+
     /// <summary>A memory copy operation node.</summary>
     MemoryCopy,
-    
+
     /// <summary>A memory set operation node.</summary>
     MemorySet,
-    
+
     /// <summary>A synchronization barrier node.</summary>
     Barrier,
-    
+
     /// <summary>A host callback function node.</summary>
     HostCallback,
-    
+
     /// <summary>An event recording node.</summary>
     EventRecord,
-    
+
+
     /// <summary>An event wait node.</summary>
     EventWait
 }
@@ -37,10 +38,11 @@ public enum MetalCommandEncoderType
 {
     /// <summary>Compute command encoder for kernel dispatch.</summary>
     Compute,
-    
+
     /// <summary>Blit command encoder for memory operations.</summary>
     Blit,
-    
+
+
     /// <summary>Render command encoder for rendering operations.</summary>
     Render
 }
@@ -52,10 +54,12 @@ public struct MTLSize
 {
     /// <summary>Width dimension.</summary>
     public uint width;
-    
+
+
     /// <summary>Height dimension.</summary>
     public uint height;
-    
+
+
     /// <summary>Depth dimension.</summary>
     public uint depth;
 
@@ -250,7 +254,8 @@ public class MetalOptimizationParameters
     public List<string> Validate()
     {
         var errors = new List<string>();
-        
+
+
         if (MaxFusionDepth < 1 || MaxFusionDepth > 10)
         {
             errors.Add("MaxFusionDepth must be between 1 and 10");
@@ -275,13 +280,14 @@ public enum MetalMemoryStrategy
 {
     /// <summary>Minimize memory usage at the cost of some performance.</summary>
     Conservative,
-    
+
     /// <summary>Balance memory usage and performance.</summary>
     Balanced,
-    
+
     /// <summary>Maximize performance, allowing higher memory usage.</summary>
     Aggressive,
-    
+
+
     /// <summary>Optimize specifically for Apple Silicon unified memory.</summary>
     UnifiedMemory
 }

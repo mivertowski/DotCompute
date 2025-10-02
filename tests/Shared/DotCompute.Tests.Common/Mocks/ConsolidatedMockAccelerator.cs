@@ -1,18 +1,11 @@
 // Copyright (c) 2025 DotCompute Project Contributors
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Memory;
-using DotCompute.Core.Memory;
-using DotCompute.Memory;
-using Microsoft.Extensions.Logging;
 using Moq;
 using AcceleratorContext = DotCompute.Abstractions.AcceleratorContext;
 using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
@@ -169,17 +162,17 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
         SetupAllocateAsync<byte>(mock);
 
         // Setup memory statistics
-        mock.Setup(m => m.Statistics)
+        _ = mock.Setup(m => m.Statistics)
             .Returns(() => new DotCompute.Memory.MemoryStatistics());
 
         // Setup memory properties
-        mock.Setup(m => m.TotalAvailableMemory)
+        _ = mock.Setup(m => m.TotalAvailableMemory)
             .Returns(() => ShouldFailMemoryAllocation ? 0L : _info.AvailableMemory);
 
-        mock.Setup(m => m.CurrentAllocatedMemory)
+        _ = mock.Setup(m => m.CurrentAllocatedMemory)
             .Returns(() => ShouldFailMemoryAllocation ? _info.TotalMemory : 0L);
 
-        mock.Setup(m => m.MaxAllocationSize)
+        _ = mock.Setup(m => m.MaxAllocationSize)
             .Returns(() => _info.MaxMemoryAllocationSize);
 
         return mock;
@@ -187,7 +180,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
 
     private void SetupAllocateAsync<T>(Mock<IUnifiedMemoryManager> mock) where T : unmanaged
     {
-        mock.Setup(m => m.AllocateAsync<T>(It.IsAny<int>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(m => m.AllocateAsync<T>(It.IsAny<int>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Returns<int, MemoryOptions, CancellationToken>((size, options, ct) =>
             {
                 if (ShouldFailMemoryAllocation)
@@ -209,11 +202,11 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     {
         var mock = new Mock<ICompiledKernel>();
 
-        mock.Setup(k => k.Id).Returns(Guid.NewGuid());
-        mock.Setup(k => k.Name).Returns($"MockKernel_{Type}");
+        _ = mock.Setup(k => k.Id).Returns(Guid.NewGuid());
+        _ = mock.Setup(k => k.Name).Returns($"MockKernel_{Type}");
 
         // Setup execution with failure and delay simulation
-        mock.Setup(k => k.ExecuteAsync(It.IsAny<KernelArguments>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(k => k.ExecuteAsync(It.IsAny<KernelArguments>(), It.IsAny<CancellationToken>()))
             .Returns<KernelArguments, CancellationToken>(async (args, ct) =>
             {
                 if (ShouldFailExecution)

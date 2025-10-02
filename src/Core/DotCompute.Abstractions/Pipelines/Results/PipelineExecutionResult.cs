@@ -249,33 +249,33 @@ namespace DotCompute.Abstractions.Pipelines.Results
         public string GetSummaryReport()
         {
             var report = new System.Text.StringBuilder();
-            report.AppendLine($"Pipeline: {PipelineName} ({PipelineId})");
-            report.AppendLine($"Status: {(Success ? "SUCCESS" : "FAILED")}");
-            report.AppendLine($"Stages: {SuccessfulStages}/{TotalStages} successful");
+            _ = report.AppendLine($"Pipeline: {PipelineName} ({PipelineId})");
+            _ = report.AppendLine($"Status: {(Success ? "SUCCESS" : "FAILED")}");
+            _ = report.AppendLine($"Stages: {SuccessfulStages}/{TotalStages} successful");
 
             if (TotalExecutionTime.HasValue)
             {
-                report.AppendLine($"Total Time: {TotalExecutionTime.Value.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine($"Total Time: {TotalExecutionTime.Value.TotalMilliseconds:F2} ms");
             }
 
-            report.AppendLine($"Outputs: {Outputs.Count} items");
+            _ = report.AppendLine($"Outputs: {Outputs.Count} items");
 
             if (Errors?.Count > 0)
             {
-                report.AppendLine($"Errors: {Errors.Count}");
+                _ = report.AppendLine($"Errors: {Errors.Count}");
                 foreach (var error in Errors.Take(3))
                 {
-                    report.AppendLine($"  - {error.Message}");
+                    _ = report.AppendLine($"  - {error.Message}");
                 }
                 if (Errors.Count > 3)
                 {
-                    report.AppendLine($"  ... and {Errors.Count - 3} more");
+                    _ = report.AppendLine($"  ... and {Errors.Count - 3} more");
                 }
             }
 
             if (Warnings?.Count > 0)
             {
-                report.AppendLine($"Warnings: {Warnings.Count}");
+                _ = report.AppendLine($"Warnings: {Warnings.Count}");
             }
 
             return report.ToString();

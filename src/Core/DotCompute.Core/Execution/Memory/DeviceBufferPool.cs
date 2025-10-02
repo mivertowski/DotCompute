@@ -6,8 +6,6 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
-
-using System;
 namespace DotCompute.Core.Execution.Memory
 {
     /// <summary>

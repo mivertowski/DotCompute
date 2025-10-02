@@ -3,12 +3,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Pipelines.Profiling;
 using DotCompute.Abstractions.Pipelines.Statistics;
-using DotCompute.Core.Execution;
 
 // Type aliases to resolve ambiguous references
 using AbstractionsDataTransferType = DotCompute.Abstractions.Pipelines.Enums.DataTransferType;

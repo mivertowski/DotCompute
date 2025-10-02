@@ -4,9 +4,7 @@
 #if DEBUG
 using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Runtime.Configuration;
-using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
-using DotCompute.Abstractions.Memory;
 
 namespace DotCompute.Runtime;
 

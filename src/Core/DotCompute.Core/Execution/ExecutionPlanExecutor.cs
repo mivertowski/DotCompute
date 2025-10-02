@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
@@ -402,7 +401,7 @@ namespace DotCompute.Core.Execution
                 if (layer.Dependencies.Count > 0)
                 {
                     var dependencyEvents = layer.Dependencies
-                        .Where(depId => allLayerEvents.ContainsKey(depId))
+                        .Where(allLayerEvents.ContainsKey)
                         .Select(depId => allLayerEvents[depId])
                         .ToArray();
 
@@ -893,6 +892,7 @@ namespace DotCompute.Core.Execution
 
         private static double EstimatePipelineMemoryBandwidth(StageExecutionResult[] stageResults)
             // Simplified memory bandwidth estimation for pipeline stages
+
 
 
             => 10.0; // GB/s - placeholder value

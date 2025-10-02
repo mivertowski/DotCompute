@@ -7,8 +7,6 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Core.Execution.Kernels;
 using DotCompute.Core.Execution.Statistics;
-
-using System;
 namespace DotCompute.Core.Execution;
 
 /// <summary>

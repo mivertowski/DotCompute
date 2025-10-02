@@ -1,16 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CUDA.Configuration;
-using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
@@ -47,12 +44,14 @@ internal sealed class CudaCompilationPipeline
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
+
         var cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DotCompute", "Cache", "CUDA");
         _cache = new CudaCompilationCache(cacheDirectory, logger);
-        
+
+
         _tempDirectory = Path.Combine(Path.GetTempPath(), "DotCompute.CUDA", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempDirectory);
+        _ = Directory.CreateDirectory(_tempDirectory);
     }
 
     /// <summary>
@@ -64,8 +63,10 @@ internal sealed class CudaCompilationPipeline
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Compiled CUDA kernel ready for execution.</returns>
     public async Task<CudaCompiledKernel> CompileKernelAsync(
-        KernelDefinition definition, 
-        CompilationOptions? options = null, 
+        KernelDefinition definition,
+
+        CompilationOptions? options = null,
+
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
@@ -79,7 +80,8 @@ internal sealed class CudaCompilationPipeline
             var cacheKey = CudaCompilationCache.GenerateCacheKey(definition, options);
             if (_cache.TryGetCachedKernel(cacheKey, out var cachedKernel, out var metadata))
             {
-                _logger.LogDebug("Using cached kernel {KernelName} (access count: {AccessCount})", 
+                _logger.LogDebug("Using cached kernel {KernelName} (access count: {AccessCount})",
+
                     definition.Name, metadata?.AccessCount ?? 0);
                 return cachedKernel!; // Non-null when TryGetCachedKernel returns true
             }
@@ -105,7 +107,8 @@ internal sealed class CudaCompilationPipeline
 
             // Phase 4: Determine compilation target (PTX vs CUBIN)
             var compilationTarget = DetermineCompilationTarget(options);
-            _logger.LogDebug("Selected compilation target: {Target} for kernel {KernelName}", 
+            _logger.LogDebug("Selected compilation target: {Target} for kernel {KernelName}",
+
                 compilationTarget, source.Name);
 
             // Phase 5: Compile kernel
@@ -116,7 +119,8 @@ internal sealed class CudaCompilationPipeline
                     compiledCode = await CubinCompiler.CompileToCubinAsync(source.Code, source.Name, options, _logger)
                         .ConfigureAwait(false);
                     break;
-                
+
+
                 case CompilationTarget.PTX:
                 default:
                     compiledCode = await PTXCompiler.CompileToPtxAsync(source.Code, source.Name, options, _logger)
@@ -143,7 +147,8 @@ internal sealed class CudaCompilationPipeline
             await _cache.CacheKernelAsync(cacheKey, compiledKernel, definition, options).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Successfully compiled kernel {KernelName} in {ElapsedMs}ms using {Target}", 
+            _logger.LogInformation("Successfully compiled kernel {KernelName} in {ElapsedMs}ms using {Target}",
+
                 definition.Name, stopwatch.ElapsedMilliseconds, compilationTarget);
 
             return compiledKernel;
@@ -151,7 +156,8 @@ internal sealed class CudaCompilationPipeline
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Compilation pipeline failed for kernel {KernelName} after {ElapsedMs}ms", 
+            _logger.LogError(ex, "Compilation pipeline failed for kernel {KernelName} after {ElapsedMs}ms",
+
                 definition.Name, stopwatch.ElapsedMilliseconds);
             throw new KernelCompilationException($"Compilation pipeline failed for kernel '{definition.Name}'", ex);
         }
@@ -166,8 +172,10 @@ internal sealed class CudaCompilationPipeline
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Array of compiled kernels in the same order as input.</returns>
     public async Task<CudaCompiledKernel[]> CompileBatchAsync(
-        KernelDefinition[] definitions, 
-        CompilationOptions? options = null, 
+        KernelDefinition[] definitions,
+
+        CompilationOptions? options = null,
+
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definitions);
@@ -195,14 +203,15 @@ internal sealed class CudaCompilationPipeline
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _ = semaphore.Release();
                 }
             }).ToArray();
 
             var results = await Task.WhenAll(compilationTasks).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Completed batch compilation of {KernelCount} kernels in {ElapsedMs}ms", 
+            _logger.LogInformation("Completed batch compilation of {KernelCount} kernels in {ElapsedMs}ms",
+
                 definitions.Length, stopwatch.ElapsedMilliseconds);
 
             return results;
@@ -250,45 +259,45 @@ internal sealed class CudaCompilationPipeline
         var builder = new StringBuilder();
 
         // Add header with compilation metadata
-        builder.AppendLine(CultureInfo.InvariantCulture, $"// Auto-generated CUDA kernel: {source.Name}");
-        builder.AppendLine(CultureInfo.InvariantCulture, $"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        builder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
-        builder.AppendLine();
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Auto-generated CUDA kernel: {source.Name}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
+        _ = builder.AppendLine();
 
         // Add performance macros
-        builder.AppendLine("// Performance optimization macros");
+        _ = builder.AppendLine("// Performance optimization macros");
         if (options?.OptimizationLevel == OptimizationLevel.Maximum)
         {
-            builder.AppendLine("#define FORCE_INLINE __forceinline__");
-            builder.AppendLine("#define RESTRICT __restrict__");
+            _ = builder.AppendLine("#define FORCE_INLINE __forceinline__");
+            _ = builder.AppendLine("#define RESTRICT __restrict__");
         }
         else
         {
-            builder.AppendLine("#define FORCE_INLINE inline");
-            builder.AppendLine("#define RESTRICT");
+            _ = builder.AppendLine("#define FORCE_INLINE inline");
+            _ = builder.AppendLine("#define RESTRICT");
         }
 
         // Add debug macros
         if (options?.EnableDebugInfo == true)
         {
-            builder.AppendLine("#define DEBUG_KERNEL 1");
-            builder.AppendLine("#define KERNEL_ASSERT(x) assert(x)");
+            _ = builder.AppendLine("#define DEBUG_KERNEL 1");
+            _ = builder.AppendLine("#define KERNEL_ASSERT(x) assert(x)");
         }
         else
         {
-            builder.AppendLine("#define DEBUG_KERNEL 0");
-            builder.AppendLine("#define KERNEL_ASSERT(x)");
+            _ = builder.AppendLine("#define DEBUG_KERNEL 0");
+            _ = builder.AppendLine("#define KERNEL_ASSERT(x)");
         }
 
-        builder.AppendLine();
+        _ = builder.AppendLine();
 
         // Add compute capability specific optimizations
         var (major, minor) = CudaCapabilityManager.GetTargetComputeCapability();
-        builder.AppendLine(CultureInfo.InvariantCulture, $"// Target compute capability: {major}.{minor}");
+        _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Target compute capability: {major}.{minor}");
 
         AddComputeCapabilityMacros(builder, major, minor);
 
-        builder.AppendLine();
+        _ = builder.AppendLine();
 
         // Add the kernel source code with extern "C" handling
         AddKernelSourceCode(builder, source);
@@ -306,20 +315,20 @@ internal sealed class CudaCompilationPipeline
     {
         if (major >= 7) // Volta and newer
         {
-            builder.AppendLine("#define VOLTA_OPTIMIZATIONS 1");
+            _ = builder.AppendLine("#define VOLTA_OPTIMIZATIONS 1");
         }
 
         if (major >= 8) // Ampere and newer
         {
-            builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
+            _ = builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
 
             if (minor >= 9) // Ada Lovelace (8.9)
             {
-                builder.AppendLine("#define ADA_OPTIMIZATIONS 1");
-                builder.AppendLine("#define RTX_2000_OPTIMIZATIONS 1");
-                builder.AppendLine("#define SHARED_MEM_SIZE_100KB 1");
-                builder.AppendLine("#define FP8_TENSOR_CORES 1");
-                builder.AppendLine("#define OPTIMAL_BLOCK_SIZE_512 1");
+                _ = builder.AppendLine("#define ADA_OPTIMIZATIONS 1");
+                _ = builder.AppendLine("#define RTX_2000_OPTIMIZATIONS 1");
+                _ = builder.AppendLine("#define SHARED_MEM_SIZE_100KB 1");
+                _ = builder.AppendLine("#define FP8_TENSOR_CORES 1");
+                _ = builder.AppendLine("#define OPTIMAL_BLOCK_SIZE_512 1");
             }
         }
     }
@@ -343,18 +352,18 @@ internal sealed class CudaCompilationPipeline
                         @"(\s*)(__global__\s+void\s+)",
                         "$1extern \"C\" $2",
                         System.Text.RegularExpressions.RegexOptions.Multiline);
-                    builder.Append(modifiedCode);
+                    _ = builder.Append(modifiedCode);
                 }
                 else
                 {
-                    builder.Append(source.Code);
+                    _ = builder.Append(source.Code);
                 }
                 break;
 
             case KernelLanguage.OpenCL:
                 // Convert OpenCL to CUDA syntax
                 var convertedCode = ConvertOpenClToCuda(source.Code);
-                builder.Append(convertedCode);
+                _ = builder.Append(convertedCode);
                 break;
 
             default:
@@ -443,7 +452,8 @@ internal sealed class CudaCompilationPipeline
         try
         {
             _cache?.Dispose();
-            
+
+
             if (Directory.Exists(_tempDirectory))
             {
                 Directory.Delete(_tempDirectory, true);

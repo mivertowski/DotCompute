@@ -5,7 +5,6 @@ using System.Diagnostics;
 using DotCompute.Tests.Common.Fixtures;
 using DotCompute.Tests.Common.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Common.Specialized;
@@ -22,7 +21,8 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     /// </summary>
     /// <param name="output">Test output helper for logging.</param>
     /// <param name="fixture">Optional common test fixture.</param>
-    protected CudaTestBase(ITestOutputHelper output, CommonTestFixture? fixture = null) 
+    protected CudaTestBase(ITestOutputHelper output, CommonTestFixture? fixture = null)
+
         : base(output, fixture)
     {
         LogCudaEnvironment();
@@ -239,18 +239,21 @@ public abstract class CudaTestBase : ConsolidatedTestBase
             // Align to GPU memory boundaries for optimal performance
             var alignedCount = ((count + 31) / 32) * 32; // Align to 32-element boundaries
             var data = new float[alignedCount];
-            
+
+
             for (var i = 0; i < count; i++)
             {
                 data[i] = start + i * step;
             }
-            
+
             // Fill remaining elements with last value to avoid undefined behavior
+
             for (var i = count; i < alignedCount; i++)
             {
                 data[i] = data[count - 1];
             }
-            
+
+
             return data;
         }
 
@@ -301,10 +304,12 @@ public abstract class CudaTestBase : ConsolidatedTestBase
             return;
 
         var initialUsage = GetCurrentGpuMemoryUsage();
-        
+
         // Allow some tolerance for driver overhead
+
         var maxExpectedUsage = initialUsage + (50 * 1024 * 1024); // 50MB tolerance
-        
+
+
         if (GetCurrentGpuMemoryUsage() > maxExpectedUsage)
         {
             Log("WARNING: Potential CUDA memory leak detected");
@@ -350,7 +355,8 @@ public abstract class CudaTestBase : ConsolidatedTestBase
             // Add CUDA-specific services here
             // services.AddSingleton<ICudaAcceleratorFactory, CudaAcceleratorFactory>();
             // services.AddSingleton<ICudaMemoryManager, CudaMemoryManager>();
-            
+
+
             Log("CUDA services configured in DI container");
         }
     }
@@ -366,16 +372,19 @@ public abstract class CudaTestBase : ConsolidatedTestBase
     {
         Log("=== CUDA Environment ===");
         Log($"CUDA Available: {IsCudaAvailable()}");
-        
+
+
         if (IsCudaAvailable())
         {
             Log($"Device Info: {GetCudaDeviceInfoString()}");
             Log($"RTX 2000 Ada: {IsRTX2000AdaAvailable()}");
             Log($"Compute Capability >= 7.0: {HasMinimumComputeCapability(7, 0)}");
-            
+
+
             TakeGpuMemorySnapshot("cuda_initial");
         }
-        
+
+
         Log("========================");
     }
 
@@ -396,8 +405,9 @@ public abstract class CudaTestBase : ConsolidatedTestBase
             Log($"  Device: {GetCudaDeviceInfoString()}");
             Log($"  Current Memory Usage: {GetCurrentGpuMemoryUsage() / (1024.0 * 1024.0):F1} MB");
             Log($"  Available Memory: {GetFreeGpuMemory() / (1024.0 * 1024.0):F1} MB");
-            
+
             // Additional device-specific logging would go here
+
         }
         catch (Exception ex)
         {
