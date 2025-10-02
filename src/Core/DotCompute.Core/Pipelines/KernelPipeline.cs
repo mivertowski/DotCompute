@@ -203,7 +203,7 @@ namespace DotCompute.Core.Pipelines
                     DataTransferTime = ExtractDataTransferTimes(stageResults).Values.Aggregate(TimeSpan.Zero, (sum, time) => sum + time),
                     ParallelExecutions = stageResults.Count(r => r.Metadata?.ContainsKey("IsParallel") == true),
                     Throughput = stageResults.Count > 0 ? stageResults.Count / stopwatch.Elapsed.TotalSeconds : 0,
-                    ExecutionStatus = errors.Count == 0 ? DotCompute.Abstractions.Types.ExecutionStatus.Completed : DotCompute.Abstractions.Types.ExecutionStatus.Failed,
+                    ExecutionStatus = errors.Count == 0 ? AbstractionsMemory.Types.ExecutionStatus.Completed : AbstractionsMemory.Types.ExecutionStatus.Failed,
                     AdditionalMetrics = new Dictionary<string, object>
                     {
                         ["ComputeUtilization"] = CalculateComputeUtilization(stageResults),
@@ -362,8 +362,8 @@ namespace DotCompute.Core.Pipelines
             return new PipelineValidationResult
             {
                 IsValid = errors.Count == 0,
-                Errors = errors.Count > 0 ? errors.Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code ?? "UNKNOWN", e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error)).ToList() : null,
-                Warnings = warnings.Count > 0 ? warnings.Select(w => new DotCompute.Abstractions.Validation.ValidationWarning { Code = w.Code, Message = w.Message, Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium }).ToList() : null
+                Errors = errors.Count > 0 ? errors.Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code ?? "UNKNOWN", e.Message, ValidationSeverity.Error)).ToList() : null,
+                Warnings = warnings.Count > 0 ? warnings.Select(w => new DotCompute.Abstractions.Validation.ValidationWarning { Code = w.Code, Message = w.Message, Severity = AbstractionsMemory.Validation.WarningSeverity.Medium }).ToList() : null
             };
         }
 
@@ -485,8 +485,8 @@ namespace DotCompute.Core.Pipelines
 
                     switch (errorResult.Action)
                     {
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.None:
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Failed:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.None:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Failed:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
@@ -496,12 +496,12 @@ namespace DotCompute.Core.Pipelines
                                 Error = ex
                             };
 
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Retry:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Retry:
                             // Simple retry - in production, add backoff
                             return await ExecuteStageAsync(stage, context, executionId, currentOutputs, cancellationToken);
 
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Skip:
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Ignored:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Skip:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Ignored:
                             return new StageExecutionResult
                             {
                                 StageId = stage.Id,
@@ -510,7 +510,7 @@ namespace DotCompute.Core.Pipelines
                                 OutputData = []
                             };
 
-                        case DotCompute.Abstractions.Pipelines.Models.ErrorHandlingAction.Abort:
+                        case AbstractionsMemory.Pipelines.Models.ErrorHandlingAction.Abort:
                         default:
                             throw;
                     }

@@ -42,7 +42,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Test with spilling disabled
 
             var optionsNoSpilling = CudaTestHelpers.CreateTestCompilationOptions(
-                DotCompute.Abstractions.Types.OptimizationLevel.O2,
+                Abstractions.Types.OptimizationLevel.O2,
                 generateDebugInfo: false
             );
 
@@ -57,7 +57,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             // Test with spilling enabled
             var optionsWithSpilling = CudaTestHelpers.CreateTestCompilationOptions(
-                DotCompute.Abstractions.Types.OptimizationLevel.O2,
+                Abstractions.Types.OptimizationLevel.O2,
                 generateDebugInfo: true
             );
 

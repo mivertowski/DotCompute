@@ -242,7 +242,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _devicePointer = devicePointer;
             _count = count;
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            _sizeInBytes = count * Unsafe.SizeOf<T>();
             Options = options;
             _isDirty = false;
             _dirtyRanges = [];
@@ -336,7 +336,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe void CopyFromHost(ReadOnlySpan<T> source)
         {
             var elementsTooCopy = Math.Min(source.Length, Count);
-            var bytesToCopy = elementsTooCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var bytesToCopy = elementsTooCopy * Unsafe.SizeOf<T>();
 
             _context.MakeCurrent();
             fixed (T* ptr = source)
@@ -354,7 +354,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public unsafe void CopyToHost(Span<T> destination)
         {
             var elementsToCopy = Math.Min(destination.Length, Count);
-            var bytesToCopy = elementsToCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var bytesToCopy = elementsToCopy * Unsafe.SizeOf<T>();
 
             _context.MakeCurrent();
             fixed (T* ptr = destination)
@@ -385,7 +385,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var sourceSpan = source.Span;
                 var elementsToCopy = Math.Min(sourceSpan.Length, Count - offset);
-                var bytesToCopy = elementsToCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var bytesToCopy = elementsToCopy * Unsafe.SizeOf<T>();
 
 
                 if (offset + elementsToCopy > Count)
@@ -400,7 +400,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     fixed (TSource* ptr = sourceSpan)
                     {
-                        var result = CudaRuntime.cudaMemcpy(_devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()),
+                        var result = CudaRuntime.cudaMemcpy(_devicePointer + (nint)(offset * Unsafe.SizeOf<T>()),
 
                             (nint)ptr, (nuint)bytesToCopy, CudaMemcpyKind.HostToDevice);
                         CudaRuntime.CheckError(result, "async copying from host to device");
@@ -428,7 +428,7 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 var destinationSpan = destination.Span;
                 var elementsToCopy = Math.Min(destinationSpan.Length, Count - offset);
-                var bytesToCopy = elementsToCopy * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var bytesToCopy = elementsToCopy * Unsafe.SizeOf<T>();
 
 
                 if (offset + elementsToCopy > Count)
@@ -445,7 +445,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     {
                         var result = CudaRuntime.cudaMemcpy((nint)ptr,
 
-                            _devicePointer + (nint)(offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()),
+                            _devicePointer + (nint)(offset * Unsafe.SizeOf<T>()),
 
                             (nuint)bytesToCopy, CudaMemcpyKind.DeviceToHost);
                         CudaRuntime.CheckError(result, "async copying from device to host");
@@ -494,9 +494,9 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            var sourcePtr = _devicePointer + (nint)(sourceOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-            var destPtr = destination.DevicePointer + (nint)(destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+            var bytesToCopy = count * Unsafe.SizeOf<T>();
+            var sourcePtr = _devicePointer + (nint)(sourceOffset * Unsafe.SizeOf<T>());
+            var destPtr = destination.DevicePointer + (nint)(destinationOffset * Unsafe.SizeOf<T>());
 
 
             _context.MakeCurrent();
@@ -556,9 +556,9 @@ namespace DotCompute.Backends.CUDA.Memory
 
             await Task.Run(() =>
             {
-                var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                var sourcePtr = _devicePointer + (nint)(sourceOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                var destPtr = destination.DevicePointer + (nint)(destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+                var bytesToCopy = count * Unsafe.SizeOf<T>();
+                var sourcePtr = _devicePointer + (nint)(sourceOffset * Unsafe.SizeOf<T>());
+                var destPtr = destination.DevicePointer + (nint)(destinationOffset * Unsafe.SizeOf<T>());
 
 
                 _context.MakeCurrent();
@@ -703,8 +703,8 @@ namespace DotCompute.Backends.CUDA.Memory
                 foreach (var (start, end) in dirtyRanges)
                 {
                     var count = end - start;
-                    var bytesToCopy = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-                    var sourcePtr = _devicePointer + (nint)(start * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+                    var bytesToCopy = count * Unsafe.SizeOf<T>();
+                    var sourcePtr = _devicePointer + (nint)(start * Unsafe.SizeOf<T>());
 
 
                     if (start + count > destSpan.Length)
@@ -846,7 +846,7 @@ namespace DotCompute.Backends.CUDA.Memory
             return new ValueTask(Task.Run(() =>
             {
                 _context.MakeCurrent();
-                var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var elementSize = Unsafe.SizeOf<T>();
                 var sourceBytes = sourceOffset * elementSize;
                 var destBytes = destinationOffset * elementSize;
                 var copyBytes = count * elementSize;
@@ -879,10 +879,10 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 // Use cudaMemset for simple types
                 _context.MakeCurrent();
-                var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var elementSize = Unsafe.SizeOf<T>();
                 if (elementSize == 1 && typeof(T) == typeof(byte))
                 {
-                    var byteValue = System.Runtime.CompilerServices.Unsafe.As<T, byte>(ref value);
+                    var byteValue = Unsafe.As<T, byte>(ref value);
                     var result = CudaRuntime.cudaMemset(_devicePointer + offset, byteValue, (nuint)count);
                     CudaRuntime.CheckError(result, "filling buffer with value");
                 }
@@ -904,7 +904,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
 
 
-            var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var elementSize = Unsafe.SizeOf<T>();
             var offsetBytes = offset * elementSize;
             return new CudaMemoryBuffer<T>(_devicePointer + offsetBytes, length, _context, Options);
         }
@@ -912,8 +912,8 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public IUnifiedMemoryBuffer<TNew> AsType<TNew>() where TNew : unmanaged
         {
-            var newElementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
-            _ = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var newElementSize = Unsafe.SizeOf<TNew>();
+            _ = Unsafe.SizeOf<T>();
 
 
             if (_sizeInBytes % newElementSize != 0)

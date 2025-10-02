@@ -77,7 +77,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
     /// <summary>
     /// Gets the memory options for this buffer.
     /// </summary>
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => MemoryOptions.None;
 
     /// <summary>
     /// Gets the buffer state for tracking transfers.
@@ -843,14 +843,14 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         }
     }
 
-    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         UpdateAccessTime();
         EnsureOnHost();
         return new MappedMemory<T>(AsMemory());
     }
 
-    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -862,7 +862,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
         return new MappedMemory<T>(memory);
     }
 
-    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         UpdateAccessTime();
         await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);

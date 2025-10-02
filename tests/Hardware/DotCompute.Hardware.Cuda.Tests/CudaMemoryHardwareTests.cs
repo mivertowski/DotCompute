@@ -418,7 +418,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await destBuffer.CopyFromAsync(sourceBuffer.AsReadOnlyMemory());
             }
             await accelerator.SynchronizeAsync();
-            var copyResult = perfMeasurement.Stop();
+            perfMeasurement.Stop();
 
             // Verify copy correctness
 
@@ -430,14 +430,14 @@ namespace DotCompute.Hardware.Cuda.Tests
 
             var dataSize = elementCount * sizeof(float);
             var totalDataTransferred = dataSize * copyIterations;
-            var bandwidth = totalDataTransferred / (copyResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
+            var bandwidth = totalDataTransferred / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
 
             UnifiedTestHelpers.ComparePerformanceResults(
                 new DotCompute.SharedTestUtilities.Performance.PerformanceResult
                 {
                     OperationName = "Device-to-Device Copy",
-                    Duration = copyResult.Duration,
+                    Duration = perfMeasurement.ElapsedTime,
                     Checkpoints = Array.Empty<DotCompute.SharedTestUtilities.Performance.Checkpoint>(),
                     Timestamp = DateTime.UtcNow
                 },
@@ -626,7 +626,7 @@ namespace DotCompute.Hardware.Cuda.Tests
                 );
             }
             await accelerator.SynchronizeAsync();
-            var coalescedResult = coalescedPerf.Stop();
+            coalescedPerf.Stop();
 
             // Measure strided access performance
 
@@ -650,15 +650,15 @@ namespace DotCompute.Hardware.Cuda.Tests
                 );
             }
             await accelerator.SynchronizeAsync();
-            var stridedResult = stridedPerf.Stop();
+            stridedPerf.Stop();
 
 
             var dataSize = arraySize * sizeof(float) * 2 * 10; // Read + write, 10 iterations
 
             // Coalesced access should be significantly faster
 
-            var coalescedBandwidth = dataSize / (coalescedResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
-            var stridedBandwidth = dataSize / (stridedResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
+            var coalescedBandwidth = dataSize / (coalescedPerf.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
+            var stridedBandwidth = dataSize / (stridedPerf.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
             var speedupRatio = coalescedBandwidth / stridedBandwidth;
 
 

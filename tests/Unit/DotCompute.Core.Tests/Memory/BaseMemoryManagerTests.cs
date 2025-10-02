@@ -705,7 +705,7 @@ public sealed class BaseMemoryManagerTests : IDisposable
         // Act & Assert
         using var buffer = await _memoryManager.AllocateAsync<byte>((int)unusualSize);
         _ = buffer.SizeInBytes.Should().Be(unusualSize);
-        buffer.Length.Should().Be(unusualSize);
+        buffer.Length.Should().Be((int)unusualSize);
     }
 
     [Fact]
@@ -861,7 +861,8 @@ internal sealed class TestMemoryManager : BaseMemoryManager
         MemoryOptions options,
         CancellationToken cancellationToken)
     {
-        return new ValueTask<IUnifiedMemoryBuffer>(new TestUnifiedMemoryBuffer(sizeInBytes));
+        var array = new byte[sizeInBytes];
+        return new ValueTask<IUnifiedMemoryBuffer>(new TestMemoryBuffer<byte>(array, sizeInBytes, this));
     }
 
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
@@ -879,8 +880,7 @@ internal sealed class TestMemoryManager : BaseMemoryManager
                 TotalMemoryBytes = AvailableMemory,
                 UsedMemoryBytes = _currentAllocatedMemory,
                 AvailableMemoryBytes = AvailableMemory - _currentAllocatedMemory,
-                AllocationCount = _allocationCount,
-                PoolHitCount = _poolHitCount
+                AllocationCount = _allocationCount
             };
         }
     }
@@ -961,7 +961,8 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     public Memory<T> AsMemory()
     {
         ThrowIfDisposed();
-        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        var span = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        return new Memory<T>(span.ToArray());
     }
 
     public ReadOnlySpan<T> AsReadOnlySpan()
@@ -973,7 +974,8 @@ internal sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
         ThrowIfDisposed();
-        return global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        var span = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(_array.AsSpan(0, (int)SizeInBytes));
+        return new ReadOnlyMemory<T>(span.ToArray());
     }
 
     public DeviceMemory GetDeviceMemory()

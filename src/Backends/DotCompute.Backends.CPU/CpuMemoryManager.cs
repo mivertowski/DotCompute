@@ -289,7 +289,7 @@ public sealed class CpuMemoryManager : BaseMemoryManager
         try
         {
             // Get current thread's processor affinity and map to NUMA node
-            var currentProcessor = System.Threading.Thread.GetCurrentProcessorId();
+            var currentProcessor = Thread.GetCurrentProcessorId();
             return _topology.GetNodeForProcessor(currentProcessor);
         }
         catch (Exception ex)
@@ -688,7 +688,7 @@ internal sealed class CpuMemoryBufferView : IUnifiedMemoryBuffer
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         // Create a temporary byte buffer and copy
-        var byteDestination = new byte[destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()];
+        var byteDestination = new byte[destination.Length * Unsafe.SizeOf<T>()];
         var task = _parent.CopyToAsync(byteDestination.AsMemory(), cancellationToken);
         System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span).CopyTo(byteDestination);
         return task;

@@ -81,7 +81,7 @@ public static class CodeFormatter
             : new string(' ', style.IndentSize);
 
 
-        return string.Concat(System.Linq.Enumerable.Repeat(singleIndent, level));
+        return string.Concat(Enumerable.Repeat(singleIndent, level));
     }
 
 

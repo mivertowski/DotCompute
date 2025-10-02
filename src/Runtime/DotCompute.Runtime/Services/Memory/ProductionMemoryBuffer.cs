@@ -53,7 +53,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
                 _nativeHandle = _pinnedHandle.AddrOfPinnedObject();
             }
 
-            DotCompute.Runtime.Services.Statistics.MemoryStatistics.RecordBufferCreation(sizeInBytes);
+            Statistics.MemoryStatistics.RecordBufferCreation(sizeInBytes);
             _logger.LogTrace("Created memory buffer {BufferId} with native handle 0x{Handle:X}", id, _nativeHandle.ToInt64());
         }
         catch (Exception ex)

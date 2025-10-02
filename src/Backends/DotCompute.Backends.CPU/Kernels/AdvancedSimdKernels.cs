@@ -202,10 +202,10 @@ public static class AdvancedSimdKernels
             for (long v = 0; v < vectorCount; v++)
             {
                 var offset = v * vectorSize;
-                var va = Avx2.LoadVector256(a + offset);
-                var vb = Avx2.LoadVector256(b + offset);
+                var va = Avx.LoadVector256(a + offset);
+                var vb = Avx.LoadVector256(b + offset);
                 var vr = Avx2.Add(va, vb);
-                Avx2.Store(result + offset, vr);
+                Avx.Store(result + offset, vr);
             }
             i = vectorCount * vectorSize;
         }
@@ -270,8 +270,8 @@ public static class AdvancedSimdKernels
                 var offset = v * vectorSize;
 
                 // Load 64-bit values
-                var va = Avx2.LoadVector256(a + offset);
-                var vb = Avx2.LoadVector256(b + offset);
+                var va = Avx.LoadVector256(a + offset);
+                var vb = Avx.LoadVector256(b + offset);
 
                 // Decompose 64-bit multiply into 32-bit operations
                 // Split each 64-bit value into high and low 32-bit parts
@@ -291,7 +291,7 @@ public static class AdvancedSimdKernels
                 var middleShifted = Avx2.ShiftLeftLogical(middle, 32);
                 var vr = Avx2.Add(loLo.AsInt64(), middleShifted.AsInt64());
 
-                Avx2.Store(result + offset, vr);
+                Avx.Store(result + offset, vr);
             }
             i = vectorCount * vectorSize;
         }
@@ -366,10 +366,10 @@ public static class AdvancedSimdKernels
             for (long v = 0; v < vectorCount; v++)
             {
                 var offset = v * vectorSize;
-                var va = Avx2.LoadVector256(a + offset);
-                var vb = Avx2.LoadVector256(b + offset);
+                var va = Avx.LoadVector256(a + offset);
+                var vb = Avx.LoadVector256(b + offset);
                 var vr = Avx2.Add(va, vb);
-                Avx2.Store(result + offset, vr);
+                Avx.Store(result + offset, vr);
             }
             i = vectorCount * vectorSize;
         }

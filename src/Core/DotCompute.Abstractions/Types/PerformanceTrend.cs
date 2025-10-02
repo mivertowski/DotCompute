@@ -223,9 +223,9 @@ public sealed class PerformanceTrend
     {
         var direction = TrendDirection switch
         {
-            Types.TrendDirection.Improving => "improving",
-            Types.TrendDirection.Degrading => "degrading",
-            Types.TrendDirection.Stable => "stable",
+            TrendDirection.Improving => "improving",
+            TrendDirection.Degrading => "degrading",
+            TrendDirection.Stable => "stable",
             _ => "unknown"
         };
 
@@ -258,17 +258,17 @@ public sealed class PerformanceTrend
         // For most metrics, improving is better than degrading
         var directionScore = TrendDirection switch
         {
-            Types.TrendDirection.Improving => 1.0,
-            Types.TrendDirection.Stable => 0.0,
-            Types.TrendDirection.Degrading => -1.0,
+            TrendDirection.Improving => 1.0,
+            TrendDirection.Stable => 0.0,
+            TrendDirection.Degrading => -1.0,
             _ => 0.0
         };
 
         var otherDirectionScore = other.TrendDirection switch
         {
-            Types.TrendDirection.Improving => 1.0,
-            Types.TrendDirection.Stable => 0.0,
-            Types.TrendDirection.Degrading => -1.0,
+            TrendDirection.Improving => 1.0,
+            TrendDirection.Stable => 0.0,
+            TrendDirection.Degrading => -1.0,
             _ => 0.0
         };
 

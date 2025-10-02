@@ -83,8 +83,8 @@ namespace DotCompute.Backends.CUDA.Types
                         if (kvp.Key != nint.Zero)
                         {
                             // Free device memory
-                            var result = DotCompute.Backends.CUDA.Native.CudaRuntime.cudaFree(kvp.Key);
-                            if (result != DotCompute.Backends.CUDA.Types.Native.CudaError.Success)
+                            var result = CUDA.Native.CudaRuntime.cudaFree(kvp.Key);
+                            if (result != Native.CudaError.Success)
                             {
                                 _logger?.LogWarning("Failed to free CUDA memory during reset: {Error}", result);
                             }

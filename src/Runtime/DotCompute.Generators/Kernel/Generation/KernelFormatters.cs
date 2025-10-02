@@ -335,7 +335,7 @@ public sealed class KernelFormatters
             return input;
         }
 
-        var words = input.Split(new char[] { '_' }, System.StringSplitOptions.RemoveEmptyEntries);
+        var words = input.Split(new char[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
         return string.Join("", words.Select(word =>
             char.ToUpperInvariant(word[0]) + word.Substring(1).ToLowerInvariant()));
     }
@@ -369,7 +369,7 @@ public sealed class KernelFormatters
         }
 
         // Split on camelCase boundaries and existing underscores
-        var words = System.Text.RegularExpressions.Regex.Split(input, @"(?<!^)(?=[A-Z])|_")
+        var words = Regex.Split(input, @"(?<!^)(?=[A-Z])|_")
             .Where(w => !string.IsNullOrEmpty(w))
             .Select(w => w.ToUpperInvariant());
 
@@ -443,7 +443,7 @@ public sealed class KernelFormatters
             return new[] { text };
         }
 
-        var words = text.Split(new char[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+        var words = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         var lines = new System.Collections.Generic.List<string>();
         var currentLine = new System.Text.StringBuilder();
 

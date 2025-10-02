@@ -43,12 +43,12 @@ public sealed class OptimizedSimdExecutor : IDisposable
         // Initialize optimization and analysis components
         _optimizationEngine = new SimdOptimizationEngine(capabilities, executorConfig);
         _performanceAnalyzer = new SimdPerformanceAnalyzer(
-            Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole())
+            LoggerFactory.Create(builder => builder.AddConsole())
                 .CreateLogger<SimdPerformanceAnalyzer>());
 
         // Initialize instruction dispatcher
         _instructionDispatcher = new SimdInstructionDispatcher(
-            Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole())
+            LoggerFactory.Create(builder => builder.AddConsole())
                 .CreateLogger<SimdInstructionDispatcher>(),
             _optimizationEngine,
             _performanceAnalyzer,

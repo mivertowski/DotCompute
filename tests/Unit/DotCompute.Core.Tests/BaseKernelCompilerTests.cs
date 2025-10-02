@@ -290,7 +290,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
         var definition = new KernelDefinition("default_opt", "__kernel void test() {}", "main");
 
         // Act
-        var result = await _compiler.CompileAsync(definition, null);
+        var result = await _compiler.CompileAsync(definition, (CompilationOptions?)null);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -355,7 +355,7 @@ public sealed class BaseKernelCompilerTests : ConsolidatedTestBase
     public async Task CompileAsync_NullDefinition_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = async () => await _compiler.CompileAsync((KernelDefinition)null!, null);
+        var act = async () => await _compiler.CompileAsync((KernelDefinition)null!, (CompilationOptions?)null);
         _ = await act.Should().ThrowAsync<ArgumentNullException>();
     }
 

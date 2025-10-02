@@ -64,13 +64,13 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // Initialize command buffer pool
-        var poolLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var poolLogger = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandBufferPool>();
         _commandBufferPool = new MetalCommandBufferPool(_commandQueue, poolLogger, _options.CommandBufferCacheSize);
 
         // Initialize performance profiler
-        var profilerLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var profilerLogger = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalPerformanceProfiler>();
         _profiler = new MetalPerformanceProfiler(profilerLogger);
@@ -87,7 +87,7 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // Set the accelerator reference in the memory manager after construction
-        if (base.Memory is MetalMemoryManager metalMemoryManager)
+        if (Memory is MetalMemoryManager metalMemoryManager)
         {
             metalMemoryManager.SetAcceleratorReference(this);
         }
@@ -434,7 +434,7 @@ public sealed class MetalAccelerator : BaseAccelerator
         }
 
         // MetalMemoryManager created without accelerator reference initially
-        var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => { });
+        var loggerFactory = LoggerFactory.Create(builder => { });
         var logger = loggerFactory.CreateLogger<MetalMemoryManager>();
         return new MetalMemoryManager(logger, null);
     }

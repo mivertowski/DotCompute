@@ -298,7 +298,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
-        var sizeInBytes = count * global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = count * Unsafe.SizeOf<T>();
         return await AllocateRawAsync(sizeInBytes);
     }
 
@@ -556,7 +556,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         }
         catch (OutOfMemoryException ex)
         {
-            DotCompute.Runtime.Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
+            Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
             _logger.LogErrorMessage(ex, $"Failed to allocate memory buffer of size {sizeInBytes} - out of memory");
 
             // Attempt garbage collection and retry once
@@ -581,7 +581,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         }
         catch (Exception ex)
         {
-            DotCompute.Runtime.Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
+            Services.Statistics.MemoryStatistics.RecordFailedAllocation(sizeInBytes);
             _logger.LogErrorMessage(ex, $"Unexpected error during memory allocation for size {sizeInBytes}");
             throw new InvalidOperationException($"Memory allocation failed: {ex.Message}", ex);
         }

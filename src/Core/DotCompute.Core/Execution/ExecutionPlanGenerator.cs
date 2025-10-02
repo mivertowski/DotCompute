@@ -107,7 +107,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = kernelName,
                     Devices = selectedDevices,
-                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.DataParallel,
+                    StrategyType = AbstractionsMemory.Types.ExecutionStrategyType.DataParallel,
                     InputBuffers = inputBuffers,
                     OutputBuffers = outputBuffers,
                     DeviceTasks = deviceTasks,
@@ -179,7 +179,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = $"ModelParallel_{workload.ModelLayers.Count}Layers",
                     Devices = devices,
-                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.ModelParallel,
+                    StrategyType = AbstractionsMemory.Types.ExecutionStrategyType.ModelParallel,
                     ModelLayers = [.. workload.ModelLayers],
                     LayerAssignments = layerAssignments,
                     CommunicationSchedule = communicationSchedule,
@@ -262,7 +262,7 @@ namespace DotCompute.Core.Execution
                 {
                     KernelName = $"Pipeline_{pipelineDefinition.Stages.Count}Stages",
                     Devices = devices,
-                    StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.PipelineParallel,
+                    StrategyType = AbstractionsMemory.Types.ExecutionStrategyType.PipelineParallel,
                     Stages = pipelineStages,
                     MicrobatchConfig = microbatchConfig,
                     BufferStrategy = bufferStrategy,
@@ -479,7 +479,7 @@ namespace DotCompute.Core.Execution
             // Compile kernel for the specific device type with appropriate optimizations
             _ = new KernelCompilationOptions
             {
-                OptimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.Balanced,
+                OptimizationLevel = AbstractionsMemory.Types.OptimizationLevel.Balanced,
                 TargetArchitecture = device.DeviceType.ToString(),
                 EnableAutoVectorization = device.DeviceType.ToString() == nameof(AcceleratorType.CPU),
                 GenerateDebugInfo = false
@@ -524,16 +524,16 @@ namespace DotCompute.Core.Execution
             foreach (var inputSpec in stageDef.InputSpecs)
             {
                 _ = inputSpec.ElementCount * Unsafe.SizeOf<T>();
-                var memoryOptions = DotCompute.Abstractions.Memory.MemoryOptions.None;
+                var memoryOptions = AbstractionsMemory.Memory.MemoryOptions.None;
 
                 // Adjust memory options based on device type
                 if (device.DeviceType.ToString() == nameof(AcceleratorType.CPU))
                 {
-                    memoryOptions |= DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
+                    memoryOptions |= AbstractionsMemory.Memory.MemoryOptions.HostVisible;
                 }
                 else if (device.DeviceType.ToString() == nameof(AcceleratorType.GPU))
                 {
-                    memoryOptions |= DotCompute.Abstractions.Memory.MemoryOptions.DeviceLocal;
+                    memoryOptions |= AbstractionsMemory.Memory.MemoryOptions.DeviceLocal;
                 }
 
                 // Use device's memory manager to allocate buffer
@@ -560,16 +560,16 @@ namespace DotCompute.Core.Execution
             foreach (var outputSpec in stageDef.OutputSpecs)
             {
                 _ = outputSpec.ElementCount * Unsafe.SizeOf<T>();
-                var memoryOptions = DotCompute.Abstractions.Memory.MemoryOptions.None;
+                var memoryOptions = AbstractionsMemory.Memory.MemoryOptions.None;
 
                 // Adjust memory options based on device type
                 if (device.DeviceType.ToString() == nameof(AcceleratorType.CPU))
                 {
-                    memoryOptions |= DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
+                    memoryOptions |= AbstractionsMemory.Memory.MemoryOptions.HostVisible;
                 }
                 else if (device.DeviceType.ToString() == nameof(AcceleratorType.GPU))
                 {
-                    memoryOptions |= DotCompute.Abstractions.Memory.MemoryOptions.DeviceLocal;
+                    memoryOptions |= AbstractionsMemory.Memory.MemoryOptions.DeviceLocal;
                 }
 
                 // Use device's memory manager to allocate buffer

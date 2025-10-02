@@ -331,7 +331,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     {
         return new KernelDefinition(name, source, entryPoint ?? name)
         {
-            Language = DotCompute.Abstractions.Kernels.Types.KernelLanguage.Cuda,
+            Language = Abstractions.Kernels.Types.KernelLanguage.Cuda,
             Metadata = new Dictionary<string, object>
             {
                 ["test_kernel"] = true,
@@ -398,7 +398,7 @@ extern ""C"" __global__ void matrixMul(const float* A, const float* B, float* C,
     /// <param name="optimizationLevel">The optimization level to use.</param>
     /// <param name="generateDebugInfo">Whether to generate debug information.</param>
     /// <returns>A CompilationOptions instance configured for testing.</returns>
-    public static DotCompute.Abstractions.CompilationOptions CreateTestCompilationOptions(DotCompute.Abstractions.Types.OptimizationLevel optimizationLevel = DotCompute.Abstractions.Types.OptimizationLevel.O2, bool generateDebugInfo = false)
+    public static DotCompute.Abstractions.CompilationOptions CreateTestCompilationOptions(DotCompute.Abstractions.Types.OptimizationLevel optimizationLevel = OptimizationLevel.O2, bool generateDebugInfo = false)
     {
         return new DotCompute.Abstractions.CompilationOptions
         {

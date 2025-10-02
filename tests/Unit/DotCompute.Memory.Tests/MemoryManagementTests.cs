@@ -986,12 +986,12 @@ public class MemoryManagementTests
             // Return a mock type-converted buffer
             => new TestUnifiedBuffer<TNew>(Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>() / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
 
-        public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory());
+        public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(AsMemory());
 
-        public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
+        public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite) => new(_hostArray.AsMemory(offset, length));
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller for disposal")]
-        public ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
+        public ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
 
         public void Dispose()
         {

@@ -125,7 +125,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // Use pinned memory for better streaming performance
-            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
+            var options = MemoryOptions.HostVisible;
 
             try
             {
@@ -168,7 +168,7 @@ namespace DotCompute.Core.Memory
             ThrowIfDisposed();
 
             // For very large allocations, use memory mapping strategy
-            var options = DotCompute.Abstractions.Memory.MemoryOptions.HostVisible | DotCompute.Abstractions.Memory.MemoryOptions.Cached;
+            var options = MemoryOptions.HostVisible | MemoryOptions.Cached;
 
             try
             {
@@ -353,7 +353,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private DotCompute.Abstractions.Memory.MemoryOptions DetermineOptimalMemoryOptions(long sizeInBytes)
         {
-            var options = DotCompute.Abstractions.Memory.MemoryOptions.None;
+            var options = MemoryOptions.None;
 
             // For P2P-capable devices, prefer device-only memory for large buffers
             if (_deviceCapabilities.SupportsP2P && sizeInBytes > 1024 * 1024) // > 1MB
@@ -365,13 +365,13 @@ namespace DotCompute.Core.Memory
             // For smaller buffers or non-P2P devices, use host-visible memory
             if (sizeInBytes <= 64 * 1024 || !_deviceCapabilities.SupportsP2P) // <= 64KB
             {
-                options |= DotCompute.Abstractions.Memory.MemoryOptions.HostVisible;
+                options |= MemoryOptions.HostVisible;
             }
 
             // Enable caching for frequently accessed data
             if (sizeInBytes <= 16 * 1024 * 1024) // <= 16MB
             {
-                options |= DotCompute.Abstractions.Memory.MemoryOptions.Cached;
+                options |= MemoryOptions.Cached;
             }
 
             return options;

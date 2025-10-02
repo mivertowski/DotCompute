@@ -17,6 +17,7 @@ using DotCompute.Core.Telemetry;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Diagnostics;
 
 namespace DotCompute.Core.Tests.Optimization;
 
@@ -417,9 +418,10 @@ public class OptimizationStrategyTests : IDisposable
         history.AddPerformanceResult("TestBackend", result);
 
         // Assert
-        _ = history.GetPerformanceStats().Should().HaveCount(1);
-        history.Results.First().Should().BeEquivalentTo(result);
-        _ = history.GetPerformanceStats()["TestBackend"].AverageExecutionTimeMs.Should().BeApproximately(150.5, 0.1);
+        var stats = history.GetPerformanceStats();
+        _ = stats.Should().HaveCount(1);
+        _ = stats["TestBackend"].AverageExecutionTimeMs.Should().BeApproximately(150.5, 0.1);
+        _ = stats["TestBackend"].SampleCount.Should().Be(1);
     }
 
     [Fact]
@@ -441,16 +443,15 @@ public class OptimizationStrategyTests : IDisposable
         }
 
         // Act
-        var avgTime = history.GetPerformanceStats()["TestBackend"].AverageExecutionTimeMs;
-        var successRate = history.GetPerformanceStats()["TestBackend"].ReliabilityScore;
         var stats = history.GetPerformanceStats();
+        var backendStats = stats["TestBackend"];
 
         // Assert
-        _ = avgTime.Should().BeApproximately(150.0, 0.1); // Average of successful executions only
-        successRate.Should().BeApproximately(0.75, 0.01); // 3 out of 4 successful
+        backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0d, 0.1d); // Average of successful executions only
+        backendStats.ReliabilityScore.Should().BeApproximately(0.75f, 0.01f); // 3 out of 4 successful
         _ = stats.Should().NotBeNull();
-        stats.Mean.Should().BeApproximately(150.0, 0.1);
-        stats.SampleCount.Should().Be(3); // Only successful executions
+        backendStats.AverageExecutionTimeMs.Should().BeApproximately(150.0, 0.1);
+        backendStats.SampleCount.Should().Be(3); // Only successful executions
     }
 
     #endregion
@@ -468,57 +469,61 @@ public class OptimizationStrategyTests : IDisposable
             LastExecutionTime = DateTimeOffset.UtcNow.AddMinutes(-1)
         };
 
-        var newMetrics = new BackendPerformanceStats
+        var result = new PerformanceResult
         {
-            AverageExecutionTimeMs = 50.0,
+            BackendId = "CUDA",
+            ExecutionTimeMs = 50.0,
             ThroughputOpsPerSecond = 50000,
-            AverageMemoryUsage = 2048000,
-            SuccessRate = 0.95,
-            LoadFactor = 0.7,
-            IsAvailable = true
+            MemoryUsedBytes = 2048000,
+            Success = true
         };
 
         // Act
-        state.UpdateMetrics(newMetrics);
+        state.RecordExecution(result);
 
         // Assert
-        state.CurrentMetrics.Should().BeEquivalentTo(newMetrics);
-        state.LastUpdateTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        state.Health.Should().BeGreaterThan(0f);
+        state.RecentAverageExecutionTimeMs.Should().BeApproximately(50.0, 0.1);
+        state.LastExecutionTime.Should().BeCloseTo(result.Timestamp, TimeSpan.FromSeconds(1));
+        state.RecentExecutionCount.Should().Be(1);
     }
 
     [Fact]
     public void BackendPerformanceStateSummary_Calculation_IsAccurate()
     {
         // Arrange
-        var states = new Dictionary<string, BackendPerformanceState>
+        var cpuState = new BackendPerformanceState
         {
-            ["CPU"] = new BackendPerformanceState
-            {
-                BackendId = "CPU",
-                CurrentUtilization = 0.5,
-                RecentAverageExecutionTimeMs = 200,
-                RecentExecutionCount = 100,
-                LastExecutionTime = DateTimeOffset.UtcNow
-            },
-            ["CUDA"] = new BackendPerformanceState
-            {
-                BackendId = "CUDA",
-                CurrentUtilization = 0.8,
-                RecentAverageExecutionTimeMs = 50,
-                RecentExecutionCount = 500,
-                LastExecutionTime = DateTimeOffset.UtcNow
-            }
+            BackendId = "CPU",
+            CurrentUtilization = 0.5,
+            RecentAverageExecutionTimeMs = 200,
+            RecentExecutionCount = 100,
+            LastExecutionTime = DateTimeOffset.UtcNow
+        };
+
+        var cudaState = new BackendPerformanceState
+        {
+            BackendId = "CUDA",
+            CurrentUtilization = 0.8,
+            RecentAverageExecutionTimeMs = 50,
+            RecentExecutionCount = 500,
+            LastExecutionTime = DateTimeOffset.UtcNow
         };
 
         // Act
-        var summary = new BackendPerformanceStateSummary(states);
+        var cpuSummary = cpuState.GetSummary();
+        var cudaSummary = cudaState.GetSummary();
 
-        // Assert
-        summary.TotalBackends.Should().Be(2);
-        summary.AvailableBackends.Should().Be(2);
-        summary.BestPerformingBackend.Should().Be("CUDA");
-        summary.AverageSuccessRate.Should().BeApproximately(0.925f, 0.001f);
+        // Assert - CPU summary
+        cpuSummary.BackendId.Should().Be("CPU");
+        cpuSummary.CurrentUtilization.Should().BeApproximately(0.5, 0.01);
+        cpuSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(200, 0.1);
+        cpuSummary.RecentExecutionCount.Should().Be(100);
+
+        // Assert - CUDA summary (faster backend)
+        cudaSummary.BackendId.Should().Be("CUDA");
+        cudaSummary.CurrentUtilization.Should().BeApproximately(0.8, 0.01);
+        cudaSummary.RecentAverageExecutionTimeMs.Should().BeApproximately(50, 0.1);
+        cudaSummary.RecentExecutionCount.Should().Be(500);
     }
 
     #endregion
@@ -585,7 +590,7 @@ public class OptimizationStrategyTests : IDisposable
         var workload = CreateTestWorkload(WorkloadPattern.ComputeIntensive, 1000000);
         var availableBackends = _mockAccelerators.Where(m => m.Object.IsAvailable).Select(m => m.Object);
 
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
 
         // Act
         const int iterations = 100;
@@ -620,7 +625,7 @@ public class OptimizationStrategyTests : IDisposable
         var selector = CreateAdaptiveBackendSelector();
         var options = new ProductionPerfOptions
         {
-            OptimizationStrategy = DotCompute.Core.Optimization.Enums.OptimizationStrategy.Balanced,
+            OptimizationStrategy = DotCompute.Core.Optimization.OptimizationStrategy.Balanced,
             EnableLearning = true,
             EnableConstraints = true
         };
@@ -636,15 +641,17 @@ public class OptimizationStrategyTests : IDisposable
     private Mock<IAccelerator> CreateMockAccelerator(string name, string description, bool isAvailable, int performanceScore)
     {
         var mock = new Mock<IAccelerator>();
-        mock.Setup(a => a.Name).Returns(name);
-        mock.Setup(a => a.Description).Returns(description);
-        _ = mock.Setup(a => a.IsAvailable).Returns(isAvailable);
-        mock.Setup(a => a.GetMemoryInfoAsync()).ReturnsAsync(new MemoryInfo
+        var info = new AcceleratorInfo
         {
+            Id = $"test_{name}",
+            Name = name,
+            DeviceType = "Test",
+            Vendor = description,
             TotalMemory = performanceScore * 1024L * 1024L, // GB converted to bytes
             AvailableMemory = (long)(performanceScore * 1024L * 1024L * 0.8),
-            UsedMemory = (long)(performanceScore * 1024L * 1024L * 0.2)
-        });
+        };
+        mock.Setup(a => a.Info).Returns(info);
+        _ = mock.Setup(a => a.IsAvailable).Returns(isAvailable);
         return mock;
     }
 

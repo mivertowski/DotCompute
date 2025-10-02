@@ -181,7 +181,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         private bool TryResolveKernelFunction()
         {
             // Strategy 1: Try mangled name first (most reliable for C++ kernels)
-            var mangledName = Compilation.CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
+            var mangledName = CudaKernelCompiler.GetMangledFunctionName(Name, _entryPoint);
             if (!string.IsNullOrEmpty(mangledName))
             {
                 var result = CudaRuntime.cuModuleGetFunction(ref _function, _module, mangledName);
@@ -242,7 +242,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             try
             {
                 // Add available mangled names information
-                var allMangledNames = Compilation.CudaKernelCompiler.GetAllMangledNames(Name);
+                var allMangledNames = CudaKernelCompiler.GetAllMangledNames(Name);
                 if (allMangledNames != null && allMangledNames.Count > 0)
                 {
                     var mangledNamesStr = string.Join(", ", allMangledNames.Select(kvp => $"{kvp.Key} -> {kvp.Value}"));

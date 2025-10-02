@@ -280,7 +280,7 @@ namespace DotCompute.Hardware.Cuda.Tests
 
 
             await accelerator.SynchronizeAsync();
-            var matrixResult = perfMeasurement.Stop();
+            perfMeasurement.Stop();
 
             // Download and verify results (simplified verification)
 
@@ -303,7 +303,7 @@ namespace DotCompute.Hardware.Cuda.Tests
             // Calculate theoretical FLOPS
 
             var operations = 2L * matrixSize * matrixSize * matrixSize; // 2N³ operations
-            var gflops = operations / (matrixResult.ElapsedTime.TotalSeconds * 1e9);
+            var gflops = operations / (perfMeasurement.ElapsedTime.TotalSeconds * 1e9);
 
 
             Output.WriteLine($"Matrix Multiplication Performance:");
@@ -563,10 +563,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyFromAsync(testData);
                 await accelerator.SynchronizeAsync();
             }
-            var hostToDeviceResult = perfMeasurement.Stop();
+            perfMeasurement.Stop();
 
 
-            var hostToDeviceBandwidth = (dataSize * 10L) / (hostToDeviceResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
+            var hostToDeviceBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
             // Test device-to-host transfer
 
@@ -580,10 +580,10 @@ namespace DotCompute.Hardware.Cuda.Tests
                 await buffer.CopyToAsync(results);
                 await accelerator.SynchronizeAsync();
             }
-            var deviceToHostResult = perfMeasurement.Stop();
+            perfMeasurement.Stop();
 
 
-            var deviceToHostBandwidth = (dataSize * 10L) / (deviceToHostResult.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
+            var deviceToHostBandwidth = (dataSize * 10L) / (perfMeasurement.ElapsedTime.TotalSeconds * 1024 * 1024 * 1024);
 
             // Verify reasonable transfer rates (should be > 1 GB/s for modern hardware)
             _ = hostToDeviceBandwidth.Should().BeGreaterThan(1.0, "H2D transfer should be > 1 GB/s");

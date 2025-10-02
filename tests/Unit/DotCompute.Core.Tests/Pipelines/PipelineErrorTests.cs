@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Interfaces;
+using DotCompute.Abstractions.Interfaces.Pipelines;
 using DotCompute.Core.Pipelines.Exceptions;
 using DotCompute.Tests.Common;
 using DotCompute.Tests.Common.Mocks;
@@ -34,7 +35,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure graceful error recovery
 
-        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
+        _ = builder.OnError(ex => Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder
@@ -64,7 +65,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure fallback on memory issues
 
-        _ = builder.OnError(ex => ex is OutOfMemoryException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
+        _ = builder.OnError(ex => ex is OutOfMemoryException ? Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -115,7 +116,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure backend switching on failure
 
-        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback);
+        _ = builder.OnError(ex => Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback);
 
         // Act
         var result = await builder
@@ -161,11 +162,11 @@ public class PipelineErrorTests : PipelineTestBase
     }
 
     [Theory]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue, true, 3)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip, true, 3)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry, true, 3)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort, false, 1)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback, true, 3)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue, true, 3)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip, true, 3)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry, true, 3)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort, false, 1)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback, true, 3)]
     public async Task Pipeline_ErrorStrategy_HandlesCorrectly(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy, bool shouldSucceed, int expectedSteps)
     {
         // Arrange
@@ -178,8 +179,7 @@ public class PipelineErrorTests : PipelineTestBase
         // Act
         Exception? caughtException = null;
         KernelChainExecutionResult? result = null;
-
-
+        
         try
         {
             result = await builder
@@ -201,7 +201,7 @@ public class PipelineErrorTests : PipelineTestBase
             Assert.True(result.Success);
 
 
-            if (strategy != DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)
+            if (strategy != Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)
             {
                 Assert.Equal(expectedSteps, result.StepMetrics.Count);
             }
@@ -226,7 +226,7 @@ public class PipelineErrorTests : PipelineTestBase
         _ = builder.OnError(ex =>
         {
             failureCount++;
-            return failureCount >= 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry;
+            return failureCount >= 3 ? Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort : Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry;
         });
 
         // Act & Assert - Should abort after 3 failures
@@ -252,7 +252,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        _ = builder.OnError(ex => ex is TimeoutException ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
+        _ = builder.OnError(ex => ex is TimeoutException ? Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback : Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort);
 
         // Act
         var result = await builder
@@ -296,7 +296,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Configure to continue on failure
 
-        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
+        _ = builder.OnError(ex => Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -325,7 +325,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         // Continue on all errors to collect them
 
-        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
+        _ = builder.OnError(ex => Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue);
 
         // Act
         var result = await builder
@@ -359,7 +359,7 @@ public class PipelineErrorTests : PipelineTestBase
         _ = builder.OnError(ex =>
         {
             retryCount++;
-            return retryCount < 3 ? DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry : DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort;
+            return retryCount < 3 ? Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry : Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort;
         });
 
         // Act & Assert - Should eventually abort after retries
@@ -385,7 +385,7 @@ public class PipelineErrorTests : PipelineTestBase
         var builder = CreatePipelineBuilder();
 
 
-        _ = builder.OnError(ex => DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
+        _ = builder.OnError(ex => Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip);
 
         // Act
         var result = await builder

@@ -423,9 +423,9 @@ namespace DotCompute.Backends.CUDA.Execution
 
             return globalSize.Length switch
             {
-                1 => Compilation.CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
-                2 => Compilation.CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
-                3 => Compilation.CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
+                1 => CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
+                2 => CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
+                3 => CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
                                         localSize[0], localSize[1], localSize[2]),
                 _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Length}"),
             };
@@ -564,12 +564,12 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 Type = type switch
                 {
-                    CudaBottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
-                    CudaBottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.GPU,
-                    CudaBottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
-                    CudaBottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.CPU,
-                    CudaBottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.GPU,
-                    _ => DotCompute.Abstractions.Types.BottleneckType.None
+                    CudaBottleneckType.None => CudaBottleneckType.None,
+                    CudaBottleneckType.Compute => CudaBottleneckType.GPU,
+                    CudaBottleneckType.MemoryBandwidth => CudaBottleneckType.Memory,
+                    CudaBottleneckType.Occupancy => CudaBottleneckType.CPU,
+                    CudaBottleneckType.ThreadDivergence => CudaBottleneckType.GPU,
+                    _ => CudaBottleneckType.None
                 },
                 Severity = Math.Min(1.0, severity),
                 Details = details,
@@ -585,12 +585,12 @@ namespace DotCompute.Backends.CUDA.Execution
         {
             var suggestions = new List<string>();
 
-            if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.GPU)
+            if (bottleneck?.Type == CudaBottleneckType.GPU)
             {
                 suggestions.Add("Consider increasing occupancy by reducing register usage or shared memory");
                 suggestions.Add("Optimize thread divergence to improve warp utilization");
             }
-            else if (bottleneck?.Type == DotCompute.Abstractions.Types.BottleneckType.Memory)
+            else if (bottleneck?.Type == CudaBottleneckType.Memory)
             {
                 suggestions.Add("Improve memory coalescing by ensuring contiguous access patterns");
                 suggestions.Add("Consider using shared memory to reduce global memory accesses");

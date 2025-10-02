@@ -527,28 +527,28 @@ public sealed partial class DebugReportGenerator : IDisposable
 
     #region Logger Messages
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting report generation for {KernelName} in {Format} format")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting report generation for {KernelName} in {Format} format")]
     private partial void LogReportGenerationStarted(string kernelName, string format);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Report generated for {KernelName}: {ContentLength} characters")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Report generated for {KernelName}: {ContentLength} characters")]
     private partial void LogReportGenerated(string kernelName, int contentLength);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting cross-validation report for {KernelName}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting cross-validation report for {KernelName}")]
     private partial void LogCrossValidationReportStarted(string kernelName);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting performance report for {KernelName}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting performance report for {KernelName}")]
     private partial void LogPerformanceReportStarted(string kernelName);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting determinism report for {KernelName}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting determinism report for {KernelName}")]
     private partial void LogDeterminismReportStarted(string kernelName);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Starting memory analysis report for {KernelName}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting memory analysis report for {KernelName}")]
     private partial void LogMemoryReportStarted(string kernelName);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Report saved for {KernelName} to {FilePath}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Report saved for {KernelName} to {FilePath}")]
     private partial void LogReportSaved(string kernelName, string filePath);
 
-    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Failed to save report for {KernelName} to {FilePath}: {Error}")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to save report for {KernelName} to {FilePath}: {Error}")]
     private partial void LogReportSaveFailed(string kernelName, string filePath, string error);
 
     #endregion

@@ -405,7 +405,7 @@ public sealed class KernelDebugLogger : IDisposable
             kernelName, analysisResult.ExecutionStatistics.TotalExecutions, analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
 
         // Log significant bottlenecks
-        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium))
+        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)BottleneckSeverity.Medium))
         {
             _logger.LogWarning("Performance bottleneck detected in kernel {KernelName}: {Description} (Severity: {Severity})",
                 kernelName, bottleneck.Description, bottleneck.Severity);

@@ -128,7 +128,7 @@ namespace DotCompute.Core.Execution
                 return new ParallelExecutionAnalysis
                 {
                     OverallRating = 5.0,
-                    RecommendedStrategy = DotCompute.Abstractions.Types.ExecutionStrategyType.Single,
+                    RecommendedStrategy = ExecutionStrategyType.Single,
                     OptimizationRecommendations = ["No execution data available for analysis."]
                 };
             }

@@ -24,7 +24,7 @@ namespace DotCompute.Backends.CUDA
 
         {
             // Use CudaCapabilityManager to get dynamic requirements
-            var targetCapability = DotCompute.Backends.CUDA.Configuration.CudaCapabilityManager.GetTargetComputeCapability();
+            var targetCapability = Configuration.CudaCapabilityManager.GetTargetComputeCapability();
             var arch = targetCapability.major switch
             {
                 >= 9 => "Hopper",

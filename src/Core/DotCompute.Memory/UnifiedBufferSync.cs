@@ -482,7 +482,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Maps this buffer to host memory for direct access.
     /// </summary>
-    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         EnsureOnHost();
@@ -492,7 +492,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Maps a portion of this buffer to host memory for direct access.
     /// </summary>
-    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -505,7 +505,7 @@ public sealed partial class UnifiedBuffer<T>
     /// <summary>
     /// Asynchronously maps this buffer to host memory.
     /// </summary>
-    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await EnsureOnHostAsync(default, cancellationToken);

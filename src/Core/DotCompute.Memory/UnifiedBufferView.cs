@@ -281,7 +281,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<TView> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 
@@ -289,7 +289,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public MappedMemory<TView> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public MappedMemory<TView> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -300,7 +300,7 @@ public sealed class UnifiedBufferView<TOriginal, TView> : IUnifiedMemoryBuffer<T
     }
 
     /// <inheritdoc />
-    public async ValueTask<MappedMemory<TView>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<MappedMemory<TView>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed || _parentBuffer.IsDisposed, this);
 

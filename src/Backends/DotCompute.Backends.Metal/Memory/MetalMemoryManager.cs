@@ -292,7 +292,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
 
         // Calculate byte offsets
 
-        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var elementSize = Unsafe.SizeOf<T>();
         var offsetBytes = (long)offset * elementSize;
         var lengthBytes = (long)count * elementSize;
 
@@ -449,13 +449,13 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                     }
                     catch (Exception ex)
                     {
-                        var logger = base.Logger as ILogger;
+                        var logger = Logger as ILogger;
                         logger?.LogWarning(ex, "Failed to release Metal device during disposal");
                     }
                 }
 
 
-                var logger2 = base.Logger as ILogger;
+                var logger2 = Logger as ILogger;
                 logger2?.LogInformation(
                     "MetalMemoryManager disposed - Total allocations: {TotalAllocs}, Peak usage: {PeakMB:F1} MB",
                     _totalAllocations,
@@ -464,7 +464,7 @@ public sealed class MetalMemoryManager : BaseMemoryManager
             }
             catch (Exception ex)
             {
-                var logger = base.Logger as ILogger;
+                var logger = Logger as ILogger;
                 logger?.LogError(ex, "Error during MetalMemoryManager disposal");
             }
         }

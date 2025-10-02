@@ -171,11 +171,11 @@ public class KernelChainTests : PipelineTestBase
     }
 
     [Theory]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort)]
-    [InlineData(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort)]
+    [InlineData(Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback)]
     public async Task KernelChain_ErrorStrategy_HandlesFailures(DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy strategy)
     {
         // Arrange
@@ -189,9 +189,9 @@ public class KernelChainTests : PipelineTestBase
         // Act & Assert based on strategy
         switch (strategy)
         {
-            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue:
-            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip:
-            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback:
+            case Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Continue:
+            case Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Skip:
+            case Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Fallback:
                 // These should complete without throwing
                 var result = await builder
                     .Kernel("VectorAdd", input, input, new float[input.Length])
@@ -201,7 +201,7 @@ public class KernelChainTests : PipelineTestBase
                 Assert.NotNull(result);
                 break;
 
-            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry:
+            case Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Retry:
                 // Should eventually succeed after retries (or fail after max retries)
                 var retryResult = await builder
                     .Kernel("VectorAdd", input, input, new float[input.Length])
@@ -209,7 +209,7 @@ public class KernelChainTests : PipelineTestBase
                     .ExecuteAsync<float[]>(CreateTestTimeout());
                 break;
 
-            case DotCompute.Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort:
+            case Abstractions.Pipelines.Enums.ErrorHandlingStrategy.Abort:
                 // Should throw and abort the entire chain
                 _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 {
@@ -338,7 +338,7 @@ public class KernelChainTests : PipelineTestBase
         foreach (var stepMetric in result.StepMetrics)
         {
             Assert.True(stepMetric.ExecutionTime > TimeSpan.Zero);
-            Assert.NotNull(stepMetric.Name);
+            Assert.NotNull(stepMetric.KernelName);
             Assert.True(stepMetric.MemoryUsed >= 0);
         }
 

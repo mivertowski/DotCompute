@@ -70,7 +70,7 @@ public sealed class ParallelKernelConfig
     public object[]? Parameters { get; init; }
     public object[]? Arguments { get; init; }
     public int[]? GlobalWorkSize { get; init; }
-    public DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority Priority { get; init; } = DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority.Normal;
+    public DotCompute.Abstractions.Pipelines.Enums.ExecutionPriority Priority { get; init; } = ExecutionPriority.Normal;
 }
 
 public sealed class AffinityRule

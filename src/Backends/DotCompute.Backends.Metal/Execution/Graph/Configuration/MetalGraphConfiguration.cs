@@ -188,7 +188,7 @@ public class MetalGraphConfiguration
                 EnableMemoryCoalescing = true,
                 EnableCommandBufferBatching = true,
                 EnableAppleSiliconOptimizations = true,
-                MemoryStrategy = Graph.Types.MetalMemoryStrategy.UnifiedMemory
+                MemoryStrategy = Types.MetalMemoryStrategy.UnifiedMemory
             }
         };
     }
@@ -212,7 +212,7 @@ public class MetalGraphConfiguration
                 EnableMemoryCoalescing = true,
                 EnableCommandBufferBatching = true,
                 EnableAppleSiliconOptimizations = false,
-                MemoryStrategy = Graph.Types.MetalMemoryStrategy.Aggressive
+                MemoryStrategy = Types.MetalMemoryStrategy.Aggressive
             }
         };
     }

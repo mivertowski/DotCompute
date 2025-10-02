@@ -469,31 +469,31 @@ public sealed class MetalExecutionManager : IDisposable
     private void InitializeComponents(MetalExecutionManagerOptions options)
     {
         // Create loggers for each component
-        var streamLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var streamLogger = LoggerFactory.Create(builder =>
 
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandStream>();
 
 
-        var eventLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var eventLogger = LoggerFactory.Create(builder =>
 
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalEventManager>();
 
 
-        var errorLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var errorLogger = LoggerFactory.Create(builder =>
 
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalErrorHandler>();
 
 
-        var contextLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var contextLogger = LoggerFactory.Create(builder =>
 
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalExecutionContext>();
 
 
-        var encoderLogger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        var encoderLogger = LoggerFactory.Create(builder =>
 
             builder.SetMinimumLevel(_logger.IsEnabled(LogLevel.Trace) ? LogLevel.Trace : LogLevel.Information))
             .CreateLogger<MetalCommandEncoder>();

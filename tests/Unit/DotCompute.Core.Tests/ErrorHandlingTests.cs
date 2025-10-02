@@ -212,7 +212,7 @@ public sealed class ErrorHandlingTests : IDisposable
 
         // Verify diagnostic information is captured
         _ = accelerator.LastStackOverflowInfo.Should().NotBeNull();
-        _ = accelerator.LastStackOverflowInfo!.Name.Should().Be("stack_overflow_test");
+        _ = accelerator.LastStackOverflowInfo!.KernelName.Should().Be("stack_overflow_test");
     }
 
     #endregion

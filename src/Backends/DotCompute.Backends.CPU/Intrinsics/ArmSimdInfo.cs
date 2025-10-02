@@ -40,7 +40,7 @@ public sealed class ArmSimdInfo
     /// <value>
     ///   <c>true</c> if this instance has aes; otherwise, <c>false</c>.
     /// </value>
-    public static bool HasAes => global::System.Runtime.Intrinsics.Arm.Aes.IsSupported;
+    public static bool HasAes => Aes.IsSupported;
 
     /// <summary>
     /// Gets a value indicating whether this instance has sha1.

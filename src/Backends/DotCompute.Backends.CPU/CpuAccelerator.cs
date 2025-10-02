@@ -245,9 +245,9 @@ public sealed class CpuAccelerator : BaseAccelerator
     {
         try
         {
-            if (global::System.IO.File.Exists("/proc/meminfo"))
+            if (File.Exists("/proc/meminfo"))
             {
-                var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
+                var lines = File.ReadAllLines("/proc/meminfo");
                 var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:", StringComparison.Ordinal));
                 if (totalLine != null)
                 {

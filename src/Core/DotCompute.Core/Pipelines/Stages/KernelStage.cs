@@ -230,7 +230,7 @@ namespace DotCompute.Core.Pipelines.Stages
             // Validate kernel
             if (_kernel == null)
             {
-                errors.Add(new ValidationIssue("KERNEL_001", "Kernel is required", DotCompute.Abstractions.Validation.ValidationSeverity.Error));
+                errors.Add(new ValidationIssue("KERNEL_001", "Kernel is required", AbstractionsMemory.Validation.ValidationSeverity.Error));
             }
 
             // Validate work size
@@ -240,7 +240,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
             else if (_globalWorkSize.Any(size => size <= 0))
             {
-                errors.Add(new ValidationIssue("KERNEL_003", "Global work size must be positive", DotCompute.Abstractions.Validation.ValidationSeverity.Error));
+                errors.Add(new ValidationIssue("KERNEL_003", "Global work size must be positive", AbstractionsMemory.Validation.ValidationSeverity.Error));
             }
 
             // Validate local work size
@@ -248,11 +248,11 @@ namespace DotCompute.Core.Pipelines.Stages
             {
                 if (_localWorkSize.Length != _globalWorkSize?.Length)
                 {
-                    errors.Add(new ValidationIssue("KERNEL_004", "Local work size dimensions must match global work size dimensions", DotCompute.Abstractions.Validation.ValidationSeverity.Error));
+                    errors.Add(new ValidationIssue("KERNEL_004", "Local work size dimensions must match global work size dimensions", AbstractionsMemory.Validation.ValidationSeverity.Error));
                 }
                 else if (_localWorkSize.Any(size => size <= 0))
                 {
-                    errors.Add(new ValidationIssue("KERNEL_005", "Local work size must be positive", DotCompute.Abstractions.Validation.ValidationSeverity.Error));
+                    errors.Add(new ValidationIssue("KERNEL_005", "Local work size must be positive", AbstractionsMemory.Validation.ValidationSeverity.Error));
                 }
             }
 

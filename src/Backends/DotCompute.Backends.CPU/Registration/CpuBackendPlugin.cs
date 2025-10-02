@@ -85,7 +85,7 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
         // Check SIMD support
         try
         {
-            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
+            var simdInfo = Intrinsics.SimdCapabilities.GetSummary();
             if (simdInfo.SupportedInstructionSets.Count == 0)
             {
                 result.Warnings.Add("No SIMD instruction sets detected - performance may be reduced");
@@ -147,8 +147,8 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
         // Get SIMD capabilities
         try
         {
-            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
-            metrics.CustomMetrics["SimdVectorWidth"] = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.PreferredVectorWidth;
+            var simdInfo = Intrinsics.SimdCapabilities.GetSummary();
+            metrics.CustomMetrics["SimdVectorWidth"] = Intrinsics.SimdCapabilities.PreferredVectorWidth;
             metrics.CustomMetrics["SimdInstructionSets"] = simdInfo.SupportedInstructionSets.Count;
         }
         catch

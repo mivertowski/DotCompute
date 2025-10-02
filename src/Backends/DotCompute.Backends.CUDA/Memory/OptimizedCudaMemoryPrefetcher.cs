@@ -61,8 +61,8 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         // Create dedicated stream for prefetch operations
         _context.MakeCurrent();
         var streamHandle = IntPtr.Zero;
-        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref streamHandle, 0x01); // Non-blocking
-        Native.CudaRuntime.CheckError(result, "creating prefetch stream");
+        var result = CudaRuntime.cudaStreamCreateWithFlags(ref streamHandle, 0x01); // Non-blocking
+        CudaRuntime.CheckError(result, "creating prefetch stream");
         _prefetchStream = streamHandle;
 
         // Setup maintenance timer
@@ -207,8 +207,8 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             // Synchronize stream to ensure prefetch completion
             if (_config.SynchronousMode)
             {
-                var syncResult = Native.CudaRuntime.cudaStreamSynchronize(_prefetchStream);
-                Native.CudaRuntime.CheckError(syncResult, "synchronizing prefetch stream");
+                var syncResult = CudaRuntime.cudaStreamSynchronize(_prefetchStream);
+                CudaRuntime.CheckError(syncResult, "synchronizing prefetch stream");
             }
         }
         finally
@@ -610,8 +610,8 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             _prefetchSemaphore?.Dispose();
             if (_prefetchStream != IntPtr.Zero)
             {
-                var destroyResult = Native.CudaRuntime.cudaStreamDestroy(_prefetchStream);
-                Native.CudaRuntime.CheckError(destroyResult, "destroying prefetch stream");
+                var destroyResult = CudaRuntime.cudaStreamDestroy(_prefetchStream);
+                CudaRuntime.CheckError(destroyResult, "destroying prefetch stream");
             }
             _accessPatterns.Clear();
 

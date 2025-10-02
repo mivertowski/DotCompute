@@ -165,12 +165,12 @@ namespace DotCompute.Backends.CUDA.Advanced
                     {
                         Type = bottlenecks.PrimaryBottleneck switch
                         {
-                            BottleneckType.None => DotCompute.Abstractions.Types.BottleneckType.None,
-                            BottleneckType.Occupancy => DotCompute.Abstractions.Types.BottleneckType.CPU,
-                            BottleneckType.MemoryBandwidth => DotCompute.Abstractions.Types.BottleneckType.Memory,
-                            BottleneckType.Compute => DotCompute.Abstractions.Types.BottleneckType.GPU,
-                            BottleneckType.ThreadDivergence => DotCompute.Abstractions.Types.BottleneckType.GPU,
-                            _ => DotCompute.Abstractions.Types.BottleneckType.None
+                            BottleneckType.None => BottleneckType.None,
+                            BottleneckType.Occupancy => BottleneckType.CPU,
+                            BottleneckType.MemoryBandwidth => BottleneckType.Memory,
+                            BottleneckType.Compute => BottleneckType.GPU,
+                            BottleneckType.ThreadDivergence => BottleneckType.GPU,
+                            _ => BottleneckType.None
                         },
                         Severity = bottlenecks.Severity,
                         Details = bottlenecks.Details

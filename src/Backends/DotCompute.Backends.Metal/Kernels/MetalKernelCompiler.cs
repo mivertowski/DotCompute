@@ -273,7 +273,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     private static string ExtractMetalCode(KernelDefinition definition)
     {
         // If it's binary code, we'll need to handle it differently
-        if (definition.Code != null && IsBinaryCode(System.Text.Encoding.UTF8.GetBytes(definition.Code)))
+        if (definition.Code != null && IsBinaryCode(Encoding.UTF8.GetBytes(definition.Code)))
         {
             throw new NotSupportedException("Pre-compiled Metal binaries are not yet supported");
         }

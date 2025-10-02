@@ -411,9 +411,9 @@ namespace DotCompute.Core.Compute
         {
             try
             {
-                if (global::System.IO.File.Exists("/proc/meminfo"))
+                if (File.Exists("/proc/meminfo"))
                 {
-                    var lines = global::System.IO.File.ReadAllLines("/proc/meminfo");
+                    var lines = File.ReadAllLines("/proc/meminfo");
                     var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
                     if (availableLine != null)
                     {

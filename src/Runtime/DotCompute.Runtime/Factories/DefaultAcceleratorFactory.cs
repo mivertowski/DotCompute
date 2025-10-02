@@ -79,7 +79,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
             var accelerator = await provider.CreateAsync(acceleratorInfo);
 
             // Cache based on lifetime setting
-            if (_options.AcceleratorLifetime == DotCompute.Runtime.Configuration.ServiceLifetime.Singleton)
+            if (_options.AcceleratorLifetime == Configuration.ServiceLifetime.Singleton)
             {
                 _createdAccelerators[acceleratorInfo.Id] = accelerator;
             }
@@ -461,7 +461,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         }
 
         // Dispose cached accelerators if they are singletons
-        if (_options.AcceleratorLifetime == DotCompute.Runtime.Configuration.ServiceLifetime.Singleton)
+        if (_options.AcceleratorLifetime == Configuration.ServiceLifetime.Singleton)
         {
             foreach (var accelerator in _createdAccelerators.Values)
             {

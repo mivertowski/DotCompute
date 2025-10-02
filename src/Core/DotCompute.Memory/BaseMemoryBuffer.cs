@@ -111,7 +111,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
 
 
     /// <inheritdoc/>
-    public virtual MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public virtual MappedMemory<T> Map(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ThrowIfDisposed();
         EnsureOnHost();
@@ -119,7 +119,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc/>
-    public virtual MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite)
+    public virtual MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite)
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -131,7 +131,7 @@ public abstract class BaseMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : un
     }
 
     /// <inheritdoc/>
-    public virtual async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = DotCompute.Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<MappedMemory<T>> MapAsync(DotCompute.Abstractions.Memory.MapMode mode = Abstractions.Memory.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         await EnsureOnHostAsync(default, cancellationToken).ConfigureAwait(false);

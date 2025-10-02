@@ -300,7 +300,7 @@ public sealed partial class KernelProfiler : IDisposable
                 KernelName = kernelName,
                 TimeRange = timeRange,
                 DataPoints = 0,
-                TrendDirection = DotCompute.Abstractions.Types.TrendDirection.Unknown,
+                TrendDirection = AbstractionsMemory.Types.TrendDirection.Unknown,
                 AnalysisTime = DateTime.UtcNow
             };
         }
@@ -355,12 +355,12 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new DotCompute.Abstractions.Debugging.PerformanceAnomaly
             {
-                Type = DotCompute.Abstractions.Debugging.AnomalyType.PerformanceSpike,
+                Type = AbstractionsMemory.Debugging.AnomalyType.PerformanceSpike,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
                 ActualValue = data.ExecutionTime.TotalMilliseconds,
                 ExpectedValue = meanTime,
-                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? DotCompute.Abstractions.Debugging.AnomalySeverity.High : DotCompute.Abstractions.Debugging.AnomalySeverity.Medium,
+                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? AbstractionsMemory.Debugging.AnomalySeverity.High : AbstractionsMemory.Debugging.AnomalySeverity.Medium,
                 Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
             });
         }
@@ -375,12 +375,12 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new DotCompute.Abstractions.Debugging.PerformanceAnomaly
             {
-                Type = DotCompute.Abstractions.Debugging.AnomalyType.MemorySpike,
+                Type = AbstractionsMemory.Debugging.AnomalyType.MemorySpike,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
                 ActualValue = data.MemoryUsage?.AllocatedMemory ?? 0,
                 ExpectedValue = meanMemory,
-                Severity = (data.MemoryUsage?.AllocatedMemory ?? 0) > meanMemory + (3 * memoryStdDev) ? DotCompute.Abstractions.Debugging.AnomalySeverity.High : DotCompute.Abstractions.Debugging.AnomalySeverity.Medium,
+                Severity = (data.MemoryUsage?.AllocatedMemory ?? 0) > meanMemory + (3 * memoryStdDev) ? AbstractionsMemory.Debugging.AnomalySeverity.High : AbstractionsMemory.Debugging.AnomalySeverity.Medium,
                 Description = $"Memory usage ({(data.MemoryUsage?.AllocatedMemory ?? 0):N0} bytes) significantly higher than average ({meanMemory:F0} bytes)"
             });
         }
@@ -634,7 +634,7 @@ public sealed partial class KernelProfiler : IDisposable
                 KernelName = data.FirstOrDefault()?.KernelName ?? string.Empty,
                 Period = data.Count > 0 ? data.Last().EndTime - data.First().StartTime : TimeSpan.Zero,
                 DataPoints = data.Count,
-                TrendDirection = DotCompute.Abstractions.Types.TrendDirection.Unknown,
+                TrendDirection = AbstractionsMemory.Types.TrendDirection.Unknown,
                 AnalysisTime = DateTime.UtcNow
             };
         }
@@ -647,9 +647,9 @@ public sealed partial class KernelProfiler : IDisposable
 
         var trendDirection = slope switch
         {
-            > 1.0 => DotCompute.Abstractions.Types.TrendDirection.Degrading,
-            < -1.0 => DotCompute.Abstractions.Types.TrendDirection.Improving,
-            _ => DotCompute.Abstractions.Types.TrendDirection.Stable
+            > 1.0 => AbstractionsMemory.Types.TrendDirection.Degrading,
+            < -1.0 => AbstractionsMemory.Types.TrendDirection.Improving,
+            _ => AbstractionsMemory.Types.TrendDirection.Stable
         };
 
         return new DotCompute.Abstractions.Types.PerformanceTrend
@@ -694,7 +694,7 @@ public sealed partial class KernelProfiler : IDisposable
 
     private static DotCompute.Abstractions.Types.TrendDirection AnalyzeTrendDirection(List<ProfilingData> data)
     {
-        if (data.Count < 3) return DotCompute.Abstractions.Types.TrendDirection.Unknown;
+        if (data.Count < 3) return AbstractionsMemory.Types.TrendDirection.Unknown;
 
         var times = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
         var firstHalf = times.Take(times.Count / 2).Average();
@@ -704,9 +704,9 @@ public sealed partial class KernelProfiler : IDisposable
 
         return change switch
         {
-            > 0.1 => DotCompute.Abstractions.Types.TrendDirection.Degrading, // Execution time getting worse
-            < -0.1 => DotCompute.Abstractions.Types.TrendDirection.Improving, // Execution time getting better
-            _ => DotCompute.Abstractions.Types.TrendDirection.Stable
+            > 0.1 => AbstractionsMemory.Types.TrendDirection.Degrading, // Execution time getting worse
+            < -0.1 => AbstractionsMemory.Types.TrendDirection.Improving, // Execution time getting better
+            _ => AbstractionsMemory.Types.TrendDirection.Stable
         };
     }
 

@@ -865,7 +865,7 @@ public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanage
     private bool _isDisposed;
 
     public TestPooledBuffer(int sizeInElements, Action<BasePooledBuffer<T>>? returnAction)
-        : base(sizeInElements * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), returnAction)
+        : base(sizeInElements * Unsafe.SizeOf<T>(), returnAction)
     {
         _memory = new T[sizeInElements];
         _memoryType = MemoryType.Host;
@@ -874,7 +874,7 @@ public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanage
     public TestPooledBuffer(long sizeInBytes, Action<BasePooledBuffer<T>>? returnAction)
         : base(sizeInBytes, returnAction)
     {
-        var elementCount = (int)(sizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        var elementCount = (int)(sizeInBytes / Unsafe.SizeOf<T>());
         _memory = new T[elementCount];
         _memoryType = MemoryType.Host;
     }
@@ -997,7 +997,7 @@ public sealed class TestPooledBuffer<T> : BasePooledBuffer<T> where T : unmanage
         ArgumentOutOfRangeException.ThrowIfNegative(length);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset + length, Length);
 
-        return new TestPooledBuffer<T>(length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), null);
+        return new TestPooledBuffer<T>(length * Unsafe.SizeOf<T>(), null);
     }
 
     public override IUnifiedMemoryBuffer<TNew> AsType<TNew>() => throw new NotSupportedException();

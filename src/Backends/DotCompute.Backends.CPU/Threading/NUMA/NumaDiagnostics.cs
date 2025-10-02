@@ -109,10 +109,10 @@ public static class NumaDiagnostics
             // Validate CPU configuration
             ValidateCpuConfiguration(topology, issues);
 
-            var severity = issues.Count == 0 ? DotCompute.Abstractions.Validation.ValidationSeverity.Info :
-                          issues.Any(i => i.Severity == DotCompute.Abstractions.Validation.ValidationSeverity.Error) ? DotCompute.Abstractions.Validation.ValidationSeverity.Error :
-                          issues.Any(i => i.Severity == DotCompute.Abstractions.Validation.ValidationSeverity.Warning) ? DotCompute.Abstractions.Validation.ValidationSeverity.Warning :
-                          DotCompute.Abstractions.Validation.ValidationSeverity.Info;
+            var severity = issues.Count == 0 ? ValidationSeverity.Info :
+                          issues.Any(i => i.Severity == ValidationSeverity.Error) ? ValidationSeverity.Error :
+                          issues.Any(i => i.Severity == ValidationSeverity.Warning) ? ValidationSeverity.Warning :
+                          ValidationSeverity.Info;
 
             return new ValidationResult
             {
@@ -132,7 +132,7 @@ public static class NumaDiagnostics
                     new()
                     {
                         Component = "System",
-                        Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error,
+                        Severity = ValidationSeverity.Error,
                         Message = $"Validation failed: {ex.Message}",
                         Details = ex.ToString()
                     }
@@ -467,7 +467,7 @@ public static class NumaDiagnostics
                 Component = "Topology",
                 Message = "Node count mismatch",
                 Details = $"Reported {topology.NodeCount} nodes but found {topology.Nodes.Count}",
-                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
+                Severity = ValidationSeverity.Error
             });
         }
 
@@ -480,7 +480,7 @@ public static class NumaDiagnostics
                 Component = "Topology",
                 Message = "Processor count mismatch",
                 Details = $"Sum of node processors ({totalProcessors}) doesn't match total ({topology.ProcessorCount})",
-                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Warning
+                Severity = ValidationSeverity.Warning
             });
         }
     }
@@ -494,7 +494,7 @@ public static class NumaDiagnostics
                 Component = "Platform",
                 Message = "Invalid maximum node count",
                 Details = $"MaxNodes is {capabilities.MaxNodes}",
-                Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
+                Severity = ValidationSeverity.Error
             });
         }
     }
@@ -510,7 +510,7 @@ public static class NumaDiagnostics
                     Component = "Memory",
                     Message = $"Invalid memory size for node {node.NodeId}",
                     Details = $"Memory size is {node.MemorySize}",
-                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
+                    Severity = ValidationSeverity.Error
                 });
             }
         }
@@ -527,7 +527,7 @@ public static class NumaDiagnostics
                     Component = "CPU",
                     Message = $"Invalid processor count for node {node.NodeId}",
                     Details = $"Processor count is {node.ProcessorCount}",
-                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Error
+                    Severity = ValidationSeverity.Error
                 });
             }
 
@@ -539,7 +539,7 @@ public static class NumaDiagnostics
                     Component = "CPU",
                     Message = $"Processor mask/count mismatch for node {node.NodeId}",
                     Details = $"Mask has {maskCount} bits but count is {node.ProcessorCount}",
-                    Severity = DotCompute.Abstractions.Validation.ValidationSeverity.Warning
+                    Severity = ValidationSeverity.Warning
                 });
             }
         }

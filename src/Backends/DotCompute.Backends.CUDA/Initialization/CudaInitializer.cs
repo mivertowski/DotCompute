@@ -193,11 +193,11 @@ namespace DotCompute.Backends.CUDA.Initialization
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     // Check for WSL
-                    if (System.IO.File.Exists("/proc/version"))
+                    if (File.Exists("/proc/version"))
                     {
                         try
                         {
-                            var version = System.IO.File.ReadAllText("/proc/version");
+                            var version = File.ReadAllText("/proc/version");
                             if (version.Contains("microsoft", StringComparison.OrdinalIgnoreCase))
                             {
                                 _ = info.AppendLine("Environment: WSL detected");

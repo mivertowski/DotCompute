@@ -62,7 +62,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
     /// <summary>
     /// Gets the memory options for this buffer.
     /// </summary>
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => MemoryOptions.None;
 
     /// <summary>
     /// Gets the buffer state for tracking transfers.
@@ -393,7 +393,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
 
         // Calculate the new length ensuring the byte size remains valid
         var originalSizeInBytes = SizeInBytes;
-        var newElementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
+        var newElementSize = Unsafe.SizeOf<TNew>();
         var newLength = (int)(originalSizeInBytes / newElementSize);
 
         if (originalSizeInBytes % newElementSize != 0)
@@ -405,8 +405,8 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
 
         // Create a new buffer and copy the data
         var newBuffer = new UnifiedBuffer<TNew>(_memoryManager, newLength);
-        var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(_hostArray.AsSpan());
-        var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(newBuffer._hostArray.AsSpan());
+        var sourceBytes = MemoryMarshal.AsBytes(_hostArray.AsSpan());
+        var destBytes = MemoryMarshal.AsBytes(newBuffer._hostArray.AsSpan());
         sourceBytes.CopyTo(destBytes);
 
         return newBuffer;
@@ -420,7 +420,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
             throw new ArgumentException($"Type mismatch: expected {typeof(T)}, got {typeof(U)}");
         }
 
-        var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<U, T>(source.Span);
+        var typedSource = MemoryMarshal.Cast<U, T>(source.Span);
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
 
         // Create a slice and copy data
@@ -443,7 +443,7 @@ public sealed partial class UnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T :
         }
 
         var elementOffset = (int)(offset / Unsafe.SizeOf<T>());
-        var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<U, T>(destination.Span);
+        var typedDestination = MemoryMarshal.Cast<U, T>(destination.Span);
 
         EnsureOnHost();
         var sourceSpan = _hostArray.AsSpan(elementOffset, Math.Min(typedDestination.Length, Length - elementOffset));

@@ -52,7 +52,7 @@ public class NuGetPluginManager : IDisposable
 
         var pluginLoaderLogger = _logger as ILogger<NuGetPluginLoader> ??
 
-                                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance;
+                                 NullLogger<NuGetPluginLoader>.Instance;
         _pluginLoader = new NuGetPluginLoader(pluginLoaderLogger);
         _healthMonitor = new PluginHealthMonitor(_logger);
         _metricsCollector = new PluginMetricsCollector(_logger);

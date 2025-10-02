@@ -189,11 +189,11 @@ namespace DotCompute.Backends.CUDA.Configuration
             // For older systems, sm_86 is a safe fallback
             // Check if we're on a CUDA 13 system by looking for cuda-13 installation
 
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+            if (Directory.Exists("/usr/local/cuda-13.0") ||
 
-                System.IO.Directory.Exists("/usr/local/cuda") &&
+                Directory.Exists("/usr/local/cuda") &&
 
-                System.IO.File.Exists("/usr/local/cuda/version.json"))
+                File.Exists("/usr/local/cuda/version.json"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }
@@ -209,9 +209,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         private static (int major, int minor) GetFallbackCapability()
         {
             // Check for CUDA 13 installation
-            if (System.IO.Directory.Exists("/usr/local/cuda-13.0") ||
+            if (Directory.Exists("/usr/local/cuda-13.0") ||
 
-                System.IO.Directory.Exists("/usr/local/cuda"))
+                Directory.Exists("/usr/local/cuda"))
             {
                 return (8, 9);  // CUDA 13 supports Ada (sm_89)
             }

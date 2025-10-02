@@ -587,7 +587,7 @@ internal static partial class KernelSourceParser
         catch (Exception ex)
         {
             // Log error and fall back to pattern matching
-            System.Diagnostics.Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
+            Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
             return ParseWithPatterns(code, language);
         }
     }
@@ -619,7 +619,7 @@ internal static partial class KernelSourceParser
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
+            Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
             // Fall back to pattern matching
             return ParseWithPatterns(code, "C#");
         }
@@ -977,14 +977,14 @@ internal static partial class KernelOptimizer
     public static KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
         // Common subexpression elimination, strength reduction
-        ast = KernelOptimizer.ApplyBasicOptimizations(ast);
+        ast = ApplyBasicOptimizations(ast);
         return ast;
     }
 
     public static KernelAst ApplyAggressiveOptimizations(KernelAst ast)
     {
         // Loop transformations, function inlining
-        ast = KernelOptimizer.ApplyStandardOptimizations(ast);
+        ast = ApplyStandardOptimizations(ast);
         return ast;
     }
 

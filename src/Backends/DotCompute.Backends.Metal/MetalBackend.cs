@@ -35,14 +35,14 @@ public sealed partial class MetalBackend : IDisposable
     /// </summary>
     public static bool IsAvailable()
     {
-        System.Console.WriteLine($"DEBUG: IsAvailable() called");
-        System.Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
+        Console.WriteLine($"DEBUG: IsAvailable() called");
+        Console.WriteLine($"DEBUG: IsOSPlatform(OSX): {RuntimeInformation.IsOSPlatform(OSPlatform.OSX)}");
 
         // Metal is only available on macOS
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            System.Console.WriteLine($"DEBUG: Not on macOS, returning false");
+            Console.WriteLine($"DEBUG: Not on macOS, returning false");
             return false;
         }
 
@@ -50,21 +50,21 @@ public sealed partial class MetalBackend : IDisposable
         try
         {
             var osVersion = Environment.OSVersion.Version;
-            System.Console.WriteLine($"DEBUG: OS Version: {osVersion}");
+            Console.WriteLine($"DEBUG: OS Version: {osVersion}");
             // macOS 11+ (Big Sur and later) report major version as 11+
             // macOS 10.x reports major version as 10
             if (osVersion.Major < 10 || (osVersion.Major == 10 && osVersion.Minor < 13))
             {
-                System.Console.WriteLine($"DEBUG: OS version too old, returning false");
+                Console.WriteLine($"DEBUG: OS version too old, returning false");
                 return false;
             }
             // Any version >= 11 is supported (Big Sur, Monterey, Ventura, Sonoma, Sequoia)
-            System.Console.WriteLine($"DEBUG: OS version check passed");
+            Console.WriteLine($"DEBUG: OS version check passed");
         }
         catch (Exception ex)
         {
             // If we can't determine OS version, assume it's not supported
-            System.Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
+            Console.WriteLine($"DEBUG: Exception in OS version check: {ex.Message}");
             return false;
         }
 
@@ -72,25 +72,25 @@ public sealed partial class MetalBackend : IDisposable
         try
         {
             var result = MetalNative.IsMetalSupported();
-            System.Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
+            Console.WriteLine($"DEBUG: MetalNative.IsMetalSupported() returned: {result}");
             return result;
         }
         catch (DllNotFoundException ex)
         {
             // Native library not available
-            System.Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
+            Console.WriteLine($"DEBUG: DllNotFoundException: {ex.Message}");
             return false;
         }
         catch (EntryPointNotFoundException ex)
         {
             // Function not found in native library
-            System.Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
+            Console.WriteLine($"DEBUG: EntryPointNotFoundException: {ex.Message}");
             return false;
         }
         catch (Exception ex)
         {
             // Any other error means Metal is not available
-            System.Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"DEBUG: Exception: {ex.GetType().Name}: {ex.Message}");
             return false;
         }
     }

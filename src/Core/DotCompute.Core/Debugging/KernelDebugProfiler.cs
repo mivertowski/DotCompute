@@ -483,7 +483,7 @@ public sealed class KernelDebugProfiler : IDisposable
                 bottlenecks.Add(new DotCompute.Abstractions.Debugging.PerformanceBottleneck
                 {
                     Description = $"Slow execution detected in {slowExecutions.Count()} runs - {(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
-                    Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
+                    Severity = BottleneckSeverity.Medium,
                     Component = "Execution Performance"
                 });
             }
@@ -494,8 +494,8 @@ public sealed class KernelDebugProfiler : IDisposable
             KernelName = kernelName,
             Bottlenecks = bottlenecks.Select(b => new DotCompute.Core.Debugging.Core.Bottleneck
             {
-                Type = DotCompute.Abstractions.Types.BottleneckType.Unknown,
-                Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
+                Type = AbstractionsMemory.Types.BottleneckType.Unknown,
+                Severity = BottleneckSeverity.Medium,
                 Description = b.Description,
                 Impact = "Performance impact",
                 Recommendation = "Optimize for better performance"

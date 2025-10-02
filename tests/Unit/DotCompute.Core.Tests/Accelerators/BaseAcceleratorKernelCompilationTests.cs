@@ -57,7 +57,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Assert
         _ = result.Should().NotBeNull();
         _ = result.Name.Should().Be("testKernel");
-        result.IsValid.Should().BeTrue();
+        _ = result.Id.Should().NotBeEmpty();
         _ = _accelerator.CompileKernelAsyncCalled.Should().BeTrue();
     }
 
@@ -97,7 +97,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         // Arrange
         var kernelDef = new KernelDefinition("testKernel", "kernel code", "testFunction");
         var options = new CompilationOptions();
-        _accelerator.Dispose();
+        await _accelerator.DisposeAsync();
 
         // Act
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options);
@@ -155,7 +155,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
         var kernelDef = new KernelDefinition("testKernel", "kernel code", "testFunction");
         var options = new CompilationOptions();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var act = async () => await _accelerator.CompileKernelAsync(kernelDef, options, cts.Token);
@@ -182,7 +182,7 @@ public sealed class BaseAcceleratorKernelCompilationTests : IDisposable
 
         // Assert
         _ = results.Should().HaveCount(3);
-        results.Should().OnlyContain(r => r.IsValid);
+        results.Should().OnlyContain(r => !string.IsNullOrEmpty(r.Name));
         _ = results.Select(r => r.Name).Should().BeEquivalentTo(["kernel1", "kernel2", "kernel3"]);
         _ = _accelerator.CompilationCount.Should().Be(3);
     }

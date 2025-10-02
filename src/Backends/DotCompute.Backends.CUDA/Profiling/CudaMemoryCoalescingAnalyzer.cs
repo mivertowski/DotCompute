@@ -221,7 +221,7 @@ namespace DotCompute.Backends.CUDA.Analysis
 
             // Analyze based on access order
 
-            if (accessOrder == DotCompute.Backends.CUDA.Analysis.Types.AccessOrder.RowMajor)
+            if (accessOrder == Types.AccessOrder.RowMajor)
             {
                 // Row-major access with row-major storage is optimal
                 analysis.IsOptimal = true;

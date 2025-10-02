@@ -85,7 +85,7 @@ public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelera
         // Check Metal device availability
         try
         {
-            var device = DotCompute.Backends.Metal.Native.MetalNative.CreateSystemDefaultDevice();
+            var device = Native.MetalNative.CreateSystemDefaultDevice();
             if (device == IntPtr.Zero)
             {
                 result.IsValid = false;
@@ -93,7 +93,7 @@ public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelera
             }
             else
             {
-                DotCompute.Backends.Metal.Native.MetalNative.ReleaseDevice(device);
+                Native.MetalNative.ReleaseDevice(device);
             }
         }
         catch (Exception ex)
@@ -143,16 +143,16 @@ public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelera
         // Get Metal device information if available
         try
         {
-            var device = DotCompute.Backends.Metal.Native.MetalNative.CreateSystemDefaultDevice();
+            var device = Native.MetalNative.CreateSystemDefaultDevice();
             if (device != IntPtr.Zero)
             {
-                var deviceInfo = DotCompute.Backends.Metal.Native.MetalNative.GetDeviceInfo(device);
+                var deviceInfo = Native.MetalNative.GetDeviceInfo(device);
                 metrics.CustomMetrics["MetalDeviceRegistryID"] = deviceInfo.RegistryID;
                 metrics.CustomMetrics["MetalDeviceHasUnifiedMemory"] = deviceInfo.HasUnifiedMemory;
                 metrics.CustomMetrics["MetalDeviceIsLowPower"] = deviceInfo.IsLowPower;
                 metrics.CustomMetrics["MetalDeviceMaxThreadgroupSize"] = deviceInfo.MaxThreadgroupSize;
 
-                DotCompute.Backends.Metal.Native.MetalNative.ReleaseDevice(device);
+                Native.MetalNative.ReleaseDevice(device);
             }
         }
         catch

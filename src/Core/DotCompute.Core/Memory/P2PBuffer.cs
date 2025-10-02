@@ -617,7 +617,7 @@ namespace DotCompute.Core.Memory
             try
             {
                 var copyStrategy = DetermineP2PCopyStrategy(_accelerator, destination._accelerator);
-                var elementSize = global::System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+                var elementSize = Unsafe.SizeOf<T>();
                 var transferSize = count * elementSize;
                 var sourceOffsetBytes = sourceOffset * elementSize;
                 var destOffsetBytes = destinationOffset * elementSize;

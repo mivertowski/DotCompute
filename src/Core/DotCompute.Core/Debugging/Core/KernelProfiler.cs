@@ -300,8 +300,8 @@ public sealed class KernelProfiler : IDisposable
         {
             bottlenecks.Add(new Bottleneck
             {
-                Type = DotCompute.Abstractions.Types.BottleneckType.Compute,
-                Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.High,
+                Type = AbstractionsMemory.Types.BottleneckType.Compute,
+                Severity = BottleneckSeverity.High,
                 Description = $"Execution time varies significantly (max: {maxExecutionTime:F2}ms, avg: {avgExecutionTime:F2}ms)",
                 Impact = $"Affects kernel execution performance",
                 Recommendation = "Profile kernel for hot paths, consider algorithmic optimizations"
@@ -319,8 +319,8 @@ public sealed class KernelProfiler : IDisposable
             {
                 bottlenecks.Add(new Bottleneck
                 {
-                    Type = DotCompute.Abstractions.Types.BottleneckType.Memory,
-                    Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
+                    Type = AbstractionsMemory.Types.BottleneckType.Memory,
+                    Severity = BottleneckSeverity.Medium,
                     Description = $"Memory usage varies significantly (max: {maxMemory:N0} bytes, avg: {avgMemory:N0} bytes)",
                     Impact = $"Affects memory allocation efficiency",
                     Recommendation = "Implement memory pooling, review allocation patterns"

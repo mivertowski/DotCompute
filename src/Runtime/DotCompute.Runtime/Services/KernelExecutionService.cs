@@ -765,9 +765,9 @@ internal class MockUnifiedBuffer<T> : IUnifiedMemoryBuffer where T : unmanaged
     public int Length { get; }
     public long SizeInBytes { get; }
     public static IAccelerator Accelerator => null!;
-    public DotCompute.Abstractions.Memory.MemoryOptions Options => DotCompute.Abstractions.Memory.MemoryOptions.None;
+    public DotCompute.Abstractions.Memory.MemoryOptions Options => Abstractions.Memory.MemoryOptions.None;
     public bool IsDisposed => false;
-    public DotCompute.Abstractions.Memory.BufferState State => DotCompute.Abstractions.Memory.BufferState.Synchronized;
+    public DotCompute.Abstractions.Memory.BufferState State => Abstractions.Memory.BufferState.Synchronized;
 
     public T[] GetData() => _data;
 

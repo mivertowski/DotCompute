@@ -244,7 +244,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
     /// <summary>
     /// Hook for derived classes to add additional validation.
     /// </summary>
-    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition) => DotCompute.Abstractions.Validation.UnifiedValidationResult.Success();
+    protected virtual DotCompute.Abstractions.Validation.UnifiedValidationResult AdditionalValidation(KernelDefinition definition) => UnifiedValidationResult.Success();
 
 
     /// <summary>
@@ -429,14 +429,14 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             {
                 IsValid = result.IsValid,
                 Errors = result.Errors
-                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code, e.Message, DotCompute.Abstractions.Validation.ValidationSeverity.Error))
+                    .Select(e => new DotCompute.Abstractions.Validation.ValidationIssue(e.Code, e.Message, ValidationSeverity.Error))
                     .ToList(),
                 Warnings = result.Warnings
                     .Select(w => new DotCompute.Abstractions.Validation.ValidationWarning
                     {
                         Code = w.Code ?? "UNKNOWN",
                         Message = w.Message,
-                        Severity = DotCompute.Abstractions.Validation.WarningSeverity.Medium
+                        Severity = WarningSeverity.Medium
                     })
                     .ToList()
             };
@@ -448,7 +448,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = false,
-                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue("VALIDATION_ERROR", $"Validation failed: {ex.Message}", DotCompute.Abstractions.Validation.ValidationSeverity.Error)]
+                Errors = [new DotCompute.Abstractions.Validation.ValidationIssue("VALIDATION_ERROR", $"Validation failed: {ex.Message}", ValidationSeverity.Error)]
             };
         }
     }

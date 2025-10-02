@@ -1154,6 +1154,33 @@ internal sealed class TestTelemetryProvider : BaseTelemetryProvider
             _counters.Clear();
         }
     }
+
+    // Helper methods for operation measurement
+    public T MeasureOperation<T>(string operationName, Func<T> operation)
+    {
+        var timer = StartTimer(operationName);
+        try
+        {
+            return operation();
+        }
+        finally
+        {
+            timer.Dispose();
+        }
+    }
+
+    public async Task<T> MeasureOperationAsync<T>(string operationName, Func<Task<T>> operation)
+    {
+        var timer = StartTimer(operationName);
+        try
+        {
+            return await operation();
+        }
+        finally
+        {
+            timer.Dispose();
+        }
+    }
 }
 
 // Helper classes for test telemetry data
@@ -1291,13 +1318,19 @@ internal class TestTelemetryTimer : IOperationTimer
         var newCount = stats.ExecutionCount + 1;
         var newTotal = stats.TotalDuration + duration;
 
-        _statistics[operationName] = stats with
+        _statistics[operationName] = new OperationStatistics
         {
+            OperationName = stats.OperationName,
             ExecutionCount = newCount,
             TotalDuration = newTotal,
             AverageDuration = TimeSpan.FromTicks(newTotal.Ticks / newCount),
             MinimumDuration = duration < stats.MinimumDuration ? duration : stats.MinimumDuration,
             MaximumDuration = duration > stats.MaximumDuration ? duration : stats.MaximumDuration,
+            StandardDeviation = stats.StandardDeviation,
+            MedianDuration = stats.MedianDuration,
+            P95Duration = stats.P95Duration,
+            P99Duration = stats.P99Duration,
+            FirstExecution = stats.FirstExecution,
             LastExecution = DateTime.UtcNow
         };
 

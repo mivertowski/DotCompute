@@ -28,7 +28,7 @@ public static class DICompilationTest
         _ = services.AddDotComputeRuntime(configureOptions: options =>
         {
             options.EnableAutoDiscovery = true;
-            options.PreferredAcceleratorType = DotCompute.Abstractions.AcceleratorType.CPU;
+            options.PreferredAcceleratorType = Abstractions.AcceleratorType.CPU;
         });
 
         _ = services.AddDotComputePlugins(configureOptions: options =>
@@ -74,7 +74,7 @@ public static class ConfigurationTest
         var runtimeOptions = new DotComputeRuntimeOptions
         {
             EnableAutoDiscovery = true,
-            PreferredAcceleratorType = DotCompute.Abstractions.AcceleratorType.CPU,
+            PreferredAcceleratorType = Abstractions.AcceleratorType.CPU,
             MaxAccelerators = 8,
             EnableKernelCaching = true,
             KernelCacheDirectory = "./cache",

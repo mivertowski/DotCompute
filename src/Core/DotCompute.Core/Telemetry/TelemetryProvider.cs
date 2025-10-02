@@ -274,7 +274,7 @@ public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Teleme
     /// <summary>
     /// Exports telemetry data to configured external systems (Prometheus, ELK, etc.).
     /// </summary>
-    public override async Task ExportTelemetryAsync(DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat format = DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Prometheus,
+    public override async Task ExportTelemetryAsync(DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat format = AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -287,13 +287,13 @@ public sealed class ProductionTelemetryProvider : DotCompute.Abstractions.Teleme
 
             switch (format)
             {
-                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Prometheus:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Prometheus:
                     await ExportPrometheusMetricsAsync(metrics, cancellationToken);
                     break;
-                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.OpenTelemetry:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.OpenTelemetry:
                     await ExportOpenTelemetryMetricsAsync(metrics, cancellationToken);
                     break;
-                case DotCompute.Abstractions.Telemetry.Types.TelemetryExportFormat.Json:
+                case AbstractionsMemory.Telemetry.Types.TelemetryExportFormat.Json:
                     await ExportJsonMetricsAsync(metrics, cancellationToken);
                     break;
             }
