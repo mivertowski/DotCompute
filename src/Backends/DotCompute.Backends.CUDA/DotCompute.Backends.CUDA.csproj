@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -16,7 +16,16 @@
     <!-- Disable debug symbols for packaging -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
-    <IncludeSymbols>false</IncludeSymbols>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SignAssembly>False</SignAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  
   </PropertyGroup>
 
   <ItemGroup>
@@ -47,8 +56,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
-    <PackageReference Include="Polly" Version="8.2.0" />
-    <PackageReference Include="Polly.Extensions" Version="8.4.2" />
+    <PackageReference Include="Polly" Version="8.6.4" />
+    <PackageReference Include="Polly.Extensions" Version="8.6.4" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <!-- Copy native CUDA wrapper to output -->

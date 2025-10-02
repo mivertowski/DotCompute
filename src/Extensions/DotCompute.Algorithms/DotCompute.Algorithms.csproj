@@ -15,53 +15,16 @@
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+   
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
   
-  <!-- Temporarily exclude plugin files that need interface updates -->
-  <ItemGroup>
-    <Compile Remove="Plugins\FFTPlugin.cs" />
-    <Compile Remove="Plugins\LinearAlgebraPlugin.cs" />
-    <Compile Remove="Plugins\SignalProcessingPlugin.cs" />
-    <Compile Remove="Plugins\VectorAdditionPlugin.cs" />
-    <Compile Remove="Types\Security\CodeAccessSecurityManager.cs" />
-    <!-- Exclude example files with complex dependencies -->
-    <Compile Remove="Examples\NuGetPluginLoadingExample.cs" />
-    <Compile Remove="Examples\EnhancedPluginSystemExample.cs" />
-    <!-- Exclude advanced management files that need refactoring -->
-    <Compile Remove="Management\AlgorithmPluginManager.cs" />
-    <Compile Remove="Management\NuGetPluginLoader.cs" />
-    <!-- Exclude files with missing dependencies -->
-    <Compile Remove="LinearAlgebraKernels.cs" />
-    <Compile Remove="LinearAlgebra\MatrixMath.cs" />
-    <Compile Remove="Types\Management\PluginManager.cs" />
-    <Compile Remove="Types\Management\AlgorithmPluginManager.cs" />
-    <Compile Remove="Management\NuGetPluginLoaderTests.cs" />
-    <Compile Remove="Management\PluginLoader.cs" />
-    <!-- Exclude more complex files that need interface updates -->
-    <Compile Remove="SignalProcessing\ConvolutionOperations.cs" />
-    <Compile Remove="LinearAlgebra\GPULinearAlgebraProvider.cs" />
-    <Compile Remove="Examples\SecurityValidationExample.cs" />
-    <Compile Remove="Examples\ConvolutionExample.cs" />
-    <Compile Remove="Types\Security\SecurityValidator.cs" />
-    <Compile Remove="Security\SecurityValidator.cs" />
-    <!-- Exclude more complex security and scanning files -->
-    <Compile Remove="Security\Scanner\*.cs" />
-    <Compile Remove="Security\DigitalSigning\*.cs" />
-    <!-- SecurityValidator and NuGetPluginService have complex dependencies - excluded for now -->
-    <Compile Remove="Management\Validation\SecurityValidator.cs" />
-    <Compile Remove="Management\Loading\NuGetPluginService.cs" />
-    <!-- UnifiedPluginManager needs significant refactoring - excluded for now -->
-    <Compile Remove="Management\Core\UnifiedPluginManager.cs" />
-    <!-- Complex files with many dependency issues - excluded for housekeeping -->
-    <!-- Exclude entire Management and complex algorithm folders for now -->
-    <Compile Remove="Management\**\*.cs" />
-    <Compile Remove="LinearAlgebra\Components\*.cs" />
-    <Compile Remove="LinearAlgebra\Operations\*.cs" />
-    <Compile Remove="Optimized\Simd\*.cs" />
-    <Compile Remove="Optimized\SimdIntrinsics.cs" />
-    <Compile Remove="Optimized\AutoTuner.cs" />
-    <Compile Remove="Types\Security\MalwareScanner.cs" />
-    <Compile Remove="Security\Core\UnifiedSecurityValidator.cs" />
-  </ItemGroup>
+  </PropertyGroup>
+  
+ 
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
@@ -81,6 +44,10 @@
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
     <PackageReference Include="System.Formats.Asn1" Version="9.0.9" />
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="9.0.9" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -93,22 +60,6 @@
     <InternalsVisibleTo Include="DotCompute.Algorithms.Tests" />
   </ItemGroup>
 
-  <!-- Temporarily exclude problematic files until interfaces are fully implemented -->
-  <ItemGroup>
-    <!-- Re-enabled Example files -->
-    <!-- <Compile Remove="Examples\SecurityValidationExample.cs" /> -->
-    <!-- <Compile Remove="Examples\NuGetPluginLoadingExample.cs" /> -->
-    <!-- <Compile Remove="Examples\EnhancedPluginSystemExample.cs" /> -->
-    <!-- <Compile Remove="Management\NuGetPluginLoaderTests.cs" /> -->
-    <!-- <Compile Remove="LinearAlgebraKernels.cs" /> -->
-    <!-- <Compile Remove="LinearAlgebra\GPULinearAlgebraProvider.cs" /> -->
-    <!-- <Compile Remove="LinearAlgebra\MatrixMath.cs" /> -->
-    <!-- <Compile Remove="Management\AlgorithmPluginManager.cs" /> -->
-    <!-- <Compile Remove="Management\NuGetPluginLoader.cs" /> -->
-    <!-- <Compile Remove="Management\PluginLoader.cs" /> -->
-    <!-- <Compile Remove="Security\SecurityRules.cs" /> -->
-    <!-- <Compile Remove="Security\SecurityPolicy.cs" /> -->
-    <!-- <Compile Remove="Plugins\LinearAlgebraPlugin.cs" /> -->
-  </ItemGroup>
+ 
 
 </Project>

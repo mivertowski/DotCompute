@@ -44,10 +44,10 @@
     <!-- Telemetry and Observability -->
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.9" />
     <!-- System.Diagnostics.Metrics is included in .NET 9.0 runtime -->
-    <PackageReference Include="OpenTelemetry" Version="1.9.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry" Version="1.13.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.13.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.9.0-beta.2" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.0" />
     <PackageReference Include="prometheus-net" Version="8.2.1" />
     
     <!-- High-performance collections and threading -->
@@ -58,7 +58,11 @@
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
     
     <!-- Performance counters (Windows-specific, conditional) -->
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.9" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -77,6 +81,14 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  
   </PropertyGroup>
 
 

@@ -11,23 +11,75 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
     /// </summary>
     public enum CudaError
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         Success = 0,
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         InvalidValue = 1,
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         OutOfMemory = 2,
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         NotInitialized = 3,
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         Deinitialized = 4,
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         NoDevice = 100
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
     public struct CudaDeviceProperties : IEquatable<CudaDeviceProperties>
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public string DeviceName { get; set; }
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public int Major { get; set; }
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public int Minor { get; set; }
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public long TotalGlobalMem { get; set; }
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public int MultiProcessorCount { get; set; }
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public readonly bool Equals(CudaDeviceProperties other)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             return DeviceName == other.DeviceName &&
                    Major == other.Major &&
@@ -36,50 +88,98 @@ namespace DotCompute.Hardware.Cuda.Tests.TestHelpers
                    MultiProcessorCount == other.MultiProcessorCount;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public readonly override bool Equals(object? obj)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             return obj is CudaDeviceProperties other && Equals(other);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public readonly override int GetHashCode()
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             return HashCode.Combine(DeviceName, Major, Minor, TotalGlobalMem, MultiProcessorCount);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             return left.Equals(right);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             return !left.Equals(right);
         }
     }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
     public static class CudaRuntime
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable XDOC001 // Missing XML documentation
         public static CudaError cudaGetDeviceCount(out int count)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             count = 0;
             return CudaError.NoDevice;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable XDOC001 // Missing XML documentation
         public static CudaError cudaDriverGetVersion(out int version)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             version = 0;
             return CudaError.Success;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable XDOC001 // Missing XML documentation
         public static CudaError cudaRuntimeGetVersion(out int version)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             version = 0;
             return CudaError.Success;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable XDOC001 // Missing XML documentation
         public static CudaError cudaGetDeviceProperties(ref CudaDeviceProperties props, int device)
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             props = default;
             return CudaError.NoDevice;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable XDOC001 // Missing XML documentation
         public static string GetErrorString(CudaError error) => error.ToString();
+#pragma warning restore XDOC001 // Missing XML documentation
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 
     /// <summary>

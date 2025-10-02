@@ -24,35 +24,60 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     private readonly List<Action> _disposeActions = new();
     private bool _disposed;
 
+    /// <inheritdoc/>
     public AcceleratorInfo Info => _info;
+    /// <inheritdoc/>
     public AcceleratorType Type { get; }
+    /// <inheritdoc/>
     public string DeviceType => _info.DeviceType;
+    /// <inheritdoc/>
     public IUnifiedMemoryManager Memory => _memoryManagerMock.Object;
+    /// <inheritdoc/>
     public IUnifiedMemoryManager MemoryManager => Memory;
+    /// <inheritdoc/>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "AcceleratorContext() constructor is not equivalent to default")]
     public AcceleratorContext Context { get; } = new();
+    /// <inheritdoc/>
     public bool IsAvailable => !_disposed;
 
     // Configuration properties for testing scenarios
+    /// <inheritdoc/>
     public bool ShouldFailCompilation { get; set; }
+    /// <inheritdoc/>
     public bool ShouldFailExecution { get; set; }
+    /// <inheritdoc/>
     public bool ShouldFailMemoryAllocation { get; set; }
+    /// <inheritdoc/>
     public TimeSpan ExecutionDelay { get; set; } = TimeSpan.Zero;
+    /// <inheritdoc/>
     public Exception? CompilationException { get; set; }
+    /// <inheritdoc/>
     public Exception? ExecutionException { get; set; }
+    /// <inheritdoc/>
     public Exception? MemoryException { get; set; }
 
     // Advanced tracking properties for BaseAccelerator testing
+    /// <inheritdoc/>
     public bool CompileKernelCoreCalled { get; private set; }
+    /// <inheritdoc/>
     public bool SynchronizeCoreCalled { get; private set; }
+    /// <inheritdoc/>
     public bool InitializeCoreCalled { get; private set; }
+    /// <inheritdoc/>
     public int DisposeCallCount { get; private set; }
+    /// <inheritdoc/>
     public KernelDefinition? LastCompiledDefinition { get; private set; }
+    /// <inheritdoc/>
     public CompilationOptions? LastCompilationOptions { get; private set; }
+    /// <inheritdoc/>
     public TimeSpan LastCompilationTime { get; private set; }
+    /// <inheritdoc/>
     public int TotalCompilations { get; private set; }
+    /// <inheritdoc/>
     public int TotalSynchronizations { get; private set; }
+    /// <inheritdoc/>
     public bool EnableCompilationCaching { get; set; } = true;
+    /// <inheritdoc/>
     public int CacheHitCount { get; private set; }
     private readonly ConcurrentDictionary<string, ICompiledKernel> _kernelCache = new();
 
@@ -224,6 +249,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
         return mock;
     }
 
+    /// <inheritdoc/>
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
@@ -262,6 +288,7 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
         return ValueTask.FromResult(_compiledKernelMock.Object);
     }
 
+    /// <inheritdoc/>
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         SynchronizeCoreCalled = true;
@@ -350,17 +377,18 @@ public sealed class ConsolidatedMockAccelerator : IAccelerator
     /// <summary>
     /// Gets the underlying memory manager mock for advanced testing scenarios.
     /// </summary>
-    public Mock<IUnifiedMemoryManager> GetMemoryManagerMock() => _memoryManagerMock;
+    public Mock<IUnifiedMemoryManager> MemoryManagerMock => _memoryManagerMock;
 
     /// <summary>
     /// Gets the underlying compiled kernel mock for advanced testing scenarios.
     /// </summary>
-    public Mock<ICompiledKernel> GetCompiledKernelMock() => _compiledKernelMock;
+    public Mock<ICompiledKernel> CompiledKernelMock => _compiledKernelMock;
 
     #endregion
 
     #region Disposal
 
+    /// <inheritdoc/>
     public ValueTask DisposeAsync()
     {
         if (_disposed)

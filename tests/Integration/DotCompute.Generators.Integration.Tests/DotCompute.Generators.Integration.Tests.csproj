@@ -9,6 +9,13 @@
     <NoWarn>$(NoWarn);CS8604;CS8625</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="XmlFix.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
   <!-- Package references are managed centrally in Directory.Packages.props -->
 
   <ItemGroup>

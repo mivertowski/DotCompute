@@ -25,11 +25,17 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+   
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
-    <!-- <ProjectReference Include="..\..\Extensions\DotCompute.Linq\DotCompute.Linq.csproj" /> -->
-    <!-- <ProjectReference Include="..\DotCompute.Algorithms\DotCompute.Algorithms.csproj" /> -->
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />   
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +50,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
