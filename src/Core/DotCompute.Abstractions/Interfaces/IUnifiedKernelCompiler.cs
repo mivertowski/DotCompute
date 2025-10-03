@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Kernels;
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels.Types;
+using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Validation;
 
 namespace DotCompute.Abstractions;

@@ -104,7 +104,7 @@ public class KernelExecutionContext
     /// <param name="value">The parameter value.</param>
     public void SetParameter(int index, object value)
     {
-        Parameters[index.ToString()] = value;
+        Parameters[index.ToString(System.Globalization.CultureInfo.InvariantCulture)] = value;
         if (value is IUnifiedMemoryBuffer<byte> buffer)
         {
             Buffers[index] = buffer;

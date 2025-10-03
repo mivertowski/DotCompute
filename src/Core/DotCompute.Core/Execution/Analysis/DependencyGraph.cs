@@ -224,7 +224,7 @@ namespace DotCompute.Core.Execution.Analysis
             }
             return nodes;
         }
-        
+
         /// <summary>
         /// Clears all dependencies from the graph.
         /// </summary>

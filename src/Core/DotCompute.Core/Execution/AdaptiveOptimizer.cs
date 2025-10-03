@@ -17,6 +17,8 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class AdaptiveOptimizer
 {
+    private readonly ILogger _logger;
+
     /// <summary>
     /// Initializes a new instance of the AdaptiveOptimizer class.
     /// </summary>

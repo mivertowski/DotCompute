@@ -7,7 +7,7 @@
 namespace DotCompute.Runtime.Services
 {
     /// <summary>
-    /// Re-export for backward compatibility. 
+    /// Re-export for backward compatibility.
     /// Use DotCompute.Abstractions.Interfaces.IComputeOrchestrator instead.
     /// </summary>
     [Obsolete("Use DotCompute.Abstractions.Interfaces.IComputeOrchestrator instead")]

@@ -43,13 +43,19 @@ namespace DotCompute.Core.Compute.Parsing
             var kernelType = DetectKernelType(kernelSource);
             var parameters = ExtractParameters(kernelSource);
 
-            return new KernelInfo
+            var kernelInfo = new KernelInfo
             {
                 Name = entryPoint,
                 Type = kernelType,
-                Source = kernelSource,
-                Parameters = parameters
+                Source = kernelSource
             };
+
+            foreach (var param in parameters)
+            {
+                kernelInfo.Parameters.Add(param);
+            }
+
+            return kernelInfo;
         }
 
         /// <summary>

@@ -25,18 +25,18 @@ __kernel void compute_householder_vector(
     const int start_idx               // Starting index
 ) {
     int gid = get_global_id(0);
-    
+
     if (gid >= n - start_idx) return;
-    
+
     // Copy column data
     float val = column[start_idx + gid];
     householder[gid] = val;
-    
+
     // Compute norm (reduction needed)
     __local float local_norm[256];
     local_norm[get_local_id(0)] = val * val;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Reduction to compute norm
     for (int offset = get_local_size(0) / 2; offset > 0; offset /= 2) {
         if (get_local_id(0) < offset) {
@@ -44,24 +44,24 @@ __kernel void compute_householder_vector(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     float norm = sqrt(local_norm[0]);
-    
+
     // Update first element with sign
     if (gid == 0) {
         float sign = householder[0] >= 0.0f ? 1.0f : -1.0f;
         householder[0] += sign * norm;
     }
-    
+
     barrier(CLK_GLOBAL_MEM_FENCE);
-    
+
     // Normalize vector
     float vnorm = 0.0f;
     for (int i = 0; i < n - start_idx; i++) {
         vnorm += householder[i] * householder[i];
     }
     vnorm = sqrt(vnorm);
-    
+
     if (vnorm > 1e-10f) {
         householder[gid] /= vnorm;
     }
@@ -85,23 +85,23 @@ __kernel void apply_householder_left(
 ) {
     int col = get_global_id(0);      // Column index
     int row_group = get_global_id(1); // Row group index
-    
+
     if (col >= n) return;
-    
+
     // Compute v^T * A[:, col] for this column
     __local float dot_products[256];
     int lid = get_local_id(1);
-    
+
     float dot = 0.0f;
     for (int i = lid; i < v_len; i += get_local_size(1)) {
         if (start_row + i < m) {
             dot += v[i] * matrix[(start_row + i) * n + col];
         }
     }
-    
+
     dot_products[lid] = dot;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Reduction to compute full dot product
     for (int offset = get_local_size(1) / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
@@ -109,9 +109,9 @@ __kernel void apply_householder_left(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     float total_dot = dot_products[0] * 2.0f;
-    
+
     // Apply transformation: A[:, col] = A[:, col] - 2 * (v^T * A[:, col]) * v
     for (int i = lid; i < v_len; i += get_local_size(1)) {
         if (start_row + i < m) {
@@ -134,20 +134,20 @@ extern ""C"" __global__ void compute_householder_vector_cuda(
     const int start_idx       // Starting index
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     if (tid >= n - start_idx) return;
-    
+
     // Copy column data
     float val = column[start_idx + tid];
     householder[tid] = val;
-    
+
     __syncthreads();
-    
+
     // Compute norm using shared memory reduction
     __shared__ float shared_norm[1024];
     shared_norm[threadIdx.x] = val * val;
     __syncthreads();
-    
+
     // Reduction
     for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
         if (threadIdx.x < offset) {
@@ -155,21 +155,21 @@ extern ""C"" __global__ void compute_householder_vector_cuda(
         }
         __syncthreads();
     }
-    
+
     float norm = sqrtf(shared_norm[0]);
-    
+
     // Update first element with sign
     if (tid == 0) {
         float sign = householder[0] >= 0.0f ? 1.0f : -1.0f;
         householder[0] += sign * norm;
     }
-    
+
     __syncthreads();
-    
+
     // Compute vector norm for normalization
     shared_norm[threadIdx.x] = householder[tid] * householder[tid];
     __syncthreads();
-    
+
     // Reduction for normalization
     for (int offset = blockDim.x / 2; offset > 0; offset >>= 1) {
         if (threadIdx.x < offset) {
@@ -177,9 +177,9 @@ extern ""C"" __global__ void compute_householder_vector_cuda(
         }
         __syncthreads();
     }
-    
+
     float vnorm = sqrtf(shared_norm[0]);
-    
+
     // Normalize
     if (vnorm > 1e-10f) {
         householder[tid] /= vnorm;
@@ -203,31 +203,31 @@ extern ""C"" __global__ void apply_householder_left_cuda(
 ) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
-    
+
     if (col >= n || row >= v_len) return;
-    
+
     __shared__ float shared_dot[32][32];
-    
+
     // Compute dot product v^T * A[:, col]
     float dot = 0.0f;
     if (start_row + row < m) {
         dot = v[row] * matrix[(start_row + row) * n + col];
     }
-    
+
     shared_dot[threadIdx.y][threadIdx.x] = dot;
     __syncthreads();
-    
+
     // Reduce along rows (within each column)
     for (int offset = blockDim.y / 2; offset > 0; offset >>= 1) {
         if (threadIdx.y < offset) {
-            shared_dot[threadIdx.y][threadIdx.x] += 
+            shared_dot[threadIdx.y][threadIdx.x] +=
                 shared_dot[threadIdx.y + offset][threadIdx.x];
         }
         __syncthreads();
     }
-    
+
     float total_dot = shared_dot[0][threadIdx.x] * 2.0f;
-    
+
     // Apply transformation
     if (start_row + row < m) {
         matrix[(start_row + row) * n + col] -= total_dot * v[row];
@@ -250,21 +250,21 @@ void CSHouseholderTransform(
 ) {
     uint col = id.x;
     uint row = id.y;
-    
+
     if (col >= MatrixCols || row >= VectorLength) return;
-    
+
     // Shared memory for reduction
     groupshared float shared_data[16][16];
-    
+
     // Load data and compute dot product
     float dot = 0.0f;
     if (StartRow + row < MatrixRows) {
         dot = HouseholderVector[row] * InputMatrix[StartRow + row][col];
     }
-    
+
     shared_data[gtid.y][gtid.x] = dot;
     GroupMemoryBarrierWithGroupSync();
-    
+
     // Reduction
     [unroll]
     for (uint offset = 8; offset > 0; offset >>= 1) {
@@ -273,12 +273,12 @@ void CSHouseholderTransform(
         }
         GroupMemoryBarrierWithGroupSync();
     }
-    
+
     float total_dot = shared_data[0][gtid.x] * 2.0f;
-    
+
     // Apply transformation
     if (StartRow + row < MatrixRows) {
-        OutputMatrix[StartRow + row][col] = 
+        OutputMatrix[StartRow + row][col] =
             InputMatrix[StartRow + row][col] - total_dot * HouseholderVector[row];
     }
 }";
@@ -304,14 +304,14 @@ kernel void compute_householder_vector_metal(
     threadgroup float* shared_norm [[threadgroup(0)]]
 ) {
     if (tid >= n - start_idx) return;
-    
+
     // Copy and compute norm
     float val = column[start_idx + tid];
     householder[tid] = val;
     shared_norm[lid] = val * val;
-    
+
     threadgroup_barrier(mem_flags::mem_threadgroup);
-    
+
     // Reduction
     for (uint offset = 128; offset > 0; offset >>= 1) {
         if (lid < offset && lid + offset < 256) {
@@ -319,21 +319,21 @@ kernel void compute_householder_vector_metal(
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
     }
-    
+
     float norm = sqrt(shared_norm[0]);
-    
+
     // Update first element
     if (tid == 0) {
         float sign = householder[0] >= 0.0f ? 1.0f : -1.0f;
         householder[0] += sign * norm;
     }
-    
+
     threadgroup_barrier(mem_flags::mem_device);
-    
+
     // Normalize
     shared_norm[lid] = householder[tid] * householder[tid];
     threadgroup_barrier(mem_flags::mem_threadgroup);
-    
+
     // Reduction for normalization
     for (uint offset = 128; offset > 0; offset >>= 1) {
         if (lid < offset) {
@@ -341,7 +341,7 @@ kernel void compute_householder_vector_metal(
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
     }
-    
+
     float vnorm = sqrt(shared_norm[0]);
     if (vnorm > 1e-10f) {
         householder[tid] /= vnorm;

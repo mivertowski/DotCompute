@@ -21,10 +21,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => "-O0",
+            OptimizationLevel.None => "-O0",
             OptimizationLevel.O1 => "-O1",
             OptimizationLevel.O2 or OptimizationLevel.Default => "-O2",
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => "-O3",
+            OptimizationLevel.O3 => "-O3",
             OptimizationLevel.Size => "-Os",
             _ => "-O2" // Default fallback
         };
@@ -39,10 +39,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => "/Od",
+            OptimizationLevel.None => "/Od",
             OptimizationLevel.O1 => "/O1",
             OptimizationLevel.O2 or OptimizationLevel.Default => "/O2",
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => "/Ox",
+            OptimizationLevel.O3 => "/Ox",
             OptimizationLevel.Size => "/O1", // MSVC uses /O1 for size optimization
             _ => "/O2" // Default fallback
         };
@@ -57,10 +57,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => "-O0",
+            OptimizationLevel.None => "-O0",
             OptimizationLevel.O1 => "-O1",
             OptimizationLevel.O2 or OptimizationLevel.Default => "-O2",
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => "-O3",
+            OptimizationLevel.O3 => "-O3",
             OptimizationLevel.Size => "-O2", // NVCC doesn't have -Os, use -O2
             _ => "-O2" // Default fallback
         };
@@ -75,10 +75,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => "-O0",
+            OptimizationLevel.None => "-O0",
             OptimizationLevel.O1 => "-O1",
             OptimizationLevel.O2 or OptimizationLevel.Default => "-O2",
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => "-O3",
+            OptimizationLevel.O3 => "-O3",
             OptimizationLevel.Size => "-Os",
             _ => "-O2" // Default fallback
         };
@@ -93,10 +93,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => 1.0,
+            OptimizationLevel.None => 1.0,
             OptimizationLevel.O1 => 1.2,
             OptimizationLevel.O2 or OptimizationLevel.Default => 1.8,
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => 3.5,
+            OptimizationLevel.O3 => 3.5,
             OptimizationLevel.Size => 1.5,
             _ => 1.8 // Default fallback
         };
@@ -111,10 +111,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => 1.0,
+            OptimizationLevel.None => 1.0,
             OptimizationLevel.O1 => 1.3,
             OptimizationLevel.O2 or OptimizationLevel.Default => 2.1,
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => 2.8,
+            OptimizationLevel.O3 => 2.8,
             OptimizationLevel.Size => 1.2, // Size optimization may reduce performance slightly
             _ => 2.1 // Default fallback
         };
@@ -129,10 +129,10 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 => true,
+            OptimizationLevel.None => true,
             OptimizationLevel.O1 => true,
             OptimizationLevel.O2 or OptimizationLevel.Default => false,
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive => false,
+            OptimizationLevel.O3 => false,
             OptimizationLevel.Size => false,
             _ => false
         };
@@ -147,13 +147,13 @@ public static class OptimizationLevelExtensions
     {
         return level switch
         {
-            OptimizationLevel.None or OptimizationLevel.O0 =>
+            OptimizationLevel.None =>
                 "No optimization - fastest compilation, best for debugging",
             OptimizationLevel.O1 =>
                 "Basic optimization - minimal performance improvements with fast compilation",
             OptimizationLevel.O2 or OptimizationLevel.Default =>
                 "Standard optimization - good performance with reasonable compilation time (recommended)",
-            OptimizationLevel.O3 or OptimizationLevel.Aggressive =>
+            OptimizationLevel.O3 =>
                 "Maximum optimization - best performance, longest compilation time",
             OptimizationLevel.Size =>
                 "Size optimization - smallest code size, moderate performance",

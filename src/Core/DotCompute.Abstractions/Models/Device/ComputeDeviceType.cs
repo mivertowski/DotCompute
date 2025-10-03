@@ -18,7 +18,7 @@ namespace DotCompute.Abstractions.Models.Device
         /// </summary>
         /// <remarks>
         /// CPU devices provide general-purpose computing with high single-threaded performance.
-        /// They typically support complex control flow, large caches, and sophisticated 
+        /// They typically support complex control flow, large caches, and sophisticated
         /// branch prediction. Best suited for tasks requiring irregular memory access patterns,
         /// complex algorithms, or when debugging is needed.
         /// </remarks>

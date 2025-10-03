@@ -315,24 +315,49 @@ public enum MetricsExportFormat
 /// <summary>
 /// High-resolution timer for performance measurements.
 /// </summary>
-public sealed class PerformanceTimer(string operationName, IUnifiedPerformanceMetrics? metrics = null) : IDisposable
+public sealed class PerformanceTimer : IDisposable
 {
+    private readonly string _operationName;
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
-    private readonly IUnifiedPerformanceMetrics? _metrics = metrics;
+    private readonly IUnifiedPerformanceMetrics? _metrics;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceTimer"/> class.
+    /// </summary>
+    /// <param name="operationName">The name of the operation being timed.</param>
+    /// <param name="metrics">Optional metrics provider for recording results.</param>
+    public PerformanceTimer(string operationName, IUnifiedPerformanceMetrics? metrics = null)
+    {
+        _operationName = operationName;
+        _metrics = metrics;
+    }
+
+    /// <summary>
+    /// Gets the operation name being measured.
+    /// </summary>
+    public string OperationName => _operationName;
+
+    /// <summary>
+    /// Gets the elapsed time.
+    /// </summary>
     public TimeSpan Elapsed => _stopwatch.Elapsed;
 
-
+    /// <summary>
+    /// Gets the elapsed time in milliseconds.
+    /// </summary>
     public double ElapsedMilliseconds => _stopwatch.Elapsed.TotalMilliseconds;
 
-
+    /// <summary>
+    /// Stops the timer and optionally records metrics.
+    /// </summary>
     public void Dispose()
     {
         _stopwatch.Stop();
         // Optionally record to metrics
         if (_metrics != null)
         {
-            // Record based on operation type
+            // Record based on operation type - implementation would use _operationName
+            // Example: _metrics.RecordKernelExecution(new KernelExecutionMetrics { ... });
         }
     }
 }

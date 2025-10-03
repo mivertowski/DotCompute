@@ -268,11 +268,11 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
 
         // Use default execution configuration since KernelArguments doesn't contain execution options
         // In a full implementation, execution options would be passed separately
-        
+
         // Estimate work size based on buffer sizes
         var maxElements = EstimateWorkSizeFromBuffers(arguments);
         globalWorkSize = [maxElements];
-        
+
         // Use a reasonable local work size
         var maxWorkGroupSize = _context.DeviceInfo.MaxWorkGroupSize;
         var localSize = Math.Min(maxWorkGroupSize, 256); // Common local work size

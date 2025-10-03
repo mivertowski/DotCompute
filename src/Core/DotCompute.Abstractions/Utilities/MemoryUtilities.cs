@@ -9,8 +9,131 @@ namespace DotCompute.Abstractions.Utilities
     /// <summary>
     /// Utility methods for common memory management patterns to reduce code duplication.
     /// </summary>
-    public static class MemoryUtilities
+    public static partial class MemoryUtilities
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 4001,
+            Level = LogLevel.Debug,
+            Message = "Allocating {Size} bytes of {MemoryType} memory in {BackendType}")]
+        private static partial void LogAllocating(ILogger logger, long size, string memoryType, string backendType);
+
+        [LoggerMessage(
+            EventId = 4002,
+            Level = LogLevel.Debug,
+            Message = "Successfully allocated {Size} bytes")]
+        private static partial void LogAllocatedSuccessfully(ILogger logger, long size);
+
+        [LoggerMessage(
+            EventId = 4003,
+            Level = LogLevel.Error,
+            Message = "Failed to allocate {Size} bytes of {MemoryType} memory in {BackendType}")]
+        private static partial void LogAllocationFailed(ILogger logger, Exception ex, long size, string memoryType, string backendType);
+
+        [LoggerMessage(
+            EventId = 4004,
+            Level = LogLevel.Debug,
+            Message = "Freeing memory in {BackendType}")]
+        private static partial void LogFreeingMemory(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 4005,
+            Level = LogLevel.Debug,
+            Message = "Successfully freed memory")]
+        private static partial void LogFreedSuccessfully(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 4006,
+            Level = LogLevel.Error,
+            Message = "Failed to free memory in {BackendType}")]
+        private static partial void LogFreeFailed(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 4007,
+            Level = LogLevel.Trace,
+            Message = "Copying {Size} bytes in {BackendType}")]
+        private static partial void LogCopyingMemory(ILogger logger, long size, string backendType);
+
+        [LoggerMessage(
+            EventId = 4008,
+            Level = LogLevel.Trace,
+            Message = "Successfully copied {Size} bytes")]
+        private static partial void LogCopiedSuccessfully(ILogger logger, long size);
+
+        [LoggerMessage(
+            EventId = 4009,
+            Level = LogLevel.Error,
+            Message = "Failed to copy {Size} bytes in {BackendType}")]
+        private static partial void LogCopyFailed(ILogger logger, Exception ex, long size, string backendType);
+
+        [LoggerMessage(
+            EventId = 4010,
+            Level = LogLevel.Debug,
+            Message = "Initializing {BackendType} memory manager")]
+        private static partial void LogInitializing(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 4011,
+            Level = LogLevel.Debug,
+            Message = "{BackendType} memory manager initialized")]
+        private static partial void LogInitialized(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 4012,
+            Level = LogLevel.Error,
+            Message = "Failed to initialize {BackendType} memory manager")]
+        private static partial void LogInitializeFailed(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 4013,
+            Level = LogLevel.Information,
+            Message = "Disposing {BackendType} memory manager with {Count} active allocations")]
+        private static partial void LogDisposingMemoryManager(ILogger logger, string backendType, int count);
+
+        [LoggerMessage(
+            EventId = 4014,
+            Level = LogLevel.Warning,
+            Message = "Error during cleanup of {BackendType} memory manager")]
+        private static partial void LogCleanupError(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 4015,
+            Level = LogLevel.Error,
+            Message = "Error during {BackendType} memory manager disposal")]
+        private static partial void LogDisposalError(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 4016,
+            Level = LogLevel.Information,
+            Message = "Disposing {BackendType} memory manager (synchronous) with {Count} active allocations")]
+        private static partial void LogDisposingMemoryManagerSync(ILogger logger, string backendType, int count);
+
+        [LoggerMessage(
+            EventId = 4017,
+            Level = LogLevel.Error,
+            Message = "Error during synchronous {BackendType} memory manager disposal")]
+        private static partial void LogSyncDisposalError(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 4018,
+            Level = LogLevel.Information,
+            Message = "Resetting {BackendType} memory manager - freeing {Count} allocations")]
+        private static partial void LogResetting(ILogger logger, string backendType, int count);
+
+        [LoggerMessage(
+            EventId = 4019,
+            Level = LogLevel.Information,
+            Message = "{BackendType} memory manager reset completed")]
+        private static partial void LogResetCompleted(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 4020,
+            Level = LogLevel.Error,
+            Message = "Error during {BackendType} memory manager reset")]
+        private static partial void LogResetError(ILogger logger, Exception ex, string backendType);
+
+        #endregion
         /// <summary>
         /// Common pattern for memory allocation with error handling and logging.
         /// </summary>
@@ -33,19 +156,17 @@ namespace DotCompute.Abstractions.Utilities
             ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(allocateFunc);
 
-            logger.LogDebug("Allocating {Size} bytes of {MemoryType} memory in {BackendType}",
-                sizeInBytes, memoryType, backendType);
+            LogAllocating(logger, sizeInBytes, memoryType, backendType);
 
             try
             {
                 var buffer = await allocateFunc(sizeInBytes, cancellationToken).ConfigureAwait(false);
-                logger.LogDebug("Successfully allocated {Size} bytes", sizeInBytes);
+                LogAllocatedSuccessfully(logger, sizeInBytes);
                 return buffer;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to allocate {Size} bytes of {MemoryType} memory in {BackendType}",
-                    sizeInBytes, memoryType, backendType);
+                LogAllocationFailed(logger, ex, sizeInBytes, memoryType, backendType);
                 throw;
             }
         }
@@ -69,16 +190,16 @@ namespace DotCompute.Abstractions.Utilities
             ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(freeFunc);
 
-            logger.LogDebug("Freeing memory in {BackendType}", backendType);
+            LogFreeingMemory(logger, backendType);
 
             try
             {
                 await freeFunc(buffer, cancellationToken).ConfigureAwait(false);
-                logger.LogDebug("Successfully freed memory");
+                LogFreedSuccessfully(logger);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to free memory in {BackendType}", backendType);
+                LogFreeFailed(logger, ex, backendType);
                 throw;
             }
         }
@@ -113,18 +234,16 @@ namespace DotCompute.Abstractions.Utilities
                 throw new ArgumentException("Copy size exceeds buffer capacity");
             }
 
-            logger.LogTrace("Copying {Size} bytes in {BackendType}",
-                size, backendType);
+            LogCopyingMemory(logger, size, backendType);
 
             try
             {
                 await copyFunc(source, destination, size, cancellationToken).ConfigureAwait(false);
-                logger.LogTrace("Successfully copied {Size} bytes", size);
+                LogCopiedSuccessfully(logger, size);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to copy {Size} bytes in {BackendType}",
-                    size, backendType);
+                LogCopyFailed(logger, ex, size, backendType);
                 throw;
             }
         }
@@ -146,14 +265,14 @@ namespace DotCompute.Abstractions.Utilities
 
             try
             {
-                logger.LogDebug("Initializing {BackendType} memory manager", backendType);
+                LogInitializing(logger, backendType);
                 var result = initFunc();
-                logger.LogDebug("{BackendType} memory manager initialized", backendType);
+                LogInitialized(logger, backendType);
                 return result;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to initialize {BackendType} memory manager", backendType);
+                LogInitializeFailed(logger, ex, backendType);
                 throw;
             }
         }
@@ -177,8 +296,7 @@ namespace DotCompute.Abstractions.Utilities
 
             try
             {
-                logger.LogInformation("Disposing {BackendType} memory manager with {Count} active allocations",
-                    backendType, allocationCount);
+                LogDisposingMemoryManager(logger, backendType, allocationCount);
 
                 // Run cleanup function if provided
                 if (cleanupFunc != null)
@@ -189,7 +307,7 @@ namespace DotCompute.Abstractions.Utilities
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Error during cleanup of {BackendType} memory manager", backendType);
+                        LogCleanupError(logger, ex, backendType);
                     }
                 }
 
@@ -198,7 +316,7 @@ namespace DotCompute.Abstractions.Utilities
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during {BackendType} memory manager disposal", backendType);
+                LogDisposalError(logger, ex, backendType);
             }
         }
 
@@ -221,8 +339,7 @@ namespace DotCompute.Abstractions.Utilities
 
             try
             {
-                logger.LogInformation("Disposing {BackendType} memory manager (synchronous) with {Count} active allocations",
-                    backendType, allocationCount);
+                LogDisposingMemoryManagerSync(logger, backendType, allocationCount);
 
                 // Run cleanup action if provided
                 if (cleanupAction != null)
@@ -233,7 +350,7 @@ namespace DotCompute.Abstractions.Utilities
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Error during cleanup of {BackendType} memory manager", backendType);
+                        LogCleanupError(logger, ex, backendType);
                     }
                 }
 
@@ -242,7 +359,7 @@ namespace DotCompute.Abstractions.Utilities
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during synchronous {BackendType} memory manager disposal", backendType);
+                LogSyncDisposalError(logger, ex, backendType);
             }
         }
 
@@ -262,17 +379,16 @@ namespace DotCompute.Abstractions.Utilities
             ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(resetFunc);
 
-            logger.LogInformation("Resetting {BackendType} memory manager - freeing {Count} allocations",
-                backendType, allocationCount);
+            LogResetting(logger, backendType, allocationCount);
 
             try
             {
                 resetFunc();
-                logger.LogInformation("{BackendType} memory manager reset completed", backendType);
+                LogResetCompleted(logger, backendType);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during {BackendType} memory manager reset", backendType);
+                LogResetError(logger, ex, backendType);
                 throw;
             }
         }

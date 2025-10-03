@@ -140,7 +140,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         var tensorcoreMultiplier = device.ComputeCapabilityMajor switch
         {
             7 => 8,   // Volta/Turing: 8x over CUDA cores
-            8 => 16,  // Ampere: 16x over CUDA cores  
+            8 => 16,  // Ampere: 16x over CUDA cores
             9 => 32,  // Hopper: 32x over CUDA cores
             _ => 4
         };

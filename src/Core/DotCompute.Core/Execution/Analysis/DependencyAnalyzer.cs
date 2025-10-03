@@ -34,7 +34,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="outputBuffers">The array of output buffers to analyze.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>
-        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
+        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/>
         /// representing the analyzed dependencies.
         /// </returns>
         /// <exception cref="ArgumentNullException">
@@ -85,7 +85,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="layers">The list of model layers to analyze.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>
-        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
+        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/>
         /// representing the layer dependencies.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
@@ -120,7 +120,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <param name="stages">The list of pipeline stage definitions to analyze.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>
-        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/> 
+        /// A <see cref="ValueTask{T}"/> containing a <see cref="DependencyGraph"/>
         /// representing the stage dependencies.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="stages"/> is null.</exception>

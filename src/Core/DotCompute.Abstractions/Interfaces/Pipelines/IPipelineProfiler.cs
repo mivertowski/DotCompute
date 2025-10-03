@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Pipelines.Statistics;
 using DotCompute.Abstractions.Pipelines.Results;
+using DotCompute.Abstractions.Pipelines.Statistics;
 
 namespace DotCompute.Abstractions.Interfaces.Pipelines.Profiling;
 

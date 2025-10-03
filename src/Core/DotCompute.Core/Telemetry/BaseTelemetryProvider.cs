@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Interfaces.Telemetry;
+using DotCompute.Abstractions.Telemetry;
 using Microsoft.Extensions.Logging;
 using System;
 

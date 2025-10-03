@@ -5,14 +5,15 @@ using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve LogLevel conflicts
 using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using CoreBottleneckSeverity = DotCompute.Core.Debugging.Core.BottleneckSeverity;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using AbstractionsPerformanceAnalysisResult = DotCompute.Abstractions.Debugging.PerformanceAnalysisResult;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 
@@ -25,6 +26,7 @@ public sealed class KernelDebugLogger(
     DebugServiceOptions options) : IDisposable
 {
     private readonly ILogger<KernelDebugLogger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly List<DebugLogEntry> _debugHistory = [];
     private readonly object _lock = new();
     private bool _disposed;
@@ -78,7 +80,7 @@ public sealed class KernelDebugLogger(
             Data = new Dictionary<string, object>
             {
                 ["IsValid"] = result.IsValid,
-                ["BackendsTested"] = result.BackendsTested.Length,
+                ["BackendsTested"] = result.BackendsTested.Count,
                 ["IssueCount"] = result.Issues.Count,
                 ["TotalTime"] = result.TotalValidationTime.TotalMilliseconds,
                 ["MaxDifference"] = result.MaxDifference,
@@ -90,7 +92,7 @@ public sealed class KernelDebugLogger(
         await LogEntryAsync(logEntry, logLevel);
 
         _logger.Log(logLevel, "Validation completed for kernel {KernelName}: {IsValid} ({BackendCount} backends tested, {IssueCount} issues)",
-            kernelName, result.IsValid, result.BackendsTested.Length, result.Issues.Count);
+            kernelName, result.IsValid, result.BackendsTested.Count, result.Issues.Count);
 
         // Log individual issues if present
         foreach (var issue in result.Issues)
@@ -245,7 +247,7 @@ public sealed class KernelDebugLogger(
             Data = new Dictionary<string, object>
             {
                 ["ResultsMatch"] = comparisonReport.ResultsMatch,
-                ["BackendsCompared"] = comparisonReport.BackendsCompared.Length,
+                ["BackendsCompared"] = comparisonReport.BackendsCompared.Count,
                 ["DifferenceCount"] = comparisonReport.Differences.Count,
                 ["Strategy"] = comparisonReport.Strategy.ToString(),
                 ["Tolerance"] = comparisonReport.Tolerance
@@ -256,7 +258,7 @@ public sealed class KernelDebugLogger(
         await LogEntryAsync(logEntry, logLevel);
 
         _logger.Log(logLevel, "Result comparison completed for kernel {KernelName}: {ResultsMatch} ({BackendCount} backends, {DifferenceCount} differences)",
-            comparisonReport.KernelName, comparisonReport.ResultsMatch, comparisonReport.BackendsCompared.Length, comparisonReport.Differences.Count);
+            comparisonReport.KernelName, comparisonReport.ResultsMatch, comparisonReport.BackendsCompared.Count, comparisonReport.Differences.Count);
 
         // Log significant differences
         if (!comparisonReport.ResultsMatch && _options.VerbosityLevel >= DebugLogLevel.Warning)
@@ -373,7 +375,7 @@ public sealed class KernelDebugLogger(
     /// </summary>
     /// <param name="kernelName">Name of the kernel that was analyzed.</param>
     /// <param name="analysisResult">Performance analysis result.</param>
-    public async Task LogPerformanceAnalysisAsync(string kernelName, PerformanceAnalysisResult analysisResult)
+    public async Task LogPerformanceAnalysisAsync(string kernelName, AbstractionsPerformanceAnalysisResult analysisResult)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 

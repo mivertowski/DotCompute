@@ -101,16 +101,16 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         CopyToHost(hostData);
         return hostData.AsSpan();
     }
-    
+
     public ReadOnlySpan<T> AsReadOnlySpan() => AsSpan();
-    
+
     public Memory<T> AsMemory()
     {
         var hostData = new T[Length];
         CopyToHost(hostData);
         return hostData.AsMemory();
     }
-    
+
     public ReadOnlyMemory<T> AsReadOnlyMemory() => AsMemory();
 
     // Device Memory Access
@@ -126,17 +126,17 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         }
         return new MappedMemory<T>(hostData);
     }
-    
+
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
         if (offset < 0 || length <= 0 || offset + length > Length)
             throw new ArgumentOutOfRangeException("Invalid range for mapping");
-            
+
         var hostData = new T[length];
         CopyToHost(hostData, (nuint)offset, (nuint)length);
         return new MappedMemory<T>(hostData);
     }
-    
+
     public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         return await Task.Run(() => Map(mode), cancellationToken);
@@ -148,24 +148,24 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         // OpenCL buffers are device-based, so this is a no-op
         // Data transfer happens during AsSpan/AsMemory calls
     }
-    
+
     public void EnsureOnDevice()
     {
         // OpenCL buffers are already on device
     }
-    
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
-    
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default) 
+
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
-    
-    public void MarkHostDirty() 
+
+    public void MarkHostDirty()
     {
         // Could track dirty state here in the future
     }
-    
-    public void MarkDeviceDirty() 
+
+    public void MarkDeviceDirty()
     {
         // Could track dirty state here in the future
     }
@@ -177,23 +177,23 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         {
             if (sizeof(T) * Length % sizeof(TNew) != 0)
                 throw new InvalidOperationException("Buffer size is not compatible with target type");
-                
+
             var newCount = (sizeof(T) * Length) / sizeof(TNew);
-            
+
             // Create a new buffer with reinterpreted data
             var newBuffer = new OpenCLMemoryBuffer<TNew>(
-                _context, 
-                (nuint)newCount, 
+                _context,
+                (nuint)newCount,
                 MemoryFlags.ReadWrite,
                 LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger))).CreateLogger<OpenCLMemoryBuffer<TNew>>());
-                
+
             // Copy raw bytes
             var sourceBytes = new byte[SizeInBytes];
             var sourceTSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(sourceBytes.AsSpan());
             CopyToHost(sourceTSpan);
             var sourceNewSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, TNew>(sourceBytes.AsSpan());
             newBuffer.CopyFromHost(sourceNewSpan);
-            
+
             return newBuffer;
         }
     }
@@ -204,50 +204,50 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         CopyFromHost(source.Span);
         return ValueTask.CompletedTask;
     }
-    
+
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
         CopyToHost(destination.Span);
         return ValueTask.CompletedTask;
     }
-    
+
     public ValueTask CopyToAsync(IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken = default)
     {
         var tempArray = new T[Length];
         CopyToHost(tempArray);
         return destination.CopyFromAsync(tempArray, cancellationToken);
     }
-    
+
     public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
         var tempArray = new T[count];
         CopyToHost(tempArray, (nuint)sourceOffset, (nuint)count);
         return destination.CopyFromAsync(tempArray.AsMemory(), cancellationToken);
     }
-    
+
     public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
     {
         Fill(value);
         return ValueTask.CompletedTask;
     }
-    
+
     public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
         Fill(value, (nuint)offset, (nuint)count);
         return ValueTask.CompletedTask;
     }
-    
+
     public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
     {
         return Slice((nuint)offset, (nuint)length);
     }
-    
+
     // Explicit interface implementations for non-generic interface
     public ValueTask CopyFromAsync<TElement>(ReadOnlyMemory<TElement> source, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
     {
         if (typeof(TElement) != typeof(T))
             throw new InvalidOperationException("Element type mismatch");
-        
+
         unsafe
         {
             var typedSource = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(source.Span);
@@ -255,12 +255,12 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
         }
         return ValueTask.CompletedTask;
     }
-    
+
     public ValueTask CopyToAsync<TElement>(Memory<TElement> destination, long offset = 0, CancellationToken cancellationToken = default) where TElement : unmanaged
     {
         if (typeof(TElement) != typeof(T))
             throw new InvalidOperationException("Element type mismatch");
-        
+
         unsafe
         {
             var typedDestination = System.Runtime.InteropServices.MemoryMarshal.Cast<TElement, T>(destination.Span);
@@ -277,8 +277,8 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// <param name="flags">Memory flags for buffer creation.</param>
     /// <param name="logger">Logger for diagnostic information.</param>
     public OpenCLMemoryBuffer(
-        OpenCLContext context, 
-        nuint elementCount, 
+        OpenCLContext context,
+        nuint elementCount,
         MemoryFlags flags,
         ILogger<OpenCLMemoryBuffer<T>> logger)
     {
@@ -319,7 +319,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
             {
                 var byteOffset = offset * (nuint)sizeof(T);
                 var byteSize = copyCount * (nuint)sizeof(T);
-                
+
                 // For simplicity, use blocking write
                 _context.EnqueueWriteBuffer(_buffer, (nint)ptr + (int)byteOffset, byteSize, true);
             }
@@ -352,7 +352,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
             {
                 var byteOffset = offset * (nuint)sizeof(T);
                 var byteSize = copyCount * (nuint)sizeof(T);
-                
+
                 // For simplicity, use blocking read
                 _context.EnqueueReadBuffer(_buffer, (nint)ptr + (int)byteOffset, byteSize, true);
             }
@@ -370,9 +370,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// <param name="count">Number of elements to copy.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     public async ValueTask CopyFromHostAsync(
-        ReadOnlyMemory<T> hostData, 
-        nuint offset = 0, 
-        nuint? count = null, 
+        ReadOnlyMemory<T> hostData,
+        nuint offset = 0,
+        nuint? count = null,
         CancellationToken cancellationToken = default)
     {
         await Task.Run(() => CopyFromHost(hostData.Span, offset, count), cancellationToken);
@@ -386,9 +386,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// <param name="count">Number of elements to copy.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     public async ValueTask CopyToHostAsync(
-        Memory<T> hostData, 
-        nuint offset = 0, 
-        nuint? count = null, 
+        Memory<T> hostData,
+        nuint offset = 0,
+        nuint? count = null,
         CancellationToken cancellationToken = default)
     {
         await Task.Run(() => CopyToHost(hostData.Span, offset, count), cancellationToken);
@@ -426,9 +426,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// <param name="count">Number of elements to fill.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     public async ValueTask FillAsync(
-        T value, 
-        nuint offset = 0, 
-        nuint? count = null, 
+        T value,
+        nuint offset = 0,
+        nuint? count = null,
         CancellationToken cancellationToken = default)
     {
         await Task.Run(() => Fill(value, offset, count), cancellationToken);
@@ -442,9 +442,9 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// <param name="destinationOffset">Offset in this buffer (in elements).</param>
     /// <param name="count">Number of elements to copy.</param>
     public void CopyFrom(
-        IUnifiedMemoryBuffer<T> sourceBuffer, 
-        nuint sourceOffset = 0, 
-        nuint destinationOffset = 0, 
+        IUnifiedMemoryBuffer<T> sourceBuffer,
+        nuint sourceOffset = 0,
+        nuint destinationOffset = 0,
         nuint? count = null)
     {
         ThrowIfDisposed();
@@ -455,7 +455,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
             throw new ArgumentException("Copy operation would exceed destination buffer bounds");
 
         var tempArray = new T[copyCount];
-        
+
         // Use the proper interface methods for copying
         if (sourceBuffer is OpenCLMemoryBuffer<T> sourceOpenCLBuffer)
         {
@@ -466,7 +466,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
             // Generic fallback - for now throw exception as we can't use async in sync method
             throw new NotSupportedException("Cross-buffer copying is only supported between OpenCL buffers of the same type");
         }
-        
+
         CopyFromHost(tempArray, destinationOffset, copyCount);
 
         _logger.LogTrace("Copied {Count} elements from source buffer to OpenCL buffer", copyCount);
@@ -476,10 +476,10 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// Asynchronously copies data from another buffer to this buffer.
     /// </summary>
     public async ValueTask CopyFromAsync(
-        IUnifiedMemoryBuffer<T> sourceBuffer, 
-        nuint sourceOffset = 0, 
-        nuint destinationOffset = 0, 
-        nuint? count = null, 
+        IUnifiedMemoryBuffer<T> sourceBuffer,
+        nuint sourceOffset = 0,
+        nuint destinationOffset = 0,
+        nuint? count = null,
         CancellationToken cancellationToken = default)
     {
         await Task.Run(() => CopyFrom(sourceBuffer, sourceOffset, destinationOffset, count), cancellationToken);

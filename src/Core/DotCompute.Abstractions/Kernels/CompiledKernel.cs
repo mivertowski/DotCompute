@@ -222,10 +222,7 @@ public class CompiledKernel : IDisposable
     /// </remarks>
     public virtual Task ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(CompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         ArgumentNullException.ThrowIfNull(arguments);
 

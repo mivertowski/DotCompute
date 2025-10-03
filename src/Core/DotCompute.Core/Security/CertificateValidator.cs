@@ -441,12 +441,12 @@ public sealed class CertificateValidator : IDisposable
         if (!_disposed)
         {
             _cacheCleanupTimer?.Dispose();
-            
+
             lock (_cacheLock)
             {
                 _validationCache.Clear();
             }
-            
+
             _disposed = true;
             _logger.LogDebugMessage("Certificate Validator disposed");
         }

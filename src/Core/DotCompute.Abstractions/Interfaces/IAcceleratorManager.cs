@@ -14,7 +14,7 @@ namespace DotCompute.Abstractions
         /// <summary>
         /// Gets the default accelerator instance.
         /// </summary>
-        public IAccelerator Default { get; }
+        public IAccelerator DefaultAccelerator { get; }
 
         /// <summary>
         /// Gets all available accelerators.

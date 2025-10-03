@@ -76,16 +76,16 @@ kernel void matrixMultiply(
 ) {
     uint row = gid.y;
     uint col = gid.x;
-    
+
     if (row >= M || col >= N) {
         return;
     }
-    
+
     float sum = 0.0f;
     for (uint k = 0; k < K; ++k) {
         sum += matrixA[row * K + k] * matrixB[k * N + col];
     }
-    
+
     matrixC[row * N + col] = sum;
 }";
 
@@ -146,7 +146,7 @@ kernel void reduction{operation}(
     // Load data into shared memory
     shared[tid] = (gid < size) ? input[gid] : 0;
     threadgroup_barrier(mem_flags::mem_threadgroup);
-    
+
     // Perform reduction
     float sum = shared[tid];
     for (uint s = tg_size / 2; s > 0; s >>= 1) {{
@@ -155,7 +155,7 @@ kernel void reduction{operation}(
         }}
         threadgroup_barrier(mem_flags::mem_threadgroup);
     }}
-    
+
     // Write result
     if (tid == 0) {{
         output[tgid] = sum;
@@ -221,25 +221,25 @@ kernel void convolution2D(
     if (gid.x >= params.outputWidth || gid.y >= params.outputHeight) {
         return;
     }
-    
+
     float sum = 0.0f;
-    
+
     for (uint ky = 0; ky < params.kernelHeight; ++ky) {
         for (uint kx = 0; kx < params.kernelWidth; ++kx) {
             int inputY = gid.y * params.strideY + ky - params.padY;
             int inputX = gid.x * params.strideX + kx - params.padX;
-            
+
             if (inputY >= 0 && inputY < params.inputHeight &&
                 inputX >= 0 && inputX < params.inputWidth) {
-                
+
                 uint inputIdx = inputY * params.inputWidth + inputX;
                 uint kernelIdx = ky * params.kernelWidth + kx;
-                
+
                 sum += input[inputIdx] * kernel[kernelIdx];
             }
         }
     }
-    
+
     output[gid.y * params.outputWidth + gid.x] = sum + params.bias;
 }";
 
@@ -294,7 +294,7 @@ kernel void activation{activation}(
     uint gid [[thread_position_in_grid]]
 ) {{
     if (gid >= size) return;
-    
+
     float value = input[gid];
     {activationCode}
 }}";

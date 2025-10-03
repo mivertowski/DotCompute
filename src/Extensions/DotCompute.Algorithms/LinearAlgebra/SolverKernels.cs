@@ -25,17 +25,17 @@ __kernel void forward_substitution(
     const int n                  // Matrix dimension
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     // Each work item handles one row
     float sum = 0.0f;
-    
+
     // Compute dot product with previously solved elements
     for (int j = 0; j < i; j++) {
         sum += L[i * n + j] * y[j];
     }
-    
+
     // Solve for y[i]
     float diagonal = L[i * n + i];
     if (fabs(diagonal) > 1e-10f) {
@@ -59,17 +59,17 @@ __kernel void backward_substitution(
     const int n                  // Matrix dimension
 ) {
     int i = n - 1 - get_global_id(0);
-    
+
     if (i < 0 || i >= n) return;
-    
+
     // Each work item handles one row (from bottom up)
     float sum = 0.0f;
-    
+
     // Compute dot product with previously solved elements
     for (int j = i + 1; j < n; j++) {
         sum += U[i * n + j] * x[j];
     }
-    
+
     // Solve for x[i]
     float diagonal = U[i * n + i];
     if (fabs(diagonal) > 1e-10f) {
@@ -96,11 +96,11 @@ extern ""C"" __global__ void triangular_solve_multi_rhs(
 ) {
     int col = blockIdx.x * blockDim.x + threadIdx.x; // RHS index
     int row = blockIdx.y * blockDim.y + threadIdx.y; // Equation index
-    
+
     if (col >= nrhs) return;
-    
+
     __shared__ float shared_x[256]; // Shared solution vector
-    
+
     if (is_upper) {
         // Backward substitution for upper triangular
         for (int i = n - 1; i >= 0; i--) {
@@ -109,7 +109,7 @@ extern ""C"" __global__ void triangular_solve_multi_rhs(
                 for (int j = i + 1; j < n; j++) {
                     sum += T[i * n + j] * X[j * nrhs + col];
                 }
-                
+
                 float diagonal = T[i * n + i];
                 if (fabsf(diagonal) > 1e-10f) {
                     X[i * nrhs + col] = (B[i * nrhs + col] - sum) / diagonal;
@@ -127,7 +127,7 @@ extern ""C"" __global__ void triangular_solve_multi_rhs(
                 for (int j = 0; j < i; j++) {
                     sum += T[i * n + j] * X[j * nrhs + col];
                 }
-                
+
                 float diagonal = T[i * n + i];
                 if (fabsf(diagonal) > 1e-10f) {
                     X[i * nrhs + col] = (B[i * nrhs + col] - sum) / diagonal;
@@ -165,24 +165,24 @@ __kernel void conjugate_gradient_step(
     const float beta             // Direction update parameter
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     // Compute A * p
     float ap_sum = 0.0f;
     for (int j = 0; j < n; j++) {
         ap_sum += A[i * n + j] * p[j];
     }
     Ap[i] = ap_sum;
-    
+
     barrier(CLK_GLOBAL_MEM_FENCE);
-    
+
     // Update solution: x_new = x + alpha * p
     x_new[i] = x[i] + alpha * p[i];
-    
+
     // Update residual: r_new = r - alpha * Ap
     r_new[i] = r[i] - alpha * Ap[i];
-    
+
     // Update search direction: p_new = r_new + beta * p
     p_new[i] = r_new[i] + beta * p[i];
 }";
@@ -204,17 +204,17 @@ extern ""C"" __global__ void jacobi_iteration_cuda(
     const float omega      // Relaxation parameter
 ) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     if (i >= n) return;
-    
+
     float diagonal = A[i * n + i];
-    
+
     if (fabsf(diagonal) < 1e-10f) {
         x_new[i] = x_old[i]; // Keep old value for singular diagonal
         if (residual) residual[i] = 0.0f;
         return;
     }
-    
+
     // Compute sum of off-diagonal terms
     float sum = 0.0f;
     for (int j = 0; j < n; j++) {
@@ -222,11 +222,11 @@ extern ""C"" __global__ void jacobi_iteration_cuda(
             sum += A[i * n + j] * x_old[j];
         }
     }
-    
+
     // Jacobi update with relaxation
     float x_jacobi = (b[i] - sum) / diagonal;
     x_new[i] = (1.0f - omega) * x_old[i] + omega * x_jacobi;
-    
+
     // Compute residual if requested
     if (residual) {
         float res = b[i];
@@ -254,9 +254,9 @@ __kernel void gauss_seidel_iteration(
     const int red_black          // 0=sequential, 1=red-black ordering
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     // Red-black ordering for parallelization
     int actual_i = i;
     if (red_black) {
@@ -264,14 +264,14 @@ __kernel void gauss_seidel_iteration(
         actual_i = 2 * i + color;
         if (actual_i >= n) return;
     }
-    
+
     float diagonal = A[actual_i * n + actual_i];
-    
+
     if (fabs(diagonal) < 1e-10f) {
         if (residual) residual[actual_i] = 0.0f;
         return;
     }
-    
+
     // Compute sum with updated values (Gauss-Seidel style)
     float sum = 0.0f;
     for (int j = 0; j < n; j++) {
@@ -279,12 +279,12 @@ __kernel void gauss_seidel_iteration(
             sum += A[actual_i * n + j] * x[j];
         }
     }
-    
+
     // Update with relaxation
     float x_old = x[actual_i];
     float x_gs = (b[actual_i] - sum) / diagonal;
     x[actual_i] = (1.0f - omega) * x_old + omega * x_gs;
-    
+
     // Compute residual if requested
     if (residual) {
         float res = b[actual_i];
@@ -316,9 +316,9 @@ extern ""C"" __global__ void gradient_descent_step(
     const int use_momentum     // 1 to use momentum, 0 for vanilla SGD
 ) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     if (i >= n) return;
-    
+
     if (use_momentum) {
         // Momentum update: momentum = momentum_coeff * momentum - learning_rate * gradient
         momentum[i] = momentum_coeff * momentum[i] - learning_rate * gradient[i];
@@ -351,21 +351,21 @@ __kernel void adam_optimizer_step(
     const float beta2_t             // beta2^t (bias correction)
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     float grad = gradient[i];
-    
+
     // Update biased first moment estimate
     m[i] = beta1 * m[i] + (1.0f - beta1) * grad;
-    
+
     // Update biased second moment estimate
     v[i] = beta2 * v[i] + (1.0f - beta2) * grad * grad;
-    
+
     // Bias correction
     float m_hat = m[i] / (1.0f - beta1_t);
     float v_hat = v[i] / (1.0f - beta2_t);
-    
+
     // Update parameters
     parameters[i] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
 }";
@@ -389,11 +389,11 @@ __kernel void apply_diagonal_preconditioner(
     const float regularization       // Small value added to diagonal
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     float diag_val = diagonal[i] + regularization;
-    
+
     if (fabs(diag_val) > 1e-10f) {
         output[i] = input[i] / diag_val;
     } else {
@@ -416,17 +416,17 @@ extern ""C"" __global__ void apply_incomplete_cholesky_preconditioner(
     const int n           // Vector dimension
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     // Forward substitution: solve L * temp = input
     for (int i = 0; i < n; i++) {
         __syncthreads();
-        
+
         if (tid == i) {
             float sum = 0.0f;
             for (int j = 0; j < i; j++) {
                 sum += L[i * n + j] * temp[j];
             }
-            
+
             float diagonal = L[i * n + i];
             if (fabsf(diagonal) > 1e-10f) {
                 temp[i] = (input[i] - sum) / diagonal;
@@ -435,19 +435,19 @@ extern ""C"" __global__ void apply_incomplete_cholesky_preconditioner(
             }
         }
     }
-    
+
     __syncthreads();
-    
+
     // Backward substitution: solve L^T * output = temp
     for (int i = n - 1; i >= 0; i--) {
         __syncthreads();
-        
+
         if (tid == i) {
             float sum = 0.0f;
             for (int j = i + 1; j < n; j++) {
                 sum += L[j * n + i] * output[j]; // L^T[i][j] = L[j][i]
             }
-            
+
             float diagonal = L[i * n + i];
             if (fabsf(diagonal) > 1e-10f) {
                 output[i] = (temp[i] - sum) / diagonal;
@@ -481,24 +481,24 @@ __kernel void convergence_analysis(
     int gid = get_global_id(0);
     int lid = get_local_id(0);
     int group_size = get_local_size(0);
-    
+
     // Initialize local contributions
     float error_l1 = 0.0f, error_l2 = 0.0f, error_linf = 0.0f;
     float res_l1 = 0.0f, res_l2 = 0.0f, res_linf = 0.0f;
-    
+
     if (gid < n) {
         float error = fabs(x_new[gid] - x_old[gid]);
         float res = fabs(residual[gid]);
-        
+
         error_l1 = error;
         error_l2 = error * error;
         error_linf = error;
-        
+
         res_l1 = res;
         res_l2 = res * res;
         res_linf = res;
     }
-    
+
     // Reduce error L1 norm
     scratch[lid] = error_l1;
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -507,7 +507,7 @@ __kernel void convergence_analysis(
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     if (lid == 0) error_norms[get_group_id(0)] = scratch[0];
-    
+
     // Reduce error L2 norm
     scratch[lid] = error_l2;
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -516,7 +516,7 @@ __kernel void convergence_analysis(
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     if (lid == 0) error_norms[get_num_groups(0) + get_group_id(0)] = sqrt(scratch[0]);
-    
+
     // Reduce error L-infinity norm (max)
     scratch[lid] = error_linf;
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -525,7 +525,7 @@ __kernel void convergence_analysis(
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     if (lid == 0) error_norms[2 * get_num_groups(0) + get_group_id(0)] = scratch[0];
-    
+
     // Similar reductions for residual norms...
     // (Residual norm computations follow the same pattern)
 }";

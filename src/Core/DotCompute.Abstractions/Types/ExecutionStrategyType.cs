@@ -59,7 +59,9 @@ public enum ExecutionStrategyType
     /// Executes the entire workload on a single computing device without parallelization.
     /// Best for small workloads or when device resources are limited.
     /// </summary>
+#pragma warning disable CA1720 // Identifier contains type name - "Single" refers to single-device strategy, not the type
     Single = 9,
+#pragma warning restore CA1720
 
     /// <summary>
     /// Dynamic work stealing for load balancing.

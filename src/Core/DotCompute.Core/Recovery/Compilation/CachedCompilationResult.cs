@@ -16,12 +16,12 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - The original source code for verification
 /// - The compilation options that resulted in success
 /// - Expiration tracking to ensure cache freshness
-/// 
+///
 /// The cache is particularly valuable for:
 /// - Kernels that are compiled multiple times with the same parameters
 /// - Fallback scenarios where a previously successful configuration can be reused
 /// - Reducing compilation overhead in development and testing scenarios
-/// 
+///
 /// Cached results include expiration times to ensure that outdated entries
 /// are not used when the underlying compilation environment may have changed.
 /// </remarks>

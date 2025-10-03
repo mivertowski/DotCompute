@@ -771,7 +771,7 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
 
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
         var sourceMem = new ReadOnlyMemory<byte>(sourceBytes.ToArray());
-        // Copy directly to our slice 
+        // Copy directly to our slice
         var destSpan = AsSpan();
         sourceMem.Span.CopyTo(System.Runtime.InteropServices.MemoryMarshal.AsBytes(destSpan));
         MarkHostDirty();

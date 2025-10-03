@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
-using DotCompute.Abstractions.Kernels.Types;
 using DotCompute.Abstractions.Kernels.Compilation;
+using DotCompute.Abstractions.Kernels.Types;
 
 namespace DotCompute.Abstractions.Interfaces.Kernels
 {

@@ -9,8 +9,77 @@ namespace DotCompute.Abstractions
     /// <summary>
     /// Common disposal patterns and utilities for accelerator implementations.
     /// </summary>
-    public static class DisposalUtilities
+    public static partial class DisposalUtilities
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 2001,
+            Level = LogLevel.Trace,
+            Message = "Disposing {ObjectName} (async)")]
+        private static partial void LogDisposing(ILogger logger, string objectName);
+
+        [LoggerMessage(
+            EventId = 2002,
+            Level = LogLevel.Trace,
+            Message = "Disposing {ObjectName} (sync)")]
+        private static partial void LogDisposingSync(ILogger logger, string objectName);
+
+        [LoggerMessage(
+            EventId = 2003,
+            Level = LogLevel.Trace,
+            Message = "{ObjectName} does not implement IDisposable")]
+        private static partial void LogNotDisposable(ILogger logger, string objectName);
+
+        [LoggerMessage(
+            EventId = 2004,
+            Level = LogLevel.Warning,
+            Message = "Error disposing {ObjectName}")]
+        private static partial void LogDisposeError(ILogger logger, Exception ex, string objectName);
+
+        [LoggerMessage(
+            EventId = 2005,
+            Level = LogLevel.Trace,
+            Message = "Disposing {ObjectName} (async - blocking)")]
+        private static partial void LogDisposingAsyncBlocking(ILogger logger, string objectName);
+
+        [LoggerMessage(
+            EventId = 2006,
+            Level = LogLevel.Warning,
+            Message = "Timeout waiting for async disposal of {ObjectName}")]
+        private static partial void LogAsyncDisposalTimeout(ILogger logger, string objectName);
+
+        [LoggerMessage(
+            EventId = 2007,
+            Level = LogLevel.Trace,
+            Message = "Synchronizing {ComponentName} before disposal")]
+        private static partial void LogSynchronizingBeforeDisposal(ILogger logger, string componentName);
+
+        [LoggerMessage(
+            EventId = 2008,
+            Level = LogLevel.Warning,
+            Message = "Error during synchronization of {ComponentName} before disposal")]
+        private static partial void LogSynchronizationError(ILogger logger, Exception ex, string componentName);
+
+        [LoggerMessage(
+            EventId = 2009,
+            Level = LogLevel.Trace,
+            Message = "Synchronizing {ComponentName} before disposal (sync)")]
+        private static partial void LogSynchronizingBeforeDisposalSync(ILogger logger, string componentName);
+
+        [LoggerMessage(
+            EventId = 2010,
+            Level = LogLevel.Trace,
+            Message = "Releasing native resource {ResourceName} for {ComponentName}")]
+        private static partial void LogReleasingNativeResource(ILogger logger, string resourceName, string componentName);
+
+        [LoggerMessage(
+            EventId = 2011,
+            Level = LogLevel.Warning,
+            Message = "Error releasing native resource {ResourceName} for {ComponentName}")]
+        private static partial void LogNativeResourceReleaseError(ILogger logger, Exception ex, string resourceName, string componentName);
+
+        #endregion
         /// <summary>
         /// Safely disposes an object with logging, handling both sync and async disposal patterns.
         /// </summary>
@@ -29,23 +98,35 @@ namespace DotCompute.Abstractions
                 switch (disposable)
                 {
                     case IAsyncDisposable asyncDisposable:
-                        logger?.LogTrace("Disposing {ObjectName} (async)", objectName);
+                        if (logger != null)
+                        {
+                            LogDisposing(logger, objectName);
+                        }
                         await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                         break;
 
                     case IDisposable syncDisposable:
-                        logger?.LogTrace("Disposing {ObjectName} (sync)", objectName);
+                        if (logger != null)
+                        {
+                            LogDisposingSync(logger, objectName);
+                        }
                         syncDisposable.Dispose();
                         break;
 
                     default:
-                        logger?.LogTrace("{ObjectName} does not implement IDisposable", objectName);
+                        if (logger != null)
+                        {
+                            LogNotDisposable(logger, objectName);
+                        }
                         break;
                 }
             }
             catch (Exception ex)
             {
-                logger?.LogWarning(ex, "Error disposing {ObjectName}", objectName);
+                if (logger != null)
+                {
+                    LogDisposeError(logger, ex, objectName);
+                }
             }
         }
 
@@ -67,31 +148,50 @@ namespace DotCompute.Abstractions
                 switch (disposable)
                 {
                     case IDisposable syncDisposable:
-                        logger?.LogTrace("Disposing {ObjectName} (sync)", objectName);
+                        if (logger != null)
+                        {
+                            LogDisposingSync(logger, objectName);
+                        }
                         syncDisposable.Dispose();
                         break;
 
                     case IAsyncDisposable asyncDisposable:
-                        logger?.LogTrace("Disposing {ObjectName} (async - blocking)", objectName);
+                        if (logger != null)
+                        {
+                            LogDisposingAsyncBlocking(logger, objectName);
+                        }
                         // Best effort sync disposal of async disposable
+                        // VSTHRD002: This is intentional - synchronous context requires blocking wait
+                        // This is a fallback for async resources in sync disposal
                         try
                         {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
                             _ = asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5));
+#pragma warning restore VSTHRD002
                         }
                         catch (TimeoutException)
                         {
-                            logger?.LogWarning("Timeout waiting for async disposal of {ObjectName}", objectName);
+                            if (logger != null)
+                            {
+                                LogAsyncDisposalTimeout(logger, objectName);
+                            }
                         }
                         break;
 
                     default:
-                        logger?.LogTrace("{ObjectName} does not implement IDisposable", objectName);
+                        if (logger != null)
+                        {
+                            LogNotDisposable(logger, objectName);
+                        }
                         break;
                 }
             }
             catch (Exception ex)
             {
-                logger?.LogWarning(ex, "Error disposing {ObjectName}", objectName);
+                if (logger != null)
+                {
+                    LogDisposeError(logger, ex, objectName);
+                }
             }
         }
 
@@ -160,12 +260,18 @@ namespace DotCompute.Abstractions
         {
             try
             {
-                logger?.LogTrace("Synchronizing {ComponentName} before disposal", componentName);
+                if (logger != null)
+                {
+                    LogSynchronizingBeforeDisposal(logger, componentName);
+                }
                 await synchronizeFunc().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                logger?.LogWarning(ex, "Error during synchronization of {ComponentName} before disposal", componentName);
+                if (logger != null)
+                {
+                    LogSynchronizationError(logger, ex, componentName);
+                }
             }
 
             await SafeDisposeAllAsync(disposables, logger).ConfigureAwait(false);
@@ -186,12 +292,18 @@ namespace DotCompute.Abstractions
         {
             try
             {
-                logger?.LogTrace("Synchronizing {ComponentName} before disposal (sync)", componentName);
+                if (logger != null)
+                {
+                    LogSynchronizingBeforeDisposalSync(logger, componentName);
+                }
                 synchronizeAction();
             }
             catch (Exception ex)
             {
-                logger?.LogWarning(ex, "Error during synchronization of {ComponentName} before disposal", componentName);
+                if (logger != null)
+                {
+                    LogSynchronizationError(logger, ex, componentName);
+                }
             }
 
             SafeDisposeAll(disposables, logger);
@@ -243,15 +355,19 @@ namespace DotCompute.Abstractions
                 {
                     if (!EqualityComparer<T>.Default.Equals(kvp.Value, default!))
                     {
-                        logger?.LogTrace("Releasing native resource {ResourceName} for {ComponentName}",
-                            kvp.Key, componentName);
+                        if (logger != null)
+                        {
+                            LogReleasingNativeResource(logger, kvp.Key, componentName);
+                        }
                         releaseFunc(kvp.Value);
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger?.LogWarning(ex, "Error releasing native resource {ResourceName} for {ComponentName}",
-                        kvp.Key, componentName);
+                    if (logger != null)
+                    {
+                        LogNativeResourceReleaseError(logger, ex, kvp.Key, componentName);
+                    }
                 }
             }
 

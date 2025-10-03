@@ -542,9 +542,9 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         }
     }
 
-    // Supporting types    
+    // Supporting types
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public enum CudaErrorStrategy
     {
@@ -575,7 +575,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorEvent
     {
@@ -621,7 +621,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorRecoveryResult
     {
@@ -675,7 +675,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaHealthCheckResult
     {
@@ -729,7 +729,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaMemoryStatus
     {
@@ -775,7 +775,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class CudaErrorStatistics
     {

@@ -8,6 +8,9 @@ using DotCompute.Abstractions.Interfaces.Recovery;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Core.Recovery.Models;
+using RecoveryMetrics = DotCompute.Core.Recovery.Models.RecoveryMetrics;
 
 namespace DotCompute.Core.Recovery;
 

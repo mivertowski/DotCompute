@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -26,12 +28,12 @@ public sealed class MemoryPatternAnalysis
     /// <summary>
     /// Gets the list of memory issues found.
     /// </summary>
-    public IReadOnlyList<MemoryIssue> Issues { get; init; } = [];
+    public Collection<MemoryIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the list of recommendations for memory optimization.
     /// </summary>
-    public IReadOnlyList<string> Recommendations { get; init; } = [];
+    public Collection<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Gets the total memory used by input data.

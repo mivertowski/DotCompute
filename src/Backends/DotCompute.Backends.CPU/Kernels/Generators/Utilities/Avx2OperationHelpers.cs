@@ -50,7 +50,7 @@ internal static class Avx2OperationHelpers
             KernelOperation.Divide => &Avx.Divide,
             KernelOperation.Maximum => &Avx.Max,
             KernelOperation.Minimum => &Avx.Min,
-            // FusedMultiplyAdd handled separately - requires 3 operands  
+            // FusedMultiplyAdd handled separately - requires 3 operands
             KernelOperation.FusedMultiplyAdd => null,
             _ => &Avx.Add
         };

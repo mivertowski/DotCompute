@@ -215,7 +215,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
             LogCreatingIsolatedContext(contextName);
 
             var loadContext = new PluginAssemblyLoadContext(contextName, assemblyPath, _options.EnableIsolation);
-            
+
             try
             {
                 // Step 3: Load assembly in isolated context
@@ -300,7 +300,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
 
             // Step 1: Basic file validation
             var fileInfo = new FileInfo(assemblyPath);
-            
+
             // Size check
             if (fileInfo.Length > _options.MaxAssemblySize)
             {
@@ -313,7 +313,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
             if (_options.AllowedDirectories.Count > 0)
             {
                 var assemblyDir = Path.GetDirectoryName(assemblyPath);
-                var isAllowed = _options.AllowedDirectories.Any(allowedDir => 
+                var isAllowed = _options.AllowedDirectories.Any(allowedDir =>
                     assemblyDir != null && assemblyDir.StartsWith(allowedDir, StringComparison.OrdinalIgnoreCase));
 
                 if (!isAllowed)
@@ -334,7 +334,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     result.Errors.Add($"Authenticode validation failed: {authenticodeResult.ErrorMessage}");
                     return result;
                 }
-                
+
                 LogSignatureValidationPassed(assemblyPath);
                 result.Metadata["AuthenticodeValid"] = true;
                 result.Metadata["TrustLevel"] = authenticodeResult.TrustLevel.ToString();
@@ -351,14 +351,14 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     result.Errors.Add("Strong name validation failed");
                     return result;
                 }
-                
+
                 result.Metadata["StrongNameValid"] = true;
             }
 
             // Step 5: Hash-based validation
             var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath, cancellationToken);
             var assemblyHash = Convert.ToHexString(SHA256.HashData(assemblyBytes));
-            
+
             if (_options.TrustedAssemblyHashes.Count > 0)
             {
                 if (!_options.TrustedAssemblyHashes.Contains(assemblyHash))
@@ -368,7 +368,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     return result;
                 }
             }
-            
+
             result.Metadata["AssemblyHash"] = assemblyHash;
 
             // Step 6: Malware scanning
@@ -381,7 +381,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     result.Errors.Add($"Malware detected: {malwareResult.ThreatDescription}");
                     return result;
                 }
-                
+
                 result.Metadata["MalwareScanClean"] = true;
                 result.Metadata["ScanMethods"] = string.Join(", ", malwareResult.ScanMethods);
             }
@@ -458,7 +458,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         {
             var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
             var publicKey = assemblyName.GetPublicKey();
-            
+
             // Check if assembly has a public key (strong name)
             if (publicKey == null || publicKey.Length == 0)
             {
@@ -518,7 +518,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 try
                 {
                     LogResolvingDependencies(pluginType.FullName ?? pluginType.Name);
-                    
+
                     var plugin = await CreatePluginInstanceWithDependenciesAsync(pluginType, cancellationToken).ConfigureAwait(false);
                     if (plugin != null)
                     {
@@ -541,7 +541,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
             {
                 LogPluginInstanceCreationFailed("Multiple types", loaderException!.Message);
             }
-            
+
             return plugins;
         }
     }
@@ -556,17 +556,17 @@ public sealed partial class PluginLoader : IAsyncDisposable
         {
             // Try different constructor patterns
             var constructors = pluginType.GetConstructors().OrderBy(c => c.GetParameters().Length).ToList();
-            
+
             foreach (var constructor in constructors)
             {
                 var parameters = constructor.GetParameters();
-                
+
                 if (parameters.Length == 0)
                 {
                     // Parameterless constructor
                     return Task.FromResult(constructor.Invoke(null) as IAlgorithmPlugin);
                 }
-                
+
                 if (parameters.Length == 1 && parameters[0].ParameterType.IsGenericType &&
                     parameters[0].ParameterType.GetGenericTypeDefinition() == typeof(ILogger<>))
                 {
@@ -581,13 +581,13 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 {
                     return Task.FromResult(serviceInstance);
                 }
-                
+
                 // Try constructor with configuration parameter
                 if (TryCreateInstanceWithConfiguration(pluginType, out var configInstance))
                 {
                     return Task.FromResult(configInstance);
                 }
-                
+
                 // Try constructor with multiple common dependencies
                 if (TryCreateInstanceWithCommonDependencies(pluginType, out var dependencyInstance))
                 {
@@ -649,7 +649,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return _loadedAssemblies.Values.Select(la => 
+        return _loadedAssemblies.Values.Select(la =>
         {
             var info = new LoadedAssemblyInfo
             {
@@ -683,7 +683,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         _securityPolicy.MaxAssemblySize = _options.MaxAssemblySize;
         _securityPolicy.EnableMalwareScanning = _options.EnableMalwareScanning;
         _securityPolicy.EnableMetadataAnalysis = true;
-        
+
         // Configure directory policies
         foreach (var directory in _options.AllowedDirectories)
         {
@@ -707,7 +707,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     private bool TryCreateInstanceWithServiceProvider(Type pluginType, out IAlgorithmPlugin? instance)
     {
         instance = null;
-        
+
         try
         {
             var serviceProviderConstructor = pluginType.GetConstructor([typeof(IServiceProvider)]);
@@ -723,7 +723,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         {
             LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
         }
-        
+
         return false;
     }
 
@@ -733,7 +733,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
     private bool TryCreateInstanceWithConfiguration(Type pluginType, out IAlgorithmPlugin? instance)
     {
         instance = null;
-        
+
         try
         {
             var configConstructor = pluginType.GetConstructor([typeof(IConfiguration)]);
@@ -749,7 +749,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         {
             LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
         }
-        
+
         return false;
     }
 
@@ -759,23 +759,23 @@ public sealed partial class PluginLoader : IAsyncDisposable
     private bool TryCreateInstanceWithCommonDependencies(Type pluginType, out IAlgorithmPlugin? instance)
     {
         instance = null;
-        
+
         try
         {
             var constructors = pluginType.GetConstructors()
                 .OrderByDescending(c => c.GetParameters().Length)
                 .ToList();
-            
+
             foreach (var constructor in constructors)
             {
                 var parameters = constructor.GetParameters();
                 var parameterInstances = new object[parameters.Length];
                 bool canInstantiate = true;
-                
+
                 for (int i = 0; i < parameters.Length; i++)
                 {
                     var paramType = parameters[i].ParameterType;
-                    
+
                     if (paramType.IsGenericType && paramType.GetGenericTypeDefinition() == typeof(ILogger<>))
                     {
                         var loggerType = typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>).MakeGenericType(pluginType);
@@ -807,7 +807,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
                         break;
                     }
                 }
-                
+
                 if (canInstantiate)
                 {
                     instance = constructor.Invoke(parameterInstances) as IAlgorithmPlugin;
@@ -822,7 +822,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         {
             LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
         }
-        
+
         return false;
     }
 
@@ -863,7 +863,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
 
             _loadedAssemblies.Clear();
             _loadContexts.Clear();
-            
+
             _loadingSemaphore.Dispose();
             _trustedPublicKey?.Dispose();
         }

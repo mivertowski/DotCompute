@@ -455,9 +455,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("matrix", StringComparison.OrdinalIgnoreCase) => elementsProcessed * elementsProcessed, // O(n²)
-            var name when name.Contains("sort", StringComparison.OrdinalIgnoreCase) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
-            var name when name.Contains("fft", StringComparison.CurrentCulture) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("matrix", StringComparison.Ordinal) => elementsProcessed * elementsProcessed, // O(n²)
+            var name when name.Contains("sort", StringComparison.Ordinal) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
+            var name when name.Contains("fft", StringComparison.Ordinal) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
             _ => elementsProcessed // O(n)
         };
     }
@@ -486,12 +486,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Heuristic based on kernel name
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("fft", StringComparison.CurrentCulture) || name.Contains("fwt", StringComparison.CurrentCulture) => 0.9,
-            var name when name.Contains("matrix", StringComparison.CurrentCulture) && name.Contains("multiply", StringComparison.CurrentCulture) => 0.85,
-            var name when name.Contains("convolution", StringComparison.CurrentCulture) || name.Contains("conv", StringComparison.CurrentCulture) => 0.8,
-            var name when name.Contains("sort", StringComparison.CurrentCulture) => 0.6,
-            var name when name.Contains("add", StringComparison.CurrentCulture) || name.Contains("sub", StringComparison.CurrentCulture) => 0.2,
-            var name when name.Contains("copy", StringComparison.CurrentCulture) => 0.1,
+            var name when name.Contains("fft", StringComparison.Ordinal) || name.Contains("fwt", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("matrix", StringComparison.Ordinal) && name.Contains("multiply", StringComparison.Ordinal) => 0.85,
+            var name when name.Contains("convolution", StringComparison.Ordinal) || name.Contains("conv", StringComparison.Ordinal) => 0.8,
+            var name when name.Contains("sort", StringComparison.Ordinal) => 0.6,
+            var name when name.Contains("add", StringComparison.Ordinal) || name.Contains("sub", StringComparison.Ordinal) => 0.2,
+            var name when name.Contains("copy", StringComparison.Ordinal) => 0.1,
             _ => 0.5 // Default moderate compute intensity
         };
     }
@@ -509,9 +509,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("copy", StringComparison.CurrentCulture) || name.Contains("transpose", StringComparison.CurrentCulture) => 0.9,
-            var name when name.Contains("reduce", StringComparison.CurrentCulture) || name.Contains("scan", StringComparison.CurrentCulture) => 0.7,
-            var name when name.Contains("matrix", StringComparison.CurrentCulture) => Math.Min(0.8, memoryOperationRatio * 2),
+            var name when name.Contains("copy", StringComparison.Ordinal) || name.Contains("transpose", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("reduce", StringComparison.Ordinal) || name.Contains("scan", StringComparison.Ordinal) => 0.7,
+            var name when name.Contains("matrix", StringComparison.Ordinal) => Math.Min(0.8, memoryOperationRatio * 2),
             _ => Math.Min(0.9, memoryOperationRatio)
         };
     }
@@ -529,12 +529,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("element", StringComparison.CurrentCulture) || name.Contains("map", StringComparison.CurrentCulture) => 0.95,
-            var name when name.Contains("matrix", StringComparison.CurrentCulture) && !name.Contains("multiply", StringComparison.CurrentCulture) => 0.9,
-            var name when name.Contains("convolution", StringComparison.CurrentCulture) => 0.85,
-            var name when name.Contains("reduce", StringComparison.CurrentCulture) => Math.Min(0.8, elementCount / 1000.0),
-            var name when name.Contains("sort", StringComparison.CurrentCulture) => Math.Min(0.7, elementCount / 10000.0),
-            var name when name.Contains("sequential", StringComparison.CurrentCulture) => 0.1,
+            var name when name.Contains("element", StringComparison.Ordinal) || name.Contains("map", StringComparison.Ordinal) => 0.95,
+            var name when name.Contains("matrix", StringComparison.Ordinal) && !name.Contains("multiply", StringComparison.Ordinal) => 0.9,
+            var name when name.Contains("convolution", StringComparison.Ordinal) => 0.85,
+            var name when name.Contains("reduce", StringComparison.Ordinal) => Math.Min(0.8, elementCount / 1000.0),
+            var name when name.Contains("sort", StringComparison.Ordinal) => Math.Min(0.7, elementCount / 10000.0),
+            var name when name.Contains("sequential", StringComparison.Ordinal) => 0.1,
             _ => Math.Min(0.8, elementCount / 5000.0)
         };
     }
@@ -543,10 +543,10 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
     {
         return kernelName.ToLowerInvariant() switch
         {
-            var name when name.Contains("transpose") => MemoryAccessPattern.Strided,
-            var name when name.Contains("random", StringComparison.CurrentCulture) => MemoryAccessPattern.Random,
-            var name when name.Contains("gather", StringComparison.CurrentCulture) || name.Contains("scatter", StringComparison.CurrentCulture) => MemoryAccessPattern.Scattered,
-            var name when name.Contains("convolution", StringComparison.CurrentCulture) => MemoryAccessPattern.Coalesced,
+            var name when name.Contains("transpose", StringComparison.Ordinal) => MemoryAccessPattern.Strided,
+            var name when name.Contains("random", StringComparison.Ordinal) => MemoryAccessPattern.Random,
+            var name when name.Contains("gather", StringComparison.Ordinal) || name.Contains("scatter", StringComparison.Ordinal) => MemoryAccessPattern.Scattered,
+            var name when name.Contains("convolution", StringComparison.Ordinal) => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };
     }

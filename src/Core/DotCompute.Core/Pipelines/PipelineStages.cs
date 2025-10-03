@@ -12,7 +12,7 @@ namespace DotCompute.Core.Pipelines
     /// - BranchStage -> Stages/BranchStage.cs
     /// - LoopStage -> Stages/LoopStage.cs
     /// - PipelineWrapperStage -> Stages/PipelineWrapperStage.cs
-    /// 
+    ///
     /// This file remains for backward compatibility and will be removed in a future version.
     /// Please update your references to use the new locations.
     /// </summary>

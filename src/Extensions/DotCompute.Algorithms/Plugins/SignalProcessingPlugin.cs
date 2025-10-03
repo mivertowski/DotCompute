@@ -191,7 +191,7 @@ namespace DotCompute.Algorithms.Plugins
             throw new ArgumentException("IIR filter requires a signal array.");
         }
 
-        if (parameters == null || 
+        if (parameters == null ||
             !parameters.TryGetValue("b", out var bObj) || bObj is not float[] b ||
             !parameters.TryGetValue("a", out var aObj) || aObj is not float[] a)
         {
@@ -203,7 +203,7 @@ namespace DotCompute.Algorithms.Plugins
 
     private static async Task<float[]> DesignLowPassAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken)
     {
-        if (parameters == null || 
+        if (parameters == null ||
             !parameters.TryGetValue("cutoff", out var cutoffObj) || cutoffObj is not float cutoff ||
             !parameters.TryGetValue("length", out var lengthObj) || lengthObj is not int length)
         {
@@ -228,7 +228,7 @@ namespace DotCompute.Algorithms.Plugins
 
     private static async Task<float[]> DesignHighPassAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken)
     {
-        if (parameters == null || 
+        if (parameters == null ||
             !parameters.TryGetValue("cutoff", out var cutoffObj) || cutoffObj is not float cutoff ||
             !parameters.TryGetValue("length", out var lengthObj) || lengthObj is not int length)
         {
@@ -253,7 +253,7 @@ namespace DotCompute.Algorithms.Plugins
 
     private static async Task<float[]> DesignBandPassAsync(Dictionary<string, object>? parameters, CancellationToken cancellationToken)
     {
-        if (parameters == null || 
+        if (parameters == null ||
             !parameters.TryGetValue("lowFreq", out var lowObj) || lowObj is not float lowFreq ||
             !parameters.TryGetValue("highFreq", out var highObj) || highObj is not float highFreq ||
             !parameters.TryGetValue("length", out var lengthObj) || lengthObj is not int length)
@@ -284,7 +284,7 @@ namespace DotCompute.Algorithms.Plugins
             throw new ArgumentException("Resample requires a signal array.");
         }
 
-        if (parameters == null || 
+        if (parameters == null ||
             !parameters.TryGetValue("originalRate", out var origObj) || origObj is not float originalRate ||
             !parameters.TryGetValue("targetRate", out var targetObj) || targetObj is not float targetRate)
         {

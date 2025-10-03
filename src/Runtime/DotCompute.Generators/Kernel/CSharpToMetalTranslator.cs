@@ -148,15 +148,11 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
     private static string ConvertToMetalParameterType(string csharpType, string paramName)
     {
-        // Remove generic type arguments for analysis
-        _ = csharpType.Contains('<') ?
-            csharpType.Substring(0, csharpType.IndexOf('<')) : csharpType;
-
         // Check if it's read-only
 
-        var isReadOnly = csharpType.IndexOf("ReadOnlySpan", StringComparison.Ordinal) >= 0 ||
-                         paramName.StartsWith("input", StringComparison.Ordinal) ||
-                         paramName.StartsWith("source", StringComparison.Ordinal);
+        var isReadOnly = csharpType.Contains("ReadOnlySpan") ||
+                         paramName.StartsWith("input") ||
+                         paramName.StartsWith("source");
 
         // Extract element type from Span<T> or array
 
@@ -178,9 +174,11 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Determine memory qualifier
 
-        if (csharpType == "int" || csharpType == "float" || csharpType == "uint" ||
-
-            csharpType == "bool" || csharpType == "double")
+        if (string.Equals(csharpType, "int") ||
+            string.Equals(csharpType, "float") ||
+            string.Equals(csharpType, "uint") ||
+            string.Equals(csharpType, "bool") ||
+            string.Equals(csharpType, "double"))
         {
             return $"constant {metalElementType}&";
         }
@@ -222,9 +220,9 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
         // Heuristics for threadgroup memory usage
         var type = variable.GetTypeDisplayString();
         return type.Contains("[]") && !type.Contains("Span") &&
-               (variable.Name.IndexOf("shared", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                variable.Name.IndexOf("tile", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                variable.Name.IndexOf("local", StringComparison.OrdinalIgnoreCase) >= 0);
+               (variable.Name.Contains("shared") ||
+                variable.Name.Contains("tile") ||
+                variable.Name.Contains("local"));
     }
 
     private static bool IsConstantCandidate(ISymbol variable)
@@ -240,8 +238,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
 
         return variable.IsStatic ||
-
-               variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               variable.Name.Contains("const") ||
                isReadOnly;
     }
 
@@ -361,14 +358,14 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
                 _ = _output.Append(postfixUnary.OperatorToken.Text);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _ = _output.Append('(');
+                _output.Append('(');
                 TranslateExpression(parenthesized.Expression);
-                _ = _output.Append(')');
+                _output.Append(')');
                 break;
             case CastExpressionSyntax cast:
-                _ = _output.Append('(');
-                _ = _output.Append(ConvertToMetalType(cast.Type.ToString()));
-                _ = _output.Append(')');
+                _output.Append('(');
+                _output.Append(ConvertToMetalType(cast.Type.ToString()));
+                _output.Append(')');
                 TranslateExpression(cast.Expression);
                 break;
             default:
@@ -397,9 +394,9 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Map Kernel.ThreadId to Metal thread position
 
-        if (_variableMapping.ContainsKey(name))
+        if (_variableMapping.TryGetValue(name, out var mappedName))
         {
-            _ = _output.Append(_variableMapping[name]);
+            _ = _output.Append(mappedName);
         }
         else
         {
@@ -413,18 +410,18 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Handle Kernel.ThreadId.X/Y/Z
 
-        if (fullName.StartsWith("Kernel.ThreadId", StringComparison.Ordinal) || fullName.StartsWith("ThreadId", StringComparison.Ordinal))
+        if (fullName.StartsWith("Kernel.ThreadId") || fullName.StartsWith("ThreadId"))
         {
             var dimensions = GetKernelDimensions();
-            if (fullName.EndsWith(".X", StringComparison.Ordinal) || fullName.EndsWith(".x", StringComparison.Ordinal))
+            if (fullName.EndsWith(".X") || fullName.EndsWith(".x"))
             {
                 _ = _output.Append(dimensions == 1 ? "gid" : "gid.x");
             }
-            else if (fullName.EndsWith(".Y", StringComparison.Ordinal) || fullName.EndsWith(".y", StringComparison.Ordinal))
+            else if (fullName.EndsWith(".Y") || fullName.EndsWith(".y"))
             {
                 _ = _output.Append("gid.y");
             }
-            else if (fullName.EndsWith(".Z", StringComparison.Ordinal) || fullName.EndsWith(".z", StringComparison.Ordinal))
+            else if (fullName.EndsWith(".Z") || fullName.EndsWith(".z"))
             {
                 _ = _output.Append("gid.z");
             }
@@ -470,7 +467,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
             _ = _output.Append(')');
         }
         // Handle math functions
-        else if (methodName.StartsWith("Math.", StringComparison.Ordinal) || methodName.StartsWith("MathF.", StringComparison.Ordinal))
+        else if (methodName.StartsWith("Math.") || methodName.StartsWith("MathF."))
         {
             var function = methodName.Substring(methodName.LastIndexOf('.') + 1).ToUpperInvariant();
 

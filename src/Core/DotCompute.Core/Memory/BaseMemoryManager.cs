@@ -18,7 +18,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 {
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers = new();
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    
+
     /// <summary>
     /// Gets the logger instance for derived classes.
     /// </summary>
@@ -281,6 +281,107 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
 
         buffer.Dispose();
+    }
+
+    // Device-specific Operations (Legacy Support) - Required by IUnifiedMemoryManager
+
+    /// <inheritdoc/>
+    public virtual DeviceMemory AllocateDevice(long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Allocate buffer and wrap in DeviceMemory
+        var buffer = AllocateAsync(sizeInBytes, MemoryOptions.None, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+
+        return new DeviceMemory(buffer.DevicePointer, sizeInBytes);
+    }
+
+    /// <inheritdoc/>
+    public virtual void FreeDevice(DeviceMemory deviceMemory)
+    {
+        ThrowIfDisposed();
+        // Device memory cleanup handled by buffer disposal
+        // This is a legacy API - actual cleanup happens in Free(IUnifiedMemoryBuffer)
+    }
+
+    /// <inheritdoc/>
+    public virtual void MemsetDevice(DeviceMemory deviceMemory, byte value, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        MemsetDeviceAsync(deviceMemory, value, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask MemsetDeviceAsync(DeviceMemory deviceMemory, byte value, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific memset implementation - default to manual fill
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Memset device memory at {deviceMemory.Pointer:X} with value {value} for {sizeInBytes} bytes");
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyHostToDevice(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        CopyHostToDeviceAsync(hostPointer, deviceMemory, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyDeviceToHost(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        // Use async version synchronously
+        CopyDeviceToHostAsync(deviceMemory, hostPointer, sizeInBytes, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask CopyHostToDeviceAsync(IntPtr hostPointer, DeviceMemory deviceMemory, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific copy implementation
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from host {hostPointer:X} to device {deviceMemory.Pointer:X}");
+    }
+
+    /// <inheritdoc/>
+    public virtual async ValueTask CopyDeviceToHostAsync(DeviceMemory deviceMemory, IntPtr hostPointer, long sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific copy implementation
+        await Task.CompletedTask;
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {deviceMemory.Pointer:X} to host {hostPointer:X}");
+    }
+
+    /// <inheritdoc/>
+    public virtual void CopyDeviceToDevice(DeviceMemory sourceDevice, DeviceMemory destinationDevice, long sizeInBytes)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        // Backend-specific device-to-device copy implementation
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {sourceDevice.Pointer:X} to device {destinationDevice.Pointer:X}");
     }
 
     /// <summary>

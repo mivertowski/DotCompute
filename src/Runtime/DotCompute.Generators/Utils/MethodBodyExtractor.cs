@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using DotCompute.Generators.Utils.Analysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,19 +14,6 @@ namespace DotCompute.Generators.Utils;
 /// </summary>
 public static class MethodBodyExtractor
 {
-    /// <summary>
-    /// Options for method body extraction.
-    /// </summary>
-    public class ExtractionOptions
-    {
-        public bool PreserveFormatting { get; set; } = true;
-        public bool IncludeComments { get; set; }
-
-        public bool ExpandExpressionBodies { get; set; } = true;
-        public bool NormalizeWhitespace { get; set; }
-
-        public int IndentSize { get; set; } = 4;
-    }
 
     /// <summary>
     /// Extracts the body of a method as a string.
@@ -412,53 +400,5 @@ public static class MethodBodyExtractor
 
 
         return linqMethods.Contains(methodName);
-    }
-
-    /// <summary>
-    /// Information about a variable declaration.
-    /// </summary>
-    public class VariableDeclarationInfo
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public bool HasInitializer { get; set; }
-        public string? InitializerExpression { get; set; }
-        public bool IsConst { get; set; }
-    }
-
-    /// <summary>
-    /// Information about a return statement.
-    /// </summary>
-    public class ReturnStatementInfo
-    {
-        public string Expression { get; set; } = string.Empty;
-        public bool IsExpressionBodied { get; set; }
-        public int LineNumber { get; set; }
-    }
-
-    /// <summary>
-    /// Information about a method invocation.
-    /// </summary>
-    public class MethodInvocationInfo
-    {
-        public string MethodName { get; set; } = string.Empty;
-        public List<string> Arguments { get; } = [];
-        public string FullExpression { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Results of method body analysis.
-    /// </summary>
-    public class MethodBodyAnalysis
-    {
-        public string MethodName { get; set; } = string.Empty;
-        public bool HasBody { get; set; }
-        public bool IsExpressionBodied { get; set; }
-        public int StatementCount { get; set; }
-        public int LoopCount { get; set; }
-        public int ConditionalCount { get; set; }
-        public int TryCatchCount { get; set; }
-        public bool HasAsyncOperations { get; set; }
-        public bool HasLinqOperations { get; set; }
     }
 }

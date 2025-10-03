@@ -16,28 +16,28 @@ public enum PipelineState
 {
     /// <summary>Pipeline has been created but not yet configured.</summary>
     Created,
-    
+
     /// <summary>Pipeline is configured and ready for execution.</summary>
     Ready,
-    
+
     /// <summary>Pipeline is currently executing.</summary>
     Executing,
-    
+
     /// <summary>Pipeline execution has been paused.</summary>
     Paused,
-    
+
     /// <summary>Pipeline execution completed successfully.</summary>
     Completed,
-    
+
     /// <summary>Pipeline execution failed with errors.</summary>
     Failed,
-    
+
     /// <summary>Pipeline execution was cancelled.</summary>
     Cancelled,
-    
+
     /// <summary>Pipeline is being optimized.</summary>
     Optimizing,
-    
+
     /// <summary>Pipeline has been disposed.</summary>
     Disposed
 }
@@ -49,31 +49,31 @@ public class PipelineStageOptions
 {
     /// <summary>Preferred backend for this stage execution.</summary>
     public string? PreferredBackend { get; set; }
-    
+
     /// <summary>Maximum execution time for this stage.</summary>
     public TimeSpan? Timeout { get; set; }
-    
+
     /// <summary>Priority level for resource allocation.</summary>
     public ExecutionPriority Priority { get; set; } = ExecutionPriority.Normal;
-    
+
     /// <summary>Whether this stage can be executed in parallel with others.</summary>
     public bool AllowParallelExecution { get; set; } = true;
-    
+
     /// <summary>Memory allocation hints for this stage.</summary>
     public MemoryAllocationHints? MemoryHints { get; set; }
-    
+
     /// <summary>Custom metadata for stage configuration.</summary>
     public Dictionary<string, object> Metadata { get; } = [];
 
     /// <summary>Whether to enable detailed profiling for this stage.</summary>
     public bool EnableProfiling { get; set; }
-    
+
     /// <summary>Retry configuration for stage execution.</summary>
     public RetryConfiguration? RetryConfig { get; set; }
-    
+
     /// <summary>Whether to enable optimization for this stage.</summary>
     public bool EnableOptimization { get; set; } = true;
-    
+
     /// <summary>Whether to enable memory optimization for this stage.</summary>
     public bool EnableMemoryOptimization { get; set; } = true;
 }
@@ -88,17 +88,17 @@ public class MemoryAllocationHints
 {
     /// <summary>Expected memory usage in bytes.</summary>
     public long? ExpectedMemoryUsage { get; set; }
-    
+
     /// <summary>Whether the stage benefits from memory pooling.</summary>
     public bool PreferMemoryPooling { get; set; } = true;
-    
+
     /// <summary>Preferred memory location (host, device, unified).</summary>
     public MemoryLocation PreferredLocation { get; set; } = MemoryLocation.Host;
-    
+
     // TODO: Define missing type
     /* <summary>Memory access pattern for optimization.</summary>
     public MemoryAccessPattern AccessPattern { get; set; } = MemoryAccessPattern.Sequential; */
-    
+
     /// <summary>Whether the stage can work with pinned memory.</summary>
     public bool SupportsPinnedMemory { get; set; }
 }
@@ -110,19 +110,19 @@ public class RetryConfiguration
 {
     /// <summary>Maximum number of retry attempts.</summary>
     public int MaxAttempts { get; set; } = 3;
-    
+
     /// <summary>Base delay between retry attempts.</summary>
     public TimeSpan BaseDelay { get; set; } = TimeSpan.FromMilliseconds(100);
-    
+
     /// <summary>Backoff strategy for increasing delays.</summary>
     public BackoffStrategy BackoffStrategy { get; set; } = BackoffStrategy.Exponential;
-    
+
     /// <summary>Maximum delay between retries.</summary>
     public TimeSpan MaxDelay { get; set; } = TimeSpan.FromSeconds(30);
-    
+
     /// <summary>Condition to determine if an exception should trigger retry.</summary>
     public Func<Exception, bool>? ShouldRetry { get; set; }
-    
+
     /// <summary>Action to execute before each retry attempt.</summary>
     public Func<int, Exception, Task>? OnRetry { get; set; }
 }
@@ -134,13 +134,13 @@ public enum BackoffStrategy
 {
     /// <summary>Fixed delay between retries.</summary>
     Fixed,
-    
+
     /// <summary>Linearly increasing delay.</summary>
     Linear,
-    
+
     /// <summary>Exponentially increasing delay.</summary>
     Exponential,
-    
+
     /// <summary>Exponential with jitter to prevent thundering herd.</summary>
     ExponentialWithJitter
 }
@@ -155,34 +155,34 @@ public enum BackoffStrategy
 public interface IPipelineConfiguration
 {
     /// <summary>Unique name for the pipeline.</summary>
-    string Name { get; }
-    
+    public string Name { get; }
+
     /// <summary>Description of the pipeline's purpose.</summary>
-    string? Description { get; }
-    
+    public string? Description { get; }
+
     /// <summary>Version of the pipeline configuration.</summary>
-    Version Version { get; }
-    
+    public Version Version { get; }
+
     /// <summary>Global timeout for the entire pipeline execution.</summary>
-    TimeSpan? GlobalTimeout { get; }
-    
+    public TimeSpan? GlobalTimeout { get; }
+
     /// <summary>Default execution priority for all stages.</summary>
-    ExecutionPriority DefaultPriority { get; }
-    
+    public ExecutionPriority DefaultPriority { get; }
+
     /// <summary>Whether to enable pipeline-wide caching.</summary>
-    bool EnableCaching { get; }
-    
+    public bool EnableCaching { get; }
+
     /// <summary>Whether to enable detailed performance profiling.</summary>
-    bool EnableProfiling { get; }
-    
+    public bool EnableProfiling { get; }
+
     /// <summary>Error handling strategy for the pipeline.</summary>
-    ErrorHandlingStrategy ErrorHandling { get; }
-    
+    public ErrorHandlingStrategy ErrorHandling { get; }
+
     /// <summary>Resource allocation preferences.</summary>
-    ResourceAllocationPreferences ResourcePreferences { get; }
-    
+    public ResourceAllocationPreferences ResourcePreferences { get; }
+
     /// <summary>Pipeline-specific metadata.</summary>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 }
 
 /// <summary>
@@ -216,16 +216,16 @@ public class ResourceAllocationPreferences
 {
     /// <summary>Preferred compute backends in order of preference.</summary>
     public IList<string> PreferredBackends { get; } = [];
-    
+
     /// <summary>Maximum memory usage for the pipeline.</summary>
     public long? MaxMemoryUsage { get; set; }
-    
+
     /// <summary>Maximum CPU cores to use.</summary>
     public int? MaxCpuCores { get; set; }
-    
+
     /// <summary>Whether to allow GPU acceleration.</summary>
     public bool AllowGpuAcceleration { get; set; } = true;
-    
+
     /// <summary>Resource sharing policy with other pipelines.</summary>
     public ResourceSharingPolicy SharingPolicy { get; set; } = ResourceSharingPolicy.Fair;
 }
@@ -237,13 +237,13 @@ public enum ResourceSharingPolicy
 {
     /// <summary>Fair sharing of resources among all pipelines.</summary>
     Fair,
-    
+
     /// <summary>Priority-based resource allocation.</summary>
     PriorityBased,
-    
+
     /// <summary>Exclusive resource usage when possible.</summary>
     Exclusive,
-    
+
     /// <summary>Adaptive sharing based on workload characteristics.</summary>
     Adaptive
 }
@@ -258,11 +258,11 @@ public enum ResourceSharingPolicy
 public interface IPipelineExecutionContext
 {
     /// <summary>Unique identifier for this execution context.</summary>
-    Guid ContextId { get; }
-    
+    public Guid ContextId { get; }
+
     /// <summary>Configuration for this execution.</summary>
-    IPipelineConfiguration Configuration { get; }
-    
+    public IPipelineConfiguration Configuration { get; }
+
     // TODO: Define missing type
     /* <summary>Resource manager for this execution.</summary>
     IPipelineResourceManager ResourceManager { get; } */
@@ -274,19 +274,19 @@ public interface IPipelineExecutionContext
     // TODO: Define missing type
     /* <summary>Telemetry collector for execution metrics.</summary>
     ITelemetryCollector TelemetryCollector { get; } */
-    
+
     /// <summary>Cancellation token for the execution.</summary>
-    CancellationToken CancellationToken { get; }
-    
+    public CancellationToken CancellationToken { get; }
+
     // TODO: Define missing type
     /* <summary>Logger for execution events and diagnostics.</summary>
     ILogger Logger { get; } */
-    
+
     /// <summary>Service provider for dependency injection.</summary>
-    IServiceProvider ServiceProvider { get; }
-    
+    public IServiceProvider ServiceProvider { get; }
+
     /// <summary>Ambient properties available to all pipeline stages.</summary>
-    IReadOnlyDictionary<string, object> Properties { get; }
+    public IReadOnlyDictionary<string, object> Properties { get; }
 }
 
 /// <summary>
@@ -295,8 +295,8 @@ public interface IPipelineExecutionContext
 public interface IStreamingExecutionContext : IPipelineExecutionContext
 {
     /// <summary>Configuration for streaming behavior.</summary>
-    StreamingConfiguration StreamingConfig { get; }
-    
+    public StreamingConfiguration StreamingConfig { get; }
+
     // TODO: Define missing type
     /* <summary>Buffer manager for streaming data.</summary>
     IStreamingBufferManager BufferManager { get; } */
@@ -317,19 +317,19 @@ public class StreamingConfiguration
 {
     /// <summary>Size of internal buffers for streaming operations.</summary>
     public int BufferSize { get; set; } = 1024;
-    
+
     /// <summary>Maximum number of items to process in parallel.</summary>
     public int MaxConcurrency { get; set; } = Environment.ProcessorCount;
-    
+
     /// <summary>Timeout for individual item processing.</summary>
     public TimeSpan ItemTimeout { get; set; } = TimeSpan.FromSeconds(30);
-    
+
     /// <summary>Whether to preserve order in streaming results.</summary>
     public bool PreserveOrder { get; set; } = true;
-    
+
     /// <summary>Backpressure handling strategy.</summary>
     public BackpressureStrategy BackpressureStrategy { get; set; } = BackpressureStrategy.Buffer;
-    
+
     /// <summary>Error handling for streaming operations.</summary>
     public StreamingErrorHandling ErrorHandling { get; set; } = StreamingErrorHandling.Skip;
 }
@@ -341,16 +341,16 @@ public enum BackpressureStrategy
 {
     /// <summary>Buffer items when consumer is slower than producer.</summary>
     Buffer,
-    
+
     /// <summary>Drop oldest items when buffer is full.</summary>
     DropOldest,
-    
+
     /// <summary>Drop newest items when buffer is full.</summary>
     DropNewest,
-    
+
     /// <summary>Block producer when buffer is full.</summary>
     Block,
-    
+
     /// <summary>Throw exception when buffer is full.</summary>
     Fail
 }
@@ -362,13 +362,13 @@ public enum StreamingErrorHandling
 {
     /// <summary>Skip items that cause errors and continue processing.</summary>
     Skip,
-    
+
     /// <summary>Stop the entire stream on first error.</summary>
     Stop,
-    
+
     /// <summary>Retry failed items with backoff.</summary>
     Retry,
-    
+
     /// <summary>Send failed items to dead letter queue.</summary>
     DeadLetter
 }
@@ -379,17 +379,17 @@ public enum StreamingErrorHandling
 public interface IPipelineExecutionResult<TOutput>
 {
     /// <summary>The output result from the pipeline execution.</summary>
-    TOutput Result { get; }
-    
+    public TOutput Result { get; }
+
     /// <summary>Whether the execution completed successfully.</summary>
-    bool IsSuccess { get; }
-    
+    public bool IsSuccess { get; }
+
     /// <summary>Any exceptions that occurred during execution.</summary>
-    IReadOnlyList<Exception> Exceptions { get; }
-    
+    public IReadOnlyList<Exception> Exceptions { get; }
+
     /// <summary>Total execution time for the pipeline.</summary>
-    TimeSpan ExecutionTime { get; }
-    
+    public TimeSpan ExecutionTime { get; }
+
     // TODO: Define missing type
     /* <summary>Detailed metrics for each pipeline stage.</summary>
     IReadOnlyList<IStageExecutionMetrics> StageMetrics { get; } */
@@ -405,15 +405,15 @@ public interface IPipelineExecutionResult<TOutput>
     // TODO: Define missing type
     /* <summary>Performance insights and recommendations.</summary>
     IPerformanceInsights PerformanceInsights { get; } */
-    
+
     /// <summary>Execution context that was used.</summary>
-    IPipelineExecutionContext ExecutionContext { get; }
-    
+    public IPipelineExecutionContext ExecutionContext { get; }
+
     /// <summary>Timestamp when execution started.</summary>
-    DateTimeOffset StartTime { get; }
-    
+    public DateTimeOffset StartTime { get; }
+
     /// <summary>Timestamp when execution completed.</summary>
-    DateTimeOffset EndTime { get; }
+    public DateTimeOffset EndTime { get; }
 }
 
 #endregion
@@ -463,7 +463,7 @@ public class PipelineExecutionStartedEvent : PipelineEvent
 {
     /// <summary>Execution context for the started pipeline.</summary>
     public IPipelineExecutionContext ExecutionContext { get; set; } = null!;
-    
+
     /// <summary>Configuration used for the execution.</summary>
     public IPipelineConfiguration Configuration { get; set; } = null!;
 }
@@ -475,13 +475,13 @@ public class PipelineExecutionCompletedEvent : PipelineEvent
 {
     /// <summary>Whether the execution completed successfully.</summary>
     public bool IsSuccess { get; set; }
-    
+
     /// <summary>Total execution time.</summary>
     public TimeSpan ExecutionTime { get; set; }
-    
+
     /// <summary>Summary of execution results.</summary>
     public string? ResultSummary { get; set; }
-    
+
     /// <summary>Any exceptions that occurred.</summary>
     public IList<Exception> Exceptions { get; } = [];
 }
@@ -493,13 +493,13 @@ public class StageExecutionStartedEvent : PipelineEvent
 {
     /// <summary>Name of the stage that started.</summary>
     public string StageName { get; set; } = string.Empty;
-    
+
     /// <summary>Kernel name being executed in the stage.</summary>
     public string KernelName { get; set; } = string.Empty;
-    
+
     /// <summary>Backend selected for stage execution.</summary>
     public string? Backend { get; set; }
-    
+
     /// <summary>Stage configuration options.</summary>
     public PipelineStageOptions? StageOptions { get; set; }
 }
@@ -511,16 +511,16 @@ public class StageExecutionCompletedEvent : PipelineEvent
 {
     /// <summary>Name of the stage that completed.</summary>
     public string StageName { get; set; } = string.Empty;
-    
+
     /// <summary>Whether the stage completed successfully.</summary>
     public bool IsSuccess { get; set; }
-    
+
     /// <summary>Stage execution time.</summary>
     public TimeSpan ExecutionTime { get; set; }
-    
+
     /// <summary>Any exceptions from the stage.</summary>
     public Exception? Exception { get; set; }
-    
+
     // TODO: Define missing type
     /* <summary>Performance metrics for the stage.</summary>
     public IStageExecutionMetrics? Metrics { get; set; } */
@@ -588,25 +588,25 @@ public enum OptimizationStrategy
 {
     /// <summary>Conservative optimization focusing on reliability.</summary>
     Conservative,
-    
+
     /// <summary>Balanced optimization between performance and reliability.</summary>
     Balanced,
-    
+
     /// <summary>Aggressive optimization maximizing performance.</summary>
     Aggressive,
-    
+
     /// <summary>Adaptive optimization based on runtime characteristics.</summary>
     Adaptive,
-    
+
     /// <summary>Memory-focused optimization minimizing allocations.</summary>
     MemoryOptimal,
-    
+
     /// <summary>Throughput-focused optimization maximizing data processing rate.</summary>
     ThroughputOptimal,
-    
+
     /// <summary>Latency-focused optimization minimizing response time.</summary>
     LatencyOptimal,
-    
+
     /// <summary>Energy-efficient optimization minimizing power consumption.</summary>
     EnergyEfficient
 }
@@ -618,10 +618,10 @@ public class OptimizationContext
 {
     /// <summary>Performance goals for the optimization.</summary>
     public PerformanceGoals Goals { get; set; } = new();
-    
+
     /// <summary>Constraints that must be respected during optimization.</summary>
     public OptimizationConstraints Constraints { get; set; } = new();
-    
+
     // TODO: Define missing type
     /* <summary>Historical execution data for informed optimization.</summary>
     public IExecutionHistory? ExecutionHistory { get; set; } */
@@ -642,19 +642,19 @@ public class PerformanceGoals
 {
     /// <summary>Target execution time for the pipeline.</summary>
     public TimeSpan? TargetExecutionTime { get; set; }
-    
+
     /// <summary>Target throughput in items per second.</summary>
     public double? TargetThroughput { get; set; }
-    
+
     /// <summary>Maximum acceptable memory usage.</summary>
     public long? MaxMemoryUsage { get; set; }
-    
+
     /// <summary>Target CPU utilization percentage.</summary>
     public double? TargetCpuUtilization { get; set; }
-    
+
     /// <summary>Target energy efficiency in operations per watt.</summary>
     public double? TargetEnergyEfficiency { get; set; }
-    
+
     /// <summary>Relative importance weights for different performance aspects.</summary>
     public PerformanceWeights Weights { get; set; } = new();
 }
@@ -666,13 +666,13 @@ public class PerformanceWeights
 {
     /// <summary>Weight for execution time optimization (0.0 to 1.0).</summary>
     public double ExecutionTime { get; set; } = 0.4;
-    
+
     /// <summary>Weight for memory usage optimization (0.0 to 1.0).</summary>
     public double MemoryUsage { get; set; } = 0.2;
-    
+
     /// <summary>Weight for throughput optimization (0.0 to 1.0).</summary>
     public double Throughput { get; set; } = 0.3;
-    
+
     /// <summary>Weight for energy efficiency optimization (0.0 to 1.0).</summary>
     public double EnergyEfficiency { get; set; } = 0.1;
 }
@@ -684,22 +684,22 @@ public class OptimizationConstraints
 {
     /// <summary>Maximum execution time allowed.</summary>
     public TimeSpan? MaxExecutionTime { get; set; }
-    
+
     /// <summary>Maximum memory that can be allocated.</summary>
     public long? MaxMemoryAllocation { get; set; }
-    
+
     /// <summary>Maximum CPU cores that can be used.</summary>
     public int? MaxCpuCores { get; set; }
-    
+
     /// <summary>Backends that are not allowed for execution.</summary>
     public HashSet<string> DisallowedBackends { get; } = [];
-    
+
     /// <summary>Backends that must be used if available.</summary>
     public HashSet<string> RequiredBackends { get; } = [];
-    
+
     /// <summary>Whether optimization can modify pipeline structure.</summary>
     public bool AllowStructuralChanges { get; set; } = true;
-    
+
     /// <summary>Whether optimization can reorder independent operations.</summary>
     public bool AllowReordering { get; set; } = true;
 }
@@ -715,10 +715,10 @@ public abstract class CachePolicy
 {
     /// <summary>Default cache policy with reasonable defaults.</summary>
     public static CachePolicy Default => new LRUCachePolicy(maxSize: 100, maxAge: TimeSpan.FromHours(1));
-    
+
     /// <summary>Determines if a cached item should be evicted.</summary>
     public abstract bool ShouldEvict(ICacheEntry entry);
-    
+
     /// <summary>Gets the priority for cache eviction (higher = keep longer).</summary>
     public abstract int GetEvictionPriority(ICacheEntry entry);
 }
@@ -766,25 +766,25 @@ public class TTLCachePolicy(TimeSpan timeToLive) : CachePolicy
 public interface ICacheEntry
 {
     /// <summary>Unique key for the cache entry.</summary>
-    string Key { get; }
-    
+    public string Key { get; }
+
     /// <summary>Cached value.</summary>
-    object Value { get; }
-    
+    public object Value { get; }
+
     /// <summary>Size of the cached value in bytes.</summary>
-    long Size { get; }
-    
+    public long Size { get; }
+
     /// <summary>When the entry was created.</summary>
-    DateTimeOffset CreatedAt { get; }
-    
+    public DateTimeOffset CreatedAt { get; }
+
     /// <summary>When the entry was last accessed.</summary>
-    DateTimeOffset LastAccessedAt { get; set; }
-    
+    public DateTimeOffset LastAccessedAt { get; set; }
+
     /// <summary>Number of times the entry has been accessed.</summary>
-    long AccessCount { get; set; }
-    
+    public long AccessCount { get; set; }
+
     /// <summary>Metadata associated with the cache entry.</summary>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 }
 
 #endregion
@@ -798,16 +798,16 @@ public enum MemoryAllocationStrategy
 {
     /// <summary>Allocate memory as needed during execution.</summary>
     OnDemand,
-    
+
     /// <summary>Pre-allocate based on estimated requirements.</summary>
     PreAllocated,
-    
+
     /// <summary>Use memory pooling for frequent allocations.</summary>
     Pooled,
-    
+
     /// <summary>Adaptive allocation based on runtime patterns.</summary>
     Adaptive,
-    
+
     /// <summary>Optimal allocation strategy based on performance analysis.</summary>
     Optimal
 }

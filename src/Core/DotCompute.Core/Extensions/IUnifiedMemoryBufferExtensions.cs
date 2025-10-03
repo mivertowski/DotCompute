@@ -205,7 +205,7 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
-        /// Reads data from the buffer asynchronously. 
+        /// Reads data from the buffer asynchronously.
         /// This is a compatibility method that maps to existing buffer operations.
         /// </summary>
         public static async ValueTask<T[]> ReadAsync<T>(this IUnifiedMemoryBuffer<T> buffer,

@@ -218,9 +218,9 @@ public sealed class KernelArgument
     {
         return type.IsPointer ||
                type.IsArray ||
-               type.Name.Contains("Span") ||
-               type.Name.Contains("Memory") ||
-               type.Name.Contains("Buffer");
+               type.Name.Contains("Span", StringComparison.Ordinal) ||
+               type.Name.Contains("Memory", StringComparison.Ordinal) ||
+               type.Name.Contains("Buffer", StringComparison.Ordinal);
     }
 
     /// <summary>

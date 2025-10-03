@@ -1,6 +1,10 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Core.Telemetry.Enums;
+using DotCompute.Core.Telemetry.Spans;
+using DotCompute.Core.Telemetry.Analysis;
+
 namespace DotCompute.Core.Telemetry.Traces;
 
 /// <summary>

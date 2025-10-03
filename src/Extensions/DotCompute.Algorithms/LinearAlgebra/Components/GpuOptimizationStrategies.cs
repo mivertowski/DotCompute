@@ -193,7 +193,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         public OptimizationRecommendation GetOptimizationRecommendation(string operationKey, MatrixProperties currentProperties)
         {
             var metrics = GetPerformanceMetrics(operationKey);
-            
+
             if (metrics == null)
             {
                 return new OptimizationRecommendation

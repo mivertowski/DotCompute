@@ -304,7 +304,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     MaxRegisters = 64,     // Optimal for Ada Lovelace
                     Description = "Ada Lovelace optimized"
                 },
-                
+
                 // Configuration 2: Conservative fallback
                 new JitConfiguration
                 {
@@ -315,7 +315,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     MaxRegisters = 32,     // Conservative register usage
                     Description = "Conservative balanced"
                 },
-                
+
                 // Configuration 3: Minimal safe options
                 new JitConfiguration
                 {

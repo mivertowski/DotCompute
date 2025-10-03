@@ -186,7 +186,7 @@ namespace DotCompute.Algorithms.Plugins
     private static async Task<float[]> InverseRealFFTAsync(object data, Dictionary<string, object>? parameters, CancellationToken cancellationToken)
     {
         var complexData = (Complex[])data;
-        
+
         if (parameters == null || !parameters.TryGetValue("outputLength", out var lengthObj) || lengthObj is not int outputLength)
         {
             throw new ArgumentException("outputLength parameter is required for inverse real FFT.");

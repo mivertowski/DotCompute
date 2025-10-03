@@ -36,6 +36,13 @@ internal sealed class TimerHandle : ITimerHandle
     /// <param name="metadata">The metadata.</param>
     /// <returns>The result of the operation.</returns>
     public TimeSpan Stop(IDictionary<string, object>? metadata = null) => TimeSpan.Zero;
+
+    /// <summary>
+    /// Stops the timer and records the operation duration.
+    /// </summary>
+    /// <param name="metadata">Optional metadata to associate with the timing record</param>
+    /// <returns>The total duration of the operation</returns>
+    public TimeSpan StopTimer(IDictionary<string, object>? metadata = null) => Stop(metadata);
     /// <summary>
     /// Gets add checkpoint.
     /// </summary>

@@ -17,7 +17,7 @@ namespace DotCompute.Core.Recovery.Statistics;
 /// - Common error patterns that may require attention
 /// - Cache performance and hit rates
 /// - Average compilation attempts per kernel
-/// 
+///
 /// The data is used for system optimization, alerting on compilation issues,
 /// and making informed decisions about fallback strategy ordering.
 /// </remarks>

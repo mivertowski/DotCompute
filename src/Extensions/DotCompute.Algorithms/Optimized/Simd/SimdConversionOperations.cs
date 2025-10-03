@@ -29,7 +29,7 @@ public static class SimdConversionOperations
         }
 
         var length = input.Length;
-        
+
         fixed (int* pInput = input)
         fixed (float* pResult = result)
         {
@@ -70,7 +70,7 @@ public static class SimdConversionOperations
         }
 
         var length = input.Length;
-        
+
         fixed (float* pInput = input)
         fixed (int* pResult = result)
         {
@@ -111,7 +111,7 @@ public static class SimdConversionOperations
         }
 
         var length = input.Length;
-        
+
         fixed (double* pInput = input)
         fixed (float* pResult = result)
         {
@@ -152,7 +152,7 @@ public static class SimdConversionOperations
         }
 
         var length = input.Length;
-        
+
         fixed (float* pInput = input)
         fixed (double* pResult = result)
         {

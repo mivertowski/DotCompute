@@ -1,10 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Abstractions.Logging;
-using DotCompute.Abstractions.Telemetry.Options;
-using DotCompute.Abstractions.Telemetry.Types;
 using DotCompute.Abstractions.Telemetry.Context;
-using DotCompute.Abstractions.Telemetry.Traces;
+using DotCompute.Abstractions.Telemetry.Options;
 using DotCompute.Abstractions.Telemetry.Profiles;
+using DotCompute.Abstractions.Telemetry.Traces;
+using DotCompute.Abstractions.Telemetry.Types;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DotCompute.Abstractions.Interfaces.Telemetry;
 
@@ -157,7 +157,7 @@ public static class TelemetryServiceCollectionExtensions
     /// <summary>
     /// Adds custom log sink.
     /// </summary>
-    public static IServiceCollection AddLogSink<T>(this IServiceCollection services) where T : class, ILogSink
+    public static IServiceCollection AddLogSink<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services) where T : class, ILogSink
     {
         _ = services.AddSingleton<ILogSink, T>();
         return services;

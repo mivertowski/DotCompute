@@ -17,7 +17,7 @@ public static class MemoryOptimizations
 {
     // Cache hierarchy parameters for modern CPUs
     private const int L1_CACHE_SIZE = 32 * 1024;      // 32KB L1 cache
-    private const int L2_CACHE_SIZE = 256 * 1024;     // 256KB L2 cache  
+    private const int L2_CACHE_SIZE = 256 * 1024;     // 256KB L2 cache
     private const int CACHE_LINE_SIZE = 64;            // 64-byte cache line
     private const int PREFETCH_DISTANCE_L2 = 512;
 

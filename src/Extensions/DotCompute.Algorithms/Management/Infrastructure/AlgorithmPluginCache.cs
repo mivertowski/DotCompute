@@ -323,7 +323,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var added = _executionCache.TryAdd(cacheKey, cachedResult);
             if (added)
             {
-                _logger.LogDebug("Cached execution result for {PluginId} with input hash {InputHash}", 
+                _logger.LogDebug("Cached execution result for {PluginId} with input hash {InputHash}",
                     pluginId, inputHash);
             }
 
@@ -512,7 +512,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var cleanupCount = 0;
 
             // Cleanup assembly cache
-            var expiredAssemblies = _assemblyCache.Where(kvp => 
+            var expiredAssemblies = _assemblyCache.Where(kvp =>
                 now - kvp.Value.LastAccessed > maxAge).ToList();
 
             foreach (var kvp in expiredAssemblies)
@@ -524,7 +524,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             }
 
             // Cleanup execution cache
-            var expiredExecutions = _executionCache.Where(kvp => 
+            var expiredExecutions = _executionCache.Where(kvp =>
                 now - kvp.Value.LastAccessed > _options.ExecutionCacheMaxAge).ToList();
 
             foreach (var kvp in expiredExecutions)

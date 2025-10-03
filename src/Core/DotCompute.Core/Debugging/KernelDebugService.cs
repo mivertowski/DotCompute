@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Debugging.Types;
+using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
+using AbstractionsBackendInfo = DotCompute.Abstractions.Debugging.BackendInfo;
 
 namespace DotCompute.Core.Debugging;
 
@@ -21,7 +24,7 @@ namespace DotCompute.Core.Debugging;
 /// </summary>
 public class KernelDebugService : IKernelDebugService, IDisposable
 {
-    private readonly CoreKernelDebugOrchestrator _orchestrator;
+    private readonly Services.KernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
     private bool _disposed;
     /// <summary>
@@ -37,8 +40,8 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // Create the orchestrator with specialized components
-        var orchestratorLogger = logger.CreateLogger<CoreKernelDebugOrchestrator>();
-        _orchestrator = new CoreKernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
+        var orchestratorLogger = logger.CreateLogger<Services.KernelDebugOrchestrator>();
+        _orchestrator = new Services.KernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
 
         _logger.LogInformation("KernelDebugService initialized with modular architecture");
     }
@@ -72,7 +75,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// </summary>
     public async Task<ResultComparisonReport> CompareResultsAsync(
         IEnumerable<KernelExecutionResult> results,
-        ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance)
+        AbstractionsComparisonStrategy comparisonStrategy = AbstractionsComparisonStrategy.Tolerance)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _orchestrator.CompareResultsAsync(results, comparisonStrategy);
@@ -116,7 +119,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// <summary>
     /// Gets information about available debugging backends.
     /// </summary>
-    public async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
+    public async Task<IEnumerable<AbstractionsBackendInfo>> GetAvailableBackendsAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _orchestrator.GetAvailableBackendsAsync();

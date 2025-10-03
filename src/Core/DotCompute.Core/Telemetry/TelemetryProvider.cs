@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Core.Telemetry.Profiles;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -421,8 +422,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
-    public override void Dispose()
+    public new void Dispose()
     {
         if (_disposed)
         {

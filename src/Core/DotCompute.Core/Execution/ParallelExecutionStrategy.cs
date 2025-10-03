@@ -12,6 +12,8 @@ using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Pipeline;
 using DotCompute.Core.Execution.Workload;
+using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

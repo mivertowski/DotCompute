@@ -29,13 +29,27 @@ public abstract class CpuCodeGeneratorBase
 
     #endregion
 
-    #region Fields
+    #region Properties
 
+    /// <summary>
+    /// Gets the method name.
+    /// </summary>
+    protected string MethodName { get; }
 
-    protected readonly string MethodName;
-    protected readonly IReadOnlyList<KernelParameter> Parameters;
-    protected readonly MethodDeclarationSyntax MethodSyntax;
-    protected readonly VectorizationInfo VectorizationInfo;
+    /// <summary>
+    /// Gets the list of kernel parameters.
+    /// </summary>
+    protected IReadOnlyList<KernelParameter> Parameters { get; }
+
+    /// <summary>
+    /// Gets the method declaration syntax.
+    /// </summary>
+    protected MethodDeclarationSyntax MethodSyntax { get; }
+
+    /// <summary>
+    /// Gets the vectorization information.
+    /// </summary>
+    protected VectorizationInfo VectorizationInfo { get; }
 
     #endregion
 
@@ -114,7 +128,7 @@ public abstract class CpuCodeGeneratorBase
     {
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        {(isPrivate ? "private" : "public")} static void {methodName}(");
-        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.Declaration)));
 
 
         if (includeRange)

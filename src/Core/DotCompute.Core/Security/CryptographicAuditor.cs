@@ -784,4 +784,33 @@ public class SecurityMetrics
     /// </summary>
     /// <value>The security score.</value>
     public double SecurityScore { get; set; }
+
+    // Event counting properties
+    public long TotalEventCount { get; set; }
+    public long AuthenticationSuccessCount { get; set; }
+    public long AuthenticationFailureCount { get; set; }
+    public long AccessGrantedCount { get; set; }
+    public long AccessDeniedCount { get; set; }
+    public long SecurityViolationCount { get; set; }
+    public long DataAccessCount { get; set; }
+    public long DataModificationCount { get; set; }
+    public long DataDeletionCount { get; set; }
+    public long CriticalEventCount { get; set; }
+    public long HighEventCount { get; set; }
+    public long MediumEventCount { get; set; }
+    public long LowEventCount { get; set; }
+    public long InformationalEventCount { get; set; }
+
+    // User and resource tracking
+    public int UniqueUsersCount { get; set; }
+    public int ActiveCorrelations { get; set; }
+    public double AverageEventsPerCorrelation { get; set; }
+    public DateTimeOffset FirstEventTime { get; set; }
+    public DateTimeOffset LastEventTime { get; set; }
+
+    // Collections
+    public ConcurrentDictionary<string, long> UserEventCounts { get; } = new();
+    public ConcurrentDictionary<string, long> ResourceEventCounts { get; } = new();
+    public Dictionary<SecurityEventType, long> EventsByType { get; set; } = new();
+    public Dictionary<SecurityLevel, long> EventsByLevel { get; set; } = new();
 }

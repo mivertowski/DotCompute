@@ -187,7 +187,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 return (IUnifiedMemoryBuffer<T>)pinnedBuffer;
             }
 
-            // Handle unified memory allocation  
+            // Handle unified memory allocation
             if ((options & MemoryOptions.Unified) != 0)
             {
                 return await AllocateUnifiedAsync<T>(count, cancellationToken);

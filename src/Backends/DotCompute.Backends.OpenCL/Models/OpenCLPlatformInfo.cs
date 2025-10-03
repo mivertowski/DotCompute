@@ -58,19 +58,19 @@ public sealed class OpenCLPlatformInfo
     /// <summary>
     /// Gets GPU devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> GpuDevices => 
+    public IEnumerable<OpenCLDeviceInfo> GpuDevices =>
         Devices.Where(d => d.Type.HasFlag(DeviceType.GPU));
 
     /// <summary>
     /// Gets CPU devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> CpuDevices => 
+    public IEnumerable<OpenCLDeviceInfo> CpuDevices =>
         Devices.Where(d => d.Type.HasFlag(DeviceType.CPU));
 
     /// <summary>
     /// Gets accelerator devices available on this platform.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> AcceleratorDevices => 
+    public IEnumerable<OpenCLDeviceInfo> AcceleratorDevices =>
         Devices.Where(d => d.Type.HasFlag(DeviceType.Accelerator));
 
     /// <summary>
@@ -109,7 +109,7 @@ public sealed class OpenCLPlatformInfo
     /// Gets devices by type with optional filtering.
     /// </summary>
     public IEnumerable<OpenCLDeviceInfo> GetDevices(
-        DeviceType deviceType = DeviceType.All, 
+        DeviceType deviceType = DeviceType.All,
         bool requireCompiler = true)
     {
         return Devices

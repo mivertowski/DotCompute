@@ -29,9 +29,9 @@ public static class SimdBitwiseOperations
         }
 
         var length = left.Length;
-        
+
         fixed (int* pLeft = left)
-        fixed (int* pRight = right) 
+        fixed (int* pRight = right)
         fixed (int* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)
@@ -72,9 +72,9 @@ public static class SimdBitwiseOperations
         }
 
         var length = left.Length;
-        
+
         fixed (int* pLeft = left)
-        fixed (int* pRight = right) 
+        fixed (int* pRight = right)
         fixed (int* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)
@@ -115,9 +115,9 @@ public static class SimdBitwiseOperations
         }
 
         var length = left.Length;
-        
+
         fixed (int* pLeft = left)
-        fixed (int* pRight = right) 
+        fixed (int* pRight = right)
         fixed (int* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)
@@ -157,7 +157,7 @@ public static class SimdBitwiseOperations
         }
 
         var length = input.Length;
-        
+
         fixed (int* pInput = input)
         fixed (int* pResult = result)
         {

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+
 namespace DotCompute.Generators.Models.Kernel;
 
 /// <summary>
@@ -8,6 +10,8 @@ namespace DotCompute.Generators.Models.Kernel;
 /// </summary>
 public sealed class KernelClassInfo
 {
+    private readonly Collection<string> _kernelMethodNames = [];
+
     /// <summary>
     /// Gets or sets the class name.
     /// </summary>
@@ -19,7 +23,7 @@ public sealed class KernelClassInfo
     public string Namespace { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the list of kernel method names in this class.
+    /// Gets the list of kernel method names in this class.
     /// </summary>
-    public List<string> KernelMethodNames { get; } = [];
+    public Collection<string> KernelMethodNames => _kernelMethodNames;
 }

@@ -17,7 +17,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
     {
         private const int GPUThreshold = 10000; // Minimum matrix size for GPU
         private const float NumericalTolerance = 1e-10f; // Default numerical tolerance
-        
+
         private static KernelManager? s_kernelManager;
         private static readonly Lock s_kernelLock = new();
 
@@ -34,7 +34,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             var a = matrix.Clone();
             var q = Matrix.Identity(m);
 
@@ -73,7 +73,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     var sign = x[0, 0] >= 0 ? 1.0f : -1.0f;
                     x[0, 0] += sign * norm;
                     var vnorm = ComputeVector2Norm(x);
-                    
+
                     if (Math.Abs(vnorm) < NumericalTolerance)
                     {
                         continue;
@@ -364,7 +364,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             // Compute H * A where H = I - 2 * v * v^T
             for (var j = 0; j < n; j++)
             {
@@ -373,9 +373,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     dot += v[i - startRow, 0] * matrix[i, j];
                 }
-                
+
                 dot *= 2.0f;
-                
+
                 for (var i = startRow; i < m; i++)
                 {
                     matrix[i, j] -= dot * v[i - startRow, 0];
@@ -387,7 +387,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             // Compute A * H where H = I - 2 * v * v^T
             for (var i = 0; i < m; i++)
             {
@@ -396,9 +396,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     dot += matrix[i, j] * v[j - startCol, 0];
                 }
-                
+
                 dot *= 2.0f;
-                
+
                 for (var j = startCol; j < Math.Min(n, startCol + v.Rows); j++)
                 {
                     matrix[i, j] -= dot * v[j - startCol, 0];
@@ -410,19 +410,19 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             // Use two-sided Jacobi SVD for small to medium matrices
             var u = Matrix.Identity(m);
             var a = matrix.Clone();
             var v = Matrix.Identity(n);
-            
+
             const int maxIterations = 1000;
             const float tolerance = 1e-10f;
-            
+
             for (var iter = 0; iter < maxIterations; iter++)
             {
                 var converged = true;
-                
+
                 // Iterate over all off-diagonal elements
                 for (var i = 0; i < Math.Min(m, n); i++)
                 {
@@ -433,27 +433,27 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         if (offDiag > tolerance)
                         {
                             converged = false;
-                            
+
                             // Compute Jacobi rotation to zero out A[i,j] and A[j,i]
                             ApplyJacobiRotation(a, u, v, i, j);
                         }
                     }
                 }
-                
+
                 if (converged)
                 {
                     break;
                 }
 
             }
-            
+
             // Extract singular values and ensure they are positive
             var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
             for (var i = 0; i < Math.Min(m, n); i++)
             {
                 var value = Math.Abs(a[i, i]);
                 s[i, i] = value;
-                
+
                 // If singular value is negative, flip sign of corresponding column in U or V
                 if (a[i, i] < 0 && i < m)
                 {
@@ -463,7 +463,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     }
                 }
             }
-            
+
             return (u, s, TransposeMatrix(v));
         }
 
@@ -474,10 +474,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var aij = a[i, j];
             var aji = a[j, i];
             var ajj = a[j, j];
-            
+
             // Compute SVD of 2x2 matrix
             ComputeJacobi2x2SVD(aii, aij, aji, ajj, out var c, out var s);
-            
+
             // Apply rotations to A, U, and V
             ApplyGivensRotationColumns(a, c, s, i, j);
             ApplyGivensRotationColumns(u, c, s, i, j);
@@ -532,7 +532,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         private static void ReduceToHessenberg(Matrix a, Matrix v)
         {
             var n = a.Rows;
-            
+
             for (var k = 0; k < n - 2; k++)
             {
                 // Find Householder vector to zero out column k below the subdiagonal
@@ -541,7 +541,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     x[i - k - 1, 0] = a[i, k];
                 }
-                
+
                 var norm = ComputeVector2Norm(x);
                 if (Math.Abs(norm) < NumericalTolerance)
                 {
@@ -552,7 +552,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 var sign = x[0, 0] >= 0 ? 1.0f : -1.0f;
                 x[0, 0] += sign * norm;
                 var vnorm = ComputeVector2Norm(x);
-                
+
                 if (Math.Abs(vnorm) < NumericalTolerance)
                 {
                     continue;
@@ -563,7 +563,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     x[i, 0] /= vnorm;
                 }
-                
+
                 // Apply Householder transformation
                 ApplyHouseholderToHessenberg(a, v, x, k + 1);
             }
@@ -572,7 +572,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         private static void ApplyHouseholderToHessenberg(Matrix a, Matrix v, Matrix householder, int startIdx)
         {
             var n = a.Rows;
-            
+
             // Apply to A from left and right
             for (var j = 0; j < n; j++)
             {
@@ -582,13 +582,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     dot += householder[i - startIdx, 0] * a[i, j];
                 }
                 dot *= 2.0f;
-                
+
                 for (var i = startIdx; i < n; i++)
                 {
                     a[i, j] -= dot * householder[i - startIdx, 0];
                 }
             }
-            
+
             for (var i = 0; i < n; i++)
             {
                 float dot = 0;
@@ -597,13 +597,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     dot += a[i, j] * householder[j - startIdx, 0];
                 }
                 dot *= 2.0f;
-                
+
                 for (var j = startIdx; j < n; j++)
                 {
                     a[i, j] -= dot * householder[j - startIdx, 0];
                 }
             }
-            
+
             // Update eigenvector matrix V
             for (var i = 0; i < n; i++)
             {
@@ -613,7 +613,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     dot += v[i, j] * householder[j - startIdx, 0];
                 }
                 dot *= 2.0f;
-                
+
                 for (var j = startIdx; j < n; j++)
                 {
                     v[i, j] -= dot * householder[j - startIdx, 0];
@@ -649,10 +649,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var b = matrix[n - 2, n - 1];
             var c = matrix[n - 1, n - 2];
             var d = matrix[n - 1, n - 1];
-            
+
             var trace = a + d;
             var det = a * d - b * c;
-            
+
             var discriminant = trace * trace - 4 * det;
             if (discriminant < 0)
             {
@@ -663,7 +663,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var sqrt_disc = (float)Math.Sqrt(discriminant);
             var lambda1 = (trace + sqrt_disc) * 0.5f;
             var lambda2 = (trace - sqrt_disc) * 0.5f;
-            
+
             // Return the eigenvalue closest to d
             return Math.Abs(lambda1 - d) < Math.Abs(lambda2 - d) ? lambda1 : lambda2;
         }
@@ -673,7 +673,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var n = hessenberg.Rows;
             var q = Matrix.Identity(n);
             var r = hessenberg.Clone();
-            
+
             // Use Givens rotations for Hessenberg matrices
             for (var i = 0; i < n - 1; i++)
             {
@@ -686,7 +686,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 var a = r[i, i];
                 var b = r[i + 1, i];
                 var norm = (float)Math.Sqrt(a * a + b * b);
-                
+
                 if (Math.Abs(norm) < NumericalTolerance)
                 {
                     continue;
@@ -695,12 +695,12 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                 var c = a / norm;
                 var s = -b / norm;
-                
+
                 // Apply Givens rotation
                 ApplyGivensRotationRows(r, c, s, i, i + 1);
                 ApplyGivensRotationColumns(q, c, s, i, i + 1);
             }
-            
+
             return (q, r);
         }
 
@@ -709,7 +709,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var m = a.Rows;
             var n = b.Columns;
             var k = a.Columns;
-            
+
             // Initialize result to zero
             for (var i = 0; i < m; i++)
             {
@@ -718,7 +718,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     result[i, j] = 0;
                 }
             }
-            
+
             // Compute matrix multiplication
             for (var i = 0; i < m; i++)
             {
@@ -752,7 +752,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var kernelManager = GetKernelManager();
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             var a = matrix.Clone();
             var q = Matrix.Identity(m);
 
@@ -820,7 +820,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         };
 
                         var result = await kernelManager.ExecuteKernelAsync(householderKernel, args, accelerator, config, cancellationToken).ConfigureAwait(false);
-                        
+
                         if (!result.Success)
                         {
                             throw new InvalidOperationException($"Householder vector computation failed: {result.ErrorMessage}");
@@ -857,7 +857,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         };
 
                         var transformResult = await kernelManager.ExecuteKernelAsync(transformKernel, transformArgs, accelerator, config, cancellationToken).ConfigureAwait(false);
-                        
+
                         if (!transformResult.Success)
                         {
                             throw new InvalidOperationException($"Householder transformation failed: {transformResult.ErrorMessage}");
@@ -906,7 +906,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         var sign = x[0, 0] >= 0 ? 1.0f : -1.0f;
                         x[0, 0] += sign * norm;
                         var vnorm = ComputeVector2Norm(x);
-                        
+
                         if (Math.Abs(vnorm) < NumericalTolerance)
                         {
                             continue;
@@ -941,14 +941,14 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             var kernelManager = GetKernelManager();
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             try
             {
                 // Initialize matrices for Jacobi SVD
                 var u = Matrix.Identity(m);
                 var a = matrix.Clone();
                 var v = Matrix.Identity(n);
-                
+
                 var context = new KernelGenerationContext
                 {
                     DeviceInfo = accelerator.Info,
@@ -965,7 +965,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 var aData = a.ToArray();
                 var uData = u.ToArray();
                 var vData = v.ToArray();
-                
+
                 var aBuffer = await accelerator.Memory.AllocateAsync<float>(aData.Length,
                     DotCompute.Abstractions.Memory.MemoryOptions.None, cancellationToken).ConfigureAwait(false);
                 var uBuffer = await accelerator.Memory.AllocateAsync<float>(uData.Length,
@@ -995,7 +995,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     for (var iter = 0; iter < maxIterations; iter++)
                     {
                         var converged = true;
-                        
+
                         // Iterate over all off-diagonal pairs
                         for (var i = 0; i < Math.Min(m, n) && converged; i++)
                         {
@@ -1029,7 +1029,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                                 };
 
                                 var result = await kernelManager.ExecuteKernelAsync(jacobiKernel, args, accelerator, config, cancellationToken).ConfigureAwait(false);
-                                
+
                                 if (!result.Success)
                                 {
                                     throw new InvalidOperationException($"Jacobi SVD rotation failed: {result.ErrorMessage}");
@@ -1043,7 +1043,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                                 }
                             }
                         }
-                        
+
                         if (converged)
                         {
                             break;
@@ -1081,7 +1081,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     };
 
                     var svdResult = await kernelManager.ExecuteKernelAsync(singularValuesKernel, svdArgs, accelerator, svdConfig, cancellationToken).ConfigureAwait(false);
-                    
+
                     if (!svdResult.Success)
                     {
                         throw new InvalidOperationException($"Singular values extraction failed: {svdResult.ErrorMessage}");
@@ -1096,7 +1096,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     // Construct result matrices
                     MatrixOperations.CopyArrayToMatrix(uData, u);
                     MatrixOperations.CopyArrayToMatrix(vData, v);
-                    
+
                     var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
                     for (var i = 0; i < Math.Min(m, n); i++)
                     {
@@ -1104,7 +1104,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     }
 
                     await sBuffer.DisposeAsync().ConfigureAwait(false);
-                    
+
                     return (u, s, TransposeMatrix(v));
                 }
                 finally

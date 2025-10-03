@@ -18,7 +18,7 @@ public static class KernelDiagnostics
         "DotCompute.Kernel",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Kernel methods must be static to be compatible with compute backends. Instance methods cannot be executed on GPU devices as they require object context that doesn't exist in kernel execution. Example: public static void MyKernel(Span<float> data) {{ }}"
+        description: "Kernel methods must be static to be compatible with compute backends. Instance methods cannot be executed on GPU devices as they require object context that doesn't exist in kernel execution."
     );
 
     public static readonly DiagnosticDescriptor KernelMethodInvalidParameters = new(

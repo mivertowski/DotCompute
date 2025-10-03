@@ -1020,7 +1020,7 @@ namespace DotCompute.Backends.CUDA.Native
                                     return new Version(581, 15); // Current working driver version
                                 }
 
-                                // If we have CUDA 12.0+ runtime, assume driver supports 13.0 
+                                // If we have CUDA 12.0+ runtime, assume driver supports 13.0
 
                                 if (runtimeMajor >= 12)
                                 {

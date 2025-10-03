@@ -20,10 +20,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static async Task<float> ConditionNumberAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             var (_, s, _) = await MatrixDecomposition.SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
-            
+
             var maxSingularValue = float.MinValue;
             var minSingularValue = float.MaxValue;
-            
+
             for (var i = 0; i < s.Rows; i++)
             {
                 var value = s[i, i];
@@ -38,7 +38,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 }
 
             }
-            
+
             return minSingularValue > 0 ? maxSingularValue / minSingularValue : float.PositiveInfinity;
         }
 
@@ -50,7 +50,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static float FrobeniusNorm(Matrix matrix)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             float sum = 0;
             for (var i = 0; i < matrix.Rows; i++)
             {
@@ -60,7 +60,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     sum += value * value;
                 }
             }
-            
+
             return (float)Math.Sqrt(sum);
         }
 
@@ -72,7 +72,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static float OneNorm(Matrix matrix)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             float maxColumnSum = 0;
             for (var j = 0; j < matrix.Columns; j++)
             {
@@ -87,7 +87,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 }
 
             }
-            
+
             return maxColumnSum;
         }
 
@@ -99,7 +99,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static float InfinityNorm(Matrix matrix)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             float maxRowSum = 0;
             for (var i = 0; i < matrix.Rows; i++)
             {
@@ -114,7 +114,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 }
 
             }
-            
+
             return maxRowSum;
         }
 
@@ -128,7 +128,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static async Task<float> TwoNormAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             var (_, s, _) = await MatrixDecomposition.SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
-            
+
             float maxSingularValue = 0;
             for (var i = 0; i < s.Rows; i++)
             {
@@ -139,7 +139,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 }
 
             }
-            
+
             return maxSingularValue;
         }
 
@@ -151,18 +151,18 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static float Trace(Matrix matrix)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             if (!matrix.IsSquare)
             {
                 throw new ArgumentException("Matrix must be square to compute trace.");
             }
-            
+
             float trace = 0;
             for (var i = 0; i < matrix.Rows; i++)
             {
                 trace += matrix[i, i];
             }
-            
+
             return trace;
         }
 
@@ -177,7 +177,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static async Task<int> RankAsync(Matrix matrix, IAccelerator accelerator, float tolerance = 1e-10f, CancellationToken cancellationToken = default)
         {
             var (_, s, _) = await MatrixDecomposition.SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
-            
+
             var rank = 0;
             for (var i = 0; i < s.Rows; i++)
             {
@@ -187,7 +187,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 }
 
             }
-            
+
             return rank;
         }
 
@@ -200,7 +200,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static bool IsSymmetric(Matrix matrix, float tolerance = 1e-10f)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             if (!matrix.IsSquare)
             {
 
@@ -220,7 +220,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                 }
             }
-            
+
             return true;
         }
 
@@ -234,7 +234,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static async Task<bool> IsPositiveDefiniteAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             if (!matrix.IsSquare)
             {
 
@@ -262,12 +262,12 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static float VectorNorm(Matrix vector, float p = 2.0f)
         {
             ArgumentNullException.ThrowIfNull(vector);
-            
+
             if (vector.Columns != 1)
             {
                 throw new ArgumentException("Input must be a column vector (single column matrix).");
             }
-            
+
             if (p == 1.0f)
             {
                 float sum = 0;
@@ -320,13 +320,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static (float Min, float Max, float Mean, float StandardDeviation) ComputeStatistics(Matrix matrix)
         {
             ArgumentNullException.ThrowIfNull(matrix);
-            
+
             var min = float.MaxValue;
             var max = float.MinValue;
             float sum = 0;
             float sumSquares = 0;
             var count = matrix.Rows * matrix.Columns;
-            
+
             for (var i = 0; i < matrix.Rows; i++)
             {
                 for (var j = 0; j < matrix.Columns; j++)
@@ -348,11 +348,11 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     sumSquares += value * value;
                 }
             }
-            
+
             var mean = sum / count;
             var variance = (sumSquares / count) - (mean * mean);
             var standardDeviation = (float)Math.Sqrt(Math.Max(0, variance)); // Ensure non-negative
-            
+
             return (min, max, mean, standardDeviation);
         }
     }

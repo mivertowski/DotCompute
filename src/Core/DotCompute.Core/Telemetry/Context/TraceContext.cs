@@ -3,6 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using DotCompute.Core.Telemetry.Spans;
+using DotCompute.Core.Telemetry.Traces;
 
 namespace DotCompute.Core.Telemetry.Context;
 

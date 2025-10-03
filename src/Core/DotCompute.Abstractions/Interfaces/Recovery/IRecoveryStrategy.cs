@@ -21,10 +21,10 @@ public interface IRecoveryStrategy<TContext>
     /// <summary>
     /// Determines if this strategy can handle the given error
     /// </summary>
-    public bool CanHandle(Exception error, TContext context);
+    public bool CanHandle(Exception exception, TContext context);
 
     /// <summary>
     /// Attempts to recover from the error
     /// </summary>
-    public Task<RecoveryResult> RecoverAsync(Exception error, TContext context, RecoveryOptions options, CancellationToken cancellationToken = default);
+    public Task<RecoveryResult> RecoverAsync(Exception exception, TContext context, RecoveryOptions options, CancellationToken cancellationToken = default);
 }

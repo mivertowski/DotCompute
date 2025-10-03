@@ -16,14 +16,14 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - Compatibility with the standard kernel execution interface
 /// - Reduced performance but increased compatibility
 /// - Graceful degradation for critical operations
-/// 
+///
 /// While interpreted execution is significantly slower than compiled kernels,
 /// it ensures that operations can continue when hardware or compiler issues
 /// prevent normal compilation. This is particularly valuable for:
 /// - Development and debugging scenarios
 /// - Systems with limited or problematic compilation environments
 /// - Critical operations that must not fail due to compilation issues
-/// 
+///
 /// The interpreter implements IDisposable to ensure proper cleanup of
 /// any resources allocated during preparation or execution.
 /// </remarks>
@@ -53,7 +53,7 @@ public class KernelInterpreter(string sourceCode, ILogger logger) : IDisposable
     /// - Validating syntax and structure
     /// - Setting up execution context
     /// - Preparing any required runtime resources
-    /// 
+    ///
     /// This method is idempotent - calling it multiple times will not repeat
     /// the preparation process if it has already been completed successfully.
     /// </remarks>

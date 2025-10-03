@@ -116,6 +116,10 @@ public class VectorizationInfo
     /// <summary>
     /// Gets a recommendation for vectorization based on the analysis.
     /// </summary>
+    /// <remarks>
+    /// This method performs complex analysis and is intentionally a method rather than a property.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Performs complex analysis with significant logic")]
     public VectorizationRecommendation GetRecommendation()
     {
         if (!IsVectorizable)

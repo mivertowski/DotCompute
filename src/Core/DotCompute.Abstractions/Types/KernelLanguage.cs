@@ -89,12 +89,6 @@ namespace DotCompute.Abstractions.Kernels.Types
         DirectCompute,
 
         /// <summary>
-        /// CUDA kernel source code (alias for Cuda).
-        /// NVIDIA GPU programming using CUDA C/C++.
-        /// </summary>
-        CUDA = Cuda,
-
-        /// <summary>
         /// Vulkan compute shader code.
         /// Cross-platform GPU compute using Vulkan API.
         /// </summary>

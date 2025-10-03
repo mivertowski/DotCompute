@@ -82,6 +82,9 @@ namespace DotCompute.Core.Pipelines
         public IKernelChainBuilder Then(string kernelName, params object[] args) => Kernel(kernelName, args);
 
         /// <inheritdoc/>
+        public IKernelChainBuilder ThenExecute(string kernelName, params object[] args) => Kernel(kernelName, args);
+
+        /// <inheritdoc/>
         public IKernelChainBuilder Parallel(params (string kernelName, object[] args)[] kernels)
         {
             ThrowIfDisposed();

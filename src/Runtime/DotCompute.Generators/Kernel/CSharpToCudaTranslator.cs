@@ -84,13 +84,12 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         // Heuristics for shared memory usage
         var type = variable.GetTypeDisplayString();
         return type.Contains("[]") && !type.Contains("Span") &&
-
-               variable.Name.IndexOf("tile", StringComparison.OrdinalIgnoreCase) >= 0;
+               variable.Name.Contains("tile");
     }
 
     private static bool IsConstantMemoryCandidate(ISymbol variable)
         // Heuristics for constant memory usage
-        => variable.IsStatic || variable.Name.IndexOf("const", StringComparison.OrdinalIgnoreCase) >= 0;
+        => variable.IsStatic || variable.Name.Contains("const");
 
     private void TranslateBlockStatement(BlockSyntax block)
     {
@@ -211,7 +210,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
         // Incrementors
 
-        if (forStmt.Incrementors.Any())
+        if (forStmt.Incrementors.Count > 0)
         {
             for (var i = 0; i < forStmt.Incrementors.Count; i++)
             {
@@ -242,7 +241,6 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
 
         var variable = forStmt.Declaration.Variables[0];
-        _ = variable.Identifier.Text;
 
         // Check if initializer contains thread/block index references
 
@@ -344,9 +342,9 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
                 TranslateAssignment(assignment);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _ = _output.Append('(');
+                _output.Append('(');
                 TranslateExpression(parenthesized.Expression);
-                _ = _output.Append(')');
+                _output.Append(')');
                 break;
             case PostfixUnaryExpressionSyntax postfix:
                 TranslateExpression(postfix.Operand);
@@ -387,7 +385,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
         // Handle float literals
 
-        if (literal.Token.Text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
+        if (literal.Token.Text.EndsWith("f"))
         {
             _ = _output.Append(literal.Token.Text);
         }
@@ -461,7 +459,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             var objectName = memberAccess.Expression.ToString();
 
 
-            if (objectName == "Math" || objectName == "MathF")
+            if (string.Equals(objectName, "Math") || string.Equals(objectName, "MathF"))
             {
                 // Translate Math functions to CUDA equivalents
                 var cudaFunction = TranslateMathFunction(methodName);
@@ -525,8 +523,8 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
     private static bool IsAtomicOperation(string methodName)
     {
-        return methodName.StartsWith("Interlocked", StringComparison.Ordinal) ||
-               methodName.IndexOf("Atomic", StringComparison.OrdinalIgnoreCase) >= 0;
+        return methodName.StartsWith("Interlocked") ||
+               methodName.Contains("Atomic");
     }
 
     private void TranslateAtomicOperation(string methodName, ArgumentListSyntax arguments)

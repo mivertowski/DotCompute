@@ -19,7 +19,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     private readonly OpenCLContext _context;
     private readonly ILogger<OpenCLMemoryManager> _logger;
     private readonly object _lock = new();
-    
+
     private readonly ConcurrentDictionary<nint, IUnifiedMemoryBuffer> _allocatedBuffers = new();
     private long _currentAllocatedMemory;
     private bool _disposed;
@@ -65,7 +65,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     /// <param name="logger">Logger for diagnostic information.</param>
     public OpenCLMemoryManager(
         IAccelerator accelerator,
-        OpenCLContext context, 
+        OpenCLContext context,
         ILogger<OpenCLMemoryManager> logger)
     {
         Accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
@@ -84,7 +84,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if (count <= 0)
             throw new ArgumentException("Count must be positive", nameof(count));
 
@@ -94,7 +94,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         {
             sizeInBytes = elementCount * (nuint)sizeof(T);
         }
-        
+
         // Check allocation limits
         if ((long)sizeInBytes > MaxAllocationSize)
             throw new OutOfMemoryException($"Requested allocation size {sizeInBytes} exceeds maximum {MaxAllocationSize}");
@@ -140,7 +140,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         if (sizeInBytes <= 0)
             throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
 
@@ -161,10 +161,10 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
         int length) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if (buffer == null)
             throw new ArgumentNullException(nameof(buffer));
-        
+
         if (offset < 0 || length <= 0 || offset + length > buffer.Length)
             throw new ArgumentOutOfRangeException("Invalid view range");
 
@@ -229,7 +229,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             return;
 
         var sizeInBytes = buffer.SizeInBytes;
-        
+
         // Remove from tracking
         if (buffer is OpenCLMemoryBuffer<byte> byteBuffer)
         {
@@ -247,7 +247,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
 
         // Update memory tracking
         Interlocked.Add(ref _currentAllocatedMemory, -sizeInBytes);
-        
+
         buffer.Dispose();
 
         _logger.LogTrace("Freed OpenCL buffer: size={Size}, remaining allocated: {Remaining} bytes",

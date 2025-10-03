@@ -129,34 +129,29 @@ public sealed class StructuredLogger : ILogger, IDisposable
             Message = "Kernel execution completed",
             FormattedMessage = $"Kernel '{kernelName}' executed on device '{deviceId}' in {executionTime.TotalMilliseconds:F2}ms",
             Exception = exception,
-            EventId = new EventId(1001, "KernelExecution"),
+            EventId = new EventId(1001, "KernelExecution")
+        };
 
+        logEntry.Properties["KernelName"] = kernelName;
+        logEntry.Properties["DeviceId"] = deviceId;
+        logEntry.Properties["ExecutionTimeMs"] = executionTime.TotalMilliseconds;
+        logEntry.Properties["ThroughputOpsPerSec"] = metrics.ThroughputOpsPerSecond;
+        logEntry.Properties["OccupancyPercentage"] = metrics.OccupancyPercentage;
+        logEntry.Properties["MemoryBandwidthGBPerSec"] = metrics.MemoryBandwidthGBPerSecond;
+        logEntry.Properties["CacheHitRate"] = metrics.CacheHitRate;
+        logEntry.Properties["InstructionThroughput"] = metrics.InstructionThroughput;
+        logEntry.Properties["WarpEfficiency"] = metrics.WarpEfficiency;
+        logEntry.Properties["BranchDivergence"] = metrics.BranchDivergence;
+        logEntry.Properties["PowerConsumption"] = metrics.PowerConsumption;
+        logEntry.Properties["Success"] = exception == null;
 
-            Properties = new Dictionary<string, object>
-            {
-                ["KernelName"] = kernelName,
-                ["DeviceId"] = deviceId,
-                ["ExecutionTimeMs"] = executionTime.TotalMilliseconds,
-                ["ThroughputOpsPerSec"] = metrics.ThroughputOpsPerSecond,
-                ["OccupancyPercentage"] = metrics.OccupancyPercentage,
-                ["MemoryBandwidthGBPerSec"] = metrics.MemoryBandwidthGBPerSecond,
-                ["CacheHitRate"] = metrics.CacheHitRate,
-                ["InstructionThroughput"] = metrics.InstructionThroughput,
-                ["WarpEfficiency"] = metrics.WarpEfficiency,
-                ["BranchDivergence"] = metrics.BranchDivergence,
-                ["PowerConsumption"] = metrics.PowerConsumption,
-                ["Success"] = exception == null
-            },
-
-
-            PerformanceMetrics = new LogPerformanceMetrics
-            {
-                ExecutionTimeMs = executionTime.TotalMilliseconds,
-                ThroughputOpsPerSecond = metrics.ThroughputOpsPerSecond,
-                MemoryUsageBytes = metrics.MemoryUsageBytes,
-                CacheHitRatio = metrics.CacheHitRate,
-                DeviceUtilizationPercentage = metrics.DeviceUtilization
-            }
+        logEntry.PerformanceMetrics = new LogPerformanceMetrics
+        {
+            ExecutionTimeMs = executionTime.TotalMilliseconds,
+            ThroughputOpsPerSecond = metrics.ThroughputOpsPerSecond,
+            MemoryUsageBytes = metrics.MemoryUsageBytes,
+            CacheHitRatio = metrics.CacheHitRate,
+            DeviceUtilizationPercentage = metrics.DeviceUtilization
         };
 
 
@@ -211,25 +206,21 @@ public sealed class StructuredLogger : ILogger, IDisposable
             FormattedMessage = $"Memory operation '{operationType}' on device '{deviceId}': " +
                               $"{bytes:N0} bytes in {duration.TotalMilliseconds:F2}ms ({bandwidthGBPerSec:F2} GB/s)",
             Exception = exception,
-            EventId = new EventId(1002, "MemoryOperation"),
-
-
-            Properties = new Dictionary<string, object>
-            {
-                ["OperationType"] = operationType,
-                ["DeviceId"] = deviceId,
-                ["Bytes"] = bytes,
-                ["DurationMs"] = duration.TotalMilliseconds,
-                ["BandwidthGBPerSec"] = bandwidthGBPerSec,
-                ["AccessPattern"] = metrics.AccessPattern,
-                ["CoalescingEfficiency"] = metrics.CoalescingEfficiency,
-                ["CacheHitRate"] = metrics.CacheHitRate,
-                ["MemorySegment"] = metrics.MemorySegment,
-                ["TransferDirection"] = metrics.TransferDirection,
-                ["QueueDepth"] = metrics.QueueDepth,
-                ["Success"] = exception == null
-            }
+            EventId = new EventId(1002, "MemoryOperation")
         };
+
+        logEntry.Properties["OperationType"] = operationType;
+        logEntry.Properties["DeviceId"] = deviceId;
+        logEntry.Properties["Bytes"] = bytes;
+        logEntry.Properties["DurationMs"] = duration.TotalMilliseconds;
+        logEntry.Properties["BandwidthGBPerSec"] = bandwidthGBPerSec;
+        logEntry.Properties["AccessPattern"] = metrics.AccessPattern;
+        logEntry.Properties["CoalescingEfficiency"] = metrics.CoalescingEfficiency;
+        logEntry.Properties["CacheHitRate"] = metrics.CacheHitRate;
+        logEntry.Properties["MemorySegment"] = metrics.MemorySegment;
+        logEntry.Properties["TransferDirection"] = metrics.TransferDirection;
+        logEntry.Properties["QueueDepth"] = metrics.QueueDepth;
+        logEntry.Properties["Success"] = exception == null;
 
 
         if (!string.IsNullOrEmpty(correlationId))
@@ -260,27 +251,23 @@ public sealed class StructuredLogger : ILogger, IDisposable
             FormattedMessage = $"System performance: CPU {snapshot.CpuUtilizationPercent:F1}%, " +
                               $"Memory {snapshot.UsedMemoryBytes:N0} bytes, " +
                               $"Threads {snapshot.ProcessThreadCount}",
-            EventId = new EventId(1003, "SystemPerformance"),
-
-
-            Properties = new Dictionary<string, object>
-            {
-                ["CpuUtilization"] = snapshot.CpuUtilizationPercent,
-                ["MemoryUsage"] = snapshot.UsedMemoryBytes,
-                ["AvailableMemory"] = snapshot.AvailableMemoryBytes,
-                ["TotalMemory"] = snapshot.TotalMemoryBytes,
-                ["ProcessWorkingSet"] = snapshot.ProcessWorkingSetBytes,
-                ["ProcessPrivateMemory"] = snapshot.ProcessPrivateMemoryBytes,
-                ["ThreadCount"] = snapshot.ProcessThreadCount,
-                ["HandleCount"] = snapshot.ProcessHandleCount,
-                ["Gen0Collections"] = snapshot.GCGen0Collections,
-                ["Gen1Collections"] = snapshot.GCGen1Collections,
-                ["Gen2Collections"] = snapshot.GCGen2Collections,
-                ["GCTotalMemory"] = snapshot.GCTotalMemoryBytes,
-                ["SystemLoadFactor"] = snapshot.SystemLoadFactor,
-                ["LogicalProcessorCount"] = snapshot.LogicalProcessorCount
-            }
+            EventId = new EventId(1003, "SystemPerformance")
         };
+
+        logEntry.Properties["CpuUtilization"] = snapshot.CpuUtilizationPercent;
+        logEntry.Properties["MemoryUsage"] = snapshot.UsedMemoryBytes;
+        logEntry.Properties["AvailableMemory"] = snapshot.AvailableMemoryBytes;
+        logEntry.Properties["TotalMemory"] = snapshot.TotalMemoryBytes;
+        logEntry.Properties["ProcessWorkingSet"] = snapshot.ProcessWorkingSetBytes;
+        logEntry.Properties["ProcessPrivateMemory"] = snapshot.ProcessPrivateMemoryBytes;
+        logEntry.Properties["ThreadCount"] = snapshot.ProcessThreadCount;
+        logEntry.Properties["HandleCount"] = snapshot.ProcessHandleCount;
+        logEntry.Properties["Gen0Collections"] = snapshot.GCGen0Collections;
+        logEntry.Properties["Gen1Collections"] = snapshot.GCGen1Collections;
+        logEntry.Properties["Gen2Collections"] = snapshot.GCGen2Collections;
+        logEntry.Properties["GCTotalMemory"] = snapshot.GCTotalMemoryBytes;
+        logEntry.Properties["SystemLoadFactor"] = snapshot.SystemLoadFactor;
+        logEntry.Properties["LogicalProcessorCount"] = snapshot.LogicalProcessorCount;
 
         // Note: Hardware counters would be added here if available
 
@@ -317,22 +304,18 @@ public sealed class StructuredLogger : ILogger, IDisposable
                               $"in {metrics.TotalDuration.TotalMilliseconds:F2}ms",
             Exception = exception,
             EventId = new EventId(1004, "DistributedOperation"),
-            CorrelationId = correlationId,
-
-
-            Properties = new Dictionary<string, object>
-            {
-                ["OperationName"] = operationName,
-                ["CorrelationId"] = correlationId,
-                ["TotalDurationMs"] = metrics.TotalDuration.TotalMilliseconds,
-                ["SpanCount"] = metrics.TotalSpans,
-                ["DeviceCount"] = metrics.DeviceCount,
-                ["ParallelismEfficiency"] = metrics.ParallelismEfficiency,
-                ["DeviceEfficiency"] = metrics.DeviceEfficiency,
-                ["CriticalPathDurationMs"] = metrics.CriticalPathDuration,
-                ["Success"] = exception == null
-            }
+            CorrelationId = correlationId
         };
+
+        logEntry.Properties["OperationName"] = operationName;
+        logEntry.Properties["CorrelationId"] = correlationId;
+        logEntry.Properties["TotalDurationMs"] = metrics.TotalDuration.TotalMilliseconds;
+        logEntry.Properties["SpanCount"] = metrics.TotalSpans;
+        logEntry.Properties["DeviceCount"] = metrics.DeviceCount;
+        logEntry.Properties["ParallelismEfficiency"] = metrics.ParallelismEfficiency;
+        logEntry.Properties["DeviceEfficiency"] = metrics.DeviceEfficiency;
+        logEntry.Properties["CriticalPathDurationMs"] = metrics.CriticalPathDuration;
+        logEntry.Properties["Success"] = exception == null;
 
         // Add device-specific metrics
 
@@ -364,16 +347,12 @@ public sealed class StructuredLogger : ILogger, IDisposable
             Category = $"{_categoryName}.Security",
             Message = "Security event occurred",
             FormattedMessage = $"Security event: {eventType} - {description}",
-            EventId = new EventId(2001, "SecurityEvent"),
-
-
-            Properties = new Dictionary<string, object>
-            {
-                ["SecurityEventType"] = eventType.ToString(),
-                ["Description"] = description,
-                ["Severity"] = GetSecuritySeverity(eventType)
-            }
+            EventId = new EventId(2001, "SecurityEvent")
         };
+
+        logEntry.Properties["SecurityEventType"] = eventType.ToString();
+        logEntry.Properties["Description"] = description;
+        logEntry.Properties["Severity"] = GetSecuritySeverity(eventType);
 
 
         if (context != null)
@@ -449,8 +428,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
             Message = state?.ToString() ?? string.Empty,
             FormattedMessage = formatter(state, exception),
             Exception = exception,
-            EventId = eventId,
-            Properties = []
+            EventId = eventId
         };
 
         // Add global context

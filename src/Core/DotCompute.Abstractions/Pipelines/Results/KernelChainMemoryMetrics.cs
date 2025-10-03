@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
+
 namespace DotCompute.Abstractions.Pipelines.Results
 {
     /// <summary>
@@ -204,26 +206,26 @@ namespace DotCompute.Abstractions.Pipelines.Results
         public string GetSummaryReport()
         {
             var report = new System.Text.StringBuilder();
-            _ = report.AppendLine($"Peak Memory Usage: {FormatBytes(PeakMemoryUsage)}");
-            _ = report.AppendLine($"Total Allocated: {FormatBytes(TotalMemoryAllocated)}");
-            _ = report.AppendLine($"Total Freed: {FormatBytes(TotalMemoryFreed)}");
-            _ = report.AppendLine($"Garbage Collections: {GarbageCollections}");
-            _ = report.AppendLine($"Memory Pooling: {(MemoryPoolingUsed ? "Enabled" : "Disabled")}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Peak Memory Usage: {FormatBytes(PeakMemoryUsage)}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Total Allocated: {FormatBytes(TotalMemoryAllocated)}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Total Freed: {FormatBytes(TotalMemoryFreed)}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Garbage Collections: {GarbageCollections}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Memory Pooling: {(MemoryPoolingUsed ? "Enabled" : "Disabled")}");
 
             if (NetMemoryChange.HasValue)
             {
                 var change = NetMemoryChange.Value;
-                _ = report.AppendLine($"Net Memory Change: {(change >= 0 ? "+" : "")}{FormatBytes(Math.Abs(change))}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Net Memory Change: {(change >= 0 ? "+" : "")}{FormatBytes(Math.Abs(change))}");
             }
 
             if (MemoryEfficiency.HasValue)
             {
-                _ = report.AppendLine($"Memory Efficiency: {MemoryEfficiency.Value:P2}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Memory Efficiency: {MemoryEfficiency.Value:P2}");
             }
 
             if (PoolCacheHitRatio.HasValue)
             {
-                _ = report.AppendLine($"Pool Cache Hit Ratio: {PoolCacheHitRatio.Value:P2}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Pool Cache Hit Ratio: {PoolCacheHitRatio.Value:P2}");
             }
 
             return report.ToString();

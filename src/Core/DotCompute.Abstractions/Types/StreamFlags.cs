@@ -4,7 +4,9 @@ namespace DotCompute.Backends.CUDA.Execution.Types
     /// Flags for CUDA stream creation and behavior.
     /// </summary>
     [Flags]
-    public enum StreamFlags
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - "Flags" is appropriate for flag enum
+    public enum StreamCreationFlags
+#pragma warning restore CA1711
     {
         /// <summary>
         /// Default stream behavior.

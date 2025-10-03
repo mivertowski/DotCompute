@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Debugging;
@@ -39,7 +40,7 @@ public sealed class MetricsSeries
     /// <summary>
     /// Gets the data points in this series.
     /// </summary>
-    public IReadOnlyList<MetricPoint> Points { get; init; } = [];
+    public Collection<MetricPoint> Points { get; init; } = [];
 
     /// <summary>
     /// Gets the unit of measurement for this metric.

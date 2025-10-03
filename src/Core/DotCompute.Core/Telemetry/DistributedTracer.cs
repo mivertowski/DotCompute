@@ -6,6 +6,13 @@ using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Core.Telemetry.Context;
+using DotCompute.Core.Telemetry.Spans;
+using DotCompute.Core.Telemetry.Traces;
+using DotCompute.Core.Telemetry.Options;
+using DotCompute.Core.Telemetry.Metrics;
+using DotCompute.Core.Telemetry.Analysis;
+using DotCompute.Core.Telemetry.Enums;
 
 namespace DotCompute.Core.Telemetry;
 

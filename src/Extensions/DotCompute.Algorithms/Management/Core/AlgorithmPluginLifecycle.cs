@@ -106,7 +106,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             var result = await ExecuteWithRetryAsync(plugin, inputs, parameters, cancellationToken).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Plugin {PluginId} executed successfully in {ElapsedMs} ms", 
+            _logger.LogInformation("Plugin {PluginId} executed successfully in {ElapsedMs} ms",
                 plugin.Id, stopwatch.ElapsedMilliseconds);
 
             return result;
@@ -289,17 +289,17 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         try
         {
             var memoryBefore = GC.GetTotalMemory(false);
-            
+
             // Force garbage collection for accurate reading
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             var memoryAfter = GC.GetTotalMemory(false);
             var memoryUsage = Math.Max(0, memoryAfter - memoryBefore);
-            
+
             healthResult.MemoryUsageBytes = memoryUsage;
-            
+
             // Check if memory usage is excessive
             if (memoryUsage > _options.MaxAssemblySize * 2)
             {
@@ -382,7 +382,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             }
 
             // Check for recent errors
-            if (loadedPlugin.LastError != null && 
+            if (loadedPlugin.LastError != null &&
                 DateTime.UtcNow - loadedPlugin.LastExecution < TimeSpan.FromMinutes(5))
             {
                 healthResult.HealthWarnings.Add($"Recent error: {loadedPlugin.LastError.Message}");
@@ -406,7 +406,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
             var handleCount = currentProcess.HandleCount;
             var threadCount = currentProcess.Threads.Count;
-            
+
             healthResult.HandleCount = handleCount;
             healthResult.ThreadCount = threadCount;
 

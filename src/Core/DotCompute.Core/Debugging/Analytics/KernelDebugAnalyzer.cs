@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
 using DotCompute.Core.Debugging.Types;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using DebugPerformanceMetrics = DotCompute.Abstractions.Debugging.PerformanceMetrics;
+using AbstractionsPerformanceMetrics = DotCompute.Abstractions.Performance.PerformanceMetrics;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -48,7 +50,7 @@ public sealed class KernelDebugAnalyzer(
             var performanceAnalysis = AnalyzePerformanceVariations(executionResults);
 
             // Update performance comparison with additional metrics
-            var enhancedPerformanceComparison = new Dictionary<string, PerformanceMetrics>();
+            var enhancedPerformanceComparison = new Dictionary<string, DebugPerformanceMetrics>();
             foreach (var kvp in comparisonReport.PerformanceComparison)
             {
                 var backend = kvp.Key;
@@ -330,8 +332,8 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Enhances performance metrics with additional statistical data.
     /// </summary>
-    private static PerformanceMetrics EnhancePerformanceMetrics(
-        PerformanceMetrics originalMetrics,
+    private static DebugPerformanceMetrics EnhancePerformanceMetrics(
+        DebugPerformanceMetrics originalMetrics,
         List<KernelExecutionResult> backendResults,
         PerformanceVariationAnalysis variationAnalysis)
         // In a real implementation, this would create enhanced metrics
@@ -492,7 +494,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Performs regression analysis on backend metrics.
     /// </summary>
-    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics)
+    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics)
     {
         // Simplified regression analysis
         return new RegressionAnalysis
@@ -548,7 +550,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Predicts performance scaling characteristics.
     /// </summary>
-    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics)
+    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics)
     {
         // Simplified scaling predictions
         return new ScalingPredictions
@@ -564,7 +566,7 @@ public sealed class KernelDebugAnalyzer(
     /// Calculates efficiency scores for different backends.
     /// </summary>
     private static Dictionary<string, double> CalculateEfficiencyScores(
-        Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> backendMetrics,
+        Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics,
         MemoryUsageAnalysis memoryAnalysis)
     {
         var efficiencyScores = new Dictionary<string, double>();
@@ -911,10 +913,10 @@ public sealed class KernelDebugAnalyzer(
     /// </summary>
     /// <param name="backendStats">Dictionary of backend performance statistics.</param>
     /// <returns>Dictionary of performance metrics.</returns>
-    private static Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics> ConvertBackendStatsToMetrics(
+    private static Dictionary<string, AbstractionsPerformanceMetrics> ConvertBackendStatsToMetrics(
         Dictionary<string, BackendPerformanceStats> backendStats)
     {
-        var metrics = new Dictionary<string, AbstractionsMemory.Performance.PerformanceMetrics>();
+        var metrics = new Dictionary<string, AbstractionsPerformanceMetrics>();
 
         foreach (var kvp in backendStats)
         {
@@ -922,7 +924,7 @@ public sealed class KernelDebugAnalyzer(
             var stats = kvp.Value;
 
             // Convert BackendPerformanceStats to PerformanceMetrics
-            var performanceMetrics = new AbstractionsMemory.Performance.PerformanceMetrics
+            var performanceMetrics = new AbstractionsPerformanceMetrics
             {
                 ExecutionTimeMs = (long)stats.AverageExecutionTimeMs,
                 MemoryUsageBytes = (long)stats.AverageMemoryUsage,

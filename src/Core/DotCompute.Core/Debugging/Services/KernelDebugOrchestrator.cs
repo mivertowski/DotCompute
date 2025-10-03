@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
@@ -12,6 +13,9 @@ using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve type conflicts
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
+using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
+using AbstractionsBackendInfo = DotCompute.Abstractions.Debugging.BackendInfo;
+using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
 using System;
 
 namespace DotCompute.Core.Debugging.Services;
@@ -168,7 +172,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// <returns>Comprehensive comparison report.</returns>
     public async Task<ResultComparisonReport> CompareResultsAsync(
         IEnumerable<KernelExecutionResult> results,
-        ComparisonStrategy comparisonStrategy = ComparisonStrategy.Tolerance)
+        AbstractionsComparisonStrategy comparisonStrategy = AbstractionsComparisonStrategy.Tolerance)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(results);
@@ -477,7 +481,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// Gets detailed information about available backends and their capabilities.
     /// </summary>
     /// <returns>Information about all available backends and their current status.</returns>
-    public async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
+    public async Task<IEnumerable<AbstractionsBackendInfo>> GetAvailableBackendsAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -520,11 +524,11 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         var capabilities = new List<string> { "Kernel Execution" };
 
         // Add more capabilities based on accelerator type
-        if (accelerator.GetType().Name.Contains("Cuda", StringComparison.OrdinalIgnoreCase))
+        if (accelerator.GetType().Name.Contains("Cuda", StringComparison.Ordinal))
         {
             capabilities.AddRange(["GPU Compute", "CUDA Kernels", "Unified Memory"]);
         }
-        else if (accelerator.GetType().Name.Contains("Cpu", StringComparison.OrdinalIgnoreCase))
+        else if (accelerator.GetType().Name.Contains("Cpu", StringComparison.Ordinal))
         {
             capabilities.AddRange(["Multi-threading", "SIMD", "Vector Operations"]);
         }
@@ -714,7 +718,7 @@ public record PerformanceAnalysisResult
     /// Gets or sets the execution statistics.
     /// </summary>
     /// <value>The execution statistics.</value>
-    public Core.ExecutionStatistics ExecutionStatistics { get; init; } = new();
+    public AbstractionsExecutionStatistics ExecutionStatistics { get; init; } = new();
     /// <summary>
     /// Gets or sets the advanced analysis.
     /// </summary>

@@ -21,7 +21,7 @@ public enum BraceStyle
     /// separated by a space. It's commonly used in JavaScript, Java, and some
     /// C# codebases. This approach can save vertical space and create a more
     /// compact code appearance.
-    /// 
+    ///
     /// Example:
     /// <code>
     /// if (condition) {
@@ -40,7 +40,7 @@ public enum BraceStyle
     /// with the beginning of the associated statement. It's the traditional
     /// C# convention and is widely used in .NET development. This approach
     /// can improve readability by clearly delineating code blocks.
-    /// 
+    ///
     /// Example:
     /// <code>
     /// if (condition)

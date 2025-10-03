@@ -23,7 +23,7 @@ public enum CommentDetailLevel
     /// - Brief method summaries for public APIs
     /// - Critical warnings or important constraints
     /// - Essential parameter descriptions for complex methods
-    /// 
+    ///
     /// This level produces the most compact code output while maintaining
     /// basic documentation for maintainability. Best suited for performance-
     /// critical scenarios or when code size is a concern.
@@ -40,7 +40,7 @@ public enum CommentDetailLevel
     /// - Parameter and return value descriptions
     /// - Brief inline comments for complex logic
     /// - Exception documentation where relevant
-    /// 
+    ///
     /// This level balances code readability with documentation completeness
     /// and is suitable for most generated code scenarios. It provides good
     /// IntelliSense support and maintains professional code standards.
@@ -59,7 +59,7 @@ public enum CommentDetailLevel
     /// - Detailed parameter validation and behavior explanations
     /// - Performance considerations and implementation notes
     /// - Cross-references to related methods and types
-    /// 
+    ///
     /// This level produces the most documentation-rich code output and is
     /// ideal for educational purposes, complex APIs, or when the generated
     /// code will be extensively used by other developers who need detailed

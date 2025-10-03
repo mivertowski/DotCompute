@@ -92,7 +92,7 @@ public class Dim3TypeConverter : TypeConverter
             if (dim3.Y == 1 && dim3.Z == 1)
             {
 
-                return dim3.X.ToString();
+                return dim3.X.ToString(System.Globalization.CultureInfo.InvariantCulture);
             }
 
 

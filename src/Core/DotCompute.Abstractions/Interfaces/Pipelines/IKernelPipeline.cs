@@ -1,12 +1,11 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
 using DotCompute.Abstractions.Models.Pipelines;
+using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines.Models;
 using DotCompute.Abstractions.Pipelines.Results;
-using DotCompute.Abstractions.Pipelines.Enums;
-using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
-
 // Using aliases to resolve interface conflicts
 using IPipelineMetricsInterface = DotCompute.Abstractions.Interfaces.Pipelines.Interfaces.IPipelineMetrics;
 

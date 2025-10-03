@@ -175,7 +175,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             }
 
             var norm = await EuclideanNormAsync(vector, accelerator, cancellationToken).ConfigureAwait(false);
-            
+
             if (Math.Abs(norm) < 1e-10f)
             {
                 throw new InvalidOperationException("Cannot normalize zero vector");

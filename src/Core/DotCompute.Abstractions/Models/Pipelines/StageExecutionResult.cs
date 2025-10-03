@@ -68,9 +68,9 @@ public sealed class StageValidationResult
     public bool IsValid { get; set; }
 
     /// <summary>
-    /// Gets or sets validation issues.
+    /// Gets or initializes validation issues.
     /// </summary>
-    public IList<Validation.ValidationIssue>? Issues { get; set; }
+    public IList<Validation.ValidationIssue>? Issues { get; init; }
 
     /// <summary>
     /// Gets or sets validation errors.
@@ -266,9 +266,9 @@ public sealed class PipelineExecutionMetrics
     public double Throughput { get; set; }
 
     /// <summary>
-    /// Gets or sets additional metrics.
+    /// Gets or initializes additional metrics.
     /// </summary>
-    public Dictionary<string, object>? AdditionalMetrics { get; set; }
+    public Dictionary<string, object>? AdditionalMetrics { get; init; }
 }
 
 /// <summary>

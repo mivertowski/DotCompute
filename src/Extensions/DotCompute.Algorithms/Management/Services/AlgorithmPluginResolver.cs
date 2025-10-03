@@ -64,7 +64,7 @@ public sealed class AlgorithmPluginResolver(
             .ToList();
 
         var bestPlugin = scoredCandidates.First().Plugin;
-        _logger.LogInformation("Resolved plugin {PluginId} (score: {Score}) for requirements", 
+        _logger.LogInformation("Resolved plugin {PluginId} (score: {Score}) for requirements",
             bestPlugin.Id, scoredCandidates.First().Score);
 
         return bestPlugin;
@@ -91,7 +91,7 @@ public sealed class AlgorithmPluginResolver(
 
         // Apply filtering
         candidates = ApplyRequirementFilters(candidates, requirements);
-        
+
         // Score and return top results
         var results = ScorePlugins(candidates, requirements)
             .OrderByDescending(sc => sc.Score)
@@ -172,7 +172,7 @@ public sealed class AlgorithmPluginResolver(
         {
             var performanceProfile = plugin.GetPerformanceProfile();
             var perfResult = CheckPerformanceCompatibility(performanceProfile, requirements.PerformanceRequirements);
-            
+
             result.CompatibilityScore += perfResult.Score;
             if (!perfResult.IsAcceptable)
             {
@@ -346,7 +346,7 @@ public sealed class AlgorithmPluginResolver(
                 }
 
                 // Penalty for recent errors
-                if (loadedPlugin.LastError != null && 
+                if (loadedPlugin.LastError != null &&
                     DateTime.UtcNow - loadedPlugin.LastExecution < TimeSpan.FromHours(1))
                 {
                     score -= 15;
@@ -361,7 +361,7 @@ public sealed class AlgorithmPluginResolver(
     /// Checks performance compatibility between a plugin's profile and requirements.
     /// </summary>
     private static PerformanceCompatibilityResult CheckPerformanceCompatibility(
-        PerformanceProfile profile, 
+        PerformanceProfile profile,
         PerformanceRequirements requirements)
     {
         var result = new PerformanceCompatibilityResult { IsAcceptable = true, Score = 0 };
@@ -502,7 +502,7 @@ public sealed class PluginRequirements
     public override string ToString()
     {
         var parts = new List<string>();
-        
+
         if (RequiredAcceleratorType.HasValue)
         {
             parts.Add($"Accelerator: {RequiredAcceleratorType.Value}");

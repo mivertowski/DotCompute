@@ -78,7 +78,7 @@ public class KernelExecutionServiceSimplified(
         // This is a placeholder implementation that demonstrates the integration pattern
         // The actual implementation would:
         // 1. Compile the kernel for the target accelerator
-        // 2. Marshal the arguments to device-appropriate format  
+        // 2. Marshal the arguments to device-appropriate format
         // 3. Execute the kernel on the accelerator
         // 4. Return the results
 

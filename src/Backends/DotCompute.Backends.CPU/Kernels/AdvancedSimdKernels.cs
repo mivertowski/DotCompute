@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 
 
 /// <summary>
-/// Advanced SIMD kernel implementations with complete FMA, integer SIMD, 
+/// Advanced SIMD kernel implementations with complete FMA, integer SIMD,
 /// enhanced ARM NEON, and modern vectorization techniques.
 /// </summary>
 public static class AdvancedSimdKernels

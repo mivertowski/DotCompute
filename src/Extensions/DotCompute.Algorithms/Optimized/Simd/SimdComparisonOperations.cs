@@ -29,9 +29,9 @@ public static class SimdComparisonOperations
         }
 
         var length = left.Length;
-        
+
         fixed (float* pLeft = left)
-        fixed (float* pRight = right) 
+        fixed (float* pRight = right)
         fixed (float* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)
@@ -72,9 +72,9 @@ public static class SimdComparisonOperations
         }
 
         var length = left.Length;
-        
+
         fixed (float* pLeft = left)
-        fixed (float* pRight = right) 
+        fixed (float* pRight = right)
         fixed (float* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)
@@ -115,9 +115,9 @@ public static class SimdComparisonOperations
         }
 
         var length = left.Length;
-        
+
         fixed (float* pLeft = left)
-        fixed (float* pRight = right) 
+        fixed (float* pRight = right)
         fixed (float* pResult = result)
         {
             if (SimdCapabilities.HasAvx512)

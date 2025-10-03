@@ -20,19 +20,19 @@ public static class VectorKernels
     public const string CUDAVectorOperationsKernel = @"
 extern ""C"" __global__ void vector_operations_cuda(
     const float* a,          // Input vector a
-    const float* b,          // Input vector b  
+    const float* b,          // Input vector b
     float* result,           // Output vector
     const int n,             // Vector length
     const int operation      // 0=add, 1=sub, 2=mul, 3=div
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
-    
+
     // Process multiple elements per thread for better efficiency
     for (int i = tid; i < n; i += stride) {
         float val_a = a[i];
         float val_b = b[i];
-        
+
         switch (operation) {
             case 0: // Addition
                 result[i] = val_a + val_b;
@@ -65,11 +65,11 @@ __kernel void vector_scale_normalize(
     const int operation              // 0=scale, 1=normalize, 2=unit_scale
 ) {
     int gid = get_global_id(0);
-    
+
     if (gid >= n) return;
-    
+
     float val = input[gid];
-    
+
     switch (operation) {
         case 0: // Simple scaling
             output[gid] = val * scale_factor;
@@ -107,10 +107,10 @@ __kernel void parallel_reduction_optimized(
     int gid = get_global_id(0);
     int lid = get_local_id(0);
     int group_size = get_local_size(0);
-    
+
     // Initialize local memory
     float value = 0.0f;
-    
+
     // Load data and handle boundary conditions
     if (gid < n) {
         value = input[gid];
@@ -118,22 +118,22 @@ __kernel void parallel_reduction_optimized(
             value = value * value;
         }
     }
-    
+
     // Handle operations that need special initialization
     if (operation == 2 && gid >= n) { // Min operation
         value = FLT_MAX;
-    } else if (operation == 1 && gid >= n) { // Max operation  
+    } else if (operation == 1 && gid >= n) { // Max operation
         value = -FLT_MAX;
     }
-    
+
     scratch[lid] = value;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Parallel reduction
     for (int offset = group_size / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
             float other = scratch[lid + offset];
-            
+
             switch (operation) {
                 case 0: // Sum
                 case 3: // L2 norm (sum of squares)
@@ -149,7 +149,7 @@ __kernel void parallel_reduction_optimized(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Store result
     if (lid == 0) {
         if (operation == 3) {
@@ -182,31 +182,31 @@ extern ""C"" __global__ void warp_reduction_cuda(
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int lane = threadIdx.x % warpSize;
     int warp_id = threadIdx.x / warpSize;
-    
+
     __shared__ float warp_sums[32]; // Max 32 warps per block
-    
+
     // Load and sum
     float sum = 0.0f;
     for (int i = tid; i < n; i += blockDim.x * gridDim.x) {
         sum += input[i];
     }
-    
+
     // Warp-level reduction
     sum = warp_reduce_sum(sum);
-    
+
     // Store warp result
     if (lane == 0) {
         warp_sums[warp_id] = sum;
     }
-    
+
     __syncthreads();
-    
+
     // Block-level reduction
     if (warp_id == 0) {
-        sum = (threadIdx.x < (blockDim.x + warpSize - 1) / warpSize) ? 
+        sum = (threadIdx.x < (blockDim.x + warpSize - 1) / warpSize) ?
               warp_sums[threadIdx.x] : 0.0f;
         sum = warp_reduce_sum(sum);
-        
+
         if (threadIdx.x == 0) {
             output[blockIdx.x] = sum;
         }
@@ -234,19 +234,19 @@ __kernel void dot_product_optimized(
     int gid = get_global_id(0);
     int lid = get_local_id(0);
     int group_size = get_local_size(0);
-    
+
     // Initialize local sum
     float local_sum = 0.0f;
-    
+
     // Grid-stride loop for better memory coalescing
     for (int i = gid; i < n; i += get_global_size(0)) {
         local_sum += a[i] * b[i];
     }
-    
+
     // Store in local memory
     scratch[lid] = local_sum;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Parallel reduction within work group
     for (int offset = group_size / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
@@ -254,7 +254,7 @@ __kernel void dot_product_optimized(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Store partial result
     if (lid == 0) {
         partial_results[get_group_id(0)] = scratch[0];
@@ -275,15 +275,15 @@ extern ""C"" __global__ void vector_norm_cuda(
     const int norm_type       // 1=L1, 2=L2, 3=Linf
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     __shared__ float shared_data[256];
-    
+
     float thread_result = 0.0f;
-    
+
     // Grid-stride loop
     for (int i = tid; i < n; i += blockDim.x * gridDim.x) {
         float val = input[i];
-        
+
         switch (norm_type) {
             case 1: // L1 norm
                 thread_result += fabsf(val);
@@ -299,10 +299,10 @@ extern ""C"" __global__ void vector_norm_cuda(
                 break;
         }
     }
-    
+
     shared_data[threadIdx.x] = thread_result;
     __syncthreads();
-    
+
     // Block reduction
     for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
         if (threadIdx.x < stride) {
@@ -314,7 +314,7 @@ extern ""C"" __global__ void vector_norm_cuda(
         }
         __syncthreads();
     }
-    
+
     if (threadIdx.x == 0) {
         output[blockIdx.x] = shared_data[0];
     }
@@ -340,12 +340,12 @@ __kernel void vector_comparison_select(
     const float tolerance            // Tolerance for equality
 ) {
     int gid = get_global_id(0);
-    
+
     if (gid >= n) return;
-    
+
     float val_a = a[gid];
     float val_b = b[gid];
-    
+
     switch (operation) {
         case 0: // Element-wise max
             result[gid] = fmax(val_a, val_b);
@@ -385,11 +385,11 @@ extern ""C"" __global__ void vector_transform_cuda(
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
-    
+
     for (int i = tid; i < n; i += stride) {
         float val = input[i];
         float result = val;
-        
+
         switch (transform_type) {
             case 0: // Copy
                 result = val;
@@ -410,7 +410,7 @@ extern ""C"" __global__ void vector_transform_cuda(
                 result = val;
                 break;
         }
-        
+
         output[i] = result;
     }
 }";

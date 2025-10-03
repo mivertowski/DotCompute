@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Interfaces.Kernels
 {
@@ -183,7 +183,9 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
     /// Kernel execution flags.
     /// </summary>
     [Flags]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - "Flags" is appropriate for flag enum
     public enum KernelExecutionFlags
+#pragma warning restore CA1711
     {
         /// <summary>
         /// No special flags

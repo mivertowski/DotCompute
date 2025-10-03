@@ -49,9 +49,8 @@ public sealed class KernelMethodAnalyzer
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var methodSymbol = model.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
 
-        if (methodSymbol is null)
+        if (model.GetDeclaredSymbol(methodDeclaration) is not IMethodSymbol methodSymbol)
         {
             return null;
         }
@@ -109,9 +108,8 @@ public sealed class KernelMethodAnalyzer
     {
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var classSymbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-        if (classSymbol is null)
+        if (model.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
         {
             return null;
         }

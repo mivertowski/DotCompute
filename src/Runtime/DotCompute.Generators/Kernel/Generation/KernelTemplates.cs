@@ -39,10 +39,7 @@ public sealed class KernelTemplates
     /// <summary>
     /// Gets the standard using statements for kernel wrapper classes.
     /// </summary>
-    /// <returns>The formatted using statements.</returns>
-    public static string GetWrapperUsingStatements()
-    {
-        return @"using System;
+    public static string WrapperUsingStatements => @"using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using DotCompute.Core.Memory;
@@ -50,29 +47,21 @@ using DotCompute.Runtime.Services;
 using DotCompute.Generated;
 
 ";
-    }
 
     /// <summary>
     /// Gets the standard using statements for registry classes.
     /// </summary>
-    /// <returns>The formatted using statements.</returns>
-    public static string GetRegistryUsingStatements()
-    {
-        return @"using System;
+    public static string RegistryUsingStatements => @"using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 ";
-    }
 
     /// <summary>
     /// Gets the standard using statements for CPU implementation classes.
     /// </summary>
-    /// <returns>The formatted using statements.</returns>
-    public static string GetCpuImplementationUsingStatements()
-    {
-        return @"using System;
+    public static string CpuImplementationUsingStatements => @"using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
@@ -80,7 +69,6 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
 ";
-    }
 
     /// <summary>
     /// Gets the class declaration template for kernel executors.
@@ -122,10 +110,7 @@ using System.Collections.Concurrent;
     /// <summary>
     /// Gets the template for backend availability checking.
     /// </summary>
-    /// <returns>The formatted backend availability check method.</returns>
-    public static string GetBackendAvailabilityTemplate()
-    {
-        return @"        private static bool IsBackendAvailable(AcceleratorType type)
+    public static string BackendAvailabilityTemplate => @"        private static bool IsBackendAvailable(AcceleratorType type)
         {
             return type switch
             {
@@ -135,15 +120,11 @@ using System.Collections.Concurrent;
                 _ => false
             };
         }";
-    }
 
     /// <summary>
     /// Gets the template for accelerator factory methods.
     /// </summary>
-    /// <returns>The formatted accelerator factory methods.</returns>
-    public static string GetAcceleratorFactoryTemplate()
-    {
-        return @"        private static IAccelerator GetAccelerator(AcceleratorType type)
+    public static string AcceleratorFactoryTemplate => @"        private static IAccelerator GetAccelerator(AcceleratorType type)
         {
             return type switch
             {
@@ -160,7 +141,6 @@ using System.Collections.Concurrent;
         });
 
         private static IAccelerator GetOrCreateCudaAccelerator() => _cudaAccelerator.Value;";
-    }
 
     /// <summary>
     /// Gets the template for CPU SIMD method implementation.
@@ -326,7 +306,7 @@ __kernel void {kernelName}_opencl_kernel(
     {
         var key = $"{method.ContainingType}.{method.Name}";
         var backendList = string.Join(", ",
-            method.Backends.ConvertAll(b => $"AcceleratorType.{b}"));
+            method.Backends.Select(b => $"AcceleratorType.{b}"));
 
         return $@"            [""{key}""] = new KernelRegistration
             {{
@@ -337,8 +317,8 @@ __kernel void {kernelName}_opencl_kernel(
                 VectorSize = {method.VectorSize},
                 IsParallel = {(method.IsParallel ? "true" : "false")},
                 ParameterCount = {method.Parameters.Count},
-                BufferParameterCount = {method.Parameters.FindAll(p => p.IsBuffer).Count},
-                ScalarParameterCount = {method.Parameters.FindAll(p => !p.IsBuffer).Count}
+                BufferParameterCount = {method.Parameters.Count(p => p.IsBuffer)},
+                ScalarParameterCount = {method.Parameters.Count(p => !p.IsBuffer)}
             }},";
     }
 
@@ -367,10 +347,7 @@ __kernel void {kernelName}_opencl_kernel(
     /// <summary>
     /// Gets the template for error handling in kernel execution.
     /// </summary>
-    /// <returns>The formatted error handling template.</returns>
-    public static string GetErrorHandlingTemplate()
-    {
-        return @"            try
+    public static string ErrorHandlingTemplate => @"            try
             {
                 // Kernel execution
             }
@@ -379,7 +356,6 @@ __kernel void {kernelName}_opencl_kernel(
                 throw new KernelExecutionException(
                     $""Failed to execute kernel: {ex.Message}"", ex);
             }";
-    }
 
     /// <summary>
     /// Gets the template for performance profiling hooks.

@@ -226,7 +226,6 @@ public sealed class StageValidationResult
         {
             BackendCompatibility[kvp.Key] = kvp.Value;
         }
-
     }
 
     /// <summary>

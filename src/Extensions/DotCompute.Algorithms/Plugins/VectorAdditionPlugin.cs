@@ -104,7 +104,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
     protected override Task OnInitializeAsync(IAccelerator accelerator, CancellationToken cancellationToken)
     {
         _memoryAllocator = new MemoryAllocator();
-        
+
         // Create kernel manager for GPU execution
         if (Enum.Parse<AcceleratorType>(accelerator.Info.DeviceType) != AcceleratorType.CPU)
         {
@@ -112,7 +112,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
             var kernelLogger = new KernelManagerLoggerWrapper(Logger);
             _kernelManager = new KernelManager(kernelLogger);
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -130,13 +130,13 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
         var length = a.Length;
 
         // Use GPU if available and vectors are large enough
-        if (_kernelManager != null && 
-            Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) != AcceleratorType.CPU && 
+        if (_kernelManager != null &&
+            Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) != AcceleratorType.CPU &&
             length >= 1024) // GPU is beneficial for larger vectors
         {
             return await ExecuteOnGPUAsync(a, b, length, cancellationToken).ConfigureAwait(false);
         }
-        
+
         // CPU implementation with SIMD when possible
         return await ExecuteOnCPUAsync(a, b, length, cancellationToken).ConfigureAwait(false);
     }
@@ -211,7 +211,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
                 // Configure execution
                 var workGroupSize = Math.Min(256, Accelerator.Info.MaxThreadsPerBlock);
                 var globalSize = ((length + workGroupSize - 1) / workGroupSize) * workGroupSize;
-                
+
                 var config = new KernelExecutionConfig
                 {
                     GlobalWorkSize = [globalSize],
@@ -280,7 +280,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
     private static async Task<float[]> ExecuteOnCPUAsync(float[] a, float[] b, int length, CancellationToken cancellationToken)
     {
         var result = new float[length];
-        
+
         await Task.Run(() =>
         {
             // Use parallel processing for large vectors
@@ -307,7 +307,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
                 }
             }
         }, cancellationToken).ConfigureAwait(false);
-        
+
         return result;
     }
 
@@ -341,7 +341,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
         }
 
         var vectorLength = inputSizes[0];
-        
+
         if (Accelerator != null && Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) != AcceleratorType.CPU)
         {
             // GPU memory: input A + input B + result + kernel overhead
@@ -361,8 +361,8 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
         {
             Complexity = "O(n)",
             IsParallelizable = true,
-            OptimalParallelism = Accelerator != null && Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) == AcceleratorType.CPU 
-                ? Environment.ProcessorCount * 2 
+            OptimalParallelism = Accelerator != null && Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) == AcceleratorType.CPU
+                ? Environment.ProcessorCount * 2
                 : Accelerator?.Info.ComputeUnits ?? 32,
             IsMemoryBound = true,
             IsComputeBound = false,
@@ -412,7 +412,7 @@ internal class KernelManagerLoggerWrapper(ILogger innerLogger) : ILogger<KernelM
     }
 
     private void LogGPUExecutionCompleted(int vectorLength, double timeMs) => Log.GPUExecutionCompleted(Logger, vectorLength, timeMs);
-    
+
     private void LogGPUExecutionFailed(string reason) => Log.GPUExecutionFailed(Logger, reason);
 
     #endregion

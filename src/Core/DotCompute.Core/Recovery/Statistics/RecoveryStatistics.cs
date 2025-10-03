@@ -18,7 +18,7 @@ namespace DotCompute.Core.Recovery.Statistics;
 /// - Compilation success rates and fallback usage
 /// - Circuit breaker states and failure rates
 /// - Plugin health and availability
-/// 
+///
 /// The statistics are collected periodically and used for monitoring, alerting, and
 /// system optimization decisions.
 /// </remarks>

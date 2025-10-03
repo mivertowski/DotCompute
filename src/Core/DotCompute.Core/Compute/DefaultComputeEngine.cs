@@ -43,7 +43,7 @@ namespace DotCompute.Core.Compute
         /// Gets or sets the dependencies.
         /// </summary>
         /// <value>The dependencies.</value>
-        public string[] Dependencies { get; } = dependencies ?? [];
+        public IReadOnlyList<string> Dependencies { get; } = dependencies ?? Array.Empty<string>();
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ namespace DotCompute.Core.Compute
         /// Gets the array of available compute backends on this system.
         /// </summary>
         /// <returns>An array of ComputeBackendType values representing detected backends.</returns>
-        public ComputeBackendType[] AvailableBackends => [.. _availableBackends];
+        public IReadOnlyList<ComputeBackendType> AvailableBackends => _availableBackends.AsReadOnly();
 
         /// <summary>
         /// Gets the default compute backend to use for kernel execution.
@@ -127,7 +127,7 @@ namespace DotCompute.Core.Compute
                 RequiredFeatures = null
             };
 
-            var accelerator = (_acceleratorManager.SelectBest(criteria) ?? _acceleratorManager.Default) ?? throw new InvalidOperationException("No accelerators available for kernel compilation");
+            var accelerator = (_acceleratorManager.SelectBest(criteria) ?? _acceleratorManager.DefaultAccelerator) ?? throw new InvalidOperationException("No accelerators available for kernel compilation");
 
             // Create a simple kernel source implementation
             var kernelSourceImpl = new KernelSource(
@@ -170,9 +170,9 @@ namespace DotCompute.Core.Compute
         /// var buffer1 = await memoryManager.AllocateAsync&lt;float&gt;(1024);
         /// var buffer2 = await memoryManager.AllocateAsync&lt;float&gt;(1024);
         /// var result = await memoryManager.AllocateAsync&lt;float&gt;(1024);
-        /// 
+        ///
         /// await engine.ExecuteAsync(
-        ///     compiledKernel, 
+        ///     compiledKernel,
         ///     new object[] { buffer1, buffer2, result },
         ///     ComputeBackendType.OpenCL,
         ///     new ExecutionOptions { GlobalWorkSize = new long[] { 1024 } });
@@ -211,7 +211,7 @@ namespace DotCompute.Core.Compute
             try
             {
                 // Check if already initialized
-                var _ = _acceleratorManager.Default;
+                var _ = _acceleratorManager.DefaultAccelerator;
             }
             catch (InvalidOperationException)
             {

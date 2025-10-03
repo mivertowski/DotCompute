@@ -21,16 +21,13 @@ public static class CompilationOptionsExtensions
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        return new CompilationOptions
+        var clone = new CompilationOptions
         {
             OptimizationLevel = options.OptimizationLevel,
             EnableDebugInfo = options.EnableDebugInfo,
             EnableFastMath = options.EnableFastMath,
             AggressiveOptimizations = options.AggressiveOptimizations,
             TargetArchitecture = options.TargetArchitecture,
-            Defines = new Dictionary<string, string>(options.Defines),
-            IncludePaths = [.. options.IncludePaths],
-            AdditionalFlags = [.. options.AdditionalFlags],
             CompilationTimeout = options.CompilationTimeout,
             TreatWarningsAsErrors = options.TreatWarningsAsErrors,
             WarningLevel = options.WarningLevel,
@@ -54,6 +51,24 @@ public static class CompilationOptionsExtensions
             CompilerBackend = options.CompilerBackend,
             ForceInterpretedMode = options.ForceInterpretedMode
         };
+
+        // Copy read-only collections
+        foreach (var kvp in options.Defines)
+        {
+            clone.Defines[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var path in options.IncludePaths)
+        {
+            clone.IncludePaths.Add(path);
+        }
+
+        foreach (var flag in options.AdditionalFlags)
+        {
+            clone.AdditionalFlags.Add(flag);
+        }
+
+        return clone;
     }
 
     /// <summary>
@@ -192,7 +207,10 @@ public static class CompilationOptionsExtensions
         // Merge collections
         if (source.AdditionalFlags != null)
         {
-            merged.AdditionalFlags.AddRange(source.AdditionalFlags);
+            foreach (var flag in source.AdditionalFlags)
+            {
+                merged.AdditionalFlags.Add(flag);
+            }
         }
 
         if (source.Defines != null)
@@ -205,7 +223,10 @@ public static class CompilationOptionsExtensions
 
         if (source.IncludePaths != null)
         {
-            merged.IncludePaths.AddRange(source.IncludePaths);
+            foreach (var path in source.IncludePaths)
+            {
+                merged.IncludePaths.Add(path);
+            }
         }
 
         return merged;

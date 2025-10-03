@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotCompute.Abstractions.Memory
 {
     /// <summary>
@@ -38,6 +40,7 @@ namespace DotCompute.Abstractions.Memory
         /// <summary>
         /// Creates an invalid mapped memory instance.
         /// </summary>
+        [SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "Invalid singleton follows BCL pattern (similar to Array.Empty<T>)")]
         public static MappedMemory<T> Invalid => new(Memory<T>.Empty);
 
         /// <summary>

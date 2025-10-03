@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions.Models.Pipelines;
 using DotCompute.Abstractions.Pipelines.Enums;
 using PipelineExecutionMetrics = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionMetrics;
@@ -249,33 +250,33 @@ namespace DotCompute.Abstractions.Pipelines.Results
         public string GetSummaryReport()
         {
             var report = new System.Text.StringBuilder();
-            _ = report.AppendLine($"Pipeline: {PipelineName} ({PipelineId})");
-            _ = report.AppendLine($"Status: {(Success ? "SUCCESS" : "FAILED")}");
-            _ = report.AppendLine($"Stages: {SuccessfulStages}/{TotalStages} successful");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Pipeline: {PipelineName} ({PipelineId})");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Status: {(Success ? "SUCCESS" : "FAILED")}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Stages: {SuccessfulStages}/{TotalStages} successful");
 
             if (TotalExecutionTime.HasValue)
             {
-                _ = report.AppendLine($"Total Time: {TotalExecutionTime.Value.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Total Time: {TotalExecutionTime.Value.TotalMilliseconds:F2} ms");
             }
 
-            _ = report.AppendLine($"Outputs: {Outputs.Count} items");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"Outputs: {Outputs.Count} items");
 
             if (Errors?.Count > 0)
             {
-                _ = report.AppendLine($"Errors: {Errors.Count}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Errors: {Errors.Count}");
                 foreach (var error in Errors.Take(3))
                 {
-                    _ = report.AppendLine($"  - {error.Message}");
+                    _ = report.AppendLine(CultureInfo.InvariantCulture, $"  - {error.Message}");
                 }
                 if (Errors.Count > 3)
                 {
-                    _ = report.AppendLine($"  ... and {Errors.Count - 3} more");
+                    _ = report.AppendLine(CultureInfo.InvariantCulture, $"  ... and {Errors.Count - 3} more");
                 }
             }
 
             if (Warnings?.Count > 0)
             {
-                _ = report.AppendLine($"Warnings: {Warnings.Count}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Warnings: {Warnings.Count}");
             }
 
             return report.ToString();
@@ -285,7 +286,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
         /// Gets the first error that occurred during pipeline execution.
         /// </summary>
         /// <returns>First error or null if no errors occurred</returns>
-        public PipelineError? GetFirstError() => Errors?.FirstOrDefault();
+        public PipelineError? GetFirstError() => Errors is { Count: > 0 } ? Errors[0] : null;
 
         /// <summary>
         /// Gets all errors of a specific type.
@@ -397,9 +398,7 @@ namespace DotCompute.Abstractions.Pipelines.Results
                 score += 3.0;
             }
 
-
             return Math.Min(20.0, score);
         }
     }
-
 }

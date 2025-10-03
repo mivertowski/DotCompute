@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Generators.Utils.Analysis;
+
 namespace DotCompute.Generators.Utils;
 
 /// <summary>
@@ -8,17 +10,6 @@ namespace DotCompute.Generators.Utils;
 /// </summary>
 public static class SimdTypeMapper
 {
-    /// <summary>
-    /// Configuration for SIMD type mapping.
-    /// </summary>
-    public class SimdConfiguration
-    {
-        public bool PreferAvx2 { get; set; } = true;
-        public bool PreferAvx512 { get; set; }
-
-        public bool FallbackToSse { get; set; } = true;
-        public int DefaultVectorBitWidth { get; set; } = 256; // AVX2 default
-    }
 
     private static readonly Dictionary<string, Type> ElementTypeToNetType = new()
     {

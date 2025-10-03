@@ -227,7 +227,9 @@ public class VectorizationInfo
     /// This method implements the decision logic for vectorization recommendations by evaluating
     /// multiple factors including vectorization feasibility, data dependencies, and estimated performance benefits.
     /// The recommendation serves as input for code generation optimization decisions.
+    /// This method performs complex analysis and is intentionally a method rather than a property.
     /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Performs complex analysis with significant logic")]
     public VectorizationRecommendation GetRecommendation()
     {
         if (!IsVectorizable)

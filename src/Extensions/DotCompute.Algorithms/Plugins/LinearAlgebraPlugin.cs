@@ -132,7 +132,7 @@ namespace DotCompute.Algorithms.Plugins
 
         // Assume square matrices for estimation
         var n = inputSizes[0];
-        
+
         // Memory for input matrices + result + workspace
         return n * n * sizeof(float) * 4 + 4096; // Extra for overhead
     }

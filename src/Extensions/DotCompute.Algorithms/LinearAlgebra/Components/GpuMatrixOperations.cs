@@ -139,7 +139,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             var context = new KernelGenerationContext
             {
                 DeviceInfo = accelerator.Info,
@@ -150,7 +150,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
             var a = matrix.Clone();
             var q = Matrix.Identity(m);
-            
+
             try
             {
                 // Use advanced parallel QR kernel for CUDA
@@ -203,7 +203,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                             };
 
                             var result = await _kernelManager.ExecuteKernelAsync(parallelQRKernel, args, accelerator, config, cancellationToken).ConfigureAwait(false);
-                            
+
                             if (!result.Success)
                             {
                                 throw new InvalidOperationException($"Parallel QR decomposition step {step} failed: {result.ErrorMessage}");
@@ -286,14 +286,14 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
-            
+
             try
             {
                 // Initialize matrices for Jacobi SVD
                 var u = Matrix.Identity(m);
                 var a = matrix.Clone();
                 var v = Matrix.Identity(n);
-                
+
                 var context = new KernelGenerationContext
                 {
                     DeviceInfo = accelerator.Info,
@@ -308,7 +308,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 var aData = a.ToArray();
                 var uData = u.ToArray();
                 var vData = v.ToArray();
-                
+
                 var aBuffer = await accelerator.Memory.AllocateAsync<float>(aData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
                 var uBuffer = await accelerator.Memory.AllocateAsync<float>(uData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
                 var vBuffer = await accelerator.Memory.AllocateAsync<float>(vData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
@@ -334,7 +334,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     for (var iter = 0; iter < maxIterations; iter++)
                     {
                         var converged = true;
-                        
+
                         // Iterate over all off-diagonal pairs
                         for (var i = 0; i < Math.Min(m, n) && converged; i++)
                         {
@@ -368,7 +368,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                                 };
 
                                 var result = await _kernelManager.ExecuteKernelAsync(jacobiKernel, args, accelerator, config, cancellationToken).ConfigureAwait(false);
-                                
+
                                 if (!result.Success)
                                 {
                                     throw new InvalidOperationException($"Jacobi SVD rotation failed: {result.ErrorMessage}");
@@ -382,7 +382,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                                 }
                             }
                         }
-                        
+
                         if (converged)
                         {
                             break;
@@ -419,7 +419,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     };
 
                     var svdResult = await _kernelManager.ExecuteKernelAsync(singularValuesKernel, svdArgs, accelerator, svdConfig, cancellationToken).ConfigureAwait(false);
-                    
+
                     if (!svdResult.Success)
                     {
                         throw new InvalidOperationException($"Singular values extraction failed: {svdResult.ErrorMessage}");
@@ -434,7 +434,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     // Construct result matrices
                     CopyArrayToMatrix(uData, u);
                     CopyArrayToMatrix(vData, v);
-                    
+
                     var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
                     for (var i = 0; i < Math.Min(m, n); i++)
                     {
@@ -442,7 +442,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     }
 
                     await sBuffer.DisposeAsync().ConfigureAwait(false);
-                    
+
                     return (u, s, TransposeMatrix(v));
                 }
                 finally
@@ -487,7 +487,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         private async Task<ManagedCompiledKernel> GetOrCompileKernelAsync(string kernelName, string kernelSource, IAccelerator accelerator, CancellationToken cancellationToken)
         {
             var cacheKey = $"{kernelName}_{accelerator.Info.DeviceType}_{accelerator.Info.Name}";
-            
+
             if (_kernelCache.TryGetValue(cacheKey, out var cached))
             {
                 return cached;

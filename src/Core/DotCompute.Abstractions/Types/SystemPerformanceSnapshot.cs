@@ -10,7 +10,7 @@ namespace DotCompute.Core.Types;
 /// Comprehensive system performance snapshot capturing CPU, memory, and I/O metrics
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct SystemPerformanceSnapshot
+public readonly struct SystemPerformanceSnapshot : IEquatable<SystemPerformanceSnapshot>
 {
     /// <summary>
     /// Timestamp when the snapshot was taken
@@ -402,4 +402,95 @@ public readonly struct SystemPerformanceSnapshot
         $"GC Memory: {GCTotalMemoryMB:F0}MB\n" +
         $"Load Factor: {SystemLoadFactor:F2}\n" +
         $"Status: {(IsPerformingWell ? "Good" : IsHighCpuLoad ? "High CPU" : "High Memory")}";
+
+    /// <summary>
+    /// Determines whether the current instance is equal to another SystemPerformanceSnapshot instance.
+    /// </summary>
+    /// <param name="other">The SystemPerformanceSnapshot instance to compare with this instance.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public bool Equals(SystemPerformanceSnapshot other)
+        => Timestamp == other.Timestamp &&
+        CpuUtilizationPercent == other.CpuUtilizationPercent &&
+        AvailableMemoryBytes == other.AvailableMemoryBytes &&
+        TotalMemoryBytes == other.TotalMemoryBytes &&
+        UsedMemoryBytes == other.UsedMemoryBytes &&
+        MemoryUtilizationPercent == other.MemoryUtilizationPercent &&
+        ProcessWorkingSetBytes == other.ProcessWorkingSetBytes &&
+        ProcessPrivateMemoryBytes == other.ProcessPrivateMemoryBytes &&
+        ProcessThreadCount == other.ProcessThreadCount &&
+        ProcessHandleCount == other.ProcessHandleCount &&
+        ProcessCpuTime == other.ProcessCpuTime &&
+        DiskReadsPerSecond == other.DiskReadsPerSecond &&
+        DiskWritesPerSecond == other.DiskWritesPerSecond &&
+        DiskReadBytesPerSecond == other.DiskReadBytesPerSecond &&
+        DiskWriteBytesPerSecond == other.DiskWriteBytesPerSecond &&
+        NetworkBytesSentPerSecond == other.NetworkBytesSentPerSecond &&
+        NetworkBytesReceivedPerSecond == other.NetworkBytesReceivedPerSecond &&
+        GCGen0Collections == other.GCGen0Collections &&
+        GCGen1Collections == other.GCGen1Collections &&
+        GCGen2Collections == other.GCGen2Collections &&
+        GCTotalMemoryBytes == other.GCTotalMemoryBytes &&
+        SystemLoadFactor == other.SystemLoadFactor &&
+        LogicalProcessorCount == other.LogicalProcessorCount &&
+        SystemUptime == other.SystemUptime;
+
+    /// <summary>
+    /// Determines whether the current instance is equal to a specified object.
+    /// </summary>
+    /// <param name="obj">The object to compare with this instance.</param>
+    /// <returns>true if obj is a SystemPerformanceSnapshot and is equal to this instance; otherwise, false.</returns>
+    public override bool Equals(object? obj)
+        => obj is SystemPerformanceSnapshot other && Equals(other);
+
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A hash code for the current instance.</returns>
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Timestamp);
+        hash.Add(CpuUtilizationPercent);
+        hash.Add(AvailableMemoryBytes);
+        hash.Add(TotalMemoryBytes);
+        hash.Add(UsedMemoryBytes);
+        hash.Add(MemoryUtilizationPercent);
+        hash.Add(ProcessWorkingSetBytes);
+        hash.Add(ProcessPrivateMemoryBytes);
+        hash.Add(ProcessThreadCount);
+        hash.Add(ProcessHandleCount);
+        hash.Add(ProcessCpuTime);
+        hash.Add(DiskReadsPerSecond);
+        hash.Add(DiskWritesPerSecond);
+        hash.Add(DiskReadBytesPerSecond);
+        hash.Add(DiskWriteBytesPerSecond);
+        hash.Add(NetworkBytesSentPerSecond);
+        hash.Add(NetworkBytesReceivedPerSecond);
+        hash.Add(GCGen0Collections);
+        hash.Add(GCGen1Collections);
+        hash.Add(GCGen2Collections);
+        hash.Add(GCTotalMemoryBytes);
+        hash.Add(SystemLoadFactor);
+        hash.Add(LogicalProcessorCount);
+        hash.Add(SystemUptime);
+        return hash.ToHashCode();
+    }
+
+    /// <summary>
+    /// Determines whether two SystemPerformanceSnapshot instances are equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public static bool operator ==(SystemPerformanceSnapshot left, SystemPerformanceSnapshot right)
+        => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two SystemPerformanceSnapshot instances are not equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are not equal; otherwise, false.</returns>
+    public static bool operator !=(SystemPerformanceSnapshot left, SystemPerformanceSnapshot right)
+        => !left.Equals(right);
 }

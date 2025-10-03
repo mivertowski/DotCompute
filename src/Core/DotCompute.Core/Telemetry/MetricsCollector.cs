@@ -258,7 +258,7 @@ public sealed class MetricsCollector : IDisposable
         metrics.Counters["total_memory_allocations"] = Interlocked.Read(ref _totalMemoryAllocations);
         metrics.Counters["total_errors"] = Interlocked.Read(ref _totalErrors);
 
-        // Collect gauge metrics  
+        // Collect gauge metrics
 
         metrics.Gauges["average_kernel_duration_ms"] = _averageKernelDuration;
         metrics.Gauges["peak_memory_usage_bytes"] = _peakMemoryUsage;

@@ -21,7 +21,7 @@ public static class MatrixKernels
 // Optimized tiled matrix multiplication using shared memory
 __kernel void matrix_multiply_tiled(
     __global const float* A,    // Matrix A (M x K)
-    __global const float* B,    // Matrix B (K x N)  
+    __global const float* B,    // Matrix B (K x N)
     __global float* C,          // Result matrix C (M x N)
     const int M,                // Rows of A and C
     const int N,                // Columns of B and C
@@ -29,23 +29,23 @@ __kernel void matrix_multiply_tiled(
 ) {
     // Tile size (should match local work size)
     const int TILE_SIZE = 16;
-    
+
     // Work group and work item IDs
     int gid_x = get_group_id(0);
     int gid_y = get_group_id(1);
     int lid_x = get_local_id(0);
     int lid_y = get_local_id(1);
-    
+
     // Shared memory for tiles
     __local float tile_A[16][16];
     __local float tile_B[16][16];
-    
+
     // Output coordinates
     int row = gid_y * TILE_SIZE + lid_y;
     int col = gid_x * TILE_SIZE + lid_x;
-    
+
     float sum = 0.0f;
-    
+
     // Loop over tiles
     int num_tiles = (K + TILE_SIZE - 1) / TILE_SIZE;
     for (int t = 0; t < num_tiles; t++) {
@@ -57,7 +57,7 @@ __kernel void matrix_multiply_tiled(
         } else {
             tile_A[lid_y][lid_x] = 0.0f;
         }
-        
+
         // Load tile of B
         int b_row = t * TILE_SIZE + lid_y;
         int b_col = col;
@@ -66,17 +66,17 @@ __kernel void matrix_multiply_tiled(
         } else {
             tile_B[lid_y][lid_x] = 0.0f;
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
-        
+
         // Compute partial sum
         for (int k = 0; k < TILE_SIZE; k++) {
             sum += tile_A[lid_y][k] * tile_B[k][lid_x];
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Store result
     if (row < M && col < N) {
         C[row * N + col] = sum;
@@ -99,23 +99,23 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
     const int K         // Columns of A and rows of B
 ) {
     const int TILE_SIZE = 16;
-    
+
     // Shared memory for tiles
     __shared__ float tile_A[16][16];
     __shared__ float tile_B[16][16];
-    
+
     // Thread and block indices
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int bx = blockIdx.x;
     int by = blockIdx.y;
-    
+
     // Output coordinates
     int row = by * TILE_SIZE + ty;
     int col = bx * TILE_SIZE + tx;
-    
+
     float sum = 0.0f;
-    
+
     // Loop over tiles
     int num_tiles = (K + TILE_SIZE - 1) / TILE_SIZE;
     for (int t = 0; t < num_tiles; t++) {
@@ -127,7 +127,7 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         } else {
             tile_A[ty][tx] = 0.0f;
         }
-        
+
         // Load tile of B
         int b_row = t * TILE_SIZE + ty;
         int b_col = col;
@@ -136,18 +136,18 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         } else {
             tile_B[ty][tx] = 0.0f;
         }
-        
+
         __syncthreads();
-        
+
         // Compute partial sum
         #pragma unroll
         for (int k = 0; k < TILE_SIZE; k++) {
             sum += tile_A[ty][k] * tile_B[k][tx];
         }
-        
+
         __syncthreads();
     }
-    
+
     // Store result
     if (row < M && col < N) {
         C[row * N + col] = sum;
@@ -174,14 +174,14 @@ __kernel void matrix_vector_multiply_optimized(
 ) {
     int row = get_global_id(0);
     int lid = get_local_id(0);
-    
+
     if (row >= m) return;
-    
+
     // Use shared memory for vector caching
     __local float x_cache[256];
-    
+
     float sum = 0.0f;
-    
+
     // Process vector in chunks that fit in shared memory
     for (int chunk = 0; chunk < n; chunk += 256) {
         // Load chunk of x into shared memory
@@ -190,18 +190,18 @@ __kernel void matrix_vector_multiply_optimized(
         } else if (lid < 256) {
             x_cache[lid] = 0.0f;
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
-        
+
         // Compute partial dot product
         int chunk_size = min(256, n - chunk);
         for (int i = 0; i < chunk_size; i++) {
             sum += A[row * n + chunk + i] * x_cache[i];
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     y[row] = sum;
 }";
     /// <summary>
@@ -224,29 +224,29 @@ __kernel void matrix_transpose_optimized(
 ) {
     const int TILE_SIZE = 16;
     __local float tile[16][16];
-    
+
     int bx = get_group_id(0);
     int by = get_group_id(1);
     int tx = get_local_id(0);
     int ty = get_local_id(1);
-    
+
     // Calculate global positions
     int x = bx * TILE_SIZE + tx;
     int y = by * TILE_SIZE + ty;
-    
+
     // Load tile from A into shared memory
     if (y < rows && x < cols) {
         tile[ty][tx] = A[y * cols + x];
     } else {
         tile[ty][tx] = 0.0f;
     }
-    
+
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Write transposed tile to AT
     int x_new = by * TILE_SIZE + tx;
     int y_new = bx * TILE_SIZE + ty;
-    
+
     if (y_new < cols && x_new < rows) {
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
@@ -267,27 +267,27 @@ extern ""C"" __global__ void matrix_transpose_cuda(
 ) {
     const int TILE_SIZE = 16;
     __shared__ float tile[16][16];
-    
+
     int bx = blockIdx.x;
     int by = blockIdx.y;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
-    
+
     // Calculate global positions
     int x = bx * TILE_SIZE + tx;
     int y = by * TILE_SIZE + ty;
-    
+
     // Load tile from A into shared memory
     if (y < rows && x < cols) {
         tile[ty][tx] = A[y * cols + x];
     }
-    
+
     __syncthreads();
-    
+
     // Write transposed tile to AT
     int x_new = by * TILE_SIZE + tx;
     int y_new = bx * TILE_SIZE + ty;
-    
+
     if (y_new < cols && x_new < rows) {
         AT[y_new * rows + x_new] = tile[tx][ty];
     }
@@ -314,12 +314,12 @@ __kernel void matrix_elementwise_operation(
 ) {
     int idx = get_global_id(0);
     int total_elements = rows * cols;
-    
+
     if (idx >= total_elements) return;
-    
+
     float a = A[idx];
     float b = (B != 0) ? B[idx] : 0.0f;
-    
+
     switch (operation) {
         case 0: // Copy
             C[idx] = a;
@@ -361,15 +361,15 @@ extern ""C"" __global__ void matrix_norm_cuda(
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int total_elements = rows * cols;
-    
+
     __shared__ float shared_data[256];
-    
+
     float thread_sum = 0.0f;
-    
+
     // Grid-stride loop to process elements
     for (int i = tid; i < total_elements; i += blockDim.x * gridDim.x) {
         float val = A[i];
-        
+
         switch (norm_type) {
             case 1: // L1 norm
                 thread_sum += fabsf(val);
@@ -386,11 +386,11 @@ extern ""C"" __global__ void matrix_norm_cuda(
                 break;
         }
     }
-    
+
     // Store in shared memory
     shared_data[threadIdx.x] = thread_sum;
     __syncthreads();
-    
+
     // Reduction within block
     for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
         if (threadIdx.x < stride) {
@@ -402,7 +402,7 @@ extern ""C"" __global__ void matrix_norm_cuda(
         }
         __syncthreads();
     }
-    
+
     // Store block result
     if (threadIdx.x == 0) {
         norm_result[blockIdx.x] = shared_data[0];

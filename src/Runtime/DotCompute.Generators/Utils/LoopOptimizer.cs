@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
+using DotCompute.Generators.Utils.Analysis;
 
 namespace DotCompute.Generators.Utils;
 
@@ -10,31 +11,6 @@ namespace DotCompute.Generators.Utils;
 /// </summary>
 public static class LoopOptimizer
 {
-    /// <summary>
-    /// Configuration options for loop optimization.
-    /// </summary>
-    public class LoopOptimizationOptions
-    {
-        public bool EnableUnrolling { get; set; }
-        public int UnrollFactor { get; set; } = 4;
-        public bool EnablePrefetching { get; set; }
-        public bool EnableVectorization { get; set; }
-        public bool ParallelizeIfPossible { get; set; }
-    }
-
-    /// <summary>
-    /// Context for loop generation.
-    /// </summary>
-    public class LoopContext
-    {
-        public string IndexVariable { get; set; } = string.Empty;
-        public string LimitVariable { get; set; } = string.Empty;
-        public string Body { get; set; } = string.Empty;
-        public int StartValue { get; set; }
-
-        public int Increment { get; set; } = 1;
-        public LoopOptimizationOptions Options { get; set; } = new();
-    }
 
     /// <summary>
     /// Generates optimized loop code based on provided options.

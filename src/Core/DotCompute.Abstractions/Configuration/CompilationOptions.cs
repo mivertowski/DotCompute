@@ -1,7 +1,8 @@
-// Copyright (c) 2025 Michael Ivertowski  
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions;
@@ -113,6 +114,7 @@ public class CompilationOptions
     /// Maximum compilation time before timeout
     /// </summary>
     [Range(typeof(TimeSpan), "00:00:01", "00:10:00")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public TimeSpan CompilationTimeout { get; set; } = TimeSpan.FromMinutes(2);
 
     /// <summary>
@@ -312,7 +314,7 @@ public class CompilationOptions
     /// </summary>
     public static CompilationOptions Release => new()
     {
-        OptimizationLevel = OptimizationLevel.Aggressive,
+        OptimizationLevel = OptimizationLevel.O3,
         EnableDebugInfo = false,
         EnableFastMath = true,
         EnableLoopUnrolling = true,
@@ -329,7 +331,7 @@ public class CompilationOptions
     /// </summary>
     public CompilationOptions Clone()
     {
-        return new CompilationOptions
+        var clone = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel,
             EnableDebugInfo = EnableDebugInfo,
@@ -338,9 +340,6 @@ public class CompilationOptions
             AggressiveOptimizations = AggressiveOptimizations,
             AllowUnsafeCode = AllowUnsafeCode,
             TargetArchitecture = TargetArchitecture,
-            Defines = new Dictionary<string, string>(Defines),
-            IncludePaths = [.. IncludePaths],
-            AdditionalFlags = [.. AdditionalFlags],
             CompilationTimeout = CompilationTimeout,
             TreatWarningsAsErrors = TreatWarningsAsErrors,
             WarningLevel = WarningLevel,
@@ -371,13 +370,31 @@ public class CompilationOptions
             EnableTileBasedProgramming = EnableTileBasedProgramming,
             EnableL2CacheResidencyControl = EnableL2CacheResidencyControl
         };
+
+        // Copy read-only collections
+        foreach (var kvp in Defines)
+        {
+            clone.Defines[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var path in IncludePaths)
+        {
+            clone.IncludePaths.Add(path);
+        }
+
+        foreach (var flag in AdditionalFlags)
+        {
+            clone.AdditionalFlags.Add(flag);
+        }
+
+        return clone;
     }
 
     /// <summary>
     /// Converts to string.
     /// </summary>
     /// <returns>
-    /// A <see cref="System.String" /> that represents this instance.
+    /// A <see cref="string" /> that represents this instance.
     /// </returns>
     public override string ToString()
 

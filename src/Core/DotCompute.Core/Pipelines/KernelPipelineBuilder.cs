@@ -18,6 +18,7 @@ using IKernelPipeline = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipe
 using PipelineExecutionContext = DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext;
 using MemoryHint = DotCompute.Abstractions.Pipelines.Enums.MemoryHint;
 using IKernelPipelineBuilder = DotCompute.Abstractions.Interfaces.Pipelines.IKernelPipelineBuilder;
+using AbstractionsPipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
 
 namespace DotCompute.Core.Pipelines
 {
@@ -194,16 +195,16 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts Core PipelineEventType to Abstractions PipelineEvent enum.
         /// </summary>
-        private static AbstractionsPipelineEvent ConvertEventType(PipelineEventType coreType)
+        private static AbstractionsPipelineEvent ConvertEventType(AbstractionsPipelineEventType coreType)
         {
             return coreType switch
             {
-                PipelineEventType.Started => AbstractionsPipelineEvent.PipelineStarted,
-                PipelineEventType.Completed => AbstractionsPipelineEvent.PipelineCompleted,
-                PipelineEventType.Failed => AbstractionsPipelineEvent.PipelineFailed,
-                PipelineEventType.StageStarted => AbstractionsPipelineEvent.StageStarted,
-                PipelineEventType.StageCompleted => AbstractionsPipelineEvent.StageCompleted,
-                PipelineEventType.StageFailed => AbstractionsPipelineEvent.StageFailed,
+                AbstractionsPipelineEventType.Started => AbstractionsPipelineEvent.PipelineStarted,
+                AbstractionsPipelineEventType.Completed => AbstractionsPipelineEvent.PipelineCompleted,
+                AbstractionsPipelineEventType.Failed => AbstractionsPipelineEvent.PipelineFailed,
+                AbstractionsPipelineEventType.StageStarted => AbstractionsPipelineEvent.StageStarted,
+                AbstractionsPipelineEventType.StageCompleted => AbstractionsPipelineEvent.StageCompleted,
+                AbstractionsPipelineEventType.StageFailed => AbstractionsPipelineEvent.StageFailed,
                 _ => AbstractionsPipelineEvent.CustomEvent
             };
         }

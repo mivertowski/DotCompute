@@ -31,8 +31,7 @@ internal static class KernelSyntaxAnalyzer
         }
 
 
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
-        if (methodSymbol == null || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
+        if (context.SemanticModel.GetDeclaredSymbol(parentMethod) is not IMethodSymbol methodSymbol || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
         {
             return;
         }
@@ -80,8 +79,7 @@ internal static class KernelSyntaxAnalyzer
         }
 
 
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod) as IMethodSymbol;
-        if (methodSymbol == null || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
+        if (context.SemanticModel.GetDeclaredSymbol(parentMethod) is not IMethodSymbol methodSymbol || !KernelAnalysisHelpers.HasKernelAttribute(methodSymbol))
         {
             return;
         }
@@ -122,8 +120,7 @@ internal static class KernelSyntaxAnalyzer
         }
 
 
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodSyntax) as IMethodSymbol;
-        if (methodSymbol == null)
+        if (context.SemanticModel.GetDeclaredSymbol(methodSyntax) is not IMethodSymbol methodSymbol)
         {
             return;
         }

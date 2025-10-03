@@ -209,7 +209,7 @@ public sealed class MemoryProfilingData
 /// <summary>
 /// Represents CPU profiling data for kernel execution.
 /// </summary>
- public sealed class CpuProfilingData
+public sealed class CpuProfilingData
 {
     /// <summary>
     /// Gets the CPU usage percentage (0-100).

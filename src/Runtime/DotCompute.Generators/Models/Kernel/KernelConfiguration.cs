@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using DotCompute.Generators.Kernel.Enums;
 
 namespace DotCompute.Generators.Models.Kernel;
@@ -21,10 +22,12 @@ public enum OptimizationLevel
 /// </summary>
 public sealed class KernelConfiguration
 {
+    private readonly Collection<string> _supportedBackends = [];
+
     /// <summary>
-    /// Gets or sets the list of supported backend accelerators.
+    /// Gets the list of supported backend accelerators.
     /// </summary>
-    public List<string> SupportedBackends { get; } = [];
+    public Collection<string> SupportedBackends => _supportedBackends;
 
     /// <summary>
     /// Gets or sets the vector size for SIMD operations.

@@ -51,7 +51,7 @@ internal sealed class OpenCLContext : IDisposable
     {
         _deviceInfo = deviceInfo ?? throw new ArgumentNullException(nameof(deviceInfo));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         Initialize();
     }
 
@@ -105,7 +105,7 @@ internal sealed class OpenCLContext : IDisposable
 
         var devices = new[] { _deviceInfo.DeviceId.Handle };
         var error = OpenCLRuntime.clBuildProgram(program, 1, devices, options, nint.Zero, nint.Zero);
-        
+
         if (error != OpenCLError.Success)
         {
             // Get build log for debugging
@@ -198,9 +198,9 @@ internal sealed class OpenCLContext : IDisposable
     /// <param name="localWorkSize">Local work size for each dimension (optional).</param>
     /// <returns>Event handle for the operation.</returns>
     public Event EnqueueKernel(
-        Kernel kernel, 
-        uint workDimensions, 
-        nuint[] globalWorkSize, 
+        Kernel kernel,
+        uint workDimensions,
+        nuint[] globalWorkSize,
         nuint[]? localWorkSize = null)
     {
         ThrowIfDisposed();
@@ -313,7 +313,7 @@ internal sealed class OpenCLContext : IDisposable
         try
         {
             const uint buildLog = 0x1183; // CL_PROGRAM_BUILD_LOG
-            
+
             var error = OpenCLRuntime.clGetProgramBuildInfo(
                 program,
                 _deviceInfo.DeviceId,

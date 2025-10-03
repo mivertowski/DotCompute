@@ -35,7 +35,7 @@ internal sealed class OpenCLDeviceManager
     /// <summary>
     /// Gets all available OpenCL devices across all platforms.
     /// </summary>
-    public IEnumerable<OpenCLDeviceInfo> AllDevices => 
+    public IEnumerable<OpenCLDeviceInfo> AllDevices =>
         Platforms.SelectMany(p => p.Devices);
 
     /// <summary>
@@ -78,7 +78,7 @@ internal sealed class OpenCLDeviceManager
     /// <param name="requireCompiler">Whether to require compiler availability.</param>
     /// <returns>Filtered list of devices.</returns>
     public IEnumerable<OpenCLDeviceInfo> GetDevices(
-        DeviceType deviceType = DeviceType.All, 
+        DeviceType deviceType = DeviceType.All,
         bool requireCompiler = true)
     {
         return Platforms.SelectMany(p => p.GetDevices(deviceType, requireCompiler));
@@ -94,7 +94,7 @@ internal sealed class OpenCLDeviceManager
         if (string.IsNullOrEmpty(vendorName))
             return [];
 
-        return AllDevices.Where(d => 
+        return AllDevices.Where(d =>
             d.Vendor.Contains(vendorName, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -287,12 +287,12 @@ internal sealed class OpenCLDeviceManager
                 fixed (nuint* ptr = sizes)
                 {
                     var error = OpenCLRuntime.clGetDeviceInfo(
-                        deviceId, 
+                        deviceId,
                         DeviceInfo.MaxWorkItemSizes,
                         (nuint)(sizeof(nuint) * dimensions),
                         (nint)ptr,
                         out _);
-                    
+
                     if (error != OpenCLError.Success)
                         return [];
                 }

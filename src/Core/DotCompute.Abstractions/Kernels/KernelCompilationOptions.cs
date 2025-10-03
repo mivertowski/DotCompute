@@ -123,16 +123,13 @@ public sealed class KernelCompilationOptions
     /// <returns>A new KernelCompilationOptions instance with the same values</returns>
     public KernelCompilationOptions Clone()
     {
-        return new KernelCompilationOptions
+        var clone = new KernelCompilationOptions
         {
             OptimizationLevel = OptimizationLevel,
             GenerateDebugInfo = GenerateDebugInfo,
             EnableFastMath = EnableFastMath,
             FloatingPointMode = FloatingPointMode,
             TargetArchitecture = TargetArchitecture,
-            CompilerFlags = [.. CompilerFlags],
-            Definitions = new Dictionary<string, string>(Definitions),
-            IncludeDirectories = [.. IncludeDirectories],
             EnableCaching = EnableCaching,
             CacheTimeout = CacheTimeout,
             UsePtx = UsePtx,
@@ -147,6 +144,24 @@ public sealed class KernelCompilationOptions
             WarningLevel = WarningLevel,
             WarningsAsErrors = WarningsAsErrors
         };
+
+        // Copy read-only collections
+        foreach (var flag in CompilerFlags)
+        {
+            clone.CompilerFlags.Add(flag);
+        }
+
+        foreach (var kvp in Definitions)
+        {
+            clone.Definitions[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var dir in IncludeDirectories)
+        {
+            clone.IncludeDirectories.Add(dir);
+        }
+
+        return clone;
     }
 
     /// <summary>

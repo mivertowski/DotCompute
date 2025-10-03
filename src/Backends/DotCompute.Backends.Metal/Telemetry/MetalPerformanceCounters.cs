@@ -357,20 +357,20 @@ public sealed class MetalPerformanceCounters : IDisposable
 
             "memory_allocation_failures_total",
             "memory_allocations_slow_total",
-            
+
             // Kernel execution counters
             "kernel_executions_total",
             "kernel_execution_failures_total",
 
             "kernel_executions_slow_total",
-            
+
             // Device utilization counters
             "gpu_utilization_percent",
             "memory_utilization_percent",
-            
+
             // Error counters
             "errors_total",
-            
+
             // Resource counters
             "memory_pressure_events_total"
         };

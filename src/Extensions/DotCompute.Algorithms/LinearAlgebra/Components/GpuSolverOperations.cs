@@ -47,7 +47,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             {
                 // Perform GPU-based LU decomposition with pivoting
                 var (l, u, p) = await ExecuteLUDecompositionAsync(a, accelerator, cancellationToken).ConfigureAwait(false);
-                
+
                 // Solve using forward and back substitution on GPU
                 return await SolveWithLUAsync(l, u, p, b, accelerator, cancellationToken).ConfigureAwait(false);
             }
@@ -71,10 +71,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             {
                 // Perform GPU-based Cholesky decomposition
                 var l = await ExecuteCholeskyDecompositionAsync(a, accelerator, cancellationToken).ConfigureAwait(false);
-                
+
                 // Solve L * y = b (forward substitution)
                 var y = await ForwardSubstitutionAsync(l, b, accelerator, cancellationToken).ConfigureAwait(false);
-                
+
                 // Solve L^T * x = y (back substitution)
                 var lTranspose = await GpuMatrixOperations.TransposeAsync(l, accelerator, cancellationToken).ConfigureAwait(false);
                 return await BackSubstitutionAsync(lTranspose, y, cancellationToken).ConfigureAwait(false);
@@ -97,13 +97,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             var matrixProperties = AnalyzeMatrixProperties(a);
             var hardwareInfo = GetHardwareInfo(accelerator);
-            
+
             var (q, r) = await _matrixOps.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
-            
+
             // Solve R * x = Q^T * b
             var qTranspose = await GpuMatrixOperations.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false);
             var qtb = await _matrixOps.MultiplyAsync(qTranspose, b, accelerator, GetOptimalKernelConfig(matrixProperties), cancellationToken).ConfigureAwait(false);
-            
+
             return await BackSubstitutionAsync(r, qtb, cancellationToken).ConfigureAwait(false);
         }
 
@@ -122,9 +122,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 // Use Conjugate Gradient for symmetric positive definite matrices
                 // or BiCGSTAB for general matrices
                 var matrixProperties = AnalyzeMatrixProperties(a);
-                
-                return matrixProperties.IsSymmetric && matrixProperties.IsPositiveDefinite 
-                    ? await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false) 
+
+                return matrixProperties.IsSymmetric && matrixProperties.IsPositiveDefinite
+                    ? await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false)
                     : await BiCGSTABSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
             }
             catch
@@ -358,10 +358,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 {
                     var ap = await _matrixOps.MultiplyAsync(a, p, accelerator, GetOptimalKernelConfig(AnalyzeMatrixProperties(a)), cancellationToken).ConfigureAwait(false);
                     var alpha = rsold / await _vectorOps.DotProductAsync(p, ap, accelerator, cancellationToken).ConfigureAwait(false);
-                    
+
                     var xCol = x.GetColumn(col);
                     var newXCol = await _vectorOps.AddAsync(xCol, await _vectorOps.ScaleAsync(p, alpha, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
-                    
+
                     for (var i = 0; i < n; i++)
                     {
                         x[i, col] = newXCol[i, 0];
@@ -417,8 +417,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         private static LAKernelParams GetOptimalKernelConfig(MatrixProperties properties)
         {
             return LinearAlgebraKernels.GetOptimizedParameters(
-                LinearAlgebraKernels.LinearAlgebraOperation.MatrixMultiply, 
-                ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)), 
+                LinearAlgebraKernels.LinearAlgebraOperation.MatrixMultiply,
+                ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)),
                 "GPU");
         }
 

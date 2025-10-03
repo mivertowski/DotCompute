@@ -9,7 +9,7 @@ namespace DotCompute.Generators.Examples;
 /// </summary>
 public static class AnalyzerDemo
 {
-    // DC001: This will trigger "Kernel methods must be static" 
+    // DC001: This will trigger "Kernel methods must be static"
     // (if [Kernel] attribute was present)
     // [Kernel]
     // public void NonStaticKernel(float[] data) { }
@@ -107,13 +107,11 @@ public static class AnalyzerDemo
         }
 
         // DC006: Too many local variables (register spilling)
-#pragma warning disable CS0219 // Variable is assigned but never used
-        float var1 = 1.0f, var2 = 2.0f, var3 = 3.0f, var4 = 4.0f;
-        float var5 = 5.0f, var6 = 6.0f, var7 = 7.0f, var8 = 8.0f;
-        float var9 = 9.0f, var10 = 10.0f, var11 = 11.0f, var12 = 12.0f;
-        float var13 = 13.0f, var14 = 14.0f, var15 = 15.0f, var16 = 16.0f;
-        float var17 = 17.0f, var18 = 18.0f;  // ← DC006: > 16 variables
-#pragma warning restore CS0219
+        // Note: Variables declared to demonstrate DC006 diagnostic (exceeds 16 variable limit)
+        // These are intentionally unused to show register spilling concerns
+        _ = (1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f,
+             9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f,
+             17.0f, 18.0f);  // ← DC006: > 16 values
     }
 
     private static float CalculateComplexValue(float a, float b) => a * b + a - b;

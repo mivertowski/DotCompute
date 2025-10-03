@@ -47,7 +47,17 @@ public abstract class TelemetryProvider : IDisposable
     /// <summary>
     /// Disposes the telemetry provider.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases resources used by the telemetry provider.
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+    protected virtual void Dispose(bool disposing)
     {
         // Default implementation - derived classes can override
     }
@@ -79,7 +89,17 @@ public abstract class DistributedTracer : IDisposable
     /// <summary>
     /// Disposes the distributed tracer.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases resources used by the distributed tracer.
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+    protected virtual void Dispose(bool disposing)
     {
         // Default implementation - derived classes can override
     }
@@ -102,7 +122,17 @@ public abstract class PerformanceProfiler : IDisposable
     /// <summary>
     /// Disposes the performance profiler.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases resources used by the performance profiler.
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+    protected virtual void Dispose(bool disposing)
     {
         // Default implementation - derived classes can override
     }
@@ -139,7 +169,17 @@ public abstract class StructuredLogger : IDisposable
     /// <summary>
     /// Disposes the structured logger.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases resources used by the structured logger.
+    /// </summary>
+    /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+    protected virtual void Dispose(bool disposing)
     {
         // Default implementation - derived classes can override
     }

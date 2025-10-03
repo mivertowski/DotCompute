@@ -776,7 +776,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void MarkDeviceDirty()
         {
-            // No-op for CUDA device-only buffers  
+            // No-op for CUDA device-only buffers
         }
 
         // Copy Operations (interface-required overloads)

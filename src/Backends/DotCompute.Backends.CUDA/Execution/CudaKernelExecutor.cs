@@ -505,7 +505,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private Task<KernelExecutionTimings> CaptureTimingsAsync(CudaKernelExecution execution)
         {
-            // Wait for events to complete  
+            // Wait for events to complete
             var result = CudaRuntime.cudaEventSynchronize(execution.EndEvent);
             CudaRuntime.CheckError(result, "event synchronization");
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using DotCompute.Abstractions.Debugging;
 
 namespace DotCompute.Abstractions.Validation;
@@ -42,7 +43,7 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets debug validation issues found during cross-backend validation.
     /// </summary>
-    public IReadOnlyList<DebugValidationIssue> Issues { get; init; } = [];
+    public Collection<DebugValidationIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the results from different backends as key-value pairs.
@@ -79,7 +80,7 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets optimization recommendations for the kernel.
     /// </summary>
-    public IReadOnlyList<string> Recommendations { get; init; } = [];
+    public Collection<string> Recommendations { get; init; } = [];
 }
 
 // ValidationWarning, ValidationIssue, WarningSeverity, and ResourceUsageEstimate

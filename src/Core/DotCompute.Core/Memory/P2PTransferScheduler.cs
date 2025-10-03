@@ -381,7 +381,7 @@ namespace DotCompute.Core.Memory
             return transferSize switch
             {
                 < 1024 * 1024 => P2PTransferPriority.High,      // < 1MB - high priority
-                < 64 * 1024 * 1024 => P2PTransferPriority.Normal, // < 64MB - normal priority  
+                < 64 * 1024 * 1024 => P2PTransferPriority.Normal, // < 64MB - normal priority
                 < 512 * 1024 * 1024 => P2PTransferPriority.Low,   // < 512MB - low priority
                 _ => P2PTransferPriority.Background                 // >= 512MB - background
             };

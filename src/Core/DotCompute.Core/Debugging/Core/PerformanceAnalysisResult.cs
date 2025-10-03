@@ -2,6 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Debugging.Types;
+using CorePerformanceReport = DotCompute.Core.Debugging.Types.PerformanceReport;
+using CoreMemoryUsageAnalysis = DotCompute.Core.Debugging.Types.MemoryUsageAnalysis;
+using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -19,12 +23,12 @@ public class PerformanceAnalysisResult
     /// Gets or sets the performance report.
     /// </summary>
     /// <value>The performance report.</value>
-    public PerformanceReport? PerformanceReport { get; set; }
+    public CorePerformanceReport? PerformanceReport { get; set; }
     /// <summary>
     /// Gets or sets the memory analysis.
     /// </summary>
     /// <value>The memory analysis.</value>
-    public MemoryUsageAnalysis? MemoryAnalysis { get; set; }
+    public CoreMemoryUsageAnalysis? MemoryAnalysis { get; set; }
     /// <summary>
     /// Gets or sets the bottleneck analysis.
     /// </summary>
@@ -34,7 +38,7 @@ public class PerformanceAnalysisResult
     /// Gets or sets the execution statistics.
     /// </summary>
     /// <value>The execution statistics.</value>
-    public ExecutionStatistics? ExecutionStatistics { get; set; }
+    public AbstractionsExecutionStatistics? ExecutionStatistics { get; set; }
     /// <summary>
     /// Gets or sets the advanced analysis.
     /// </summary>

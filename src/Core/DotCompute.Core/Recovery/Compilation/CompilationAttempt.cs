@@ -18,7 +18,7 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - Understanding which strategies work for specific types of kernels
 /// - Debugging compilation issues
 /// - Optimizing the order of fallback strategies
-/// 
+///
 /// The timing information helps identify slow compilation paths that may
 /// need optimization or should be deprioritized in fallback sequences.
 /// </remarks>

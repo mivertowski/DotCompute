@@ -22,7 +22,7 @@ public enum LineEndingStyle
     /// Auto detection uses the operating system's default line ending convention:
     /// - Windows: CRLF (Carriage Return + Line Feed, \r\n)
     /// - Unix/Linux/macOS: LF (Line Feed only, \n)
-    /// 
+    ///
     /// This option provides platform-appropriate defaults but may result in
     /// different line endings across development environments, which could
     /// cause version control issues in mixed-platform teams.
@@ -37,7 +37,7 @@ public enum LineEndingStyle
     /// characters to terminate lines. This is the historical convention from
     /// DOS and Windows systems. Using this setting ensures consistent CRLF
     /// line endings regardless of the development platform.
-    /// 
+    ///
     /// Character sequence: \r\n (0x0D 0x0A)
     /// </remarks>
     Windows,
@@ -51,7 +51,7 @@ public enum LineEndingStyle
     /// This is the standard for Unix, Linux, and macOS systems. It's also the
     /// preferred format for most version control systems and web applications.
     /// Using this setting ensures consistent LF line endings across all platforms.
-    /// 
+    ///
     /// Character sequence: \n (0x0A)
     /// </remarks>
     Unix

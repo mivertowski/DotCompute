@@ -352,10 +352,10 @@ public sealed class EncryptionManager : IDisposable
 
                 _randomGenerator.GetBytes(nonce);
                 _randomGenerator.GetBytes(tag);
-                
+
                 // In a real implementation, this would be actual ChaCha20 encryption
                 data.Span.CopyTo(ciphertext);
-                
+
                 // XOR with pseudo-random data for demonstration
                 var keyStream = new byte[data.Length];
                 _randomGenerator.GetBytes(keyStream);
@@ -474,7 +474,7 @@ public sealed class EncryptionManager : IDisposable
                 // ChaCha20-Poly1305 decryption would go here
                 // For now, return a mock implementation that reverses the mock encryption
                 var plaintext = new byte[encryptedData.Length];
-                
+
                 // Mock decryption - XOR with the same pseudo-random data
                 var keyStream = new byte[encryptedData.Length];
                 _randomGenerator.GetBytes(keyStream);

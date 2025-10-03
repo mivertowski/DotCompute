@@ -14,7 +14,7 @@ namespace DotCompute.Core.Recovery.Statistics;
 /// - Overall system stability trends
 /// - Circuit breaker state transitions and timing
 /// - Request volume and failure distribution
-/// 
+///
 /// These metrics are used for alerting, capacity planning, and system health monitoring.
 /// </remarks>
 public class CircuitBreakerStatistics

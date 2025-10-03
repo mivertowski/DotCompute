@@ -37,12 +37,12 @@ namespace DotCompute.Algorithms.Types.Security
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
 
-        _logger?.LogDebug("Creating permission set for {AssemblyPath} in zone {SecurityZone}", 
+        _logger?.LogDebug("Creating permission set for {AssemblyPath} in zone {SecurityZone}",
             assemblyPath, securityZone);
 
         // Create a mock permission set based on security zone
         var permissionSet = new { Zone = securityZone, Permissions = new List<string>() };
-        
+
         // Add permissions based on security zone
         switch (securityZone)
         {
@@ -68,10 +68,10 @@ namespace DotCompute.Algorithms.Types.Security
 
         // Store the permission set
         _permissionSets[assemblyPath] = permissionSet;
-        
-        _logger?.LogDebug("Created permission set with {PermissionCount} permissions for {AssemblyPath}", 
+
+        _logger?.LogDebug("Created permission set with {PermissionCount} permissions for {AssemblyPath}",
             permissionSet.Count, assemblyPath);
-        
+
         return permissionSet;
     }
 
@@ -133,7 +133,7 @@ namespace DotCompute.Algorithms.Types.Security
 
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(filePath, json);
-        
+
         _logger?.LogInformation("CAS configuration saved to {FilePath}", filePath);
     }
 
@@ -159,22 +159,22 @@ namespace DotCompute.Algorithms.Types.Security
         // Load configuration properties
         if (root.TryGetProperty("DefaultSecurityZone", out var zone))
             _options.DefaultSecurityZone = Enum.Parse<SecurityZone>(zone.GetString()!);
-        
+
         if (root.TryGetProperty("EnableFileSystemRestrictions", out var fileRestrictions))
             _options.EnableFileSystemRestrictions = fileRestrictions.GetBoolean();
-        
+
         if (root.TryGetProperty("EnableNetworkRestrictions", out var netRestrictions))
             _options.EnableNetworkRestrictions = netRestrictions.GetBoolean();
-        
+
         if (root.TryGetProperty("EnableReflectionRestrictions", out var refRestrictions))
             _options.EnableReflectionRestrictions = refRestrictions.GetBoolean();
-        
+
         if (root.TryGetProperty("AllowReflectionEmit", out var allowRefEmit))
             _options.AllowReflectionEmit = allowRefEmit.GetBoolean();
-        
+
         if (root.TryGetProperty("MaxMemoryUsage", out var maxMem))
             _options.MaxMemoryUsage = maxMem.GetInt64();
-        
+
         if (root.TryGetProperty("MaxExecutionTime", out var maxTime))
             _options.MaxExecutionTime = TimeSpan.FromMilliseconds(maxTime.GetDouble());
 
@@ -247,12 +247,12 @@ namespace DotCompute.Algorithms.Types.Security
         private bool CheckFileReadPermission(PermissionSet permissionSet, string? target)
     {
         if (!_options.EnableFileSystemRestrictions) return true;
-        
+
         try
         {
             var filePermission = permissionSet.GetPermission(typeof(FileIOPermission)) as FileIOPermission;
-            return filePermission != null && (filePermission.IsUnrestricted() || 
-                   string.IsNullOrEmpty(target) || 
+            return filePermission != null && (filePermission.IsUnrestricted() ||
+                   string.IsNullOrEmpty(target) ||
                    _options.AllowedFileSystemPaths.Any(path => target.StartsWith(path, StringComparison.OrdinalIgnoreCase)));
         }
         catch
@@ -264,7 +264,7 @@ namespace DotCompute.Algorithms.Types.Security
     private bool CheckFileWritePermission(PermissionSet permissionSet, string? target)
     {
         if (!_options.EnableFileSystemRestrictions) return true;
-        
+
         try
         {
             var filePermission = permissionSet.GetPermission(typeof(FileIOPermission)) as FileIOPermission;
@@ -279,16 +279,16 @@ namespace DotCompute.Algorithms.Types.Security
     private bool CheckNetworkPermission(PermissionSet permissionSet, string? target)
     {
         if (!_options.EnableNetworkRestrictions) return true;
-        
-        return string.IsNullOrEmpty(target) || 
-               _options.AllowedNetworkEndpoints.Any(endpoint => 
+
+        return string.IsNullOrEmpty(target) ||
+               _options.AllowedNetworkEndpoints.Any(endpoint =>
                    target.StartsWith(endpoint, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool CheckReflectionPermission(PermissionSet permissionSet)
     {
         if (!_options.EnableReflectionRestrictions) return true;
-        
+
         try
         {
             var reflectionPermission = permissionSet.GetPermission(typeof(ReflectionPermission)) as ReflectionPermission;
@@ -305,7 +305,7 @@ namespace DotCompute.Algorithms.Types.Security
         try
         {
             var securityPermission = permissionSet.GetPermission(typeof(SecurityPermission)) as SecurityPermission;
-            return securityPermission != null && 
+            return securityPermission != null &&
                    securityPermission.Flags.HasFlag(SecurityPermissionFlag.UnmanagedCode);
         }
         catch

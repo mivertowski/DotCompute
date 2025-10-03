@@ -12,12 +12,12 @@ namespace DotCompute.Abstractions.Memory;
 /// <remarks>
 /// Initializes a new instance of the <see cref="DeviceMemory{T}"/> struct.
 /// </remarks>
-/// <param name="pointer">Pointer to the device memory.</param>
+/// <param name="devicePtr">Pointer to the device memory.</param>
 /// <param name="length">Length in elements.</param>
 [StructLayout(LayoutKind.Sequential)]
-public readonly unsafe struct DeviceMemory<T>(T* pointer, int length) where T : unmanaged
+public readonly unsafe struct DeviceMemory<T>(T* devicePtr, int length) : IEquatable<DeviceMemory<T>> where T : unmanaged
 {
-    private readonly T* _pointer = pointer;
+    private readonly T* _pointer = devicePtr;
     private readonly int _length = length;
 
     /// <summary>
@@ -71,4 +71,45 @@ public readonly unsafe struct DeviceMemory<T>(T* pointer, int length) where T : 
 
         return new DeviceMemory<T>(_pointer + start, length);
     }
+
+    /// <summary>
+    /// Determines whether the current instance is equal to another DeviceMemory instance.
+    /// </summary>
+    /// <param name="other">The DeviceMemory instance to compare with this instance.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public bool Equals(DeviceMemory<T> other)
+        => _pointer == other._pointer && _length == other._length;
+
+    /// <summary>
+    /// Determines whether the current instance is equal to a specified object.
+    /// </summary>
+    /// <param name="obj">The object to compare with this instance.</param>
+    /// <returns>true if obj is a DeviceMemory and is equal to this instance; otherwise, false.</returns>
+    public override bool Equals(object? obj)
+        => obj is DeviceMemory<T> other && Equals(other);
+
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A hash code for the current instance.</returns>
+    public override int GetHashCode()
+        => HashCode.Combine((IntPtr)_pointer, _length);
+
+    /// <summary>
+    /// Determines whether two DeviceMemory instances are equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public static bool operator ==(DeviceMemory<T> left, DeviceMemory<T> right)
+        => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two DeviceMemory instances are not equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are not equal; otherwise, false.</returns>
+    public static bool operator !=(DeviceMemory<T> left, DeviceMemory<T> right)
+        => !left.Equals(right);
 }

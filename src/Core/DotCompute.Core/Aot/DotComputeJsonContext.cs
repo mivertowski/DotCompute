@@ -159,7 +159,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class StageMetricsData
     {
@@ -237,7 +237,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class TimeSeriesData
     {
@@ -297,7 +297,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryResource
     {
@@ -311,7 +311,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryMetric
     {
@@ -357,7 +357,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryGauge
     {
@@ -371,7 +371,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryHistogram
     {
@@ -385,7 +385,7 @@ namespace DotCompute.Core.Aot
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public sealed class OpenTelemetryDataPoint
     {

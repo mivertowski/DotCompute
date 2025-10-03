@@ -213,7 +213,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
             }
 
-            // Pre-allocate normal priority streams  
+            // Pre-allocate normal priority streams
             for (var i = 0; i < INITIAL_NORMAL_PRIORITY_COUNT; i++)
             {
                 var stream = CreatePooledStream(CudaStreamPriority.Normal);

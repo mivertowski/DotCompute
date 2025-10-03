@@ -22,7 +22,7 @@ public static class LinearAlgebraKernels
 // Optimized tiled matrix multiplication using shared memory
 __kernel void matrix_multiply_tiled(
     __global const float* A,    // Matrix A (M x K)
-    __global const float* B,    // Matrix B (K x N)  
+    __global const float* B,    // Matrix B (K x N)
     __global float* C,          // Result matrix C (M x N)
     const int M,                // Rows of A and C
     const int N,                // Columns of B and C
@@ -30,23 +30,23 @@ __kernel void matrix_multiply_tiled(
 ) {
     // Tile size (should match local work size)
     const int TILE_SIZE = 16;
-    
+
     // Work group and work item IDs
     int gid_x = get_group_id(0);
     int gid_y = get_group_id(1);
     int lid_x = get_local_id(0);
     int lid_y = get_local_id(1);
-    
+
     // Shared memory for tiles
     __local float tile_A[16][16];
     __local float tile_B[16][16];
-    
+
     // Output coordinates
     int row = gid_y * TILE_SIZE + lid_y;
     int col = gid_x * TILE_SIZE + lid_x;
-    
+
     float sum = 0.0f;
-    
+
     // Loop over tiles
     int num_tiles = (K + TILE_SIZE - 1) / TILE_SIZE;
     for (int t = 0; t < num_tiles; t++) {
@@ -58,7 +58,7 @@ __kernel void matrix_multiply_tiled(
         } else {
             tile_A[lid_y][lid_x] = 0.0f;
         }
-        
+
         // Load tile of B
         int b_row = t * TILE_SIZE + lid_y;
         int b_col = col;
@@ -67,17 +67,17 @@ __kernel void matrix_multiply_tiled(
         } else {
             tile_B[lid_y][lid_x] = 0.0f;
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
-        
+
         // Compute partial sum
         for (int k = 0; k < TILE_SIZE; k++) {
             sum += tile_A[lid_y][k] * tile_B[k][lid_x];
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Store result
     if (row < M && col < N) {
         C[row * N + col] = sum;
@@ -100,23 +100,23 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
     const int K         // Columns of A and rows of B
 ) {
     const int TILE_SIZE = 16;
-    
+
     // Shared memory for tiles
     __shared__ float tile_A[16][16];
     __shared__ float tile_B[16][16];
-    
+
     // Thread and block indices
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int bx = blockIdx.x;
     int by = blockIdx.y;
-    
+
     // Output coordinates
     int row = by * TILE_SIZE + ty;
     int col = bx * TILE_SIZE + tx;
-    
+
     float sum = 0.0f;
-    
+
     // Loop over tiles
     int num_tiles = (K + TILE_SIZE - 1) / TILE_SIZE;
     for (int t = 0; t < num_tiles; t++) {
@@ -128,7 +128,7 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         } else {
             tile_A[ty][tx] = 0.0f;
         }
-        
+
         // Load tile of B
         int b_row = t * TILE_SIZE + ty;
         int b_col = col;
@@ -137,18 +137,18 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         } else {
             tile_B[ty][tx] = 0.0f;
         }
-        
+
         __syncthreads();
-        
+
         // Compute partial sum
         #pragma unroll
         for (int k = 0; k < TILE_SIZE; k++) {
             sum += tile_A[ty][k] * tile_B[k][tx];
         }
-        
+
         __syncthreads();
     }
-    
+
     // Store result
     if (row < M && col < N) {
         C[row * N + col] = sum;
@@ -176,22 +176,22 @@ __kernel void compute_householder_vector_parallel(
     int gid = get_global_id(0);
     int lid = get_local_id(0);
     int group_size = get_local_size(0);
-    
+
     // Shared memory for reduction
     __local float shared_data[256];
-    
+
     // Initialize shared memory
     shared_data[lid] = 0.0f;
-    
+
     // Load and square elements for norm computation
     if (gid < n - start_idx) {
         float val = column[start_idx + gid];
         householder[gid] = val;
         shared_data[lid] = val * val;
     }
-    
+
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Parallel reduction for norm
     for (int offset = group_size / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
@@ -199,29 +199,29 @@ __kernel void compute_householder_vector_parallel(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Compute norm and update first element
     if (lid == 0) {
         float norm = sqrt(shared_data[0]);
         norm_result[get_group_id(0)] = norm;
-        
+
         if (gid == 0 && norm > 1e-10f) {
             float sign = householder[0] >= 0.0f ? 1.0f : -1.0f;
             householder[0] += sign * norm;
         }
     }
-    
+
     barrier(CLK_GLOBAL_MEM_FENCE);
-    
+
     // Second reduction for normalization
     if (gid < n - start_idx) {
         shared_data[lid] = householder[gid] * householder[gid];
     } else {
         shared_data[lid] = 0.0f;
     }
-    
+
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Reduction for vector norm
     for (int offset = group_size / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
@@ -229,7 +229,7 @@ __kernel void compute_householder_vector_parallel(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Normalize vector
     if (lid == 0) {
         float vnorm = sqrt(shared_data[0]);
@@ -258,13 +258,13 @@ __kernel void apply_householder_transform_optimized(
 ) {
     int col = get_global_id(0);
     int lid = get_local_id(0);
-    
+
     if (col >= n) return;
-    
+
     // Shared memory for dot product computation
     __local float shared_dot[256];
     shared_dot[lid] = 0.0f;
-    
+
     // Compute dot product v^T * A[:, col] using work group collaboration
     float local_dot = 0.0f;
     for (int i = lid; i < v_len; i += get_local_size(0)) {
@@ -272,10 +272,10 @@ __kernel void apply_householder_transform_optimized(
             local_dot += v[i] * matrix[(start_row + i) * n + col];
         }
     }
-    
+
     shared_dot[lid] = local_dot;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Parallel reduction
     for (int offset = get_local_size(0) / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
@@ -283,9 +283,9 @@ __kernel void apply_householder_transform_optimized(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     float total_dot = shared_dot[0] * 2.0f;
-    
+
     // Apply transformation: A[:, col] = A[:, col] - 2 * (v^T * A[:, col]) * v
     for (int i = lid; i < v_len; i += get_local_size(0)) {
         if (start_row + i < m) {
@@ -308,67 +308,67 @@ __kernel void apply_householder_transform_optimized(
 extern ""C"" __global__ void jacobi_svd_rotation_cuda(
     float* A,                 // Matrix A (modified in-place)
     float* U,                 // Left singular vectors
-    float* V,                 // Right singular vectors  
+    float* V,                 // Right singular vectors
     const int n,              // Matrix dimension
     const int i,              // Row index for rotation
     const int j,              // Column index for rotation
     float* convergence_flag   // Convergence indicator
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     if (tid >= n) return;
-    
+
     // Load matrix elements for 2x2 submatrix
     float a_ii = A[i * n + i];
     float a_ij = A[i * n + j];
     float a_ji = A[j * n + i];
     float a_jj = A[j * n + j];
-    
+
     // Check convergence criteria
     float off_diag = fabsf(a_ij) + fabsf(a_ji);
     if (off_diag < 1e-10f) {
         if (tid == 0) *convergence_flag = 1.0f;
         return;
     }
-    
+
     // Compute Jacobi rotation parameters
     float tau = (a_jj - a_ii) / (2.0f * (a_ij + a_ji));
     float t = copysignf(1.0f, tau) / (fabsf(tau) + sqrtf(1.0f + tau * tau));
     float c = rsqrtf(1.0f + t * t);  // 1/sqrt(1+t²)
     float s = c * t;
-    
+
     __syncthreads();
-    
+
     // Apply Givens rotation to columns i and j
     if (tid < n) {
         float a_ti = A[tid * n + i];
         float a_tj = A[tid * n + j];
-        
+
         A[tid * n + i] = c * a_ti - s * a_tj;
         A[tid * n + j] = s * a_ti + c * a_tj;
-        
+
         // Update U matrix
         float u_ti = U[tid * n + i];
         float u_tj = U[tid * n + j];
-        
+
         U[tid * n + i] = c * u_ti - s * u_tj;
         U[tid * n + j] = s * u_ti + c * u_tj;
     }
-    
+
     __syncthreads();
-    
+
     // Apply Givens rotation to rows i and j
     if (tid < n) {
         float a_it = A[i * n + tid];
         float a_jt = A[j * n + tid];
-        
+
         A[i * n + tid] = c * a_it - s * a_jt;
         A[j * n + tid] = s * a_it + c * a_jt;
-        
+
         // Update V matrix
         float v_it = V[i * n + tid];
         float v_jt = V[j * n + tid];
-        
+
         V[i * n + tid] = c * v_it - s * v_jt;
         V[j * n + tid] = s * v_it + c * v_jt;
     }
@@ -388,15 +388,15 @@ __kernel void extract_singular_values(
     const int n                  // Matrix dimension
 ) {
     int i = get_global_id(0);
-    
+
     if (i >= n) return;
-    
+
     // Extract diagonal element and ensure positive
     float value = A[i * n + i];
     float abs_value = fabs(value);
-    
+
     S[i] = abs_value;
-    
+
     // If singular value was negative, flip corresponding column of U
     if (value < 0.0f) {
         for (int j = 0; j < n; j++) {
@@ -425,14 +425,14 @@ __kernel void matrix_vector_multiply_optimized(
 ) {
     int row = get_global_id(0);
     int lid = get_local_id(0);
-    
+
     if (row >= m) return;
-    
+
     // Use shared memory for vector caching
     __local float x_cache[256];
-    
+
     float sum = 0.0f;
-    
+
     // Process vector in chunks that fit in shared memory
     for (int chunk = 0; chunk < n; chunk += 256) {
         // Load chunk of x into shared memory
@@ -441,18 +441,18 @@ __kernel void matrix_vector_multiply_optimized(
         } else if (lid < 256) {
             x_cache[lid] = 0.0f;
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
-        
+
         // Compute partial dot product
         int chunk_size = min(256, n - chunk);
         for (int i = 0; i < chunk_size; i++) {
             sum += A[row * n + chunk + i] * x_cache[i];
         }
-        
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     y[row] = sum;
 }";
     /// <summary>
@@ -465,19 +465,19 @@ __kernel void matrix_vector_multiply_optimized(
     public const string CUDAVectorOperationsKernel = @"
 extern ""C"" __global__ void vector_operations_cuda(
     const float* a,          // Input vector a
-    const float* b,          // Input vector b  
+    const float* b,          // Input vector b
     float* result,           // Output vector
     const int n,             // Vector length
     const int operation      // 0=add, 1=sub, 2=mul, 3=div
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
-    
+
     // Process multiple elements per thread for better efficiency
     for (int i = tid; i < n; i += stride) {
         float val_a = a[i];
         float val_b = b[i];
-        
+
         switch (operation) {
             case 0: // Addition
                 result[i] = val_a + val_b;
@@ -516,10 +516,10 @@ __kernel void parallel_reduction_optimized(
     int gid = get_global_id(0);
     int lid = get_local_id(0);
     int group_size = get_local_size(0);
-    
+
     // Initialize local memory
     float value = 0.0f;
-    
+
     // Load data and handle boundary conditions
     if (gid < n) {
         value = input[gid];
@@ -527,22 +527,22 @@ __kernel void parallel_reduction_optimized(
             value = value * value;
         }
     }
-    
+
     // Handle operations that need special initialization
     if (operation == 2 && gid >= n) { // Min operation
         value = FLT_MAX;
-    } else if (operation == 1 && gid >= n) { // Max operation  
+    } else if (operation == 1 && gid >= n) { // Max operation
         value = -FLT_MAX;
     }
-    
+
     scratch[lid] = value;
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Parallel reduction
     for (int offset = group_size / 2; offset > 0; offset /= 2) {
         if (lid < offset) {
             float other = scratch[lid + offset];
-            
+
             switch (operation) {
                 case 0: // Sum
                 case 3: // L2 norm (sum of squares)
@@ -558,7 +558,7 @@ __kernel void parallel_reduction_optimized(
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-    
+
     // Store result
     if (lid == 0) {
         if (operation == 3) {
@@ -591,31 +591,31 @@ extern ""C"" __global__ void warp_reduction_cuda(
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int lane = threadIdx.x % warpSize;
     int warp_id = threadIdx.x / warpSize;
-    
+
     __shared__ float warp_sums[32]; // Max 32 warps per block
-    
+
     // Load and sum
     float sum = 0.0f;
     for (int i = tid; i < n; i += blockDim.x * gridDim.x) {
         sum += input[i];
     }
-    
+
     // Warp-level reduction
     sum = warp_reduce_sum(sum);
-    
+
     // Store warp result
     if (lane == 0) {
         warp_sums[warp_id] = sum;
     }
-    
+
     __syncthreads();
-    
+
     // Block-level reduction
     if (warp_id == 0) {
-        sum = (threadIdx.x < (blockDim.x + warpSize - 1) / warpSize) ? 
+        sum = (threadIdx.x < (blockDim.x + warpSize - 1) / warpSize) ?
               warp_sums[threadIdx.x] : 0.0f;
         sum = warp_reduce_sum(sum);
-        
+
         if (threadIdx.x == 0) {
             output[blockIdx.x] = sum;
         }
@@ -641,28 +641,28 @@ __kernel void qr_algorithm_shift(
     const float tolerance         // Convergence tolerance
 ) {
     int tid = get_global_id(0);
-    
+
     if (tid >= n * n) return;
-    
+
     // Compute Wilkinson shift from bottom-right 2x2 submatrix
     __local float shift_value;
-    
+
     if (tid == 0) {
         if (n >= 2) {
             float a = A[(n-2) * n + (n-2)];
             float b = A[(n-2) * n + (n-1)];
             float c = A[(n-1) * n + (n-2)];
             float d = A[(n-1) * n + (n-1)];
-            
+
             float trace = a + d;
             float det = a * d - b * c;
             float discriminant = trace * trace - 4.0f * det;
-            
+
             if (discriminant >= 0.0f) {
                 float sqrt_disc = sqrt(discriminant);
                 float lambda1 = (trace + sqrt_disc) * 0.5f;
                 float lambda2 = (trace - sqrt_disc) * 0.5f;
-                
+
                 // Choose eigenvalue closer to d
                 shift_value = (fabs(lambda1 - d) < fabs(lambda2 - d)) ? lambda1 : lambda2;
             } else {
@@ -672,27 +672,27 @@ __kernel void qr_algorithm_shift(
             shift_value = 0.0f;
         }
     }
-    
+
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Apply shift: A = A - shift * I
     int row = tid / n;
     int col = tid % n;
-    
+
     if (row == col && tid < n * n) {
         A[tid] -= shift_value;
     }
-    
+
     barrier(CLK_GLOBAL_MEM_FENCE);
-    
+
     // Apply Givens rotations for QR factorization of Hessenberg matrix
     // (This would be called iteratively for each rotation)
-    
+
     // After QR step, restore shift: A = A + shift * I
     if (row == col && tid < n * n) {
         A[tid] += shift_value;
     }
-    
+
     // Extract eigenvalues from diagonal
     if (tid < n) {
         eigenvalues[tid] = A[tid * n + tid];
@@ -716,30 +716,30 @@ extern ""C"" __global__ void apply_givens_rotation_cuda(
     const float s           // Sine of rotation
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     // Apply rotation to rows
     if (tid < n) {
         float a_i = A[i * n + tid];
         float a_j = A[j * n + tid];
-        
+
         A[i * n + tid] = c * a_i - s * a_j;
         A[j * n + tid] = s * a_i + c * a_j;
     }
-    
+
     __syncthreads();
-    
+
     // Apply rotation to columns
     if (tid < n) {
         float a_i = A[tid * n + i];
         float a_j = A[tid * n + j];
-        
+
         A[tid * n + i] = c * a_i - s * a_j;
         A[tid * n + j] = s * a_i + c * a_j;
-        
+
         // Update Q matrix
         float q_i = Q[tid * n + i];
         float q_j = Q[tid * n + j];
-        
+
         Q[tid * n + i] = c * q_i - s * q_j;
         Q[tid * n + j] = s * q_i + c * q_j;
     }
@@ -763,20 +763,20 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
 ) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int i = blockIdx.y;     // Current row being processed
-    
+
     // Ensure positive definiteness
     __shared__ float pivot_value;
-    
+
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         pivot_value = A[i * n + i];
     }
-    
+
     __syncthreads();
-    
+
     if (pivot_value <= 0.0f) {
         return; // Matrix not positive definite
     }
-    
+
     // Process diagonal element
     if (i == blockIdx.x && tid == i) {
         float sum = 0.0f;
@@ -784,27 +784,27 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
             float val = A[i * n + k];
             sum += val * val;
         }
-        
+
         float diagonal_val = A[i * n + i] - sum;
         if (diagonal_val > 0.0f) {
             A[i * n + i] = sqrtf(diagonal_val);
         }
     }
-    
+
     __syncthreads();
-    
+
     // Process elements below diagonal in current column
     if (tid > i && tid < n) {
         float sum = 0.0f;
         for (int k = 0; k < i; k++) {
             sum += A[tid * n + k] * A[i * n + k];
         }
-        
+
         float diagonal = A[i * n + i];
         if (fabsf(diagonal) > 1e-10f) {
             A[tid * n + i] = (A[tid * n + i] - sum) / diagonal;
         }
-        
+
         // Zero out upper triangular part
         if (tid < i) {
             A[i * n + tid] = 0.0f;
@@ -831,17 +831,17 @@ __kernel void lu_decomposition_step(
 ) {
     int tid = get_global_id(0);
     int row = tid + k + 1;
-    
+
     if (row >= n) return;
-    
+
     // Find pivot (would need separate kernel for full pivoting)
     __local float max_val;
     __local int pivot_row;
-    
+
     if (get_local_id(0) == 0) {
         max_val = fabs(A[k * n + k]);
         pivot_row = k;
-        
+
         for (int i = k + 1; i < n; i++) {
             float val = fabs(A[i * n + k]);
             if (val > max_val) {
@@ -850,9 +850,9 @@ __kernel void lu_decomposition_step(
             }
         }
     }
-    
+
     barrier(CLK_LOCAL_MEM_FENCE);
-    
+
     // Swap rows if needed (simplified - would need atomic operations)
     if (pivot_row != k && get_local_id(0) == 0) {
         for (int j = 0; j < n; j++) {
@@ -860,22 +860,22 @@ __kernel void lu_decomposition_step(
             A[k * n + j] = A[pivot_row * n + j];
             A[pivot_row * n + j] = temp;
         }
-        
+
         // Update permutation
         int temp_p = P[k];
         P[k] = P[pivot_row];
         P[pivot_row] = temp_p;
     }
-    
+
     barrier(CLK_GLOBAL_MEM_FENCE);
-    
+
     // Compute multipliers and eliminate
     if (row < n) {
         float pivot = A[k * n + k];
         if (fabs(pivot) > 1e-10f) {
             float multiplier = A[row * n + k] / pivot;
             A[row * n + k] = multiplier; // Store L
-            
+
             // Eliminate
             for (int j = k + 1; j < n; j++) {
                 A[row * n + j] -= multiplier * A[k * n + j];
@@ -898,7 +898,7 @@ __kernel void lu_decomposition_step(
     public static string GetKernelSource(LinearAlgebraOperation operation, string acceleratorType, string precision = "single")
     {
         var type = acceleratorType.ToUpperInvariant();
-        
+
         return operation switch
         {
             LinearAlgebraOperation.MatrixMultiply => type switch
@@ -907,61 +907,61 @@ __kernel void lu_decomposition_step(
                 "CUDA" => CUDAMatrixMultiplyTiledKernel,
                 _ => throw new NotSupportedException($"Matrix multiplication not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.HouseholderVector => type switch
             {
                 "OPENCL" => OpenCLHouseholderVectorKernel,
                 "CUDA" => HouseholderKernels.CudaComputeHouseholderVectorKernel,
                 _ => throw new NotSupportedException($"Householder vector not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.HouseholderTransform => type switch
             {
                 "OPENCL" => OpenCLHouseholderTransformKernel,
                 "CUDA" => HouseholderKernels.CudaApplyHouseholderTransformationKernel,
                 _ => throw new NotSupportedException($"Householder transform not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.JacobiSVD => type switch
             {
                 "CUDA" => CUDAJacobiSVDKernel,
                 "OPENCL" => OpenCLSingularValuesKernel,
                 _ => throw new NotSupportedException($"Jacobi SVD not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.MatrixVector => type switch
             {
                 "OPENCL" => OpenCLMatrixVectorKernel,
                 "CUDA" => CUDAVectorOperationsKernel,
                 _ => throw new NotSupportedException($"Matrix-vector ops not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.ParallelReduction => type switch
             {
                 "OPENCL" => OpenCLParallelReductionKernel,
                 "CUDA" => CUDAWarpReductionKernel,
                 _ => throw new NotSupportedException($"Parallel reduction not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.QRAlgorithm => type switch
             {
                 "OPENCL" => OpenCLQRShiftKernel,
                 "CUDA" => CUDAGivensRotationKernel,
                 _ => throw new NotSupportedException($"QR algorithm not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.CholeskyDecomposition => type switch
             {
                 "CUDA" => CUDACholeskyKernel,
                 _ => throw new NotSupportedException($"Cholesky decomposition not supported for {acceleratorType}")
             },
-            
+
             LinearAlgebraOperation.LUDecomposition => type switch
             {
                 "OPENCL" => OpenCLLUDecompositionKernel,
                 _ => throw new NotSupportedException($"LU decomposition not supported for {acceleratorType}")
             },
-            
+
             _ => throw new ArgumentException($"Unknown operation: {operation}")
         };
     }
@@ -974,12 +974,12 @@ __kernel void lu_decomposition_step(
     /// <param name="deviceInfo">GPU device information.</param>
     /// <returns>Optimized kernel execution parameters.</returns>
     public static KernelExecutionParameters GetOptimizedParameters(
-        LinearAlgebraOperation operation, 
+        LinearAlgebraOperation operation,
         (int rows, int cols) matrixSize,
         string deviceInfo)
     {
         var (rows, cols) = matrixSize;
-        
+
         return operation switch
         {
             LinearAlgebraOperation.MatrixMultiply => new KernelExecutionParameters
@@ -990,7 +990,7 @@ __kernel void lu_decomposition_step(
                 UseSharedMemory = true,
                 TileSize = 16
             },
-            
+
             LinearAlgebraOperation.HouseholderVector => new KernelExecutionParameters
             {
                 GlobalWorkSize = [((Math.Max(rows, cols) + 255) / 256) * 256],
@@ -998,7 +998,7 @@ __kernel void lu_decomposition_step(
                 SharedMemorySize = 256 * sizeof(float),
                 UseSharedMemory = true
             },
-            
+
             LinearAlgebraOperation.ParallelReduction => new KernelExecutionParameters
             {
                 GlobalWorkSize = [((rows * cols + 255) / 256) * 256],
@@ -1006,7 +1006,7 @@ __kernel void lu_decomposition_step(
                 SharedMemorySize = 256 * sizeof(float),
                 UseSharedMemory = true
             },
-            
+
             _ => new KernelExecutionParameters
             {
                 GlobalWorkSize = [((Math.Max(rows, cols) + 127) / 128) * 128],
@@ -1029,34 +1029,34 @@ __kernel void lu_decomposition_step(
         HardwareInfo hardwareInfo)
     {
         var config = new AdaptiveKernelConfig();
-        
+
         // Configure based on matrix sparsity
         if (matrixProperties.SparsityRatio > 0.9f)
         {
             config.UseSparseOptimizations = true;
             config.SparsityThreshold = matrixProperties.SparsityRatio;
         }
-        
+
         // Configure based on matrix size
         if (matrixProperties.Size > hardwareInfo.GlobalMemorySize / 4)
         {
             config.UseOutOfCoreAlgorithm = true;
             config.BlockSize = CalculateOptimalBlockSize(matrixProperties.Size, hardwareInfo);
         }
-        
+
         // Configure precision based on condition number
         if (matrixProperties.ConditionNumber > 1e12f)
         {
             config.RequiresHighPrecision = true;
             config.UseMixedPrecision = true;
         }
-        
+
         // Configure work group size based on hardware
         config.OptimalWorkGroupSize = Math.Min(
             hardwareInfo.MaxWorkGroupSize,
             GetNextPowerOfTwo(hardwareInfo.PreferredWorkGroupSizeMultiple)
         );
-        
+
         return config;
     }
 
@@ -1065,11 +1065,11 @@ __kernel void lu_decomposition_step(
         // Calculate block size to fit in shared memory
         long availableSharedMem = hardware.SharedMemorySize - 1024; // Reserve some space
         var maxBlockSize = (int)Math.Sqrt(availableSharedMem / sizeof(float));
-        
+
         // Round down to nearest power of 2
         return GetPreviousPowerOfTwo(Math.Min(maxBlockSize, 64));
     }
-    
+
     private static int GetNextPowerOfTwo(int value)
     {
         value--;

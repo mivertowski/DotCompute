@@ -1021,7 +1021,7 @@ namespace DotCompute.Core.Memory
     {
         Generic = 0,     // Generic/unknown device fallback
         CUDA = 1,        // NVIDIA CUDA devices
-        HIP = 2,         // AMD ROCm/HIP devices  
+        HIP = 2,         // AMD ROCm/HIP devices
         OpenCL = 3,      // Intel/OpenCL devices
     }
 }

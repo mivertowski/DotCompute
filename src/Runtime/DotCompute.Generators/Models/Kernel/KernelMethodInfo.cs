@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DotCompute.Generators.Models.Kernel;
@@ -10,6 +11,9 @@ namespace DotCompute.Generators.Models.Kernel;
 /// </summary>
 public sealed class KernelMethodInfo
 {
+    private readonly Collection<ParameterInfo> _parameters = [];
+    private readonly Collection<string> _backends = [];
+
     /// <summary>
     /// Gets or sets the method name.
     /// </summary>
@@ -26,9 +30,9 @@ public sealed class KernelMethodInfo
     public string Namespace { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the method parameters.
+    /// Gets the method parameters.
     /// </summary>
-    public List<ParameterInfo> Parameters { get; } = [];
+    public Collection<ParameterInfo> Parameters => _parameters;
 
     /// <summary>
     /// Gets or sets the return type of the method.
@@ -36,9 +40,9 @@ public sealed class KernelMethodInfo
     public string ReturnType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the list of supported backend accelerators.
+    /// Gets the list of supported backend accelerators.
     /// </summary>
-    public List<string> Backends { get; } = [];
+    public Collection<string> Backends => _backends;
 
     /// <summary>
     /// Gets or sets the vector size for SIMD operations.

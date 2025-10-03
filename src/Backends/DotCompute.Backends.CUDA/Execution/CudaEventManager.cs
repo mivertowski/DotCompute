@@ -423,7 +423,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     timings.Add(timing);
                     session.CompletedIterations = i + 1;
 
-                    // Log progress every 10% 
+                    // Log progress every 10%
                     if ((i + 1) % Math.Max(1, iterations / 10) == 0)
                     {
                         var progress = (double)(i + 1) / iterations * 100;

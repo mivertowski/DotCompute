@@ -41,7 +41,7 @@ namespace DotCompute.Generators.Models
         /// <code>
         /// var param = new KernelParameter("data", "float[]", true);
         /// param.Validate(); // Passes validation
-        /// 
+        ///
         /// var invalidParam = new KernelParameter("", "float[]", true);
         /// invalidParam.Validate(); // Throws ArgumentException
         /// </code>
@@ -82,22 +82,19 @@ namespace DotCompute.Generators.Models
         }
 
         /// <summary>
-        /// Gets the parameter declaration string for method signatures.
+        /// Gets the parameter declaration string for method signatures in the format "Type Name".
         /// </summary>
-        /// <returns>A string in the format "Type Name".</returns>
-        public string GetDeclaration() => $"{Type} {Name}";
+        public string Declaration => $"{Type} {Name}";
 
         /// <summary>
-        /// Determines if this parameter requires null checking.
+        /// Gets a value indicating whether this parameter requires null checking.
         /// </summary>
-        /// <returns>True if the parameter should be null-checked; otherwise, false.</returns>
-        public bool RequiresNullCheck() => IsBuffer && !Type.Contains("*") && !Type.Contains("Span") && !Type.Contains("Memory");
+        public bool RequiresNullCheck => IsBuffer && !Type.Contains("*") && !Type.Contains("Span") && !Type.Contains("Memory");
 
         /// <summary>
-        /// Determines if this parameter requires empty check for spans/memory.
+        /// Gets a value indicating whether this parameter requires empty check for spans/memory.
         /// </summary>
-        /// <returns>True if the parameter should be checked for emptiness; otherwise, false.</returns>
-        public bool RequiresEmptyCheck() => Type.Contains("Span") || Type.Contains("Memory");
+        public bool RequiresEmptyCheck => Type.Contains("Span") || Type.Contains("Memory");
 
         /// <summary>
         /// Returns a string representation of the kernel parameter.

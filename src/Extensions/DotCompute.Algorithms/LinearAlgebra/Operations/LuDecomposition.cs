@@ -25,8 +25,8 @@ public static class LuDecomposition
     /// <exception cref="ArgumentException">Thrown when matrix is not square</exception>
     /// <exception cref="InvalidOperationException">Thrown when matrix is singular</exception>
     public static async Task<(Matrix L, Matrix U, int[] P)> DecomposeAsync(
-        Matrix matrix, 
-        IAccelerator accelerator, 
+        Matrix matrix,
+        IAccelerator accelerator,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(matrix);
@@ -86,8 +86,8 @@ public static class LuDecomposition
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Solution vector x</returns>
     public static async Task<Matrix> SolveAsync(
-        Matrix matrix, 
-        Matrix rhs, 
+        Matrix matrix,
+        Matrix rhs,
         IAccelerator accelerator,
         CancellationToken cancellationToken = default)
     {

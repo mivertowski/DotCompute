@@ -193,12 +193,9 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
         var configuration = new AcceleratorConfiguration
         {
-            DeviceIndex = 0,
-            CustomProperties = new Dictionary<string, object>
-            {
-                ["DeviceInfo"] = acceleratorInfo
-            }
+            DeviceIndex = 0
         };
+        configuration.CustomProperties["DeviceInfo"] = acceleratorInfo;
 
 
         return await CreateAsync(acceleratorInfo.Type, configuration, serviceProvider, cancellationToken).ConfigureAwait(false);

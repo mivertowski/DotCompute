@@ -192,7 +192,7 @@ namespace DotCompute.Core.Types
         public override int GetHashCode() => _value.GetHashCode();
 
         /// <inheritdoc/>
-        public override string ToString() => ToSingle().ToString();
+        public override string ToString() => ToSingle().ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Checks if the value is NaN.
@@ -337,6 +337,13 @@ namespace DotCompute.Core.Types
         /// Negates a Half value.
         /// </summary>
         public static Half Negate(Half value) => -value;
+
+        /// <summary>
+        /// Converts a single-precision floating-point number to Half (CA2225).
+        /// </summary>
+        /// <param name="value">The single value to convert.</param>
+        /// <returns>A Half value.</returns>
+        public static Half FromSingle(float value) => (Half)value;
 
         #endregion
     }

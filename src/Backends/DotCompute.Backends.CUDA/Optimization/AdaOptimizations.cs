@@ -273,7 +273,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     public enum SharedMemoryCarveout
     {
         Default,      // 48KB shared, 16KB L1
-        Prefer100KB,  // 100KB shared, minimal L1  
+        Prefer100KB,  // 100KB shared, minimal L1
         PreferL1      // 16KB shared, 48KB L1
     }
 

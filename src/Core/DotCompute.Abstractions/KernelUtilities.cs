@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Kernels;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Abstractions
 {
@@ -10,8 +10,101 @@ namespace DotCompute.Abstractions
     /// <summary>
     /// Utility methods for common kernel compilation patterns to reduce code duplication.
     /// </summary>
-    public static class KernelUtilities
+    public static partial class KernelUtilities
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 3015,
+            Level = LogLevel.Debug,
+            Message = "Compiling kernel '{KernelName}' for {BackendType} backend")]
+        private static partial void LogCompilingKernel(ILogger logger, string kernelName, string backendType);
+
+        [LoggerMessage(
+            EventId = 3016,
+            Level = LogLevel.Debug,
+            Message = "Retrieved kernel '{KernelName}' from cache")]
+        private static partial void LogKernelFromCache(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 3017,
+            Level = LogLevel.Debug,
+            Message = "Successfully compiled kernel '{KernelName}'")]
+        private static partial void LogKernelCompiled(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 3018,
+            Level = LogLevel.Error,
+            Message = "Failed to compile kernel '{KernelName}' for {BackendType}")]
+        private static partial void LogKernelCompileFailed(ILogger logger, Exception ex, string kernelName, string backendType);
+
+        [LoggerMessage(
+            EventId = 3019,
+            Level = LogLevel.Debug,
+            Message = "Initializing {BackendType} kernel compiler{CompilerInfo}")]
+        private static partial void LogInitializingCompiler(ILogger logger, string backendType, string compilerInfo);
+
+        [LoggerMessage(
+            EventId = 3020,
+            Level = LogLevel.Debug,
+            Message = "{BackendType} kernel compiler initialized successfully")]
+        private static partial void LogCompilerInitialized(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 3021,
+            Level = LogLevel.Error,
+            Message = "Failed to initialize {BackendType} kernel compiler")]
+        private static partial void LogCompilerInitFailed(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 3022,
+            Level = LogLevel.Information,
+            Message = "Disposing {BackendType} kernel compiler")]
+        private static partial void LogDisposingCompiler(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 3023,
+            Level = LogLevel.Debug,
+            Message = "Clearing kernel compilation cache ({Count} entries)")]
+        private static partial void LogClearingCache(ILogger logger, int count);
+
+        [LoggerMessage(
+            EventId = 3024,
+            Level = LogLevel.Warning,
+            Message = "Failed to dispose cached kernel during cache clear")]
+        private static partial void LogCachedKernelDisposeFailed(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 3025,
+            Level = LogLevel.Error,
+            Message = "Error during {BackendType} kernel compiler disposal")]
+        private static partial void LogCompilerDisposalError(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 3026,
+            Level = LogLevel.Information,
+            Message = "Disposing {BackendType} kernel compiler (synchronous)")]
+        private static partial void LogDisposingCompilerSync(ILogger logger, string backendType);
+
+        [LoggerMessage(
+            EventId = 3027,
+            Level = LogLevel.Error,
+            Message = "Error during synchronous {BackendType} kernel compiler disposal")]
+        private static partial void LogSyncCompilerDisposalError(ILogger logger, Exception ex, string backendType);
+
+        [LoggerMessage(
+            EventId = 3028,
+            Level = LogLevel.Debug,
+            Message = "Clearing {BackendType} kernel compilation cache ({Count} entries)")]
+        private static partial void LogClearingCacheSafely(ILogger logger, string backendType, int count);
+
+        [LoggerMessage(
+            EventId = 3029,
+            Level = LogLevel.Debug,
+            Message = "{BackendType} kernel compilation cache cleared")]
+        private static partial void LogCacheCleared(ILogger logger, string backendType);
+
+        #endregion
         /// <summary>
         /// Common pattern for kernel compilation with caching, error handling, and logging.
         /// </summary>
@@ -44,8 +137,7 @@ namespace DotCompute.Abstractions
 
             options ??= new CompilationOptions();
 
-            logger.LogDebug("Compiling kernel '{KernelName}' for {BackendType} backend",
-                definition.Name, backendType);
+            LogCompilingKernel(logger, definition.Name, backendType);
 
             // Check cache first if enabled
             if (enableCaching)
@@ -53,7 +145,7 @@ namespace DotCompute.Abstractions
                 var cacheKey = cacheKeyFunc(definition, options);
                 if (cache.TryGetValue(cacheKey, out var cachedKernel))
                 {
-                    logger.LogDebug("Retrieved kernel '{KernelName}' from cache", definition.Name);
+                    LogKernelFromCache(logger, definition.Name);
                     return cachedKernel;
                 }
             }
@@ -73,13 +165,12 @@ namespace DotCompute.Abstractions
                     cache[cacheKey] = compiledKernel;
                 }
 
-                logger.LogDebug("Successfully compiled kernel '{KernelName}'", definition.Name);
+                LogKernelCompiled(logger, definition.Name);
                 return compiledKernel;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to compile kernel '{KernelName}' for {BackendType}",
-                    definition.Name, backendType);
+                LogKernelCompileFailed(logger, ex, definition.Name, backendType);
                 throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
             }
         }
@@ -103,17 +194,16 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogDebug("Initializing {BackendType} kernel compiler{CompilerInfo}",
-                    backendType, compilerInfo != null ? $" ({compilerInfo})" : "");
+                LogInitializingCompiler(logger, backendType, compilerInfo != null ? $" ({compilerInfo})" : "");
 
                 var result = initFunc();
 
-                logger.LogDebug("{BackendType} kernel compiler initialized successfully", backendType);
+                LogCompilerInitialized(logger, backendType);
                 return result;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to initialize {BackendType} kernel compiler", backendType);
+                LogCompilerInitFailed(logger, ex, backendType);
                 throw;
             }
         }
@@ -135,12 +225,12 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogInformation("Disposing {BackendType} kernel compiler", backendType);
+                LogDisposingCompiler(logger, backendType);
 
                 // Clear and dispose cache if present
                 if (cache != null && cache.Count > 0)
                 {
-                    logger.LogDebug("Clearing kernel compilation cache ({Count} entries)", cache.Count);
+                    LogClearingCache(logger, cache.Count);
 
                     foreach (var kernel in cache.Values)
                     {
@@ -150,7 +240,7 @@ namespace DotCompute.Abstractions
                         }
                         catch (Exception ex)
                         {
-                            logger.LogWarning(ex, "Failed to dispose cached kernel during cache clear");
+                            LogCachedKernelDisposeFailed(logger, ex);
                         }
                     }
                     cache.Clear();
@@ -161,7 +251,7 @@ namespace DotCompute.Abstractions
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during {BackendType} kernel compiler disposal", backendType);
+                LogCompilerDisposalError(logger, ex, backendType);
             }
         }
 
@@ -182,12 +272,12 @@ namespace DotCompute.Abstractions
 
             try
             {
-                logger.LogInformation("Disposing {BackendType} kernel compiler (synchronous)", backendType);
+                LogDisposingCompilerSync(logger, backendType);
 
                 // Clear and dispose cache if present
                 if (cache != null && cache.Count > 0)
                 {
-                    logger.LogDebug("Clearing kernel compilation cache ({Count} entries)", cache.Count);
+                    LogClearingCache(logger, cache.Count);
 
                     foreach (var kernel in cache.Values)
                     {
@@ -197,7 +287,7 @@ namespace DotCompute.Abstractions
                         }
                         catch (Exception ex)
                         {
-                            logger.LogWarning(ex, "Failed to dispose cached kernel during cache clear");
+                            LogCachedKernelDisposeFailed(logger, ex);
                         }
                     }
                     cache.Clear();
@@ -208,7 +298,7 @@ namespace DotCompute.Abstractions
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during synchronous {BackendType} kernel compiler disposal", backendType);
+                LogSyncCompilerDisposalError(logger, ex, backendType);
             }
         }
 
@@ -268,7 +358,7 @@ namespace DotCompute.Abstractions
                 return;
             }
 
-            logger.LogDebug("Clearing {BackendType} kernel compilation cache ({Count} entries)", backendType, count);
+            LogClearingCacheSafely(logger, backendType, count);
 
             foreach (var kernel in cache.Values)
             {
@@ -278,12 +368,12 @@ namespace DotCompute.Abstractions
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Failed to dispose cached kernel during cache clear");
+                    LogCachedKernelDisposeFailed(logger, ex);
                 }
             }
 
             cache.Clear();
-            logger.LogDebug("{BackendType} kernel compilation cache cleared", backendType);
+            LogCacheCleared(logger, backendType);
         }
 
         /// <summary>

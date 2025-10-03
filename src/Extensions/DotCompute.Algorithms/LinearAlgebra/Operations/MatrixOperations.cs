@@ -17,7 +17,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
     {
         private const int BlockSize = 64; // Cache-friendly block size
         private const int GPUThreshold = 10000; // Minimum matrix size for GPU
-        
+
         private static KernelManager? s_kernelManager;
         private static readonly Lock s_kernelLock = new();
 
@@ -209,7 +209,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
             // Use LU decomposition to compute inverse
             var (l, u, p) = await MatrixDecomposition.LUDecompositionAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
-            
+
             var n = matrix.Rows;
             var inverse = new Matrix(n, n);
 

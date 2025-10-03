@@ -17,7 +17,7 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - Flags indicating the type of failure (timeout, compilation error, etc.)
 /// - Modified compilation options and interpreter instances for fallback attempts
 /// - Cached results that may be used as alternatives
-/// 
+///
 /// The context can be cloned to preserve original state while attempting
 /// different recovery strategies.
 /// </remarks>

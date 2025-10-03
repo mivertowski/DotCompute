@@ -680,7 +680,7 @@ namespace DotCompute.Core.Pipelines
         /// <summary>
         /// Converts ValidationIssue from Abstractions to Validation namespace
         /// </summary>
-        private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyIReadOnlyList<ValidationIssue> issues)
+        private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyList<ValidationIssue> issues)
         {
             return issues.Select(issue => new ValidationIssue(
                 (ValidationSeverity)(int)issue.Severity,

@@ -3,6 +3,9 @@
 
 
 using DotCompute.Core.Execution.Configuration;
+using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Types;
+
 namespace DotCompute.Core.Execution.Metrics
 {
     /// <summary>

@@ -23,7 +23,7 @@ namespace DotCompute.Abstractions.Interfaces.Pipelines
         /// <param name="kernelName">The name of the kernel to execute</param>
         /// <param name="args">The arguments to pass to the kernel</param>
         /// <returns>The chain builder for method chaining</returns>
-        public IKernelChainBuilder Then(string kernelName, params object[] args);
+        public IKernelChainBuilder ThenExecute(string kernelName, params object[] args);
 
         /// <summary>
         /// Adds multiple kernels to execute in parallel.

@@ -23,6 +23,7 @@ public sealed class KernelValidator(
     DebugServiceOptions options) : IDisposable
 {
     private readonly ILogger<KernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private bool _disposed;
 
@@ -438,7 +439,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with tolerance-based comparison.
     /// </summary>
-    private bool CompareWithTolerance(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
+    private bool CompareWithTolerance(List<KernelExecutionResult> results, IList<ResultDifference> differences)
     {
         // Simplified comparison logic - would be more sophisticated in practice
         var baseline = results[0];
@@ -467,7 +468,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with exact comparison.
     /// </summary>
-    private bool CompareExact(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
+    private bool CompareExact(List<KernelExecutionResult> results, IList<ResultDifference> differences)
     {
         var baseline = results[0];
 
@@ -494,7 +495,7 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with statistical comparison.
     /// </summary>
-    private bool CompareStatistical(List<KernelExecutionResult> results, IReadOnlyList<ResultDifference> differences)
+    private bool CompareStatistical(List<KernelExecutionResult> results, IList<ResultDifference> differences)
         // Simplified statistical comparison
         => CompareWithTolerance(results, differences);
 

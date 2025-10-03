@@ -18,7 +18,7 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - The final compilation options that worked
 /// - A complete log of all attempts and their outcomes
 /// - Performance metrics for the entire fallback process
-/// 
+///
 /// This information is crucial for optimizing fallback strategy ordering and
 /// identifying patterns in compilation failures.
 /// </remarks>

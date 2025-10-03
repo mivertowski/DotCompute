@@ -19,7 +19,7 @@ namespace DotCompute.Core.Extensions
             T[] data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged
-            // For now, just copy to the buffer 
+            // For now, just copy to the buffer
             // TODO: handle offset properly
             => buffer.CopyFromAsync(data.AsMemory(), cancellationToken);
 
@@ -31,7 +31,7 @@ namespace DotCompute.Core.Extensions
             ReadOnlyMemory<T> data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged
-            // For now, just copy to the buffer 
+            // For now, just copy to the buffer
             // TODO: handle offset properly
             => buffer.CopyFromAsync(data, cancellationToken);
 
@@ -43,7 +43,7 @@ namespace DotCompute.Core.Extensions
             T[] data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged
-            // For now, just copy from the buffer 
+            // For now, just copy from the buffer
             // TODO: handle offset properly
             => buffer.CopyToAsync(data.AsMemory(), cancellationToken);
 
@@ -55,7 +55,7 @@ namespace DotCompute.Core.Extensions
             Memory<T> data,
             long offset,
             CancellationToken cancellationToken = default) where T : unmanaged
-            // For now, just copy from the buffer 
+            // For now, just copy from the buffer
             // TODO: handle offset properly
             => buffer.CopyToAsync(data, cancellationToken);
     }

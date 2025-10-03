@@ -204,7 +204,6 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
             {
                 y--;
             }
-
         }
 
         return new WorkGroupSize(x, y);
@@ -316,4 +315,25 @@ public readonly struct WorkGroupSize : IEquatable<WorkGroupSize>
     /// Implicit conversion from (int, int, int) tuple to 3D WorkGroupSize
     /// </summary>
     public static implicit operator WorkGroupSize((int x, int y, int z) size) => new(size.x, size.y, size.z);
+
+    /// <summary>
+    /// Named alternative for implicit conversion from int to 1D WorkGroupSize (CA2225).
+    /// </summary>
+    /// <param name="size">The 1D size.</param>
+    /// <returns>A new WorkGroupSize.</returns>
+    public static WorkGroupSize FromInt32(int size) => size;
+
+    /// <summary>
+    /// Named alternative for implicit conversion from (int, int) tuple to 2D WorkGroupSize (CA2225).
+    /// </summary>
+    /// <param name="size">The 2D size tuple.</param>
+    /// <returns>A new WorkGroupSize.</returns>
+    public static WorkGroupSize FromValueTuple((int x, int y) size) => size;
+
+    /// <summary>
+    /// Named alternative for implicit conversion from (int, int, int) tuple to 3D WorkGroupSize (CA2225).
+    /// </summary>
+    /// <param name="size">The 3D size tuple.</param>
+    /// <returns>A new WorkGroupSize.</returns>
+    public static WorkGroupSize FromValueTuple((int x, int y, int z) size) => size;
 }

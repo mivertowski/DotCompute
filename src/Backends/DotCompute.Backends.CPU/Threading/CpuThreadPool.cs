@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CPU.Threading;
 public sealed class CpuThreadPoolOptions
 {
     /// <summary>
-    /// Gets or sets the number of worker threads. 
+    /// Gets or sets the number of worker threads.
     /// If null, defaults to Environment.ProcessorCount.
     /// </summary>
     public int? WorkerThreads { get; set; }
@@ -757,7 +757,7 @@ public sealed class ThreadPoolStatistics
     /// </value>
     public required int GlobalQueueCount { get; init; }
 
-#pragma warning disable CA1819 // Properties should not return arrays - Required for work queue statistics    
+#pragma warning disable CA1819 // Properties should not return arrays - Required for work queue statistics
     /// <summary>
     /// Gets the local queue counts.
     /// </summary>

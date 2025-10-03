@@ -397,7 +397,7 @@ namespace DotCompute.Plugins.Platform
                 var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-                // Check for NVIDIA Management Library (nvml.dll) 
+                // Check for NVIDIA Management Library (nvml.dll)
                 var nvmlPath = Path.Combine(systemDirectory, "nvml.dll");
                 if (File.Exists(nvmlPath))
                 {

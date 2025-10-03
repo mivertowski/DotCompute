@@ -49,7 +49,7 @@ public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelera
     [UnconditionalSuppressMessage("AOT", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Configuration options are preserved")]
     [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "Configuration options are preserved")]
     protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
-        // Configure Metal backend options  
+        // Configure Metal backend options
 
 
 

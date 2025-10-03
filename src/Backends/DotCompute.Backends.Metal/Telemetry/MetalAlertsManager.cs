@@ -668,7 +668,7 @@ public sealed class MetalAlertsManager : IDisposable
         // Placeholder for notification sending
         // Would implement integrations with:
         // - Slack
-        // - Microsoft Teams  
+        // - Microsoft Teams
         // - Email
         // - PagerDuty
         // - Custom webhooks

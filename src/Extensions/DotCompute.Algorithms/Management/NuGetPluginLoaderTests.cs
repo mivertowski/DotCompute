@@ -30,7 +30,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance;
         _testCacheDirectory = Path.Combine(Path.GetTempPath(), "NuGetPluginLoaderTests", Guid.NewGuid().ToString("N"));
         _testPackagesDirectory = Path.Combine(_testCacheDirectory, "packages");
-        
+
         Directory.CreateDirectory(_testCacheDirectory);
         Directory.CreateDirectory(_testPackagesDirectory);
     }
@@ -45,7 +45,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     public string CreateTestPackage(string packageId, string version, bool includeAssembly = true)
     {
         var packagePath = Path.Combine(_testPackagesDirectory, $"{packageId}.{version}.nupkg");
-        
+
         using var fileStream = File.Create(packagePath);
         using var archive = new ZipArchive(fileStream, ZipArchiveMode.Create);
 
@@ -181,11 +181,11 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         // Create a package with complex dependencies
         var packagePath = CreateTestPackage("ComplexPackage", "2.1.0");
-        
+
         var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
         _logger.LogInfoMessage($"Package manifest parsed - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, Dependencies: {result.ResolvedDependencies.Length}");
-        
+
         foreach (var dependency in result.ResolvedDependencies)
         {
             var frameworks = dependency.TargetFrameworks?.Length > 0 ? string.Join(", ", dependency.TargetFrameworks) : "None";
@@ -222,7 +222,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
             {
                 _logger.LogInfoMessage("Testing framework compatibility: {framework}");
                 var result = await loader.LoadPackageAsync(packagePath, framework);
-                
+
                 _logger.LogInfoMessage("Framework {Framework} supported - {framework, result.LoadedAssemblyPaths.Length} assemblies found");
                 foreach (var assembly in result.LoadedAssemblyPaths)
                 {
@@ -317,7 +317,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         {
             var result = await loader.LoadPackageAsync(packagePath, "net9.0");
             _logger.LogInfoMessage($"Package loaded with security validation - Result: {result.SecurityValidationResult ?? "No security issues"}, Warnings: {result.Warnings.Length}");
-            
+
             foreach (var warning in result.Warnings)
             {
                 _logger.LogWarningMessage("Security warning: {warning}");
@@ -331,7 +331,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Test with size limit exceeded
         var largeDummyData = new byte[2 * 1024 * 1024]; // 2 MB
         var largePackagePath = Path.Combine(_testPackagesDirectory, "LargePackage.1.0.0.nupkg");
-        
+
         using (var fileStream = File.Create(largePackagePath))
         using (var archive = new ZipArchive(fileStream, ZipArchiveMode.Create))
         {
@@ -483,7 +483,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         // Test invalid target framework
         var validPackagePath = CreateTestPackage("ValidPackage", "1.0.0");
-        
+
         try
         {
             var result = await loader.LoadPackageAsync(validPackagePath, "invalid-framework");
@@ -620,7 +620,7 @@ public static class Program
         // Create a simple console logger for the main entry point
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         var logger = loggerFactory.CreateLogger<NuGetPluginLoader>();
-        
+
         logger.LogInformation("DotCompute NuGet Plugin Loader Tests - Starting test suite");
 
         using var tests = new NuGetPluginLoaderTests(logger);

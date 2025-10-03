@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Types;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Abstractions
 {
@@ -10,7 +11,9 @@ namespace DotCompute.Abstractions
     /// Represents an execution stream on an accelerator for asynchronous command submission.
     /// Streams allow overlapping of computation and data transfers.
     /// </summary>
-    public abstract class AcceleratorStream : IAsyncDisposable
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - "Stream" is appropriate for GPU/compute stream concept
+    public abstract class ComputeStream : IAsyncDisposable
+#pragma warning restore CA1711
     {
         /// <summary>
         /// Gets the unique identifier for this stream.
@@ -95,14 +98,15 @@ namespace DotCompute.Abstractions
         /// </summary>
         /// <param name="event">The event to record.</param>
         /// <returns>A task representing the record operation.</returns>
+        [SuppressMessage("Naming", "CA1716:In virtual/interface member ComputeStream.RecordEventAsync(AcceleratorEvent), rename parameter event", Justification = "Parameter name semantically correct; languages can escape reserved keywords")]
         public abstract ValueTask RecordEventAsync(AcceleratorEvent @event);
 
         /// <summary>
         /// Waits for an event on this stream.
         /// </summary>
-        /// <param name="event">The event to wait for.</param>
+        /// <param name="acceleratorEvent">The event to wait for.</param>
         /// <returns>A task representing the wait operation.</returns>
-        public abstract ValueTask WaitForEventAsync(AcceleratorEvent @event);
+        public abstract ValueTask WaitForEventAsync(AcceleratorEvent acceleratorEvent);
 
         /// <summary>
         /// Adds a callback to be called when all currently enqueued operations complete.
@@ -128,6 +132,11 @@ namespace DotCompute.Abstractions
     /// </summary>
     public abstract class AcceleratorEvent : IDisposable
     {
+        /// <summary>
+        /// Gets a value indicating whether this instance has been disposed.
+        /// </summary>
+        private bool _disposed;
+
         /// <summary>
         /// Gets the native handle for this event.
         /// </summary>
@@ -165,8 +174,31 @@ namespace DotCompute.Abstractions
         public abstract TimeSpan? GetElapsedTime(AcceleratorEvent startEvent);
 
         /// <summary>
+        /// Releases managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Dispose managed resources - override in derived classes
+                }
+
+                // Dispose unmanaged resources - override in derived classes
+
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
         /// Disposes of this event.
         /// </summary>
-        public abstract void Dispose();
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

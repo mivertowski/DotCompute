@@ -6,8 +6,8 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Pipelines.Enums;
+using DotCompute.Abstractions.Telemetry;
 using DotCompute.Core.Telemetry.Implementation;
-using TelemetryConfiguration = DotCompute.Abstractions.Interfaces.Telemetry.TelemetryConfiguration;
 using System;
 
 namespace DotCompute.Core.Telemetry;
@@ -214,13 +214,13 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             if (activity != null)
             {
                 _ = activity.SetTag("event.name", name);
-                _ = activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O"));
+                _ = activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
 
                 if (attributes != null)
                 {
                     foreach (var attr in attributes)
                     {
-                        _ = activity.SetTag($"event.{attr.Key}", attr.Value?.ToString());
+                        _ = activity.SetTag($"event.{attr.Key}", Convert.ToString(attr.Value, System.Globalization.CultureInfo.InvariantCulture));
                     }
                 }
 
@@ -567,14 +567,14 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
         var name = kernelName.ToLowerInvariant();
         return name switch
         {
-            var n when n.Contains("add", StringComparison.OrdinalIgnoreCase) || n.Contains("sum", StringComparison.OrdinalIgnoreCase) => "arithmetic",
-            var n when n.Contains("mul", StringComparison.CurrentCulture) || n.Contains("multiply", StringComparison.CurrentCulture) => "arithmetic",
-            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => "linear_algebra",
-            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("scan", StringComparison.CurrentCulture) => "reduction",
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => "sorting",
-            var n when n.Contains("fft", StringComparison.CurrentCulture) => "transform",
-            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => "convolution",
-            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => "memory",
+            var n when n.Contains("add", StringComparison.Ordinal) || n.Contains("sum", StringComparison.Ordinal) => "arithmetic",
+            var n when n.Contains("mul", StringComparison.Ordinal) || n.Contains("multiply", StringComparison.Ordinal) => "arithmetic",
+            var n when n.Contains("matrix", StringComparison.Ordinal) || n.Contains("gemm", StringComparison.Ordinal) => "linear_algebra",
+            var n when n.Contains("reduce", StringComparison.Ordinal) || n.Contains("scan", StringComparison.Ordinal) => "reduction",
+            var n when n.Contains("sort", StringComparison.Ordinal) => "sorting",
+            var n when n.Contains("fft", StringComparison.Ordinal) => "transform",
+            var n when n.Contains("conv", StringComparison.Ordinal) || n.Contains("filter", StringComparison.Ordinal) => "convolution",
+            var n when n.Contains("copy", StringComparison.Ordinal) || n.Contains("memcpy", StringComparison.Ordinal) => "memory",
             _ => "general"
         };
     }
@@ -633,7 +633,7 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         {
             foreach (var tag in tags)
             {
-                _ = _activity.SetTag(tag.Key, tag.Value?.ToString());
+                _ = _activity.SetTag(tag.Key, Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture));
             }
         }
     }
@@ -886,6 +886,14 @@ internal sealed class ProductionOperationTimer : IOperationTimer
             _stopwatch.Stop();
             return _stopwatch.Elapsed;
         }
+
+        /// <summary>
+        /// Stops the timer and records the operation duration.
+        /// </summary>
+        /// <param name="metadata">Optional metadata to associate with the timing record</param>
+        /// <returns>The total duration of the operation</returns>
+        public TimeSpan StopTimer(IDictionary<string, object>? metadata = null) => Stop(metadata);
+
         /// <summary>
         /// Gets add checkpoint.
         /// </summary>

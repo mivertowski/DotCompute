@@ -53,7 +53,7 @@ namespace DotCompute.Algorithms.SignalProcessing
         ValidateInputs(signal, kernel);
 
         strategy = SelectOptimalStrategy(strategy, kernel.Length, 1);
-        
+
         return strategy switch
         {
             ConvolutionStrategy.Direct => await DirectConvolve1DAsync(signal, kernel, padding, cancellationToken),
@@ -84,7 +84,7 @@ namespace DotCompute.Algorithms.SignalProcessing
 
         var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, stride);
         var result = new float[outputLength];
-        
+
         var context = CreateKernelGenerationContext();
         // Mock compilation - in real implementation would use kernel manager
         var compiledKernel = new MockCompiledKernel("StridedConvolution1D");
@@ -116,7 +116,7 @@ namespace DotCompute.Algorithms.SignalProcessing
         var effectiveKernelSize = (kernel.Length - 1) * dilation + 1;
         var outputLength = CalculateOutputLength(signal.Length, effectiveKernelSize, padding, 1);
         var result = new float[outputLength];
-        
+
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "DilatedConvolution1D",
@@ -172,22 +172,22 @@ namespace DotCompute.Algorithms.SignalProcessing
         CancellationToken cancellationToken = default)
     {
         ValidateInputs2D(input, kernel, inputWidth, inputHeight, kernelWidth, kernelHeight);
-        
+
         if (stride == default) stride = (1, 1);
         strategy = SelectOptimalStrategy(strategy, Math.Max(kernelWidth, kernelHeight), 2);
 
         return strategy switch
         {
-            ConvolutionStrategy.Direct => await DirectConvolve2DAsync(input, kernel, inputWidth, inputHeight, 
+            ConvolutionStrategy.Direct => await DirectConvolve2DAsync(input, kernel, inputWidth, inputHeight,
                 kernelWidth, kernelHeight, padding, stride, cancellationToken),
-            ConvolutionStrategy.Winograd when IsWinogradSuitable(kernelWidth, kernelHeight) => 
-                await WinogradConvolve2DAsync(input, kernel, inputWidth, inputHeight, 
+            ConvolutionStrategy.Winograd when IsWinogradSuitable(kernelWidth, kernelHeight) =>
+                await WinogradConvolve2DAsync(input, kernel, inputWidth, inputHeight,
                 kernelWidth, kernelHeight, padding, stride, cancellationToken),
-            ConvolutionStrategy.Im2Col => await Im2ColConvolve2DAsync(input, kernel, inputWidth, inputHeight, 
+            ConvolutionStrategy.Im2Col => await Im2ColConvolve2DAsync(input, kernel, inputWidth, inputHeight,
                 kernelWidth, kernelHeight, padding, stride, cancellationToken),
-            ConvolutionStrategy.FFT => await FFTConvolve2DAsync(input, kernel, inputWidth, inputHeight, 
+            ConvolutionStrategy.FFT => await FFTConvolve2DAsync(input, kernel, inputWidth, inputHeight,
                 kernelWidth, kernelHeight, padding, stride, cancellationToken),
-            _ => await AutoConvolve2DAsync(input, kernel, inputWidth, inputHeight, 
+            _ => await AutoConvolve2DAsync(input, kernel, inputWidth, inputHeight,
                 kernelWidth, kernelHeight, padding, stride, cancellationToken)
         };
     }
@@ -325,7 +325,7 @@ namespace DotCompute.Algorithms.SignalProcessing
         CancellationToken cancellationToken = default)
     {
         ValidateInputs3D(input, kernel, inputWidth, inputHeight, inputDepth, kernelWidth, kernelHeight, kernelDepth);
-        
+
         if (stride == default) stride = (1, 1, 1);
 
         var outputWidth = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
@@ -548,10 +548,10 @@ namespace DotCompute.Algorithms.SignalProcessing
         // Use existing FFT implementation from SignalProcessor for CPU fallback
         // GPU implementation would use cuFFT or similar
         var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, 1);
-        
+
         // For now, delegate to CPU FFT implementation asynchronously
         var cpuResult = await Task.Run(() => SignalProcessor.Convolve(signal, kernel), cancellationToken);
-        
+
         // Apply padding logic if needed
         return ApplyPadding1D(cpuResult, signal.Length, kernel.Length, padding);
     }
@@ -854,7 +854,7 @@ namespace DotCompute.Algorithms.SignalProcessing
     {
         // Choose work group size based on device capabilities
         var maxWorkGroupSize = _accelerator.Info.MaxThreadsPerBlock;
-        
+
         if (maxWorkGroupSize >= 256)
             return [16, 16]; // 2D work groups
         else if (maxWorkGroupSize >= 64)

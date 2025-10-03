@@ -343,7 +343,7 @@ namespace DotCompute.Core.Memory
             // Create intermediate host buffer
             var hostData = new T[BufferHelpers.GetElementCount(source)];
 
-            // Copy from source to host  
+            // Copy from source to host
             await source.CopyToAsync(hostData.AsMemory(), cancellationToken);
 
             // Copy from host to target

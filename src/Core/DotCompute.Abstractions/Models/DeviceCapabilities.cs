@@ -1,5 +1,5 @@
-using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Models.Device;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Abstractions.Models;
 

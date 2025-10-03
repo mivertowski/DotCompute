@@ -162,7 +162,7 @@ public interface ITimerHandle : IDisposable
     /// </summary>
     /// <param name="metadata">Optional metadata to associate with the timing record</param>
     /// <returns>The total duration of the operation</returns>
-    public TimeSpan Stop(IDictionary<string, object>? metadata = null);
+    public TimeSpan StopTimer(IDictionary<string, object>? metadata = null);
 
     /// <summary>
     /// Adds a checkpoint with a name and the current elapsed time.

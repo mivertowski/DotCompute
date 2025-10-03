@@ -8,7 +8,7 @@ namespace DotCompute.Generators.Kernel.Analysis;
 /// <summary>
 /// Parses kernel attributes to extract configuration.
 /// </summary>
-public class KernelAttributeParser
+public static class KernelAttributeParser
 {
     public static IReadOnlyList<string> GetBackendsFromAttribute(AttributeData attribute)
     {

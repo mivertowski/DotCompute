@@ -122,19 +122,17 @@ public sealed class PipelineOptimizationSettings
     /// <returns>A new instance with the same configuration</returns>
     public PipelineOptimizationSettings Clone()
     {
-        return new PipelineOptimizationSettings
+        var clone = new PipelineOptimizationSettings
         {
             Level = Level,
             OptimizationTypes = OptimizationTypes,
             MaxOptimizationTime = MaxOptimizationTime,
             ValidateOptimizations = ValidateOptimizations,
-            TargetBackends = [.. TargetBackends],
             MemoryConstraints = MemoryConstraints?.Clone(),
             PerformanceTargets = PerformanceTargets?.Clone(),
             PreserveDebugInfo = PreserveDebugInfo,
             AllowPrecisionLoss = AllowPrecisionLoss,
             OptimizationParallelism = OptimizationParallelism,
-            CustomParameters = new Dictionary<string, object>(CustomParameters),
             FailureStrategy = FailureStrategy,
             ProfilingConfig = ProfilingConfig?.Clone(),
             CacheSettings = CacheSettings?.Clone(),
@@ -145,6 +143,19 @@ public sealed class PipelineOptimizationSettings
             EnableParallelMerging = EnableParallelMerging,
             EnableFusion = EnableFusion
         };
+
+        // Copy read-only collections
+        foreach (var backend in TargetBackends)
+        {
+            clone.TargetBackends.Add(backend);
+        }
+
+        foreach (var kvp in CustomParameters)
+        {
+            clone.CustomParameters[kvp.Key] = kvp.Value;
+        }
+
+        return clone;
     }
 }
 

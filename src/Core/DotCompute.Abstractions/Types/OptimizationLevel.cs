@@ -17,17 +17,6 @@ public enum OptimizationLevel
     None = 0,
 
     /// <summary>
-    /// No optimization - fastest compilation, no performance optimizations.
-    /// Equivalent to compiler flag -O0. Alias for None.
-    /// </summary>
-    O0 = 0,
-
-    /// <summary>
-    /// Minimal optimization - alias for None/O0.
-    /// </summary>
-    Minimal = 0,
-
-    /// <summary>
     /// Basic optimization - minimal performance improvements with fast compilation.
     /// Equivalent to compiler flag -O1. Enables basic optimizations like dead code elimination.
     /// </summary>
@@ -46,11 +35,6 @@ public enum OptimizationLevel
     O3 = 3,
 
     /// <summary>
-    /// Maximum optimization - alias for O3.
-    /// </summary>
-    Maximum = 3,
-
-    /// <summary>
     /// Size optimization - optimize for smallest code size rather than speed.
     /// Equivalent to compiler flag -Os. Best for memory-constrained environments.
     /// </summary>
@@ -60,23 +44,5 @@ public enum OptimizationLevel
     /// Default optimization level for balanced performance and compilation time.
     /// Typically maps to O2 for most scenarios.
     /// </summary>
-    Default = O2,
-
-    /// <summary>
-    /// Aggressive optimization alias for maximum performance.
-    /// Maps to O3 optimization level.
-    /// </summary>
-    Aggressive = O3,
-
-    /// <summary>
-    /// Balanced optimization - good balance between performance and compilation time.
-    /// Maps to O2 optimization level. Alias for Default.
-    /// </summary>
-    Balanced = O2,
-
-    /// <summary>
-    /// Full optimization - comprehensive optimization with maximum performance.
-    /// Maps to O3 optimization level. Alias for Aggressive.
-    /// </summary>
-    Full = O3
+    Default = O2
 }

@@ -207,7 +207,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         }
 
         // Setup metrics collection timer - collect every minute
-        _metricsCollectionTimer = new Timer(CollectMetrics, null, 
+        _metricsCollectionTimer = new Timer(CollectMetrics, null,
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
@@ -239,7 +239,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             else
             {
                 metricsData.FailedExecutions++;
-                
+
                 // Track error types
                 var errorType = error?.GetType().Name ?? "Unknown";
                 metricsData.ErrorCounts[errorType] = metricsData.ErrorCounts.GetValueOrDefault(errorType) + 1;
@@ -312,14 +312,14 @@ public sealed class AlgorithmPluginMetrics : IDisposable
                 TotalExecutions = metricsData.TotalExecutions,
                 SuccessfulExecutions = metricsData.SuccessfulExecutions,
                 FailedExecutions = metricsData.FailedExecutions,
-                SuccessRate = metricsData.TotalExecutions > 0 
-                    ? (double)metricsData.SuccessfulExecutions / metricsData.TotalExecutions 
+                SuccessRate = metricsData.TotalExecutions > 0
+                    ? (double)metricsData.SuccessfulExecutions / metricsData.TotalExecutions
                     : 0,
-                AverageExecutionTime = metricsData.TotalExecutions > 0 
+                AverageExecutionTime = metricsData.TotalExecutions > 0
                     ? TimeSpan.FromTicks(metricsData.TotalExecutionTime.Ticks / metricsData.TotalExecutions)
                     : TimeSpan.Zero,
-                MinExecutionTime = metricsData.MinExecutionTime == TimeSpan.MaxValue 
-                    ? TimeSpan.Zero 
+                MinExecutionTime = metricsData.MinExecutionTime == TimeSpan.MaxValue
+                    ? TimeSpan.Zero
                     : metricsData.MinExecutionTime,
                 MaxExecutionTime = metricsData.MaxExecutionTime,
                 TotalExecutionTime = metricsData.TotalExecutionTime,
@@ -358,7 +358,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var allMetrics = GetAllPluginMetrics().ToList();
-        
+
         return new SystemMetrics
         {
             TotalPlugins = _registry.PluginCount,
@@ -369,7 +369,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             OverallSuccessRate = allMetrics.Sum(m => m.TotalExecutions) > 0
                 ? allMetrics.Sum(m => m.SuccessfulExecutions) / (double)allMetrics.Sum(m => m.TotalExecutions)
                 : 0,
-            AverageExecutionTime = allMetrics.Any() 
+            AverageExecutionTime = allMetrics.Any()
                 ? TimeSpan.FromTicks((long)allMetrics.Average(m => m.AverageExecutionTime.Ticks))
                 : TimeSpan.Zero,
             TotalMemoryAllocated = allMetrics.Sum(m => m.TotalMemoryAllocated),
@@ -484,7 +484,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         var count = _metricsData.Count;
         _metricsData.Clear();
-        
+
         _logger.LogInformation("Cleared metrics for {Count} plugins", count);
     }
 
@@ -535,7 +535,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         var firstHalf = recentExecutions.Take(10).Average(e => e.Duration.TotalMilliseconds);
         var secondHalf = recentExecutions.Skip(10).Average(e => e.Duration.TotalMilliseconds);
-        
+
         var percentChange = (secondHalf - firstHalf) / firstHalf * 100;
 
         return percentChange switch
@@ -611,7 +611,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
                     };
 
                     kvp.Value.PerformanceHistory.Enqueue(snapshot);
-                    
+
                     // Keep only last 24 hours of snapshots (1440 minutes)
                     while (kvp.Value.PerformanceHistory.Count > 1440)
                     {
@@ -648,13 +648,13 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         // Header
         _ = csv.AppendLine("PluginId,TotalExecutions,SuccessfulExecutions,FailedExecutions,SuccessRate,AverageExecutionTime,MinExecutionTime,MaxExecutionTime");
-        
+
         // Data
         foreach (var metrics in allMetrics)
         {
             _ = csv.AppendLine($"{metrics.PluginId},{metrics.TotalExecutions},{metrics.SuccessfulExecutions},{metrics.FailedExecutions},{metrics.SuccessRate:F4},{metrics.AverageExecutionTime.TotalMilliseconds},{metrics.MinExecutionTime.TotalMilliseconds},{metrics.MaxExecutionTime.TotalMilliseconds}");
         }
-        
+
         return csv.ToString();
     }
 
@@ -668,7 +668,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         _ = xml.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         _ = xml.AppendLine("<PluginMetrics>");
-        
+
         foreach (var metrics in allMetrics)
         {
             _ = xml.AppendLine($"  <Plugin Id=\"{metrics.PluginId}\">");
@@ -693,7 +693,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             _metricsCollectionTimer.Dispose();
             // _cpuCounter?.Dispose();
             // _memoryCounter?.Dispose();
-            
+
             _logger.LogInformation("Plugin metrics service disposed");
         }
     }

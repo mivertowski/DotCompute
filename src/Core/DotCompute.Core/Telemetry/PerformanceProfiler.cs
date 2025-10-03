@@ -5,6 +5,12 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Core.Telemetry.System;
+using DotCompute.Core.Telemetry.Profiles;
+using DotCompute.Core.Telemetry.Analysis;
+using DotCompute.Core.Telemetry.Metrics;
+using DotCompute.Core.Telemetry.Options;
+using DotCompute.Core.Telemetry.Samples;
+using DotCompute.Core.Telemetry.Enums;
 using ProfileOptions = DotCompute.Core.Telemetry.Options.ProfileOptions;
 
 namespace DotCompute.Core.Telemetry;

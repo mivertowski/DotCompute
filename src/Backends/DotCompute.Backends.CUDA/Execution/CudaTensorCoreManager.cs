@@ -357,7 +357,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             var baseSpeedup = generation switch
             {
                 4 => 8.0,  // Ada Lovelace
-                3 => 6.0,  // Ampere  
+                3 => 6.0,  // Ampere
                 2 => 4.0,  // Turing
                 1 => 3.0,  // Volta
                 _ => 1.0

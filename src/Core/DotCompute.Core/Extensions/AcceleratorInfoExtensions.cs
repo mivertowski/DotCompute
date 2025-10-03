@@ -43,7 +43,7 @@ namespace DotCompute.Core.Extensions
                 return major switch
                 {
                     >= 8 => 40 * 1024 * 1024, // 40 MB for RTX 30/40 series
-                    7 => 6 * 1024 * 1024,      // 6 MB for RTX 20 series  
+                    7 => 6 * 1024 * 1024,      // 6 MB for RTX 20 series
                     6 => 4 * 1024 * 1024,      // 4 MB for GTX 10 series
                     _ => 2 * 1024 * 1024       // 2 MB default
                 };

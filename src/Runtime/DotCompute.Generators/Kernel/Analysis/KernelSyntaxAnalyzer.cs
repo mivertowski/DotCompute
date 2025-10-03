@@ -12,11 +12,8 @@ namespace DotCompute.Generators.Kernel.Analysis;
 /// </summary>
 public class KernelSyntaxAnalyzer : IKernelAnalyzer
 {
-    private readonly KernelAttributeParser _attributeParser;
-
     public KernelSyntaxAnalyzer()
     {
-        _attributeParser = new KernelAttributeParser();
     }
 
     public bool IsKernelMethod(SyntaxNode node)
@@ -49,9 +46,8 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var methodSymbol = model.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
 
-        if (methodSymbol is null)
+        if (model.GetDeclaredSymbol(methodDeclaration) is not IMethodSymbol methodSymbol)
         {
             return null;
         }
@@ -95,9 +91,8 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
     {
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
-        var classSymbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-        if (classSymbol is null)
+        if (model.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
         {
             return null;
         }

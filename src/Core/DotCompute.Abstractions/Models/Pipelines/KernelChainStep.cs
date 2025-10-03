@@ -44,9 +44,9 @@ namespace DotCompute.Abstractions.Models.Pipelines
         public TimeSpan? CacheTtl { get; set; }
 
         /// <summary>
-        /// Gets or sets the parallel kernels for parallel execution steps.
+        /// Gets or initializes the parallel kernels for parallel execution steps.
         /// </summary>
-        public IList<KernelChainStep>? ParallelKernels { get; set; }
+        public IList<KernelChainStep>? ParallelKernels { get; init; }
 
         /// <summary>
         /// Gets or sets the branch condition for branching steps.
@@ -54,9 +54,9 @@ namespace DotCompute.Abstractions.Models.Pipelines
         public IBranchCondition? BranchCondition { get; set; }
 
         /// <summary>
-        /// Gets or sets additional metadata for this step.
+        /// Gets or initializes additional metadata for this step.
         /// </summary>
-        public Dictionary<string, object>? Metadata { get; set; }
+        public Dictionary<string, object>? Metadata { get; init; }
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ namespace DotCompute.Abstractions.Models.Pipelines
             // Attempt type conversion
             try
             {
-                var convertedResult = (T)Convert.ChangeType(previousResult, typeof(T))!;
+                var convertedResult = (T)Convert.ChangeType(previousResult, typeof(T), System.Globalization.CultureInfo.InvariantCulture)!;
                 return Condition(convertedResult);
             }
             catch

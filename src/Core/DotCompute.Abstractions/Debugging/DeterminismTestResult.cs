@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -36,12 +38,12 @@ public sealed class DeterminismTestResult
     /// <summary>
     /// Gets the execution results from each iteration.
     /// </summary>
-    public IReadOnlyList<object?> ExecutionResults { get; init; } = [];
+    public Collection<object?> ExecutionResults { get; init; } = [];
 
     /// <summary>
     /// Gets the list of issues found during determinism testing.
     /// </summary>
-    public IReadOnlyList<string> Issues { get; init; } = [];
+    public Collection<string> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the total execution time for all iterations.

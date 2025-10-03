@@ -10,7 +10,7 @@ namespace DotCompute.Generators.Backend;
 
 /// <summary>
 /// Generates optimized CPU code with SIMD support for kernel execution.
-/// This generator creates multiple implementations (scalar, SIMD, AVX2, AVX-512) 
+/// This generator creates multiple implementations (scalar, SIMD, AVX2, AVX-512)
 /// and selects the best one based on hardware capabilities at runtime.
 /// </summary>
 public class CpuCodeGenerator
@@ -457,7 +457,7 @@ public class CpuCodeGenerator
 
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        public static void Execute(");
-        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.Declaration)));
         _ = sb.AppendLine(", int start, int end)");
         _ = sb.AppendLine("        {");
 
@@ -532,7 +532,7 @@ public class CpuCodeGenerator
 
 
         _ = sb.Append($"        public static void Execute(");
-        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.Declaration)));
         _ = sb.AppendLine(", int length)");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            Execute(");
@@ -743,7 +743,7 @@ public class CpuCodeGenerator
     {
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        {(isPrivate ? "private" : "public")} static void {methodName}(");
-        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", _parameters.Select(p => p.Declaration)));
 
 
         if (includeRange)

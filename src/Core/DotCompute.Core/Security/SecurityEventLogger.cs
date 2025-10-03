@@ -40,7 +40,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
         try
         {
             _auditQueue.Enqueue(entry);
-            
+
             // Log based on severity
             LogSecurityEventByLevel(entry);
         }
@@ -156,12 +156,12 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
         [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
         [CallerLineNumber] int lineNumber = 0)
     {
-        var eventType = result == AccessResult.Granted 
-            ? SecurityEventType.AccessGranted 
+        var eventType = result == AccessResult.Granted
+            ? SecurityEventType.AccessGranted
             : SecurityEventType.AccessDenied;
-        
-        var level = result == AccessResult.Granted 
-            ? SecurityLevel.Informational 
+
+        var level = result == AccessResult.Granted
+            ? SecurityLevel.Informational
             : SecurityLevel.Warning;
 
         var data = new Dictionary<string, object>

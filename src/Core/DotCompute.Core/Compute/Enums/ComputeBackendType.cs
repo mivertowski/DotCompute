@@ -88,7 +88,7 @@ namespace DotCompute.Core.Compute.Enums
         /// AMD's open-source platform for GPU computing with HIP (Heterogeneous-compute
         /// Interface for Portability). Provides excellent performance for AMD Radeon and
         /// Instinct GPUs with features including shared virtual memory, peer-to-peer
-        /// transfers, and support for large memory workloads. Compatible with both 
+        /// transfers, and support for large memory workloads. Compatible with both
         /// consumer and enterprise AMD GPU hardware.
         /// </remarks>
         ROCm

@@ -16,11 +16,11 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// - Successful strategies for this specific kernel
 /// - Failure counts and success rates over time
 /// - Strategy effectiveness for optimization
-/// 
+///
 /// This historical data enables the system to make intelligent decisions about
 /// which fallback strategies to try first for a given kernel, improving
 /// overall compilation success rates and reducing recovery time.
-/// 
+///
 /// The class implements IDisposable to ensure proper cleanup of tracked data.
 /// </remarks>
 /// <remarks>

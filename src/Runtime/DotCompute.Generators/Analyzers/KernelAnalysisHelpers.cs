@@ -16,7 +16,16 @@ internal static class KernelAnalysisHelpers
     /// Checks if a symbol has the [Kernel] attribute.
     /// </summary>
     public static bool HasKernelAttribute(ISymbol symbol)
-        => symbol.GetAttributes().Any(attr => attr.AttributeClass?.Name == "KernelAttribute");
+    {
+        foreach (var attr in symbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "KernelAttribute")
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>
     /// Gets the [Kernel] attribute from a symbol if it exists.
@@ -28,9 +37,42 @@ internal static class KernelAnalysisHelpers
     /// Determines if a method looks like a kernel based on its signature and body.
     /// </summary>
     public static bool LooksLikeKernelMethod(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
-        => methodSymbol.IsStatic &&
-        methodSymbol.Parameters.Any(p => p.Type.ToString().Contains("Span")) &&
-        methodSyntax.Body?.Statements.OfType<ForStatementSyntax>().Any() == true;
+    {
+        if (!methodSymbol.IsStatic)
+        {
+            return false;
+        }
+
+        var hasSpanParameter = false;
+        foreach (var p in methodSymbol.Parameters)
+        {
+            if (p.Type.ToString().Contains("Span"))
+            {
+                hasSpanParameter = true;
+                break;
+            }
+        }
+
+        if (!hasSpanParameter)
+        {
+            return false;
+        }
+
+        if (methodSyntax.Body == null)
+        {
+            return false;
+        }
+
+        foreach (var stmt in methodSyntax.Body.Statements)
+        {
+            if (stmt is ForStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Validates if a type is a valid kernel parameter type.
@@ -49,9 +91,28 @@ internal static class KernelAnalysisHelpers
     public static bool CanBeVectorized(ForStatementSyntax forLoop)
     {
         // Simple heuristic - loops with array access and arithmetic operations
-        return forLoop.DescendantNodes().OfType<ElementAccessExpressionSyntax>().Any() &&
-               forLoop.DescendantNodes().OfType<BinaryExpressionSyntax>().Any(b =>
-                   b.IsKind(SyntaxKind.AddExpression) || b.IsKind(SyntaxKind.MultiplyExpression));
+        var hasElementAccess = false;
+        var hasArithmeticOps = false;
+
+        foreach (var node in forLoop.DescendantNodes())
+        {
+            if (node is ElementAccessExpressionSyntax)
+            {
+                hasElementAccess = true;
+            }
+            else if (node is BinaryExpressionSyntax b &&
+                     (b.IsKind(SyntaxKind.AddExpression) || b.IsKind(SyntaxKind.MultiplyExpression)))
+            {
+                hasArithmeticOps = true;
+            }
+
+            if (hasElementAccess && hasArithmeticOps)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -60,9 +121,14 @@ internal static class KernelAnalysisHelpers
     public static bool HasSuboptimalAccessPattern(ElementAccessExpressionSyntax access)
     {
         // Heuristic for non-sequential access patterns
-        return access.ArgumentList.Arguments.Count == 1 &&
-               (access.ArgumentList.Arguments[0].Expression.ToString().Contains("*") ||
-                access.ArgumentList.Arguments[0].Expression.ToString().Contains("%"));
+        if (access.ArgumentList.Arguments.Count != 1)
+        {
+            return false;
+        }
+
+        var exprText = access.ArgumentList.Arguments[0].Expression.ToString();
+        return exprText.Contains("*") ||
+               exprText.Contains("%");
     }
 
     /// <summary>
@@ -70,9 +136,21 @@ internal static class KernelAnalysisHelpers
     /// </summary>
     public static string AnalyzeComputationalComplexity(MethodDeclarationSyntax methodSyntax)
     {
-        var loopCount = methodSyntax.DescendantNodes().OfType<ForStatementSyntax>().Count();
-        var mathOperations = methodSyntax.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Count(inv => inv.ToString().Contains("Math."));
+        var loopCount = 0;
+        var mathOperations = 0;
+
+        foreach (var node in methodSyntax.DescendantNodes())
+        {
+            if (node is ForStatementSyntax)
+            {
+                loopCount++;
+            }
+            else if (node is InvocationExpressionSyntax inv &&
+                     inv.ToString().Contains("Math."))
+            {
+                mathOperations++;
+            }
+        }
 
         return (loopCount, mathOperations) switch
         {
@@ -102,8 +180,6 @@ internal static class KernelAnalysisHelpers
         {
             return null;
         }
-
-        _ = new List<string>();
 
         // Look for named arguments with 'Backends' parameter
         foreach (var namedArg in attribute.NamedArguments)

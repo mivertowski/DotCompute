@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -496,7 +497,7 @@ public sealed class KernelCodeBuilder
     private static string ExtractBaseType(string typeString)
     {
         // Simple type extraction - would be more sophisticated in real implementation
-        if (typeString.Contains('<') && typeString.Contains('>'))
+        if (typeString.Contains("<") && typeString.Contains(">"))
         {
             var start = typeString.IndexOf('<') + 1;
             var end = typeString.LastIndexOf('>');
@@ -506,7 +507,7 @@ public sealed class KernelCodeBuilder
             }
         }
 
-        if (typeString.EndsWith("[]", StringComparison.Ordinal))
+        if (typeString.EndsWith("[]"))
         {
             return typeString.Substring(0, typeString.Length - 2);
         }
@@ -522,15 +523,18 @@ public sealed class KernelCodeBuilder
 /// </summary>
 public sealed class KernelValidationResult
 {
+    private readonly Collection<string> _errors = [];
+    private readonly Collection<string> _warnings = [];
+
     /// <summary>
     /// Gets the list of validation errors.
     /// </summary>
-    public IList<string> Errors { get; } = [];
+    public Collection<string> Errors => _errors;
 
     /// <summary>
     /// Gets the list of validation warnings.
     /// </summary>
-    public IList<string> Warnings { get; } = [];
+    public Collection<string> Warnings => _warnings;
 
     /// <summary>
     /// Gets a value indicating whether the validation result contains errors.
@@ -548,7 +552,13 @@ public sealed class KernelValidationResult
     /// <param name="other">The validation result to merge.</param>
     public void Merge(KernelValidationResult other)
     {
-        Errors.AddRange(other.Errors);
-        Warnings.AddRange(other.Warnings);
+        foreach (var error in other.Errors)
+        {
+            Errors.Add(error);
+        }
+        foreach (var warning in other.Warnings)
+        {
+            Warnings.Add(warning);
+        }
     }
 }

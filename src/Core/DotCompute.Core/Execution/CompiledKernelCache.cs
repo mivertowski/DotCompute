@@ -376,7 +376,7 @@ namespace DotCompute.Core.Execution
 
         /// <summary>Gets or sets the compute capability version used for kernel compilation.</summary>
         /// <remarks>
-        /// This property stores the target compute capability (e.g., "7.5", "8.6") 
+        /// This property stores the target compute capability (e.g., "7.5", "8.6")
         /// that was used when compiling the kernel. This information is important for
         /// ensuring compatibility and optimizing kernel selection for different GPU architectures.
         /// </remarks>

@@ -105,8 +105,7 @@ internal sealed class RegisterSpillingOptimizer
         foreach (var variable in localVariables)
         {
             var variableName = variable.Identifier.Text;
-            var declaration = variable.Parent as VariableDeclarationSyntax;
-            var typeInfo = declaration != null ? _semanticModel.GetTypeInfo(declaration.Type) : default;
+            var typeInfo = variable.Parent is VariableDeclarationSyntax declaration ? _semanticModel.GetTypeInfo(declaration.Type) : default;
 
             // Estimate registers based on type
 

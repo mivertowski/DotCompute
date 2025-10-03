@@ -126,10 +126,10 @@ public sealed class OpenCLAccelerator : IAccelerator
     public OpenCLAccelerator(ILogger<OpenCLAccelerator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         // Create a simple logger factory from the provided logger
         _loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(logger)));
-        
+
         _deviceManager = new OpenCLDeviceManager(_loggerFactory.CreateLogger<OpenCLDeviceManager>());
     }
 
@@ -192,10 +192,10 @@ public sealed class OpenCLAccelerator : IAccelerator
                 try
                 {
                     _context = new OpenCLContext(_selectedDevice, _loggerFactory.CreateLogger<OpenCLContext>());
-                    
+
                     // Create memory manager
                     _memoryManager = new OpenCLMemoryManager(this, _context, _loggerFactory.CreateLogger<OpenCLMemoryManager>());
-                    
+
                     _logger.LogInformation($"OpenCL accelerator initialized successfully with device: {_selectedDevice.Name}");
                 }
                 catch (Exception ex)
@@ -259,7 +259,7 @@ public sealed class OpenCLAccelerator : IAccelerator
         return await Task.Run(() =>
         {
             var buildOptions = DetermineBuildOptions(options);
-            
+
             // Create program from source
             var program = _context!.CreateProgramFromSource(definition.Source);
 
@@ -294,7 +294,7 @@ public sealed class OpenCLAccelerator : IAccelerator
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         if (_context == null)
         {
             _logger.LogDebug("Synchronize called on uninitialized accelerator");
@@ -321,7 +321,7 @@ public sealed class OpenCLAccelerator : IAccelerator
 
         // Map common options to OpenCL flags - for now just use ReadWrite
         // In a full implementation, this would map specific flags
-        
+
         return flags;
     }
 

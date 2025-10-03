@@ -10,7 +10,7 @@ namespace DotCompute.Core.Pipelines.Models;
 /// <summary>
 /// Execution context for pipeline operations in the Core pipeline system.
 /// </summary>
-public sealed class PipelineExecutionContext : AbstractionsMemory.Models.Pipelines.PipelineExecutionContext, IDisposable, IAsyncDisposable
+public sealed class PipelineExecutionContext : DotCompute.Abstractions.Models.Pipelines.PipelineExecutionContext, IDisposable, IAsyncDisposable
 {
     private bool _disposed;
     private string? _pipelineId;

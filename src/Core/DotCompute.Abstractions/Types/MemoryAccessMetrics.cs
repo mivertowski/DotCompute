@@ -25,7 +25,7 @@ public readonly struct MemoryAccessMetrics(
     int alignmentBytes = 1,
     bool isCoalesced = false,
     long peakMemoryUsage = 0,
-    int fragmentationEvents = 0)
+    int fragmentationEvents = 0) : IEquatable<MemoryAccessMetrics>
 {
     /// <summary>
     /// Total bytes transferred
@@ -277,5 +277,74 @@ public readonly struct MemoryAccessMetrics(
         $"Latency: {LatencyMicroseconds:F2}μs\n" +
         $"Memory: {SourceMemoryType} → {DestinationMemoryType}\n" +
         $"Efficiency: {EfficiencyScore:P1} ({(IsHighPerformance ? "High" : "Standard")})";
+
+    /// <summary>
+    /// Determines whether the current instance is equal to another MemoryAccessMetrics instance.
+    /// </summary>
+    /// <param name="other">The MemoryAccessMetrics instance to compare with this instance.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public bool Equals(MemoryAccessMetrics other)
+        => BytesTransferred == other.BytesTransferred &&
+        Duration == other.Duration &&
+        AccessCount == other.AccessCount &&
+        AccessPattern == other.AccessPattern &&
+        CacheHitRate == other.CacheHitRate &&
+        CacheMisses == other.CacheMisses &&
+        LatencyNanoseconds == other.LatencyNanoseconds &&
+        SourceMemoryType == other.SourceMemoryType &&
+        DestinationMemoryType == other.DestinationMemoryType &&
+        AlignmentBytes == other.AlignmentBytes &&
+        IsCoalesced == other.IsCoalesced &&
+        PeakMemoryUsage == other.PeakMemoryUsage &&
+        FragmentationEvents == other.FragmentationEvents;
+
+    /// <summary>
+    /// Determines whether the current instance is equal to a specified object.
+    /// </summary>
+    /// <param name="obj">The object to compare with this instance.</param>
+    /// <returns>true if obj is a MemoryAccessMetrics and is equal to this instance; otherwise, false.</returns>
+    public override bool Equals(object? obj)
+        => obj is MemoryAccessMetrics other && Equals(other);
+
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A hash code for the current instance.</returns>
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(BytesTransferred);
+        hash.Add(Duration);
+        hash.Add(AccessCount);
+        hash.Add(AccessPattern);
+        hash.Add(CacheHitRate);
+        hash.Add(CacheMisses);
+        hash.Add(LatencyNanoseconds);
+        hash.Add(SourceMemoryType);
+        hash.Add(DestinationMemoryType);
+        hash.Add(AlignmentBytes);
+        hash.Add(IsCoalesced);
+        hash.Add(PeakMemoryUsage);
+        hash.Add(FragmentationEvents);
+        return hash.ToHashCode();
+    }
+
+    /// <summary>
+    /// Determines whether two MemoryAccessMetrics instances are equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are equal; otherwise, false.</returns>
+    public static bool operator ==(MemoryAccessMetrics left, MemoryAccessMetrics right)
+        => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two MemoryAccessMetrics instances are not equal.
+    /// </summary>
+    /// <param name="left">The first instance to compare.</param>
+    /// <param name="right">The second instance to compare.</param>
+    /// <returns>true if the instances are not equal; otherwise, false.</returns>
+    public static bool operator !=(MemoryAccessMetrics left, MemoryAccessMetrics right)
+        => !left.Equals(right);
 }
 

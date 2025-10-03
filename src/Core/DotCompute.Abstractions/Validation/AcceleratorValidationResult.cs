@@ -250,6 +250,14 @@ public sealed class AcceleratorValidationResult
     /// <returns>The underlying UnifiedValidationResult.</returns>
     public static implicit operator UnifiedValidationResult(AcceleratorValidationResult result)
         => result._baseResult;
+
+    /// <summary>
+    /// Named alternative for implicit conversion to UnifiedValidationResult (CA2225).
+    /// </summary>
+    /// <param name="result">The AcceleratorValidationResult to convert.</param>
+    /// <returns>The underlying UnifiedValidationResult.</returns>
+    public static UnifiedValidationResult FromAcceleratorValidationResult(AcceleratorValidationResult result)
+        => result._baseResult;
 }
 
 /// <summary>

@@ -44,7 +44,7 @@ public class ExecutionStrategyGenerator(
 
         _ = sb.AppendLine("        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
         _ = sb.Append($"        public static void Execute(");
-        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.Declaration)));
         _ = sb.AppendLine(", int start, int end)");
         _ = sb.AppendLine("        {");
 
@@ -116,7 +116,7 @@ public class ExecutionStrategyGenerator(
 
 
         _ = sb.Append($"        public static void Execute(");
-        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.GetDeclaration())));
+        _ = sb.Append(string.Join(", ", Parameters.Select(p => p.Declaration)));
         _ = sb.AppendLine(", int length)");
         _ = sb.AppendLine("        {");
         _ = sb.AppendLine("            Execute(");

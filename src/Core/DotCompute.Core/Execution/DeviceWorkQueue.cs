@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
+using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Debugging.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution

@@ -1,4 +1,6 @@
 using DotCompute.Backends.CUDA.Execution.Types;
+using DotCompute.Abstractions.Types;
+using DotCompute.Abstractions.Execution;
 
 namespace DotCompute.Core.Models
 {

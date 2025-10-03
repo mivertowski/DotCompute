@@ -14,7 +14,7 @@ namespace DotCompute.Core.Recovery.Statistics;
 /// - Performance degradation trends
 /// - Circuit breaker state transitions for the service
 /// - Request volume and timing patterns
-/// 
+///
 /// This data is essential for service-level alerting and targeted recovery actions.
 /// </remarks>
 public class ServiceStatistics

@@ -6,7 +6,6 @@ namespace DotCompute.Abstractions.Interfaces.Recovery;
 /// <summary>
 /// Recovery capabilities that strategies can handle
 /// </summary>
-[Flags]
 public enum RecoveryCapability
 {
     None = 0,

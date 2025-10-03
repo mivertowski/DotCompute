@@ -76,9 +76,9 @@ public interface ITelemetryProvider : IDisposable
 
 
 /// <summary>
-/// Telemetry configuration options.
+/// Telemetry configuration options for the DotCompute telemetry system.
 /// </summary>
-public class TelemetryConfiguration
+public class TelemetryOptions
 {
     /// <summary>
     /// Gets or sets whether telemetry is enabled.
@@ -268,14 +268,21 @@ public static class Telemetry
     {
         get
         {
-            if (_provider == null)
+            // Double-check locking pattern for thread-safe lazy initialization
+            var provider = _provider;
+            if (provider == null)
             {
                 lock (_lock)
                 {
-                    _provider ??= new NullTelemetryProvider();
+                    provider = _provider;
+                    if (provider == null)
+                    {
+                        provider = new NullTelemetryProvider();
+                        _provider = provider;
+                    }
                 }
             }
-            return _provider;
+            return provider;
         }
         set
         {
@@ -292,7 +299,7 @@ public static class Telemetry
     /// Initializes the telemetry system with the specified configuration.
     /// TODO: UnifiedTelemetryProvider should be implemented in DotCompute.Core
     /// </summary>
-    public static void Initialize(TelemetryConfiguration configuration)
+    public static void Initialize(TelemetryOptions configuration)
         // TODO: Replace with actual implementation from DotCompute.Core
         => Provider = new NullTelemetryProvider();
 }
@@ -334,13 +341,32 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
         public IDisposable StartOperationScope(string operationName, string? operationId = null) => new NullHandle();
         public (T result, TimeSpan duration) TimeOperation<T>(string operationName, Func<T> operation) => (operation(), TimeSpan.Zero);
         public async Task<(T result, TimeSpan duration)> TimeOperationAsync<T>(string operationName, Func<Task<T>> operation) => (await operation(), TimeSpan.Zero);
-        public TimeSpan TimeOperation(string operationName, Action operation) { operation(); return TimeSpan.Zero; }
-        public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation) { await operation(); return TimeSpan.Zero; }
-        public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null) { }
+        public TimeSpan TimeOperation(string operationName, Action operation)
+        {
+            operation();
+            return TimeSpan.Zero;
+        }
+
+        public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
+        {
+            await operation();
+            return TimeSpan.Zero;
+        }
+        public void RecordTiming(string operationName, TimeSpan duration, string? operationId = null, IDictionary<string, object>? metadata = null)
+        {
+        }
+
         public OperationStatistics? GetStatistics(string operationName) => null;
+
         public IDictionary<string, OperationStatistics> GetAllStatistics() => new Dictionary<string, OperationStatistics>();
-        public void ClearStatistics(string operationName) { }
-        public void ClearAllStatistics() { }
+
+        public void ClearStatistics(string operationName)
+        {
+        }
+
+        public void ClearAllStatistics()
+        {
+        }
         public string ExportData(MetricsExportFormat format, Func<string, bool>? operationFilter = null) => string.Empty;
         public void SetEnabled(bool enabled) { }
         public void SetMinimumDurationThreshold(TimeSpan threshold) { }
@@ -352,7 +378,7 @@ internal sealed class NullTelemetryProvider : ITelemetryProvider
             public string OperationId => string.Empty;
             public DateTime StartTime => DateTime.UtcNow;
             public TimeSpan Elapsed => TimeSpan.Zero;
-            public TimeSpan Stop(IDictionary<string, object>? metadata = null) => TimeSpan.Zero;
+            public TimeSpan StopTimer(IDictionary<string, object>? metadata = null) => TimeSpan.Zero;
             public TimeSpan AddCheckpoint(string checkpointName) => TimeSpan.Zero;
             public IDictionary<string, TimeSpan> GetCheckpoints() => new Dictionary<string, TimeSpan>();
             public void Dispose() { }

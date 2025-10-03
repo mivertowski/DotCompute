@@ -12,7 +12,7 @@ using DotCompute.Core.Logging;
 namespace DotCompute.Core.Security;
 
 /// <summary>
-/// Provides comprehensive memory protection services including bounds checking, 
+/// Provides comprehensive memory protection services including bounds checking,
 /// guard pages, and secure memory management with defense against common memory vulnerabilities.
 /// </summary>
 public sealed class MemoryProtection : IDisposable

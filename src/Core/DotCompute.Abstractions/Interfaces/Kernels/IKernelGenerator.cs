@@ -2,8 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
-using DotCompute.Abstractions.Kernels.Types;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Kernels.Types;
 
 namespace DotCompute.Abstractions.Interfaces.Kernels
 {
@@ -151,9 +152,10 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
 
         private static Guid GenerateIdFromName(string name)
         {
-            // Generate a deterministic GUID from the name
+            // Generate a deterministic GUID from the name using SHA256 (more secure than SHA1)
+            // Note: This is for non-security purposes (ID generation), but using SHA256 to satisfy analyzers
             var bytes = System.Text.Encoding.UTF8.GetBytes(name);
-            var hash = System.Security.Cryptography.SHA1.Create().ComputeHash(bytes);
+            var hash = System.Security.Cryptography.SHA256.HashData(bytes);
             var guid = new byte[16];
             Array.Copy(hash, guid, 16);
             return new Guid(guid);
@@ -256,11 +258,13 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Single precision (32-bit)
         /// </summary>
+        [SuppressMessage("Naming", "CA1720:Identifier 'Single' contains type name", Justification = "Enum member represents single-precision floating-point type; renaming would reduce clarity")]
         Single,
 
         /// <summary>
         /// Double precision (64-bit)
         /// </summary>
+        [SuppressMessage("Naming", "CA1720:Identifier 'Double' contains type name", Justification = "Enum member represents double-precision floating-point type; renaming would reduce clarity")]
         Double,
 
         /// <summary>

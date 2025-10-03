@@ -52,7 +52,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var cos = (float)Math.Cos(angleRadians);
             var sin = (float)Math.Sin(angleRadians);
-            
+
             var matrix = Matrix.Identity(4);
             matrix[0, 0] = cos;
             matrix[0, 1] = -sin;
@@ -70,7 +70,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var cos = (float)Math.Cos(angleRadians);
             var sin = (float)Math.Sin(angleRadians);
-            
+
             var matrix = Matrix.Identity(4);
             matrix[1, 1] = cos;
             matrix[1, 2] = -sin;
@@ -88,7 +88,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var cos = (float)Math.Cos(angleRadians);
             var sin = (float)Math.Sin(angleRadians);
-            
+
             var matrix = Matrix.Identity(4);
             matrix[0, 0] = cos;
             matrix[0, 2] = sin;
@@ -106,43 +106,43 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static Matrix CreateRotationAroundAxis(Matrix axis, float angleRadians)
         {
             ArgumentNullException.ThrowIfNull(axis);
-            
+
             if (axis.Rows != 3 || axis.Columns != 1)
             {
                 throw new ArgumentException("Axis must be a 3x1 column vector.");
             }
-            
+
             var x = axis[0, 0];
             var y = axis[1, 0];
             var z = axis[2, 0];
-            
+
             var cos = (float)Math.Cos(angleRadians);
             var sin = (float)Math.Sin(angleRadians);
             var oneMinusCos = 1.0f - cos;
-            
+
             var matrix = new Matrix(4, 4);
-            
+
             // Rodrigues' rotation formula in matrix form
             matrix[0, 0] = cos + x * x * oneMinusCos;
             matrix[0, 1] = x * y * oneMinusCos - z * sin;
             matrix[0, 2] = x * z * oneMinusCos + y * sin;
             matrix[0, 3] = 0;
-            
+
             matrix[1, 0] = y * x * oneMinusCos + z * sin;
             matrix[1, 1] = cos + y * y * oneMinusCos;
             matrix[1, 2] = y * z * oneMinusCos - x * sin;
             matrix[1, 3] = 0;
-            
+
             matrix[2, 0] = z * x * oneMinusCos - y * sin;
             matrix[2, 1] = z * y * oneMinusCos + x * sin;
             matrix[2, 2] = cos + z * z * oneMinusCos;
             matrix[2, 3] = 0;
-            
+
             matrix[3, 0] = 0;
             matrix[3, 1] = 0;
             matrix[3, 2] = 0;
             matrix[3, 3] = 1;
-            
+
             return matrix;
         }
 
@@ -154,39 +154,39 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static Matrix CreateReflection(Matrix planeNormal)
         {
             ArgumentNullException.ThrowIfNull(planeNormal);
-            
+
             if (planeNormal.Rows != 3 || planeNormal.Columns != 1)
             {
                 throw new ArgumentException("Plane normal must be a 3x1 column vector.");
             }
-            
+
             var nx = planeNormal[0, 0];
             var ny = planeNormal[1, 0];
             var nz = planeNormal[2, 0];
-            
+
             var matrix = new Matrix(4, 4);
-            
+
             // Reflection matrix: I - 2 * n * n^T
             matrix[0, 0] = 1 - 2 * nx * nx;
             matrix[0, 1] = -2 * nx * ny;
             matrix[0, 2] = -2 * nx * nz;
             matrix[0, 3] = 0;
-            
+
             matrix[1, 0] = -2 * ny * nx;
             matrix[1, 1] = 1 - 2 * ny * ny;
             matrix[1, 2] = -2 * ny * nz;
             matrix[1, 3] = 0;
-            
+
             matrix[2, 0] = -2 * nz * nx;
             matrix[2, 1] = -2 * nz * ny;
             matrix[2, 2] = 1 - 2 * nz * nz;
             matrix[2, 3] = 0;
-            
+
             matrix[3, 0] = 0;
             matrix[3, 1] = 0;
             matrix[3, 2] = 0;
             matrix[3, 3] = 1;
-            
+
             return matrix;
         }
 
@@ -200,7 +200,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         /// <param name="shearZX">Shear factor for Z in X direction.</param>
         /// <param name="shearZY">Shear factor for Z in Y direction.</param>
         /// <returns>Shear transformation matrix.</returns>
-        public static Matrix CreateShear(float shearXY = 0, float shearXZ = 0, float shearYX = 0, 
+        public static Matrix CreateShear(float shearXY = 0, float shearXZ = 0, float shearYX = 0,
                                        float shearYZ = 0, float shearZX = 0, float shearZY = 0)
         {
             var matrix = Matrix.Identity(4);
@@ -225,14 +225,14 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             var tanHalfFov = (float)Math.Tan(fieldOfViewRadians * 0.5f);
             var range = nearPlane - farPlane;
-            
+
             var matrix = new Matrix(4, 4);
             matrix[0, 0] = 1.0f / (aspectRatio * tanHalfFov);
             matrix[1, 1] = 1.0f / tanHalfFov;
             matrix[2, 2] = (farPlane + nearPlane) / range;
             matrix[2, 3] = 2.0f * farPlane * nearPlane / range;
             matrix[3, 2] = -1.0f;
-            
+
             return matrix;
         }
 
@@ -249,22 +249,22 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         public static Matrix CreateOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
         {
             var matrix = new Matrix(4, 4);
-            
+
             var width = right - left;
             var height = top - bottom;
             var depth = farPlane - nearPlane;
-            
+
             matrix[0, 0] = 2.0f / width;
             matrix[0, 3] = -(right + left) / width;
-            
+
             matrix[1, 1] = 2.0f / height;
             matrix[1, 3] = -(top + bottom) / height;
-            
+
             matrix[2, 2] = -2.0f / depth;
             matrix[2, 3] = -(farPlane + nearPlane) / depth;
-            
+
             matrix[3, 3] = 1.0f;
-            
+
             return matrix;
         }
 
@@ -280,53 +280,53 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             ArgumentNullException.ThrowIfNull(eye);
             ArgumentNullException.ThrowIfNull(target);
             ArgumentNullException.ThrowIfNull(up);
-            
+
             if (eye.Rows != 3 || eye.Columns != 1 ||
                 target.Rows != 3 || target.Columns != 1 ||
                 up.Rows != 3 || up.Columns != 1)
             {
                 throw new ArgumentException("Eye, target, and up vectors must be 3x1 column vectors.");
             }
-            
+
             // Compute forward vector (normalized)
             var forward = new Matrix(3, 1);
             forward[0, 0] = target[0, 0] - eye[0, 0];
             forward[1, 0] = target[1, 0] - eye[1, 0];
             forward[2, 0] = target[2, 0] - eye[2, 0];
             forward = NormalizeVector(forward);
-            
+
             // Compute right vector (forward x up, normalized)
             var right = CrossProduct(forward, up);
             right = NormalizeVector(right);
-            
+
             // Compute true up vector (right x forward)
             var trueUp = CrossProduct(right, forward);
-            
+
             // Create view matrix
             var matrix = new Matrix(4, 4);
-            
+
             // Right vector
             matrix[0, 0] = right[0, 0];
             matrix[1, 0] = right[1, 0];
             matrix[2, 0] = right[2, 0];
-            
+
             // Up vector
             matrix[0, 1] = trueUp[0, 0];
             matrix[1, 1] = trueUp[1, 0];
             matrix[2, 1] = trueUp[2, 0];
-            
+
             // Forward vector (negated for right-handed system)
             matrix[0, 2] = -forward[0, 0];
             matrix[1, 2] = -forward[1, 0];
             matrix[2, 2] = -forward[2, 0];
-            
+
             // Translation
             matrix[0, 3] = -DotProduct(right, eye);
             matrix[1, 3] = -DotProduct(trueUp, eye);
             matrix[2, 3] = DotProduct(forward, eye);
-            
+
             matrix[3, 3] = 1.0f;
-            
+
             return matrix;
         }
 
@@ -341,7 +341,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
         {
             ArgumentNullException.ThrowIfNull(transformation);
             ArgumentNullException.ThrowIfNull(point);
-            
+
             // Convert to homogeneous coordinates if needed
             Matrix homogeneousPoint;
             if (point.Rows == 3 && point.Columns == 1)
@@ -360,7 +360,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             {
                 throw new ArgumentException("Point must be a 3x1 or 4x1 column vector.");
             }
-            
+
             // Apply transformation
             Matrix result;
             if (accelerator != null)
@@ -383,7 +383,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     }
                 }
             }
-            
+
             // Convert back to 3D if needed and perform perspective divide for points
             if (result.Rows == 4 && isPoint && Math.Abs(result[3, 0]) > 1e-10f)
             {
@@ -394,7 +394,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 converted[2, 0] = result[2, 0] / w;
                 return converted;
             }
-            
+
             return result;
         }
 

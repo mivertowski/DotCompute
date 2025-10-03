@@ -32,7 +32,7 @@ public sealed class SimdSummary
     /// </value>
     public required IReadOnlySet<string> SupportedInstructionSets { get; init; }
 
-    // Helper properties for quick checks    
+    // Helper properties for quick checks
     /// <summary>
     /// Gets a value indicating whether [supports sse2].
     /// </summary>

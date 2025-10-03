@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class ResultComparisonReport
     public string KernelName { get; init; } = string.Empty;
     public bool ResultsMatch { get; init; }
     public IReadOnlyList<string> BackendsCompared { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<ResultDifference> Differences { get; init; } = [];
+    public Collection<ResultDifference> Differences { get; init; } = [];
     public ComparisonStrategy Strategy { get; init; }
     public float Tolerance { get; init; }
     public Dictionary<string, PerformanceMetrics> PerformanceComparison { get; init; } = [];
@@ -29,7 +31,7 @@ public class ResultComparisonReport
     /// <summary>
     /// List of comparison issues found between the results.
     /// </summary>
-    public IReadOnlyList<ComparisonIssue> Issues { get; init; } = [];
+    public Collection<ComparisonIssue> Issues { get; init; } = [];
 
     /// <summary>
     /// Time when the comparison was performed.

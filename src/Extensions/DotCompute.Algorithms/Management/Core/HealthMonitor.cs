@@ -265,7 +265,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
             // Calculate error rate based on recent errors
             var errorCount = loadedPlugin.LastError != null ? 1 : 0;
 
-            // Get historical error count if available  
+            // Get historical error count if available
             var totalErrors = 0L;
             if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out object? totalErrorsObj))
             {

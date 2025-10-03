@@ -24,7 +24,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// and applications where memory efficiency is critical. Often used in
         /// image processing, neural networks, and embedded applications.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int8 = 1 << 0,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 16-bit signed integer support (-32,768 to 32,767).
@@ -34,7 +36,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// integer values. Commonly used for audio processing, intermediate
         /// calculations, and applications requiring more range than 8-bit integers.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int16 = 1 << 1,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 32-bit signed integer support (-2,147,483,648 to 2,147,483,647).
@@ -44,7 +48,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// for array indices, counters, and general-purpose integer arithmetic.
         /// Widely supported across all device types and programming languages.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int32 = 1 << 2,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 64-bit signed integer support (-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807).
@@ -54,7 +60,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// and applications requiring very large numeric ranges. May have
         /// performance implications on some devices due to register pressure.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int64 = 1 << 3,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 16-bit IEEE 754 half-precision floating-point support.
@@ -74,7 +82,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// Provides good balance of range, precision, and performance. Range: approximately
         /// ±3.4×10³⁸ with ~7 decimal digits of precision.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Float32 = 1 << 5,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 64-bit IEEE 754 double-precision floating-point support.
@@ -84,7 +94,9 @@ namespace DotCompute.Abstractions.Models.Device
         /// and applications requiring extended precision. Range: approximately ±1.8×10³⁰⁸
         /// with ~15 decimal digits of precision. May be emulated on some devices.
         /// </remarks>
+#pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Float64 = 1 << 6,
+#pragma warning restore CA1720
 
         /// <summary>
         /// 16-bit Brain Floating Point format support (bfloat16).

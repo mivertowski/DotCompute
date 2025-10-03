@@ -4,7 +4,7 @@ namespace DotCompute.Backends.CUDA.Types
     /// Flags for CUDA managed memory allocation and behavior.
     /// </summary>
     [Flags]
-    public enum ManagedMemoryFlags
+    public enum ManagedMemoryOptions
     {
         /// <summary>
         /// Default managed memory behavior.
@@ -15,12 +15,6 @@ namespace DotCompute.Backends.CUDA.Types
         /// Memory should be initially resident on the device.
         /// </summary>
         PreferDevice = 0x01,
-
-
-        /// <summary>
-        /// Memory should be initially resident on the device (CUDA native value).
-        /// </summary>
-        PreferDeviceNative = 0x10,
 
         /// <summary>
         /// Memory should be initially resident on the host.

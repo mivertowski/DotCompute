@@ -69,7 +69,6 @@ public sealed class PerformanceProfilerOptions
     /// Gets or sets whether to enable detailed profiling.
     /// </summary>
     public bool DetailedProfiling { get; set; }
-
 }
 
 /// <summary>
@@ -91,7 +90,6 @@ public sealed class StructuredLoggingOptions
     /// Gets or sets whether to include stack traces.
     /// </summary>
     public bool IncludeStackTrace { get; set; }
-
 }
 
 /// <summary>

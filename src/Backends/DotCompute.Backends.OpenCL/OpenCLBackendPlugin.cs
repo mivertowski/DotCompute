@@ -52,8 +52,8 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     /// <summary>
     /// Gets the capabilities supported by this OpenCL backend plugin.
     /// </summary>
-    public PluginCapabilities Capabilities => 
-        PluginCapabilities.ComputeBackend | 
+    public PluginCapabilities Capabilities =>
+        PluginCapabilities.ComputeBackend |
         PluginCapabilities.Scalable |
         PluginCapabilities.CrossPlatform;
 
@@ -106,7 +106,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         services.AddTransient<OpenCLAccelerator>();
 
         // Register factory as singleton for efficient device enumeration
-        services.AddSingleton<ILogger<OpenCLDeviceManager>>(provider => 
+        services.AddSingleton<ILogger<OpenCLDeviceManager>>(provider =>
             provider.GetRequiredService<ILogger<OpenCLDeviceManager>>());
 
         _logger.LogDebug("OpenCL backend services configured successfully");
@@ -143,7 +143,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                         {
                             _state = PluginState.Initialized;
                             _health = PluginHealth.Healthy;
-                            
+
                             var deviceCount = deviceManager.AllDevices.Count();
                             _logger.LogInformation("OpenCL backend initialized successfully with {deviceCount} devices");
                         }
@@ -164,7 +164,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                     // Notify state changes
                     if (oldState != _state)
                         StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
-                    
+
                     if (oldHealth != _health)
                         HealthChanged?.Invoke(this, new PluginHealthChangedEventArgs(oldHealth, _health));
                 }
@@ -172,12 +172,12 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                 {
                     var oldState = _state;
                     var oldHealth = _health;
-                    
+
                     _state = PluginState.Failed;
                     _health = PluginHealth.Unhealthy;
-                    
+
                     _logger.LogError(ex, "Failed to initialize OpenCL backend plugin");
-                    
+
                     ErrorOccurred?.Invoke(this, new PluginErrorEventArgs(ex, "Initialization failed"));
                     StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
                     HealthChanged?.Invoke(this, new PluginHealthChangedEventArgs(oldHealth, _health));
@@ -203,11 +203,11 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
 
             var oldState = _state;
             _state = PluginState.Running;
-            
+
             _logger.LogInformation("OpenCL backend plugin started successfully");
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -222,11 +222,11 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
         {
             var oldState = _state;
             _state = PluginState.Stopped;
-            
+
             _logger.LogInformation("OpenCL backend plugin stopped");
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -254,7 +254,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
             var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger)));
             var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
             var hasDevices = deviceManager.IsOpenCLAvailable;
-            
+
             if (!hasDevices)
             {
                 result.IsValid = false;
@@ -276,7 +276,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
 
             result.IsValid = true;
             result.Warnings.Add($"Found {suitableDevices.Count} suitable OpenCL devices");
-            
+
             foreach (var device in suitableDevices.Take(3)) // Log first 3 devices
             {
                 result.Warnings.Add($"Device: {device.Name} ({device.Vendor}) - {device.Type}");
@@ -339,12 +339,12 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("OpenCL backend configuration updated");
-        
+
         // In a full implementation, we might want to:
         // - Update preferred device selection
         // - Adjust memory allocation limits
         // - Enable/disable profiling
-        
+
         return Task.CompletedTask;
     }
 
@@ -355,7 +355,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
     public PluginMetrics GetMetrics()
     {
         var metrics = new PluginMetrics();
-        
+
         try
         {
             if (_health == PluginHealth.Healthy)
@@ -363,7 +363,7 @@ public sealed class OpenCLBackendPlugin : IBackendPlugin
                 // Add OpenCL-specific metrics
                 var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new SingleLoggerProvider(_logger)));
                 var deviceManager = new OpenCLDeviceManager(loggerFactory.CreateLogger<OpenCLDeviceManager>());
-                
+
                 metrics.CustomMetrics["opencl_devices_available"] = deviceManager.AllDevices.Count();
                 metrics.CustomMetrics["opencl_platforms_available"] = deviceManager.Platforms.Count;
                 metrics.CustomMetrics["status"] = "Healthy";

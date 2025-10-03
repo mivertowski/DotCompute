@@ -205,7 +205,7 @@ namespace DotCompute.Core.Memory
                 return new TransferStrategy
                 {
                     Type = TransferType.HostMediated,
-                    EstimatedBandwidthGBps = 16.0, // Host bandwidth  
+                    EstimatedBandwidthGBps = 16.0, // Host bandwidth
                     ChunkSize = 1 * 1024 * 1024 // 1MB chunks
                 };
             }
@@ -480,7 +480,7 @@ namespace DotCompute.Core.Memory
             // In real implementation, this would call CUDA runtime APIs
             // cudaSetDevice(device1Id)
             // cudaDeviceEnablePeerAccess(device2Id, 0)
-            // cudaSetDevice(device2Id) 
+            // cudaSetDevice(device2Id)
             // cudaDeviceEnablePeerAccess(device1Id, 0)
 
             return true; // Assume success for this implementation
@@ -497,7 +497,7 @@ namespace DotCompute.Core.Memory
             // In real implementation, this would call CUDA runtime APIs
             // cudaSetDevice(device1Id)
             // cudaDeviceDisablePeerAccess(device2Id)
-            // cudaSetDevice(device2Id) 
+            // cudaSetDevice(device2Id)
             // cudaDeviceDisablePeerAccess(device1Id)
 
             return true; // Assume success for this implementation

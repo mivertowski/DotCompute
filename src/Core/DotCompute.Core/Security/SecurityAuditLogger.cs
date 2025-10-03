@@ -110,7 +110,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         try
         {
             var entriesToFlush = new List<SecurityLogEntry>();
-            
+
             // Dequeue all pending entries
             while (_auditQueue.TryDequeue(out var entry))
             {
@@ -176,7 +176,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         var entries = new List<SecurityLogEntry>();
         var auditDirectory = Path.GetDirectoryName(_auditLogPath) ?? "";
-        
+
         try
         {
             // Get all audit log files that might contain entries in the date range
@@ -206,8 +206,8 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
                             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                         });
 
-                        if (entry != null && 
-                            entry.Timestamp >= startDate && 
+                        if (entry != null &&
+                            entry.Timestamp >= startDate &&
                             entry.Timestamp <= endDate &&
                             (additionalFilter?.Invoke(entry) ?? true))
                         {
@@ -263,7 +263,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
         // Write header
         _ = csv.AppendLine("Id,SequenceNumber,Timestamp,EventType,Level,Message,UserId,ResourceId,CorrelationId,CallerName");
-        
+
         // Write entries
         foreach (var entry in entries)
         {
@@ -278,7 +278,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
                           $"{EscapeCsv(entry.CorrelationId)}," +
                           $"{EscapeCsv(entry.CallerName ?? "")}");
         }
-        
+
         await File.WriteAllTextAsync(exportPath, csv.ToString());
     }
 
@@ -292,10 +292,10 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
         await using var fileStream = new FileStream(exportPath, FileMode.Create);
         await using var xmlWriter = XmlWriter.Create(fileStream, settings);
-        
+
         await xmlWriter.WriteStartDocumentAsync();
         await xmlWriter.WriteStartElementAsync(null, "SecurityAuditLog", null);
-        
+
         foreach (var entry in entries)
         {
             await xmlWriter.WriteStartElementAsync(null, "Entry", null);
@@ -343,8 +343,8 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         var fileName = Path.GetFileNameWithoutExtension(filePath);
         var datePart = fileName.Replace("security_audit_", "");
-        
-        if (DateTime.TryParseExact(datePart, "yyyyMMdd", null, 
+
+        if (DateTime.TryParseExact(datePart, "yyyyMMdd", null,
             DateTimeStyles.None, out var fileDate))
         {
             return fileDate >= startDate.Date && fileDate <= endDate.Date;

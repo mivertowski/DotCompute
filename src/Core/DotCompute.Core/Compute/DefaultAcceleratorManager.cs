@@ -27,7 +27,7 @@ namespace DotCompute.Core.Compute
         /// or
         /// No default accelerator available
         /// </exception>
-        public IAccelerator Default
+        public IAccelerator DefaultAccelerator
         {
             get
             {
@@ -39,6 +39,11 @@ namespace DotCompute.Core.Compute
                 return _default ?? throw new InvalidOperationException("No default accelerator available");
             }
         }
+
+        /// <summary>
+        /// Gets the default accelerator instance (legacy property for compatibility).
+        /// </summary>
+        public IAccelerator Default => DefaultAccelerator;
 
         /// <summary>
         /// Gets all available accelerators.

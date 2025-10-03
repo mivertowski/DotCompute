@@ -10,7 +10,9 @@ namespace DotCompute.Abstractions.Interfaces.Device
     /// Represents a command queue for scheduling and executing operations on a compute device.
     /// Command queues provide ordered execution of kernels, memory operations, and synchronization primitives.
     /// </summary>
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - "Queue" is appropriate for command queue concept
     public interface ICommandQueue : IAsyncDisposable
+#pragma warning restore CA1711
     {
         /// <summary>
         /// Gets the unique identifier for this command queue.
