@@ -64,16 +64,7 @@ public sealed class EncryptionManager : IDisposable
             aes.KeySize = keySize;
             aes.GenerateKey();
 
-            return new SecureKeyContainer
-            {
-                KeyType = KeyType.AES,
-                KeySize = keySize,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = (byte[])aes.Key.Clone()
-            };
+            return new SecureKeyContainer(KeyType.AES, (byte[])aes.Key.Clone(), identifier, purpose, keySize);
         });
     }
 
@@ -95,16 +86,7 @@ public sealed class EncryptionManager : IDisposable
             var keyBytes = new byte[32]; // ChaCha20 uses 256-bit keys
             _randomGenerator.GetBytes(keyBytes);
 
-            return new SecureKeyContainer
-            {
-                KeyType = KeyType.ChaCha20,
-                KeySize = 256,
-                Identifier = identifier,
-                Purpose = purpose,
-                CreationTime = DateTimeOffset.UtcNow,
-                KeyData = new SecureString(),
-                RawKeyData = keyBytes
-            };
+            return new SecureKeyContainer(KeyType.ChaCha20, keyBytes, identifier, purpose, 256);
         });
     }
 
