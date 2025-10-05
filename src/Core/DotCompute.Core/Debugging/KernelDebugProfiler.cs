@@ -93,10 +93,10 @@ public sealed partial class KernelDebugProfiler(
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = success,
-                Result = result,
-                ExecutionTime = stopwatch.Elapsed,
+                Output = result,
+                Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
                 ErrorMessage = null,
-                ExecutedAt = DateTime.UtcNow
+                Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernelName, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true }
             };
 
             // Store in execution history
@@ -121,10 +121,11 @@ public sealed partial class KernelDebugProfiler(
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = false,
-                Result = null,
-                ExecutionTime = stopwatch.Elapsed,
+                Output = null,
+                Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
                 ErrorMessage = ex.Message,
-                ExecutedAt = DateTime.UtcNow
+                Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernelName, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true },
+                Error = ex
             };
 
             _executionHistory.Enqueue(failedResult);
@@ -311,7 +312,7 @@ public sealed partial class KernelDebugProfiler(
                 SuccessfulExecutions = 0,
                 FailedExecutions = 0,
                 SuccessRate = 0.0,
-                AverageExecutionTime = TimeSpan.Zero,
+                AverageTimeMs = TimeSpan.Zero,
                 BackendMetrics = new Dictionary<string, PerformanceMetrics>()
             });
         }
@@ -347,7 +348,7 @@ public sealed partial class KernelDebugProfiler(
             SuccessfulExecutions = successfulExecutions,
             FailedExecutions = failedExecutions,
             SuccessRate = successfulExecutions / (double)relevantResults.Count,
-            AverageExecutionTime = TimeSpan.FromMilliseconds(avgExecutionTime),
+            AverageTimeMs = TimeSpan.FromMilliseconds(avgExecutionTime),
             BackendMetrics = backendMetrics,
             AverageMemoryUsage = relevantResults.Sum(GetMemoryUsage) / relevantResults.Count,
             GeneratedAt = DateTime.UtcNow
@@ -557,7 +558,7 @@ public sealed partial class KernelDebugProfiler(
                 TotalExecutions = 0,
                 SuccessfulExecutions = 0,
                 FailedExecutions = 0,
-                AverageExecutionTime = TimeSpan.Zero,
+                AverageTimeMs = TimeSpan.Zero,
                 LastExecutionTime = null
             };
         }
@@ -572,7 +573,7 @@ public sealed partial class KernelDebugProfiler(
             TotalExecutions = relevantResults.Count(),
             SuccessfulExecutions = successfulExecutions,
             FailedExecutions = relevantResults.Count - successfulExecutions,
-            AverageExecutionTime = avgTime,
+            AverageTimeMs = avgTime,
             LastExecutionTime = relevantResults.Max(r => r.ExecutedAt)
         };
     }

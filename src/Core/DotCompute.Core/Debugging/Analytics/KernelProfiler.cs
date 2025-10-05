@@ -249,9 +249,9 @@ public sealed partial class KernelProfiler : IDisposable
                 AcceleratorType = acceleratorType,
                 DataPoints = data.Count,
                 AverageExecutionTimeMs = data.Average(d => d.Timings.TotalMilliseconds),
-                MedianExecutionTime = CalculateMedian(data.Select(d => d.Timings.TotalMilliseconds)),
-                MinExecutionTime = data.Min(d => d.Timings.TotalMilliseconds),
-                MaxExecutionTime = data.Max(d => d.Timings.TotalMilliseconds),
+                MedianTimeMs = CalculateMedian(data.Select(d => d.Timings.TotalMilliseconds)),
+                MinTimeMs = data.Min(d => d.Timings.TotalMilliseconds),
+                MaxTimeMs = data.Max(d => d.Timings.TotalMilliseconds),
                 StandardDeviation = CalculateStandardDeviation(data.Select(d => d.Timings.TotalMilliseconds)),
                 AverageMemoryUsage = data.Average(d => d.MemoryUsage.AllocatedMemory),
                 SuccessRate = data.Count(d => d.Success) / (double)data.Count * 100,
@@ -352,7 +352,7 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new PerformanceAnomaly
             {
-                Type = AnomalyType.Timings,
+                Type = AnomalyType.ExecutionTime,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
                 Value = data.Timings.TotalMilliseconds,
@@ -372,7 +372,7 @@ public sealed partial class KernelProfiler : IDisposable
         {
             anomalies.Add(new PerformanceAnomaly
             {
-                Type = AnomalyType.MemoryUsage,
+                Type = AnomalyType.Memory,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
                 Value = data.MemoryUsage.AllocatedMemory,
@@ -490,9 +490,9 @@ public sealed partial class KernelProfiler : IDisposable
         return new PerformanceMetrics
         {
             ExecutionTimeMs = executionTime.TotalMilliseconds,
-            MemoryAllocatedBytes = memoryAllocated,
-            ThroughputOpsPerSec = executionTime.TotalSeconds > 0 ? 1.0 / executionTime.TotalSeconds : 0.0,
-            EfficiencyScore = CalculateEfficiencyScore(executionTime, memoryAllocated)
+            MemoryUsageBytes = memoryAllocated,
+            OperationsPerSecond = executionTime.TotalSeconds > 0 ? 1.0 / executionTime.TotalSeconds : 0.0,
+            ComputeUtilization = CalculateEfficiencyScore(executionTime, memoryAllocated)
         };
     }
 
@@ -523,10 +523,10 @@ public sealed partial class KernelProfiler : IDisposable
         return new PerformanceAnalysis
         {
             DataPoints = data.Count,
-            AverageExecutionTime = executionTimes.Average(),
-            MedianExecutionTime = CalculateMedian(executionTimes),
-            MinExecutionTime = executionTimes.Min(),
-            MaxExecutionTime = executionTimes.Max(),
+            AverageTimeMs = executionTimes.Average(),
+            MedianTimeMs = CalculateMedian(executionTimes),
+            MinTimeMs = executionTimes.Min(),
+            MaxTimeMs = executionTimes.Max(),
             ExecutionTimeStdDev = CalculateStandardDeviation(executionTimes),
             AverageMemoryUsage = memoryUsages.Average(),
             PeakMemoryUsage = memoryUsages.Max(),

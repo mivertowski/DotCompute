@@ -377,9 +377,9 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Timing analysis
 
-            AverageExecutionTime = kernelExecutions.Average(k => k.Timings.TotalMilliseconds),
-            MinExecutionTime = kernelExecutions.Min(k => k.Timings.TotalMilliseconds),
-            MaxExecutionTime = kernelExecutions.Max(k => k.Timings.TotalMilliseconds),
+            AverageTimeMs = kernelExecutions.Average(k => k.Timings.TotalMilliseconds),
+            MinTimeMs = kernelExecutions.Min(k => k.Timings.TotalMilliseconds),
+            MaxTimeMs = kernelExecutions.Max(k => k.Timings.TotalMilliseconds),
             ExecutionTimeStdDev = CalculateStandardDeviation(kernelExecutions.Select(k => k.Timings.TotalMilliseconds)),
 
             // Performance metrics

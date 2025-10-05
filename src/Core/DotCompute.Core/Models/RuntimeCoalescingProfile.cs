@@ -137,9 +137,9 @@ namespace DotCompute.Core.Models
 
                 EstimatedBandwidth = 0.0;
                 EstimatedCoalescingEfficiency = 0.0;
-                AverageExecutionTime = TimeSpan.Zero;
-                MinExecutionTime = TimeSpan.MaxValue;
-                MaxExecutionTime = TimeSpan.Zero;
+                AverageTimeMs = TimeSpan.Zero;
+                MinTimeMs = TimeSpan.MaxValue;
+                MaxTimeMs = TimeSpan.Zero;
             }
         }
 
@@ -162,25 +162,25 @@ namespace DotCompute.Core.Models
 
                 if (_executionTimes.Count == 1)
                 {
-                    MinExecutionTime = executionTime;
-                    MaxExecutionTime = executionTime;
+                    MinTimeMs = executionTime;
+                    MaxTimeMs = executionTime;
                 }
                 else
                 {
                     if (executionTime < MinExecutionTime)
                     {
-                        MinExecutionTime = executionTime;
+                        MinTimeMs = executionTime;
                     }
 
 
                     if (executionTime > MaxExecutionTime)
                     {
-                        MaxExecutionTime = executionTime;
+                        MaxTimeMs = executionTime;
                     }
                 }
 
 
-                AverageExecutionTime = TimeSpan.FromMilliseconds(_executionTimes.Average());
+                AverageTimeMs = TimeSpan.FromMilliseconds(_executionTimes.Average());
 
                 // Update calculated values
 

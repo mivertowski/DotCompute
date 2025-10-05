@@ -113,7 +113,7 @@ public sealed class KernelProfiler(
                 BackendType = backendType,
                 Success = result != null,
                 Output = result,
-                Timings = new KernelExecutionTimings { TotalTime = stopwatch.Elapsed },
+                Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
                 MemoryAllocated = finalMemory - initialMemory,
                 Handle = new ExecutionHandle(Guid.NewGuid())
             });
@@ -382,9 +382,9 @@ public sealed class KernelProfiler(
             SuccessfulExecutions = successful,
             FailedExecutions = failed,
             SuccessRate = successRate,
-            AverageExecutionTime = executionTimes.Length > 0 ? executionTimes.Average() : 0,
-            MinExecutionTime = executionTimes.Length > 0 ? executionTimes.Min() : 0,
-            MaxExecutionTime = executionTimes.Length > 0 ? executionTimes.Max() : 0,
+            AverageTimeMs = executionTimes.Length > 0 ? executionTimes.Average() : 0,
+            MinTimeMs = executionTimes.Length > 0 ? executionTimes.Min() : 0,
+            MaxTimeMs = executionTimes.Length > 0 ? executionTimes.Max() : 0,
             StandardDeviation = CalculateStandardDeviation(executionTimes)
         };
     }

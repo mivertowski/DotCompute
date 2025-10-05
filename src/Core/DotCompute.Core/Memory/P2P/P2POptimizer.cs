@@ -79,7 +79,7 @@ namespace DotCompute.Core.Memory.P2P
                             OptimalPipelineDepth = CalculateOptimalPipelineDepth(pair.Capability),
                             PreferredStrategy = DeterminePreferredStrategy(pair.Capability),
                             BandwidthUtilization = 0.0,
-                            EfficiencyScore = 1.0,
+                            ComputeUtilization = 1.0,
                             LastUpdated = DateTimeOffset.UtcNow
                         };
 
@@ -470,7 +470,7 @@ namespace DotCompute.Core.Memory.P2P
                 OptimalPipelineDepth = CalculateOptimalPipelineDepth(capability),
                 PreferredStrategy = DeterminePreferredStrategy(capability),
                 BandwidthUtilization = 0.0,
-                EfficiencyScore = 1.0,
+                ComputeUtilization = 1.0,
                 OptimizationScore = CalculateInitialOptimizationScore(capability),
                 LastUpdated = DateTimeOffset.UtcNow
             };

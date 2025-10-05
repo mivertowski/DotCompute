@@ -130,7 +130,7 @@ namespace DotCompute.Core.Execution.Analysis
             if (succeeded && executionTime >= 0)
             {
                 TotalExecutionTime += executionTime;
-                AverageExecutionTime = TotalExecutionTime / newTotal;
+                AverageTimeMs = TotalExecutionTime / newTotal;
             }
 
 
@@ -146,7 +146,7 @@ namespace DotCompute.Core.Execution.Analysis
             SuccessRate = 1.0;
             AverageEfficiency = 80.0;
             TotalExecutions = 0;
-            AverageExecutionTime = 0.0;
+            AverageTimeMs = 0.0;
             TotalExecutionTime = 0.0;
             LastUpdated = DateTime.UtcNow;
         }

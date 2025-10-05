@@ -430,9 +430,9 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         return new PerformanceMetrics
         {
             ExecutionTimeMs = debugInfo.Timings.TotalMilliseconds,
-            MemoryAllocatedBytes = debugInfo.MemoryAllocated,
-            ThroughputOpsPerSec = CalculateThroughput(debugInfo),
-            EfficiencyScore = CalculateEfficiencyScore(debugInfo)
+            MemoryUsageBytes = debugInfo.MemoryAllocated,
+            OperationsPerSecond = CalculateThroughput(debugInfo),
+            ComputeUtilization = CalculateEfficiencyScore(debugInfo)
         };
     }
 
