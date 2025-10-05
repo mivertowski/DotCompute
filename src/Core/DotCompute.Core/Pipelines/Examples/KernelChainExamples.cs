@@ -346,7 +346,7 @@ namespace DotCompute.Core.Pipelines.Examples
                 Success = interfaceMetrics.Success,
                 Backend = interfaceMetrics.Backend,
                 WasCached = interfaceMetrics.WasCached,
-                MemoryUsed = interfaceMetrics.MemoryUsed,
+                MemoryUsed = interfaceMetrics.MemoryAllocated,
                 StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.Timings),
                 EndTime = DateTime.UtcNow,
                 Error = string.IsNullOrEmpty(interfaceMetrics.ErrorMessage) ? null : new Exception(interfaceMetrics.ErrorMessage),

@@ -273,7 +273,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         }
 
         var trend = AnalyzeTrend(recentPoints);
-        trend.MetricName = metricName;
+        trend.Name = metricName;
         trend.TimeRange = timeRange;
 
         LogTrendAnalysisCompleted(metricName, recentPoints.Count, trend.TrendDirection.ToString());
@@ -317,7 +317,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
                     ExpectedValue = mean,
                     Deviation = Math.Abs(point.Value - mean),
                     Severity = Math.Abs(point.Value - mean) > (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                    Type = point.Value > threshold ? AnomalyType.Spike : AnomalyType.Drop
+                    Type = point.Value > threshold ? AnomalyType.PerformanceSpike : AnomalyType.PerformanceDrop
                 });
             }
         }

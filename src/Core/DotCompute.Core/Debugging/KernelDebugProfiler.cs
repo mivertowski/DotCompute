@@ -477,7 +477,7 @@ public sealed partial class KernelDebugProfiler(
             });
         }
 
-        var memoryUsages = relevantResults.Select(r => r.MemoryUsed).ToList();
+        var memoryUsages = relevantResults.Select(r => r.MemoryAllocated).ToList();
 
         return Task.FromResult(new MemoryUsageAnalysis
         {

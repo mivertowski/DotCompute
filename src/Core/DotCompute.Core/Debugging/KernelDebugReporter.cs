@@ -152,7 +152,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             }
 
             // Generate summary
-            report.Summary = GenerateComparisonSummary(report);
+            report.ComparisonSummary = GenerateComparisonSummary(report);
 
             return report;
         }

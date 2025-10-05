@@ -37,7 +37,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the amount of memory used during execution.
     /// </summary>
-    public long MemoryUsed => BaseResult.MemoryUsed;
+    public long MemoryUsed => BaseResult.MemoryAllocated;
 
     /// <summary>
     /// Gets any error that occurred during execution.

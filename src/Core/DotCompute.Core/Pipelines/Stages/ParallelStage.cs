@@ -139,7 +139,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 var endMemory = GC.GetTotalMemory(false);
 
                 var success = results.All(r => r.Success);
-                var totalMemoryUsage = results.Sum(r => r.MemoryUsed);
+                var totalMemoryUsage = results.Sum(r => r.MemoryAllocated);
 
                 var memoryUsed = Math.Max(allocatedBytes, totalMemoryUsage);
 

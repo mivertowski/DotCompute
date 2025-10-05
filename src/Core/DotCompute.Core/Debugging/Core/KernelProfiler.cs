@@ -112,9 +112,10 @@ public sealed class KernelProfiler(
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = result != null,
-                Result = result,
-                ExecutionTime = stopwatch.Elapsed,
-                MemoryUsed = finalMemory - initialMemory
+                Output = result,
+                Timings = new KernelExecutionTimings { TotalTime = stopwatch.Elapsed },
+                MemoryAllocated = finalMemory - initialMemory,
+                Handle = new ExecutionHandle(Guid.NewGuid())
             });
 
             _logger.LogDebug("Completed kernel execution trace for {KernelName}: {Success}", kernelName, result != null);
