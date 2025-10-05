@@ -486,13 +486,13 @@ public sealed class MetricsCollector : IDisposable
 
     private static double CalculateThroughput(KernelExecutionDetails details)
     {
-        if (details.ExecutionTime.TotalSeconds == 0)
+        if (details.Timings.TotalSeconds == 0)
         {
             return 0;
         }
 
 
-        return details.OperationsPerformed / details.ExecutionTime.TotalSeconds;
+        return details.OperationsPerformed / details.Timings.TotalSeconds;
     }
 
     private static double CalculateMemoryEfficiency(KernelMetrics metrics)

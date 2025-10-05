@@ -252,8 +252,8 @@ namespace DotCompute.Core.Pipelines.Stages
                 return 0;
             }
 
-            var totalTime = results.Sum(r => r.ExecutionTime.TotalMilliseconds);
-            var maxTime = results.Max(r => r.ExecutionTime.TotalMilliseconds);
+            var totalTime = results.Sum(r => r.Timings.TotalMilliseconds);
+            var maxTime = results.Max(r => r.Timings.TotalMilliseconds);
 
             return maxTime > 0 ? (totalTime / (results.Count * maxTime)) : 0;
         }
@@ -265,7 +265,7 @@ namespace DotCompute.Core.Pipelines.Stages
                 return 1;
             }
 
-            var durations = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
+            var durations = results.Select(r => r.Timings.TotalMilliseconds).ToList();
             var mean = durations.Average();
             var variance = durations.Sum(d => Math.Pow(d - mean, 2)) / durations.Count;
             var stdDev = Math.Sqrt(variance);
@@ -281,7 +281,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
 
             // Calculate synchronization overhead based on variance in execution times
-            var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
+            var executionTimes = results.Select(r => r.Timings.TotalMilliseconds).ToList();
             var mean = executionTimes.Average();
             var variance = executionTimes.Sum(t => Math.Pow(t - mean, 2)) / executionTimes.Count;
             var stdDev = Math.Sqrt(variance);
@@ -322,7 +322,7 @@ namespace DotCompute.Core.Pipelines.Stages
             }
 
             // Calculate the sum of all stage durations
-            var totalStageDuration = results.Sum(r => r.ExecutionTime.TotalMilliseconds);
+            var totalStageDuration = results.Sum(r => r.Timings.TotalMilliseconds);
 
             // Actual parallelism is the ratio of total work time to wall clock time
             var actualParallelism = totalStageDuration / totalDuration.TotalMilliseconds;

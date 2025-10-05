@@ -97,15 +97,15 @@ internal class DevicePerformanceEstimator
         {
             var single = measurements[0];
             var ratio = (double)dataSize / single.DataSize;
-            return TimeSpan.FromMilliseconds(single.ExecutionTime.TotalMilliseconds * ratio);
+            return TimeSpan.FromMilliseconds(single.Timings.TotalMilliseconds * ratio);
         }
 
         // Calculate throughput (bytes per second) from recent measurements
         var recentMeasurements = measurements.TakeLast(Math.Min(10, measurements.Length));
-        var averageThroughput = recentMeasurements.Average(m => m.DataSize / m.ExecutionTime.TotalSeconds);
+        var averageThroughput = recentMeasurements.Average(m => m.DataSize / m.Timings.TotalSeconds);
 
         // Apply confidence factor based on data variance
-        var variance = CalculateVariance(recentMeasurements.Select(m => m.DataSize / m.ExecutionTime.TotalSeconds));
+        var variance = CalculateVariance(recentMeasurements.Select(m => m.DataSize / m.Timings.TotalSeconds));
         var confidenceFactor = Math.Max(1.1, 1.0 + variance / averageThroughput);
 
         var estimatedTime = dataSize / (averageThroughput / confidenceFactor);
@@ -516,7 +516,7 @@ internal class DevicePerformanceEstimator
         for (var i = 1; i < measurements.Length; i++)
         {
             var sizeRatio = (double)measurements[i].DataSize / measurements[i - 1].DataSize;
-            var timeRatio = measurements[i].ExecutionTime.TotalSeconds / measurements[i - 1].ExecutionTime.TotalSeconds;
+            var timeRatio = measurements[i].Timings.TotalSeconds / measurements[i - 1].Timings.TotalSeconds;
 
             if (sizeRatio > 1.1) // Only consider significant size changes
             {

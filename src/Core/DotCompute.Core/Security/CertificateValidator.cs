@@ -62,7 +62,7 @@ public sealed class CertificateValidator : IDisposable
                     DateTimeOffset.UtcNow - cachedResult.ValidationTime < TimeSpan.FromMinutes(15))
                 {
                     _logger.LogDebugMessage($"Certificate validation result retrieved from cache: {thumbprint}");
-                    return cachedResult.Result;
+                    return cachedResult.Output;
                 }
             }
 

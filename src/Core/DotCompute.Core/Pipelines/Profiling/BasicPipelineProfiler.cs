@@ -132,7 +132,7 @@ internal sealed class BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logg
     {
         _logger?.LogInformation(
             "[PROFILER] Kernel {KernelName}: {Duration:F2}ms, {WorkItems} items, {Utilization:P} utilization (Execution: {ExecutionId})",
-            stats.KernelName, stats.ExecutionTime.TotalMilliseconds, stats.WorkItemsProcessed,
+            stats.KernelName, stats.Timings.TotalMilliseconds, stats.WorkItemsProcessed,
 
             stats.ComputeUtilization, executionId);
     }

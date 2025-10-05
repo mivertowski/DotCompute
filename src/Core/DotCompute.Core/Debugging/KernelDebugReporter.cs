@@ -211,7 +211,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             var warningCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Warning);
             _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "✗ Validation failed with {0} error(s) and {1} warning(s)", errorCount, warningCount));
         }
-        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Execution Time: {0:F2}ms", validationResult.ExecutionTime.TotalMilliseconds));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Execution Time: {0:F2}ms", validationResult.Timings.TotalMilliseconds));
         _ = report.AppendLine();
 
         // Backend Results

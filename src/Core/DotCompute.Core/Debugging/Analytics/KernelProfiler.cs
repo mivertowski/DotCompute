@@ -144,7 +144,7 @@ public sealed partial class KernelProfiler : IDisposable
                 return existing;
             });
 
-        LogProfilingCompleted(sessionId, profilingData.ExecutionTime.TotalMilliseconds);
+        LogProfilingCompleted(sessionId, profilingData.Timings.TotalMilliseconds);
 
         return profilingData;
     }
@@ -248,11 +248,11 @@ public sealed partial class KernelProfiler : IDisposable
             {
                 AcceleratorType = acceleratorType,
                 DataPoints = data.Count,
-                AverageExecutionTimeMs = data.Average(d => d.ExecutionTime.TotalMilliseconds),
-                MedianExecutionTime = CalculateMedian(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
-                MinExecutionTime = data.Min(d => d.ExecutionTime.TotalMilliseconds),
-                MaxExecutionTime = data.Max(d => d.ExecutionTime.TotalMilliseconds),
-                StandardDeviation = CalculateStandardDeviation(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
+                AverageExecutionTimeMs = data.Average(d => d.Timings.TotalMilliseconds),
+                MedianExecutionTime = CalculateMedian(data.Select(d => d.Timings.TotalMilliseconds)),
+                MinExecutionTime = data.Min(d => d.Timings.TotalMilliseconds),
+                MaxExecutionTime = data.Max(d => d.Timings.TotalMilliseconds),
+                StandardDeviation = CalculateStandardDeviation(data.Select(d => d.Timings.TotalMilliseconds)),
                 AverageMemoryUsage = data.Average(d => d.MemoryUsage.AllocatedMemory),
                 SuccessRate = data.Count(d => d.Success) / (double)data.Count * 100,
                 ThroughputScore = CalculateThroughputScore(data)
@@ -343,22 +343,22 @@ public sealed partial class KernelProfiler : IDisposable
         var anomalies = new List<PerformanceAnomaly>();
 
         // Detect execution time anomalies
-        var executionTimes = allData.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
+        var executionTimes = allData.Select(d => d.Timings.TotalMilliseconds).ToList();
         var meanTime = executionTimes.Average();
         var stdDev = CalculateStandardDeviation(executionTimes);
         var threshold = meanTime + (2 * stdDev); // 2 standard deviations
 
-        foreach (var data in allData.Where(d => d.ExecutionTime.TotalMilliseconds > threshold))
+        foreach (var data in allData.Where(d => d.Timings.TotalMilliseconds > threshold))
         {
             anomalies.Add(new PerformanceAnomaly
             {
-                Type = AnomalyType.ExecutionTime,
+                Type = AnomalyType.Timings,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
-                Value = data.ExecutionTime.TotalMilliseconds,
+                Value = data.Timings.TotalMilliseconds,
                 ExpectedValue = meanTime,
-                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
+                Severity = data.Timings.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
+                Description = $"Execution time ({data.Timings.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
             });
         }
 
@@ -517,7 +517,7 @@ public sealed partial class KernelProfiler : IDisposable
 
     private static PerformanceAnalysis AnalyzePerformanceData(IReadOnlyList<ProfilingData> data)
     {
-        var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
+        var executionTimes = data.Select(d => d.Timings.TotalMilliseconds).ToList();
         var memoryUsages = data.Select(d => (double)d.MemoryUsage.AllocatedMemory).ToList();
 
         return new PerformanceAnalysis
@@ -576,7 +576,7 @@ public sealed partial class KernelProfiler : IDisposable
 
 
         var totalOps = data.Count;
-        var totalTime = data.Sum(d => d.ExecutionTime.TotalSeconds);
+        var totalTime = data.Sum(d => d.Timings.TotalSeconds);
 
         return totalTime > 0 ? totalOps / totalTime : 0;
     }
@@ -624,7 +624,7 @@ public sealed partial class KernelProfiler : IDisposable
 
         // Simple linear regression to determine trend
         var times = data.Select((d, i) => (double)i).ToList();
-        var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
+        var executionTimes = data.Select(d => d.Timings.TotalMilliseconds).ToList();
 
         var slope = CalculateSlope(times, executionTimes);
 
@@ -640,9 +640,9 @@ public sealed partial class KernelProfiler : IDisposable
             DataPoints = data.Count,
             TrendDirection = trendDirection,
             Slope = slope,
-            FirstDataPoint = data.First().ExecutionTime,
-            LastDataPoint = data.Last().ExecutionTime,
-            AverageChange = (data.Last().ExecutionTime.TotalMilliseconds - data.First().ExecutionTime.TotalMilliseconds) / data.Count
+            FirstDataPoint = data.First().Timings,
+            LastDataPoint = data.Last().Timings,
+            AverageChange = (data.Last().Timings.TotalMilliseconds - data.First().Timings.TotalMilliseconds) / data.Count
         };
     }
 

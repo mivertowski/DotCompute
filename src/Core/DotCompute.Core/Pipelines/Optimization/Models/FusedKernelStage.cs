@@ -63,7 +63,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
             {
                 StageId = Id,
                 Success = result1.Success,
-                ExecutionTime = result1.ExecutionTime,
+                ExecutionTime = result1.Timings,
                 OutputData = result1.OutputData ?? []
             };
         }
@@ -83,7 +83,7 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
         {
             StageId = Id,
             Success = result2.Success,
-            ExecutionTime = result1.ExecutionTime + result2.ExecutionTime,
+            ExecutionTime = result1.Timings + result2.Timings,
             OutputData = result2.OutputData ?? []
         };
     }

@@ -231,7 +231,7 @@ namespace DotCompute.Core.Pipelines.Examples
             var report = new DetailedExecutionReport
             {
                 Success = executionResult.Success,
-                TotalExecutionTime = executionResult.ExecutionTime,
+                TotalExecutionTime = executionResult.Timings,
                 StepMetrics = [.. executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics)],
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(executionResult.MemoryMetrics),
                 BackendUsed = executionResult.Backend,
@@ -314,7 +314,7 @@ namespace DotCompute.Core.Pipelines.Examples
             var recommendations = new List<string>();
 
             // Analyze execution metrics and provide recommendations
-            if (executionResult.ExecutionTime > TimeSpan.FromSeconds(10))
+            if (executionResult.Timings > TimeSpan.FromSeconds(10))
             {
                 recommendations.Add("Consider using parallel execution for better performance");
             }
@@ -342,12 +342,12 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 KernelName = interfaceMetrics.KernelName,
                 StepIndex = interfaceMetrics.StepIndex,
-                ExecutionTime = interfaceMetrics.ExecutionTime,
+                ExecutionTime = interfaceMetrics.Timings,
                 Success = interfaceMetrics.Success,
                 Backend = interfaceMetrics.Backend,
                 WasCached = interfaceMetrics.WasCached,
                 MemoryUsed = interfaceMetrics.MemoryUsed,
-                StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.ExecutionTime),
+                StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.Timings),
                 EndTime = DateTime.UtcNow,
                 Error = string.IsNullOrEmpty(interfaceMetrics.ErrorMessage) ? null : new Exception(interfaceMetrics.ErrorMessage),
                 Throughput = interfaceMetrics.ThroughputOpsPerSecond
@@ -386,7 +386,7 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 Success = interfaceResult.Success,
                 Result = null, // Set to null for this conversion - could be set to actual result if available
-                ExecutionTime = interfaceResult.ExecutionTime,
+                ExecutionTime = interfaceResult.Timings,
                 Backend = interfaceResult.Backend,
                 StepMetrics = interfaceResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(interfaceResult.MemoryMetrics),

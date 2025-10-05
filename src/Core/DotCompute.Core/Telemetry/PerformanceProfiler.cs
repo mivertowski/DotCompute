@@ -198,7 +198,7 @@ public sealed class PerformanceProfiler : IDisposable
             DeviceId = deviceId,
             StartTime = executionMetrics.StartTime,
             EndTime = executionMetrics.EndTime,
-            ExecutionTime = executionMetrics.ExecutionTime,
+            ExecutionTime = executionMetrics.Timings,
 
             // Performance characteristics
 
@@ -230,7 +230,7 @@ public sealed class PerformanceProfiler : IDisposable
         profile?.KernelExecutions.Add(executionProfile);
 
 
-        LogKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
+        LogKernelExecution(_logger, kernelName, deviceId, executionMetrics.Timings.TotalMilliseconds,
             executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage, null);
     }
 
@@ -377,10 +377,10 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Timing analysis
 
-            AverageExecutionTime = kernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds),
-            MinExecutionTime = kernelExecutions.Min(k => k.ExecutionTime.TotalMilliseconds),
-            MaxExecutionTime = kernelExecutions.Max(k => k.ExecutionTime.TotalMilliseconds),
-            ExecutionTimeStdDev = CalculateStandardDeviation(kernelExecutions.Select(k => k.ExecutionTime.TotalMilliseconds)),
+            AverageExecutionTime = kernelExecutions.Average(k => k.Timings.TotalMilliseconds),
+            MinExecutionTime = kernelExecutions.Min(k => k.Timings.TotalMilliseconds),
+            MaxExecutionTime = kernelExecutions.Max(k => k.Timings.TotalMilliseconds),
+            ExecutionTimeStdDev = CalculateStandardDeviation(kernelExecutions.Select(k => k.Timings.TotalMilliseconds)),
 
             // Performance metrics
 
@@ -585,10 +585,10 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Overall performance metrics
 
-            TotalExecutionTime = kernelExecutions.Sum(k => k.ExecutionTime.TotalMilliseconds),
+            TotalExecutionTime = kernelExecutions.Sum(k => k.Timings.TotalMilliseconds),
             AverageKernelExecutionTime = kernelExecutions.Count != 0 ?
 
-                kernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds) : 0,
+                kernelExecutions.Average(k => k.Timings.TotalMilliseconds) : 0,
 
             // Throughput analysis
 
@@ -725,8 +725,8 @@ public sealed class PerformanceProfiler : IDisposable
         var secondHalf = orderedExecutions.Skip(orderedExecutions.Count / 2);
 
 
-        var firstHalfAvg = firstHalf.Average(e => e.ExecutionTime.TotalMilliseconds);
-        var secondHalfAvg = secondHalf.Average(e => e.ExecutionTime.TotalMilliseconds);
+        var firstHalfAvg = firstHalf.Average(e => e.Timings.TotalMilliseconds);
+        var secondHalfAvg = secondHalf.Average(e => e.Timings.TotalMilliseconds);
 
 
         var changePercentage = (secondHalfAvg - firstHalfAvg) / firstHalfAvg;
@@ -818,7 +818,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
 
 
-        var totalTime = executions.Sum(e => e.ExecutionTime.TotalMilliseconds);
+        var totalTime = executions.Sum(e => e.Timings.TotalMilliseconds);
         var timeSpan = executions.Max(e => e.EndTime) - executions.Min(e => e.StartTime);
 
 
@@ -833,9 +833,9 @@ public sealed class PerformanceProfiler : IDisposable
 
         // Check for long-running kernels
 
-        var avgKernelTime = profile.KernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds);
+        var avgKernelTime = profile.KernelExecutions.Average(k => k.Timings.TotalMilliseconds);
         var longRunningKernels = profile.KernelExecutions
-            .Where(k => k.ExecutionTime.TotalMilliseconds > avgKernelTime * 2)
+            .Where(k => k.Timings.TotalMilliseconds > avgKernelTime * 2)
             .ToList();
 
 

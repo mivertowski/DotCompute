@@ -27,7 +27,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the execution time.
     /// </summary>
-    public TimeSpan ExecutionTime => BaseResult.ExecutionTime;
+    public TimeSpan ExecutionTime => BaseResult.Timings;
 
     /// <summary>
     /// Gets the output data produced by the stage.

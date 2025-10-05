@@ -294,7 +294,7 @@ public sealed class KernelProfiler(
         {
             bottlenecks.Add(new PerformanceBottleneck
             {
-                Type = BottleneckType.ExecutionTime,
+                Type = BottleneckType.Timings,
                 Severity = BottleneckSeverity.High,
                 Description = $"Execution time varies significantly (max: {maxExecutionTime:F2}ms, avg: {avgExecutionTime:F2}ms)",
                 AffectedComponents = ["Kernel execution"],
@@ -561,7 +561,7 @@ public sealed class KernelProfiler(
     {
         var recommendations = new List<string>();
 
-        var avgTime = metrics.ExecutionTime.TotalMilliseconds;
+        var avgTime = metrics.Timings.TotalMilliseconds;
         if (avgTime > 100) // > 100ms
         {
             recommendations.Add($"{backend}: Consider optimizing for faster execution (current avg: {avgTime:F2}ms)");
@@ -585,7 +585,7 @@ public sealed class KernelProfiler(
 
         if (backendMetrics.Count > 1)
         {
-            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTime).First();
+            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.Timings).First();
             recommendations.Add($"Consider using {fastest.Key} backend for best performance");
         }
 

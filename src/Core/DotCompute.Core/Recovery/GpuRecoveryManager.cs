@@ -382,7 +382,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             foreach (var hangingKernel in hangingKernels)
             {
-                _logger.LogWarningMessage($"Kernel {hangingKernel.KernelId} appears to be hanging (running for {hangingKernel.ExecutionTime})");
+                _logger.LogWarningMessage($"Kernel {hangingKernel.KernelId} appears to be hanging (running for {hangingKernel.Timings})");
 
                 // Auto-cancel hanging kernels
 

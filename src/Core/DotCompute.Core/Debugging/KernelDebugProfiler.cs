@@ -321,7 +321,7 @@ public sealed partial class KernelDebugProfiler(
 
         foreach (var group in backendGroups)
         {
-            var execTimes = group.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
+            var execTimes = group.Select(r => r.Timings.TotalMilliseconds).ToArray();
             var memoryUsages = group.Select(GetMemoryUsage).Where(m => m > 0).ToArray();
 
             // Convert to PerformanceMetrics (from Abstractions)
@@ -337,7 +337,7 @@ public sealed partial class KernelDebugProfiler(
 
         var successfulExecutions = relevantResults.Count(r => r.Success);
         var failedExecutions = relevantResults.Count - successfulExecutions;
-        var avgExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average();
+        var avgExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.Timings.TotalMilliseconds).DefaultIfEmpty(0).Average();
 
         return Task.FromResult(new PerformanceReport
         {
@@ -507,8 +507,8 @@ public sealed partial class KernelDebugProfiler(
 
         if (relevantResults.Count > 0)
         {
-            var avgExecutionTime = relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds);
-            var slowExecutions = relevantResults.Where(r => r.ExecutionTime.TotalMilliseconds > avgExecutionTime * 1.5);
+            var avgExecutionTime = relevantResults.Average(r => r.Timings.TotalMilliseconds);
+            var slowExecutions = relevantResults.Where(r => r.Timings.TotalMilliseconds > avgExecutionTime * 1.5);
 
             if (slowExecutions.Any())
             {
@@ -564,7 +564,7 @@ public sealed partial class KernelDebugProfiler(
 
         var successfulExecutions = relevantResults.Count(r => r.Success);
         var avgTime = TimeSpan.FromMilliseconds(
-            relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds));
+            relevantResults.Average(r => r.Timings.TotalMilliseconds));
 
         return new ExecutionStatistics
         {

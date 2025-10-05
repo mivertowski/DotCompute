@@ -294,7 +294,7 @@ namespace DotCompute.Core.Memory.P2P
                     var targetDevice = devices[j];
 
                     var task = ExecuteP2PBenchmarkAsync(sourceDevice, targetDevice, benchmarkOptions, cancellationToken)
-                        .ContinueWith(t => benchmarkResult.PairwiseBenchmarks.Add(t.Result), TaskScheduler.Default);
+                        .ContinueWith(t => benchmarkResult.PairwiseBenchmarks.Add(t.Output), TaskScheduler.Default);
 
                     tasks.Add(task);
                 }

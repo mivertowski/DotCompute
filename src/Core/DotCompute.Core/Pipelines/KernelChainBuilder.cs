@@ -294,13 +294,13 @@ namespace DotCompute.Core.Pipelines
                 throw aggregateException;
             }
 
-            if (result.Result is T typedResult)
+            if (result.Output is T typedResult)
             {
                 return typedResult;
             }
 
 
-            if (result.Result == null)
+            if (result.Output == null)
             {
 
                 return default!;
@@ -310,12 +310,12 @@ namespace DotCompute.Core.Pipelines
 
             try
             {
-                return (T)Convert.ChangeType(result.Result, typeof(T));
+                return (T)Convert.ChangeType(result.Output, typeof(T));
             }
             catch (Exception ex)
             {
                 throw new InvalidCastException(
-                    $"Cannot convert result of type {result.Result.GetType().Name} to {typeof(T).Name}", ex);
+                    $"Cannot convert result of type {result.Output.GetType().Name} to {typeof(T).Name}", ex);
             }
         }
 

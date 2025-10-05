@@ -243,7 +243,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
                 MemoryUsageBefore = debugInfo.MemoryUsageBefore,
                 MemoryUsageAfter = debugInfo.MemoryUsageAfter,
                 MemoryAllocated = debugInfo.MemoryAllocated,
-                ExecutionTime = debugInfo.ExecutionTime,
+                ExecutionTime = debugInfo.Timings,
                 Output = debugInfo.Output,
                 Success = debugInfo.Success,
                 PerformanceMetrics = performanceMetrics,
@@ -357,10 +357,10 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         }
 
         // Compare outputs (simplified - real implementation would need deep comparison)
-        var firstOutput = successfulResults[0].Result;
+        var firstOutput = successfulResults[0].Output;
         for (var i = 1; i < successfulResults.Count; i++)
         {
-            var otherOutput = successfulResults[i].Result;
+            var otherOutput = successfulResults[i].Output;
 
             if (!AreOutputsEqual(firstOutput, otherOutput))
             {
@@ -374,13 +374,13 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         }
 
         // Compare execution times for performance anomalies
-        var executionTimes = successfulResults.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
+        var executionTimes = successfulResults.Select(r => r.Timings.TotalMilliseconds).ToList();
         var averageTime = executionTimes.Average();
         var maxTime = executionTimes.Max();
 
         if (maxTime > averageTime * 3) // If any execution is 3x slower than average
         {
-            var slowResult = successfulResults.First(r => r.ExecutionTime.TotalMilliseconds == maxTime);
+            var slowResult = successfulResults.First(r => r.Timings.TotalMilliseconds == maxTime);
             issues.Add(new DebugValidationIssue
             {
                 Severity = DebugValidationSeverity.Warning,
@@ -428,7 +428,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     {
         return new PerformanceMetrics
         {
-            ExecutionTimeMs = debugInfo.ExecutionTime.TotalMilliseconds,
+            ExecutionTimeMs = debugInfo.Timings.TotalMilliseconds,
             MemoryAllocatedBytes = debugInfo.MemoryAllocated,
             ThroughputOpsPerSec = CalculateThroughput(debugInfo),
             EfficiencyScore = CalculateEfficiencyScore(debugInfo)
@@ -444,7 +444,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         {
             PeakMemoryUsage = debugInfo.MemoryUsageAfter,
             MemoryAllocationCount = GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2),
-            CpuTimeMs = debugInfo.ExecutionTime.TotalMilliseconds // Simplified
+            CpuTimeMs = debugInfo.Timings.TotalMilliseconds // Simplified
         };
     }
 
@@ -508,9 +508,9 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     private static double CalculateThroughput(KernelDebugInfo debugInfo)
     {
         // Simplified calculation - real implementation would depend on operation type
-        if (debugInfo.ExecutionTime.TotalSeconds > 0)
+        if (debugInfo.Timings.TotalSeconds > 0)
         {
-            return 1.0 / debugInfo.ExecutionTime.TotalSeconds;
+            return 1.0 / debugInfo.Timings.TotalSeconds;
         }
         return 0.0;
     }
@@ -521,7 +521,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     private static double CalculateEfficiencyScore(KernelDebugInfo debugInfo)
     {
         // Simplified scoring based on execution time and memory usage
-        var timeScore = Math.Max(0, 100 - debugInfo.ExecutionTime.TotalMilliseconds / 10);
+        var timeScore = Math.Max(0, 100 - debugInfo.Timings.TotalMilliseconds / 10);
         var memoryScore = Math.Max(0, 100 - debugInfo.MemoryAllocated / (1024 * 1024)); // MB
         return (timeScore + memoryScore) / 2;
     }
