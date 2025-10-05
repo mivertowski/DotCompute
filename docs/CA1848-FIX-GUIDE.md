@@ -6,7 +6,7 @@ This document tracks the systematic conversion of all direct `ILogger` calls to 
 
 **Status**: In Progress
 **Total Files**: 293+ files with logging
-**Files Fixed**: 2 (examples provided)
+**Files Fixed**: 3 (KernelExecutionService, AcceleratorUtilities, DisposalUtilities)
 **Estimated Remaining**: ~290 files
 
 ---
@@ -42,16 +42,24 @@ LogKernelRegistered(_logger, registration.FullName, string.Join(", ", registrati
 - Added `#region LoggerMessage Delegates`
 - Replaced all 13 direct logger calls
 
+### 3. DisposalUtilities.cs
+**Location**: `src/Core/DotCompute.Abstractions/`
+**Status**: ✅ Complete
+**Event IDs**: 2001-2011
+**Delegates**: 11 LoggerMessage delegates
+
+**Changes**:
+- Converted class to `partial`
+- Added `#region LoggerMessage Delegates` with 11 delegates
+- Replaced all direct logger calls with null-checked delegate invocations
+- Handled nullable logger pattern with `if (logger != null)` checks
+- All CA1848 warnings eliminated
+
 ---
 
 ## 📝 Files In Progress
 
-### 3. DisposalUtilities.cs
-**Location**: `src/Core/DotCompute.Abstractions/`
-**Status**: 🔄 Prepared (delegates created, usage needs updating)
-**Event IDs**: 2001-2011
-**Delegates**: 11 LoggerMessage delegates
-**Remaining**: Need to update actual logger call sites
+### None currently
 
 ---
 
@@ -286,7 +294,7 @@ Track your progress here:
 
 - [x] KernelExecutionService.cs (11 delegates)
 - [x] AcceleratorUtilities.cs (14 delegates)
-- [ ] DisposalUtilities.cs (11 delegates - prepared)
+- [x] DisposalUtilities.cs (11 delegates)
 - [ ] KernelUtilities.cs (8+ delegates needed)
 - [ ] CudaMemoryManager.cs (15+ delegates needed)
 - [ ] ... (290+ more files)
@@ -301,5 +309,5 @@ Track your progress here:
 
 ---
 
-**Last Updated**: 2025-01-03
+**Last Updated**: 2025-10-03
 **Maintained By**: Code Quality Team
