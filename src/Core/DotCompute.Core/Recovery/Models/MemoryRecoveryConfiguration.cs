@@ -102,12 +102,12 @@ public class MemoryRecoveryContext
     /// <summary>
     /// Gets or sets the list of memory consumers to potentially clean up
     /// </summary>
-    public IList<MemoryConsumer> MemoryConsumers { get; } = [];
+    public IList<MemoryConsumer> MemoryConsumers { get; init; } = [];
 
     /// <summary>
     /// Gets or sets additional context data
     /// </summary>
-    public Dictionary<string, object> AdditionalData { get; } = [];
+    public Dictionary<string, object> AdditionalData { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the timestamp when recovery was initiated

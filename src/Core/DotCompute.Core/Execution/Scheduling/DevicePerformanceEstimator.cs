@@ -574,7 +574,7 @@ internal class DevicePerformanceEstimator
     private double GetObservedPerformanceFactor(IAccelerator device)
     {
         var deviceScores = _devicePerformanceScores
-            .Where(kvp => kvp.Key.StartsWith(device.Info.Name))
+            .Where(kvp => kvp.Key.StartsWith(device.Info.Name, StringComparison.Ordinal))
             .Select(kvp => kvp.Value)
             .ToArray();
 

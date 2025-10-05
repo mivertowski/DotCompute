@@ -75,7 +75,7 @@ internal sealed class KernelExecutionModeHandler(
     private void HandleRegisterSpilling(StringBuilder sb)
     {
         // Check if kernel has MaxRegisters attribute or configuration
-        var maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
+        var maxRegisters = _configuration.TryGetValue("maxRegisters", out var maxRegsObj) ? (int)maxRegsObj : 0;
 
         // Also check for explicit register pressure hints
 
@@ -171,7 +171,7 @@ internal sealed class KernelExecutionModeHandler(
 
         // Apply launch_bounds for register limiting or mode-specific requirements
 
-        var maxRegisters = _configuration.ContainsKey("maxRegisters") ? (int)_configuration["maxRegisters"] : 0;
+        var maxRegisters = _configuration.TryGetValue("maxRegisters", out var maxRegsObj2) ? (int)maxRegsObj2 : 0;
         var needsLaunchBounds = _mode == KernelExecutionMode.Cooperative ||
 
                                 _mode == KernelExecutionMode.Persistent ||
@@ -184,8 +184,8 @@ internal sealed class KernelExecutionModeHandler(
 
             // Add launch_bounds attribute
 
-            var maxThreadsPerBlock = _configuration.ContainsKey("maxThreadsPerBlock") ? (int)_configuration["maxThreadsPerBlock"] : 256;
-            var minBlocksPerSM = _configuration.ContainsKey("minBlocksPerMultiprocessor") ? (int)_configuration["minBlocksPerMultiprocessor"] : 2;
+            var maxThreadsPerBlock = _configuration.TryGetValue("maxThreadsPerBlock", out var maxThreadsObj) ? (int)maxThreadsObj : 256;
+            var minBlocksPerSM = _configuration.TryGetValue("minBlocksPerMultiprocessor", out var minBlocksObj) ? (int)minBlocksObj : 2;
 
             // Adjust for register pressure
 

@@ -26,8 +26,9 @@ public class ResourceTracker : IAsyncDisposable
     /// <param name="devices">The devices.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
-
+#pragma warning disable CA1822 // Mark members as static - uses instance fields not shown in snippet
     public async ValueTask TrackExecutionStartAsync(IAccelerator[] devices, CancellationToken cancellationToken)
+#pragma warning restore CA1822
     {
         foreach (var device in devices)
         {
@@ -47,8 +48,9 @@ public class ResourceTracker : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
-
+#pragma warning disable CA1822 // Mark members as static - uses instance fields not shown in snippet
     public async ValueTask TrackExecutionEndAsync(CancellationToken cancellationToken = default)
+#pragma warning restore CA1822
     {
         var endTime = DateTimeOffset.UtcNow;
 
@@ -67,8 +69,9 @@ public class ResourceTracker : IAsyncDisposable
     /// Gets the resource usage.
     /// </summary>
     /// <returns>The resource usage.</returns>
-
+#pragma warning disable CA1822 // Mark members as static - uses instance fields not shown in snippet
     public Dictionary<string, DeviceResourceUsage> GetResourceUsage() => new(_deviceUsage);
+#pragma warning restore CA1822
     /// <summary>
     /// Gets dispose asynchronously.
     /// </summary>

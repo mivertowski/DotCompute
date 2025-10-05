@@ -32,5 +32,5 @@ public class GpuRecoveryContext
     /// Gets or sets the metadata.
     /// </summary>
     /// <value>The metadata.</value>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }

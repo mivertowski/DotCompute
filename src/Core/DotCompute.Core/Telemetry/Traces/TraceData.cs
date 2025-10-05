@@ -67,21 +67,21 @@ public sealed class TraceData
     /// Each span represents an individual operation within the trace.
     /// </summary>
     /// <value>A list of span data objects.</value>
-    public IList<SpanData> Spans { get; } = [];
+    public IList<SpanData> Spans { get; init; } = [];
 
     /// <summary>
     /// Gets or sets device operations tracked within this trace.
     /// Maps device IDs to their corresponding operation summaries.
     /// </summary>
     /// <value>A dictionary mapping device IDs to operation traces.</value>
-    public Dictionary<string, DeviceOperationTrace> DeviceOperations { get; } = [];
+    public Dictionary<string, DeviceOperationTrace> DeviceOperations { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the tags associated with this trace.
     /// Tags are key-value pairs that provide additional metadata about the trace.
     /// </summary>
     /// <value>A dictionary of tag key-value pairs.</value>
-    public Dictionary<string, object?> Tags { get; } = [];
+    public Dictionary<string, object?> Tags { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the analysis results for this trace.

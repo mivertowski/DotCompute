@@ -52,16 +52,16 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the list of coalescing issues identified.
         /// </summary>
-        public IList<CoalescingIssue> Issues { get; } = [];
+        public IList<CoalescingIssue> Issues { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the list of optimization recommendations.
         /// </summary>
-        public IList<string> Optimizations { get; } = [];
+        public IList<string> Optimizations { get; init; } = [];
 
         /// <summary>
         /// Gets or sets architecture-specific notes about the analysis.
         /// </summary>
-        public IList<string> ArchitectureNotes { get; } = [];
+        public IList<string> ArchitectureNotes { get; init; } = [];
     }
 }

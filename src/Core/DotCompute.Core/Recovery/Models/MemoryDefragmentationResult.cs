@@ -51,7 +51,7 @@ public class MemoryDefragmentationResult
     /// <summary>
     /// Gets or sets additional statistics and metrics
     /// </summary>
-    public Dictionary<string, object> Statistics { get; } = [];
+    public Dictionary<string, object> Statistics { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the number of memory blocks that were moved

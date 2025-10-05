@@ -21,7 +21,7 @@ public class DeviceHealthReport
     /// <summary>
     /// Gets or sets the health status of individual devices.
     /// </summary>
-    public Dictionary<string, DeviceHealth> DeviceHealth { get; } = [];
+    public Dictionary<string, DeviceHealth> DeviceHealth { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the number of active kernels across all devices.
@@ -61,7 +61,7 @@ public class DeviceHealthReport
     /// <summary>
     /// Gets or sets any critical issues detected.
     /// </summary>
-    public IList<string> CriticalIssues { get; } = [];
+    public IList<string> CriticalIssues { get; init; } = [];
 }
 
 /// <summary>

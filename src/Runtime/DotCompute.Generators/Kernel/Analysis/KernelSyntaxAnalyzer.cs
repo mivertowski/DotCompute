@@ -102,7 +102,7 @@ public class KernelSyntaxAnalyzer : IKernelAnalyzer
             .Where(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "KernelAttribute"))
             .ToList();
 
-        if (!kernelMethods.Any())
+        if (kernelMethods.Count == 0)
         {
             return null;
         }

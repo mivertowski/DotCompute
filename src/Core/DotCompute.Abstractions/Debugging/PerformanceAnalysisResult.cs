@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Types;
+
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -36,17 +38,17 @@ public class PerformanceAnalysisResult
     /// <summary>
     /// Bottlenecks identified during analysis.
     /// </summary>
-    public IList<string> Bottlenecks { get; } = [];
+    public IList<string> Bottlenecks { get; init; } = [];
 
     /// <summary>
     /// Performance recommendations.
     /// </summary>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; init; } = [];
 
     /// <summary>
     /// Detailed performance metrics.
     /// </summary>
-    public Dictionary<string, object> DetailedMetrics { get; } = [];
+    public Dictionary<string, object> DetailedMetrics { get; init; } = [];
 
     /// <summary>
     /// Execution statistics for the analysis.
@@ -147,12 +149,17 @@ public class BottleneckAnalysis
     /// <summary>
     /// Identified bottlenecks.
     /// </summary>
-    public IList<PerformanceBottleneck> Bottlenecks { get; } = [];
+    public IList<PerformanceBottleneck> Bottlenecks { get; init; } = [];
 
     /// <summary>
     /// Overall performance score (0-100).
     /// </summary>
     public double OverallPerformanceScore { get; set; }
+
+    /// <summary>
+    /// Recommended optimizations based on bottleneck analysis.
+    /// </summary>
+    public IList<string> RecommendedOptimizations { get; init; } = [];
 }
 
 /// <summary>
@@ -190,6 +197,21 @@ public class PerformanceBottleneck
     /// Component affected by the bottleneck.
     /// </summary>
     public string? Component { get; set; }
+
+    /// <summary>
+    /// Type of bottleneck identified.
+    /// </summary>
+    public BottleneckType Type { get; set; }
+
+    /// <summary>
+    /// Components affected by this bottleneck.
+    /// </summary>
+    public IList<string> AffectedComponents { get; init; } = [];
+
+    /// <summary>
+    /// Recommended actions to resolve this bottleneck.
+    /// </summary>
+    public IList<string> RecommendedActions { get; init; } = [];
 }
 
 /// <summary>

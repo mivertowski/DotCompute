@@ -39,5 +39,5 @@ public class ExecutionProfilingData
     /// Gets or sets the events.
     /// </summary>
     /// <value>The events.</value>
-    public IList<ProfilingEvent> Events { get; } = [];
+    public IList<ProfilingEvent> Events { get; init; } = [];
 }

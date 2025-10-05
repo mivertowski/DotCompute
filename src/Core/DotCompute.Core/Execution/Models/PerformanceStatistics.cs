@@ -61,7 +61,7 @@ public class PerformanceStatistics
     /// <summary>
     /// Gets or sets performance percentiles (P50, P95, P99, etc.).
     /// </summary>
-    public Dictionary<string, double> Percentiles { get; } = [];
+    public Dictionary<string, double> Percentiles { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the time window for these statistics.

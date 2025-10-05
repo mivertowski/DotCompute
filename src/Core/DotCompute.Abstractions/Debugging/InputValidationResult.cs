@@ -11,12 +11,12 @@ public sealed class InputValidationResult
     /// <summary>
     /// Gets whether the input validation passed.
     /// </summary>
-    public bool IsValid { get; init; }
+    public bool IsValid { get; set; }
 
     /// <summary>
     /// Gets the list of validation issues found.
     /// </summary>
-    public IReadOnlyList<string> Issues { get; init; } = [];
+    public IReadOnlyList<string> Issues { get; set; } = [];
 
     /// <summary>
     /// Gets the number of inputs validated.

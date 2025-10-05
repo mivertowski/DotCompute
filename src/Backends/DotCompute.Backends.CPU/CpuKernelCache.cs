@@ -519,7 +519,7 @@ internal sealed class CpuKernelCache : IDisposable
         return new OptimizationCacheStatistics
         {
             EntryCount = _optimizationCache.Count,
-            AverageAge = _optimizationCache.Values.Any()
+            AverageAge = !_optimizationCache.IsEmpty
                 ? _optimizationCache.Values.Average(p => (DateTimeOffset.UtcNow - p.CreationTime).TotalMinutes)
                 : 0
         };
@@ -530,7 +530,7 @@ internal sealed class CpuKernelCache : IDisposable
         return new PerformanceCacheStatistics
         {
             EntryCount = _performanceCache.Count,
-            AverageAge = _performanceCache.Values.Any()
+            AverageAge = !_performanceCache.IsEmpty
                 ? _performanceCache.Values.Average(m => (DateTimeOffset.UtcNow - m.Timestamp).TotalMinutes)
                 : 0
         };

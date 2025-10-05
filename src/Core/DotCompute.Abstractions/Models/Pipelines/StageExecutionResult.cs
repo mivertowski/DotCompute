@@ -29,7 +29,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the output data produced by the stage.
     /// </summary>
-    public Dictionary<string, object> OutputData { get; } = [];
+    public Dictionary<string, object> OutputData { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the amount of memory used during execution.
@@ -54,7 +54,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets additional execution metadata.
     /// </summary>
-    public Dictionary<string, object>? Metadata { get; }
+    public Dictionary<string, object>? Metadata { get; init; }
 }
 
 /// <summary>

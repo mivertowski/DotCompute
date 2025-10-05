@@ -608,22 +608,22 @@ public sealed partial class SystemInfoManager : IDisposable
 
             foreach (var line in lines)
             {
-                if (line.StartsWith("model name"))
+                if (line.StartsWith("model name", StringComparison.Ordinal))
                 {
                     info.Name = line.Split(':', 2)[1].Trim();
                 }
-                else if (line.StartsWith("cpu MHz"))
+                else if (line.StartsWith("cpu MHz", StringComparison.Ordinal))
                 {
                     if (double.TryParse(line.Split(':', 2)[1].Trim(), out var mhz))
                     {
                         info.FrequencyMHz = (int)mhz;
                     }
                 }
-                else if (line.StartsWith("processor"))
+                else if (line.StartsWith("processor", StringComparison.Ordinal))
                 {
                     _ = processors.Add(line.Split(':', 2)[1].Trim());
                 }
-                else if (line.StartsWith("physical id"))
+                else if (line.StartsWith("physical id", StringComparison.Ordinal))
                 {
                     _ = physicalIds.Add(line.Split(':', 2)[1].Trim());
                 }

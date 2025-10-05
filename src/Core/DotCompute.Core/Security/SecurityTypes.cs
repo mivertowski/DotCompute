@@ -160,7 +160,7 @@ public sealed class AuditExportResult
     /// <summary>
     /// Gets any error message if the export failed.
     /// </summary>
-    public string? ErrorMessage { get; init; }
+    public string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Gets the export format used.
@@ -170,7 +170,7 @@ public sealed class AuditExportResult
     /// <summary>
     /// Gets the size of the exported file in bytes.
     /// </summary>
-    public long FileSizeBytes { get; init; }
+    public long FileSizeBytes { get; set; }
 }
 
 /// <summary>

@@ -171,10 +171,7 @@ namespace DotCompute.Core.Execution
             PipelineExecutionPlan<T> plan,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionPlanExecutor));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
@@ -624,7 +621,7 @@ namespace DotCompute.Core.Execution
             }).ToArray();
 
             var totalThroughput = successfulResults.Sum(r => r.ThroughputGFLOPS);
-            var avgMemoryBandwidth = successfulResults.Any() ? successfulResults.Average(r => r.MemoryBandwidthGBps) : 0;
+            var avgMemoryBandwidth = successfulResults.Length > 0 ? successfulResults.Average(r => r.MemoryBandwidthGBps) : 0;
             var efficiency = CalculateParallelEfficiency(deviceResults, totalElapsed.TotalMilliseconds);
 
             await Task.CompletedTask.ConfigureAwait(false);
@@ -664,7 +661,7 @@ namespace DotCompute.Core.Execution
             }).ToArray();
 
             var totalThroughput = successfulResults.Sum(r => r.ComputeFLOPS / 1e9);
-            var avgMemoryBandwidth = deviceExecutionResults.Any() ? deviceExecutionResults.Average(r => r.MemoryBandwidthGBps) : 0;
+            var avgMemoryBandwidth = deviceExecutionResults.Length > 0 ? deviceExecutionResults.Average(r => r.MemoryBandwidthGBps) : 0;
             var efficiency = CalculateModelParallelEfficiency(layerResults, plan.ModelLayers.Length);
 
             await Task.CompletedTask.ConfigureAwait(false);
@@ -712,7 +709,7 @@ namespace DotCompute.Core.Execution
                 Strategy = ExecutionStrategyType.PipelineParallel,
                 DeviceResults = deviceExecutionResults,
                 ThroughputGFLOPS = deviceExecutionResults.Sum(r => r.ThroughputGFLOPS),
-                MemoryBandwidthGBps = deviceExecutionResults.Any() ? deviceExecutionResults.Average(r => r.MemoryBandwidthGBps) : 0,
+                MemoryBandwidthGBps = deviceExecutionResults.Length > 0 ? deviceExecutionResults.Average(r => r.MemoryBandwidthGBps) : 0,
                 EfficiencyPercentage = efficiency
             };
         }

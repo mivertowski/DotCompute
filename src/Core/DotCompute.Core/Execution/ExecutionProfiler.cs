@@ -27,8 +27,9 @@ public class ExecutionProfiler : IAsyncDisposable
     /// <param name="strategy">The strategy.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
-
+#pragma warning disable CA1822 // Mark members as static - uses instance fields _profilingData and _logger
     public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
+#pragma warning restore CA1822
     {
         _profilingData[executionId] = new ExecutionProfilingData
         {

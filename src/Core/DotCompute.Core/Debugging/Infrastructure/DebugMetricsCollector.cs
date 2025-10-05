@@ -57,14 +57,20 @@ public sealed partial class DebugMetricsCollector : IDisposable
         };
 
         _metricsData.AddOrUpdate(name,
-            new MetricsSeries { Name = name, Points = [metricPoint] },
+            new MetricsSeries { Name = name, Points = new List<MetricPoint> { metricPoint } },
             (key, existing) =>
             {
                 existing.Points.Add(metricPoint);
                 // Keep only recent points to prevent memory bloat
                 if (existing.Points.Count > _options.MaxMetricPoints)
                 {
-                    existing.Points.RemoveRange(0, existing.Points.Count - _options.MaxMetricPoints);
+                    // Remove old points - Collection doesn't have RemoveRange, so we'll keep the last N points
+                    var pointsToKeep = existing.Points.Skip(existing.Points.Count - _options.MaxMetricPoints).ToList();
+                    existing.Points.Clear();
+                    foreach (var point in pointsToKeep)
+                    {
+                        existing.Points.Add(point);
+                    }
                 }
                 return existing;
             });
@@ -162,7 +168,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
         }
 
         var pointsList = points.ToList();
-        if (!pointsList.Any())
+        if (pointsList.Count == 0)
         {
             return null;
         }
@@ -409,7 +415,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
     private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
-        if (!valuesList.Any())
+        if (valuesList.Count == 0)
         {
             return 0;
         }
@@ -441,7 +447,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
     private static double CalculatePercentile(IEnumerable<double> values, double percentile)
     {
         var sorted = values.OrderBy(x => x).ToList();
-        if (!sorted.Any())
+        if (sorted.Count == 0)
         {
             return 0;
         }

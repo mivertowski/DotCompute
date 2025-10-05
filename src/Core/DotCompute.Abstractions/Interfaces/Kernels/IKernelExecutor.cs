@@ -251,12 +251,12 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// <summary>
         /// Gets whether the execution has completed.
         /// </summary>
-        public bool IsCompleted { get; internal set; }
+        public bool IsCompleted { get; set; }
 
         /// <summary>
         /// Gets the completion timestamp.
         /// </summary>
-        public DateTimeOffset? CompletedAt { get; internal set; }
+        public DateTimeOffset? CompletedAt { get; set; }
     }
 
     /// <summary>
@@ -308,6 +308,61 @@ namespace DotCompute.Abstractions.Interfaces.Kernels
         /// Gets the execution error if failed.
         /// </summary>
         public Exception? Error { get; init; }
+
+        /// <summary>
+        /// Gets the name of the kernel that was executed.
+        /// </summary>
+        public string? KernelName { get; init; }
+
+        /// <summary>
+        /// Gets the type of backend used for execution.
+        /// </summary>
+        public string? BackendType { get; init; }
+
+        /// <summary>
+        /// Gets when the kernel was executed.
+        /// </summary>
+        public DateTime? ExecutedAt { get; init; }
+
+        /// <summary>
+        /// Gets the execution configuration used.
+        /// </summary>
+        public object? ConfigurationUsed { get; init; }
+
+        /// <summary>
+        /// Gets whether optimizations were applied during execution.
+        /// </summary>
+        public bool? OptimizationsApplied { get; init; }
+
+        /// <summary>
+        /// Gets the execution ID (convenience accessor for Handle.Id).
+        /// </summary>
+        public Guid ExecutionId => Handle.Id;
+
+        /// <summary>
+        /// Creates a successful execution result.
+        /// </summary>
+        /// <param name="handle">The execution handle.</param>
+        /// <returns>A successful execution result.</returns>
+        public static KernelExecutionResult CreateSuccess(KernelExecutionHandle handle) => new()
+        {
+            Success = true,
+            Handle = handle
+        };
+
+        /// <summary>
+        /// Creates a failed execution result.
+        /// </summary>
+        /// <param name="handle">The execution handle.</param>
+        /// <param name="error">The error that occurred.</param>
+        /// <returns>A failed execution result.</returns>
+        public static KernelExecutionResult CreateFailure(KernelExecutionHandle handle, Exception error) => new()
+        {
+            Success = false,
+            Handle = handle,
+            Error = error,
+            ErrorMessage = error.Message
+        };
     }
 
     /// <summary>

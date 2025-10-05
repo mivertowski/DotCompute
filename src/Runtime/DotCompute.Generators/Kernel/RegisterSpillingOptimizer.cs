@@ -117,7 +117,7 @@ internal sealed class RegisterSpillingOptimizer
 
             // Mark long-lived variables as spillable
 
-            if (_variableLifetimes.ContainsKey(variableName) && _variableLifetimes[variableName] > 10)
+            if (_variableLifetimes.TryGetValue(variableName, out var lifetime) && lifetime > 10)
             {
                 _spillableVariables.Add(variableName);
             }
@@ -711,9 +711,8 @@ internal sealed class RegisterSpillingOptimizer
             foreach (var identifier in identifiers)
             {
                 var name = identifier.Identifier.Text;
-                if (_flowInfo.ContainsKey(name))
+                if (_flowInfo.TryGetValue(name, out var info))
                 {
-                    var info = _flowInfo[name];
                     info.LastUse = Math.Max(info.LastUse, lineNumber);
                     info.UseCount++;
 
@@ -723,9 +722,9 @@ internal sealed class RegisterSpillingOptimizer
                     if (assignment != null && assignment.Left.ToString() != name)
                     {
                         var leftSide = assignment.Left.ToString();
-                        if (_flowInfo.ContainsKey(leftSide))
+                        if (_flowInfo.TryGetValue(leftSide, out var leftInfo))
                         {
-                            _ = _flowInfo[leftSide].Dependencies.Add(name);
+                            _ = leftInfo.Dependencies.Add(name);
                         }
                     }
                 }

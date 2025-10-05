@@ -6,8 +6,8 @@ using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
-using AbstractionsBackendInfo = DotCompute.Abstractions.Debugging.BackendInfo;
 
 namespace DotCompute.Core.Debugging;
 
@@ -22,11 +22,24 @@ namespace DotCompute.Core.Debugging;
 /// - KernelDebugReporter: Report generation and result comparison
 /// - KernelDebugOrchestrator: Coordinates all debugging components
 /// </summary>
-public class KernelDebugService : IKernelDebugService, IDisposable
+public partial class KernelDebugService : IKernelDebugService, IDisposable
 {
     private readonly Services.KernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;
     private bool _disposed;
+
+    // LoggerMessage delegates (Event IDs: 11000-11999 for Debugging)
+    [LoggerMessage(EventId = 11000, Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "KernelDebugService initialized with modular architecture")]
+    private static partial void LogServiceInitialized(ILogger logger);
+
+    [LoggerMessage(EventId = 11001, Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Debug service options configured")]
+    private static partial void LogOptionsConfigured(ILogger logger);
+
+    [LoggerMessage(EventId = 11002, Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "KernelDebugService disposed successfully")]
+    private static partial void LogServiceDisposed(ILogger logger);
+
+    [LoggerMessage(EventId = 11003, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Error during KernelDebugService disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception exception);
     /// <summary>
     /// Initializes a new instance of the KernelDebugService class.
     /// </summary>
@@ -35,15 +48,17 @@ public class KernelDebugService : IKernelDebugService, IDisposable
 
     public KernelDebugService(
         ILogger<KernelDebugService> logger,
+        ILoggerFactory loggerFactory,
         IAccelerator? primaryAccelerator = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(loggerFactory);
 
         // Create the orchestrator with specialized components
-        var orchestratorLogger = logger.CreateLogger<Services.KernelDebugOrchestrator>();
+        var orchestratorLogger = loggerFactory.CreateLogger<Services.KernelDebugOrchestrator>();
         _orchestrator = new Services.KernelDebugOrchestrator(orchestratorLogger, primaryAccelerator);
 
-        _logger.LogInformation("KernelDebugService initialized with modular architecture");
+        LogServiceInitialized(_logger);
     }
 
     /// <summary>
@@ -119,7 +134,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     /// <summary>
     /// Gets information about available debugging backends.
     /// </summary>
-    public async Task<IEnumerable<AbstractionsBackendInfo>> GetAvailableBackendsAsync()
+    public async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return await _orchestrator.GetAvailableBackendsAsync();
@@ -132,7 +147,7 @@ public class KernelDebugService : IKernelDebugService, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _orchestrator.Configure(options);
-        _logger.LogDebug("Debug service options configured");
+        LogOptionsConfigured(_logger);
     }
 
     // Additional convenience methods that leverage the modular architecture
@@ -231,11 +246,11 @@ public class KernelDebugService : IKernelDebugService, IDisposable
         {
             _orchestrator?.Dispose();
             _disposed = true;
-            _logger.LogInformation("KernelDebugService disposed successfully");
+            LogServiceDisposed(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during KernelDebugService disposal");
+            LogDisposalError(_logger, ex);
         }
     }
 }

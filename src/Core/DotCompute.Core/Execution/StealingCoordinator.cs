@@ -44,7 +44,9 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <param name="thiefIndex">Index of the thief.</param>
         /// <param name="victimIndex">Index of the victim.</param>
+#pragma warning disable CA1822 // Mark members as static - instance method for consistency with class design
         public void RecordFailedSteal(int thiefIndex, int victimIndex)
+#pragma warning restore CA1822
         {
             lock (_statsLock)
             {
@@ -56,7 +58,9 @@ namespace DotCompute.Core.Execution
         /// Gets the statistics.
         /// </summary>
         /// <returns></returns>
+#pragma warning disable CA1822 // Mark members as static - instance property for consistency with class design
         public StealingStatistics Statistics
+#pragma warning restore CA1822
         {
             get
             {

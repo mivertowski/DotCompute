@@ -96,7 +96,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the dependencies on other layers.
         /// Contains the layer IDs that must complete execution before this layer can begin.
         /// </summary>
-        public IList<int> Dependencies { get; } = [];
+        public IList<int> Dependencies { get; init; } = [];
     }
 
     /// <summary>

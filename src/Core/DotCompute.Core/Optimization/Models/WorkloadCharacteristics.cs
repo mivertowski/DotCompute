@@ -38,8 +38,8 @@ public class WorkloadCharacteristics
     public MemoryAccessPattern AccessPattern { get; set; }
 
     /// <summary>Additional custom characteristics</summary>
-    public Dictionary<string, object> CustomCharacteristics { get; } = [];
+    public Dictionary<string, object> CustomCharacteristics { get; init; } = [];
 
     /// <summary>Gets or sets optimization hints for this workload.</summary>
-    public IList<string> OptimizationHints { get; } = [];
+    public IList<string> OptimizationHints { get; init; } = [];
 }

@@ -57,10 +57,7 @@ namespace DotCompute.Core.Compute.Memory
         /// <exception cref="ObjectDisposedException">Thrown when the buffer has been disposed.</exception>
         public void Reset(long sizeInBytes, MemoryOptions options)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (_data != null)
             {
@@ -99,10 +96,7 @@ namespace DotCompute.Core.Compute.Memory
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var sourceBytes = MemoryMarshal.AsBytes(source.Span);
             var destPtr = _alignedPtr + (int)offset;
@@ -130,10 +124,7 @@ namespace DotCompute.Core.Compute.Memory
             long offset = 0,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var destBytes = MemoryMarshal.AsBytes(destination.Span);
             var sourcePtr = _alignedPtr + (int)offset;

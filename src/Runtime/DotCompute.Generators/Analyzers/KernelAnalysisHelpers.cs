@@ -312,8 +312,12 @@ internal static class KernelAnalysisHelpers
     {
         return methodSyntax.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Any(inv => !inv.ToString().Contains("Math.") &&
-                       !inv.ToString().Contains("MathF.") &&
-                       !inv.ToString().StartsWith("System."));
+            .Any(inv =>
+            {
+                var invString = inv.ToString();
+                return !invString.Contains("Math.") &&
+                       !invString.Contains("MathF.") &&
+                       !invString.StartsWith("System.", StringComparison.Ordinal);
+            });
     }
 }

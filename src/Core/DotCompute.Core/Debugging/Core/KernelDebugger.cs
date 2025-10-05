@@ -3,10 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Performance;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Sockets;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 
@@ -15,7 +17,7 @@ namespace DotCompute.Core.Debugging.Core;
 /// <summary>
 /// Core kernel debugging functionality for cross-backend validation and analysis.
 /// </summary>
-public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null) : IDisposable
+public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? _options = null) : IDisposable
 {
     private readonly ILogger<KernelDebugger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
@@ -339,7 +341,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     /// <summary>
     /// Analyzes result consistency across accelerators.
     /// </summary>
-    private List<DebugValidationIssue> AnalyzeResultConsistency(IReadOnlyList<KernelExecutionResult> results)
+    private static List<DebugValidationIssue> AnalyzeResultConsistency(IReadOnlyList<KernelExecutionResult> results)
     {
         var issues = new List<DebugValidationIssue>();
 

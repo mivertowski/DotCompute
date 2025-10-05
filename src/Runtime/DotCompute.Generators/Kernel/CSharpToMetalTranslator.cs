@@ -109,7 +109,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
             var metalType = ConvertToMetalParameterType(param.Type, param.Name);
             _ = result.Append(metalType);
-            _ = result.Append(" ");
+            _ = result.Append(' ');
             _ = result.Append(param.Name);
             _ = result.Append(" [[buffer(");
             _ = result.Append(bufferIndex++);
@@ -151,8 +151,8 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
         // Check if it's read-only
 
         var isReadOnly = csharpType.Contains("ReadOnlySpan") ||
-                         paramName.StartsWith("input") ||
-                         paramName.StartsWith("source");
+                         paramName.StartsWith("input", StringComparison.Ordinal) ||
+                         paramName.StartsWith("source", StringComparison.Ordinal);
 
         // Extract element type from Span<T> or array
 
@@ -174,11 +174,11 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Determine memory qualifier
 
-        if (string.Equals(csharpType, "int") ||
-            string.Equals(csharpType, "float") ||
-            string.Equals(csharpType, "uint") ||
-            string.Equals(csharpType, "bool") ||
-            string.Equals(csharpType, "double"))
+        if (string.Equals(csharpType, "int", StringComparison.Ordinal) ||
+            string.Equals(csharpType, "float", StringComparison.Ordinal) ||
+            string.Equals(csharpType, "uint", StringComparison.Ordinal) ||
+            string.Equals(csharpType, "bool", StringComparison.Ordinal) ||
+            string.Equals(csharpType, "double", StringComparison.Ordinal))
         {
             return $"constant {metalElementType}&";
         }
@@ -410,18 +410,18 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Handle Kernel.ThreadId.X/Y/Z
 
-        if (fullName.StartsWith("Kernel.ThreadId") || fullName.StartsWith("ThreadId"))
+        if (fullName.StartsWith("Kernel.ThreadId", StringComparison.Ordinal) || fullName.StartsWith("ThreadId", StringComparison.Ordinal))
         {
             var dimensions = GetKernelDimensions();
-            if (fullName.EndsWith(".X") || fullName.EndsWith(".x"))
+            if (fullName.EndsWith(".X", StringComparison.Ordinal) || fullName.EndsWith(".x", StringComparison.Ordinal))
             {
                 _ = _output.Append(dimensions == 1 ? "gid" : "gid.x");
             }
-            else if (fullName.EndsWith(".Y") || fullName.EndsWith(".y"))
+            else if (fullName.EndsWith(".Y", StringComparison.Ordinal) || fullName.EndsWith(".y", StringComparison.Ordinal))
             {
                 _ = _output.Append("gid.y");
             }
-            else if (fullName.EndsWith(".Z") || fullName.EndsWith(".z"))
+            else if (fullName.EndsWith(".Z", StringComparison.Ordinal) || fullName.EndsWith(".z", StringComparison.Ordinal))
             {
                 _ = _output.Append("gid.z");
             }
@@ -441,7 +441,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
         else
         {
             TranslateExpression(memberAccess.Expression);
-            _ = _output.Append(".");
+            _ = _output.Append('.');
             _ = _output.Append(memberAccess.Name.Identifier.Text);
         }
     }
@@ -467,7 +467,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
             _ = _output.Append(')');
         }
         // Handle math functions
-        else if (methodName.StartsWith("Math.") || methodName.StartsWith("MathF."))
+        else if (methodName.StartsWith("Math.", StringComparison.Ordinal) || methodName.StartsWith("MathF.", StringComparison.Ordinal))
         {
             var function = methodName.Substring(methodName.LastIndexOf('.') + 1).ToUpperInvariant();
 
@@ -487,7 +487,9 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
                 "LOG" => "log",
                 "FLOOR" => "floor",
                 "CEIL" => "ceil",
+#pragma warning disable CA1308 // Lowercase required for Metal Shading Language function names
                 _ => function.ToLowerInvariant()
+#pragma warning restore CA1308
             };
 
 
@@ -536,7 +538,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
     private void TranslateElementAccess(ElementAccessExpressionSyntax elementAccess)
     {
         TranslateExpression(elementAccess.Expression);
-        _ = _output.Append("[");
+        _ = _output.Append('[');
         var first = true;
         foreach (var arg in elementAccess.ArgumentList.Arguments)
         {
@@ -548,7 +550,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
             TranslateExpression(arg.Expression);
             first = false;
         }
-        _ = _output.Append("]");
+        _ = _output.Append(']');
     }
 
     private void TranslateForStatement(ForStatementSyntax forStmt)
@@ -636,7 +638,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
             WriteIndented("else");
             if (ifStmt.Else.Statement is IfStatementSyntax elseIf)
             {
-                _ = _output.Append(" ");
+                _ = _output.Append(' ');
                 TranslateIfStatement(elseIf);
             }
             else
@@ -674,7 +676,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
         WriteIndented("return");
         if (returnStmt.Expression != null)
         {
-            _ = _output.Append(" ");
+            _ = _output.Append(' ');
             TranslateExpression(returnStmt.Expression);
         }
         _ = _output.AppendLine(";");

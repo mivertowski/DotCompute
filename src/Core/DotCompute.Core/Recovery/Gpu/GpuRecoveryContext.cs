@@ -48,5 +48,5 @@ public class GpuRecoveryContext
     /// - "execution_time": Time spent executing before failure
     /// - "retry_count": Number of previous retry attempts
     /// </remarks>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }

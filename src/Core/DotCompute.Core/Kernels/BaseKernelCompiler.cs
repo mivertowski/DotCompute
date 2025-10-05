@@ -228,7 +228,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
 
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
-            if (paramsObj is IIReadOnlyList<object> parameters && parameters.Count == 0)
+            if (paramsObj is IReadOnlyList<object> parameters && parameters.Count == 0)
             {
                 result.AddError("Kernel must have at least one parameter");
                 return result;
@@ -255,7 +255,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
         // Use kernel name, code hash, and optimization level for cache key
         var codeHash = definition.Code != null
 
-            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code))).Replace("-", "")
+            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code))).Replace("-", "", StringComparison.Ordinal)
             : "empty";
 
 
@@ -306,7 +306,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             CompilerName,
             kernelName,
             compilationTime.TotalMilliseconds,
-            byteCodeSize?.ToString() ?? "N/A");
+            byteCodeSize?.ToString(global::System.Globalization.CultureInfo.InvariantCulture) ?? "N/A");
     }
 
 

@@ -22,6 +22,35 @@ namespace DotCompute.Core.Telemetry;
 public sealed class PerformanceProfiler : IDisposable
 {
     private readonly ILogger<PerformanceProfiler> _logger;
+
+    // Event IDs: 9000-9099 for PerformanceProfiler
+    private static readonly Action<ILogger, string, Exception?> LogProfileStart =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9000, nameof(LogProfileStart)),
+            "Started performance profiling for correlation ID {CorrelationId}");
+
+    private static readonly Action<ILogger, string, Exception?> LogOrphanedRecord =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9001, nameof(LogOrphanedRecord)),
+            "Recording kernel execution for unknown profile {CorrelationId}");
+
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogKernelExecution =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9002, nameof(LogKernelExecution)),
+            "Recorded kernel execution profile for {KernelName} on {DeviceId}: {ExecutionTime}ms, {Throughput} ops/sec, {Occupancy}% occupancy");
+
+    private static readonly Action<ILogger, string, double, Exception?> LogProfileFinish =
+        LoggerMessage.Define<string, double>(LogLevel.Information, new EventId(9003, nameof(LogProfileFinish)),
+            "Finishing performance profile for {CorrelationId} after {Duration}ms");
+
+    private static readonly Action<ILogger, string, Exception> LogHwCounterReadFailed =
+        LoggerMessage.Define<string>(LogLevel.Trace, new EventId(9004, nameof(LogHwCounterReadFailed)),
+            "Failed to read hardware counter {CounterName}");
+
+    private static readonly Action<ILogger, Exception?> LogHwCountersNotAvailable =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9005, nameof(LogHwCountersNotAvailable)),
+            "Hardware performance counters not available on this platform");
+
+    private static readonly Action<ILogger, Exception> LogProcessorUsageFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9006, nameof(LogProcessorUsageFailed)),
+            "Failed to get processor usage from hardware counter");
     private readonly PerformanceProfilerOptions _options;
     private readonly ConcurrentDictionary<string, ActiveProfile> _activeProfiles;
     private readonly ConcurrentQueue<ProfileSample> _profileSamples;
@@ -108,7 +137,7 @@ public sealed class PerformanceProfiler : IDisposable
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);
 
 
-            _logger.LogDebugMessage($"Started performance profiling for correlation ID {correlationId} with options: {options}");
+            LogProfileStart(_logger, correlationId, null);
 
             // Collect baseline metrics
 
@@ -154,7 +183,7 @@ public sealed class PerformanceProfiler : IDisposable
         {
             if (_options.AllowOrphanedRecords)
             {
-                _logger.LogWarningMessage("Recording kernel execution for unknown profile {correlationId}");
+                LogOrphanedRecord(_logger, correlationId, null);
             }
             else
             {
@@ -201,10 +230,8 @@ public sealed class PerformanceProfiler : IDisposable
         profile?.KernelExecutions.Add(executionProfile);
 
 
-        _logger.LogTrace("Recorded kernel execution profile for {KernelName} on {DeviceId}: " +
-            "{ExecutionTime}ms, {Throughput} ops/sec, {Occupancy}% occupancy",
-            kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
-            executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage);
+        LogKernelExecution(_logger, kernelName, deviceId, executionMetrics.ExecutionTime.TotalMilliseconds,
+            executionMetrics.ThroughputOpsPerSecond, executionMetrics.OccupancyPercentage, null);
     }
 
     /// <summary>
@@ -273,7 +300,7 @@ public sealed class PerformanceProfiler : IDisposable
         var totalDuration = endTime - activeProfile.StartTime;
 
 
-        _logger.LogInfoMessage($"Finishing performance profile for {correlationId} after {totalDuration.TotalMilliseconds}ms");
+        LogProfileFinish(_logger, correlationId, totalDuration.TotalMilliseconds, null);
 
         // Perform comprehensive analysis
 
@@ -513,13 +540,13 @@ public sealed class PerformanceProfiler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogTrace(ex, "Failed to read hardware counter {CounterName}", counter.Key);
+                LogHwCounterReadFailed(_logger, counter.Key, ex);
             }
         }
 #else
         // Performance counters not available on non-Windows platforms
 
-        _logger.LogTrace("Hardware performance counters not available on this platform");
+        LogHwCountersNotAvailable(_logger, null);
 #endif
 
 
@@ -774,7 +801,7 @@ public sealed class PerformanceProfiler : IDisposable
 
     private static double CalculateDeviceUtilizationEfficiency(ActiveProfile profile)
     {
-        if (!profile.DeviceMetrics.Any())
+        if (profile.DeviceMetrics.IsEmpty)
         {
             return 0;
         }
@@ -825,7 +852,7 @@ public sealed class PerformanceProfiler : IDisposable
             .ToList();
 
 
-        if (lowBandwidthOps.Any())
+        if (lowBandwidthOps.Count > 0)
         {
             bottlenecks.Add($"{lowBandwidthOps.Count} memory operations are showing poor bandwidth utilization");
         }
@@ -839,7 +866,7 @@ public sealed class PerformanceProfiler : IDisposable
         var recommendations = new List<string>();
 
 
-        if (profile.KernelExecutions.Any())
+        if (!profile.KernelExecutions.IsEmpty)
         {
             var avgOccupancy = profile.KernelExecutions.Average(k => k.OccupancyPercentage);
             if (avgOccupancy < 60)
@@ -849,7 +876,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
 
 
-        if (profile.MemoryOperations.Any())
+        if (!profile.MemoryOperations.IsEmpty)
         {
             var avgCoalescing = profile.MemoryOperations.Average(m => m.CoalescingEfficiency);
             if (avgCoalescing < 0.7)
@@ -876,7 +903,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to get processor usage from hardware counter");
+            LogProcessorUsageFailed(_logger, ex);
         }
 
         // Fallback to process-based calculation

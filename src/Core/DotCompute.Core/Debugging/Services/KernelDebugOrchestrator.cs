@@ -10,11 +10,11 @@ using DotCompute.Core.Debugging.Analytics;
 using DotCompute.Core.Debugging.Core;
 using DotCompute.Core.Debugging.Infrastructure;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 // Using aliases to resolve type conflicts
 using CoreKernelValidator = DotCompute.Core.Debugging.Core.KernelValidator;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
-using AbstractionsBackendInfo = DotCompute.Abstractions.Debugging.BackendInfo;
 using AbstractionsExecutionStatistics = DotCompute.Abstractions.Debugging.ExecutionStatistics;
 using System;
 
@@ -51,7 +51,8 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
         IAccelerator? primaryAccelerator = null,
         DebugServiceOptions? options = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _primaryAccelerator = primaryAccelerator;
         _options = options ?? new DebugServiceOptions();
         _accelerators = new ConcurrentDictionary<string, IAccelerator>();
@@ -239,7 +240,7 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
             await _debugLogger.LogTracingStartAsync(kernelName, backendType, tracePoints);
 
             // Perform execution tracing
-            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, inputs, tracePoints);
+            var trace = await _profiler.TraceKernelExecutionAsync(kernelName, backendType, inputs);
 
             // Enhance with additional analysis
             var enhancedTrace = await _analyzer.EnhanceExecutionTraceAsync(trace);
@@ -481,17 +482,17 @@ public sealed class KernelDebugOrchestrator : IKernelDebugService, IDisposable
     /// Gets detailed information about available backends and their capabilities.
     /// </summary>
     /// <returns>Information about all available backends and their current status.</returns>
-    public async Task<IEnumerable<AbstractionsBackendInfo>> GetAvailableBackendsAsync()
+    public async Task<IEnumerable<BackendInfo>> GetAvailableBackendsAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.CompletedTask; // Make async for interface compliance
 
-        var backendInfos = new List<BackendInfo>();
+        var backendInfos = new List<DotCompute.Abstractions.Debugging.Types.BackendInfo>();
 
         foreach (var (backendType, accelerator) in _accelerators)
         {
-            var backendInfo = new BackendInfo
+            var backendInfo = new DotCompute.Abstractions.Debugging.Types.BackendInfo
             {
                 Name = backendType,
                 Type = backendType,
@@ -703,17 +704,17 @@ public record PerformanceAnalysisResult
     /// Gets or sets the performance report.
     /// </summary>
     /// <value>The performance report.</value>
-    public KernelPerformanceReport PerformanceReport { get; init; } = new();
+    public PerformanceReport PerformanceReport { get; init; } = new() { KernelName = string.Empty, AnalysisTimeWindow = TimeSpan.FromMinutes(5) };
     /// <summary>
     /// Gets or sets the memory analysis.
     /// </summary>
     /// <value>The memory analysis.</value>
-    public MemoryUsageAnalysis MemoryAnalysis { get; init; } = new();
+    public MemoryUsageAnalysis MemoryAnalysis { get; init; } = new() { MinimumMemoryUsage = 0 };
     /// <summary>
     /// Gets or sets the bottleneck analysis.
     /// </summary>
     /// <value>The bottleneck analysis.</value>
-    public Core.BottleneckAnalysis BottleneckAnalysis { get; init; } = new();
+    public Core.BottleneckAnalysis BottleneckAnalysis { get; init; } = new() { KernelName = string.Empty };
     /// <summary>
     /// Gets or sets the execution statistics.
     /// </summary>

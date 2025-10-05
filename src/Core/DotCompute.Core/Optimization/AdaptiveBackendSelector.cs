@@ -23,6 +23,18 @@ namespace DotCompute.Core.Optimization;
 /// </summary>
 public class AdaptiveBackendSelector : IDisposable
 {
+    // Event IDs: 9300-9399 for AdaptiveBackendSelector
+    private static readonly Action<ILogger, string, string, float, string, Exception?> _logBackendSelection =
+        LoggerMessage.Define<string, string, float, string>(LogLevel.Debug, new EventId(9300, nameof(_logBackendSelection)),
+            "Selected backend {BackendId} for {KernelName} with {Confidence} confidence using {Strategy}");
+
+    private static readonly Action<ILogger, string, string, double, double, Exception?> _logPerformanceRecorded =
+        LoggerMessage.Define<string, string, double, double>(LogLevel.Trace, new EventId(9301, nameof(_logPerformanceRecorded)),
+            "Recorded performance result for {Kernel} on {Backend}: {ExecutionTime}ms, {Throughput} ops/sec");
+
+    private static readonly Action<ILogger, int, Exception> _logPerformanceUpdateFailed =
+        LoggerMessage.Define<int>(LogLevel.Warning, new EventId(9302, nameof(_logPerformanceUpdateFailed)),
+            "Error updating backend performance states");
     private readonly ILogger<AdaptiveBackendSelector> _logger;
     private readonly PerformanceProfiler _performanceProfiler;
     private readonly AdaptiveSelectionOptions _options;
@@ -120,7 +132,8 @@ public class AdaptiveBackendSelector : IDisposable
         var selection = await ApplyOptimalSelectionStrategyAsync(
             backends, workloadAnalysis, workloadSignature, constraints);
 
-        _logger.LogDebugMessage($"Selected backend {selection.BackendId} for {kernelName} with {selection.ConfidenceScore} confidence using {selection.SelectionStrategy}");
+        _logBackendSelection(_logger, selection.BackendId, kernelName, selection.ConfidenceScore,
+            selection.SelectionStrategy.ToString(), null);
 
         return selection;
     }
@@ -168,8 +181,8 @@ public class AdaptiveBackendSelector : IDisposable
         // Invalidate workload analysis cache for this signature
         _ = _workloadAnalysisCache.TryRemove(GetWorkloadCacheKey(workloadSignature), out _);
 
-        _logger.LogTrace("Recorded performance result for {Kernel} on {Backend}: {ExecutionTime}ms, {Throughput} ops/sec",
-            kernelName, selectedBackend, performanceResult.ExecutionTimeMs, performanceResult.ThroughputOpsPerSecond);
+        _logPerformanceRecorded(_logger, kernelName, selectedBackend,
+            performanceResult.ExecutionTimeMs, performanceResult.ThroughputOpsPerSecond, null);
 
         await Task.CompletedTask;
     }
@@ -185,9 +198,9 @@ public class AdaptiveBackendSelector : IDisposable
             Timestamp = DateTimeOffset.UtcNow,
             TotalWorkloadSignatures = _performanceHistory.Count,
             TotalBackends = _backendStates.Count,
+            LearningStatistics = GetLearningStatistics(),
             BackendStates = _backendStates.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.GetSummary()),
-            TopPerformingPairs = GetTopPerformingWorkloadBackendPairs(10),
-            LearningStatistics = GetLearningStatistics()
+            TopPerformingPairs = GetTopPerformingWorkloadBackendPairs(10)
         };
 
         return insights;
@@ -256,6 +269,13 @@ public class AdaptiveBackendSelector : IDisposable
         var selectedAccelerator = backends.First(b => GetBackendId(b) == bestBackend.Key);
         var confidence = CalculateHistoricalConfidence(bestBackend.Value, workloadAnalysis.TotalHistoryEntries);
 
+        var metadata = new Dictionary<string, object>
+        {
+            ["HistoricalSamples"] = bestBackend.Value.SampleCount,
+            ["AverageExecutionTime"] = bestBackend.Value.AverageExecutionTimeMs,
+            ["Reliability"] = bestBackend.Value.ReliabilityScore
+        };
+
         return new BackendSelection
         {
             SelectedBackend = selectedAccelerator,
@@ -263,12 +283,7 @@ public class AdaptiveBackendSelector : IDisposable
             ConfidenceScore = confidence,
             Reason = $"Historical performance: avg {bestBackend.Value.AverageExecutionTimeMs:F1}ms, {bestBackend.Value.AverageThroughput:F0} ops/sec",
             SelectionStrategy = SelectionStrategy.Historical,
-            Metadata = new Dictionary<string, object>
-            {
-                ["HistoricalSamples"] = bestBackend.Value.SampleCount,
-                ["AverageExecutionTime"] = bestBackend.Value.AverageExecutionTimeMs,
-                ["Reliability"] = bestBackend.Value.ReliabilityScore
-            }
+            Metadata = metadata
         };
     }
 
@@ -308,6 +323,13 @@ public class AdaptiveBackendSelector : IDisposable
 
         await Task.CompletedTask;
 
+        var realtimeMetadata = new Dictionary<string, object>
+        {
+            ["RecentExecutions"] = bestState.RecentExecutionCount,
+            ["CurrentUtilization"] = bestState.CurrentUtilization,
+            ["Score"] = realtimeScores[bestBackendId]
+        };
+
         return new BackendSelection
         {
             SelectedBackend = bestBackend,
@@ -315,12 +337,7 @@ public class AdaptiveBackendSelector : IDisposable
             ConfidenceScore = Math.Min(0.8f, (float)realtimeScores[bestBackendId]),
             Reason = $"Real-time performance: {bestState.RecentAverageExecutionTimeMs:F1}ms avg, {bestState.CurrentUtilization:P1} utilization",
             SelectionStrategy = SelectionStrategy.RealTime,
-            Metadata = new Dictionary<string, object>
-            {
-                ["RecentExecutions"] = bestState.RecentExecutionCount,
-                ["CurrentUtilization"] = bestState.CurrentUtilization,
-                ["Score"] = realtimeScores[bestBackendId]
-            }
+            Metadata = realtimeMetadata
         };
     }
 
@@ -638,7 +655,7 @@ public class AdaptiveBackendSelector : IDisposable
 
     private string GetBackendId(IAccelerator accelerator)
         // This would need to be implemented based on the actual IAccelerator interface
-        => accelerator.GetType().Name.Replace("Accelerator", "");
+        => accelerator.GetType().Name.Replace("Accelerator", "", StringComparison.Ordinal);
 
     private List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> GetTopPerformingWorkloadBackendPairs(int count)
     {
@@ -662,7 +679,7 @@ public class AdaptiveBackendSelector : IDisposable
     private LearningStatistics GetLearningStatistics()
     {
         var totalSamples = _performanceHistory.Values.Sum(h => h.TotalEntries);
-        var averageSamplesPerWorkload = _performanceHistory.Count > 0
+        var averageSamplesPerWorkload = !_performanceHistory.IsEmpty
 
             ? totalSamples / _performanceHistory.Count
 
@@ -708,12 +725,10 @@ public class AdaptiveBackendSelector : IDisposable
             {
                 backendState.UpdateState(systemSnapshot);
             }
-
-            _logger.LogTrace("Updated performance states for {BackendCount} backends", _backendStates.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error updating backend performance states");
+            _logPerformanceUpdateFailed(_logger, _backendStates.Count, ex);
         }
     }
     /// <summary>

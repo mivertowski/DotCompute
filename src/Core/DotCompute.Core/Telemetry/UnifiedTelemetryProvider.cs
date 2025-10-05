@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+using System.Globalization;
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -214,13 +214,13 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             if (activity != null)
             {
                 _ = activity.SetTag("event.name", name);
-                _ = activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                _ = activity.SetTag("event.timestamp", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
 
                 if (attributes != null)
                 {
                     foreach (var attr in attributes)
                     {
-                        _ = activity.SetTag($"event.{attr.Key}", Convert.ToString(attr.Value, System.Globalization.CultureInfo.InvariantCulture));
+                        _ = activity.SetTag($"event.{attr.Key}", Convert.ToString(attr.Value, CultureInfo.InvariantCulture));
                     }
                 }
 
@@ -633,7 +633,7 @@ internal sealed class ProductionOperationTimer : IOperationTimer
         {
             foreach (var tag in tags)
             {
-                _ = _activity.SetTag(tag.Key, Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture));
+                _ = _activity.SetTag(tag.Key, Convert.ToString(tag.Value, CultureInfo.InvariantCulture));
             }
         }
     }

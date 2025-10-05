@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 
 namespace DotCompute.Core.Logging;
 
@@ -270,8 +270,8 @@ public sealed class LogEnricher : IDisposable
         {
             DeviceId = deviceId,
             DeviceType = deviceType,
-            Capabilities = capabilities ?? [],
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTimeOffset.UtcNow,
+            Capabilities = capabilities ?? []
         };
 
 
@@ -612,7 +612,7 @@ public sealed class LogEnricher : IDisposable
 
 
 
-        => input.GetHashCode().ToString("X8");
+        => input.GetHashCode(StringComparison.Ordinal).ToString("X8", CultureInfo.InvariantCulture);
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)
     {
@@ -680,11 +680,7 @@ public sealed class LogEnricher : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(LogEnricher));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.
@@ -734,7 +730,7 @@ public sealed class LogEnricherOptions
     /// Gets or sets the additional sensitive patterns.
     /// </summary>
     /// <value>The additional sensitive patterns.</value>
-    public IList<string> AdditionalSensitivePatterns { get; } = [];
+    public IList<string> AdditionalSensitivePatterns { get; init; } = [];
 }
 /// <summary>
 /// An context scope enumeration.
@@ -798,7 +794,7 @@ public sealed class DeviceContext
     /// Gets or sets the capabilities.
     /// </summary>
     /// <value>The capabilities.</value>
-    public Dictionary<string, object> Capabilities { get; } = [];
+    public Dictionary<string, object> Capabilities { get; init; } = [];
     /// <summary>
     /// Gets or sets the timestamp.
     /// </summary>
@@ -827,5 +823,5 @@ public sealed class KernelCompilationInfo
     /// Gets or sets the compiler flags.
     /// </summary>
     /// <value>The compiler flags.</value>
-    public Dictionary<string, object> CompilerFlags { get; } = [];
+    public Dictionary<string, object> CompilerFlags { get; init; } = [];
 }

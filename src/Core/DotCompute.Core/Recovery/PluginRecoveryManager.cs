@@ -13,7 +13,7 @@ namespace DotCompute.Core.Recovery;
 public class PluginRecoveryManager(
     ILogger<PluginRecoveryManager> logger,
 
-    PluginRecoveryConfiguration? config = null) : IDisposable
+    PluginRecoveryConfiguration? _config = null) : IDisposable
 {
     private readonly ILogger<PluginRecoveryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _disposed;
@@ -149,7 +149,7 @@ public class PluginRecoveryContext
     /// <summary>
     /// Additional context data
     /// </summary>
-    public Dictionary<string, object> Context { get; } = [];
+    public Dictionary<string, object> Context { get; init; } = [];
 
     /// <summary>
     /// Path to plugin file or directory

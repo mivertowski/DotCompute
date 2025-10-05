@@ -957,7 +957,7 @@ public sealed class MemoryAccessAnalysis
     /// Gets or sets the access patterns.
     /// </summary>
     /// <value>The access patterns.</value>
-    public Dictionary<string, int> AccessPatterns { get; } = [];
+    public Dictionary<string, int> AccessPatterns { get; init; } = [];
     /// <summary>
     /// Gets or sets the average coalescing efficiency.
     /// </summary>

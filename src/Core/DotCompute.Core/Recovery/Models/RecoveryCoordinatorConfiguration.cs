@@ -55,12 +55,12 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets the recovery strategies to use.
     /// </summary>
-    public IList<RecoveryStrategyConfig> RecoveryStrategies { get; } = [];
+    public IList<RecoveryStrategyConfig> RecoveryStrategies { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the components to monitor.
     /// </summary>
-    public IList<string> MonitoredComponents { get; } = [];
+    public IList<string> MonitoredComponents { get; init; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable recovery metrics.
@@ -86,12 +86,12 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets the notification endpoints.
     /// </summary>
-    public IList<string> NotificationEndpoints { get; } = [];
+    public IList<string> NotificationEndpoints { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the recovery priority levels.
     /// </summary>
-    public Dictionary<string, int> ComponentPriorities { get; } = [];
+    public Dictionary<string, int> ComponentPriorities { get; init; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable failover.
@@ -112,7 +112,7 @@ public class RecoveryCoordinatorConfiguration
     /// <summary>
     /// Gets or sets custom recovery parameters.
     /// </summary>
-    public Dictionary<string, object> CustomParameters { get; } = [];
+    public Dictionary<string, object> CustomParameters { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the GPU recovery configuration.
@@ -178,7 +178,7 @@ public class RecoveryStrategyConfig
     /// <summary>
     /// Gets or sets strategy-specific parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; } = [];
+    public Dictionary<string, object> Parameters { get; init; } = [];
 }
 
 /// <summary>
@@ -189,7 +189,7 @@ public class FailoverConfiguration
     /// <summary>
     /// Gets or sets the failover targets.
     /// </summary>
-    public IList<string> FailoverTargets { get; } = [];
+    public IList<string> FailoverTargets { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the failover timeout.

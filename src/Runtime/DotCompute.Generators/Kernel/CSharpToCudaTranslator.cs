@@ -310,7 +310,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         WriteIndented("return");
         if (returnStmt.Expression != null)
         {
-            _ = _output.Append(" ");
+            _ = _output.Append(' ');
             TranslateExpression(returnStmt.Expression);
         }
         _ = _output.AppendLine(";");
@@ -385,7 +385,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
         // Handle float literals
 
-        if (literal.Token.Text.EndsWith("f"))
+        if (literal.Token.Text.EndsWith("f", StringComparison.Ordinal))
         {
             _ = _output.Append(literal.Token.Text);
         }
@@ -433,7 +433,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
     private void TranslateElementAccess(ElementAccessExpressionSyntax elementAccess)
     {
         TranslateExpression(elementAccess.Expression);
-        _ = _output.Append("[");
+        _ = _output.Append('[');
 
 
         for (var i = 0; i < elementAccess.ArgumentList.Arguments.Count; i++)
@@ -447,7 +447,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         }
 
 
-        _ = _output.Append("]");
+        _ = _output.Append(']');
     }
 
     private void TranslateInvocation(InvocationExpressionSyntax invocation)
@@ -459,7 +459,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             var objectName = memberAccess.Expression.ToString();
 
 
-            if (string.Equals(objectName, "Math") || string.Equals(objectName, "MathF"))
+            if (string.Equals(objectName, "Math", StringComparison.Ordinal) || string.Equals(objectName, "MathF", StringComparison.Ordinal))
             {
                 // Translate Math functions to CUDA equivalents
                 var cudaFunction = TranslateMathFunction(methodName);
@@ -509,7 +509,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         else
         {
             TranslateExpression(memberAccess.Expression);
-            _ = _output.Append(".");
+            _ = _output.Append('.');
             _ = _output.Append(memberName);
         }
     }
@@ -523,7 +523,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
     private static bool IsAtomicOperation(string methodName)
     {
-        return methodName.StartsWith("Interlocked") ||
+        return methodName.StartsWith("Interlocked", StringComparison.Ordinal) ||
                methodName.Contains("Atomic");
     }
 
@@ -607,7 +607,9 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             "Max" => "fmaxf",
             "Sign" => "copysignf",
             "Clamp" => "fmaxf(fminf",  // Special handling needed
+#pragma warning disable CA1308 // Lowercase required for CUDA C function names
             _ => methodName.ToLowerInvariant()
+#pragma warning restore CA1308
         };
     }
 

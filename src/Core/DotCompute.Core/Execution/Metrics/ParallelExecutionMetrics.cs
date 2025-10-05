@@ -61,7 +61,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A dictionary mapping execution strategy types to their corresponding performance metrics.
         /// This allows for strategy-specific performance analysis and comparison.
         /// </value>
-        public Dictionary<ExecutionStrategyType, StrategyMetrics> MetricsByStrategy { get; } = [];
+        public Dictionary<ExecutionStrategyType, StrategyMetrics> MetricsByStrategy { get; init; } = [];
 
         /// <summary>
         /// Gets or sets metrics by device.
@@ -70,7 +70,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A dictionary mapping device identifiers to their corresponding performance metrics.
         /// This enables device-specific performance tracking and load balancing analysis.
         /// </value>
-        public Dictionary<string, DeviceMetrics> MetricsByDevice { get; } = [];
+        public Dictionary<string, DeviceMetrics> MetricsByDevice { get; init; } = [];
 
         /// <summary>
         /// Gets the overall success rate percentage.

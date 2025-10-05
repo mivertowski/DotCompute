@@ -261,10 +261,7 @@ public sealed class UnifiedGeneratedKernel(
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedGeneratedKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }
 

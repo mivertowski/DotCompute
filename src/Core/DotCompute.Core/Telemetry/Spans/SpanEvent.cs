@@ -28,5 +28,5 @@ public sealed class SpanEvent
     /// Attributes provide additional context and details about the event.
     /// </summary>
     /// <value>A dictionary of attribute key-value pairs.</value>
-    public Dictionary<string, object?> Attributes { get; } = [];
+    public Dictionary<string, object?> Attributes { get; init; } = [];
 }

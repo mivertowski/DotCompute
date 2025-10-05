@@ -340,7 +340,7 @@ public static class ErrorHandlingUtilities
             var m when m.Contains("busy", StringComparison.CurrentCulture) || m.Contains("in use", StringComparison.CurrentCulture) => ErrorClassification.DeviceBusy,
             var m when m.Contains("timeout", StringComparison.CurrentCulture) => ErrorClassification.Timeout,
             var m when m.Contains("hardware", StringComparison.CurrentCulture) || m.Contains("driver", StringComparison.CurrentCulture) => ErrorClassification.HardwareFailure,
-            var m when m.Contains("invalid") => ErrorClassification.InvalidInput,
+            var m when m.Contains("invalid", StringComparison.OrdinalIgnoreCase) => ErrorClassification.InvalidInput,
             var m when m.Contains("permission", StringComparison.CurrentCulture) || m.Contains("access", StringComparison.CurrentCulture) => ErrorClassification.PermissionDenied,
             _ => ErrorClassification.ComputeError
         };
@@ -408,9 +408,9 @@ public static class ErrorHandlingUtilities
 
     private static string GenerateErrorId(Exception exception)
     {
-        var hash = exception.GetType().Name.GetHashCode() ^
-                   (exception.Message?.GetHashCode() ?? 0) ^
-                   (exception.StackTrace?.GetHashCode() ?? 0);
+        var hash = exception.GetType().Name.GetHashCode(StringComparison.Ordinal) ^
+                   (exception.Message?.GetHashCode(StringComparison.Ordinal) ?? 0) ^
+                   (exception.StackTrace?.GetHashCode(StringComparison.Ordinal) ?? 0);
 
         return $"ERR_{Math.Abs(hash):X8}_{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
     }

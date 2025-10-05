@@ -67,7 +67,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void RecordMetric(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -108,7 +108,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void IncrementCounter(string name, long increment = 1, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -149,7 +149,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void RecordHistogram(string name, double value, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -189,7 +189,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return null;
         }
@@ -224,7 +224,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordEvent(string name, IDictionary<string, object?>? attributes = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -269,7 +269,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual IOperationTimer StartTimer(string operationName, IDictionary<string, object?>? tags = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
 
             return new NullOperationTimer();
@@ -299,7 +299,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordMemoryAllocation(long bytes, string? allocationType = null)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -332,7 +332,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordAcceleratorUtilization(string acceleratorType, double utilization, long memoryUsed)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -364,7 +364,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordKernelExecution(string kernelName, TimeSpan duration, long operationCount)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -404,7 +404,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordMemoryTransfer(string direction, long bytes, TimeSpan duration)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }
@@ -444,7 +444,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     public virtual void RecordGarbageCollection(int generation, TimeSpan duration, long memoryBefore, long memoryAfter)
     {
-        if (_disposed || !Configuration.IsEnabled)
+        if (_disposed || !Configuration.Enabled)
         {
             return;
         }

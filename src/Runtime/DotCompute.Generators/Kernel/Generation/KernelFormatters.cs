@@ -19,8 +19,8 @@ namespace DotCompute.Generators.Kernel.Generation;
 /// </remarks>
 public sealed class KernelFormatters
 {
-    private static readonly Regex InvalidCharacters = new(@"[^\w\d_]", RegexOptions.Compiled);
-    private static readonly Regex MultipleUnderscores = new(@"_{2,}", RegexOptions.Compiled);
+    private static readonly Regex _invalidCharacters = new(@"[^\w\d_]", RegexOptions.Compiled);
+    private static readonly Regex _multipleUnderscores = new(@"_{2,}", RegexOptions.Compiled);
 
     /// <summary>
     /// Formats a kernel name for use as a class name.
@@ -169,14 +169,14 @@ public sealed class KernelFormatters
         }
 
         // Handle array types
-        if (typeName.EndsWith("[]"))
+        if (typeName.EndsWith("[]", StringComparison.Ordinal))
         {
             var elementType = typeName.Substring(0, typeName.Length - 2);
             return $"{FormatTypeName(elementType)}[]";
         }
 
         // Handle pointer types
-        if (typeName.EndsWith("*"))
+        if (typeName.EndsWith("*", StringComparison.Ordinal))
         {
             var baseType = typeName.Substring(0, typeName.Length - 1);
             return $"{FormatTypeName(baseType)}*";
@@ -278,10 +278,10 @@ public sealed class KernelFormatters
         }
 
         // Remove invalid characters
-        var sanitized = InvalidCharacters.Replace(identifier, "_");
+        var sanitized = _invalidCharacters.Replace(identifier, "_");
 
         // Collapse multiple underscores
-        sanitized = MultipleUnderscores.Replace(sanitized, "_");
+        sanitized = _multipleUnderscores.Replace(sanitized, "_");
 
         // Ensure it starts with a letter or underscore
         if (!char.IsLetter(sanitized[0]) && sanitized[0] != '_')
@@ -318,7 +318,7 @@ public sealed class KernelFormatters
         }
 
         // Collapse multiple underscores
-        sanitized = MultipleUnderscores.Replace(sanitized, "_");
+        sanitized = _multipleUnderscores.Replace(sanitized, "_");
 
         return sanitized.Trim('_');
     }
@@ -336,8 +336,10 @@ public sealed class KernelFormatters
         }
 
         var words = input.Split(['_'], StringSplitOptions.RemoveEmptyEntries);
+#pragma warning disable CA1308 // Lowercase required for PascalCase formatting
         return string.Join("", words.Select(word =>
             char.ToUpperInvariant(word[0]) + word.Substring(1).ToLowerInvariant()));
+#pragma warning restore CA1308
     }
 
     /// <summary>

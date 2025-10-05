@@ -41,10 +41,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public void AddKernel(IAccelerator device, ManagedCompiledKernel kernel)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CompiledKernelCache));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var deviceKey = GetDeviceKey(device);
             _kernelsByDevice[deviceKey] = kernel;
@@ -411,7 +408,7 @@ namespace DotCompute.Core.Execution
         public long TotalAccessCount { get; set; }
 
         /// <summary>Gets or sets the number of kernels by device type.</summary>
-        public Dictionary<string, int> DeviceTypes { get; } = [];
+        public Dictionary<string, int> DeviceTypes { get; init; } = [];
 
         /// <summary>Gets or sets the total number of cache hits.</summary>
         public long TotalHits { get; set; }
@@ -476,10 +473,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public CompiledKernelCache GetOrCreateCache(string kernelName)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(GlobalKernelCacheManager));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             return _cachesByKernel.GetOrAdd(kernelName, _ => new CompiledKernelCache());
         }

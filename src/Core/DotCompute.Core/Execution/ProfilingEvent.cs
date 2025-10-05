@@ -27,5 +27,5 @@ public class ProfilingEvent
     /// Gets or sets the properties.
     /// </summary>
     /// <value>The properties.</value>
-    public Dictionary<string, object> Properties { get; } = [];
+    public Dictionary<string, object> Properties { get; init; } = [];
 }

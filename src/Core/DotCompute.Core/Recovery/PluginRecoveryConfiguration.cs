@@ -229,7 +229,7 @@ public class PluginHealthReport
     /// <summary>
     /// Additional metrics
     /// </summary>
-    public Dictionary<string, object> Metrics { get; } = [];
+    public Dictionary<string, object> Metrics { get; init; } = [];
 
     /// <summary>
     /// Overall health score (0.0 to 1.0)

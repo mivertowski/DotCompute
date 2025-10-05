@@ -773,7 +773,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         private static double CalculateVariance(IEnumerable<double> values)
         {
             var list = values.ToList();
-            if (!list.Any())
+            if (list.Count == 0)
             {
                 return 0;
             }

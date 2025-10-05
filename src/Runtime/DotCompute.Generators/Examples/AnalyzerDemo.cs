@@ -118,6 +118,7 @@ public static class AnalyzerDemo
     private static int GetThreadIndex() => 0; // Placeholder
 
     // Fake Kernel attribute and threading model for demo
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     private sealed class KernelAttribute : Attribute
     {
         public KernelBackends Backends { get; set; } = KernelBackends.CPU;
@@ -241,6 +242,7 @@ public static class PerformanceAnalysisExamples
         data[index] += 1.0f;  // Simple operation - CPU might be better
     }
 
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     private sealed class KernelAttribute : Attribute
     {
         public KernelBackends Backends { get; set; } = KernelBackends.CPU;

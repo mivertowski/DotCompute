@@ -60,7 +60,7 @@ public class CircuitBreakerStatistics
     /// Maps service names to their specific performance and health metrics.
     /// </summary>
     /// <value>A dictionary of service names and their corresponding statistics.</value>
-    public Dictionary<string, ServiceStatistics> ServiceStatistics { get; } = [];
+    public Dictionary<string, ServiceStatistics> ServiceStatistics { get; init; } = [];
 
 
     /// <summary>

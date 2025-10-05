@@ -27,5 +27,5 @@ public class BackendSelection
     public SelectionStrategy SelectionStrategy { get; set; }
 
     /// <summary>Additional metadata about the selection</summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }

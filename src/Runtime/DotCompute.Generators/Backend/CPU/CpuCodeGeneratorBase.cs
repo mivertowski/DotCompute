@@ -92,7 +92,7 @@ public abstract class CpuCodeGeneratorBase
     /// <summary>
     /// Validates all kernel parameters.
     /// </summary>
-    protected virtual void ValidateParameters()
+    protected void ValidateParameters()
     {
         foreach (var parameter in Parameters)
         {

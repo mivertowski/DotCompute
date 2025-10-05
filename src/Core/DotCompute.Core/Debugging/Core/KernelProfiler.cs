@@ -5,9 +5,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging.Types;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -15,11 +17,13 @@ namespace DotCompute.Core.Debugging.Core;
 /// Provides comprehensive performance profiling and analysis for kernel execution.
 /// Tracks execution traces, memory usage, and performance metrics across backends.
 /// </summary>
+#pragma warning disable CS9113 // Parameter reserved for future configurable profiling options
 public sealed class KernelProfiler(
     ILogger<KernelProfiler> logger,
     DebugServiceOptions options) : IDisposable
+#pragma warning restore CS9113
 {
-    private readonly ILogger<KernelProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<KernelProfiler> _logger = logger;
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = new();
     private readonly ConcurrentDictionary<string, PerformanceProfile> _performanceProfiles = new();
     private bool _disposed;
@@ -139,7 +143,7 @@ public sealed class KernelProfiler(
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <param name="timeWindow">Time window for historical analysis.</param>
     /// <returns>Performance report with trends and recommendations.</returns>
-    public async Task<KernelPerformanceReport> GeneratePerformanceReportAsync(
+    public async Task<PerformanceReport> GeneratePerformanceReportAsync(
         string kernelName,
         TimeSpan? timeWindow = null)
     {
@@ -150,12 +154,12 @@ public sealed class KernelProfiler(
 
         var cutoffTime = DateTime.UtcNow - (timeWindow ?? TimeSpan.FromHours(24));
         var relevantExecutions = _executionHistory
-            .Where(e => e.KernelName == kernelName && e.ExecutionTime > TimeSpan.Zero)
+            .Where(e => e.KernelName == kernelName && e.Timings != null && e.Timings.TotalTimeMs > 0)
             .ToList();
 
         if (relevantExecutions.Count == 0)
         {
-            return new KernelPerformanceReport
+            return new PerformanceReport
             {
                 KernelName = kernelName,
                 ExecutionCount = 0,
@@ -183,7 +187,7 @@ public sealed class KernelProfiler(
         var crossBackendRecommendations = GenerateCrossBackendRecommendations(backendMetrics);
         recommendations.AddRange(crossBackendRecommendations);
 
-        return new KernelPerformanceReport
+        return new PerformanceReport
         {
             KernelName = kernelName,
             ExecutionCount = relevantExecutions.Count,
@@ -207,7 +211,9 @@ public sealed class KernelProfiler(
         await Task.CompletedTask; // Make async for consistency
 
         var relevantExecutions = _executionHistory
-            .Where(e => e.KernelName == kernelName && e.MemoryUsed > 0)
+            .Where(e => e.KernelName == kernelName
+                && e.PerformanceCounters?.ContainsKey("MemoryUsed") == true
+                && Convert.ToInt64(e.PerformanceCounters["MemoryUsed"]) > 0)
             .ToList();
 
         if (relevantExecutions.Count == 0)
@@ -222,7 +228,9 @@ public sealed class KernelProfiler(
             };
         }
 
-        var memoryUsages = relevantExecutions.Select(e => e.MemoryUsed).ToArray();
+        var memoryUsages = relevantExecutions
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .ToArray();
         var average = memoryUsages.Average();
         var peak = memoryUsages.Max();
         var minimum = memoryUsages.Min();
@@ -275,11 +283,14 @@ public sealed class KernelProfiler(
         }
 
         // Analyze execution time patterns
-        var executionTimes = relevantExecutions.Select(e => e.ExecutionTime.TotalMilliseconds).ToArray();
-        var avgExecutionTime = executionTimes.Average();
-        var maxExecutionTime = executionTimes.Max();
+        var executionTimes = relevantExecutions
+            .Where(e => e.Timings != null)
+            .Select(e => e.Timings!.TotalTimeMs)
+            .ToArray();
+        var avgExecutionTime = executionTimes.Length > 0 ? executionTimes.Average() : 0;
+        var maxExecutionTime = executionTimes.Length > 0 ? executionTimes.Max() : 0;
 
-        if (maxExecutionTime > avgExecutionTime * 2)
+        if (executionTimes.Length > 0 && maxExecutionTime > avgExecutionTime * 2)
         {
             bottlenecks.Add(new PerformanceBottleneck
             {
@@ -292,7 +303,10 @@ public sealed class KernelProfiler(
         }
 
         // Analyze memory usage patterns
-        var memoryUsages = relevantExecutions.Where(e => e.MemoryUsed > 0).Select(e => e.MemoryUsed).ToArray();
+        var memoryUsages = relevantExecutions
+            .Where(e => e.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .ToArray();
         if (memoryUsages.Length > 0)
         {
             var avgMemory = memoryUsages.Average();
@@ -356,8 +370,8 @@ public sealed class KernelProfiler(
         var successRate = (double)successful / relevantExecutions.Count;
 
         var executionTimes = relevantExecutions
-            .Where(e => e.Success && e.ExecutionTime > TimeSpan.Zero)
-            .Select(e => e.ExecutionTime.TotalMilliseconds)
+            .Where(e => e.Success && e.Timings != null && e.Timings.TotalTimeMs > 0)
+            .Select(e => e.Timings!.TotalTimeMs)
             .ToArray();
 
         return new ExecutionStatistics
@@ -391,7 +405,7 @@ public sealed class KernelProfiler(
     /// <summary>
     /// Executes kernel with detailed tracing.
     /// </summary>
-    private async Task<object?> ExecuteKernelWithTracingAsync(
+    private static async Task<object?> ExecuteKernelWithTracingAsync(
         string kernelName,
         object[] inputs,
         IAccelerator accelerator,
@@ -521,13 +535,21 @@ public sealed class KernelProfiler(
     /// </summary>
     private static PerformanceMetrics AnalyzeExecutionGroup(IReadOnlyList<KernelExecutionResult> executions)
     {
-        var executionTimes = executions.Select(e => e.ExecutionTime.TotalMilliseconds).ToArray();
-        var memoryUsages = executions.Where(e => e.MemoryUsed > 0).Select(e => e.MemoryUsed).ToArray();
+        var executionTimes = executions
+            .Where(e => e.Timings != null)
+            .Select(e => e.Timings!.TotalTimeMs)
+            .ToArray();
+        var memoryUsages = executions
+            .Where(e => e.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .ToArray();
 
         return new PerformanceMetrics
         {
-            ExecutionTime = TimeSpan.FromMilliseconds(executionTimes.Average()),
-            ThroughputOpsPerSecond = (int)(executionTimes.Average() > 0 ? 1000.0 / executionTimes.Average() : 0),
+            ExecutionTime = TimeSpan.FromMilliseconds(executionTimes.Length > 0 ? executionTimes.Average() : 0),
+            ThroughputOpsPerSecond = executionTimes.Length > 0 && executionTimes.Average() > 0
+                ? (int)(1000.0 / executionTimes.Average())
+                : 0,
             MemoryUsage = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0
         };
     }

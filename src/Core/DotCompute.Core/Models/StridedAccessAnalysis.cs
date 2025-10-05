@@ -43,6 +43,6 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets the list of optimization recommendations.
         /// </summary>
-        public IList<string> Recommendations { get; } = [];
+        public IList<string> Recommendations { get; init; } = [];
     }
 }

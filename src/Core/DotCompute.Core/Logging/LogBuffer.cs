@@ -308,7 +308,7 @@ public sealed class LogBuffer : IDisposable
         try
         {
             // Apply batch-level transformations
-            var processedBatch = await PreprocessBatchAsync(batch, cancellationToken);
+            var processedBatch = await PreprocessBatchAsync(batch.ToList(), cancellationToken);
 
             // Write to all configured sinks in parallel
 
@@ -330,7 +330,7 @@ public sealed class LogBuffer : IDisposable
 
             // Attempt individual entry processing for resilience
 
-            await ProcessIndividualEntriesAsync(batch, cancellationToken);
+            await ProcessIndividualEntriesAsync(batch.ToList(), cancellationToken);
         }
     }
 
@@ -551,11 +551,7 @@ public sealed class LogBuffer : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(LogBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.
@@ -727,7 +723,7 @@ public sealed class LogBufferOptions
     /// Gets or sets the excluded categories.
     /// </summary>
     /// <value>The excluded categories.</value>
-    public IList<string> ExcludedCategories { get; } = [];
+    public IList<string> ExcludedCategories { get; init; } = [];
     /// <summary>
     /// Gets or sets the custom filters.
     /// </summary>

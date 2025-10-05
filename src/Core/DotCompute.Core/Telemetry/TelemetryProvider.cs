@@ -559,17 +559,17 @@ public sealed class CollectedMetrics
     /// Gets or sets the counters.
     /// </summary>
     /// <value>The counters.</value>
-    public Dictionary<string, long> Counters { get; } = [];
+    public Dictionary<string, long> Counters { get; init; } = [];
     /// <summary>
     /// Gets or sets the histograms.
     /// </summary>
     /// <value>The histograms.</value>
-    public Dictionary<string, double[]> Histograms { get; } = [];
+    public Dictionary<string, double[]> Histograms { get; init; } = [];
     /// <summary>
     /// Gets or sets the gauges.
     /// </summary>
     /// <value>The gauges.</value>
-    public Dictionary<string, double> Gauges { get; } = [];
+    public Dictionary<string, double> Gauges { get; init; } = [];
     /// <summary>
     /// Gets or sets the collected at.
     /// </summary>

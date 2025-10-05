@@ -14,13 +14,19 @@ namespace DotCompute.Core.Execution
     /// <typeparam name="T">The unmanaged type of data being processed</typeparam>
     public sealed class ExecutionPlanAlternatives<T> where T : unmanaged
     {
+        private readonly ExecutionPlan<T>[] _allAlternatives = [];
+
         /// <summary>Gets or initializes the recommended execution plan based on selection criteria.</summary>
         /// <value>The best execution plan according to the selection algorithm, or null if no suitable plan exists</value>
         public ExecutionPlan<T>? RecommendedPlan { get; init; }
 
-        /// <summary>Gets or initializes all available execution plan alternatives.</summary>
-        /// <value>Array of all generated execution plans, ordered by performance</value>
-        public ExecutionPlan<T>[] AllAlternatives { get; init; } = [];
+        /// <summary>Gets all available execution plan alternatives.</summary>
+        /// <value>Read-only list of all generated execution plans, ordered by performance</value>
+        public IReadOnlyList<ExecutionPlan<T>> AllAlternatives
+        {
+            get => _allAlternatives;
+            init => _allAlternatives = value?.ToArray() ?? [];
+        }
 
         /// <summary>Gets or initializes the criteria used for plan selection and ranking.</summary>
         /// <value>Description of how plans were ranked and the recommended plan was selected</value>
@@ -30,13 +36,13 @@ namespace DotCompute.Core.Execution
         /// Gets the number of available alternatives.
         /// </summary>
         /// <value>The count of execution plan alternatives</value>
-        public int AlternativeCount => AllAlternatives.Length;
+        public int AlternativeCount => AllAlternatives.Count;
 
         /// <summary>
         /// Gets whether there are multiple alternatives available.
         /// </summary>
         /// <value>True if more than one alternative exists, false otherwise</value>
-        public bool HasMultipleAlternatives => AllAlternatives.Length > 1;
+        public bool HasMultipleAlternatives => AllAlternatives.Count > 1;
 
         /// <summary>
         /// Gets the execution plan with the shortest estimated execution time.

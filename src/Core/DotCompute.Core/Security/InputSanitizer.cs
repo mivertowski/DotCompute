@@ -1099,7 +1099,7 @@ public sealed class SanitizationResult
     /// Gets or sets the security threats.
     /// </summary>
     /// <value>The security threats.</value>
-    public IList<InputThreat> SecurityThreats { get; } = [];
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
 }
 
 /// <summary>
@@ -1141,17 +1141,17 @@ public sealed class ParameterValidationResult
     /// Gets or sets the invalid parameters.
     /// </summary>
     /// <value>The invalid parameters.</value>
-    public IList<string> InvalidParameters { get; } = [];
+    public IList<string> InvalidParameters { get; init; } = [];
     /// <summary>
     /// Gets or sets the parameter results.
     /// </summary>
     /// <value>The parameter results.</value>
-    public Dictionary<string, SanitizationResult> ParameterResults { get; } = [];
+    public Dictionary<string, SanitizationResult> ParameterResults { get; init; } = [];
     /// <summary>
     /// Gets or sets the security threats.
     /// </summary>
     /// <value>The security threats.</value>
-    public IList<InputThreat> SecurityThreats { get; } = [];
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
 }
 
 /// <summary>
@@ -1183,7 +1183,7 @@ public sealed class PathValidationResult
     /// Gets or sets the security threats.
     /// </summary>
     /// <value>The security threats.</value>
-    public IList<InputThreat> SecurityThreats { get; } = [];
+    public IList<InputThreat> SecurityThreats { get; init; } = [];
 }
 
 /// <summary>
@@ -1225,12 +1225,12 @@ public sealed class WorkGroupValidationResult
     /// Gets or sets the validation errors.
     /// </summary>
     /// <value>The validation errors.</value>
-    public IList<string> ValidationErrors { get; } = [];
+    public IList<string> ValidationErrors { get; init; } = [];
     /// <summary>
     /// Gets or sets the validation warnings.
     /// </summary>
     /// <value>The validation warnings.</value>
-    public IList<string> ValidationWarnings { get; } = [];
+    public IList<string> ValidationWarnings { get; init; } = [];
 }
 
 /// <summary>

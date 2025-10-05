@@ -12,6 +12,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
+using DotCompute.Abstractions.Performance;
 using System;
 
 namespace DotCompute.Core.Optimization;
@@ -22,6 +23,46 @@ namespace DotCompute.Core.Optimization;
 /// </summary>
 public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposable
 {
+    // Event IDs: 9200-9299 for PerformanceOptimizedOrchestrator
+    private static readonly Action<ILogger, string, string, Exception?> LogExecutionStart =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(9200, nameof(LogExecutionStart)),
+            "Starting optimized execution of {KernelName} [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, Exception?> LogNoBackendFallback =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9201, nameof(LogNoBackendFallback)),
+            "No suitable backend found for {KernelName}, falling back to base orchestrator");
+
+    private static readonly Action<ILogger, string, string, float, string, Exception?> LogBackendSelected =
+        LoggerMessage.Define<string, string, float, string>(LogLevel.Debug, new EventId(9202, nameof(LogBackendSelected)),
+            "Selected {BackendId} for {KernelName} with {Confidence} confidence using {Strategy}");
+
+    private static readonly Action<ILogger, string, string, Exception> LogOptimizedExecutionError =
+        LoggerMessage.Define<string, string>(LogLevel.Error, new EventId(9203, nameof(LogOptimizedExecutionError)),
+            "Error during optimized execution of {KernelName} [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, Exception> LogFallbackExecutionError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9204, nameof(LogFallbackExecutionError)),
+            "Fallback execution also failed for {KernelName}");
+
+    private static readonly Action<ILogger, string, double, string, Exception?> LogExecutionCompleted =
+        LoggerMessage.Define<string, double, string>(LogLevel.Trace, new EventId(9205, nameof(LogExecutionCompleted)),
+            "Optimized execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogWorkloadAnalyzed =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9206, nameof(LogWorkloadAnalyzed)),
+            "Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}");
+
+    private static readonly Action<ILogger, string, string, Exception?> LogPreExecutionOptimization =
+        LoggerMessage.Define<string, string>(LogLevel.Trace, new EventId(9207, nameof(LogPreExecutionOptimization)),
+            "Applying pre-execution optimizations for {KernelName} on {Backend}");
+
+    private static readonly Action<ILogger, string, string, double, string, Exception?> LogPerformanceRecorded =
+        LoggerMessage.Define<string, string, double, string>(LogLevel.Trace, new EventId(9208, nameof(LogPerformanceRecorded)),
+            "Recorded performance result for {KernelName} on {Backend}: {ExecutionTime}ms [ID: {ExecutionId}]");
+
+    private static readonly Action<ILogger, string, string, Exception> LogProfilingFinishFailed =
+        LoggerMessage.Define<string, string>(LogLevel.Warning, new EventId(9209, nameof(LogProfilingFinishFailed)),
+            "Failed to finish performance profiling for {CorrelationId}");
     private readonly IComputeOrchestrator _baseOrchestrator;
     private readonly AdaptiveBackendSelector _backendSelector;
     private readonly PerformanceProfiler _performanceProfiler;
@@ -114,7 +155,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogDebugMessage($"Starting optimized execution of {kernelName} [ID: {executionId}]");
+        LogExecutionStart(_logger, kernelName, executionId.ToString(), null);
 
         try
         {
@@ -129,11 +170,12 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             if (backendSelection.SelectedBackend == null)
             {
-                _logger.LogWarningMessage($"No suitable backend found for {kernelName}, falling back to base orchestrator");
+                LogNoBackendFallback(_logger, kernelName, null);
                 return await _baseOrchestrator.ExecuteAsync<T>(kernelName, args);
             }
 
-            _logger.LogDebugMessage($"Selected {backendSelection.BackendId} for {kernelName} with {backendSelection.ConfidenceScore} confidence using {backendSelection.SelectionStrategy}");
+            LogBackendSelected(_logger, backendSelection.BackendId, kernelName,
+                backendSelection.ConfidenceScore, backendSelection.SelectionStrategy.ToString(), null);
 
             // Phase 3: Pre-execution Optimization
             await ApplyPreExecutionOptimizationsAsync(kernelName, args, backendSelection);
@@ -150,7 +192,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error during optimized execution of {kernelName} [ID: {executionId}]");
+            LogOptimizedExecutionError(_logger, kernelName, executionId.ToString(), ex);
 
             // Fallback to base orchestrator on error
 
@@ -160,15 +202,13 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             }
             catch (Exception fallbackEx)
             {
-                _logger.LogErrorMessage(fallbackEx, $"Fallback execution also failed for {kernelName}");
+                LogFallbackExecutionError(_logger, kernelName, fallbackEx);
                 throw;
             }
         }
         finally
         {
-            _logger.LogTrace("Optimized execution of {KernelName} completed in {TotalTime}ms [ID: {ExecutionId}]",
-
-                kernelName, stopwatch.Elapsed.TotalMilliseconds, executionId);
+            LogExecutionCompleted(_logger, kernelName, stopwatch.Elapsed.TotalMilliseconds, executionId.ToString(), null);
         }
     }
 
@@ -217,10 +257,9 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             _workloadCache[cacheKey] = characteristics;
         }
 
-        _logger.LogTrace("Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}",
-            kernelName, characteristics.DataSize / 1024 / 1024, characteristics.ComputeIntensity,
-
-            characteristics.MemoryIntensity, characteristics.ParallelismLevel);
+        LogWorkloadAnalyzed(_logger, kernelName,
+            (characteristics.DataSize / 1024 / 1024).ToString("F2"),
+            characteristics.ComputeIntensity, characteristics.MemoryIntensity, characteristics.ParallelismLevel, null);
 
         await Task.CompletedTask;
         return characteristics;
@@ -281,9 +320,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
 
-        _logger.LogTrace("Applying pre-execution optimizations for {KernelName} on {Backend}",
-
-            kernelName, backendSelection.BackendId);
+        LogPreExecutionOptimization(_logger, kernelName, backendSelection.BackendId, null);
 
         // Memory optimization
         if (_options.EnableMemoryOptimization)
@@ -373,7 +410,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to finish performance profiling for {CorrelationId}", correlationId);
+                LogProfilingFinishFailed(_logger, correlationId, string.Empty, ex);
             }
         }
 
@@ -408,8 +445,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         // Update kernel profile
         UpdateKernelProfile(kernelName, backendSelection.BackendId, performanceResult);
 
-        _logger.LogTrace("Recorded performance result for {KernelName} on {Backend}: {ExecutionTime}ms [ID: {ExecutionId}]",
-            kernelName, backendSelection.BackendId, performanceResult.ExecutionTimeMs, executionId);
+        LogPerformanceRecorded(_logger, kernelName, backendSelection.BackendId,
+            performanceResult.ExecutionTimeMs, executionId.ToString(), null);
     }
 
     #region Helper Methods
@@ -545,7 +582,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         {
             var name when name.Contains("transpose", StringComparison.Ordinal) => MemoryAccessPattern.Strided,
             var name when name.Contains("random", StringComparison.Ordinal) => MemoryAccessPattern.Random,
-            var name when name.Contains("gather", StringComparison.Ordinal) || name.Contains("scatter", StringComparison.Ordinal) => MemoryAccessPattern.Scattered,
+            var name when name.Contains("gather", StringComparison.Ordinal) || name.Contains("scatter", StringComparison.Ordinal) => MemoryAccessPattern.ScatterGather,
             var name when name.Contains("convolution", StringComparison.Ordinal) => MemoryAccessPattern.Coalesced,
             _ => MemoryAccessPattern.Sequential
         };

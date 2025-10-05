@@ -428,7 +428,7 @@ namespace DotCompute.Core.Kernels
         private static string GenerateCacheKey(Expression expression, AcceleratorInfo acceleratorInfo)
         {
             // Simple hash-based cache key generation
-            var hash = expression.ToString().GetHashCode();
+            var hash = expression.ToString().GetHashCode(StringComparison.Ordinal);
             return $"{acceleratorInfo.DeviceType}_{acceleratorInfo.Name}_{hash:X8}";
         }
 

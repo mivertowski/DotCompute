@@ -17,7 +17,7 @@ namespace DotCompute.Core.Security;
 /// Provides tamper-evident logging and compliance support.
 /// </summary>
 public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
-    SecurityLoggingConfiguration configuration,
+    SecurityLoggingConfiguration _configuration,
     ConcurrentQueue<SecurityLogEntry> auditQueue,
     SemaphoreSlim logWriteLock,
     string auditLogPath)

@@ -19,7 +19,9 @@ namespace DotCompute.Core.Compute.Kernels
     /// <param name="kernelInfo">Parsed kernel information.</param>
     /// <param name="options">Compilation options.</param>
     /// <param name="logger">Logger instance.</param>
-    internal class SimpleOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger) : ICompiledKernel
+#pragma warning disable CS9113 // Parameters reserved for enhanced kernel optimization and validation features
+    internal class SimpleOptimizedKernel(string name, KernelInfo _kernelInfo, CompilationOptions _options, ILogger logger) : ICompiledKernel
+#pragma warning restore CS9113
     {
         private readonly ILogger _logger = logger;
         private bool _disposed;
@@ -43,10 +45,7 @@ namespace DotCompute.Core.Compute.Kernels
         /// <exception cref="ObjectDisposedException">Thrown when the kernel has been disposed.</exception>
         public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(SimpleOptimizedKernel));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _logger.LogDebugMessage("Executing simple optimized kernel: {Name}");
 

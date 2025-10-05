@@ -40,10 +40,7 @@ internal sealed class CompiledKernelWrapper(CompiledKernel kernel) : ICompiledKe
     /// <exception cref="ObjectDisposedException">Thrown when the kernel has been disposed.</exception>
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CompiledKernelWrapper));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Simulate kernel execution - in real implementation would call native kernel - TODO
         await Task.Delay(1, cancellationToken).ConfigureAwait(false);

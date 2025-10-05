@@ -568,17 +568,17 @@ namespace DotCompute.Core.Security
         /// Gets or sets a value indicating whether sues.
         /// </summary>
         /// <value>The issues.</value>
-        public IList<string> Issues { get; } = [];
+        public IList<string> Issues { get; init; } = [];
         /// <summary>
         /// Gets or sets the warnings.
         /// </summary>
         /// <value>The warnings.</value>
-        public IList<string> Warnings { get; } = [];
+        public IList<string> Warnings { get; init; } = [];
         /// <summary>
         /// Gets or sets the recommendations.
         /// </summary>
         /// <value>The recommendations.</value>
-        public IList<string> Recommendations { get; } = [];
+        public IList<string> Recommendations { get; set; } = [];
     }
     /// <summary>
     /// A class that represents secure key container.
@@ -611,6 +611,13 @@ namespace DotCompute.Core.Security
         /// </summary>
         /// <value>The creation time.</value>
         public DateTimeOffset CreationTime { get; init; }
+
+        /// <summary>
+        /// Gets or sets the public key data for asymmetric keys.
+        /// </summary>
+        /// <value>The public key data bytes, or null for symmetric keys.</value>
+        public byte[]? PublicKeyData { get; set; }
+
         private readonly byte[] _keyData;
         private bool _disposed;
         /// <summary>

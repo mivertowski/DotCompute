@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.ObjectModel;
+using DotCompute.Abstractions.Performance;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Abstractions.Debugging;
 
@@ -11,7 +13,7 @@ namespace DotCompute.Abstractions.Debugging;
 public class ResultComparisonReport
 {
     public string KernelName { get; init; } = string.Empty;
-    public bool ResultsMatch { get; init; }
+    public bool ResultsMatch { get; set; }
     public IReadOnlyList<string> BackendsCompared { get; init; } = Array.Empty<string>();
     public Collection<ResultDifference> Differences { get; init; } = [];
     public ComparisonStrategy Strategy { get; init; }

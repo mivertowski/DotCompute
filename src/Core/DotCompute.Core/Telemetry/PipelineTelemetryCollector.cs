@@ -20,6 +20,30 @@ namespace DotCompute.Core.Telemetry;
 /// </summary>
 public sealed class PipelineTelemetryCollector : IDisposable
 {
+    // Event IDs: 9100-9199 for PipelineTelemetryCollector
+    private static readonly Action<ILogger, string, string, double, double, double, Exception?> LogWorkloadAnalysis =
+        LoggerMessage.Define<string, string, double, double, double>(LogLevel.Trace, new EventId(9100, nameof(LogWorkloadAnalysis)),
+            "Analyzed workload {KernelName}: DataSize={DataSize}MB, Compute={Compute:F2}, Memory={Memory:F2}, Parallelism={Parallelism:F2}");
+
+    private static readonly Action<ILogger, string, Exception?> LogMetricsDebug =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9101, nameof(LogMetricsDebug)),
+            "Pipeline Metrics:\n{Metrics}");
+
+    private static readonly Action<ILogger, int, Exception?> LogProcessedEvents =
+        LoggerMessage.Define<int>(LogLevel.Debug, new EventId(9102, nameof(LogProcessedEvents)),
+            "Processed {EventCount} telemetry events");
+
+    private static readonly Action<ILogger, string, Exception> LogEventProcessingFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9103, nameof(LogEventProcessingFailed)),
+            "Failed to process telemetry event for pipeline {PipelineId}");
+
+    private static readonly Action<ILogger, Exception> LogMetricsExportFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9104, nameof(LogMetricsExportFailed)),
+            "Failed to export pipeline metrics");
+
+    private static readonly Action<ILogger, Exception> LogMetricsScheduleFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9105, nameof(LogMetricsScheduleFailed)),
+            "Failed to schedule metrics export");
     private static readonly Meter PipelineMeter = new("DotCompute.Pipelines", "1.0.0");
     private static readonly ActivitySource PipelineActivitySource = new("DotCompute.Pipelines", "1.0.0");
 
@@ -461,7 +485,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
                     if (_options.ExportToConsole)
                     {
-                        _logger.LogDebug("Pipeline Metrics:\n{Metrics}", metrics);
+                        LogMetricsDebug(_logger, metrics, null);
                     }
 
                     // Process queued events
@@ -469,13 +493,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
                 }
                 catch (Exception ex) when (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "Failed to export pipeline metrics");
+                    LogMetricsExportFailed(_logger, ex);
                 }
             }, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to schedule metrics export");
+            LogMetricsScheduleFailed(_logger, ex);
         }
     }
 
@@ -493,15 +517,13 @@ public sealed class PipelineTelemetryCollector : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to process telemetry event for pipeline {PipelineId}",
-
-                    telemetryEvent.PipelineId);
+                LogEventProcessingFailed(_logger, telemetryEvent.PipelineId ?? "Unknown", ex);
             }
         }
 
         if (processedEvents > 0)
         {
-            _logger.LogDebug("Processed {EventCount} telemetry events", processedEvents);
+            LogProcessedEvents(_logger, processedEvents, null);
         }
     }
 

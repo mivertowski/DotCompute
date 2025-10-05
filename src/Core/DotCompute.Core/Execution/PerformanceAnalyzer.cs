@@ -268,7 +268,7 @@ public class DevicePerformanceProfile
     /// Gets or sets the executions.
     /// </summary>
     /// <value>The executions.</value>
-    public IList<DeviceExecutionResult> Executions { get; } = [];
+    public IList<DeviceExecutionResult> Executions { get; init; } = [];
     /// <summary>
     /// Gets or sets the average utilization percentage.
     /// </summary>
@@ -381,5 +381,5 @@ public class DeviceUtilizationAnalysis
     /// Gets or sets the recommended optimizations.
     /// </summary>
     /// <value>The recommended optimizations.</value>
-    public IList<string> RecommendedOptimizations { get; } = [];
+    public IList<string> RecommendedOptimizations { get; init; } = [];
 }

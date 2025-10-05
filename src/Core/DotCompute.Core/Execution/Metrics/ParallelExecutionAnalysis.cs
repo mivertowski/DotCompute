@@ -34,7 +34,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// limitations identified during execution. These bottlenecks are ordered by
         /// severity and impact on overall performance.
         /// </value>
-        public IList<Analysis.BottleneckAnalysis> Bottlenecks { get; } = [];
+        public IList<Analysis.BottleneckAnalysis> Bottlenecks { get; set; } = [];
 
         /// <summary>
         /// Gets or sets optimization recommendations.
@@ -43,7 +43,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A list of specific, actionable recommendations for improving execution performance.
         /// These recommendations are based on the identified bottlenecks and performance patterns.
         /// </value>
-        public IList<string> OptimizationRecommendations { get; } = [];
+        public IList<string> OptimizationRecommendations { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the recommended execution strategy.
@@ -61,7 +61,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A dictionary mapping device identifiers to their utilization percentages.
         /// This provides insights into load balancing and resource allocation effectiveness.
         /// </value>
-        public Dictionary<string, double> DeviceUtilizationAnalysis { get; } = [];
+        public Dictionary<string, double> DeviceUtilizationAnalysis { get; set; } = [];
 
         /// <summary>
         /// Gets the number of critical bottlenecks.

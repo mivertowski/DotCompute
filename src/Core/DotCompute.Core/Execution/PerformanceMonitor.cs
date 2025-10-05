@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Models.Device;
 using Microsoft.Extensions.Logging;
@@ -123,7 +124,7 @@ namespace DotCompute.Core.Execution
                 return new ParallelExecutionAnalysis
                 {
                     OverallRating = 5.0,
-                    RecommendedStrategy = (Types.ExecutionStrategyType)ExecutionStrategyType.Single,
+                    RecommendedStrategy = ExecutionStrategyType.Single,
                     OptimizationRecommendations = ["No execution data available for analysis."]
                 };
             }

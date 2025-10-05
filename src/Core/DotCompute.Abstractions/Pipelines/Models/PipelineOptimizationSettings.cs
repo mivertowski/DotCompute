@@ -34,7 +34,7 @@ public sealed class PipelineOptimizationSettings
     /// <summary>
     /// Gets or sets the target backends to optimize for.
     /// </summary>
-    public IList<string> TargetBackends { get; } = [];
+    public IList<string> TargetBackends { get; init; } = [];
 
     /// <summary>
     /// Gets or sets memory constraints for optimization.

@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Performance;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -173,7 +174,7 @@ public sealed partial class KernelProfiler : IDisposable
             relevantData.AddRange(filteredData);
         }
 
-        if (!relevantData.Any())
+        if (relevantData.Count == 0)
         {
             LogNoDataAvailable(kernelName);
             return new PerformanceAnalysis
@@ -247,7 +248,7 @@ public sealed partial class KernelProfiler : IDisposable
             {
                 AcceleratorType = acceleratorType,
                 DataPoints = data.Count,
-                AverageExecutionTime = data.Average(d => d.ExecutionTime.TotalMilliseconds),
+                AverageExecutionTimeMs = data.Average(d => d.ExecutionTime.TotalMilliseconds),
                 MedianExecutionTime = CalculateMedian(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
                 MinExecutionTime = data.Min(d => d.ExecutionTime.TotalMilliseconds),
                 MaxExecutionTime = data.Max(d => d.ExecutionTime.TotalMilliseconds),
@@ -295,7 +296,7 @@ public sealed partial class KernelProfiler : IDisposable
             .OrderBy(d => d.EndTime)
             .ToList();
 
-        if (!recentData.Any())
+        if (recentData.Count == 0)
         {
             LogNoRecentData(kernelName, timeRange.ToString());
             return new PerformanceTrend
@@ -555,7 +556,7 @@ public sealed partial class KernelProfiler : IDisposable
     private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valueList = values.ToList();
-        if (!valueList.Any())
+        if (valueList.Count == 0)
         {
             return 0;
         }
@@ -568,7 +569,7 @@ public sealed partial class KernelProfiler : IDisposable
 
     private static double CalculateThroughputScore(IReadOnlyList<ProfilingData> data)
     {
-        if (!data.Any())
+        if (data.Count == 0)
         {
             return 0;
         }
@@ -584,7 +585,7 @@ public sealed partial class KernelProfiler : IDisposable
     {
         var recommendations = new List<string>();
 
-        if (!comparisons.Any())
+        if (comparisons.Count == 0)
         {
             return recommendations;
         }

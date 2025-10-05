@@ -516,7 +516,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     private double CalculateCacheHitRate()
         // This would be tracked by actual cache hit/miss statistics in a real implementation
-        => _resolutionCache.Count > 0 ? 0.75 : 0.0; // Placeholder
+        => !_resolutionCache.IsEmpty ? 0.75 : 0.0; // Placeholder
 
     /// <summary>
     /// Calculates average resolution time.

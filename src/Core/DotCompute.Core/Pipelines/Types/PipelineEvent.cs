@@ -28,7 +28,7 @@ namespace DotCompute.Core.Pipelines.Types
         /// <summary>
         /// Gets or sets additional event data.
         /// </summary>
-        public Dictionary<string, object> Data { get; } = [];
+        public Dictionary<string, object> Data { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the stage identifier associated with the event.

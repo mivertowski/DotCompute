@@ -133,7 +133,7 @@ public sealed class OptimizationValidationResult
     public bool IsValid { get; set; }
     public string? Message { get; set; }
     public double AccuracyScore { get; set; } = 1.0;
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 }
 
 public sealed class OptimizationImpactEstimate
@@ -147,9 +147,9 @@ public sealed class OptimizationImpactEstimate
 public sealed class PipelineAnalysisResult
 {
     public bool Success { get; set; }
-    public IList<string> Issues { get; } = [];
-    public IList<string> Recommendations { get; } = [];
-    public IDictionary<string, object> Metrics { get; } = new Dictionary<string, object>();
+    public IList<string> Issues { get; init; } = [];
+    public IList<string> Recommendations { get; init; } = [];
+    public IDictionary<string, object> Metrics { get; init; } = new Dictionary<string, object>();
 }
 
 // Interface placeholders for types referenced in the pipeline interfaces

@@ -322,7 +322,7 @@ public sealed class KernelParameterAnalyzer
         }
 
         // Handle array types
-        if (typeString.EndsWith("[]"))
+        if (typeString.EndsWith("[]", StringComparison.Ordinal))
         {
             return typeString.Substring(0, typeString.Length - 2);
         }

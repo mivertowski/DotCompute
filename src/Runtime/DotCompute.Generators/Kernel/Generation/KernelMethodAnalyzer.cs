@@ -45,7 +45,9 @@ public sealed class KernelMethodAnalyzer
     /// - Backend compatibility determination
     /// - Performance characteristics analysis
     /// </remarks>
+#pragma warning disable CA1822 // Mark members as static - instance method for design consistency
     public KernelMethodInfo? AnalyzeKernelMethod(GeneratorSyntaxContext context)
+#pragma warning restore CA1822
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
@@ -249,7 +251,7 @@ public sealed class KernelMethodAnalyzer
                typeName.Contains("ReadOnlySpan<") ||
                typeName.Contains("UnifiedBuffer<") ||
                typeName.Contains("Buffer<") ||
-               typeName.EndsWith("[]");
+               typeName.EndsWith("[]", StringComparison.Ordinal);
     }
 
     /// <summary>

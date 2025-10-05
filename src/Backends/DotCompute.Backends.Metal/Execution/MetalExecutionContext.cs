@@ -534,12 +534,12 @@ public sealed class MetalExecutionContext : IDisposable
     {
         var startTime = DateTimeOffset.UtcNow;
 
-        while (_activeOperations.Count > 0 && DateTimeOffset.UtcNow - startTime < timeout)
+        while (!_activeOperations.IsEmpty && DateTimeOffset.UtcNow - startTime < timeout)
         {
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        if (_activeOperations.Count > 0)
+        if (!_activeOperations.IsEmpty)
         {
             _logger.LogWarning("Timed out waiting for {Count} active operations to complete", _activeOperations.Count);
         }

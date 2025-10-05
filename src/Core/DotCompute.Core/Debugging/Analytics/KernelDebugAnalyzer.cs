@@ -8,10 +8,9 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Core.Optimization.Performance;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
-using DebugPerformanceMetrics = DotCompute.Abstractions.Debugging.PerformanceMetrics;
-using AbstractionsPerformanceMetrics = DotCompute.Abstractions.Performance.PerformanceMetrics;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -21,10 +20,12 @@ namespace DotCompute.Core.Debugging.Analytics;
 /// </summary>
 public sealed class KernelDebugAnalyzer(
     ILogger<KernelDebugAnalyzer> logger,
-    ConcurrentDictionary<string, IAccelerator> accelerators,
-    KernelDebugProfiler profiler) : IDisposable
+#pragma warning disable CS9113 // Parameter is captured for future use in advanced analytics features
+    ConcurrentDictionary<string, IAccelerator> _accelerators,
+    KernelDebugProfiler _profiler) : IDisposable
+#pragma warning restore CS9113
 {
-    private readonly ILogger<KernelDebugAnalyzer> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ILogger<KernelDebugAnalyzer> _logger = logger;
     private readonly ConcurrentDictionary<string, KernelAnalysisProfile> _analysisProfiles = new();
     private bool _disposed;
 
@@ -49,31 +50,11 @@ public sealed class KernelDebugAnalyzer(
             // Perform statistical analysis on performance differences
             var performanceAnalysis = AnalyzePerformanceVariations(executionResults);
 
-            // Update performance comparison with additional metrics
-            var enhancedPerformanceComparison = new Dictionary<string, DebugPerformanceMetrics>();
-            foreach (var kvp in comparisonReport.PerformanceComparison)
-            {
-                var backend = kvp.Key;
-                var metrics = kvp.Value;
+            // Performance comparison already uses the correct PerformanceMetrics from Performance namespace
+            // No conversion needed - ResultComparisonReport.PerformanceComparison already uses Performance.PerformanceMetrics
 
-                // Find corresponding execution results
-                var backendResults = executionResults.Where(r => r.BackendType == backend).ToList();
-                var enhancedMetrics = EnhancePerformanceMetrics(metrics, backendResults, performanceAnalysis);
-
-                enhancedPerformanceComparison[backend] = enhancedMetrics;
-            }
-
-            // Return enhanced report (create a new instance since ResultComparisonReport is a class, not a record)
-            return new ResultComparisonReport
-            {
-                KernelName = comparisonReport.KernelName,
-                ResultsMatch = comparisonReport.ResultsMatch,
-                BackendsCompared = comparisonReport.BackendsCompared,
-                Differences = comparisonReport.Differences,
-                Strategy = comparisonReport.Strategy,
-                Tolerance = comparisonReport.Tolerance,
-                PerformanceComparison = enhancedPerformanceComparison
-            };
+            // Return original report - performance comparison is already correct
+            return comparisonReport;
         }
         catch (Exception ex)
         {
@@ -102,7 +83,7 @@ public sealed class KernelDebugAnalyzer(
             }
 
             // Analyze trace point patterns
-            var patternAnalysis = AnalyzeTracePointPatterns(trace.TracePoints);
+            var patternAnalysis = AnalyzeTracePointPatterns(trace.TracePoints.ToList());
 
             // Analyze memory usage patterns
             var memoryPatterns = AnalyzeMemoryPatterns(trace.TracePoints);
@@ -151,8 +132,8 @@ public sealed class KernelDebugAnalyzer(
             // Analyze performance trends
             var trendAnalysis = AnalyzePerformanceTrends(kernelName, performanceReport);
 
-            // Convert BackendPerformanceStats to PerformanceMetrics
-            var backendMetrics = ConvertBackendStatsToMetrics(performanceReport.Backends);
+            // BackendMetrics is already in the correct format (PerformanceMetrics)
+            var backendMetrics = performanceReport.BackendMetrics;
 
             // Perform regression analysis
             var regressionAnalysis = PerformRegressionAnalysis(backendMetrics);
@@ -315,10 +296,13 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes performance variations across execution results.
     /// </summary>
-    private PerformanceVariationAnalysis AnalyzePerformanceVariations(IReadOnlyList<KernelExecutionResult> results)
+    private static PerformanceVariationAnalysis AnalyzePerformanceVariations(List<KernelExecutionResult> results)
     {
-        var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
-        var memoryUsages = results.Where(r => r.MemoryUsed > 0).Select(r => r.MemoryUsed).ToArray();
+        var executionTimes = results.Where(r => r.Timings != null).Select(r => r.Timings!.TotalTimeMs).ToArray();
+        var memoryUsages = results
+            .Where(r => r.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
+            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"]))
+            .ToArray();
 
         return new PerformanceVariationAnalysis
         {
@@ -329,21 +313,11 @@ public sealed class KernelDebugAnalyzer(
         };
     }
 
-    /// <summary>
-    /// Enhances performance metrics with additional statistical data.
-    /// </summary>
-    private static DebugPerformanceMetrics EnhancePerformanceMetrics(
-        DebugPerformanceMetrics originalMetrics,
-        List<KernelExecutionResult> backendResults,
-        PerformanceVariationAnalysis variationAnalysis)
-        // In a real implementation, this would create enhanced metrics
-        // For now, return the original metrics
-        => originalMetrics;
 
     /// <summary>
     /// Analyzes trace point patterns to identify execution characteristics.
     /// </summary>
-    private TracePointPatternAnalysis AnalyzeTracePointPatterns(IReadOnlyList<TracePoint> tracePoints)
+    private static TracePointPatternAnalysis AnalyzeTracePointPatterns(List<TracePoint> tracePoints)
     {
         if (tracePoints.Count == 0)
         {
@@ -376,7 +350,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes memory usage patterns from trace points.
     /// </summary>
-    private MemoryPatternAnalysis AnalyzeMemoryPatterns(IReadOnlyList<TracePoint> tracePoints)
+    private static MemoryPatternAnalysis AnalyzeMemoryPatterns(IReadOnlyList<TracePoint> tracePoints)
     {
         var memoryReadings = tracePoints.Select(tp => tp.MemoryUsage).ToArray();
 
@@ -405,7 +379,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Detects performance anomalies in trace points.
     /// </summary>
-    private List<PerformanceAnomaly> DetectPerformanceAnomalies(IReadOnlyList<TracePoint> tracePoints)
+    private static List<PerformanceAnomaly> DetectPerformanceAnomalies(IReadOnlyList<TracePoint> tracePoints)
     {
         var anomalies = new List<PerformanceAnomaly>();
 
@@ -494,7 +468,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Performs regression analysis on backend metrics.
     /// </summary>
-    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics)
+    private static RegressionAnalysis PerformRegressionAnalysis(Dictionary<string, Abstractions.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified regression analysis
         return new RegressionAnalysis
@@ -550,7 +524,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Predicts performance scaling characteristics.
     /// </summary>
-    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics)
+    private static ScalingPredictions PredictPerformanceScaling(Dictionary<string, Abstractions.Performance.PerformanceMetrics> backendMetrics)
     {
         // Simplified scaling predictions
         return new ScalingPredictions
@@ -566,7 +540,7 @@ public sealed class KernelDebugAnalyzer(
     /// Calculates efficiency scores for different backends.
     /// </summary>
     private static Dictionary<string, double> CalculateEfficiencyScores(
-        Dictionary<string, AbstractionsPerformanceMetrics> backendMetrics,
+        Dictionary<string, Abstractions.Performance.PerformanceMetrics> backendMetrics,
         MemoryUsageAnalysis memoryAnalysis)
     {
         var efficiencyScores = new Dictionary<string, double>();
@@ -745,7 +719,7 @@ public sealed class KernelDebugAnalyzer(
     /// <summary>
     /// Recommends validation strategy based on analysis.
     /// </summary>
-    private ValidationStrategy RecommendValidationStrategy(KernelValidationResult validationResult, object[] inputs)
+    private static ValidationStrategy RecommendValidationStrategy(KernelValidationResult validationResult, object[] inputs)
     {
         if (inputs.Length > 1000)
         {
@@ -781,7 +755,7 @@ public sealed class KernelDebugAnalyzer(
 
     private static double CalculateStandardDeviation(double[] values) => Math.Sqrt(CalculateVariance(values));
 
-    private double CalculateCoefficientOfVariation(double[] values)
+    private static double CalculateCoefficientOfVariation(double[] values)
     {
         if (values.Length == 0)
         {
@@ -793,7 +767,7 @@ public sealed class KernelDebugAnalyzer(
         return mean != 0 ? CalculateStandardDeviation(values) / mean : 0;
     }
 
-    private ExecutionPattern DetermineExecutionPattern(IReadOnlyList<double> timingIntervals)
+    private static ExecutionPattern DetermineExecutionPattern(IReadOnlyList<double> timingIntervals)
     {
         if (timingIntervals.Count < 2)
         {
@@ -909,38 +883,8 @@ public sealed class KernelDebugAnalyzer(
     }
 
     /// <summary>
-    /// Converts a dictionary of BackendPerformanceStats to PerformanceMetrics.
-    /// </summary>
-    /// <param name="backendStats">Dictionary of backend performance statistics.</param>
-    /// <returns>Dictionary of performance metrics.</returns>
-    private static Dictionary<string, AbstractionsPerformanceMetrics> ConvertBackendStatsToMetrics(
-        Dictionary<string, BackendPerformanceStats> backendStats)
-    {
-        var metrics = new Dictionary<string, AbstractionsPerformanceMetrics>();
-
-        foreach (var kvp in backendStats)
-        {
-            var backend = kvp.Key;
-            var stats = kvp.Value;
-
-            // Convert BackendPerformanceStats to PerformanceMetrics
-            var performanceMetrics = new AbstractionsPerformanceMetrics
-            {
-                ExecutionTimeMs = (long)stats.AverageExecutionTimeMs,
-                MemoryUsageBytes = (long)stats.AverageMemoryUsage,
-                ComputeUtilization = 0.0, // Not available in BackendPerformanceStats
-                OperationsPerSecond = (long)stats.AverageThroughput
-            };
-
-            metrics[backend] = performanceMetrics;
-        }
-
-        return metrics;
-    }
-    /// <summary>
     /// Performs dispose.
     /// </summary>
-
     public void Dispose()
     {
         if (!_disposed)

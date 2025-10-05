@@ -189,11 +189,8 @@ public sealed class AsyncChannel<T> : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
 
-            throw new ObjectDisposedException(nameof(AsyncChannel<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
     }
     /// <summary>
@@ -327,11 +324,8 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
 
-            throw new ObjectDisposedException(nameof(AsyncWorkStealingCoordinator<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
     }
     /// <summary>
@@ -456,11 +450,8 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
 
-            throw new ObjectDisposedException(nameof(AsyncResourcePool<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
     }
     /// <summary>
@@ -645,11 +636,8 @@ public sealed class AsyncBarrier : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
 
-            throw new ObjectDisposedException(nameof(AsyncBarrier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
     }
     /// <summary>

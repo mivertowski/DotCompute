@@ -765,9 +765,9 @@ namespace DotCompute.Core.Memory
 
             // Check accelerator type first for mock devices
             if (device.Type == AcceleratorType.CUDA || name.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
-                name.Contains("rtx", StringComparison.OrdinalIgnoreCase) || name.Contains("gtx", StringComparison.CurrentCulture) ||
-                name.Contains("nvidia", StringComparison.CurrentCulture) || name.Contains("geforce", StringComparison.CurrentCulture) ||
-                name.Contains("quadro", StringComparison.CurrentCulture) || name.Contains("tesla"))
+                name.Contains("rtx", StringComparison.OrdinalIgnoreCase) || name.Contains("gtx", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("nvidia", StringComparison.OrdinalIgnoreCase) || name.Contains("geforce", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("quadro", StringComparison.OrdinalIgnoreCase) || name.Contains("tesla", StringComparison.OrdinalIgnoreCase))
             {
                 return DeviceVendor.NVIDIA;
             }

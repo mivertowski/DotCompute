@@ -327,7 +327,7 @@ public sealed class KernelCodeBuilder
             _ = source.Append($"    {cudaType} {param.Name}");
             if (i < method.Parameters.Count - 1)
             {
-                _ = source.Append(",");
+                _ = source.Append(',');
             }
             _ = source.AppendLine();
         }
@@ -369,7 +369,7 @@ public sealed class KernelCodeBuilder
             _ = source.Append($"    {addressSpace}{metalType} {param.Name} [[buffer({i})]]");
             if (i < method.Parameters.Count - 1)
             {
-                _ = source.Append(",");
+                _ = source.Append(',');
             }
             _ = source.AppendLine();
         }
@@ -404,7 +404,7 @@ public sealed class KernelCodeBuilder
             _ = source.Append($"    {addressSpace}{openclType} {param.Name}");
             if (i < method.Parameters.Count - 1)
             {
-                _ = source.Append(",");
+                _ = source.Append(',');
             }
             _ = source.AppendLine();
         }
@@ -507,7 +507,7 @@ public sealed class KernelCodeBuilder
             }
         }
 
-        if (typeString.EndsWith("[]"))
+        if (typeString.EndsWith("[]", StringComparison.Ordinal))
         {
             return typeString.Substring(0, typeString.Length - 2);
         }

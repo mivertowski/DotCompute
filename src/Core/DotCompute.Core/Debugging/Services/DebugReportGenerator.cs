@@ -1,18 +1,19 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
-using System.Text;
-using System.Text.Json;
 
 namespace DotCompute.Core.Debugging.Services;
 
 /// <summary>
 /// Generates comprehensive debug reports and documentation.
 /// </summary>
-public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? options = null) : IDisposable
+public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? _options = null) : IDisposable
 {
     private readonly ILogger<DebugReportGenerator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _disposed;
@@ -191,30 +192,30 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     {
         var summary = new StringBuilder();
 
-        _ = summary.AppendLine($"Debug Summary for Kernel: {debugData.KernelName}");
-        _ = summary.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Debug Summary for Kernel: {0}", debugData.KernelName));
+        _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Generated: {0:yyyy-MM-dd HH:mm:ss} UTC", DateTime.UtcNow));
 
         if (debugData.CrossValidationResult != null)
         {
-            _ = summary.AppendLine($"Cross-Validation: {(debugData.CrossValidationResult.IsValid ? "PASSED" : "FAILED")}");
-            _ = summary.AppendLine($"Validation Issues: {debugData.CrossValidationResult.ValidationIssues.Count}");
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Cross-Validation: {0}", debugData.CrossValidationResult.IsValid ? "PASSED" : "FAILED"));
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Validation Issues: {0}", debugData.CrossValidationResult.ValidationIssues.Count));
         }
 
         if (debugData.PerformanceAnalysis != null)
         {
-            _ = summary.AppendLine($"Performance Analysis: {debugData.PerformanceAnalysis.DataPoints} data points");
-            _ = summary.AppendLine($"Average Execution Time: {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
-            _ = summary.AppendLine($"Success Rate: {debugData.PerformanceAnalysis.SuccessRate:F1}%");
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Performance Analysis: {0} data points", debugData.PerformanceAnalysis.DataPoints));
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Average Execution Time: {0:F2} ms", debugData.PerformanceAnalysis.AverageExecutionTimeMs));
+            // Note: SuccessRate not available on PerformanceAnalysis, skipping
         }
 
         if (debugData.DeterminismResult != null)
         {
-            _ = summary.AppendLine($"Determinism Test: {(debugData.DeterminismResult.IsDeterministic ? "PASSED" : "FAILED")}");
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Determinism Test: {0}", debugData.DeterminismResult.IsDeterministic ? "PASSED" : "FAILED"));
         }
 
         if (debugData.MemoryAnalysis != null)
         {
-            _ = summary.AppendLine($"Memory Analysis: {(debugData.MemoryAnalysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}");
+            _ = summary.AppendLine(string.Format(CultureInfo.InvariantCulture, "Memory Analysis: {0}", debugData.MemoryAnalysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED"));
         }
 
         return summary.ToString();
@@ -239,12 +240,14 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
         // Add performance recommendations
         if (debugData.PerformanceAnalysis != null)
         {
-            if (debugData.PerformanceAnalysis.AverageExecutionTime > 1000) // > 1 second
+            if (debugData.PerformanceAnalysis.AverageExecutionTimeMs > 1000) // > 1 second
             {
                 recommendations.Add("Consider optimizing for better performance (current average > 1s).");
             }
 
-            if (debugData.PerformanceAnalysis.SuccessRate < 95)
+            // Note: SuccessRate not available on PerformanceAnalysis type
+            // Skipping this check
+            if (false) // Disabled: SuccessRate not available
             {
                 recommendations.Add("Low success rate detected. Investigate and fix reliability issues.");
             }
@@ -275,51 +278,51 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     {
         var md = new StringBuilder();
 
-        _ = md.AppendLine($"# Debug Report: {debugData.KernelName}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Debug Report: {0}", debugData.KernelName));
         _ = md.AppendLine();
-        _ = md.AppendLine($"**Generated:** {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Generated:** {0:yyyy-MM-dd HH:mm:ss} UTC", DateTime.UtcNow));
         _ = md.AppendLine();
 
         if (debugData.CrossValidationResult != null)
         {
             _ = md.AppendLine("## Cross-Validation Results");
-            _ = md.AppendLine($"- **Status:** {(debugData.CrossValidationResult.IsValid ? "✅ PASSED" : "❌ FAILED")}");
-            _ = md.AppendLine($"- **Validation Time:** {debugData.CrossValidationResult.ValidationTime:yyyy-MM-dd HH:mm:ss}");
-            _ = md.AppendLine($"- **Issues Found:** {debugData.CrossValidationResult.ValidationIssues.Count}");
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Status:** {0}", debugData.CrossValidationResult.IsValid ? "✅ PASSED" : "❌ FAILED"));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Validation Time:** {0:yyyy-MM-dd HH:mm:ss}", debugData.CrossValidationResult.ValidationTime));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Issues Found:** {0}", debugData.CrossValidationResult.ValidationIssues.Count));
             _ = md.AppendLine();
         }
 
         if (debugData.PerformanceAnalysis != null)
         {
             _ = md.AppendLine("## Performance Analysis");
-            _ = md.AppendLine($"- **Data Points:** {debugData.PerformanceAnalysis.DataPoints}");
-            _ = md.AppendLine($"- **Average Execution Time:** {debugData.PerformanceAnalysis.AverageExecutionTime:F2} ms");
-            _ = md.AppendLine($"- **Success Rate:** {debugData.PerformanceAnalysis.SuccessRate:F1}%");
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Data Points:** {0}", debugData.PerformanceAnalysis.DataPoints));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Average Execution Time:** {0:F2} ms", debugData.PerformanceAnalysis.AverageExecutionTimeMs));
+            // Note: SuccessRate not available on PerformanceAnalysis type
             _ = md.AppendLine();
         }
 
         return md.ToString();
     }
 
-    private string GenerateMarkdownCrossValidationReport(CrossValidationResult result)
+    private static string GenerateMarkdownCrossValidationReport(CrossValidationResult result)
     {
         var md = new StringBuilder();
 
-        _ = md.AppendLine($"# Cross-Validation Report: {result.KernelName}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Cross-Validation Report: {0}", result.KernelName));
         _ = md.AppendLine();
-        _ = md.AppendLine($"**Status:** {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
-        _ = md.AppendLine($"**Validation Time:** {result.ValidationTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Status:** {0}", result.IsValid ? "✅ PASSED" : "❌ FAILED"));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Validation Time:** {0:yyyy-MM-dd HH:mm:ss} UTC", result.ValidationTime));
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Execution Results");
         foreach (var execResult in result.ExecutionResults)
         {
-            _ = md.AppendLine($"- **{execResult.AcceleratorName}** ({execResult.AcceleratorType}):");
-            _ = md.AppendLine($"  - Success: {(execResult.Success ? "✅" : "❌")}");
-            _ = md.AppendLine($"  - Execution Time: {execResult.ExecutionTime.TotalMilliseconds:F2} ms");
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **{0}** ({1}):", execResult.AcceleratorName, execResult.AcceleratorType));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Success: {0}", execResult.Success ? "✅" : "❌"));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Execution Time: {0:F2} ms", execResult.ExecutionTime.TotalMilliseconds));
             if (execResult.Error != null)
             {
-                _ = md.AppendLine($"  - Error: {execResult.Error.Message}");
+                _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Error: {0}", execResult.Error.Message));
             }
         }
 
@@ -329,10 +332,10 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             _ = md.AppendLine("## Validation Issues");
             foreach (var issue in result.ValidationIssues)
             {
-                _ = md.AppendLine($"- **{issue.Severity}:** {issue.Message}");
+                _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **{0}:** {1}", issue.Severity, issue.Message));
                 if (!string.IsNullOrEmpty(issue.Context))
                 {
-                    _ = md.AppendLine($"  - Context: {issue.Context}");
+                    _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Context: {0}", issue.Context));
                 }
             }
         }
@@ -344,28 +347,27 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     {
         var md = new StringBuilder();
 
-        _ = md.AppendLine($"# Performance Analysis: {performance.KernelName}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Performance Analysis: {0}", performance.KernelName));
         _ = md.AppendLine();
-        _ = md.AppendLine($"**Analysis Time:** {performance.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
-        _ = md.AppendLine($"**Data Points:** {performance.DataPoints}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Analysis Time:** {0:yyyy-MM-dd HH:mm:ss} UTC", performance.AnalysisTime));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Data Points:** {0}", performance.DataPoints));
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Execution Time Statistics");
-        _ = md.AppendLine($"- **Average:** {performance.AverageExecutionTime:F2} ms");
-        _ = md.AppendLine($"- **Median:** {performance.MedianExecutionTime:F2} ms");
-        _ = md.AppendLine($"- **Minimum:** {performance.MinExecutionTime:F2} ms");
-        _ = md.AppendLine($"- **Maximum:** {performance.MaxExecutionTime:F2} ms");
-        _ = md.AppendLine($"- **Standard Deviation:** {performance.ExecutionTimeStdDev:F2} ms");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Average:** {0:F2} ms", performance.AverageExecutionTimeMs));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Minimum:** {0:F2} ms", performance.MinExecutionTimeMs));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Maximum:** {0:F2} ms", performance.MaxExecutionTimeMs));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Standard Deviation:** {0:F2} ms", performance.ExecutionTimeStdDev));
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Memory Statistics");
-        _ = md.AppendLine($"- **Average Usage:** {performance.AverageMemoryUsage:F0} bytes");
-        _ = md.AppendLine($"- **Peak Usage:** {performance.PeakMemoryUsage:F0} bytes");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Average Usage:** {0:F0} bytes", performance.AverageMemoryUsage));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Peak Usage:** {0:F0} bytes", performance.PeakMemoryUsage));
         _ = md.AppendLine();
 
         _ = md.AppendLine("## Reliability");
-        _ = md.AppendLine($"- **Success Rate:** {performance.SuccessRate:F1}%");
-        _ = md.AppendLine($"- **Total Executions:** {performance.TotalExecutions}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **Data Points:** {0}", performance.DataPointCount));
+        // Note: SuccessRate and TotalExecutions not available on PerformanceAnalysis type
 
         return md.ToString();
     }
@@ -374,12 +376,12 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     {
         var md = new StringBuilder();
 
-        _ = md.AppendLine($"# Determinism Test: {result.KernelName}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Determinism Test: {0}", result.KernelName));
         _ = md.AppendLine();
-        _ = md.AppendLine($"**Status:** {(result.IsDeterministic ? "✅ DETERMINISTIC" : "❌ NON-DETERMINISTIC")}");
-        _ = md.AppendLine($"**Accelerator:** {result.AcceleratorType}");
-        _ = md.AppendLine($"**Iterations:** {result.Iterations}");
-        _ = md.AppendLine($"**Test Time:** {result.TestTime:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Status:** {0}", result.IsDeterministic ? "✅ DETERMINISTIC" : "❌ NON-DETERMINISTIC"));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Accelerator:** {0}", result.AcceleratorType));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Iterations:** {0}", result.Iterations));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Test Time:** {0:yyyy-MM-dd HH:mm:ss} UTC", result.TestTime));
         _ = md.AppendLine();
 
         if (result.Issues.Any())
@@ -387,7 +389,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             _ = md.AppendLine("## Issues and Recommendations");
             foreach (var issue in result.Issues)
             {
-                _ = md.AppendLine($"- {issue}");
+                _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- {0}", issue));
             }
         }
 
@@ -398,11 +400,11 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
     {
         var md = new StringBuilder();
 
-        _ = md.AppendLine($"# Memory Analysis: {analysis.KernelName}");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Memory Analysis: {0}", analysis.KernelName));
         _ = md.AppendLine();
-        _ = md.AppendLine($"**Status:** {(analysis.IsMemorySafe ? "✅ SAFE" : "⚠️ ISSUES DETECTED")}");
-        _ = md.AppendLine($"**Analysis Time:** {analysis.AnalysisTime:yyyy-MM-dd HH:mm:ss} UTC");
-        _ = md.AppendLine($"**Total Input Memory:** {analysis.TotalInputMemory:N0} bytes");
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Status:** {0}", analysis.IsMemorySafe ? "✅ SAFE" : "⚠️ ISSUES DETECTED"));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Analysis Time:** {0:yyyy-MM-dd HH:mm:ss} UTC", analysis.AnalysisTime));
+        _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Total Input Memory:** {0:N0} bytes", analysis.TotalInputMemory));
         _ = md.AppendLine();
 
         if (analysis.Issues.Any())
@@ -410,10 +412,10 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             _ = md.AppendLine("## Memory Issues");
             foreach (var issue in analysis.Issues)
             {
-                _ = md.AppendLine($"- **{issue.Severity} - {issue.Type}:** {issue.Description}");
+                _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **{0} - {1}:** {2}", issue.Severity, issue.Type, issue.Description));
                 if (!string.IsNullOrEmpty(issue.Context))
                 {
-                    _ = md.AppendLine($"  - Context: {issue.Context}");
+                    _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Context: {0}", issue.Context));
                 }
             }
             _ = md.AppendLine();
@@ -424,7 +426,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             _ = md.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
             {
-                _ = md.AppendLine($"- {recommendation}");
+                _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- {0}", recommendation));
             }
         }
 
@@ -437,35 +439,35 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
 
     private static string GenerateHtmlReport(DebugData debugData)
         // HTML generation implementation
-        => $"<html><body><h1>Debug Report: {debugData.KernelName}</h1></body></html>";
+        => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Debug Report: {0}</h1></body></html>", debugData.KernelName);
 
     private static string GenerateJsonReport(DebugData debugData) => JsonSerializer.Serialize(debugData, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextReport(DebugData debugData) => $"Debug Report for {debugData.KernelName}\nGenerated: {DateTime.UtcNow}";
+    private static string GeneratePlainTextReport(DebugData debugData) => string.Format(CultureInfo.InvariantCulture, "Debug Report for {0}\nGenerated: {1}", debugData.KernelName, DateTime.UtcNow);
 
-    private static string GenerateHtmlCrossValidationReport(CrossValidationResult result) => $"<html><body><h1>Cross-Validation: {result.KernelName}</h1></body></html>";
+    private static string GenerateHtmlCrossValidationReport(CrossValidationResult result) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Cross-Validation: {0}</h1></body></html>", result.KernelName);
 
     private static string GenerateJsonCrossValidationReport(CrossValidationResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextCrossValidationReport(CrossValidationResult result) => $"Cross-Validation Report for {result.KernelName}\nStatus: {(result.IsValid ? "PASSED" : "FAILED")}";
+    private static string GeneratePlainTextCrossValidationReport(CrossValidationResult result) => string.Format(CultureInfo.InvariantCulture, "Cross-Validation Report for {0}\nStatus: {1}", result.KernelName, result.IsValid ? "PASSED" : "FAILED");
 
-    private static string GenerateHtmlPerformanceReport(PerformanceAnalysis performance) => $"<html><body><h1>Performance Analysis: {performance.KernelName}</h1></body></html>";
+    private static string GenerateHtmlPerformanceReport(PerformanceAnalysis performance) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Performance Analysis: {0}</h1></body></html>", performance.KernelName);
 
     private static string GenerateJsonPerformanceReport(PerformanceAnalysis performance) => JsonSerializer.Serialize(performance, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextPerformanceReport(PerformanceAnalysis performance) => $"Performance Analysis for {performance.KernelName}\nData Points: {performance.DataPoints}";
+    private static string GeneratePlainTextPerformanceReport(PerformanceAnalysis performance) => string.Format(CultureInfo.InvariantCulture, "Performance Analysis for {0}\nData Points: {1}", performance.KernelName, performance.DataPoints);
 
-    private static string GenerateHtmlDeterminismReport(DeterminismTestResult result) => $"<html><body><h1>Determinism Test: {result.KernelName}</h1></body></html>";
+    private static string GenerateHtmlDeterminismReport(DeterminismTestResult result) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Determinism Test: {0}</h1></body></html>", result.KernelName);
 
     private static string GenerateJsonDeterminismReport(DeterminismTestResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextDeterminismReport(DeterminismTestResult result) => $"Determinism Test for {result.KernelName}\nStatus: {(result.IsDeterministic ? "DETERMINISTIC" : "NON-DETERMINISTIC")}";
+    private static string GeneratePlainTextDeterminismReport(DeterminismTestResult result) => string.Format(CultureInfo.InvariantCulture, "Determinism Test for {0}\nStatus: {1}", result.KernelName, result.IsDeterministic ? "DETERMINISTIC" : "NON-DETERMINISTIC");
 
-    private static string GenerateHtmlMemoryReport(MemoryPatternAnalysis analysis) => $"<html><body><h1>Memory Analysis: {analysis.KernelName}</h1></body></html>";
+    private static string GenerateHtmlMemoryReport(MemoryPatternAnalysis analysis) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Memory Analysis: {0}</h1></body></html>", analysis.KernelName);
 
     private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis) => JsonSerializer.Serialize(analysis, new JsonSerializerOptions { WriteIndented = true });
 
-    private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis) => $"Memory Analysis for {analysis.KernelName}\nStatus: {(analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED")}";
+    private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis) => string.Format(CultureInfo.InvariantCulture, "Memory Analysis for {0}\nStatus: {1}", analysis.KernelName, analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED");
     /// <summary>
     /// Performs dispose.
     /// </summary>

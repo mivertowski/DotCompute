@@ -669,12 +669,12 @@ public class KeyRotationResult
     /// Gets or sets the rotated keys.
     /// </summary>
     /// <value>The rotated keys.</value>
-    public IList<string> RotatedKeys { get; } = [];
+    public IList<string> RotatedKeys { get; init; } = [];
     /// <summary>
     /// Gets or sets the failed rotations.
     /// </summary>
     /// <value>The failed rotations.</value>
-    public IList<string> FailedRotations { get; } = [];
+    public IList<string> FailedRotations { get; init; } = [];
     /// <summary>
     /// Gets or sets the new key identifier.
     /// </summary>

@@ -198,7 +198,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 MaxAllowed = _maxPinnedMemory,
                 Available = _maxPinnedMemory - _totalAllocated,
                 AllocationCount = _allocations.Count,
-                AverageAllocationSize = _allocations.Count > 0 ? _totalAllocated / _allocations.Count : 0
+                AverageAllocationSize = !_allocations.IsEmpty ? _totalAllocated / _allocations.Count : 0
             };
         }
         /// <summary>

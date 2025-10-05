@@ -21,7 +21,7 @@ public class BottleneckAnalysis
     /// Gets or sets the bottlenecks.
     /// </summary>
     /// <value>The bottlenecks.</value>
-    public IList<Bottleneck> Bottlenecks { get; } = [];
+    public IList<Bottleneck> Bottlenecks { get; init; } = [];
     /// <summary>
     /// Gets or sets the analysis time.
     /// </summary>

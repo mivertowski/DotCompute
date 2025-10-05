@@ -139,7 +139,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The stage metrics.
         /// </value>
-        public Dictionary<string, StageMetricsData> StageMetrics { get; } = [];
+        public Dictionary<string, StageMetricsData> StageMetrics { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the custom metrics.
@@ -147,7 +147,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The custom metrics.
         /// </value>
-        public Dictionary<string, double> CustomMetrics { get; } = [];
+        public Dictionary<string, double> CustomMetrics { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the time series.
@@ -155,7 +155,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The time series.
         /// </value>
-        public IList<TimeSeriesData> TimeSeries { get; } = [];
+        public IList<TimeSeriesData> TimeSeries { get; init; } = [];
     }
 
     /// <summary>
@@ -233,7 +233,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The custom metrics.
         /// </value>
-        public Dictionary<string, double> CustomMetrics { get; } = [];
+        public Dictionary<string, double> CustomMetrics { get; init; } = [];
     }
 
     /// <summary>
@@ -271,7 +271,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The labels.
         /// </value>
-        public Dictionary<string, string> Labels { get; } = [];
+        public Dictionary<string, string> Labels { get; init; } = [];
     }
 
     /// <summary>
@@ -293,7 +293,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The metrics.
         /// </value>
-        public IList<OpenTelemetryMetric> Metrics { get; } = [];
+        public IList<OpenTelemetryMetric> Metrics { get; init; } = [];
     }
 
     /// <summary>
@@ -307,7 +307,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The attributes.
         /// </value>
-        public Dictionary<string, object> Attributes { get; } = [];
+        public Dictionary<string, object> Attributes { get; init; } = [];
     }
 
     /// <summary>
@@ -367,7 +367,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The data points.
         /// </value>
-        public IList<OpenTelemetryDataPoint> DataPoints { get; } = [];
+        public IList<OpenTelemetryDataPoint> DataPoints { get; init; } = [];
     }
 
     /// <summary>
@@ -381,7 +381,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The data points.
         /// </value>
-        public IList<OpenTelemetryDataPoint> DataPoints { get; } = [];
+        public IList<OpenTelemetryDataPoint> DataPoints { get; init; } = [];
     }
 
     /// <summary>
@@ -411,7 +411,7 @@ namespace DotCompute.Core.Aot
         /// <value>
         /// The attributes.
         /// </value>
-        public Dictionary<string, object> Attributes { get; } = [];
+        public Dictionary<string, object> Attributes { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the count.

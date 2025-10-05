@@ -3,6 +3,7 @@
 
 using System.Collections.ObjectModel;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Abstractions.Validation;
 
@@ -46,10 +47,10 @@ public sealed class KernelValidationResult
     public Collection<DebugValidationIssue> Issues { get; init; } = [];
 
     /// <summary>
-    /// Gets the results from different backends as key-value pairs.
-    /// Key: backend name, Value: validation result data
+    /// Gets the results from different backends.
+    /// Contains the execution results from each backend tested.
     /// </summary>
-    public Dictionary<string, object> Results { get; init; } = [];
+    public IReadOnlyList<KernelExecutionResult> Results { get; init; } = [];
 
     /// <summary>
     /// Gets the total time spent on validation across all backends.
@@ -73,14 +74,50 @@ public sealed class KernelValidationResult
     public ResourceUsageEstimate? ResourceUsage { get; init; }
 
     /// <summary>
-    /// Gets the time spent validating this kernel.
+    /// Gets the time spent validating this kernel (total execution time).
     /// </summary>
     public TimeSpan ValidationTime { get; set; }
+
+    /// <summary>
+    /// Gets the time spent on the actual kernel execution.
+    /// </summary>
+    public TimeSpan ExecutionTime { get; init; }
 
     /// <summary>
     /// Gets optimization recommendations for the kernel.
     /// </summary>
     public Collection<string> Recommendations { get; init; } = [];
+
+    /// <summary>
+    /// Gets the comparison results between different backends.
+    /// </summary>
+    public IReadOnlyList<ResultComparison> Comparisons { get; init; } = [];
+}
+
+/// <summary>
+/// Represents a comparison between two backend execution results.
+/// </summary>
+public sealed class ResultComparison
+{
+    /// <summary>
+    /// Gets or sets the first backend in the comparison.
+    /// </summary>
+    public string Backend1 { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the second backend in the comparison.
+    /// </summary>
+    public string Backend2 { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the results match within tolerance.
+    /// </summary>
+    public bool IsMatch { get; set; }
+
+    /// <summary>
+    /// Gets or sets the measured difference between the results.
+    /// </summary>
+    public float Difference { get; set; }
 }
 
 // ValidationWarning, ValidationIssue, WarningSeverity, and ResourceUsageEstimate

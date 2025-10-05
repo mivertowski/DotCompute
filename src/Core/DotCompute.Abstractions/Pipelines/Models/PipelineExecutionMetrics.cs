@@ -170,7 +170,7 @@ public sealed class PipelineExecutionMetrics
     /// <summary>
     /// Gets or sets additional metrics for the pipeline.
     /// </summary>
-    public IDictionary<string, object> AdditionalMetrics { get; } = new Dictionary<string, object>();
+    public IDictionary<string, object> AdditionalMetrics { get; init; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Gets or sets memory usage statistics.

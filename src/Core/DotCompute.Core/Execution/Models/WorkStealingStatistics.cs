@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Abstractions.Execution;
+
 namespace DotCompute.Core.Execution.Models
 {
     /// <summary>
@@ -46,7 +49,7 @@ namespace DotCompute.Core.Execution.Models
         /// <value>
         /// The device statistics.
         /// </value>
-        public DeviceQueueStatistics[] DeviceStatistics { get; set; } = [];
+        public DotCompute.Abstractions.Debugging.Types.DeviceQueueStatistics[] DeviceStatistics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the stealing statistics.
@@ -54,6 +57,6 @@ namespace DotCompute.Core.Execution.Models
         /// <value>
         /// The stealing statistics.
         /// </value>
-        public StealingStatistics StealingStatistics { get; set; } = new();
+        public DotCompute.Abstractions.Execution.StealingStatistics StealingStatistics { get; set; } = new();
     }
 }

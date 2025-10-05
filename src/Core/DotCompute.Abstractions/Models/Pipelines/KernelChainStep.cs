@@ -120,10 +120,10 @@ namespace DotCompute.Abstractions.Models.Pipelines
         public required Func<T, bool> Condition { get; set; }
 
         /// <inheritdoc/>
-        public IList<KernelChainStep> TruePath { get; } = [];
+        public IList<KernelChainStep> TruePath { get; init; } = [];
 
         /// <inheritdoc/>
-        public IList<KernelChainStep> FalsePath { get; } = [];
+        public IList<KernelChainStep> FalsePath { get; init; } = [];
 
         /// <inheritdoc/>
         public bool EvaluateCondition(object? previousResult)

@@ -52,7 +52,7 @@ public class PerformanceResult
     /// Gets or sets the additional metrics.
     /// </summary>
     /// <value>The additional metrics.</value>
-    public Dictionary<string, object> AdditionalMetrics { get; } = [];
+    public Dictionary<string, object> AdditionalMetrics { get; init; } = [];
 
     /// <summary>
     /// Gets the elapsed time as a TimeSpan (computed from ExecutionTimeMs).

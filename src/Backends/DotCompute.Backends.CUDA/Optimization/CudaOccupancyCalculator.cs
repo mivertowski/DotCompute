@@ -208,7 +208,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             }
 
             // Find optimal points
-            if (curve.DataPoints.Any())
+            if (curve.DataPoints.Count > 0)
             {
                 curve.OptimalBlockSize = curve.DataPoints
                     .OrderByDescending(p => p.Occupancy)

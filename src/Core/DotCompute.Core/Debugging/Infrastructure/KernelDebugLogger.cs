@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using DotCompute.Abstractions.Debugging;
@@ -8,6 +9,7 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Debugging.Core;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 // Using aliases to resolve LogLevel conflicts
 using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
@@ -178,8 +180,10 @@ public sealed class KernelDebugLogger(
             {
                 ["BackendType"] = backendType,
                 ["Success"] = result.Success,
-                ["ExecutionTime"] = result.ExecutionTime.TotalMilliseconds,
-                ["MemoryUsed"] = result.MemoryUsed,
+                ["ExecutionTime"] = result.Timings?.TotalTimeMs ?? 0,
+                ["MemoryUsed"] = result.PerformanceCounters?.ContainsKey("MemoryUsed") == true
+                    ? result.PerformanceCounters["MemoryUsed"]
+                    : 0,
                 ["ErrorMessage"] = result.ErrorMessage ?? string.Empty
             }
         };
@@ -192,7 +196,7 @@ public sealed class KernelDebugLogger(
             if (result.Success)
             {
                 _logger.LogDebug("Execution completed for kernel {KernelName} on {BackendType} in {ExecutionTime}ms",
-                    kernelName, backendType, result.ExecutionTime.TotalMilliseconds);
+                    kernelName, backendType, result.Timings?.TotalTimeMs ?? 0);
             }
             else
             {
@@ -462,10 +466,10 @@ public sealed class KernelDebugLogger(
         var relevantEntries = GetRelevantLogEntries(kernelName, cutoffTime);
 
         var report = new StringBuilder();
-        _ = report.AppendLine($"# Debug Report for Kernel: {kernelName}");
-        _ = report.AppendLine($"Generated at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        _ = report.AppendLine($"Time window: {timeWindow?.ToString() ?? "24 hours"}");
-        _ = report.AppendLine($"Total log entries: {relevantEntries.Count}");
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "# Debug Report for Kernel: {0}", kernelName));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Generated at: {0:yyyy-MM-dd HH:mm:ss} UTC", DateTime.UtcNow));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Time window: {0}", timeWindow?.ToString() ?? "24 hours"));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Total log entries: {0}", relevantEntries.Count));
         _ = report.AppendLine();
 
         // Group entries by operation
@@ -473,11 +477,11 @@ public sealed class KernelDebugLogger(
 
         foreach (var group in operationGroups)
         {
-            _ = report.AppendLine($"## {group.Key} Operations ({group.Count()})");
+            _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "## {0} Operations ({1})", group.Key, group.Count()));
 
             foreach (var entry in group.OrderBy(e => e.Timestamp))
             {
-                _ = report.AppendLine($"- {entry.Timestamp:HH:mm:ss.fff}: {FormatLogEntryData(entry.Data)}");
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "- {0:HH:mm:ss.fff}: {1}", entry.Timestamp, FormatLogEntryData(entry.Data)));
             }
 
             _ = report.AppendLine();

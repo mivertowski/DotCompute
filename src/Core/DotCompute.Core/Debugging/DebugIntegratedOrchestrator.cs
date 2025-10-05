@@ -525,7 +525,7 @@ public class DebugIntegratedOrchestrator(
         /// Gets or sets a value indicating whether sues.
         /// </summary>
         /// <value>The issues.</value>
-        public IList<string> Issues { get; } = [];
+        public IList<string> Issues { get; init; } = [];
         /// <summary>
         /// Gets or sets a value indicating whether critical issues.
         /// </summary>

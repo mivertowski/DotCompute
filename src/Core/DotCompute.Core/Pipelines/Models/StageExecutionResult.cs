@@ -101,19 +101,20 @@ public sealed class StageExecutionResult
         Dictionary<string, object> outputData,
         TimeSpan executionTime)
     {
+        var now = DateTimeOffset.UtcNow;
         var baseResult = new AbstractionsMemory.Models.Pipelines.StageExecutionResult
         {
             Success = true,
             StageId = stageId,
-            OutputData = outputData,
-            ExecutionTime = executionTime
+            ExecutionTime = executionTime,
+            OutputData = outputData
         };
 
         return new StageExecutionResult
         {
             BaseResult = baseResult,
-            EndTime = DateTimeOffset.UtcNow,
-            StartTime = DateTimeOffset.UtcNow.Subtract(executionTime)
+            EndTime = now,
+            StartTime = now.Subtract(executionTime)
         };
     }
 
@@ -131,20 +132,21 @@ public sealed class StageExecutionResult
         TimeSpan executionTime,
         Dictionary<string, object>? partialOutputs = null)
     {
+        var now = DateTimeOffset.UtcNow;
         var baseResult = new AbstractionsMemory.Models.Pipelines.StageExecutionResult
         {
             Success = false,
             StageId = stageId,
-            OutputData = partialOutputs ?? [],
             ExecutionTime = executionTime,
-            Error = error
+            Error = error,
+            OutputData = partialOutputs ?? []
         };
 
         return new StageExecutionResult
         {
             BaseResult = baseResult,
-            EndTime = DateTimeOffset.UtcNow,
-            StartTime = DateTimeOffset.UtcNow.Subtract(executionTime)
+            EndTime = now,
+            StartTime = now.Subtract(executionTime)
         };
     }
 }

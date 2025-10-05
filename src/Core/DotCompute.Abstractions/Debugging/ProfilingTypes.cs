@@ -349,29 +349,29 @@ public sealed class PerformanceAnalysis
 public sealed class PerformanceTrend
 {
     /// <summary>
-    /// Gets the kernel name.
+    /// Gets or sets the kernel name.
     /// </summary>
-    public string KernelName { get; init; } = string.Empty;
+    public string KernelName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets the time range for the trend.
+    /// Gets or sets the time range for the trend.
     /// </summary>
-    public TimeSpan TimeRange { get; init; }
+    public TimeSpan TimeRange { get; set; }
 
     /// <summary>
-    /// Gets the number of data points.
+    /// Gets or sets the number of data points.
     /// </summary>
-    public int DataPoints { get; init; }
+    public int DataPoints { get; set; }
 
     /// <summary>
-    /// Gets the trend direction.
+    /// Gets or sets the trend direction.
     /// </summary>
-    public TrendDirection TrendDirection { get; init; }
+    public TrendDirection TrendDirection { get; set; }
 
     /// <summary>
-    /// Gets the time of analysis.
+    /// Gets or sets the time of analysis.
     /// </summary>
-    public DateTime AnalysisTime { get; init; }
+    public DateTime AnalysisTime { get; set; }
 
     /// <summary>
     /// Gets the metric that is trending.
@@ -397,6 +397,26 @@ public sealed class PerformanceTrend
     /// Gets the description of the trend.
     /// </summary>
     public string Description { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the slope of the trend line.
+    /// </summary>
+    public double Slope { get; set; }
+
+    /// <summary>
+    /// Gets or sets the first data point in the trend.
+    /// </summary>
+    public TimeSpan FirstDataPoint { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last data point in the trend.
+    /// </summary>
+    public TimeSpan LastDataPoint { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average change per time period.
+    /// </summary>
+    public double AverageChange { get; set; }
 }
 
 /// <summary>
@@ -405,54 +425,54 @@ public sealed class PerformanceTrend
 public sealed class PerformanceAnomaly
 {
     /// <summary>
-    /// Gets the session ID where the anomaly was detected.
+    /// Gets or sets the session ID where the anomaly was detected.
     /// </summary>
-    public string SessionId { get; init; } = string.Empty;
+    public string SessionId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets when the anomaly was detected.
+    /// Gets or sets when the anomaly was detected.
     /// </summary>
-    public DateTime DetectedAt { get; init; } = DateTime.UtcNow;
+    public DateTime DetectedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets the timestamp when the anomaly occurred.
+    /// Gets or sets the timestamp when the anomaly occurred.
     /// </summary>
-    public DateTime Timestamp { get; init; }
+    public DateTime Timestamp { get; set; }
 
     /// <summary>
-    /// Gets the type of anomaly.
+    /// Gets or sets the type of anomaly.
     /// </summary>
-    public AnomalyType Type { get; init; }
+    public AnomalyType Type { get; set; }
 
     /// <summary>
-    /// Gets the severity of the anomaly.
+    /// Gets or sets the severity of the anomaly.
     /// </summary>
-    public AnomalySeverity Severity { get; init; }
+    public AnomalySeverity Severity { get; set; }
 
     /// <summary>
-    /// Gets the metric that showed anomalous behavior.
+    /// Gets or sets the metric that showed anomalous behavior.
     /// </summary>
-    public string Metric { get; init; } = string.Empty;
+    public string Metric { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets the actual value that was anomalous.
+    /// Gets or sets the actual value that was anomalous.
     /// </summary>
-    public double ActualValue { get; init; }
+    public double ActualValue { get; set; }
 
     /// <summary>
-    /// Gets the expected value based on historical data.
+    /// Gets or sets the expected value based on historical data.
     /// </summary>
-    public double ExpectedValue { get; init; }
+    public double ExpectedValue { get; set; }
 
     /// <summary>
-    /// Gets the deviation from the expected value.
+    /// Gets or sets the deviation from the expected value.
     /// </summary>
-    public double Deviation { get; init; }
+    public double Deviation { get; set; }
 
     /// <summary>
-    /// Gets a description of the anomaly.
+    /// Gets or sets a description of the anomaly.
     /// </summary>
-    public string Description { get; init; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }
 
 /// <summary>

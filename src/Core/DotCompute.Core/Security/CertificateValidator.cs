@@ -496,12 +496,12 @@ public sealed class CertificateValidationResult
     /// Gets or sets the errors.
     /// </summary>
     /// <value>The errors.</value>
-    public IList<string> Errors { get; } = [];
+    public IList<string> Errors { get; init; } = [];
     /// <summary>
     /// Gets or sets the warnings.
     /// </summary>
     /// <value>The warnings.</value>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
     /// <summary>
     /// Gets or sets the chain info.
     /// </summary>
@@ -538,7 +538,7 @@ public sealed class CertificateUsageValidationResult
     /// Gets or sets a value indicating whether sues.
     /// </summary>
     /// <value>The issues.</value>
-    public IList<string> Issues { get; } = [];
+    public IList<string> Issues { get; init; } = [];
 }
 
 /// <summary>
@@ -565,12 +565,12 @@ public sealed class CertificateChainValidationResult
     /// Gets or sets the chain status.
     /// </summary>
     /// <value>The chain status.</value>
-    public IList<string> ChainStatus { get; } = [];
+    public IList<string> ChainStatus { get; init; } = [];
     /// <summary>
     /// Gets or sets the chain elements.
     /// </summary>
     /// <value>The chain elements.</value>
-    public IList<ChainElementInfo> ChainElements { get; } = [];
+    public IList<ChainElementInfo> ChainElements { get; init; } = [];
 }
 
 /// <summary>

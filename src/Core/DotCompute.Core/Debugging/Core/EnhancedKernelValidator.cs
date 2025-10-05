@@ -14,7 +14,7 @@ namespace DotCompute.Core.Debugging.Core;
 /// Provides comprehensive kernel validation and correctness checking.
 /// Enhanced version with advanced validation capabilities.
 /// </summary>
-public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValidator> logger, DebugServiceOptions? options = null) : IDisposable
+public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValidator> logger, DebugServiceOptions? _options = null) : IDisposable
 {
     private readonly ILogger<EnhancedKernelValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, ValidationProfile> _validationProfiles = new();
@@ -174,7 +174,10 @@ public sealed partial class EnhancedKernelValidator(ILogger<EnhancedKernelValida
 
             if (!result.IsDeterministic)
             {
-                result.Issues.AddRange(DeterminismChecklist);
+                foreach (var issue in DeterminismChecklist)
+                {
+                    result.Issues.Add(issue);
+                }
             }
 
             LogDeterminismTestCompleted(kernel.Name, result.IsDeterministic);

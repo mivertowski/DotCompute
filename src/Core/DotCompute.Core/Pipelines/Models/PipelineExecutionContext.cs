@@ -157,27 +157,27 @@ public sealed class PipelineExecutionContext : DotCompute.Abstractions.Models.Pi
     /// <summary>
     /// Gets or sets the execution metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the telemetry data.
     /// </summary>
-    public Dictionary<string, object> Telemetry { get; } = [];
+    public Dictionary<string, object> Telemetry { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the performance counters.
     /// </summary>
-    public Dictionary<string, long> PerformanceCounters { get; } = [];
+    public Dictionary<string, long> PerformanceCounters { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the memory allocations tracking.
     /// </summary>
-    public Dictionary<string, long> MemoryAllocations { get; } = [];
+    public Dictionary<string, long> MemoryAllocations { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the execution history for debugging.
     /// </summary>
-    public IList<string> ExecutionHistory { get; } = [];
+    public IList<string> ExecutionHistory { get; init; } = [];
 
     /// <summary>
     /// Gets or sets whether debugging is enabled.
@@ -422,7 +422,7 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Gets or sets additional configuration options.
     /// </summary>
-    public Dictionary<string, object> AdditionalOptions { get; } = [];
+    public Dictionary<string, object> AdditionalOptions { get; init; } = [];
 
     /// <summary>
     /// Gets the default execution options.

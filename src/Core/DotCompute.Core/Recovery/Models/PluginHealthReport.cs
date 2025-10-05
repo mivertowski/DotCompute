@@ -51,7 +51,7 @@ public class PluginHealthReport
     /// <summary>
     /// Gets or sets the health status of individual plugins.
     /// </summary>
-    public Dictionary<string, PluginHealth> PluginStatuses { get; } = [];
+    public Dictionary<string, PluginHealth> PluginStatuses { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the timestamp when this report was generated.
@@ -61,12 +61,12 @@ public class PluginHealthReport
     /// <summary>
     /// Gets or sets any critical issues detected.
     /// </summary>
-    public IList<string> CriticalIssues { get; } = [];
+    public IList<string> CriticalIssues { get; init; } = [];
 
     /// <summary>
     /// Gets or sets warning messages.
     /// </summary>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the component identifier for health tracking.
@@ -147,7 +147,7 @@ public class PluginHealth
     /// <summary>
     /// Gets or sets plugin-specific metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

@@ -1069,7 +1069,7 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         base.VisitInvocationExpression(node);
 
         // Check for recursion after visiting all nodes
-        HasRecursion = _declaredMethods.Intersect(_calledMethods).Any();
+        HasRecursion = _declaredMethods.Intersect(_calledMethods).Count() > 0;
     }
 }
 

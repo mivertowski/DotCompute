@@ -9,6 +9,7 @@ using PipelineEvent = DotCompute.Core.Pipelines.Types.PipelineEvent;
 using DotCompute.Core.Validation;
 using DotCompute.Abstractions.Pipelines.Enums;
 using DotCompute.Abstractions.Pipelines;
+using PipelineEventType = DotCompute.Abstractions.Pipelines.Enums.PipelineEventType;
 using AbstractionsPipelineExecutionMetrics = DotCompute.Abstractions.Pipelines.Models.PipelineExecutionMetrics;
 using CorePipelineExecutionContext = DotCompute.Core.Pipelines.Models.PipelineExecutionContext;
 using ValidationIssue = DotCompute.Abstractions.Validation.ValidationIssue;

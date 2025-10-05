@@ -8,6 +8,7 @@ using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
@@ -173,12 +174,23 @@ internal sealed class KernelDebugValidator(
         var accelerator = await GetOrCreateAcceleratorAsync(backendType);
         if (accelerator == null)
         {
+            var handle = new KernelExecutionHandle
+            {
+                Id = Guid.NewGuid(),
+                KernelName = kernelName,
+                SubmittedAt = DateTimeOffset.UtcNow,
+                IsCompleted = true,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
             return new KernelExecutionResult
             {
+                Handle = handle,
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = false,
-                ErrorMessage = $"Backend {backendType} not available"
+                ErrorMessage = $"Backend {backendType} not available",
+                ExecutedAt = DateTime.UtcNow
             };
         }
 
@@ -198,7 +210,6 @@ internal sealed class KernelDebugValidator(
             var result = await _profiler.ExecuteWithProfilingAsync(kernelName, backendType, inputs, accelerator);
 
             stopwatch.Stop();
-            result.ExecutionTime = stopwatch.Elapsed;
             return result;
         }
         catch (Exception ex)
@@ -206,35 +217,51 @@ internal sealed class KernelDebugValidator(
             stopwatch.Stop();
             _logger.LogErrorMessage(ex, "Error executing kernel {kernelName} on {backendType}", kernelName, backendType);
 
+            var handle = new KernelExecutionHandle
+            {
+                Id = Guid.NewGuid(),
+                KernelName = kernelName,
+                SubmittedAt = DateTimeOffset.UtcNow,
+                IsCompleted = true,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
             return new KernelExecutionResult
             {
+                Handle = handle,
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = false,
                 ErrorMessage = ex.Message,
-                ExecutionTime = stopwatch.Elapsed
+                Error = ex,
+                Timings = new KernelExecutionTimings
+                {
+                    KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                    TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds
+                },
+                ExecutedAt = DateTime.UtcNow
             };
         }
     }
 
-    private ResultComparison CompareResults(KernelExecutionResult result1, KernelExecutionResult result2, float tolerance)
+    private static ResultComparison CompareResults(KernelExecutionResult result1, KernelExecutionResult result2, float tolerance)
     {
         var comparison = new ResultComparison
         {
-            Backend1 = result1.BackendType,
-            Backend2 = result2.BackendType,
+            Backend1 = result1.BackendType ?? "Unknown",
+            Backend2 = result2.BackendType ?? "Unknown",
             IsMatch = false,
             Difference = float.MaxValue
         };
 
-        if (result1.Result == null || result2.Result == null)
+        if (result1.Output == null || result2.Output == null)
         {
-            comparison.IsMatch = result1.Result == result2.Result;
+            comparison.IsMatch = result1.Output == result2.Output;
             comparison.Difference = comparison.IsMatch ? 0f : 1f;
             return comparison;
         }
 
-        var (isMatch, difference, _) = CompareObjects(result1.Result, result2.Result, tolerance);
+        var (isMatch, difference, _) = CompareObjects(result1.Output, result2.Output, tolerance);
         comparison.IsMatch = isMatch;
         comparison.Difference = difference;
 
@@ -307,7 +334,7 @@ internal sealed class KernelDebugValidator(
         return (toString1 == toString2, toString1 == toString2 ? 0f : 0.5f, "Object difference");
     }
 
-    private List<DebugValidationIssue> AnalyzePerformanceConsistency(KernelExecutionResult[] results)
+    private static List<DebugValidationIssue> AnalyzePerformanceConsistency(KernelExecutionResult[] results)
     {
         var issues = new List<DebugValidationIssue>();
 
@@ -317,7 +344,7 @@ internal sealed class KernelDebugValidator(
         }
 
 
-        var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
+        var executionTimes = results.Select(r => r.Timings?.TotalTimeMs ?? 0).ToArray();
         var average = executionTimes.Average();
         var maxDeviation = executionTimes.Max(t => Math.Abs(t - average));
 
@@ -391,30 +418,4 @@ internal sealed class KernelDebugValidator(
             _disposed = true;
         }
     }
-}
-
-/// <summary>
-/// Represents the result of comparing two kernel execution results.
-/// </summary>
-internal class ResultComparison
-{
-    /// <summary>
-    /// Gets or sets the first backend type.
-    /// </summary>
-    public string Backend1 { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the second backend type.
-    /// </summary>
-    public string Backend2 { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets whether the results match within tolerance.
-    /// </summary>
-    public bool IsMatch { get; set; }
-
-    /// <summary>
-    /// Gets or sets the measured difference between results.
-    /// </summary>
-    public float Difference { get; set; }
 }

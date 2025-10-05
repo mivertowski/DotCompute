@@ -65,7 +65,7 @@ public sealed class MemoryAccessAnalysisResult
     /// Maps access pattern names to the number of operations using each pattern.
     /// </summary>
     /// <value>A dictionary mapping access patterns to operation counts.</value>
-    public Dictionary<string, int> AccessPatternDistribution { get; } = [];
+    public Dictionary<string, int> AccessPatternDistribution { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the average memory coalescing efficiency.
@@ -86,26 +86,26 @@ public sealed class MemoryAccessAnalysisResult
     /// Maps transfer direction names to the number of operations in each direction.
     /// </summary>
     /// <value>A dictionary mapping transfer directions to operation counts.</value>
-    public Dictionary<string, int> TransferDirectionDistribution { get; } = [];
+    public Dictionary<string, int> TransferDirectionDistribution { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the bandwidth utilization per device.
     /// Maps device IDs to their memory bandwidth utilization percentages.
     /// </summary>
     /// <value>A dictionary mapping device IDs to bandwidth utilization.</value>
-    public Dictionary<string, double> DeviceBandwidthUtilization { get; } = [];
+    public Dictionary<string, double> DeviceBandwidthUtilization { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the memory segment usage statistics.
     /// Maps memory segment names to their detailed usage statistics.
     /// </summary>
     /// <value>A dictionary mapping segment names to usage statistics.</value>
-    public Dictionary<string, MemorySegmentStats> MemorySegmentUsage { get; } = [];
+    public Dictionary<string, MemorySegmentStats> MemorySegmentUsage { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the list of optimization recommendations for memory access.
     /// Provides actionable suggestions for improving memory subsystem performance.
     /// </summary>
     /// <value>A list of optimization recommendation strings.</value>
-    public IList<string> OptimizationRecommendations { get; } = [];
+    public IList<string> OptimizationRecommendations { get; set; } = [];
 }

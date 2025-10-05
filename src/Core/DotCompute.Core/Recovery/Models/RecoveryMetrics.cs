@@ -41,7 +41,7 @@ public class RecoveryMetrics
     {
         get
         {
-            if (!_attempts.Any())
+            if (_attempts.IsEmpty)
             {
 
                 return TimeSpan.Zero;
@@ -60,7 +60,7 @@ public class RecoveryMetrics
     {
         get
         {
-            if (!_attempts.Any())
+            if (_attempts.IsEmpty)
             {
 
                 return TimeSpan.Zero;
@@ -78,7 +78,7 @@ public class RecoveryMetrics
     {
         get
         {
-            if (!_attempts.Any())
+            if (_attempts.IsEmpty)
             {
 
                 return TimeSpan.Zero;
@@ -96,7 +96,7 @@ public class RecoveryMetrics
     {
         get
         {
-            if (!_attempts.Any())
+            if (_attempts.IsEmpty)
             {
 
                 return null;

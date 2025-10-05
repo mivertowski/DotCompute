@@ -94,14 +94,14 @@ public sealed class SpanContext
     /// Attributes are key-value pairs providing additional context about the operation.
     /// </summary>
     /// <value>A dictionary of attribute key-value pairs.</value>
-    public Dictionary<string, object?> Attributes { get; } = [];
+    public Dictionary<string, object?> Attributes { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the events that occurred during this span's lifetime.
     /// Events represent point-in-time occurrences within the span.
     /// </summary>
     /// <value>A list of span events.</value>
-    public IList<SpanEvent> Events { get; } = [];
+    public IList<SpanEvent> Events { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the identifier of the parent span.

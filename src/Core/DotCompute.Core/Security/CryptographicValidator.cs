@@ -555,12 +555,12 @@ public class SecurityStandard
     /// Gets or sets the approved algorithms.
     /// </summary>
     /// <value>The approved algorithms.</value>
-    public IList<string> ApprovedAlgorithms { get; } = [];
+    public IList<string> ApprovedAlgorithms { get; init; } = [];
     /// <summary>
     /// Gets or sets the minimum key sizes.
     /// </summary>
     /// <value>The minimum key sizes.</value>
-    public Dictionary<string, int> MinimumKeySizes { get; } = [];
+    public Dictionary<string, int> MinimumKeySizes { get; init; } = [];
 }
 /// <summary>
 /// An entropy quality enumeration.
@@ -608,12 +608,12 @@ public class ConfigurationValidationResult
     /// Gets or sets a value indicating whether sues.
     /// </summary>
     /// <value>The issues.</value>
-    public IList<string> Issues { get; } = [];
+    public IList<string> Issues { get; init; } = [];
     /// <summary>
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
 }
 /// <summary>
 /// A class that represents security audit result.
@@ -645,17 +645,17 @@ public class SecurityAuditResult
     /// Gets or sets the operation results.
     /// </summary>
     /// <value>The operation results.</value>
-    public IList<OperationAuditResult> OperationResults { get; } = [];
+    public IList<OperationAuditResult> OperationResults { get; init; } = [];
     /// <summary>
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
     /// <summary>
     /// Gets or sets the audit errors.
     /// </summary>
     /// <value>The audit errors.</value>
-    public IList<string> AuditErrors { get; } = [];
+    public IList<string> AuditErrors { get; init; } = [];
 }
 /// <summary>
 /// A class that represents operation audit result.
@@ -682,7 +682,7 @@ public class OperationAuditResult
     /// Gets or sets a value indicating whether sues.
     /// </summary>
     /// <value>The issues.</value>
-    public IList<string> Issues { get; } = [];
+    public IList<string> Issues { get; init; } = [];
 }
 /// <summary>
 /// A class that represents entropy validation result.
@@ -724,7 +724,7 @@ public class EntropyValidationResult
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
     /// <summary>
     /// Gets or sets the error message.
     /// </summary>

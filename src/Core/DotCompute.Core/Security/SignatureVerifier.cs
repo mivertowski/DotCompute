@@ -614,12 +614,12 @@ public sealed class SignatureAlgorithmValidationResult
     /// Gets or sets the security issues.
     /// </summary>
     /// <value>The security issues.</value>
-    public IList<string> SecurityIssues { get; } = [];
+    public IList<string> SecurityIssues { get; init; } = [];
     /// <summary>
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>

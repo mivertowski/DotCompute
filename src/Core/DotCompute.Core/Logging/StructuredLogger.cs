@@ -527,11 +527,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(StructuredLogger));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.
@@ -656,7 +652,7 @@ public sealed class StructuredLogEntry
     /// Gets or sets the properties.
     /// </summary>
     /// <value>The properties.</value>
-    public Dictionary<string, object> Properties { get; } = [];
+    public Dictionary<string, object> Properties { get; init; } = [];
     /// <summary>
     /// Gets or sets the performance metrics.
     /// </summary>
@@ -829,7 +825,7 @@ public sealed class DistributedOperationMetrics
     /// Gets or sets the device metrics.
     /// </summary>
     /// <value>The device metrics.</value>
-    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; } = [];
+    public Dictionary<string, DeviceOperationMetrics> DeviceMetrics { get; init; } = [];
 }
 /// <summary>
 /// A class that represents device operation metrics.

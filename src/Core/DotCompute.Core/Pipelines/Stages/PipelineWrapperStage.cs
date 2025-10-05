@@ -34,7 +34,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public PipelineStageType Type => PipelineStageType.Custom;
 
         /// <inheritdoc/>
-        public IReadOnlyList<string> Dependencies { get; } = [];
+        public IReadOnlyList<string> Dependencies { get; init; } = [];
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, object> Metadata => _pipeline.Metadata;
@@ -58,9 +58,9 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = result.Success,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
                     MemoryUsed = result.Metrics?.PeakMemoryUsage ?? 0L,
-                    Error = result.Errors?.FirstOrDefault()?.Exception
+                    Error = result.Errors?.FirstOrDefault()?.Exception,
+                    OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
                 };
             }
             catch (Exception ex)
@@ -73,8 +73,8 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = [],
-                    Error = ex
+                    Error = ex,
+                    OutputData = []
                 };
             }
         }

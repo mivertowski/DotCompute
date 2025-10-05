@@ -606,7 +606,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var overlapping = _dirtyRanges.Where(r => r.start <= end && r.end >= start).ToList();
 
 
-                if (overlapping.Any())
+                if (overlapping.Count > 0)
                 {
                     foreach (var range in overlapping)
                     {

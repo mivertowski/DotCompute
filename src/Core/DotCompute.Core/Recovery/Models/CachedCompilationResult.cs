@@ -68,7 +68,7 @@ public class CachedCompilationResult
     /// <summary>
     /// Gets or sets additional metadata
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
     /// <summary>
     /// Gets a value indicating whether this cache entry has expired

@@ -55,7 +55,7 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets additional context data.
         /// </summary>
-        public Dictionary<string, object> AdditionalData { get; } = [];
+        public Dictionary<string, object> AdditionalData { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the stack trace at the time of error.

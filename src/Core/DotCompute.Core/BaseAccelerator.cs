@@ -190,7 +190,7 @@ public abstract class BaseAccelerator : IAccelerator
             "Kernel '{KernelName}' compilation metrics: Time={CompilationTime}ms, Size={ByteCodeSize}",
             kernelName,
             compilationTime.TotalMilliseconds,
-            byteCodeSize?.ToString() ?? "N/A");
+            byteCodeSize?.ToString(global::System.Globalization.CultureInfo.InvariantCulture) ?? "N/A");
     }
 
 

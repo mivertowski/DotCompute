@@ -47,12 +47,12 @@ public class CompilationFallbackResult
     /// <summary>
     /// Gets or sets the list of errors encountered during fallback attempts
     /// </summary>
-    public IList<Exception> AttemptErrors { get; } = [];
+    public IList<Exception> AttemptErrors { get; init; } = [];
 
     /// <summary>
     /// Gets or sets additional metadata about the fallback process
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the compilation statistics
@@ -103,12 +103,12 @@ public class CompilationStatistics
     /// <summary>
     /// Gets or sets the compilation warnings
     /// </summary>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets additional compilation metrics
     /// </summary>
-    public Dictionary<string, object> Metrics { get; } = [];
+    public Dictionary<string, object> Metrics { get; init; } = [];
 }
 
 /// <summary>
@@ -134,5 +134,5 @@ public class PerformanceImpact
     /// <summary>
     /// Gets or sets additional impact details
     /// </summary>
-    public Dictionary<string, object> Details { get; } = [];
+    public Dictionary<string, object> Details { get; init; } = [];
 }

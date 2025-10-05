@@ -10,10 +10,9 @@ using DotCompute.Core.Execution.Configuration;
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Models;
 using DotCompute.Abstractions.Execution;
+using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using DotCompute.Core.Execution.Enums;
-using CoreWorkStealingStatistics = DotCompute.Core.Execution.Models.WorkStealingStatistics;
 
 namespace DotCompute.Core.Execution
 {
@@ -57,10 +56,14 @@ namespace DotCompute.Core.Execution
             IUnifiedMemoryManager memoryManager,
             ILogger logger)
         {
-            _devices = devices ?? throw new ArgumentNullException(nameof(devices));
-            _workload = workload ?? throw new ArgumentNullException(nameof(workload));
-            _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(devices);
+            ArgumentNullException.ThrowIfNull(workload);
+            ArgumentNullException.ThrowIfNull(memoryManager);
+            ArgumentNullException.ThrowIfNull(logger);
+            _devices = devices;
+            _workload = workload;
+            _memoryManager = memoryManager;
+            _logger = logger;
 
             _deviceQueues = [.. _devices.Select((device, index) =>
 
@@ -117,13 +120,13 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Gets current work-stealing statistics.
         /// </summary>
-        public CoreWorkStealingStatistics GetStatistics()
+        public Models.WorkStealingStatistics GetStatistics()
         {
-            var stats = new CoreWorkStealingStatistics
+            var stats = new Models.WorkStealingStatistics
             {
                 TotalWorkItems = _workload.WorkItems.Count,
                 CompletedWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Completed),
-                InProgressWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.InProgress),
+                InProgressWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Executing),
                 PendingWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Pending),
                 DeviceStatistics = [.. _deviceQueues.Select(q => q.Statistics)],
                 StealingStatistics = _stealingCoordinator.Statistics
@@ -384,7 +387,7 @@ namespace DotCompute.Core.Execution
             // Update work item status
             if (_workItemStatuses.TryGetValue(workItem.Id, out var status))
             {
-                status.Status = WorkStatus.InProgress;
+                status.Status = WorkStatus.Executing;
                 status.StartTime = startTime;
                 status.AssignedDeviceIndex = Array.IndexOf(_devices, device);
             }

@@ -31,5 +31,5 @@ public class ExecutionPerformanceMetric
     /// <summary>
     /// Gets or sets additional metadata for the metric.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; } = [];
+    public Dictionary<string, string> Metadata { get; init; } = [];
 }

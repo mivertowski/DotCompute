@@ -29,7 +29,7 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
 
         // Calculate average events per correlation
 
-        if (_correlationContexts.Count > 0)
+        if (!_correlationContexts.IsEmpty)
         {
             _metrics.AverageEventsPerCorrelation = _correlationContexts.Values
                 .Average(c => c.EventCount);

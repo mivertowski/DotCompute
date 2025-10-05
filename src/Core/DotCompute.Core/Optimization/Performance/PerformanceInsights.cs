@@ -29,12 +29,12 @@ public class PerformanceInsights
     /// Gets or sets the backend states.
     /// </summary>
     /// <value>The backend states.</value>
-    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; } = [];
+    public Dictionary<string, BackendPerformanceStateSummary> BackendStates { get; init; } = [];
     /// <summary>
     /// Gets or sets the top performing pairs.
     /// </summary>
     /// <value>The top performing pairs.</value>
-    public IList<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; } = [];
+    public IList<(WorkloadSignature Workload, string Backend, double PerformanceScore)> TopPerformingPairs { get; init; } = [];
     /// <summary>
     /// Gets or sets the learning statistics.
     /// </summary>

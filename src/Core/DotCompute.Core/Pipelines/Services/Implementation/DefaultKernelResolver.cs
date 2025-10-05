@@ -17,7 +17,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// <param name="serviceProvider">The service provider for kernel discovery</param>
     /// <param name="logger">Optional logger for diagnostics</param>
     public sealed class DefaultKernelResolver(
-        IServiceProvider serviceProvider,
+        IServiceProvider _serviceProvider,
         ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
     {
         private readonly ILogger<DefaultKernelResolver>? _logger = logger;

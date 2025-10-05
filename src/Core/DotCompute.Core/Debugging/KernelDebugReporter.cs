@@ -1,12 +1,15 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Core.Debugging;
 
@@ -69,8 +72,10 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             }
 
             // Compare execution times
-            var timeDifference = Math.Abs((result1.ExecutionTime - result2.ExecutionTime).TotalMilliseconds);
-            var averageTime = (result1.ExecutionTime.TotalMilliseconds + result2.ExecutionTime.TotalMilliseconds) / 2;
+            var time1 = result1.Timings?.TotalTimeMs ?? 0;
+            var time2 = result2.Timings?.TotalTimeMs ?? 0;
+            var timeDifference = Math.Abs(time1 - time2);
+            var averageTime = (time1 + time2) / 2;
 
             if (averageTime > 0 && timeDifference / averageTime > 0.5) // >50% difference
             {
@@ -79,16 +84,18 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                     Severity = ComparisonSeverity.Warning,
                     Category = "Performance",
                     Description = "Significant execution time difference detected",
-                    Details = $"{result1.BackendType}: {result1.ExecutionTime.TotalMilliseconds:F2}ms | " +
-                             $"{result2.BackendType}: {result2.ExecutionTime.TotalMilliseconds:F2}ms"
+                    Details = $"{result1.BackendType}: {time1:F2}ms | " +
+                             $"{result2.BackendType}: {time2:F2}ms"
                 });
             }
 
             // Compare memory usage
-            if (result1.MemoryUsage > 0 && result2.MemoryUsage > 0)
+            var mem1 = GetMemoryUsage(result1);
+            var mem2 = GetMemoryUsage(result2);
+            if (mem1 > 0 && mem2 > 0)
             {
-                var memoryDifference = Math.Abs(result1.MemoryUsage - result2.MemoryUsage);
-                var averageMemory = (result1.MemoryUsage + result2.MemoryUsage) / 2.0;
+                var memoryDifference = Math.Abs(mem1 - mem2);
+                var averageMemory = (mem1 + mem2) / 2.0;
 
                 if (memoryDifference / averageMemory > 0.3) // >30% difference
                 {
@@ -97,8 +104,8 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                         Severity = ComparisonSeverity.Warning,
                         Category = "Memory Usage",
                         Description = "Significant memory usage difference detected",
-                        Details = $"{result1.BackendType}: {result1.MemoryUsage:N0} bytes | " +
-                                 $"{result2.BackendType}: {result2.MemoryUsage:N0} bytes"
+                        Details = $"{result1.BackendType}: {mem1:N0} bytes | " +
+                                 $"{result2.BackendType}: {mem2:N0} bytes"
                     });
                 }
             }
@@ -106,7 +113,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             // Compare actual results
             if (result1.Success && result2.Success)
             {
-                var resultComparison = CompareResultValues(result1.Result, result2.Result, tolerance);
+                var resultComparison = CompareResultValues(result1.Output, result2.Output, tolerance);
                 if (!resultComparison.IsMatch)
                 {
                     report.Issues.Add(new ComparisonIssue
@@ -116,15 +123,32 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                         Description = "Result values differ between backends",
                         Details = $"Difference: {resultComparison.Difference:F6}, Tolerance: {tolerance:F6}"
                     });
+
+                    // Add to Differences collection (ResultDifference is computed from this)
+                    report.Differences.Add(new ResultDifference
+                    {
+                        FieldName = "Output",
+                        Value1 = result1.Output?.ToString() ?? "null",
+                        Value2 = result2.Output?.ToString() ?? "null",
+                        DifferenceValue = resultComparison.Difference
+                    });
                 }
 
                 report.ResultsMatch = resultComparison.IsMatch;
-                report.ResultDifference = resultComparison.Difference;
             }
             else
             {
                 report.ResultsMatch = false;
-                report.ResultDifference = float.MaxValue;
+                if (!result1.Success || !result2.Success)
+                {
+                    report.Differences.Add(new ResultDifference
+                    {
+                        FieldName = "Success",
+                        Value1 = result1.Success.ToString(),
+                        Value2 = result2.Success.ToString(),
+                        DifferenceValue = float.MaxValue
+                    });
+                }
             }
 
             // Generate summary
@@ -169,9 +193,9 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
 
         // Header
         _ = report.AppendLine("=== Kernel Debug Report ===");
-        _ = report.AppendLine($"Kernel: {validationResult.KernelName}");
-        _ = report.AppendLine($"Generated: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss UTC}");
-        _ = report.AppendLine($"Validation Status: {(validationResult.IsValid ? "PASSED" : "FAILED")}");
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Kernel: {0}", validationResult.KernelName));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Generated: {0:yyyy-MM-dd HH:mm:ss UTC}", DateTimeOffset.UtcNow));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Validation Status: {0}", validationResult.IsValid ? "PASSED" : "FAILED"));
         _ = report.AppendLine();
 
         // Executive Summary
@@ -179,68 +203,70 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
         if (validationResult.IsValid)
         {
             _ = report.AppendLine("✓ All cross-backend validations passed successfully");
-            _ = report.AppendLine($"✓ Tested on {validationResult.BackendsTested.Length} backend(s): {string.Join(", ", validationResult.BackendsTested)}");
+            _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "✓ Tested on {0} backend(s): {1}", validationResult.BackendsTested.Length, string.Join(", ", validationResult.BackendsTested)));
         }
         else
         {
             var errorCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Error);
             var warningCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Warning);
-            _ = report.AppendLine($"✗ Validation failed with {errorCount} error(s) and {warningCount} warning(s)");
+            _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "✗ Validation failed with {0} error(s) and {1} warning(s)", errorCount, warningCount));
         }
-        _ = report.AppendLine($"Execution Time: {validationResult.ExecutionTime.TotalMilliseconds:F2}ms");
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Execution Time: {0:F2}ms", validationResult.ExecutionTime.TotalMilliseconds));
         _ = report.AppendLine();
 
         // Backend Results
-        if (validationResult.Results?.Any() == true)
+        if (validationResult.Results?.Count > 0)
         {
             _ = report.AppendLine("--- Backend Execution Results ---");
             foreach (var result in validationResult.Results)
             {
-                _ = report.AppendLine($"Backend: {result.BackendType}");
-                _ = report.AppendLine($"  Status: {(result.Success ? "Success" : "Failed")}");
-                _ = report.AppendLine($"  Execution Time: {result.ExecutionTime.TotalMilliseconds:F2}ms");
-                if (result.MemoryUsage > 0)
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Backend: {0}", result.BackendType));
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  Status: {0}", result.Success ? "Success" : "Failed"));
+                var execTime = result.Timings?.TotalTimeMs ?? 0;
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  Execution Time: {0:F2}ms", execTime));
+                var memUsage = GetMemoryUsage(result);
+                if (memUsage > 0)
                 {
-                    _ = report.AppendLine($"  Memory Usage: {result.MemoryUsage:N0} bytes");
+                    _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  Memory Usage: {0:N0} bytes", memUsage));
                 }
                 if (!result.Success && !string.IsNullOrEmpty(result.ErrorMessage))
                 {
-                    _ = report.AppendLine($"  Error: {result.ErrorMessage}");
+                    _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  Error: {0}", result.ErrorMessage));
                 }
                 _ = report.AppendLine();
             }
         }
 
         // Cross-Backend Comparisons
-        if (validationResult.Comparisons?.Any() == true)
+        if (validationResult.Comparisons?.Count > 0)
         {
             _ = report.AppendLine("--- Cross-Backend Comparisons ---");
             foreach (var comparison in validationResult.Comparisons)
             {
                 var status = comparison.IsMatch ? "✓ MATCH" : "✗ DIFFER";
-                _ = report.AppendLine($"{comparison.Backend1} vs {comparison.Backend2}: {status}");
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} vs {1}: {2}", comparison.Backend1, comparison.Backend2, status));
                 if (!comparison.IsMatch)
                 {
-                    _ = report.AppendLine($"  Difference: {comparison.Difference:F6}");
+                    _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  Difference: {0:F6}", comparison.Difference));
                 }
             }
             _ = report.AppendLine();
         }
 
         // Issues and Recommendations
-        if (validationResult.Issues.Any())
+        if (validationResult.Issues.Count > 0)
         {
             _ = report.AppendLine("--- Issues Found ---");
             var groupedIssues = validationResult.Issues.GroupBy(i => i.Severity);
             foreach (var group in groupedIssues.OrderBy(g => g.Key))
             {
-                _ = report.AppendLine($"{group.Key}s:");
+                _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}s:", group.Key));
                 foreach (var issue in group)
                 {
-                    _ = report.AppendLine($"  • {issue.Message}");
+                    _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  • {0}", issue.Message));
                     if (!string.IsNullOrEmpty(issue.Details))
                     {
-                        _ = report.AppendLine($"    Details: {issue.Details}");
+                        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "    Details: {0}", issue.Details));
                     }
                 }
                 _ = report.AppendLine();
@@ -377,7 +403,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             _ = summary.Append("Results differ");
             if (report.ResultDifference < float.MaxValue)
             {
-                _ = summary.Append($" (difference: {report.ResultDifference:F6})");
+                _ = summary.Append(string.Format(CultureInfo.InvariantCulture, " (difference: {0:F6})", report.ResultDifference));
             }
         }
 
@@ -386,7 +412,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
 
         if (errorCount > 0 || warningCount > 0)
         {
-            _ = summary.Append($" - {errorCount} error(s), {warningCount} warning(s)");
+            _ = summary.Append(string.Format(CultureInfo.InvariantCulture, " - {0} error(s), {1} warning(s)", errorCount, warningCount));
         }
 
         return summary.ToString();
@@ -414,8 +440,10 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             {
                 foreach (var result in validation.Results)
                 {
+                    var execTime = result.Timings?.TotalTimeMs ?? 0;
+                    var memUsage = GetMemoryUsage(result);
                     csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
-                                 $"{result.ExecutionTime.TotalMilliseconds},{result.MemoryUsage}");
+                                 $"{execTime},{memUsage}");
                 }
             }
 
@@ -434,6 +462,21 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
 
         return report.ToString() ?? "No data available";
     }
+
+    /// <summary>
+    /// Gets the memory usage from a kernel execution result.
+    /// </summary>
+    /// <param name="result">The kernel execution result.</param>
+    /// <returns>Memory usage in bytes, or 0 if not available.</returns>
+    private static long GetMemoryUsage(KernelExecutionResult result)
+    {
+        if (result.PerformanceCounters?.TryGetValue("MemoryUsage", out var memory) == true)
+        {
+            return memory is long l ? l : 0;
+        }
+        return 0;
+    }
+
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -445,44 +488,4 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             _disposed = true;
         }
     }
-}
-/// <summary>
-/// An comparison severity enumeration.
-/// </summary>
-
-// Supporting enums and classes
-// ReportFormat moved to DotCompute.Abstractions.Debugging.ReportingTypes
-
-public enum ComparisonSeverity
-{
-    Info,
-    Warning,
-    Error
-}
-/// <summary>
-/// A class that represents comparison issue.
-/// </summary>
-
-public class ComparisonIssue
-{
-    /// <summary>
-    /// Gets or sets the severity.
-    /// </summary>
-    /// <value>The severity.</value>
-    public ComparisonSeverity Severity { get; set; }
-    /// <summary>
-    /// Gets or sets the category.
-    /// </summary>
-    /// <value>The category.</value>
-    public required string Category { get; set; }
-    /// <summary>
-    /// Gets or sets the description.
-    /// </summary>
-    /// <value>The description.</value>
-    public required string Description { get; set; }
-    /// <summary>
-    /// Gets or sets the details.
-    /// </summary>
-    /// <value>The details.</value>
-    public string Details { get; set; } = string.Empty;
 }

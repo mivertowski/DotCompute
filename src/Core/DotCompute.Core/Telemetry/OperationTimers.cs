@@ -316,8 +316,9 @@ internal sealed class NullOperationTimer : IOperationTimer
     /// Performs stop.
     /// </summary>
 #pragma warning restore CS0067
-
-    public static void Stop() { }
+#pragma warning disable CA1822 // Mark members as static - implements interface member
+    public void Stop() { }
+#pragma warning restore CA1822
     /// <summary>
     /// Performs dispose.
     /// </summary>
@@ -439,7 +440,9 @@ internal sealed class NullOperationTimer : IOperationTimer
         /// </summary>
         /// <param name="metadata">The metadata.</param>
         /// <returns>The result of the operation.</returns>
+#pragma warning disable CA1822 // Mark members as static - implements interface member
         public TimeSpan Stop(IDictionary<string, object>? metadata = null) => TimeSpan.Zero;
+#pragma warning restore CA1822
 
         /// <summary>
         /// Stops the timer and records the operation duration.

@@ -43,11 +43,11 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the top kernels by execution time.
         /// </summary>
-        public IList<KernelProfile> TopKernelsByTime { get; } = [];
+        public IList<KernelProfile> TopKernelsByTime { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the top memory transfers by size.
         /// </summary>
-        public IList<MemoryProfile> TopMemoryTransfers { get; } = [];
+        public IList<MemoryProfile> TopMemoryTransfers { get; init; } = [];
     }
 }

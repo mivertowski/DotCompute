@@ -35,7 +35,9 @@ internal sealed class TimerHandle : ITimerHandle
     /// </summary>
     /// <param name="metadata">The metadata.</param>
     /// <returns>The result of the operation.</returns>
+#pragma warning disable CA1822 // Mark members as static - implements interface member
     public TimeSpan Stop(IDictionary<string, object>? metadata = null) => TimeSpan.Zero;
+#pragma warning restore CA1822
 
     /// <summary>
     /// Stops the timer and records the operation duration.

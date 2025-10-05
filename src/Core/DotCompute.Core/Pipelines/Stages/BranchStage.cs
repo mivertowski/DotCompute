@@ -37,7 +37,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public PipelineStageType Type => PipelineStageType.Branch;
 
         /// <inheritdoc/>
-        public IReadOnlyList<string> Dependencies { get; } = [];
+        public IReadOnlyList<string> Dependencies { get; init; } = [];
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();

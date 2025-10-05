@@ -353,9 +353,9 @@ public sealed class RecoveryCoordinator : IDisposable
             {
                 IsHealthy = allHealthy,
                 OverallHealth = overallHealth,
-                ComponentResults = healthResults,
                 Duration = stopwatch.Elapsed,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.UtcNow,
+                ComponentResults = healthResults
             });
         }
         catch (Exception ex)
@@ -368,10 +368,10 @@ public sealed class RecoveryCoordinator : IDisposable
             {
                 IsHealthy = false,
                 OverallHealth = 0.0,
-                ComponentResults = healthResults,
                 Duration = stopwatch.Elapsed,
                 Timestamp = DateTimeOffset.UtcNow,
-                Error = ex.Message
+                Error = ex.Message,
+                ComponentResults = healthResults
             });
         }
     }

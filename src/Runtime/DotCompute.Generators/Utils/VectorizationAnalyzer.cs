@@ -223,7 +223,7 @@ public static class VectorizationAnalyzer
         var loopVariable = GetLoopVariable(loop);
 
 
-        if (string.IsNullOrEmpty(loopVariable))
+        if (loopVariable == null)
         {
             return false;
         }
@@ -234,7 +234,7 @@ public static class VectorizationAnalyzer
             if (argument?.Expression is BinaryExpressionSyntax binary)
             {
                 // Check for patterns like arr[i-1] or arr[i+1]
-                if (loopVariable != null && ContainsOffsetFromLoopVariable(binary, loopVariable))
+                if (ContainsOffsetFromLoopVariable(binary, loopVariable))
                 {
                     return true;
                 }

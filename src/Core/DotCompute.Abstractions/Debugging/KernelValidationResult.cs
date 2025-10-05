@@ -2,24 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Abstractions.Debugging;
-
-/// <summary>
-/// Result of executing a kernel on a specific backend.
-/// </summary>
-public record KernelExecutionResult
-{
-    public string KernelName { get; init; } = string.Empty;
-    public string BackendType { get; init; } = string.Empty;
-    public object? Result { get; init; }
-    public TimeSpan ExecutionTime { get; init; }
-    public long MemoryUsed { get; init; }
-    public bool Success { get; init; }
-    public string? ErrorMessage { get; init; }
-    public Dictionary<string, object> Metadata { get; init; } = [];
-    public DateTime ExecutedAt { get; init; } = DateTime.UtcNow;
-}
 
 /// <summary>
 /// Represents a validation issue found during kernel testing.

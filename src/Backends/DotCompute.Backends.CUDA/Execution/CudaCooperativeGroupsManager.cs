@@ -383,7 +383,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         private double CalculateSynchronizationOverhead()
         {
             // Estimate synchronization overhead for cooperative groups
-            if (_cooperativeKernels.Count == 0)
+            if (_cooperativeKernels.IsEmpty)
             {
 
                 return 0.0;
@@ -423,7 +423,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             // Estimate memory bandwidth utilization
             // This is a simplified calculation - production would use hardware counters
-            if (_cooperativeKernels.Count == 0)
+            if (_cooperativeKernels.IsEmpty)
             {
 
                 return 0.0;
@@ -442,7 +442,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         {
             // Estimate compute utilization
             // This is a simplified calculation - production would use hardware counters
-            if (_cooperativeKernels.Count == 0)
+            if (_cooperativeKernels.IsEmpty)
             {
 
                 return 0.0;

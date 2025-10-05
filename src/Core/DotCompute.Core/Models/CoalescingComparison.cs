@@ -8,7 +8,7 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets the dictionary of analyses indexed by pattern name.
         /// </summary>
-        public Dictionary<string, CoalescingAnalysis> Analyses { get; } = [];
+        public Dictionary<string, CoalescingAnalysis> Analyses { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the name of the pattern with the best efficiency.
@@ -38,6 +38,6 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the list of recommendations based on the comparison.
         /// </summary>
-        public IList<string> Recommendations { get; } = [];
+        public IList<string> Recommendations { get; init; } = [];
     }
 }

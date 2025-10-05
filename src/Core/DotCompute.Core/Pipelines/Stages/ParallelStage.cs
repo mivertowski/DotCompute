@@ -45,7 +45,7 @@ namespace DotCompute.Core.Pipelines.Stages
         public PipelineStageType Type => PipelineStageType.Parallel;
 
         /// <inheritdoc/>
-        public IReadOnlyList<string> Dependencies { get; } = [];
+        public IReadOnlyList<string> Dependencies { get; init; } = [];
 
         /// <inheritdoc/>
         public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
@@ -155,22 +155,24 @@ namespace DotCompute.Core.Pipelines.Stages
                 var expectedCpuUtilization = Math.Min(1.0, parallelEfficiency * _maxDegreeOfParallelism / Environment.ProcessorCount);
                 var syncOverhead = Math.Max(0.0, (expectedCpuUtilization - avgCpuUtilization) / expectedCpuUtilization);
 
+                var metadata = new Dictionary<string, object>
+                {
+                    ["ParallelEfficiency"] = parallelEfficiency,
+                    ["LoadBalance"] = loadBalance,
+                    ["SynchronizationOverhead"] = syncOverhead,
+                    ["CpuUtilization"] = avgCpuUtilization,
+                    ["ThreadPoolUtilization"] = GetThreadPoolUtilization(),
+                    ["ActualParallelism"] = CalculateActualParallelism(results, stopwatch.Elapsed)
+                };
+
                 return new AbsStageExecutionResult
                 {
                     StageId = Id,
                     Success = success,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
                     MemoryUsed = memoryUsed,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["ParallelEfficiency"] = parallelEfficiency,
-                        ["LoadBalance"] = loadBalance,
-                        ["SynchronizationOverhead"] = syncOverhead,
-                        ["CpuUtilization"] = avgCpuUtilization,
-                        ["ThreadPoolUtilization"] = GetThreadPoolUtilization(),
-                        ["ActualParallelism"] = CalculateActualParallelism(results, stopwatch.Elapsed)
-                    }
+                    OutputData = outputs.Count > context.Inputs.Count ? outputs : [],
+                    Metadata = metadata
                 };
             }
             catch (Exception ex)
@@ -183,9 +185,9 @@ namespace DotCompute.Core.Pipelines.Stages
                     StageId = Id,
                     Success = false,
                     ExecutionTime = stopwatch.Elapsed,
-                    OutputData = [],
                     MemoryUsed = 0,
-                    Error = ex
+                    Error = ex,
+                    OutputData = []
                 };
             }
         }

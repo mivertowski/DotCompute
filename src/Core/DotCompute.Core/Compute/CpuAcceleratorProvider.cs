@@ -586,7 +586,7 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// CPU compiled kernel implementation.
     /// </summary>
-    internal class CpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
+    internal class CpuCompiledKernel(string name, KernelDefinition _definition) : ICompiledKernel
     {
         private bool _disposed;
 
@@ -612,10 +612,7 @@ namespace DotCompute.Core.Compute
             KernelArguments arguments,
             CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CpuCompiledKernel));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             // Simple kernel execution - in a real implementation,
             // this would parse and execute the kernel code

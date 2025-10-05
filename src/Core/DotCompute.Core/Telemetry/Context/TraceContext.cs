@@ -61,7 +61,7 @@ public sealed class TraceContext
     /// Tags are key-value pairs that provide additional metadata about the trace.
     /// </summary>
     /// <value>A dictionary of tag key-value pairs.</value>
-    public Dictionary<string, object?> Tags { get; } = [];
+    public Dictionary<string, object?> Tags { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the collection of spans belonging to this trace.

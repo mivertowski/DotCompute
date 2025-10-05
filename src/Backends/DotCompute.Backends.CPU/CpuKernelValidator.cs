@@ -626,7 +626,7 @@ internal sealed class CpuKernelValidator : IDisposable
             result.Issues.Add("Invalid work dimensions in execution context");
         }
 
-        if ((context.Buffers?.Any() != true) && (context.Scalars?.Any() != true))
+        if ((context.Buffers?.Count > 0 != true) && (context.Scalars?.Count > 0 != true))
         {
             result.Issues.Add("No arguments provided in execution context");
         }

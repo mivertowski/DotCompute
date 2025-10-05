@@ -1,9 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
-// KernelExecutionResult is already defined in IKernelDebugService.cs as a record
+namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
 /// Represents the result of cross-validation between multiple accelerators.

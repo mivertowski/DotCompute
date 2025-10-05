@@ -468,7 +468,7 @@ public sealed class HashResult
     /// <inheritdoc/>
     public DateTimeOffset CalculationTime { get; init; }
     /// <inheritdoc/>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 }
 
 /// <summary>
@@ -483,11 +483,11 @@ public sealed class MultiHashResult
     /// <inheritdoc/>
     public IReadOnlyList<string> RequestedAlgorithms { get; init; } = [];
     /// <inheritdoc/>
-    public Dictionary<string, HashResult> HashResults { get; } = [];
+    public Dictionary<string, HashResult> HashResults { get; init; } = [];
     /// <inheritdoc/>
     public bool IsSuccessful { get; set; }
     /// <inheritdoc/>
-    public IList<string> Errors { get; } = [];
+    public IList<string> Errors { get; init; } = [];
 }
 
 /// <summary>
@@ -529,9 +529,9 @@ public sealed class HashAlgorithmValidationResult
     /// <inheritdoc/>
     public bool IsApproved { get; set; }
     /// <inheritdoc/>
-    public IList<string> SecurityIssues { get; } = [];
+    public IList<string> SecurityIssues { get; init; } = [];
     /// <inheritdoc/>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
 }
 
 /// <summary>

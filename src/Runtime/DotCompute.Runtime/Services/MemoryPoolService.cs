@@ -329,7 +329,7 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
 
     private double CalculateFragmentationPercentage()
     {
-        if (_acceleratorPools.Count == 0)
+        if (_acceleratorPools.IsEmpty)
         {
             return 0.0;
         }

@@ -368,7 +368,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
     /// Creates a context key for tracking recovery history.
     /// Override for context-specific key generation.
     /// </summary>
-    protected virtual string GetContextKey(TContext context) => context.GetHashCode().ToString();
+    protected virtual string GetContextKey(TContext context) => context.GetHashCode().ToString(global::System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Creates a failure result with consistent formatting.

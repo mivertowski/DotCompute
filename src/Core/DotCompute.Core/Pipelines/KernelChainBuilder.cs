@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+using System.Globalization;
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -139,17 +139,19 @@ namespace DotCompute.Core.Pipelines
                 _ = falsePath(falseChain);
             }
 
+            var branchCondition = new BranchCondition<T>
+            {
+                Condition = condition,
+                TruePath = trueChain._steps,
+                FalsePath = falseChain?._steps ?? []
+            };
+
             var branchStep = new KernelChainStep
             {
                 Type = KernelChainStepType.Branch,
                 StepId = Guid.NewGuid().ToString(),
                 ExecutionOrder = _steps.Count,
-                BranchCondition = new BranchCondition<T>
-                {
-                    Condition = condition,
-                    TruePath = trueChain._steps,
-                    FalsePath = falseChain?._steps ?? []
-                }
+                BranchCondition = branchCondition
             };
 
             _steps.Add(branchStep);
@@ -225,7 +227,7 @@ namespace DotCompute.Core.Pipelines
             ThrowIfDisposed();
 
             _profilingEnabled = true;
-            _profileName = profileName ?? $"KernelChain_{Guid.NewGuid():N}";
+            _profileName = profileName ?? string.Format(CultureInfo.InvariantCulture, "KernelChain_{0:N}", Guid.NewGuid());
 
             _logger?.LogDebug("Enabled profiling with name '{ProfileName}'", _profileName);
 

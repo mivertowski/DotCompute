@@ -107,7 +107,7 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
     /// <summary>
     /// Additional metrics and metadata
     /// </summary>
-    public Dictionary<string, object> Metrics { get; } = [];
+    public Dictionary<string, object> Metrics { get; init; } = [];
 
     private readonly CircuitBreakerConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -273,6 +273,20 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
     /// </summary>
     public CircuitBreakerStatistics GetStatistics()
     {
+        var serviceStats = new Dictionary<string, ServiceStatistics>
+        {
+            [ServiceName] = new ServiceStatistics
+            {
+                ServiceName = ServiceName,
+                State = State,
+                FailureRate = FailureRate * 100.0,
+                TotalRequests = TotalRequests,
+                FailedRequests = FailedRequests,
+                AverageResponseTime = TimeSpan.FromMilliseconds(100), // Default value
+                LastFailure = LastStateChange
+            }
+        };
+
         return new CircuitBreakerStatistics
         {
             GlobalState = State,
@@ -280,19 +294,7 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
             TotalRequests = TotalRequests,
             FailedRequests = FailedRequests,
             ConsecutiveFailures = ConsecutiveFailures,
-            ServiceStatistics = new Dictionary<string, ServiceStatistics>
-            {
-                [ServiceName] = new ServiceStatistics
-                {
-                    ServiceName = ServiceName,
-                    State = State,
-                    FailureRate = FailureRate * 100.0,
-                    TotalRequests = TotalRequests,
-                    FailedRequests = FailedRequests,
-                    AverageResponseTime = TimeSpan.FromMilliseconds(100), // Default value
-                    LastFailure = LastStateChange
-                }
-            },
+            ServiceStatistics = serviceStats,
             LastStateChange = LastStateChange,
             ActiveServices = 1
         };

@@ -245,7 +245,7 @@ public static class CodeFormatter
             }
 
 
-            if (currentLine.Length > 0 && !currentLine.ToString().EndsWith(" "))
+            if (currentLine.Length > 0 && !currentLine.ToString().EndsWith(" ", StringComparison.Ordinal))
             {
                 _ = currentLine.Append(' ');
             }

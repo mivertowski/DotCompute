@@ -7,8 +7,10 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
 using DotCompute.Core.Optimization.Performance;
-using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Performance;
+using DotCompute.Core.Debugging.Types;
+using DotCompute.Abstractions.Interfaces.Kernels;
 
 namespace DotCompute.Core.Debugging;
 
@@ -16,20 +18,37 @@ namespace DotCompute.Core.Debugging;
 /// Handles performance profiling and execution tracing for kernel debugging.
 /// Provides detailed performance metrics and execution traces.
 /// </summary>
-public sealed class KernelDebugProfiler(
+public sealed partial class KernelDebugProfiler(
     ILogger<KernelDebugProfiler> logger,
     ConcurrentQueue<KernelExecutionResult> executionHistory) : IDisposable
 {
-    private readonly ILogger<KernelDebugProfiler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = executionHistory ?? throw new ArgumentNullException(nameof(executionHistory));
+    private readonly ILogger<KernelDebugProfiler> _logger = logger;
+    private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = executionHistory;
     private DebugServiceOptions _options = new();
     private bool _disposed;
+
+    // LoggerMessage delegates (Event IDs: 11010-11099 for Profiling)
+    [LoggerMessage(EventId = 11010, Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Executing kernel {kernelName} on {backendType} with profiling")]
+    private static partial void LogProfiledExecution(ILogger logger, string kernelName, string backendType);
+
+    [LoggerMessage(EventId = 11011, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Error during profiled execution of {kernelName} on {backendType}")]
+    private static partial void LogProfilingError(ILogger logger, Exception exception, string kernelName, string backendType);
+
+    [LoggerMessage(EventId = 11012, Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Tracing execution for kernel {kernelName} on {backendType}")]
+    private static partial void LogTracingExecution(ILogger logger, string kernelName, string backendType);
+
+    [LoggerMessage(EventId = 11013, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Error during execution tracing")]
+    private static partial void LogTracingError(ILogger logger, Exception exception);
     /// <summary>
     /// Performs configure.
     /// </summary>
     /// <param name="options">The options.</param>
 
-    public void Configure(DebugServiceOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
+    public void Configure(DebugServiceOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _options = options;
+    }
     /// <summary>
     /// Gets execute with profiling asynchronously.
     /// </summary>
@@ -56,7 +75,7 @@ public sealed class KernelDebugProfiler(
 
         try
         {
-            _logger.LogDebug("Executing kernel {kernelName} on {backendType} with profiling", kernelName, backendType);
+            LogProfiledExecution(_logger, kernelName, backendType);
 
             // TODO: Replace with actual kernel execution
             // This is a placeholder - the actual implementation would use the accelerator
@@ -95,7 +114,7 @@ public sealed class KernelDebugProfiler(
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error during profiled execution of {kernelName} on {backendType}", kernelName, backendType);
+            LogProfilingError(_logger, ex, kernelName, backendType);
 
             var failedResult = new KernelExecutionResult
             {
@@ -130,7 +149,7 @@ public sealed class KernelDebugProfiler(
         ArgumentException.ThrowIfNullOrEmpty(backendType);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogInformation("Tracing execution for kernel {kernelName} on {backendType}", kernelName, backendType);
+        LogTracingExecution(_logger, kernelName, backendType);
 
         var trace = new KernelExecutionTrace
         {
@@ -248,7 +267,7 @@ public sealed class KernelDebugProfiler(
         catch (Exception ex)
         {
             overallStopwatch.Stop();
-            _logger.LogError(ex, "Error during execution tracing");
+            LogTracingError(_logger, ex);
 
             // Create error trace with all properties
             return new KernelExecutionTrace
@@ -282,56 +301,56 @@ public sealed class KernelDebugProfiler(
                        r.ExecutedAt >= cutoffTime)
             .ToList();
 
-        if (!relevantResults.Any())
+        if (relevantResults.Count == 0)
         {
             return Task.FromResult(new PerformanceReport
             {
                 KernelName = kernelName,
-                TimeWindow = window,
+                AnalysisTimeWindow = window,
                 ExecutionCount = 0,
-                Backends = [],
-                Summary = "No execution data available for the specified time window"
+                SuccessfulExecutions = 0,
+                FailedExecutions = 0,
+                SuccessRate = 0.0,
+                AverageExecutionTime = TimeSpan.Zero,
+                BackendMetrics = new Dictionary<string, PerformanceMetrics>()
             });
         }
 
         var backendGroups = relevantResults.GroupBy(r => r.BackendType).ToList();
-        var backendStats = new Dictionary<string, BackendPerformanceStats>();
+        var backendMetrics = new Dictionary<string, PerformanceMetrics>();
 
         foreach (var group in backendGroups)
         {
             var execTimes = group.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
             var memoryUsages = group.Select(GetMemoryUsage).Where(m => m > 0).ToArray();
 
-            backendStats[group.Key] = new BackendPerformanceStats
+            // Convert to PerformanceMetrics (from Abstractions)
+            backendMetrics[group.Key] = new PerformanceMetrics
             {
-                SampleCount = group.Count(),
-                AverageExecutionTimeMs = execTimes.Average(),
-                MinExecutionTimeMs = execTimes.Min(),
-                MaxExecutionTimeMs = execTimes.Max(),
-                ExecutionTimeStdDev = CalculateStandardDeviation(execTimes),
-                AverageMemoryUsage = memoryUsages.Any() ? memoryUsages.Average() : 0,
-                ReliabilityScore = (float)(group.Count(r => r.Success) / (double)group.Count()),
-                LastUpdated = DateTime.UtcNow
+                ExecutionTimeMs = (long)execTimes.Average(),
+                MemoryUsageBytes = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0,
+                ComputeUtilization = (group.Count(r => r.Success) / (double)group.Count()) * 100.0,
+                OperationsPerSecond = 0, // Would need to calculate based on actual operations
+                ThroughputGBps = 0.0 // Would need to calculate based on data transferred
             };
         }
 
-        var overallStats = new OverallPerformanceStats
-        {
-            TotalExecutions = relevantResults.Count(),
-            SuccessfulExecutions = relevantResults.Count(r => r.Success),
-            FailedExecutions = relevantResults.Count(r => !r.Success),
-            AverageExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average(),
-            TotalMemoryUsed = relevantResults.Sum(GetMemoryUsage)
-        };
+        var successfulExecutions = relevantResults.Count(r => r.Success);
+        var failedExecutions = relevantResults.Count - successfulExecutions;
+        var avgExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average();
 
         return Task.FromResult(new PerformanceReport
         {
             KernelName = kernelName,
-            TimeWindow = window,
-            ExecutionCount = relevantResults.Count(),
-            Backends = backendStats,
-            OverallStats = overallStats,
-            Summary = GeneratePerformanceSummary(backendStats, overallStats)
+            AnalysisTimeWindow = window,
+            ExecutionCount = relevantResults.Count,
+            SuccessfulExecutions = successfulExecutions,
+            FailedExecutions = failedExecutions,
+            SuccessRate = successfulExecutions / (double)relevantResults.Count,
+            AverageExecutionTime = TimeSpan.FromMilliseconds(avgExecutionTime),
+            BackendMetrics = backendMetrics,
+            AverageMemoryUsage = relevantResults.Sum(GetMemoryUsage) / relevantResults.Count,
+            GeneratedAt = DateTime.UtcNow
         });
     }
 
@@ -446,15 +465,14 @@ public sealed class KernelDebugProfiler(
             .Where(r => r.KernelName == kernelName && r.ExecutedAt >= cutoffTime)
             .ToList();
 
-        if (!relevantResults.Any())
+        if (relevantResults.Count == 0)
         {
             return Task.FromResult(new MemoryUsageAnalysis
             {
                 KernelName = kernelName,
                 AverageMemoryUsage = 0,
                 PeakMemoryUsage = 0,
-                MinMemoryUsage = 0,
-                TotalMemoryAllocated = 0,
+                MinimumMemoryUsage = 0,
                 AnalysisTime = DateTime.UtcNow
             });
         }
@@ -464,10 +482,9 @@ public sealed class KernelDebugProfiler(
         return Task.FromResult(new MemoryUsageAnalysis
         {
             KernelName = kernelName,
-            AverageMemoryUsage = memoryUsages.Average(),
+            AverageMemoryUsage = (long)memoryUsages.Average(),
             PeakMemoryUsage = memoryUsages.Max(),
-            MinMemoryUsage = memoryUsages.Min(),
-            TotalMemoryAllocated = memoryUsages.Sum(),
+            MinimumMemoryUsage = memoryUsages.Min(),
             AnalysisTime = DateTime.UtcNow
         });
     }
@@ -488,7 +505,7 @@ public sealed class KernelDebugProfiler(
 
         var bottlenecks = new List<PerformanceBottleneck>();
 
-        if (relevantResults.Any())
+        if (relevantResults.Count > 0)
         {
             var avgExecutionTime = relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds);
             var slowExecutions = relevantResults.Where(r => r.ExecutionTime.TotalMilliseconds > avgExecutionTime * 1.5);
@@ -532,7 +549,7 @@ public sealed class KernelDebugProfiler(
             .Where(r => r.KernelName == kernelName)
             .ToList();
 
-        if (!relevantResults.Any())
+        if (relevantResults.Count == 0)
         {
             return new ExecutionStatistics
             {

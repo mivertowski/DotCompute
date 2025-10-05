@@ -582,7 +582,7 @@ namespace DotCompute.Backends.CUDA.Profiling
             };
 
             // Calculate summary statistics
-            if (report.KernelProfiles.Any())
+            if (report.KernelProfiles.Count > 0)
             {
                 report.TotalKernelTime = TimeSpan.FromMilliseconds(
                     report.KernelProfiles.Sum(k => k.TotalTime.TotalMilliseconds));
@@ -590,7 +590,7 @@ namespace DotCompute.Backends.CUDA.Profiling
                     report.KernelProfiles.Average(k => k.AverageTime.TotalMilliseconds));
             }
 
-            if (report.MemoryProfiles.Any())
+            if (report.MemoryProfiles.Count > 0)
             {
                 report.TotalMemoryTransferred = report.MemoryProfiles.Sum(m => m.BytesTransferred);
                 report.TotalMemoryTime = TimeSpan.FromMilliseconds(
@@ -639,7 +639,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// </summary>
         private static double CalculateAverageBandwidth(IReadOnlyList<MemoryProfile> transfers)
         {
-            if (!transfers.Any())
+            if (transfers.Count == 0)
             {
                 return 0;
             }

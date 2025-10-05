@@ -510,7 +510,7 @@ public sealed class MetalComputeGraph : IDisposable
 
     private int CalculateCriticalPathLength()
     {
-        if (_nodes.Count == 0)
+        if (_nodes.IsEmpty)
         {
             return 0;
         }

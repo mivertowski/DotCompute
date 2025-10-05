@@ -14,7 +14,7 @@ namespace DotCompute.Core.Security;
 /// Provides comprehensive audit logging and security event tracking for cryptographic operations.
 /// Maintains detailed security logs for compliance and forensic analysis.
 /// </summary>
-internal sealed class CryptographicAuditor : IDisposable
+internal sealed partial class CryptographicAuditor : IDisposable
 {
     private readonly ILogger<CryptographicAuditor> _logger;
     private readonly CryptographicConfiguration _configuration;
@@ -67,8 +67,11 @@ internal sealed class CryptographicAuditor : IDisposable
         // Set up periodic audit log flushing
         _flushTimer = new Timer(FlushAuditLogs, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
-        _logger.LogInfoMessage($"CryptographicAuditor initialized with audit log: {_auditLogPath}");
+        LogCryptographicAuditorInitialized(_logger, _auditLogPath);
     }
+
+    [LoggerMessage(EventId = 8000, Level = LogLevel.Information, Message = "CryptographicAuditor initialized with audit log: {AuditLogPath}")]
+    private static partial void LogCryptographicAuditorInitialized(ILogger logger, string auditLogPath);
 
     /// <summary>
     /// Logs a security event for audit purposes.
@@ -112,13 +115,19 @@ internal sealed class CryptographicAuditor : IDisposable
                 _logger.LogWarning("High severity security event: {eventType} - {description}", eventType, description);
             }
 
-            _logger.LogDebugMessage($"Security event logged: {eventType} - {severity}");
+            LogSecurityEventRecorded(_logger, eventType, severity);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to log security event: {eventType}");
+            LogFailedToLogSecurityEvent(_logger, eventType, ex);
         }
     }
+
+    [LoggerMessage(EventId = 8001, Level = LogLevel.Debug, Message = "Security event logged: {EventType} - {Severity}")]
+    private static partial void LogSecurityEventRecorded(ILogger logger, string eventType, SecurityEventSeverity severity);
+
+    [LoggerMessage(EventId = 8002, Level = LogLevel.Error, Message = "Failed to log security event: {EventType}")]
+    private static partial void LogFailedToLogSecurityEvent(ILogger logger, string eventType, Exception ex);
 
     /// <summary>
     /// Logs a cryptographic operation for audit purposes.
@@ -229,7 +238,7 @@ internal sealed class CryptographicAuditor : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        _logger.LogInfoMessage($"Generating security audit report from {startTime} to {endTime}");
+        LogGeneratingSecurityAuditReport(_logger, startTime, endTime);
 
         try
         {
@@ -275,15 +284,24 @@ internal sealed class CryptographicAuditor : IDisposable
             // Calculate security metrics
             report.SecurityMetrics = CalculateSecurityMetrics(events);
 
-            _logger.LogInfoMessage($"Security audit report generated: {report.TotalEvents} events analyzed");
+            LogSecurityAuditReportGenerated(_logger, report.TotalEvents);
             return report;
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Failed to generate security audit report");
+            LogFailedToGenerateSecurityAuditReport(_logger, ex);
             throw;
         }
     }
+
+    [LoggerMessage(EventId = 8003, Level = LogLevel.Information, Message = "Generating security audit report from {StartTime} to {EndTime}")]
+    private static partial void LogGeneratingSecurityAuditReport(ILogger logger, DateTimeOffset startTime, DateTimeOffset endTime);
+
+    [LoggerMessage(EventId = 8004, Level = LogLevel.Information, Message = "Security audit report generated: {TotalEvents} events analyzed")]
+    private static partial void LogSecurityAuditReportGenerated(ILogger logger, int totalEvents);
+
+    [LoggerMessage(EventId = 8005, Level = LogLevel.Error, Message = "Failed to generate security audit report")]
+    private static partial void LogFailedToGenerateSecurityAuditReport(ILogger logger, Exception ex);
 
     /// <summary>
     /// Exports audit logs in the specified format.
@@ -310,9 +328,12 @@ internal sealed class CryptographicAuditor : IDisposable
 
         await File.WriteAllTextAsync(exportPath, exportContent);
 
-        _logger.LogInfoMessage($"Audit logs exported to: {exportPath}");
+        LogAuditLogsExported(_logger, exportPath);
         return exportPath;
     }
+
+    [LoggerMessage(EventId = 8006, Level = LogLevel.Information, Message = "Audit logs exported to: {ExportPath}")]
+    private static partial void LogAuditLogsExported(ILogger logger, string exportPath);
 
     /// <summary>
     /// Searches audit logs for specific patterns or events.
@@ -338,9 +359,12 @@ internal sealed class CryptographicAuditor : IDisposable
             .Take(maxResults)
             .ToList();
 
-        _logger.LogInfoMessage($"Audit log search completed: {results.Count} results for '{searchTerm}'");
+        LogAuditLogSearchCompleted(_logger, results.Count, searchTerm);
         return results;
     }
+
+    [LoggerMessage(EventId = 8007, Level = LogLevel.Information, Message = "Audit log search completed: {ResultCount} results for '{SearchTerm}'")]
+    private static partial void LogAuditLogSearchCompleted(ILogger logger, int resultCount, string searchTerm);
 
     // Private implementation methods
 
@@ -367,11 +391,11 @@ internal sealed class CryptographicAuditor : IDisposable
             var logEntries = eventsToFlush.Select(FormatLogEntry);
             await File.AppendAllLinesAsync(_auditLogPath, logEntries);
 
-            _logger.LogDebugMessage($"Flushed {eventsToFlush.Count} audit log entries");
+            LogFlushedAuditLogEntries(_logger, eventsToFlush.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Failed to flush audit logs");
+            LogFailedToFlushAuditLogs(_logger, ex);
         }
         finally
         {
@@ -387,9 +411,18 @@ internal sealed class CryptographicAuditor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during scheduled audit log flush");
+            LogErrorDuringScheduledAuditLogFlush(_logger, ex);
         }
     }
+
+    [LoggerMessage(EventId = 8008, Level = LogLevel.Debug, Message = "Flushed {EventCount} audit log entries")]
+    private static partial void LogFlushedAuditLogEntries(ILogger logger, int eventCount);
+
+    [LoggerMessage(EventId = 8009, Level = LogLevel.Error, Message = "Failed to flush audit logs")]
+    private static partial void LogFailedToFlushAuditLogs(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 8010, Level = LogLevel.Error, Message = "Error during scheduled audit log flush")]
+    private static partial void LogErrorDuringScheduledAuditLogFlush(ILogger logger, Exception ex);
 
     private string FormatLogEntry(SecurityEvent securityEvent)
     {
@@ -565,7 +598,7 @@ internal sealed class CryptographicAuditor : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error flushing audit logs during disposal");
+                LogErrorFlushingAuditLogsDuringDisposal(_logger, ex);
             }
 
             _flushTimer?.Dispose();
@@ -573,6 +606,9 @@ internal sealed class CryptographicAuditor : IDisposable
             _disposed = true;
         }
     }
+
+    [LoggerMessage(EventId = 8011, Level = LogLevel.Error, Message = "Error flushing audit logs during disposal")]
+    private static partial void LogErrorFlushingAuditLogsDuringDisposal(ILogger logger, Exception ex);
 }
 /// <summary>
 /// An security event severity enumeration.
@@ -711,27 +747,27 @@ public class SecurityAuditReport
     /// Gets or sets the events by severity.
     /// </summary>
     /// <value>The events by severity.</value>
-    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; } = [];
+    public Dictionary<SecurityEventSeverity, int> EventsBySeverity { get; init; } = [];
     /// <summary>
     /// Gets or sets the events by category.
     /// </summary>
     /// <value>The events by category.</value>
-    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; } = [];
+    public Dictionary<SecurityEventCategory, int> EventsByCategory { get; init; } = [];
     /// <summary>
     /// Gets or sets the events by type.
     /// </summary>
     /// <value>The events by type.</value>
-    public Dictionary<string, int> EventsByType { get; } = [];
+    public Dictionary<string, int> EventsByType { get; init; } = [];
     /// <summary>
     /// Gets or sets the security incidents.
     /// </summary>
     /// <value>The security incidents.</value>
-    public IList<SecurityEvent> SecurityIncidents { get; } = [];
+    public IList<SecurityEvent> SecurityIncidents { get; init; } = [];
     /// <summary>
     /// Gets or sets the recommendations generated.
     /// </summary>
     /// <value>The recommendations generated.</value>
-    public IList<string> RecommendationsGenerated { get; } = [];
+    public IList<string> RecommendationsGenerated { get; set; } = [];
     /// <summary>
     /// Gets or sets the security metrics.
     /// </summary>

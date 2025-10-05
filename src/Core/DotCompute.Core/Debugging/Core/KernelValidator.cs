@@ -2,10 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Validation;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
 
 // Using aliases to resolve ValidationIssue conflicts
@@ -123,9 +126,9 @@ public sealed class KernelValidator(
             {
                 KernelName = kernelName,
                 IsValid = issues.All(i => i.Severity != DebugValidationSeverity.Critical),
-                BackendsTested = successfulResults.Select(r => r.BackendType).ToArray(),
-                Results = successfulResults.ToDictionary(r => r.BackendType, r => r.Result ?? new object()),
-                Issues = issues,
+                BackendsTested = successfulResults.Select(r => r.BackendType ?? "Unknown").ToArray(),
+                Results = successfulResults.ToDictionary(r => r.BackendType ?? "Unknown", r => r.Output ?? new object()),
+                Issues = new Collection<DebugValidationIssue>(issues),
                 TotalValidationTime = stopwatch.Elapsed,
                 MaxDifference = maxDifference,
                 RecommendedBackend = recommendedBackend
@@ -172,12 +175,24 @@ public sealed class KernelValidator(
         var accelerator = await GetOrCreateAcceleratorAsync(backendType);
         if (accelerator == null)
         {
+            // Create a placeholder handle for failed execution
+            var handle = new KernelExecutionHandle
+            {
+                Id = Guid.NewGuid(),
+                KernelName = kernelName,
+                SubmittedAt = DateTimeOffset.UtcNow,
+                IsCompleted = true,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
             return new KernelExecutionResult
             {
+                Handle = handle,
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = false,
-                ErrorMessage = $"Backend '{backendType}' is not available"
+                ErrorMessage = $"Backend '{backendType}' is not available",
+                ExecutedAt = DateTime.UtcNow
             };
         }
 
@@ -211,11 +226,14 @@ public sealed class KernelValidator(
         // Build performance comparison
         foreach (var result in resultsList)
         {
-            performanceComparison[result.BackendType] = new PerformanceMetrics
+            var executionTimeMs = result.Timings?.TotalTimeMs ?? 0;
+            var memoryUsage = result.PerformanceCounters?.TryGetValue("MemoryUsed", out var mem) == true && mem is long l ? l : 0L;
+
+            performanceComparison[result.BackendType ?? "Unknown"] = new PerformanceMetrics
             {
-                ExecutionTime = result.ExecutionTime,
-                MemoryUsage = result.MemoryUsed,
-                ThroughputOpsPerSecond = (int)CalculateThroughput(result)
+                ExecutionTimeMs = (long)executionTimeMs,
+                MemoryUsageBytes = memoryUsage,
+                OperationsPerSecond = CalculateThroughput(result)
             };
         }
 
@@ -227,7 +245,7 @@ public sealed class KernelValidator(
             KernelName = kernelName,
             ResultsMatch = resultsMatch,
             BackendsCompared = backendNames,
-            Differences = differences,
+            Differences = new Collection<ResultDifference>(differences),
             Strategy = comparisonStrategy,
             Tolerance = _options.VerbosityLevel == AbstractionsMemory.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,
             PerformanceComparison = performanceComparison
@@ -369,14 +387,36 @@ public sealed class KernelValidator(
 
             stopwatch.Stop();
 
+            var handle = new KernelExecutionHandle
+            {
+                Id = Guid.NewGuid(),
+                KernelName = kernelName,
+                SubmittedAt = DateTimeOffset.UtcNow,
+                IsCompleted = true,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
+            var executionTime = stopwatch.Elapsed.TotalMilliseconds;
+            var memoryUsage = GetMemoryUsage(accelerator);
+
             return new KernelExecutionResult
             {
+                Handle = handle,
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = true,
-                Result = result,
-                ExecutionTime = stopwatch.Elapsed,
-                MemoryUsed = GetMemoryUsage(accelerator)
+                Output = result,
+                Timings = new KernelExecutionTimings
+                {
+                    KernelTimeMs = executionTime,
+                    TotalTimeMs = executionTime
+                },
+                PerformanceCounters = new Dictionary<string, object>
+                {
+                    ["MemoryUsed"] = memoryUsage,
+                    ["ExecutionTimeMs"] = executionTime
+                },
+                ExecutedAt = DateTime.UtcNow
             };
         }
         catch (Exception ex)
@@ -385,13 +425,29 @@ public sealed class KernelValidator(
 
             _logger.LogError(ex, "Kernel execution failed for {KernelName} on {BackendType}", kernelName, backendType);
 
+            var handle = new KernelExecutionHandle
+            {
+                Id = Guid.NewGuid(),
+                KernelName = kernelName,
+                SubmittedAt = DateTimeOffset.UtcNow,
+                IsCompleted = true,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
             return new KernelExecutionResult
             {
+                Handle = handle,
                 KernelName = kernelName,
                 BackendType = backendType,
                 Success = false,
                 ErrorMessage = ex.Message,
-                ExecutionTime = stopwatch.Elapsed
+                Error = ex,
+                Timings = new KernelExecutionTimings
+                {
+                    KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                    TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds
+                },
+                ExecutedAt = DateTime.UtcNow
             };
         }
     }
@@ -447,11 +503,11 @@ public sealed class KernelValidator(
 
         for (var i = 1; i < results.Count; i++)
         {
-            var difference = CalculateDifference(baseline.Result, results[i].Result);
+            var difference = CalculateDifference(baseline.Output, results[i].Output);
             differences.Add(new ResultDifference
             {
-                Backend1 = baseline.BackendType,
-                Backend2 = results[i].BackendType,
+                Backend1 = baseline.BackendType ?? "Unknown",
+                Backend2 = results[i].BackendType ?? "Unknown",
                 Difference = difference,
                 Location = $"Comparison_{i}"
             });
@@ -468,17 +524,17 @@ public sealed class KernelValidator(
     /// <summary>
     /// Compares results with exact comparison.
     /// </summary>
-    private bool CompareExact(List<KernelExecutionResult> results, IList<ResultDifference> differences)
+    private static bool CompareExact(List<KernelExecutionResult> results, IList<ResultDifference> differences)
     {
         var baseline = results[0];
 
         for (var i = 1; i < results.Count; i++)
         {
-            var isExactMatch = AreResultsExactlyEqual(baseline.Result, results[i].Result);
+            var isExactMatch = AreResultsExactlyEqual(baseline.Output, results[i].Output);
             differences.Add(new ResultDifference
             {
-                Backend1 = baseline.BackendType,
-                Backend2 = results[i].BackendType,
+                Backend1 = baseline.BackendType ?? "Unknown",
+                Backend2 = results[i].BackendType ?? "Unknown",
                 Difference = isExactMatch ? 0f : 1f,
                 Location = $"ExactMatch_{i}"
             });
@@ -538,20 +594,21 @@ public sealed class KernelValidator(
     /// </summary>
     private static double CalculateThroughput(KernelExecutionResult result)
     {
-        if (result.ExecutionTime.TotalSeconds == 0)
+        var executionTimeMs = result.Timings?.TotalTimeMs ?? 0;
+        if (executionTimeMs == 0)
         {
             return 0;
         }
 
         // Simplified throughput calculation
 
-        return 1000.0 / result.ExecutionTime.TotalMilliseconds;
+        return 1000.0 / executionTimeMs;
     }
 
     /// <summary>
     /// Analyzes performance characteristics and identifies potential issues.
     /// </summary>
-    private List<DebugValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
+    private static List<DebugValidationIssue> AnalyzePerformanceCharacteristics(KernelExecutionResult[] results)
     {
         var issues = new List<DebugValidationIssue>();
 
@@ -562,14 +619,14 @@ public sealed class KernelValidator(
 
         // Find performance outliers
 
-        var executionTimes = results.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
+        var executionTimes = results.Select(r => r.Timings?.TotalTimeMs ?? 0).ToArray();
         var avgTime = executionTimes.Average();
         var maxTime = executionTimes.Max();
         var minTime = executionTimes.Min();
 
         if (maxTime > avgTime * 2)
         {
-            var slowestBackend = results.First(r => r.ExecutionTime.TotalMilliseconds == maxTime).BackendType;
+            var slowestBackend = results.First(r => (r.Timings?.TotalTimeMs ?? 0) == maxTime).BackendType ?? "Unknown";
             issues.Add(new DebugValidationIssue
             {
                 Severity = DebugValidationSeverity.Warning,
@@ -595,8 +652,8 @@ public sealed class KernelValidator(
 
         // Simple logic: fastest execution time wins
 
-        var fastest = results.OrderBy(r => r.ExecutionTime).First();
-        return fastest.BackendType;
+        var fastest = results.OrderBy(r => r.Timings?.TotalTimeMs ?? double.MaxValue).First();
+        return fastest.BackendType ?? "Unknown";
     }
     /// <summary>
     /// Performs dispose.

@@ -202,10 +202,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask SignalAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (!_isSignaled)
             {
@@ -222,10 +219,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask WaitAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (!_isSignaled)
             {
@@ -238,10 +232,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask ResetAsync()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionEvent));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _isSignaled = false;
             // Drain any pending releases
@@ -312,10 +303,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask EnterAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionBarrier));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var participantNumber = Interlocked.Increment(ref _participantsEntered);
             _logger.LogTrace("Participant {ParticipantNumber}/{TotalParticipants} entered barrier: {BarrierName}",
@@ -340,10 +328,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask ResetAsync()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ExecutionBarrier));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _participantsEntered = 0;
             _isComplete = false;
