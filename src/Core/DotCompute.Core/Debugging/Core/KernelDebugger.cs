@@ -17,9 +17,10 @@ namespace DotCompute.Core.Debugging.Core;
 /// <summary>
 /// Core kernel debugging functionality for cross-backend validation and analysis.
 /// </summary>
-public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? _options = null) : IDisposable
+public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, DebugServiceOptions? options = null) : IDisposable
 {
     private readonly ILogger<KernelDebugger> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DebugServiceOptions? _options = options;
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = new();
     private bool _disposed;

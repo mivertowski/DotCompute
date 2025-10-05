@@ -17,12 +17,13 @@ namespace DotCompute.Core.Security;
 /// Provides tamper-evident logging and compliance support.
 /// </summary>
 public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
-    SecurityLoggingConfiguration _configuration,
+    SecurityLoggingConfiguration configuration,
     ConcurrentQueue<SecurityLogEntry> auditQueue,
     SemaphoreSlim logWriteLock,
     string auditLogPath)
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly SecurityLoggingConfiguration _configuration = configuration;
     private readonly ConcurrentQueue<SecurityLogEntry> _auditQueue = auditQueue ?? throw new ArgumentNullException(nameof(auditQueue));
     private readonly SemaphoreSlim _logWriteLock = logWriteLock ?? throw new ArgumentNullException(nameof(logWriteLock));
     private readonly string _auditLogPath = auditLogPath ?? throw new ArgumentNullException(nameof(auditLogPath));

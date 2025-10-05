@@ -586,8 +586,9 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// CPU compiled kernel implementation.
     /// </summary>
-    internal class CpuCompiledKernel(string name, KernelDefinition _definition) : ICompiledKernel
+    internal class CpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
     {
+        private readonly KernelDefinition _definition = definition;
         private bool _disposed;
 
 

@@ -13,9 +13,10 @@ namespace DotCompute.Core.Debugging.Services;
 /// <summary>
 /// Generates comprehensive debug reports and documentation.
 /// </summary>
-public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? _options = null) : IDisposable
+public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? options = null) : IDisposable
 {
     private readonly ILogger<DebugReportGenerator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly DebugServiceOptions? _options = options;
     private bool _disposed;
 
     /// <summary>

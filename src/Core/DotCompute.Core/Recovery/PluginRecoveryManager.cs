@@ -12,10 +12,10 @@ namespace DotCompute.Core.Recovery;
 /// </summary>
 public class PluginRecoveryManager(
     ILogger<PluginRecoveryManager> logger,
-
-    PluginRecoveryConfiguration? _config = null) : IDisposable
+    PluginRecoveryConfiguration? config = null) : IDisposable
 {
     private readonly ILogger<PluginRecoveryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly PluginRecoveryConfiguration? _config = config;
     private bool _disposed;
 
     /// <summary>

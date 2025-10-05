@@ -18,8 +18,9 @@ namespace DotCompute.Core.Pipelines
     /// <summary>
     /// Default implementation of IPipelineMemoryManager.
     /// </summary>
-    internal sealed class PipelineMemoryManager(IUnifiedMemoryManager _memoryManager, IComputeDevice device) : IPipelineMemoryManager
+    internal sealed class PipelineMemoryManager(IUnifiedMemoryManager memoryManager, IComputeDevice device) : IPipelineMemoryManager
     {
+        private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         private readonly IComputeDevice _device = device ?? throw new ArgumentNullException(nameof(device));
         private readonly ConcurrentDictionary<string, object> _sharedMemories = new();
         private readonly ConcurrentDictionary<Type, MemoryPool> _pools = new();
