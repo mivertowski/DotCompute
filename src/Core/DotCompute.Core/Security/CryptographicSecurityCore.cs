@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security
 {
@@ -332,12 +333,8 @@ namespace DotCompute.Core.Security
             _disposed = true;
         }
     }
-    /// <summary>
-    /// An security level enumeration.
-    /// </summary>
+    // SecurityLevel enum removed - use DotCompute.Abstractions.Security.SecurityLevel instead
 
-    // Supporting types - essential subset for compilation
-    public enum SecurityLevel { Weak, Moderate, Strong, Unknown }
     /// <summary>
     /// A class that represents cryptographic configuration.
     /// </summary>

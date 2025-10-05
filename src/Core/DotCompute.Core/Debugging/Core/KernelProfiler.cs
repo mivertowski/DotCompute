@@ -115,7 +115,7 @@ public sealed class KernelProfiler(
                 Output = result,
                 Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
                 MemoryAllocated = finalMemory - initialMemory,
-                Handle = new ExecutionHandle(Guid.NewGuid())
+                Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernelName, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true }
             });
 
             _logger.LogDebug("Completed kernel execution trace for {KernelName}: {Success}", kernelName, result != null);

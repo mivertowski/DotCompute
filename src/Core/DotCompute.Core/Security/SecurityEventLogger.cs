@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
 

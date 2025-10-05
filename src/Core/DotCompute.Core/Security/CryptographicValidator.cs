@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
 
