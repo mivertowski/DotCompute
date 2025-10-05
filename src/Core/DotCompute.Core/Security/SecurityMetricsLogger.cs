@@ -55,8 +55,7 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
             { SecurityLevel.Critical, _metrics.CriticalEventCount },
             { SecurityLevel.High, _metrics.HighEventCount },
             { SecurityLevel.Medium, _metrics.MediumEventCount },
-            { SecurityLevel.Low, _metrics.LowEventCount },
-            { SecurityLevel.Informational, _metrics.InformationalEventCount }
+            { SecurityLevel.Low, _metrics.LowEventCount + _metrics.InformationalEventCount }
         };
 
         return _metrics;
@@ -227,8 +226,6 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
                 break;
             case SecurityLevel.Low:
                 _metrics.LowEventCount++;
-                break;
-            case SecurityLevel.Informational:
                 _metrics.InformationalEventCount++;
                 break;
         }

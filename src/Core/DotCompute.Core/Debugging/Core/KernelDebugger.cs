@@ -111,12 +111,12 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
                     {
                         KernelName = kernel.Name,
                         BackendType = accelerator.Type.ToString(),
-                        Result = kernelResult,
-                        ExecutionTime = stopwatch.Elapsed,
-                        MemoryUsed = 0, // TODO: Add memory tracking
+                        Output = kernelResult,
+                        Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
                         Success = true,
                         ErrorMessage = null,
-                        ExecutedAt = DateTime.UtcNow
+                        ExecutedAt = DateTime.UtcNow,
+                        Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernel.Name, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true }
                     };
 
                     results.Add(executionResult);
@@ -130,12 +130,12 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
                     {
                         KernelName = kernel.Name,
                         BackendType = accelerator.Type.ToString(),
-                        Result = null,
-                        ExecutionTime = TimeSpan.Zero,
-                        MemoryUsed = 0,
+                        Output = null,
+                        Timings = new KernelExecutionTimings { KernelTimeMs = 0, TotalTimeMs = 0 },
                         Success = false,
                         ErrorMessage = ex.Message,
-                        ExecutedAt = DateTime.UtcNow
+                        ExecutedAt = DateTime.UtcNow,
+                        Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernel.Name, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true }
                     };
 
                     results.Add(failureResult);

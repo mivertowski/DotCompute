@@ -630,8 +630,8 @@ public sealed partial class KernelProfiler : IDisposable
 
         var trendDirection = slope switch
         {
-            > 1.0 => TrendDirection.Increasing,
-            < -1.0 => TrendDirection.Decreasing,
+            > 1.0 => TrendDirection.Degrading,
+            < -1.0 => TrendDirection.Improving,
             _ => TrendDirection.Stable
         };
 

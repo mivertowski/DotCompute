@@ -127,10 +127,10 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                     // Add to Differences collection (ResultDifference is computed from this)
                     report.Differences.Add(new ResultDifference
                     {
-                        FieldName = "Output",
-                        Value1 = result1.Output?.ToString() ?? "null",
-                        Value2 = result2.Output?.ToString() ?? "null",
-                        DifferenceValue = resultComparison.Difference
+                        Location = "Output",
+                        ExpectedValue = result1.Output ?? "null",
+                        ActualValue = result2.Output ?? "null",
+                        Difference = resultComparison.Difference
                     });
                 }
 
@@ -143,10 +143,10 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                 {
                     report.Differences.Add(new ResultDifference
                     {
-                        FieldName = "Success",
-                        Value1 = result1.Success.ToString(),
-                        Value2 = result2.Success.ToString(),
-                        DifferenceValue = float.MaxValue
+                        Location = "Success",
+                        ExpectedValue = result1.Success,
+                        ActualValue = result2.Success,
+                        Difference = float.MaxValue
                     });
                 }
             }

@@ -485,8 +485,8 @@ public sealed partial class DebugMetricsCollector : IDisposable
 
         var trendDirection = slope switch
         {
-            > 0.1 => TrendDirection.Increasing,
-            < -0.1 => TrendDirection.Decreasing,
+            > 0.1 => TrendDirection.Degrading,
+            < -0.1 => TrendDirection.Improving,
             _ => TrendDirection.Stable
         };
 

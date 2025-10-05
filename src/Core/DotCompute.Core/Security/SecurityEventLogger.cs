@@ -119,7 +119,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
 
         await LogSecurityEventAsync(SecurityEventType.AuthenticationSuccess,
             $"User '{userId}' authenticated successfully using {authenticationMethod}",
-            SecurityLevel.Informational, userId, null, data, null, callerName, sourceFile, lineNumber);
+            SecurityLevel.Low, userId, null, data, null, callerName, sourceFile, lineNumber);
     }
 
     /// <summary>
@@ -162,8 +162,8 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
             : SecurityEventType.AccessDenied;
 
         var level = result == AccessResult.Granted
-            ? SecurityLevel.Informational
-            : SecurityLevel.Warning;
+            ? SecurityLevel.Low
+            : SecurityLevel.Medium;
 
         var data = new Dictionary<string, object>
         {
@@ -202,7 +202,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
             _ => SecurityEventType.DataAccess
         };
 
-        var level = isSuccessful ? SecurityLevel.Informational : SecurityLevel.Warning;
+        var level = isSuccessful ? SecurityLevel.Low : SecurityLevel.Medium;
         var message = isSuccessful
             ? $"Data {operation.ToString().ToLowerInvariant()} operation successful for user '{userId}' on {dataType}"
             : $"Data {operation.ToString().ToLowerInvariant()} operation failed for user '{userId}' on {dataType}: {failureReason}";
@@ -293,9 +293,6 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
                 break;
             case SecurityLevel.Low:
                 _logger.LogInformation("[SECURITY-LOW] {Message}", message);
-                break;
-            case SecurityLevel.Informational:
-                _logger.LogInformation("[SECURITY-INFO] {Message}", message);
                 break;
         }
     }
