@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
+using TrendDirection = DotCompute.Abstractions.Types.TrendDirection;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 
@@ -269,13 +270,12 @@ public sealed partial class DebugMetricsCollector : IDisposable
                 MetricName = metricName,
                 TimeRange = timeRange,
                 DataPoints = recentPoints.Count,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
-        var trend = AnalyzeTrend(recentPoints);
-        trend.Name = metricName;
-        trend.TimeRange = timeRange;
+        var trend = AnalyzeTrend(recentPoints, metricName, timeRange);
 
         LogTrendAnalysisCompleted(metricName, recentPoints.Count, trend.TrendDirection.ToString());
 
@@ -467,14 +467,17 @@ public sealed partial class DebugMetricsCollector : IDisposable
         return sorted[lowerIndex] * (1 - weight) + sorted[upperIndex] * weight;
     }
 
-    private static PerformanceTrend AnalyzeTrend(IReadOnlyList<MetricPoint> points)
+    private static PerformanceTrend AnalyzeTrend(IReadOnlyList<MetricPoint> points, string metricName, TimeSpan timeRange)
     {
         if (points.Count < 3)
         {
             return new PerformanceTrend
             {
+                MetricName = metricName,
+                TimeRange = timeRange,
                 DataPoints = points.Count,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
@@ -491,14 +494,23 @@ public sealed partial class DebugMetricsCollector : IDisposable
             _ => TrendDirection.Stable
         };
 
+        var firstValue = points.First().Value;
+        var lastValue = points.Last().Value;
+        var averageChange = (lastValue - firstValue) / points.Count;
+        var percentChange = firstValue != 0 ? (lastValue - firstValue) / firstValue : 0;
+
         return new PerformanceTrend
         {
+            MetricName = metricName,
+            TimeRange = timeRange,
             DataPoints = points.Count,
             TrendDirection = trendDirection,
-            Slope = slope,
-            StartValue = points.First().Value,
-            EndValue = points.Last().Value,
-            AverageChange = (points.Last().Value - points.First().Value) / points.Count
+            RateOfChange = slope,
+            Magnitude = Math.Abs(slope),
+            PercentChange = percentChange,
+            PerformanceChange = averageChange,
+            AnalysisTime = DateTime.UtcNow,
+            Confidence = points.Count >= 10 ? 0.9 : points.Count / 10.0
         };
     }
 

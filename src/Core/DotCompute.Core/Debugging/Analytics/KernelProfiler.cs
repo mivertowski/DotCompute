@@ -4,11 +4,12 @@
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Performance;
-using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
+using TrendDirection = DotCompute.Abstractions.Types.TrendDirection;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -145,7 +146,7 @@ public sealed partial class KernelProfiler : IDisposable
                 return existing;
             });
 
-        LogProfilingCompleted(sessionId, profilingData.Timings.TotalMilliseconds);
+        LogProfilingCompleted(sessionId, profilingData.ExecutionTime.TotalMilliseconds);
 
         return profilingData;
     }
@@ -249,11 +250,11 @@ public sealed partial class KernelProfiler : IDisposable
             {
                 AcceleratorType = acceleratorType,
                 DataPoints = data.Count,
-                AverageExecutionTimeMs = data.Average(d => d.Timings.TotalMilliseconds),
-                MedianTimeMs = CalculateMedian(data.Select(d => d.Timings.TotalMilliseconds)),
-                MinTimeMs = data.Min(d => d.Timings.TotalMilliseconds),
-                MaxTimeMs = data.Max(d => d.Timings.TotalMilliseconds),
-                StandardDeviation = CalculateStandardDeviation(data.Select(d => d.Timings.TotalMilliseconds)),
+                AverageExecutionTimeMs = data.Average(d => d.ExecutionTime.TotalMilliseconds),
+                MedianExecutionTime = CalculateMedian(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
+                MinExecutionTime = data.Min(d => d.ExecutionTime.TotalMilliseconds),
+                MaxExecutionTime = data.Max(d => d.ExecutionTime.TotalMilliseconds),
+                StandardDeviation = CalculateStandardDeviation(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
                 AverageMemoryUsage = data.Average(d => d.MemoryUsage.AllocatedMemory),
                 SuccessRate = data.Count(d => d.Success) / (double)data.Count * 100,
                 ThroughputScore = CalculateThroughputScore(data)
@@ -300,19 +301,18 @@ public sealed partial class KernelProfiler : IDisposable
         if (recentData.Count == 0)
         {
             LogNoRecentData(kernelName, timeRange.ToString());
-            return new PerformanceTrend
+            return new DotCompute.Abstractions.Types.PerformanceTrend
             {
                 KernelName = kernelName,
+                MetricName = "ExecutionTime",
                 TimeRange = timeRange,
                 DataPoints = 0,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = DotCompute.Abstractions.Types.TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
-        var trend = AnalyzeTrend(recentData);
-        trend.KernelName = kernelName;
-        trend.TimeRange = timeRange;
-        trend.AnalysisTime = DateTime.UtcNow;
+        var trend = AnalyzeTrend(recentData, kernelName, timeRange);
 
         LogTrendAnalysisCompleted(kernelName, recentData.Count, trend.TrendDirection.ToString());
 
@@ -344,22 +344,22 @@ public sealed partial class KernelProfiler : IDisposable
         var anomalies = new List<PerformanceAnomaly>();
 
         // Detect execution time anomalies
-        var executionTimes = allData.Select(d => d.Timings.TotalMilliseconds).ToList();
+        var executionTimes = allData.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
         var meanTime = executionTimes.Average();
         var stdDev = CalculateStandardDeviation(executionTimes);
         var threshold = meanTime + (2 * stdDev); // 2 standard deviations
 
-        foreach (var data in allData.Where(d => d.Timings.TotalMilliseconds > threshold))
+        foreach (var data in allData.Where(d => d.ExecutionTime.TotalMilliseconds > threshold))
         {
             anomalies.Add(new PerformanceAnomaly
             {
                 Type = AnomalyType.ExecutionTime,
                 SessionId = data.SessionId,
                 DetectedAt = data.EndTime,
-                Value = data.Timings.TotalMilliseconds,
+                Value = data.ExecutionTime.TotalMilliseconds,
                 ExpectedValue = meanTime,
-                Severity = data.Timings.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                Description = $"Execution time ({data.Timings.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
+                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
+                Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
             });
         }
 
@@ -518,16 +518,16 @@ public sealed partial class KernelProfiler : IDisposable
 
     private static PerformanceAnalysis AnalyzePerformanceData(IReadOnlyList<ProfilingData> data)
     {
-        var executionTimes = data.Select(d => d.Timings.TotalMilliseconds).ToList();
+        var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
         var memoryUsages = data.Select(d => (double)d.MemoryUsage.AllocatedMemory).ToList();
 
         return new PerformanceAnalysis
         {
             DataPoints = data.Count,
-            AverageTimeMs = executionTimes.Average(),
-            MedianTimeMs = CalculateMedian(executionTimes),
-            MinTimeMs = executionTimes.Min(),
-            MaxTimeMs = executionTimes.Max(),
+            AverageExecutionTimeMs = executionTimes.Average(),
+            MedianExecutionTime = CalculateMedian(executionTimes),
+            MinExecutionTime = executionTimes.Min(),
+            MaxExecutionTime = executionTimes.Max(),
             ExecutionTimeStdDev = CalculateStandardDeviation(executionTimes),
             AverageMemoryUsage = memoryUsages.Average(),
             PeakMemoryUsage = memoryUsages.Max(),
@@ -577,7 +577,7 @@ public sealed partial class KernelProfiler : IDisposable
 
 
         var totalOps = data.Count;
-        var totalTime = data.Sum(d => d.Timings.TotalSeconds);
+        var totalTime = data.Sum(d => d.ExecutionTime.TotalSeconds);
 
         return totalTime > 0 ? totalOps / totalTime : 0;
     }
@@ -612,38 +612,52 @@ public sealed partial class KernelProfiler : IDisposable
         return recommendations;
     }
 
-    private static PerformanceTrend AnalyzeTrend(IReadOnlyList<ProfilingData> data)
+    private static DotCompute.Abstractions.Types.PerformanceTrend AnalyzeTrend(IReadOnlyList<ProfilingData> data, string kernelName, TimeSpan timeRange)
     {
         if (data.Count < 3)
         {
-            return new PerformanceTrend
+            return new DotCompute.Abstractions.Types.PerformanceTrend
             {
+                KernelName = kernelName,
+                MetricName = "ExecutionTime",
+                TimeRange = timeRange,
                 DataPoints = data.Count,
-                TrendDirection = TrendDirection.Unknown
+                TrendDirection = DotCompute.Abstractions.Types.TrendDirection.Unknown,
+                AnalysisTime = DateTime.UtcNow
             };
         }
 
         // Simple linear regression to determine trend
         var times = data.Select((d, i) => (double)i).ToList();
-        var executionTimes = data.Select(d => d.Timings.TotalMilliseconds).ToList();
+        var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
 
         var slope = CalculateSlope(times, executionTimes);
 
         var trendDirection = slope switch
         {
-            > 1.0 => TrendDirection.Degrading,
-            < -1.0 => TrendDirection.Improving,
-            _ => TrendDirection.Stable
+            > 1.0 => DotCompute.Abstractions.Types.TrendDirection.Degrading,
+            < -1.0 => DotCompute.Abstractions.Types.TrendDirection.Improving,
+            _ => DotCompute.Abstractions.Types.TrendDirection.Stable
         };
 
-        return new PerformanceTrend
+        var firstTime = data.First().ExecutionTime.TotalMilliseconds;
+        var lastTime = data.Last().ExecutionTime.TotalMilliseconds;
+        var averageChange = (lastTime - firstTime) / data.Count;
+        var percentChange = firstTime != 0 ? (lastTime - firstTime) / firstTime : 0;
+
+        return new DotCompute.Abstractions.Types.PerformanceTrend
         {
+            KernelName = kernelName,
+            MetricName = "ExecutionTime",
+            TimeRange = timeRange,
             DataPoints = data.Count,
             TrendDirection = trendDirection,
-            Slope = slope,
-            FirstDataPoint = data.First().Timings,
-            LastDataPoint = data.Last().Timings,
-            AverageChange = (data.Last().Timings.TotalMilliseconds - data.First().Timings.TotalMilliseconds) / data.Count
+            RateOfChange = slope,
+            Magnitude = Math.Abs(slope),
+            PercentChange = percentChange,
+            PerformanceChange = averageChange,
+            AnalysisTime = DateTime.UtcNow,
+            Confidence = data.Count >= 10 ? 0.9 : data.Count / 10.0
         };
     }
 

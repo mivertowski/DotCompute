@@ -244,7 +244,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
                 MemoryUsageBefore = debugInfo.MemoryUsageBefore,
                 MemoryUsageAfter = debugInfo.MemoryUsageAfter,
                 MemoryAllocated = debugInfo.MemoryAllocated,
-                ExecutionTime = debugInfo.Timings,
+                ExecutionTime = debugInfo.ExecutionTime,
                 Output = debugInfo.Output,
                 Success = debugInfo.Success,
                 PerformanceMetrics = performanceMetrics,
@@ -375,13 +375,13 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         }
 
         // Compare execution times for performance anomalies
-        var executionTimes = successfulResults.Select(r => r.Timings.TotalMilliseconds).ToList();
+        var executionTimes = successfulResults.Select(r => r.ExecutionTime.TotalMilliseconds).ToList();
         var averageTime = executionTimes.Average();
         var maxTime = executionTimes.Max();
 
         if (maxTime > averageTime * 3) // If any execution is 3x slower than average
         {
-            var slowResult = successfulResults.First(r => r.Timings.TotalMilliseconds == maxTime);
+            var slowResult = successfulResults.First(r => r.ExecutionTime.TotalMilliseconds == maxTime);
             issues.Add(new DebugValidationIssue
             {
                 Severity = DebugValidationSeverity.Warning,
@@ -429,7 +429,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     {
         return new PerformanceMetrics
         {
-            ExecutionTimeMs = debugInfo.Timings.TotalMilliseconds,
+            ExecutionTimeMs = debugInfo.ExecutionTime.TotalMilliseconds,
             MemoryUsageBytes = debugInfo.MemoryAllocated,
             OperationsPerSecond = CalculateThroughput(debugInfo),
             ComputeUtilization = CalculateEfficiencyScore(debugInfo)
@@ -445,7 +445,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         {
             PeakMemoryUsage = debugInfo.MemoryUsageAfter,
             MemoryAllocationCount = GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2),
-            CpuTimeMs = debugInfo.Timings.TotalMilliseconds // Simplified
+            CpuTimeMs = debugInfo.ExecutionTime.TotalMilliseconds // Simplified
         };
     }
 
@@ -509,9 +509,9 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     private static double CalculateThroughput(KernelDebugInfo debugInfo)
     {
         // Simplified calculation - real implementation would depend on operation type
-        if (debugInfo.Timings.TotalSeconds > 0)
+        if (debugInfo.ExecutionTime.TotalSeconds > 0)
         {
-            return 1.0 / debugInfo.Timings.TotalSeconds;
+            return 1.0 / debugInfo.ExecutionTime.TotalSeconds;
         }
         return 0.0;
     }
@@ -522,7 +522,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
     private static double CalculateEfficiencyScore(KernelDebugInfo debugInfo)
     {
         // Simplified scoring based on execution time and memory usage
-        var timeScore = Math.Max(0, 100 - debugInfo.Timings.TotalMilliseconds / 10);
+        var timeScore = Math.Max(0, 100 - debugInfo.ExecutionTime.TotalMilliseconds / 10);
         var memoryScore = Math.Max(0, 100 - debugInfo.MemoryAllocated / (1024 * 1024)); // MB
         return (timeScore + memoryScore) / 2;
     }

@@ -132,7 +132,7 @@ internal sealed class BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logg
     {
         _logger?.LogInformation(
             "[PROFILER] Kernel {KernelName}: {Duration:F2}ms, {WorkItems} items, {Utilization:P} utilization (Execution: {ExecutionId})",
-            stats.KernelName, stats.Timings.TotalMilliseconds, stats.WorkItemsProcessed,
+            stats.KernelName, stats.ExecutionTime.TotalMilliseconds, stats.WorkItemsProcessed,
 
             stats.ComputeUtilization, executionId);
     }
@@ -187,9 +187,9 @@ internal sealed class BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logg
         {
             PipelineId = pipelineId,
             ExecutionCount = 1,
-            AverageTimeMs = TimeSpan.FromMinutes(1),
-            MinTimeMs = TimeSpan.FromSeconds(45),
-            MaxTimeMs = TimeSpan.FromSeconds(75),
+            AverageExecutionTimeMs = TimeSpan.FromMinutes(1),
+            MinExecutionTime = TimeSpan.FromSeconds(45),
+            MaxExecutionTime = TimeSpan.FromSeconds(75),
             Trends = []
         };
     }

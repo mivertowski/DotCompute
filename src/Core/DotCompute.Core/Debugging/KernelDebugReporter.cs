@@ -72,8 +72,8 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             }
 
             // Compare execution times
-            var time1 = result1.Timings?.TotalTimeMs ?? 0;
-            var time2 = result2.Timings?.TotalTimeMs ?? 0;
+            var time1 = result1.ExecutionTime?.TotalTimeMs ?? 0;
+            var time2 = result2.ExecutionTime?.TotalTimeMs ?? 0;
             var timeDifference = Math.Abs(time1 - time2);
             var averageTime = (time1 + time2) / 2;
 
@@ -211,7 +211,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
             var warningCount = validationResult.Issues.Count(i => i.Severity == ValidationSeverity.Warning);
             _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "✗ Validation failed with {0} error(s) and {1} warning(s)", errorCount, warningCount));
         }
-        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Execution Time: {0:F2}ms", validationResult.Timings.TotalMilliseconds));
+        _ = report.AppendLine(string.Format(CultureInfo.InvariantCulture, "Execution Time: {0:F2}ms", validationResult.ExecutionTime.TotalMilliseconds));
         _ = report.AppendLine();
 
         // Backend Results

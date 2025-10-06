@@ -231,7 +231,7 @@ namespace DotCompute.Core.Pipelines.Examples
             var report = new DetailedExecutionReport
             {
                 Success = executionResult.Success,
-                TotalExecutionTime = executionResult.Timings,
+                TotalExecutionTime = executionResult.ExecutionTime,
                 StepMetrics = [.. executionResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics)],
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(executionResult.MemoryMetrics),
                 BackendUsed = executionResult.Backend,
@@ -314,7 +314,7 @@ namespace DotCompute.Core.Pipelines.Examples
             var recommendations = new List<string>();
 
             // Analyze execution metrics and provide recommendations
-            if (executionResult.Timings > TimeSpan.FromSeconds(10))
+            if (executionResult.ExecutionTime > TimeSpan.FromSeconds(10))
             {
                 recommendations.Add("Consider using parallel execution for better performance");
             }

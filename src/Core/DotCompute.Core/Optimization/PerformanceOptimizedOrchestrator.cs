@@ -8,6 +8,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Core.Pipelines;
 using DotCompute.Core.Telemetry;
+using DotCompute.Core.Telemetry.Metrics;
 using DotCompute.Abstractions.Types;
 using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;

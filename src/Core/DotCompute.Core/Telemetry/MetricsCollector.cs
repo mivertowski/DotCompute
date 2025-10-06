@@ -82,8 +82,8 @@ public sealed class MetricsCollector : IDisposable
                 KernelName = kernelName,
                 ExecutionCount = 1,
                 TotalExecutionTime = executionTime,
-                MinTimeMs = executionTime,
-                MaxTimeMs = executionTime,
+                MinExecutionTime = executionTime,
+                MaxExecutionTime = executionTime,
                 TotalMemoryUsed = memoryUsed,
                 SuccessCount = success ? 1 : 0,
                 LastExecutionTime = DateTimeOffset.UtcNow,
@@ -196,9 +196,9 @@ public sealed class MetricsCollector : IDisposable
         {
             KernelName = kernelName,
             ExecutionCount = metrics.ExecutionCount,
-            AverageTimeMs = metrics.TotalExecutionTime.TotalMilliseconds / metrics.ExecutionCount,
-            MinTimeMs = metrics.MinExecutionTime.TotalMilliseconds,
-            MaxTimeMs = metrics.MaxExecutionTime.TotalMilliseconds,
+            AverageExecutionTimeMs = metrics.TotalExecutionTime.TotalMilliseconds / metrics.ExecutionCount,
+            MinExecutionTime = metrics.MinExecutionTime.TotalMilliseconds,
+            MaxExecutionTime = metrics.MaxExecutionTime.TotalMilliseconds,
             SuccessRate = (double)metrics.SuccessCount / metrics.ExecutionCount,
             AverageThroughput = metrics.Throughput,
             AverageOccupancy = metrics.Occupancy,
@@ -486,13 +486,13 @@ public sealed class MetricsCollector : IDisposable
 
     private static double CalculateThroughput(KernelExecutionDetails details)
     {
-        if (details.Timings.TotalSeconds == 0)
+        if (details.ExecutionTime.TotalSeconds == 0)
         {
             return 0;
         }
 
 
-        return details.OperationsPerformed / details.Timings.TotalSeconds;
+        return details.OperationsPerformed / details.ExecutionTime.TotalSeconds;
     }
 
     private static double CalculateMemoryEfficiency(KernelMetrics metrics)

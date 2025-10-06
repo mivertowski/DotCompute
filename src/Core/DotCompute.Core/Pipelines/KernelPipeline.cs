@@ -201,7 +201,7 @@ namespace DotCompute.Core.Pipelines
                     EndTime = DateTime.UtcNow,
                     TotalExecutionTime = stopwatch.Elapsed,
                     StageExecutions = stageResults.Count,
-                    ComputationTime = TimeSpan.FromMilliseconds(stageResults.Sum(r => r.Timings.TotalMilliseconds)),
+                    ComputationTime = TimeSpan.FromMilliseconds(stageResults.Sum(r => r.ExecutionTime.TotalMilliseconds)),
                     DataTransferTime = ExtractDataTransferTimes(stageResults).Values.Aggregate(TimeSpan.Zero, (sum, time) => sum + time),
                     ParallelExecutions = stageResults.Count(r => r.Metadata?.ContainsKey("IsParallel") == true),
                     Throughput = stageResults.Count > 0 ? stageResults.Count / stopwatch.Elapsed.TotalSeconds : 0,
@@ -211,7 +211,7 @@ namespace DotCompute.Core.Pipelines
                         ["ComputeUtilization"] = CalculateComputeUtilization(stageResults),
                         ["MemoryBandwidthUtilization"] = CalculateMemoryBandwidthUtilization(stageResults),
                         ["MemoryUsage"] = memoryStats,
-                        ["StageExecutionTimes"] = stageResults.ToDictionary(r => r.StageId, r => r.Timings.TotalMilliseconds)
+                        ["StageExecutionTimes"] = stageResults.ToDictionary(r => r.StageId, r => r.ExecutionTime.TotalMilliseconds)
                     }
                 };
 
@@ -470,7 +470,7 @@ namespace DotCompute.Core.Pipelines
                     Data = new Dictionary<string, object>
                     {
                         ["Success"] = result.Success,
-                        ["Duration"] = result.Timings.TotalMilliseconds
+                        ["Duration"] = result.ExecutionTime.TotalMilliseconds
                     }
                 });
 

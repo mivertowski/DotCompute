@@ -567,7 +567,7 @@ namespace DotCompute.Core.Kernels
             {
                 KernelLanguage.CSharp => KernelLanguage.CSharpIL,
                 KernelLanguage.OpenCL => KernelLanguage.OpenCL,
-                KernelLanguage.CUDA => KernelLanguage.Cuda,
+                KernelLanguage.Cuda => KernelLanguage.Cuda,
                 KernelLanguage.Metal => KernelLanguage.Metal,
                 KernelLanguage.DirectCompute => KernelLanguage.HLSL,
                 KernelLanguage.Vulkan or KernelLanguage.WebGPU => KernelLanguage.SPIRV,
