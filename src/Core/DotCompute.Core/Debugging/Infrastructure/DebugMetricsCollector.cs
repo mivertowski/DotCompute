@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 
