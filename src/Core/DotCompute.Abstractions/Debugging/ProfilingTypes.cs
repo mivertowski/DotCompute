@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Types;
+
 namespace DotCompute.Abstractions.Debugging;
 
 /// <summary>
@@ -343,81 +345,8 @@ public sealed class PerformanceAnalysis
     public DateTime AnalysisTime { get; init; }
 }
 
-/// <summary>
-/// Represents a performance trend identified in the data.
-/// </summary>
-public sealed class PerformanceTrend
-{
-    /// <summary>
-    /// Gets or sets the kernel name.
-    /// </summary>
-    public string KernelName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the time range for the trend.
-    /// </summary>
-    public TimeSpan TimeRange { get; set; }
-
-    /// <summary>
-    /// Gets or sets the number of data points.
-    /// </summary>
-    public int DataPoints { get; set; }
-
-    /// <summary>
-    /// Gets or sets the trend direction.
-    /// </summary>
-    public TrendDirection TrendDirection { get; set; }
-
-    /// <summary>
-    /// Gets or sets the time of analysis.
-    /// </summary>
-    public DateTime AnalysisTime { get; set; }
-
-    /// <summary>
-    /// Gets the metric that is trending.
-    /// </summary>
-    public string Metric { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Gets the direction of the trend.
-    /// </summary>
-    public TrendDirection Direction { get; init; }
-
-    /// <summary>
-    /// Gets the confidence level of the trend (0-1).
-    /// </summary>
-    public double Confidence { get; init; }
-
-    /// <summary>
-    /// Gets the rate of change per time period.
-    /// </summary>
-    public double RateOfChange { get; init; }
-
-    /// <summary>
-    /// Gets the description of the trend.
-    /// </summary>
-    public string Description { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the slope of the trend line.
-    /// </summary>
-    public double Slope { get; set; }
-
-    /// <summary>
-    /// Gets or sets the first data point in the trend.
-    /// </summary>
-    public TimeSpan FirstDataPoint { get; set; }
-
-    /// <summary>
-    /// Gets or sets the last data point in the trend.
-    /// </summary>
-    public TimeSpan LastDataPoint { get; set; }
-
-    /// <summary>
-    /// Gets or sets the average change per time period.
-    /// </summary>
-    public double AverageChange { get; set; }
-}
+// PerformanceTrend class removed - use DotCompute.Abstractions.Types.PerformanceTrend instead
+// The canonical comprehensive version is in Types/PerformanceTrend.cs
 
 /// <summary>
 /// Represents a performance anomaly detected in the data.
