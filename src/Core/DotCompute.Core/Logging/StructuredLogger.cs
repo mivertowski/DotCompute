@@ -11,7 +11,7 @@ namespace DotCompute.Core.Logging;
 /// Production-grade structured logger with semantic properties, correlation IDs, and performance metrics.
 /// Provides async, buffered logging with configurable sinks and minimal performance impact.
 /// </summary>
-public sealed class StructuredLogger : ILogger, IDisposable
+public sealed partial class StructuredLogger : ILogger, IDisposable
 {
     private readonly string _categoryName;
     private readonly ILogger _baseLogger;
@@ -21,6 +21,50 @@ public sealed class StructuredLogger : ILogger, IDisposable
     private readonly ConcurrentDictionary<string, object> _globalContext;
     private readonly Timer _flushTimer;
     private volatile bool _disposed;
+
+    #region LoggerMessage Delegates - Event ID range 25100-25104
+
+    private static readonly Action<ILogger, Exception?> _logStructuredEntryFailed =
+        LoggerMessage.Define(
+            LogLevel.Error,
+            new EventId(25100, nameof(LogStructuredEntryFailed)),
+            "Failed to process structured log entry");
+
+    private static void LogStructuredEntryFailed(ILogger logger, Exception ex) => _logStructuredEntryFailed(logger, ex);
+
+    private static readonly Action<ILogger, string, string, double, Exception?> _logKernelFailed =
+        LoggerMessage.Define<string, string, double>(
+            LogLevel.Error,
+            new EventId(25101, nameof(LogKernelFailed)),
+            "Kernel execution failed: {KernelName} on {DeviceId} after {ExecutionTime}ms");
+
+    private static void LogKernelFailed(ILogger logger, string kernelName, string deviceId, double executionTime, Exception ex) => _logKernelFailed(logger, kernelName, deviceId, executionTime, ex);
+
+    private static readonly Action<ILogger, Exception?> _logFlushFailed =
+        LoggerMessage.Define(
+            LogLevel.Error,
+            new EventId(25102, nameof(LogFlushFailed)),
+            "Failed to flush log buffer during timer flush");
+
+    private static void LogFlushFailed(ILogger logger, Exception ex) => _logFlushFailed(logger, ex);
+
+    private static readonly Action<ILogger, Exception?> _logFlushTaskFailed =
+        LoggerMessage.Define(
+            LogLevel.Error,
+            new EventId(25103, nameof(LogFlushTaskFailed)),
+            "Failed to start log flush task");
+
+    private static void LogFlushTaskFailed(ILogger logger, Exception ex) => _logFlushTaskFailed(logger, ex);
+
+    private static readonly Action<ILogger, Exception?> _logFinalFlushFailed =
+        LoggerMessage.Define(
+            LogLevel.Error,
+            new EventId(25104, nameof(LogFinalFlushFailed)),
+            "Failed to perform final flush during dispose");
+
+    private static void LogFinalFlushFailed(ILogger logger, Exception ex) => _logFinalFlushFailed(logger, ex);
+
+    #endregion
     /// <summary>
     /// Initializes a new instance of the StructuredLogger class.
     /// </summary>
@@ -108,7 +152,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
         catch (Exception ex)
         {
             // Never throw from logging - log the error through base logger
-            _baseLogger.LogError(ex, "Failed to process structured log entry");
+            LogStructuredEntryFailed(_baseLogger, ex);
         }
     }
 
@@ -180,8 +224,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
 
         if (exception != null)
         {
-            _baseLogger.LogError(exception, "Kernel execution failed: {KernelName} on {DeviceId} after {ExecutionTime}ms",
-                kernelName, deviceId, executionTime.TotalMilliseconds);
+            LogKernelFailed(_baseLogger, kernelName, deviceId, executionTime.TotalMilliseconds, exception);
         }
     }
 
@@ -514,13 +557,13 @@ public sealed class StructuredLogger : ILogger, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _baseLogger.LogError(ex, "Failed to flush log buffer during timer flush");
+                    LogFlushFailed(_baseLogger, ex);
                 }
             });
         }
         catch (Exception ex)
         {
-            _baseLogger.LogError(ex, "Failed to start log flush task");
+            LogFlushTaskFailed(_baseLogger, ex);
         }
     }
 
@@ -551,7 +594,7 @@ public sealed class StructuredLogger : ILogger, IDisposable
         }
         catch (Exception ex)
         {
-            _baseLogger.LogError(ex, "Failed to perform final flush during dispose");
+            LogFinalFlushFailed(_baseLogger, ex);
         }
 
 

@@ -13,8 +13,144 @@ namespace DotCompute.Core.Memory
     /// Advanced P2P memory coherence manager that maintains consistency across multiple GPU devices.
     /// Handles lazy synchronization, conflict resolution, and access pattern optimization.
     /// </summary>
-    public sealed class P2PMemoryCoherenceManager : IAsyncDisposable
+    public sealed partial class P2PMemoryCoherenceManager : IAsyncDisposable
     {
+        // LoggerMessage delegates - Event ID range 14500-14513 for P2PMemoryCoherenceManager
+        private static readonly Action<ILogger, Exception?> _logManagerInitialized =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(14500, nameof(LogManagerInitialized)),
+                "P2P memory coherence manager initialized");
+
+        private static void LogManagerInitialized(ILogger logger)
+            => _logManagerInitialized(logger, null);
+
+        private static readonly Action<ILogger, Guid, string, Exception?> _logBufferTracked =
+            LoggerMessage.Define<Guid, string>(
+                LogLevel.Trace,
+                new EventId(14501, nameof(LogBufferTracked)),
+                "Started tracking P2P buffer: {BufferId} on {Device}");
+
+        private static void LogBufferTracked(ILogger logger, Guid bufferId, string device)
+            => _logBufferTracked(logger, bufferId, device, null);
+
+        private static readonly Action<ILogger, Exception?> _logSyncUntracked =
+            LoggerMessage.Define(
+                LogLevel.Warning,
+                new EventId(14502, nameof(LogSyncUntracked)),
+                "Attempted to synchronize untracked buffer");
+
+        private static void LogSyncUntracked(ILogger logger)
+            => _logSyncUntracked(logger, null);
+
+        private static readonly Action<ILogger, Guid, Exception?> _logBufferAlreadyCoherent =
+            LoggerMessage.Define<Guid>(
+                LogLevel.Trace,
+                new EventId(14503, nameof(LogBufferAlreadyCoherent)),
+                "Buffer {BufferId} is already coherent, no sync needed");
+
+        private static void LogBufferAlreadyCoherent(ILogger logger, Guid bufferId)
+            => _logBufferAlreadyCoherent(logger, bufferId, null);
+
+        private static readonly Action<ILogger, Guid, string, Exception?> _logSynchronizingBuffer =
+            LoggerMessage.Define<Guid, string>(
+                LogLevel.Debug,
+                new EventId(14504, nameof(LogSynchronizingBuffer)),
+                "Synchronizing buffer {BufferId} from canonical copy on {Device}");
+
+        private static void LogSynchronizingBuffer(ILogger logger, Guid bufferId, string device)
+            => _logSynchronizingBuffer(logger, bufferId, device, null);
+
+        private static readonly Action<ILogger, Guid, int, double, Exception?> _logBufferSynchronized =
+            LoggerMessage.Define<Guid, int, double>(
+                LogLevel.Debug,
+                new EventId(14505, nameof(LogBufferSynchronized)),
+                "Buffer {BufferId} synchronized across {CopyCount} devices in {DurationMs}ms");
+
+        private static void LogBufferSynchronized(ILogger logger, Guid bufferId, int copyCount, double durationMs)
+            => _logBufferSynchronized(logger, bufferId, copyCount, durationMs, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logOptimizingPlacement =
+            LoggerMessage.Define<int>(
+                LogLevel.Information,
+                new EventId(14506, nameof(LogOptimizingPlacement)),
+                "Optimizing P2P buffer placement across {DeviceCount} devices");
+
+        private static void LogOptimizingPlacement(ILogger logger, int deviceCount)
+            => _logOptimizingPlacement(logger, deviceCount, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logPlacementOptimized =
+            LoggerMessage.Define<int>(
+                LogLevel.Information,
+                new EventId(14507, nameof(LogPlacementOptimized)),
+                "P2P placement optimization completed: {OptimizationCount} optimizations applied");
+
+        private static void LogPlacementOptimized(ILogger logger, int optimizationCount)
+            => _logPlacementOptimized(logger, optimizationCount, null);
+
+        private static readonly Action<ILogger, string, Guid, string, Exception?> _logBufferAccess =
+            LoggerMessage.Define<string, Guid, string>(
+                LogLevel.Trace,
+                new EventId(14508, nameof(LogBufferAccess)),
+                "Recorded {AccessType} access to buffer {BufferId} on {Device}");
+
+        private static void LogBufferAccess(ILogger logger, string accessType, Guid bufferId, string device)
+            => _logBufferAccess(logger, accessType, bufferId, device, null);
+
+        private static readonly Action<ILogger, string, string, Exception?> _logCopySynchronized =
+            LoggerMessage.Define<string, string>(
+                LogLevel.Trace,
+                new EventId(14509, nameof(LogCopySynchronized)),
+                "Synchronized copy on {TargetDevice} from {SourceDevice}");
+
+        private static void LogCopySynchronized(ILogger logger, string targetDevice, string sourceDevice)
+            => _logCopySynchronized(logger, targetDevice, sourceDevice, null);
+
+        private static readonly Action<ILogger, string, string, Exception?> _logSyncFailed =
+            LoggerMessage.Define<string, string>(
+                LogLevel.Error,
+                new EventId(14510, nameof(LogSyncFailed)),
+                "Failed to synchronize buffer copy from {SourceDevice} to {TargetDevice}");
+
+        private static void LogSyncFailed(ILogger logger, string sourceDevice, string targetDevice, Exception exception)
+            => _logSyncFailed(logger, sourceDevice, targetDevice, exception);
+
+        private static readonly Action<ILogger, string, string, double, Exception?> _logExecutingOptimization =
+            LoggerMessage.Define<string, string, double>(
+                LogLevel.Debug,
+                new EventId(14511, nameof(LogExecutingOptimization)),
+                "Executing placement optimization: {SourceDevice} -> {TargetDevice}, Expected benefit: {ExpectedBenefit} GB/s");
+
+        private static void LogExecutingOptimization(ILogger logger, string sourceDevice, string targetDevice, double expectedBenefit)
+            => _logExecutingOptimization(logger, sourceDevice, targetDevice, expectedBenefit, null);
+
+        private static readonly Action<ILogger, double, Exception?> _logHighIncoherence =
+            LoggerMessage.Define<double>(
+                LogLevel.Warning,
+                new EventId(14512, nameof(LogHighIncoherence)),
+                "High incoherence detected: {IncoherentRatio} of buffers are incoherent");
+
+        private static void LogHighIncoherence(ILogger logger, double incoherentRatio)
+            => _logHighIncoherence(logger, incoherentRatio, null);
+
+        private static readonly Action<ILogger, string, int, int, Exception?> _logDeviceCoherence =
+            LoggerMessage.Define<string, int, int>(
+                LogLevel.Trace,
+                new EventId(14513, nameof(LogDeviceCoherence)),
+                "Device {DeviceId} coherence: {Coherent} coherent, {Incoherent} incoherent");
+
+        private static void LogDeviceCoherence(ILogger logger, string deviceId, int coherent, int incoherent)
+            => _logDeviceCoherence(logger, deviceId, coherent, incoherent, null);
+
+        private static readonly Action<ILogger, Exception?> _logManagerDisposed =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(14514, nameof(LogManagerDisposed)),
+                "P2P memory coherence manager disposed");
+
+        private static void LogManagerDisposed(ILogger logger)
+            => _logManagerDisposed(logger, null);
+
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<object, P2PBufferCoherenceInfo> _bufferTracking;
         private readonly ConcurrentDictionary<string, DeviceCoherenceState> _deviceStates;
@@ -46,7 +182,7 @@ namespace DotCompute.Core.Memory
                 TimeSpan.FromMilliseconds(CoherenceMonitorIntervalMs),
                 TimeSpan.FromMilliseconds(CoherenceMonitorIntervalMs));
 
-            _logger.LogDebugMessage("P2P memory coherence manager initialized");
+            LogManagerInitialized(_logger);
         }
 
         /// <summary>
@@ -100,8 +236,7 @@ namespace DotCompute.Core.Memory
                 _statistics.CoherentBuffers++;
             }
 
-            _logger.LogTrace("Started tracking P2P buffer: {BufferId} on {Device}",
-                coherenceInfo.BufferId, buffer.Accelerator.Info.Name);
+            LogBufferTracked(_logger, coherenceInfo.BufferId, buffer.Accelerator.Info.Name);
         }
 
         /// <summary>
@@ -111,7 +246,7 @@ namespace DotCompute.Core.Memory
         {
             if (!_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
             {
-                _logger.LogWarningMessage("Attempted to synchronize untracked buffer");
+                LogSyncUntracked(_logger);
                 return;
             }
 
@@ -120,7 +255,7 @@ namespace DotCompute.Core.Memory
             {
                 if (coherenceInfo.IsCoherent)
                 {
-                    _logger.LogTrace("Buffer {BufferId} is already coherent, no sync needed", coherenceInfo.BufferId);
+                    LogBufferAlreadyCoherent(_logger, coherenceInfo.BufferId);
                     return;
                 }
 
@@ -134,7 +269,7 @@ namespace DotCompute.Core.Memory
                     .FirstOrDefault()
                     ?? coherenceInfo.Copies.OrderByDescending(c => c.LastAccessed).First();
 
-                _logger.LogDebugMessage($"Synchronizing buffer {coherenceInfo.BufferId} from canonical copy on {canonicalCopy.Device.Info.Name}");
+                LogSynchronizingBuffer(_logger, coherenceInfo.BufferId, canonicalCopy.Device.Info.Name);
 
                 // Synchronize all other copies
                 foreach (var copy in coherenceInfo.Copies.Where(c => c != canonicalCopy))
@@ -167,7 +302,7 @@ namespace DotCompute.Core.Memory
                     _statistics.CoherentBuffers++;
                 }
 
-                _logger.LogDebugMessage($"Buffer {coherenceInfo.BufferId} synchronized across {coherenceInfo.Copies.Count} devices in {duration.TotalMilliseconds}ms");
+                LogBufferSynchronized(_logger, coherenceInfo.BufferId, coherenceInfo.Copies.Count, duration.TotalMilliseconds);
             }
             finally
             {
@@ -186,7 +321,7 @@ namespace DotCompute.Core.Memory
             await _coherenceSemaphore.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogInfoMessage("Optimizing P2P buffer placement across {devices.Length} devices");
+                LogOptimizingPlacement(_logger, devices.Length);
 
                 // Store P2P topology for future reference
                 _p2pTopology.Clear();
@@ -207,7 +342,7 @@ namespace DotCompute.Core.Memory
 
                 await Task.WhenAll(optimizationTasks);
 
-                _logger.LogInfoMessage($"P2P placement optimization completed: {optimizations.Count} optimizations applied");
+                LogPlacementOptimized(_logger, optimizations.Count);
             }
             finally
             {
@@ -258,8 +393,7 @@ namespace DotCompute.Core.Memory
                     // Update access pattern analysis
                     UpdateAccessPattern(coherenceInfo, accessType);
 
-                    _logger.LogTrace("Recorded {AccessType} access to buffer {BufferId} on {Device}",
-                        accessType, coherenceInfo.BufferId, buffer.Accelerator.Info.Name);
+                    LogBufferAccess(_logger, accessType.ToString(), coherenceInfo.BufferId, buffer.Accelerator.Info.Name);
                 }
             }
         }
@@ -338,12 +472,11 @@ namespace DotCompute.Core.Memory
                 targetCopy.LastAccessed = DateTimeOffset.UtcNow;
                 targetCopy.IsWritten = false;
 
-                _logger.LogTrace("Synchronized copy on {TargetDevice} from {SourceDevice}",
-                    targetCopy.Device.Info.Name, canonicalCopy.Device.Info.Name);
+                LogCopySynchronized(_logger, targetCopy.Device.Info.Name, canonicalCopy.Device.Info.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"Failed to synchronize buffer copy from {canonicalCopy.Device.Info.Name} to {targetCopy.Device.Info.Name}");
+                LogSyncFailed(_logger, canonicalCopy.Device.Info.Name, targetCopy.Device.Info.Name, ex);
                 throw;
             }
         }
@@ -577,7 +710,7 @@ namespace DotCompute.Core.Memory
         {
             // This would implement actual buffer migration
             // For now, just log the optimization
-            _logger.LogDebugMessage($"Executing placement optimization: {optimization.SourceDeviceId} -> {optimization.TargetDeviceId}, Expected benefit: {optimization.ExpectedBenefit} GB/s");
+            LogExecutingOptimization(_logger, optimization.SourceDeviceId, optimization.TargetDeviceId, optimization.ExpectedBenefit);
 
             await Task.Delay(1, cancellationToken); // Simulate optimization work
         }
@@ -621,7 +754,7 @@ namespace DotCompute.Core.Memory
 
                 if (incoherentRatio > IncoherentThresholdRatio)
                 {
-                    _logger.LogWarningMessage($"High incoherence detected: {incoherentRatio} of buffers are incoherent");
+                    LogHighIncoherence(_logger, incoherentRatio);
 
                     // Trigger background synchronization for heavily accessed buffers
                     _ = Task.Run(async () => await PerformBackgroundSynchronizationAsync(CancellationToken.None));
@@ -630,8 +763,7 @@ namespace DotCompute.Core.Memory
                 // Update device coherence states
                 foreach (var deviceState in _deviceStates.Values)
                 {
-                    _logger.LogTrace("Device {DeviceId} coherence: {Coherent} coherent, {Incoherent} incoherent",
-                        deviceState.DeviceId, deviceState.CoherentBuffers, deviceState.IncoherentBuffers);
+                    LogDeviceCoherence(_logger, deviceState.DeviceId, deviceState.CoherentBuffers, deviceState.IncoherentBuffers);
                 }
             }
             catch (Exception ex)
@@ -689,7 +821,7 @@ namespace DotCompute.Core.Memory
             _deviceStates.Clear();
             _p2pTopology.Clear();
 
-            _logger.LogDebugMessage("P2P memory coherence manager disposed");
+            LogManagerDisposed(_logger);
         }
     }
 

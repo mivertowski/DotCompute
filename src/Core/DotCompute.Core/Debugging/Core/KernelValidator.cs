@@ -22,7 +22,7 @@ namespace DotCompute.Core.Debugging.Core;
 /// Core kernel validation logic for cross-backend verification.
 /// Handles kernel execution across multiple backends and result comparison.
 /// </summary>
-public sealed class KernelValidator(
+public sealed partial class KernelValidator(
     ILogger<KernelValidator> logger,
     DebugServiceOptions options) : IDisposable
 {
@@ -30,6 +30,66 @@ public sealed class KernelValidator(
     private readonly DebugServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = new();
     private bool _disposed;
+
+    #region LoggerMessage Delegates - Event ID range 11200-11206
+
+    private static readonly Action<ILogger, string, Exception?> _logValidationStarting =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Information,
+            new EventId(11200, nameof(LogValidationStarting)),
+            "Starting cross-backend validation for kernel {KernelName}");
+
+    private static void LogValidationStarting(ILogger logger, string kernelName) => _logValidationStarting(logger, kernelName, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logValidationFailed =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Error,
+            new EventId(11201, nameof(LogValidationFailed)),
+            "Error during kernel validation for {KernelName}");
+
+    private static void LogValidationFailed(ILogger logger, string kernelName, Exception ex) => _logValidationFailed(logger, kernelName, ex);
+
+    private static readonly Action<ILogger, string, Exception?> _logAcceleratorRegistered =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Debug,
+            new EventId(11202, nameof(LogAcceleratorRegistered)),
+            "Registered accelerator for backend: {BackendType}");
+
+    private static void LogAcceleratorRegistered(ILogger logger, string backendType) => _logAcceleratorRegistered(logger, backendType, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logAcceleratorUnregistered =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Debug,
+            new EventId(11203, nameof(LogAcceleratorUnregistered)),
+            "Unregistered accelerator for backend: {BackendType}");
+
+    private static void LogAcceleratorUnregistered(ILogger logger, string backendType) => _logAcceleratorUnregistered(logger, backendType, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logAcceleratorHealthCheckFailed =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Warning,
+            new EventId(11204, nameof(LogAcceleratorHealthCheckFailed)),
+            "Accelerator {BackendType} failed health check");
+
+    private static void LogAcceleratorHealthCheckFailed(ILogger logger, string backendType, Exception ex) => _logAcceleratorHealthCheckFailed(logger, backendType, ex);
+
+    private static readonly Action<ILogger, string, Exception?> _logAcceleratorCreationFailed =
+        LoggerMessage.Define<string>(
+            Microsoft.Extensions.Logging.LogLevel.Warning,
+            new EventId(11205, nameof(LogAcceleratorCreationFailed)),
+            "Failed to create accelerator for backend: {BackendType}");
+
+    private static void LogAcceleratorCreationFailed(ILogger logger, string backendType, Exception ex) => _logAcceleratorCreationFailed(logger, backendType, ex);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logKernelExecutionFailed =
+        LoggerMessage.Define<string, string>(
+            Microsoft.Extensions.Logging.LogLevel.Error,
+            new EventId(11206, nameof(LogKernelExecutionFailed)),
+            "Kernel execution failed for {KernelName} on {BackendType}");
+
+    private static void LogKernelExecutionFailed(ILogger logger, string kernelName, string backendType, Exception ex) => _logKernelExecutionFailed(logger, kernelName, backendType, ex);
+
+    #endregion
 
     /// <summary>
     /// Validates a kernel across multiple backends with comprehensive comparison.
@@ -47,7 +107,7 @@ public sealed class KernelValidator(
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogInformation("Starting cross-backend validation for kernel {kernelName}", kernelName);
+        LogValidationStarting(_logger, kernelName);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -136,7 +196,7 @@ public sealed class KernelValidator(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during kernel validation for {kernelName}", kernelName);
+            LogValidationFailed(_logger, kernelName, ex);
 
             return new KernelValidationResult
             {
@@ -263,7 +323,7 @@ public sealed class KernelValidator(
         ArgumentNullException.ThrowIfNull(accelerator);
 
         _ = _accelerators.TryAdd(backendType, accelerator);
-        _logger.LogDebug("Registered accelerator for backend: {BackendType}", backendType);
+        LogAcceleratorRegistered(_logger, backendType);
     }
 
     /// <summary>
@@ -278,7 +338,7 @@ public sealed class KernelValidator(
 
         if (_accelerators.TryRemove(backendType, out _))
         {
-            _logger.LogDebug("Unregistered accelerator for backend: {BackendType}", backendType);
+            LogAcceleratorUnregistered(_logger, backendType);
             return true;
         }
 
@@ -304,7 +364,7 @@ public sealed class KernelValidator(
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Accelerator {BackendType} failed health check", accelerator.Key);
+                LogAcceleratorHealthCheckFailed(_logger, accelerator.Key, ex);
             }
         }
 
@@ -333,7 +393,7 @@ public sealed class KernelValidator(
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to create accelerator for backend: {BackendType}", backendType);
+            LogAcceleratorCreationFailed(_logger, backendType, ex);
         }
 
         return null;
@@ -422,7 +482,7 @@ public sealed class KernelValidator(
         {
             stopwatch.Stop();
 
-            _logger.LogError(ex, "Kernel execution failed for {KernelName} on {BackendType}", kernelName, backendType);
+            LogKernelExecutionFailed(_logger, kernelName, backendType, ex);
 
             var handle = new KernelExecutionHandle
             {

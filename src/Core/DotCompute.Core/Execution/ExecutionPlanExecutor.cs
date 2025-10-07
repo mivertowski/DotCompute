@@ -23,8 +23,207 @@ namespace DotCompute.Core.Execution
     /// <param name="logger">The logger for monitoring and diagnostics.</param>
     /// <param name="performanceMonitor">The performance monitor for tracking execution metrics.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null.</exception>
-    public sealed class ExecutionPlanExecutor(ILogger logger, PerformanceMonitor performanceMonitor) : IAsyncDisposable
+    public sealed partial class ExecutionPlanExecutor(ILogger logger, PerformanceMonitor performanceMonitor) : IAsyncDisposable
     {
+        // LoggerMessage delegates - Event ID range 23200-23235 for ExecutionPlanExecutor
+        private static readonly Action<ILogger, Guid, string, int, Exception?> _logDataParallelStarted =
+            LoggerMessage.Define<Guid, string, int>(
+                LogLevel.Information,
+                new EventId(23200, nameof(LogDataParallelStarted)),
+                "Starting data parallel execution {ExecutionId} for kernel {KernelName} on {DeviceCount} devices");
+
+        private static void LogDataParallelStarted(ILogger logger, Guid executionId, string kernelName, int deviceCount)
+            => _logDataParallelStarted(logger, executionId, kernelName, deviceCount, null);
+
+        private static readonly Action<ILogger, Guid, double, double, Exception?> _logDataParallelCompleted =
+            LoggerMessage.Define<Guid, double, double>(
+                LogLevel.Information,
+                new EventId(23201, nameof(LogDataParallelCompleted)),
+                "Completed data parallel execution {ExecutionId} in {DurationMs}ms with {SuccessRate}% success rate");
+
+        private static void LogDataParallelCompleted(ILogger logger, Guid executionId, double durationMs, double successRate)
+            => _logDataParallelCompleted(logger, executionId, durationMs, successRate, null);
+
+        private static readonly Action<ILogger, Guid, Exception?> _logDataParallelFailed =
+            LoggerMessage.Define<Guid>(
+                LogLevel.Error,
+                new EventId(23202, nameof(LogDataParallelFailed)),
+                "Failed to execute data parallel plan {ExecutionId}");
+
+        private static void LogDataParallelFailed(ILogger logger, Guid executionId, Exception exception)
+            => _logDataParallelFailed(logger, executionId, exception);
+
+        private static readonly Action<ILogger, Guid, int, int, Exception?> _logModelParallelStarted =
+            LoggerMessage.Define<Guid, int, int>(
+                LogLevel.Information,
+                new EventId(23203, nameof(LogModelParallelStarted)),
+                "Starting model parallel execution {ExecutionId} for {LayerCount} layers on {DeviceCount} devices");
+
+        private static void LogModelParallelStarted(ILogger logger, Guid executionId, int layerCount, int deviceCount)
+            => _logModelParallelStarted(logger, executionId, layerCount, deviceCount, null);
+
+        private static readonly Action<ILogger, Guid, double, Exception?> _logModelParallelCompleted =
+            LoggerMessage.Define<Guid, double>(
+                LogLevel.Information,
+                new EventId(23204, nameof(LogModelParallelCompleted)),
+                "Completed model parallel execution {ExecutionId} in {DurationMs}ms");
+
+        private static void LogModelParallelCompleted(ILogger logger, Guid executionId, double durationMs)
+            => _logModelParallelCompleted(logger, executionId, durationMs, null);
+
+        private static readonly Action<ILogger, Guid, Exception?> _logModelParallelFailed =
+            LoggerMessage.Define<Guid>(
+                LogLevel.Error,
+                new EventId(23205, nameof(LogModelParallelFailed)),
+                "Failed to execute model parallel plan {ExecutionId}");
+
+        private static void LogModelParallelFailed(ILogger logger, Guid executionId, Exception exception)
+            => _logModelParallelFailed(logger, executionId, exception);
+
+        private static readonly Action<ILogger, Guid, int, int, Exception?> _logPipelineStarted =
+            LoggerMessage.Define<Guid, int, int>(
+                LogLevel.Information,
+                new EventId(23206, nameof(LogPipelineStarted)),
+                "Starting pipeline execution {ExecutionId} with {StageCount} stages and {MicrobatchCount} microbatches");
+
+        private static void LogPipelineStarted(ILogger logger, Guid executionId, int stageCount, int microbatchCount)
+            => _logPipelineStarted(logger, executionId, stageCount, microbatchCount, null);
+
+        private static readonly Action<ILogger, Guid, double, Exception?> _logPipelineCompleted =
+            LoggerMessage.Define<Guid, double>(
+                LogLevel.Information,
+                new EventId(23207, nameof(LogPipelineCompleted)),
+                "Completed pipeline execution {ExecutionId} in {DurationMs}ms");
+
+        private static void LogPipelineCompleted(ILogger logger, Guid executionId, double durationMs)
+            => _logPipelineCompleted(logger, executionId, durationMs, null);
+
+        private static readonly Action<ILogger, Guid, Exception?> _logPipelineFailed =
+            LoggerMessage.Define<Guid>(
+                LogLevel.Error,
+                new EventId(23208, nameof(LogPipelineFailed)),
+                "Failed to execute pipeline plan {ExecutionId}");
+
+        private static void LogPipelineFailed(ILogger logger, Guid executionId, Exception exception)
+            => _logPipelineFailed(logger, executionId, exception);
+
+        private static readonly Action<ILogger, string, int, Exception?> _logDeviceTaskStarting =
+            LoggerMessage.Define<string, int>(
+                LogLevel.Trace,
+                new EventId(23209, nameof(LogDeviceTaskStarting)),
+                "Starting execution on device {DeviceId} for task {TaskIndex}");
+
+        private static void LogDeviceTaskStarting(ILogger logger, string deviceId, int taskIndex)
+            => _logDeviceTaskStarting(logger, deviceId, taskIndex, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logDependenciesSatisfied =
+            LoggerMessage.Define<int>(
+                LogLevel.Trace,
+                new EventId(23210, nameof(LogDependenciesSatisfied)),
+                "Dependencies satisfied for device task {TaskIndex}");
+
+        private static void LogDependenciesSatisfied(ILogger logger, int taskIndex)
+            => _logDependenciesSatisfied(logger, taskIndex, null);
+
+        private static readonly Action<ILogger, string, int, double, Exception?> _logDeviceTaskCompleted =
+            LoggerMessage.Define<string, int, double>(
+                LogLevel.Trace,
+                new EventId(23211, nameof(LogDeviceTaskCompleted)),
+                "Completed execution on device {DeviceId} for task {TaskIndex} in {ElapsedMs}ms");
+
+        private static void LogDeviceTaskCompleted(ILogger logger, string deviceId, int taskIndex, double elapsedMs)
+            => _logDeviceTaskCompleted(logger, deviceId, taskIndex, elapsedMs, null);
+
+        private static readonly Action<ILogger, string, int, Exception?> _logDeviceTaskFailed =
+            LoggerMessage.Define<string, int>(
+                LogLevel.Error,
+                new EventId(23212, nameof(LogDeviceTaskFailed)),
+                "Failed execution on device {DeviceId} for task {TaskIndex}");
+
+        private static void LogDeviceTaskFailed(ILogger logger, string deviceId, int taskIndex, Exception exception)
+            => _logDeviceTaskFailed(logger, deviceId, taskIndex, exception);
+
+        private static readonly Action<ILogger, string, string, Exception?> _logLayerExecutionStarting =
+            LoggerMessage.Define<string, string>(
+                LogLevel.Trace,
+                new EventId(23213, nameof(LogLayerExecutionStarting)),
+                "Starting execution of layer {LayerId} on device {DeviceId}");
+
+        private static void LogLayerExecutionStarting(ILogger logger, string layerId, string deviceId)
+            => _logLayerExecutionStarting(logger, layerId, deviceId, null);
+
+        private static readonly Action<ILogger, string, double, Exception?> _logLayerExecutionCompleted =
+            LoggerMessage.Define<string, double>(
+                LogLevel.Trace,
+                new EventId(23214, nameof(LogLayerExecutionCompleted)),
+                "Completed execution of layer {LayerId} in {ElapsedMs}ms");
+
+        private static void LogLayerExecutionCompleted(ILogger logger, string layerId, double elapsedMs)
+            => _logLayerExecutionCompleted(logger, layerId, elapsedMs, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logLayerExecutionFailed =
+            LoggerMessage.Define<string>(
+                LogLevel.Error,
+                new EventId(23215, nameof(LogLayerExecutionFailed)),
+                "Failed execution of layer {LayerId}");
+
+        private static void LogLayerExecutionFailed(ILogger logger, string layerId, Exception exception)
+            => _logLayerExecutionFailed(logger, layerId, exception);
+
+        private static readonly Action<ILogger, int, int, string, Exception?> _logPipelineExecuting =
+            LoggerMessage.Define<int, int, string>(
+                LogLevel.Trace,
+                new EventId(23216, nameof(LogPipelineExecuting)),
+                "Executing pipeline with {StageCount} stages and {MicrobatchCount} microbatches using {Strategy} scheduling");
+
+        private static void LogPipelineExecuting(ILogger logger, int stageCount, int microbatchCount, string strategy)
+            => _logPipelineExecuting(logger, stageCount, microbatchCount, strategy, null);
+
+        private static readonly Action<ILogger, int, int, Exception?> _logProcessingMicrobatch =
+            LoggerMessage.Define<int, int>(
+                LogLevel.Trace,
+                new EventId(23217, nameof(LogProcessingMicrobatch)),
+                "Processing microbatch {MicrobatchIndex}/{TotalMicrobatches}");
+
+        private static void LogProcessingMicrobatch(ILogger logger, int microbatchIndex, int totalMicrobatches)
+            => _logProcessingMicrobatch(logger, microbatchIndex, totalMicrobatches, null);
+
+        private static readonly Action<ILogger, string, int, Exception?> _logExecutingStage =
+            LoggerMessage.Define<string, int>(
+                LogLevel.Trace,
+                new EventId(23218, nameof(LogExecutingStage)),
+                "Executing stage {StageId} for microbatch {MicrobatchIndex}");
+
+        private static void LogExecutingStage(ILogger logger, string stageId, int microbatchIndex)
+            => _logExecutingStage(logger, stageId, microbatchIndex, null);
+
+        private static readonly Action<ILogger, string, int, Exception?> _logStageExecutionFailed =
+            LoggerMessage.Define<string, int>(
+                LogLevel.Error,
+                new EventId(23219, nameof(LogStageExecutionFailed)),
+                "Failed execution of stage {StageId} for microbatch {MicrobatchIndex}");
+
+        private static void LogStageExecutionFailed(ILogger logger, string stageId, int microbatchIndex, Exception exception)
+            => _logStageExecutionFailed(logger, stageId, microbatchIndex, exception);
+
+        private static readonly Action<ILogger, Exception?> _logExecutorDisposing =
+            LoggerMessage.Define(
+                LogLevel.Information,
+                new EventId(23220, nameof(LogExecutorDisposing)),
+                "Disposing ExecutionPlanExecutor");
+
+        private static void LogExecutorDisposing(ILogger logger)
+            => _logExecutorDisposing(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logExecutorDisposed =
+            LoggerMessage.Define(
+                LogLevel.Information,
+                new EventId(23221, nameof(LogExecutorDisposed)),
+                "ExecutionPlanExecutor disposed");
+
+        private static void LogExecutorDisposed(ILogger logger)
+            => _logExecutorDisposed(logger, null);
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ExecutionCoordinator _coordinator = new(logger);
         private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
@@ -52,7 +251,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting data parallel execution {executionId} for kernel {plan.KernelName} on {plan.Devices.Count} devices");
+            LogDataParallelStarted(_logger, executionId, plan.KernelName, plan.Devices.Count);
 
             try
             {
@@ -82,14 +281,14 @@ namespace DotCompute.Core.Execution
                 // Stop profiling and collect detailed metrics
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
 
-                _logger.LogInfoMessage($"Completed data parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms with {deviceResults.Count(r => r.Success) * 100.0 / deviceResults.Length}% success rate");
+                LogDataParallelCompleted(_logger, executionId, stopwatch.Elapsed.TotalMilliseconds, deviceResults.Count(r => r.Success) * 100.0 / deviceResults.Length);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed to execute data parallel plan {executionId}");
+                LogDataParallelFailed(_logger, executionId, ex);
 
                 return new ParallelExecutionResult
                 {
@@ -119,7 +318,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting model parallel execution {executionId} for {plan.ModelLayers.Count} layers on {plan.Devices.Count} devices");
+            LogModelParallelStarted(_logger, executionId, plan.ModelLayers.Count, plan.Devices.Count);
 
             try
             {
@@ -138,14 +337,14 @@ namespace DotCompute.Core.Execution
 
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
 
-                _logger.LogInfoMessage($"Completed model parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                LogModelParallelCompleted(_logger, executionId, stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed to execute model parallel plan {executionId}");
+                LogModelParallelFailed(_logger, executionId, ex);
 
                 return new ParallelExecutionResult
                 {
@@ -174,7 +373,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting pipeline execution {executionId} with {plan.Stages.Count} stages and {plan.MicrobatchConfig.Count} microbatches");
+            LogPipelineStarted(_logger, executionId, plan.Stages.Count, plan.MicrobatchConfig.Count);
 
             try
             {
@@ -193,14 +392,14 @@ namespace DotCompute.Core.Execution
 
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
 
-                _logger.LogInfoMessage($"Completed pipeline execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
+                LogPipelineCompleted(_logger, executionId, stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed to execute pipeline plan {executionId}");
+                LogPipelineFailed(_logger, executionId, ex);
 
                 return new ParallelExecutionResult
                 {
@@ -261,7 +460,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                _logger.LogTrace("Starting execution on device {DeviceId} for task {TaskIndex}", deviceId, taskIndex);
+                LogDeviceTaskStarting(_logger, deviceId, taskIndex);
 
                 // Wait for dependencies if any
                 if (deviceTask.Dependencies.Count > 0)
@@ -271,7 +470,7 @@ namespace DotCompute.Core.Execution
                         .ToArray();
 
                     await _coordinator.WaitForAllEventsAsync(dependencyEvents, cancellationToken);
-                    _logger.LogTrace("Dependencies satisfied for device task {TaskIndex}", taskIndex);
+                    LogDependenciesSatisfied(_logger, taskIndex);
                 }
 
                 // Execute the kernel
@@ -305,15 +504,14 @@ namespace DotCompute.Core.Execution
                     MemoryBandwidthGBps = CalculateMemoryBandwidth(deviceTask, stopwatch.Elapsed.TotalMilliseconds)
                 };
 
-                _logger.LogTrace("Completed execution on device {DeviceId} for task {TaskIndex} in {ElapsedMs:F2}ms",
-                    deviceId, taskIndex, stopwatch.Elapsed.TotalMilliseconds);
+                LogDeviceTaskCompleted(_logger, deviceId, taskIndex, stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed execution on device {deviceId} for task {taskIndex}");
+                LogDeviceTaskFailed(_logger, deviceId, taskIndex, ex);
 
                 // Signal completion even on failure to avoid deadlocks
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
@@ -380,7 +578,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                _logger.LogTrace("Starting execution of layer {LayerId} on device {DeviceId}", layer.LayerId, device.Info.Id);
+                LogLayerExecutionStarting(_logger, layer.LayerId, device.Info.Id);
 
                 // Wait for dependencies
                 if (layer.Dependencies.Count > 0)
@@ -416,15 +614,14 @@ namespace DotCompute.Core.Execution
                     MemoryUsageBytes = layer.MemoryRequirementBytes
                 };
 
-                _logger.LogTrace("Completed execution of layer {LayerId} in {ElapsedMs:F2}ms",
-                    layer.LayerId, stopwatch.Elapsed.TotalMilliseconds);
+                LogLayerExecutionCompleted(_logger, layer.LayerId, stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed execution of layer {layer.LayerId}");
+                LogLayerExecutionFailed(_logger, layer.LayerId, ex);
 
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
 
@@ -448,8 +645,7 @@ namespace DotCompute.Core.Execution
             var microbatchConfig = plan.MicrobatchConfig;
             var results = new List<StageExecutionResult>();
 
-            _logger.LogTrace("Executing pipeline with {StageCount} stages and {MicrobatchCount} microbatches using {Strategy} scheduling",
-                stages.Count, microbatchConfig.Count, microbatchConfig.SchedulingStrategy);
+            LogPipelineExecuting(_logger, plan.Stages.Count, plan.MicrobatchConfig.Count, plan.SchedulingStrategy.ToString());
 
             // Execute based on scheduling strategy
             switch (microbatchConfig.SchedulingStrategy)
@@ -478,8 +674,7 @@ namespace DotCompute.Core.Execution
 
             for (var microbatch = 0; microbatch < microbatchConfig.Count; microbatch++)
             {
-                _logger.LogTrace("Processing microbatch {MicrobatchIndex}/{TotalMicrobatches}",
-                    microbatch + 1, microbatchConfig.Count);
+                LogProcessingMicrobatch(_logger, microbatch, plan.MicrobatchConfig.Count);
 
                 // Process each stage sequentially for this microbatch
                 for (var stageIndex = 0; stageIndex < stages.Count; stageIndex++)
@@ -555,8 +750,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                _logger.LogTrace("Executing stage {StageId} for microbatch {MicrobatchIndex}",
-                    stage.StageId, microbatchIndex);
+                LogExecutingStage(_logger, stage.StageId, microbatchIndex);
 
                 // Execute stage kernel for this microbatch
                 var kernelArgs = CreateStageKernelArguments(stage, microbatchIndex);
@@ -578,7 +772,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogErrorMessage(ex, $"Failed execution of stage {stage.StageId} for microbatch {microbatchIndex}");
+                LogStageExecutionFailed(_logger, stage.StageId, microbatchIndex, ex);
 
                 return new StageExecutionResult
                 {
@@ -932,14 +1126,14 @@ namespace DotCompute.Core.Execution
                 return;
             }
 
-            _logger.LogInfoMessage("Disposing ExecutionPlanExecutor");
+            LogExecutorDisposing(_logger);
 
             await _coordinator.DisposeAsync();
             await _resourceTracker.DisposeAsync();
             await _profiler.DisposeAsync();
 
             _disposed = true;
-            _logger.LogInfoMessage("ExecutionPlanExecutor disposed");
+            LogExecutorDisposed(_logger);
         }
     }
 }

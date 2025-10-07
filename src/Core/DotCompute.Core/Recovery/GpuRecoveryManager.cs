@@ -23,7 +23,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
     // LoggerMessage delegates - Event ID range 13100-13111 for GpuRecoveryManager
     private static readonly Action<ILogger, string, Exception?> _logManagerInitialized =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13100, nameof(LogManagerInitialized)),
             "GPU Recovery Manager initialized with configuration: {Config}");
 
@@ -32,7 +32,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, string, Exception?> _logGpuErrorDetected =
         LoggerMessage.Define<string, string>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13101, nameof(LogGpuErrorDetected)),
             "GPU error detected on device {DeviceId}: {ErrorMessage}");
 
@@ -41,7 +41,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, string, Exception?> _logRecoveryStrategySelected =
         LoggerMessage.Define<string, string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13102, nameof(LogRecoveryStrategySelected)),
             "Using recovery strategy {Strategy} for device {DeviceId}");
 
@@ -50,7 +50,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, string, long, Exception?> _logRecoverySuccessful =
         LoggerMessage.Define<string, string, long>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13103, nameof(LogRecoverySuccessful)),
             "GPU recovery successful for device {DeviceId} using {Strategy} in {DurationMs}ms");
 
@@ -59,7 +59,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logRecoveryException =
         LoggerMessage.Define<string>(
-            LogLevel.Error,
+            Microsoft.Extensions.Logging.LogLevel.Error,
             new EventId(13104, nameof(LogRecoveryException)),
             "Exception during GPU recovery for device {DeviceId}");
 
@@ -68,7 +68,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logDeviceResetAttempt =
         LoggerMessage.Define<string>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13105, nameof(LogDeviceResetAttempt)),
             "Attempting device reset for {DeviceId}");
 
@@ -77,7 +77,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logDeviceResetCompleted =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13106, nameof(LogDeviceResetCompleted)),
             "Device reset completed for {DeviceId}");
 
@@ -86,7 +86,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logDeviceResetFailed =
         LoggerMessage.Define<string>(
-            LogLevel.Error,
+            Microsoft.Extensions.Logging.LogLevel.Error,
             new EventId(13107, nameof(LogDeviceResetFailed)),
             "Device reset failed for {DeviceId}");
 
@@ -95,7 +95,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logSimpleRetry =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13108, nameof(LogSimpleRetry)),
             "Attempting simple retry for device {DeviceId}");
 
@@ -104,7 +104,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logMemoryRecovery =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13109, nameof(LogMemoryRecovery)),
             "Performing memory recovery for device {DeviceId}");
 
@@ -113,7 +113,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logKernelTermination =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13110, nameof(LogKernelTermination)),
             "Terminating hanging kernels for device {DeviceId}");
 
@@ -122,7 +122,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logContextReset =
         LoggerMessage.Define<string>(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13111, nameof(LogContextReset)),
             "Resetting context for device {DeviceId}");
 
@@ -131,7 +131,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logDeviceResetRecovery =
         LoggerMessage.Define<string>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13112, nameof(LogDeviceResetRecovery)),
             "Performing device reset recovery for device {DeviceId}");
 
@@ -140,7 +140,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, int, Exception?> _logDeviceHealthDegraded =
         LoggerMessage.Define<string, int>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13113, nameof(LogDeviceHealthDegraded)),
             "Device {DeviceId} health degraded: {ConsecutiveFailures} consecutive failures");
 
@@ -149,7 +149,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, string, Exception?> _logKernelHanging =
         LoggerMessage.Define<string, string>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13114, nameof(LogKernelHanging)),
             "Kernel {KernelId} appears to be hanging (running for {ExecutionTime})");
 
@@ -158,7 +158,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logKernelCancelFailed =
         LoggerMessage.Define<string>(
-            LogLevel.Error,
+            Microsoft.Extensions.Logging.LogLevel.Error,
             new EventId(13115, nameof(LogKernelCancelFailed)),
             "Failed to auto-cancel hanging kernel {KernelId}");
 
@@ -167,7 +167,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, Exception?> _logHealthCheckError =
         LoggerMessage.Define(
-            LogLevel.Error,
+            Microsoft.Extensions.Logging.LogLevel.Error,
             new EventId(13116, nameof(LogHealthCheckError)),
             "Error during GPU health check");
 
@@ -176,7 +176,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, Exception?> _logManagerDisposed =
         LoggerMessage.Define(
-            LogLevel.Information,
+            Microsoft.Extensions.Logging.LogLevel.Information,
             new EventId(13117, nameof(LogManagerDisposed)),
             "GPU Recovery Manager disposed");
 
@@ -185,7 +185,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
 
     private static readonly Action<ILogger, string, Exception?> _logMonitorDisposeError =
         LoggerMessage.Define<string>(
-            LogLevel.Warning,
+            Microsoft.Extensions.Logging.LogLevel.Warning,
             new EventId(13118, nameof(LogMonitorDisposeError)),
             "Error disposing kernel monitor {KernelId}");
 

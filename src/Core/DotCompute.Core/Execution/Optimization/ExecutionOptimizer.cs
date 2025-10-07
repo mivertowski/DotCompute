@@ -18,9 +18,157 @@ namespace DotCompute.Core.Execution.Optimization
     /// </remarks>
     /// <param name="logger">The logger instance for diagnostic information.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-    public sealed class ExecutionOptimizer(ILogger logger)
+    public sealed partial class ExecutionOptimizer(ILogger logger)
     {
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        #region LoggerMessage Delegates - Event ID range 23300-23315
+
+        private static readonly Action<ILogger, int, Exception?> _logOptimizingDataParallel =
+            LoggerMessage.Define<int>(
+                LogLevel.Information,
+                new EventId(23300, nameof(LogOptimizingDataParallel)),
+                "Optimizing data parallel execution plan for {DeviceCount} devices");
+
+        private static void LogOptimizingDataParallel(ILogger logger, int deviceCount)
+            => _logOptimizingDataParallel(logger, deviceCount, null);
+
+        private static readonly Action<ILogger, Exception?> _logDataParallelOptimized =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(23301, nameof(LogDataParallelOptimized)),
+                "Data parallel plan optimization completed");
+
+        private static void LogDataParallelOptimized(ILogger logger)
+            => _logDataParallelOptimized(logger, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logOptimizingModelParallel =
+            LoggerMessage.Define<int>(
+                LogLevel.Information,
+                new EventId(23302, nameof(LogOptimizingModelParallel)),
+                "Optimizing model parallel execution plan for {LayerCount} layers");
+
+        private static void LogOptimizingModelParallel(ILogger logger, int layerCount)
+            => _logOptimizingModelParallel(logger, layerCount, null);
+
+        private static readonly Action<ILogger, Exception?> _logModelParallelOptimized =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(23303, nameof(LogModelParallelOptimized)),
+                "Model parallel plan optimization completed");
+
+        private static void LogModelParallelOptimized(ILogger logger)
+            => _logModelParallelOptimized(logger, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logOptimizingPipeline =
+            LoggerMessage.Define<int>(
+                LogLevel.Information,
+                new EventId(23304, nameof(LogOptimizingPipeline)),
+                "Optimizing pipeline execution plan for {StageCount} stages");
+
+        private static void LogOptimizingPipeline(ILogger logger, int stageCount)
+            => _logOptimizingPipeline(logger, stageCount, null);
+
+        private static readonly Action<ILogger, Exception?> _logPipelineOptimized =
+            LoggerMessage.Define(
+                LogLevel.Debug,
+                new EventId(23305, nameof(LogPipelineOptimized)),
+                "Pipeline plan optimization completed");
+
+        private static void LogPipelineOptimized(ILogger logger)
+            => _logPipelineOptimized(logger, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logOptimizingUnifiedMemory =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23306, nameof(LogOptimizingUnifiedMemory)),
+                "Optimizing for unified memory on device {DeviceId}");
+
+        private static void LogOptimizingUnifiedMemory(ILogger logger, string deviceId)
+            => _logOptimizingUnifiedMemory(logger, deviceId, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logOptimizingDiscreteMemory =
+            LoggerMessage.Define<string>(
+                LogLevel.Trace,
+                new EventId(23307, nameof(LogOptimizingDiscreteMemory)),
+                "Optimizing for discrete memory on device {DeviceId}");
+
+        private static void LogOptimizingDiscreteMemory(ILogger logger, string deviceId)
+            => _logOptimizingDiscreteMemory(logger, deviceId, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logAnalyzingSynchronization =
+            LoggerMessage.Define<int>(
+                LogLevel.Trace,
+                new EventId(23308, nameof(LogAnalyzingSynchronization)),
+                "Analyzing {DependencyCount} task dependencies for synchronization optimization");
+
+        private static void LogAnalyzingSynchronization(ILogger logger, int dependencyCount)
+            => _logAnalyzingSynchronization(logger, dependencyCount, null);
+
+        private static readonly Action<ILogger, string, string, Exception?> _logApplyingDeviceOptimizations =
+            LoggerMessage.Define<string, string>(
+                LogLevel.Trace,
+                new EventId(23309, nameof(LogApplyingDeviceOptimizations)),
+                "Applying device-specific optimizations for {DeviceType} device {DeviceId}");
+
+        private static void LogApplyingDeviceOptimizations(ILogger logger, string deviceType, string deviceId)
+            => _logApplyingDeviceOptimizations(logger, deviceType, deviceId, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizingLayerPlacement =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23310, nameof(LogOptimizingLayerPlacement)),
+                "Optimizing layer placement for minimal communication overhead");
+
+        private static void LogOptimizingLayerPlacement(ILogger logger)
+            => _logOptimizingLayerPlacement(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizingCommunicationSchedule =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23311, nameof(LogOptimizingCommunicationSchedule)),
+                "Optimizing communication schedule for model parallel execution");
+
+        private static void LogOptimizingCommunicationSchedule(ILogger logger)
+            => _logOptimizingCommunicationSchedule(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logApplyingGradientCheckpointing =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23312, nameof(LogApplyingGradientCheckpointing)),
+                "Applying gradient checkpointing optimizations");
+
+        private static void LogApplyingGradientCheckpointing(ILogger logger)
+            => _logApplyingGradientCheckpointing(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizingMicrobatchSize =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23313, nameof(LogOptimizingMicrobatchSize)),
+                "Optimizing microbatch size for pipeline execution");
+
+        private static void LogOptimizingMicrobatchSize(ILogger logger)
+            => _logOptimizingMicrobatchSize(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizingBufferManagement =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23314, nameof(LogOptimizingBufferManagement)),
+                "Optimizing buffer management for pipeline stages");
+
+        private static void LogOptimizingBufferManagement(ILogger logger)
+            => _logOptimizingBufferManagement(logger, null);
+
+        private static readonly Action<ILogger, Exception?> _logBalancingPipelineStages =
+            LoggerMessage.Define(
+                LogLevel.Trace,
+                new EventId(23315, nameof(LogBalancingPipelineStages)),
+                "Balancing pipeline stages for optimal throughput");
+
+        private static void LogBalancingPipelineStages(ILogger logger)
+            => _logBalancingPipelineStages(logger, null);
+
+        #endregion
 
         /// <summary>
         /// Optimizes data parallel execution plan for improved performance across devices.
@@ -36,8 +184,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-
-            _logger.LogInfoMessage("Optimizing data parallel execution plan for {plan.Devices.Length} devices");
+            LogOptimizingDataParallel(_logger, plan.Devices.Length);
 
             // 1. Optimize memory allocation patterns
             await OptimizeMemoryAllocationAsync(plan, cancellationToken);
@@ -48,7 +195,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Apply device-specific optimizations
             await ApplyDeviceSpecificOptimizationsAsync(plan, cancellationToken);
 
-            _logger.LogDebugMessage("Data parallel plan optimization completed");
+            LogDataParallelOptimized(_logger);
         }
 
         /// <summary>
@@ -65,8 +212,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-
-            _logger.LogInfoMessage("Optimizing model parallel execution plan for {plan.ModelLayers.Length} layers");
+            LogOptimizingModelParallel(_logger, plan.ModelLayers.Length);
 
             // 1. Optimize layer placement for minimal communication
             await OptimizeLayerPlacementAsync(plan, cancellationToken);
@@ -77,7 +223,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Apply gradient checkpointing optimizations
             await ApplyGradientCheckpointingAsync(plan, cancellationToken);
 
-            _logger.LogDebugMessage("Model parallel plan optimization completed");
+            LogModelParallelOptimized(_logger);
         }
 
         /// <summary>
@@ -94,8 +240,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-
-            _logger.LogInfoMessage("Optimizing pipeline execution plan for {plan.Stages.Length} stages");
+            LogOptimizingPipeline(_logger, plan.Stages.Length);
 
             // 1. Optimize microbatch sizing
             await OptimizeMicrobatchSizeAsync(plan, cancellationToken);
@@ -106,7 +251,7 @@ namespace DotCompute.Core.Execution.Optimization
             // 3. Balance pipeline stages
             await BalancePipelineStagesAsync(plan, cancellationToken);
 
-            _logger.LogDebugMessage("Pipeline plan optimization completed");
+            LogPipelineOptimized(_logger);
         }
 
         #region Private Optimization Methods
@@ -126,12 +271,12 @@ namespace DotCompute.Core.Execution.Optimization
                 if (device.Info.IsUnifiedMemory)
                 {
                     // Optimize for unified memory architecture
-                    _logger.LogTrace("Optimizing for unified memory on device {DeviceId}", device.Info.Id);
+                    LogOptimizingUnifiedMemory(_logger, device.Info.Id);
                 }
                 else
                 {
                     // Optimize for discrete memory architecture
-                    _logger.LogTrace("Optimizing for discrete memory on device {DeviceId}", device.Info.Id);
+                    LogOptimizingDiscreteMemory(_logger, device.Info.Id);
                 }
             }
 
@@ -148,8 +293,7 @@ namespace DotCompute.Core.Execution.Optimization
             // Minimize synchronization overhead by analyzing dependency patterns
             var taskDependencies = plan.DeviceTasks.SelectMany(t => t.Dependencies).ToList();
 
-
-            _logger.LogTrace("Analyzing {DependencyCount} task dependencies for synchronization optimization", taskDependencies.Count);
+            LogAnalyzingSynchronization(_logger, taskDependencies.Count);
 
             // Additional synchronization optimization logic would go here - TODO
             await ValueTask.CompletedTask;
@@ -166,8 +310,7 @@ namespace DotCompute.Core.Execution.Optimization
             foreach (var task in plan.DeviceTasks)
             {
                 var device = task.Device;
-                _logger.LogTrace("Applying device-specific optimizations for {DeviceType} device {DeviceId}",
-                    device.Info.DeviceType, device.Info.Id);
+                LogApplyingDeviceOptimizations(_logger, device.Info.DeviceType.ToString(), device.Info.Id);
             }
 
             await ValueTask.CompletedTask;
@@ -180,7 +323,7 @@ namespace DotCompute.Core.Execution.Optimization
             ModelParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Optimizing layer placement for minimal communication overhead");
+            LogOptimizingLayerPlacement(_logger);
             await ValueTask.CompletedTask;
         }
 
@@ -191,7 +334,7 @@ namespace DotCompute.Core.Execution.Optimization
             ModelParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Optimizing communication schedule for model parallel execution");
+            LogOptimizingCommunicationSchedule(_logger);
             await ValueTask.CompletedTask;
         }
 
@@ -202,7 +345,7 @@ namespace DotCompute.Core.Execution.Optimization
             ModelParallelExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Applying gradient checkpointing optimizations");
+            LogApplyingGradientCheckpointing(_logger);
             await ValueTask.CompletedTask;
         }
 
@@ -213,7 +356,7 @@ namespace DotCompute.Core.Execution.Optimization
             PipelineExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Optimizing microbatch size for pipeline execution");
+            LogOptimizingMicrobatchSize(_logger);
             await ValueTask.CompletedTask;
         }
 
@@ -224,7 +367,7 @@ namespace DotCompute.Core.Execution.Optimization
             PipelineExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Optimizing buffer management for pipeline stages");
+            LogOptimizingBufferManagement(_logger);
             await ValueTask.CompletedTask;
         }
 
@@ -235,7 +378,7 @@ namespace DotCompute.Core.Execution.Optimization
             PipelineExecutionPlan<T> plan,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            _logger.LogTrace("Balancing pipeline stages for optimal throughput");
+            LogBalancingPipelineStages(_logger);
             await ValueTask.CompletedTask;
         }
 
