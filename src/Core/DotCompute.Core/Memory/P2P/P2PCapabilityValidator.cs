@@ -294,7 +294,7 @@ namespace DotCompute.Core.Memory.P2P
                     var targetDevice = devices[j];
 
                     var task = ExecuteP2PBenchmarkAsync(sourceDevice, targetDevice, benchmarkOptions, cancellationToken)
-                        .ContinueWith(t => benchmarkResult.PairwiseBenchmarks.Add(t.Output), TaskScheduler.Default);
+                        .ContinueWith(t => benchmarkResult.PairwiseBenchmarks.Add(t.Result), TaskScheduler.Default);
 
                     tasks.Add(task);
                 }
@@ -371,13 +371,14 @@ namespace DotCompute.Core.Memory.P2P
         /// </summary>
         /// <returns>The result of the operation.</returns>
 
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             if (!_disposed)
             {
                 _benchmarkSemaphore?.Dispose();
                 _disposed = true;
             }
+            return ValueTask.CompletedTask;
         }
     }
 }

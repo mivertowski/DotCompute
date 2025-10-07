@@ -86,10 +86,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         string identifier,
         string purpose)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
@@ -125,9 +122,9 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
             });
 
             result.IsSuccessful = true;
-            result.KeyFingerprint = await _hashCalculator.CalculateKeyFingerprintAsync(keyContainer);
+            result.Fingerprint = await _hashCalculator.CalculateKeyFingerprintAsync(keyContainer);
 
-            _logger.LogInfoMessage($"Cryptographic key generated successfully: Id={identifier}, Fingerprint={result.KeyFingerprint}");
+            _logger.LogInfoMessage($"Cryptographic key generated successfully: Id={identifier}, Fingerprint={result.Fingerprint}");
 
             return result;
         }
@@ -146,10 +143,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         string algorithm = "AES-256-GCM",
         ReadOnlyMemory<byte> associatedData = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
@@ -204,10 +198,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         ReadOnlyMemory<byte> tag = default,
         ReadOnlyMemory<byte> associatedData = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
@@ -259,10 +250,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         string keyIdentifier,
         string hashAlgorithm = "SHA-256")
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
@@ -330,10 +318,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         string keyIdentifier,
         string hashAlgorithm = "SHA-256")
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(keyIdentifier);
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
@@ -390,10 +375,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
         int keySize,
         string context)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
@@ -406,10 +388,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
     /// </summary>
     public async Task<KeyRotationResult> RotateKeysAsync(bool forceRotation = false)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CryptographicSecurityOrchestrator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await _operationLock.WaitAsync();
         try
@@ -488,7 +467,7 @@ public sealed class CryptographicSecurityOrchestrator : IDisposable
     private bool ShouldRotateKey(SecureKeyContainer keyContainer)
     {
         var keyAge = DateTimeOffset.UtcNow - keyContainer.CreationTime;
-        return keyAge > _configuration.KeyMaxAge;
+        return keyAge > _configuration.KeyLifetime;
     }
 
     private async Task RotateKeyAsync(SecureKeyContainer keyContainer)

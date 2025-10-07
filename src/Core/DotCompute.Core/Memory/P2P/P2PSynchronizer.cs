@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -12,8 +13,28 @@ namespace DotCompute.Core.Memory.P2P
     /// Advanced P2P Synchronizer that provides cross-device synchronization primitives,
     /// barriers, and memory consistency guarantees for multi-GPU P2P operations.
     /// </summary>
-    public sealed class P2PSynchronizer : IAsyncDisposable
+    public sealed partial class P2PSynchronizer : IAsyncDisposable
     {
+        // LoggerMessage delegates - Event ID range 14200-14299 for P2PSynchronizer (Memory/P2P module)
+        private static readonly Action<ILogger, int, int, Exception?> _logSyncMonitor =
+            LoggerMessage.Define<int, int>(
+                MsLogLevel.Trace,
+                new EventId(14200, nameof(LogSyncMonitor)),
+                "Sync monitor: {ActiveBarriers} active barriers, {ActiveEvents} active events with waiters");
+
+        private static readonly Action<ILogger, Exception?> _logMonitoringError =
+            LoggerMessage.Define(
+                MsLogLevel.Warning,
+                new EventId(14201, nameof(LogMonitoringError)),
+                "Error in synchronization health monitoring");
+
+        // Wrapper methods
+        private static void LogSyncMonitor(ILogger logger, int activeBarriers, int activeEvents)
+            => _logSyncMonitor(logger, activeBarriers, activeEvents, null);
+
+        private static void LogMonitoringError(ILogger logger, Exception ex)
+            => _logMonitoringError(logger, ex);
+
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, P2PSyncBarrier> _barriers;
         private readonly ConcurrentDictionary<string, P2PSyncEvent> _syncEvents;
@@ -711,12 +732,11 @@ namespace DotCompute.Core.Memory.P2P
             try
             {
                 var activeBarrierCount = _barriers.Values.Count(b => b.BarrierState == P2PBarrierState.Active);
-                var activeEventCount = _syncEvents.Values.Count(e => e.WaitingDevices.Any());
+                var activeEventCount = _syncEvents.Values.Count(e => !e.WaitingDevices.IsEmpty);
 
                 if (activeBarrierCount > 0 || activeEventCount > 0)
                 {
-                    _logger.LogTrace("Sync monitor: {ActiveBarriers} active barriers, {ActiveEvents} active events with waiters",
-                        activeBarrierCount, activeEventCount);
+                    LogSyncMonitor(_logger, activeBarrierCount, activeEventCount);
                 }
 
                 // Check for stuck barriers (created more than 2x timeout ago)
@@ -732,7 +752,7 @@ namespace DotCompute.Core.Memory.P2P
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error in synchronization health monitoring");
+                LogMonitoringError(_logger, ex);
             }
         }
         /// <summary>

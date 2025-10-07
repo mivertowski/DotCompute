@@ -31,7 +31,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
     /// Gets the compiled binary data.
     /// Contains the machine code or intermediate representation of the kernel.
     /// </summary>
-    public required byte[] Binary { get; init; }
+    public required IReadOnlyList<byte> Binary { get; init; }
 
     /// <summary>
     /// Gets the kernel handle (platform-specific).
@@ -43,13 +43,13 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
     /// Gets the kernel parameters.
     /// Defines the arguments expected by the kernel during execution.
     /// </summary>
-    public required KernelParameter[] Parameters { get; init; }
+    public required IReadOnlyList<KernelParameter> Parameters { get; init; }
 
     /// <summary>
     /// Gets the required work group size.
     /// Specifies constraints on thread block dimensions for optimal performance.
     /// </summary>
-    public int[]? RequiredWorkGroupSize { get; init; }
+    public IReadOnlyList<int>? RequiredWorkGroupSize { get; init; }
 
     /// <summary>
     /// Gets the shared memory size in bytes.
@@ -72,7 +72,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
     /// <summary>
     /// Gets whether the kernel is compiled and ready for execution.
     /// </summary>
-    public bool IsCompiled => Handle != IntPtr.Zero && Binary.Length > 0;
+    public bool IsCompiled => Handle != IntPtr.Zero && Binary.Count > 0;
 
     /// <summary>
     /// Converts this ManagedCompiledKernel to an Abstractions CompiledKernel.
@@ -82,7 +82,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
     {
         var metadata = PerformanceMetadata ?? [];
         metadata["Handle"] = Handle;
-        metadata["EntryPoint"] = Parameters.Length > 0 ? Name : "main";
+        metadata["EntryPoint"] = Parameters.Count > 0 ? Name : "main";
         metadata["SharedMemorySize"] = SharedMemorySize;
         if (RequiredWorkGroupSize != null)
         {
@@ -122,10 +122,10 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
         try
         {
             // Validate parameters against kernel definition
-            if (arguments.Count != Parameters.Length)
+            if (arguments.Count != Parameters.Count)
             {
                 throw new ArgumentException(
-                    $"Kernel '{Name}' expects {Parameters.Length} parameters but received {arguments.Count}");
+                    $"Kernel '{Name}' expects {Parameters.Count} parameters but received {arguments.Count}");
             }
 
             // For managed kernels, the Handle should point to a delegate or reflection method

@@ -51,6 +51,15 @@ public sealed class PerformanceProfiler : IDisposable
     private static readonly Action<ILogger, Exception> LogProcessorUsageFailed =
         LoggerMessage.Define(LogLevel.Trace, new EventId(9006, nameof(LogProcessorUsageFailed)),
             "Failed to get processor usage from hardware counter");
+
+    private static readonly Action<ILogger, Exception> LogHwCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(9007, nameof(LogHwCounterInitFailed)),
+            "Failed to initialize hardware performance counters");
+
+    private static readonly Action<ILogger, Exception> LogWindowsCounterInitFailed =
+        LoggerMessage.Define(LogLevel.Trace, new EventId(9008, nameof(LogWindowsCounterInitFailed)),
+            "Could not initialize some Windows performance counters");
+
     private readonly PerformanceProfilerOptions _options;
     private readonly ConcurrentDictionary<string, ActiveProfile> _activeProfiles;
     private readonly ConcurrentQueue<ProfileSample> _profileSamples;
@@ -198,7 +207,7 @@ public sealed class PerformanceProfiler : IDisposable
             DeviceId = deviceId,
             StartTime = executionMetrics.StartTime,
             EndTime = executionMetrics.EndTime,
-            ExecutionTime = executionMetrics.Timings,
+            ExecutionTime = executionMetrics.ExecutionTime,
 
             // Performance characteristics
 
@@ -377,7 +386,7 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Timing analysis
 
-            AverageExecutionTimeMs = kernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds),
+            AverageExecutionTime = kernelExecutions.Average(k => k.ExecutionTime.TotalMilliseconds),
             MinExecutionTime = kernelExecutions.Min(k => k.ExecutionTime.TotalMilliseconds),
             MaxExecutionTime = kernelExecutions.Max(k => k.ExecutionTime.TotalMilliseconds),
             ExecutionTimeStdDev = CalculateStandardDeviation(kernelExecutions.Select(k => k.ExecutionTime.TotalMilliseconds)),
@@ -633,11 +642,18 @@ public sealed class PerformanceProfiler : IDisposable
 
         try
         {
+            var systemSnapshot = GetSystemPerformanceSnapshot();
             var sample = new ProfileSample
             {
                 Timestamp = DateTimeOffset.UtcNow,
                 ActiveProfileCount = _activeProfiles.Count,
-                SystemSnapshot = GetSystemPerformanceSnapshot()
+                SystemSnapshot = new SystemSnapshot
+                {
+                    Timestamp = systemSnapshot.Timestamp,
+                    CpuUsage = systemSnapshot.CpuUsage,
+                    MemoryUsage = systemSnapshot.MemoryUsage,
+                    ThreadCount = systemSnapshot.ThreadCount
+                }
             };
 
 
@@ -672,7 +688,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to initialize hardware performance counters");
+            LogHwCounterInitFailed(_logger, ex);
         }
     }
 
@@ -688,7 +704,7 @@ public sealed class PerformanceProfiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Could not initialize some Windows performance counters");
+            LogWindowsCounterInitFailed(_logger, ex);
         }
     }
 

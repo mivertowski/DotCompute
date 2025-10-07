@@ -5,10 +5,13 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
 using TrendDirection = DotCompute.Abstractions.Types.TrendDirection;
+using AnomalyType = DotCompute.Abstractions.Debugging.AnomalyType;
+using AnomalySeverity = DotCompute.Abstractions.Debugging.AnomalySeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 
@@ -59,7 +62,11 @@ public sealed partial class DebugMetricsCollector : IDisposable
         };
 
         _metricsData.AddOrUpdate(name,
-            new MetricsSeries { Name = name, Points = new List<MetricPoint> { metricPoint } },
+            _ =>
+            {
+                var points = new Collection<MetricPoint> { metricPoint };
+                return new MetricsSeries { Name = name, Points = points };
+            },
             (key, existing) =>
             {
                 existing.Points.Add(metricPoint);
@@ -318,7 +325,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
                     ExpectedValue = mean,
                     Deviation = Math.Abs(point.Value - mean),
                     Severity = Math.Abs(point.Value - mean) > (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                    Type = point.Value > threshold ? AnomalyType.PerformanceSpike : AnomalyType.PerformanceDrop
+                    Type = point.Value > threshold ? AnomalyType.ExecutionTime : AnomalyType.MemoryUsage
                 });
             }
         }

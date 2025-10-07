@@ -124,7 +124,7 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan
     /// </summary>
-    public IList<string> PluginDirectories { get; set; } = ["plugins"];
+    public IList<string> PluginDirectories { get; } = ["plugins"];
 
     /// <summary>
     /// Gets or sets whether to enable plugin isolation

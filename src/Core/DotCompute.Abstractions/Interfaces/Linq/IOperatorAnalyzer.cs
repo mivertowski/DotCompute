@@ -85,7 +85,7 @@ public sealed class OperatorAnalysisResult
     /// <summary>
     /// Gets or sets the operand types.
     /// </summary>
-    public IReadOnlyList<Type> OperandTypes { get; set; } = Array.Empty<Type>();
+    public IReadOnlyList<Type> OperandTypes { get; } = Array.Empty<Type>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the operator is compute-friendly.

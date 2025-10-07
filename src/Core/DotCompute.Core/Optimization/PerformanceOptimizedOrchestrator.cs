@@ -381,7 +381,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
             // Record kernel execution in profiler
 
-            var executionMetrics = new KernelExecutionMetrics
+            var executionMetrics = new DotCompute.Core.Telemetry.Metrics.KernelExecutionMetrics
             {
                 StartTime = DateTimeOffset.UtcNow - executionStopwatch.Elapsed,
                 EndTime = DateTimeOffset.UtcNow,

@@ -107,5 +107,5 @@ public sealed class MemoryAccessAnalysisResult
     /// Provides actionable suggestions for improving memory subsystem performance.
     /// </summary>
     /// <value>A list of optimization recommendation strings.</value>
-    public IList<string> OptimizationRecommendations { get; set; } = [];
+    public IList<string> OptimizationRecommendations { get; } = [];
 }

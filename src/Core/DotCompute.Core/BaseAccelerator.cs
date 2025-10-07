@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using Microsoft.Extensions.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core;
 
@@ -15,8 +16,19 @@ namespace DotCompute.Core;
 /// Base abstract class for accelerator implementations, consolidating common patterns.
 /// This addresses the critical issue of 240+ lines of duplicate code across accelerator implementations.
 /// </summary>
-public abstract class BaseAccelerator : IAccelerator
+public abstract partial class BaseAccelerator : IAccelerator
 {
+    // LoggerMessage delegates - Event ID range 21000-21099 for BaseAccelerator (Core module)
+    private static readonly Action<ILogger, string, double, string, Exception?> _logCompilationMetrics =
+        LoggerMessage.Define<string, double, string>(
+            MsLogLevel.Debug,
+            new EventId(21000, nameof(LogCompilationMetrics)),
+            "Kernel '{KernelName}' compilation metrics: Time={CompilationTime}ms, Size={ByteCodeSize}");
+
+    // Wrapper method
+    private static void LogCompilationMetrics(ILogger logger, string kernelName, double compilationTimeMs, string byteCodeSize)
+        => _logCompilationMetrics(logger, kernelName, compilationTimeMs, byteCodeSize, null);
+
     private volatile int _disposed;
     private readonly ILogger _logger;
 
@@ -186,10 +198,7 @@ public abstract class BaseAccelerator : IAccelerator
     /// </summary>
     protected void LogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize = null)
     {
-        _logger.LogDebug(
-            "Kernel '{KernelName}' compilation metrics: Time={CompilationTime}ms, Size={ByteCodeSize}",
-            kernelName,
-            compilationTime.TotalMilliseconds,
+        LogCompilationMetrics(_logger, kernelName, compilationTime.TotalMilliseconds,
             byteCodeSize?.ToString(global::System.Globalization.CultureInfo.InvariantCulture) ?? "N/A");
     }
 

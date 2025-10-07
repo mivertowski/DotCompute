@@ -62,7 +62,7 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         var settings = new PipelineOptimizationSettings
         {
             OptimizationTypes = OptimizationType.DeadCodeElimination,
-            Level = (AbstractionsMemory.Pipelines.Models.OptimizationLevel)OptimizationLevel.Balanced
+            Level = OptimizationLevel.O2
         };
 
         var result = await ApplyInternalAsync([.. pipeline.Stages], settings, cancellationToken);

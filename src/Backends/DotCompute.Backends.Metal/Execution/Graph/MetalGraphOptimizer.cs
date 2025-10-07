@@ -879,13 +879,13 @@ public class MetalOptimizationResult
 internal class KernelFusionResult
 {
     public int FusionsApplied { get; set; }
-    public List<List<string>> FusedNodeGroups { get; set; } = [];
+    public List<List<string>> FusedNodeGroups { get; } = [];
 }
 
 internal class MemoryOptimizationResult
 {
     public int OptimizationsApplied { get; set; }
-    public List<List<string>> CoalescedOperations { get; set; } = [];
+    public List<List<string>> CoalescedOperations { get; } = [];
     public IList<string> MemoryOptimizedKernels { get; } = [];
 }
 

@@ -47,7 +47,7 @@ namespace DotCompute.Core.Execution.Scheduling
             var deviceCandidates = availableDevices.ToList();
 
             // Filter by target devices if specified
-            if (options.TargetDevices != null && options.TargetDevices.Length > 0)
+            if (options.TargetDevices != null && options.TargetDevices.Count > 0)
             {
                 deviceCandidates = [.. deviceCandidates.Where(d => options.TargetDevices.Contains(d.Info.Id))];
 

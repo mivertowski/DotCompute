@@ -344,7 +344,7 @@ public class SecurityValidator
 
             if (filePath.Contains("..", StringComparison.OrdinalIgnoreCase) || filePath.Contains("~", StringComparison.OrdinalIgnoreCase) ||
 
-                fileName.StartsWith(".") || fileName.Contains(":", StringComparison.CurrentCulture))
+                fileName.StartsWith(".", StringComparison.Ordinal) || fileName.Contains(":", StringComparison.CurrentCulture))
             {
                 return false;
             }

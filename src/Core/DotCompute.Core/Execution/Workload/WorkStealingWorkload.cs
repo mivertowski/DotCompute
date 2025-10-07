@@ -16,7 +16,7 @@ namespace DotCompute.Core.Execution.Workload
         /// Gets or sets the collection of work items that can be executed independently
         /// and potentially stolen by idle processors.
         /// </summary>
-        public required List<WorkItem<T>> WorkItems { get; set; }
+        public required List<WorkItem<T>> WorkItems { get; init; }
 
         /// <summary>
         /// Gets or sets the load balancing hints to guide the work stealing strategy.

@@ -259,14 +259,14 @@ namespace DotCompute.Core.Extensions
                 if (result is ValueTask<object> valueTaskNonNull)
                 {
 
-                    return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Output));
+                    return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Result));
                 }
 
 
                 if (result is Task<object> taskNonNull)
                 {
 
-                    return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Output));
+                    return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result));
                 }
 
             }

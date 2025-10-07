@@ -211,7 +211,7 @@ public static class SecurityExtensions
 
             // Check for directory traversal
             if (path.Contains("..", StringComparison.OrdinalIgnoreCase) || path.Contains("~", StringComparison.OrdinalIgnoreCase) ||
-                fileName.StartsWith(".") || fileName.Contains(":", StringComparison.CurrentCulture))
+                fileName.StartsWith(".", StringComparison.Ordinal) || fileName.Contains(":", StringComparison.CurrentCulture))
             {
                 return false;
             }

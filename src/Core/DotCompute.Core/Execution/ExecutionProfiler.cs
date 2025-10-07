@@ -11,6 +11,10 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ExecutionProfiler : IAsyncDisposable
 {
+    private readonly ILogger _logger;
+    private readonly Dictionary<string, ExecutionProfilingData> _profilingData;
+    private bool _disposed;
+
     /// <summary>
     /// Initializes a new instance of the ExecutionProfiler class.
     /// </summary>
@@ -31,7 +35,7 @@ public class ExecutionProfiler : IAsyncDisposable
     public async ValueTask StartProfilingAsync(Guid executionId, ExecutionStrategyType strategy, CancellationToken cancellationToken)
 #pragma warning restore CA1822
     {
-        _profilingData[executionId] = new ExecutionProfilingData
+        _profilingData[executionId.ToString()] = new ExecutionProfilingData
         {
             ExecutionId = executionId,
             Strategy = strategy,
@@ -51,7 +55,7 @@ public class ExecutionProfiler : IAsyncDisposable
 
     public async ValueTask<ExecutionProfilingData> StopProfilingAsync(Guid executionId, CancellationToken cancellationToken)
     {
-        if (_profilingData.TryGetValue(executionId, out var data))
+        if (_profilingData.TryGetValue(executionId.ToString(), out var data))
         {
             data.EndTime = DateTimeOffset.UtcNow;
             data.TotalDuration = data.EndTime - data.StartTime;

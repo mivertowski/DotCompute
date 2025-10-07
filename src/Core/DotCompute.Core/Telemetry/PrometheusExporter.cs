@@ -545,7 +545,7 @@ public sealed class PrometheusExporterOptions
     /// Gets or sets the common labels.
     /// </summary>
     /// <value>The common labels.</value>
-    public IList<string> CommonLabels { get; set; } = ["application", "version", "environment"];
+    public IList<string> CommonLabels { get; } = ["application", "version", "environment"];
 }
 
 /// <summary>

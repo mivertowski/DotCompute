@@ -18,13 +18,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the model layers that make up the complete model.
         /// Each layer represents a computational component that will be executed on an assigned device.
         /// </summary>
-        public required ModelLayer<T>[] ModelLayers { get; set; }
+        public required IReadOnlyList<ModelLayer<T>> ModelLayers { get; init; }
 
         /// <summary>
         /// Gets or sets the layer assignments to devices.
         /// Maps each layer ID to the specific device that will execute that layer.
         /// </summary>
-        public required Dictionary<int, IAccelerator> LayerAssignments { get; set; }
+        public required Dictionary<int, IAccelerator> LayerAssignments { get; init; }
 
         /// <summary>
         /// Gets or sets the communication schedule between layers.
@@ -39,7 +39,7 @@ namespace DotCompute.Core.Execution.Plans
         /// </summary>
         public ModelParallelExecutionPlan()
         {
-            StrategyType = ExecutionStrategyType.ModelParallel;
+            StrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType.ModelParallel;
         }
     }
 
@@ -72,13 +72,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the input tensor descriptions.
         /// Describes the input tensors that this layer expects to receive.
         /// </summary>
-        public required TensorDescription<T>[] InputTensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> InputTensors { get; init; }
 
         /// <summary>
         /// Gets or sets the output tensor descriptions.
         /// Describes the output tensors that this layer will produce.
         /// </summary>
-        public required TensorDescription<T>[] OutputTensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> OutputTensors { get; init; }
 
         /// <summary>
         /// Gets or sets the memory requirements for this layer in bytes.
@@ -114,9 +114,9 @@ namespace DotCompute.Core.Execution.Plans
 
         /// <summary>
         /// Gets or sets the tensor dimensions.
-        /// Array representing the shape of the tensor (e.g., [batch_size, height, width, channels]).
+        /// Read-only list representing the shape of the tensor (e.g., [batch_size, height, width, channels]).
         /// </summary>
-        public required int[] Dimensions { get; set; }
+        public required IReadOnlyList<int> Dimensions { get; init; }
 
         /// <summary>
         /// Gets or sets the tensor data type.
@@ -160,13 +160,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the communication operations.
         /// Ordered list of data transfer operations between devices.
         /// </summary>
-        public required List<CommunicationOperation<T>> Operations { get; set; }
+        public required List<CommunicationOperation<T>> Operations { get; init; }
 
         /// <summary>
         /// Gets or sets the synchronization points.
         /// Points in the execution where devices must wait for each other.
         /// </summary>
-        public required List<SynchronizationPoint> SynchronizationPoints { get; set; }
+        public required List<SynchronizationPoint> SynchronizationPoints { get; init; }
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the participating devices.
         /// List of devices that must reach this synchronization point.
         /// </summary>
-        public required List<IAccelerator> ParticipatingDevices { get; set; }
+        public required List<IAccelerator> ParticipatingDevices { get; init; }
 
         /// <summary>
         /// Gets or sets the synchronization type.

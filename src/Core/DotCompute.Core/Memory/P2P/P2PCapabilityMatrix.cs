@@ -1020,17 +1020,17 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the topology clusters.
         /// </summary>
         /// <value>The topology clusters.</value>
-        public IList<P2PTopologyCluster> TopologyClusters { get; set; } = [];
+        public IList<P2PTopologyCluster> TopologyClusters { get; } = [];
         /// <summary>
         /// Gets or sets the bandwidth bottlenecks.
         /// </summary>
         /// <value>The bandwidth bottlenecks.</value>
-        public IList<P2PBandwidthBottleneck> BandwidthBottlenecks { get; set; } = [];
+        public IList<P2PBandwidthBottleneck> BandwidthBottlenecks { get; } = [];
         /// <summary>
         /// Gets or sets the high performance paths.
         /// </summary>
         /// <value>The high performance paths.</value>
-        public IList<P2PHighPerformancePath> HighPerformancePaths { get; set; } = [];
+        public IList<P2PHighPerformancePath> HighPerformancePaths { get; } = [];
     }
 
     /// <summary>
@@ -1138,7 +1138,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets a value indicating whether sues.
         /// </summary>
         /// <value>The issues.</value>
-        public IList<string> Issues { get; set; } = [];
+        public IList<string> Issues { get; } = [];
         /// <summary>
         /// Gets or sets the validation time.
         /// </summary>

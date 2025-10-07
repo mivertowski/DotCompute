@@ -16,7 +16,7 @@ namespace DotCompute.Core.Recovery;
 /// defragmentation, and emergency memory reserve management.
 /// Consolidated using BaseRecoveryStrategy to eliminate duplicate patterns.
 /// </summary>
-public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryRecoveryContext>
+public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryRecoveryContext>
 {
     private readonly ConcurrentDictionary<string, Models.MemoryPoolState> _memoryPools;
     private readonly Models.MemoryRecoveryConfiguration _config;
@@ -64,8 +64,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         _defragmentationTimer = new Timer(PerformPeriodicDefragmentation, null,
             _config.DefragmentationInterval, _config.DefragmentationInterval);
 
-        Logger.LogInformation("Memory Recovery Strategy initialized with {ReserveSize}MB emergency reserve",
-            _config.EmergencyReserveSizeMB);
+        LogMemoryRecoveryStrategyInitialized(Logger, _config.EmergencyReserveSizeMB);
     }
     /// <summary>
     /// Determines whether handle.
@@ -101,9 +100,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
     {
         var stopwatch = Stopwatch.StartNew();
 
-
-        Logger.LogWarning("Memory error detected: {Error}. Available memory: {AvailableMemory}MB",
-            error.Message, GC.GetTotalMemory(false) / 1024 / 1024);
+        LogMemoryErrorDetected(Logger, error.Message, GC.GetTotalMemory(false) / 1024 / 1024);
 
         await _recoveryLock.WaitAsync(cancellationToken);
 
@@ -112,7 +109,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         {
             // Determine recovery strategy based on error type and system state
             var strategy = DetermineMemoryRecoveryStrategy(error, context);
-            Logger.LogInformation("Using memory recovery strategy: {Strategy}", strategy);
+            LogUsingMemoryRecoveryStrategy(Logger, strategy.ToString());
 
             var result = await ExecuteMemoryRecoveryAsync(strategy, context, options, cancellationToken);
 
@@ -120,11 +117,9 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             stopwatch.Stop();
             result.Duration = stopwatch.Elapsed;
 
-
             if (result.Success)
             {
-                Logger.LogInformation("Memory recovery successful using {Strategy} in {Duration}ms. Memory after recovery: {MemoryAfter}MB",
-                    strategy, stopwatch.ElapsedMilliseconds, GC.GetTotalMemory(false) / 1024 / 1024);
+                LogMemoryRecoverySuccessful(Logger, strategy.ToString(), stopwatch.ElapsedMilliseconds, GC.GetTotalMemory(false) / 1024 / 1024);
             }
 
             return result;
@@ -155,8 +150,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             }
             catch (OutOfMemoryException) when (attempt < maxRetries)
             {
-                Logger.LogWarning("Memory allocation failed on attempt {Attempt}/{MaxRetries}, retrying after {Delay}ms",
-                    attempt, maxRetries, delay.TotalMilliseconds);
+                LogMemoryAllocationFailed(Logger, attempt, maxRetries, delay.TotalMilliseconds);
 
                 // Perform emergency memory recovery
                 await PerformEmergencyMemoryRecoveryAsync(cancellationToken);
@@ -175,7 +169,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         }
         catch (OutOfMemoryException ex)
         {
-            Logger.LogError("Memory allocation failed after {MaxRetries} attempts", maxRetries);
+            LogMemoryAllocationFailedAfterRetries(Logger, maxRetries);
             throw new MemoryAllocationException($"Failed to allocate memory after {maxRetries} attempts", ex);
         }
     }
@@ -187,8 +181,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         string? poolId = null,
         CancellationToken cancellationToken = default)
     {
-        Logger.LogInformation("Starting memory defragmentation for pool: {PoolId}", poolId ?? "all");
-
+        LogStartingMemoryDefragmentation(Logger, poolId ?? "all");
 
         var stopwatch = Stopwatch.StartNew();
         var memoryBefore = GC.GetTotalMemory(false);
@@ -223,8 +216,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             var memoryAfter = GC.GetTotalMemory(false);
             var memoryFreed = Math.Max(0, memoryBefore - memoryAfter);
 
-            Logger.LogInformation("Memory defragmentation completed in {Duration}ms. Freed {MemoryFreed}MB",
-                stopwatch.ElapsedMilliseconds, memoryFreed / 1024 / 1024);
+            LogMemoryDefragmentationCompleted(Logger, stopwatch.ElapsedMilliseconds, memoryFreed / 1024 / 1024);
 
             return new Models.MemoryDefragmentationResult
             {
@@ -238,7 +230,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Memory defragmentation failed");
+            LogMemoryDefragmentationFailed(Logger, ex);
 
             // Ensure emergency reserve is restored even on failure
 
@@ -266,8 +258,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         var poolState = new Models.MemoryPoolState(poolId, pool);
         _ = _memoryPools.TryAdd(poolId, poolState);
 
-
-        Logger.LogDebug("Registered memory pool {PoolId} for recovery monitoring", poolId);
+        LogRegisteredMemoryPool(Logger, poolId);
     }
 
     /// <summary>
@@ -275,13 +266,11 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
     /// </summary>
     public bool UnregisterMemoryPool(string poolId)
     {
-
         if (_memoryPools.TryRemove(poolId, out _))
         {
-            Logger.LogDebug("Unregistered memory pool {PoolId}", poolId);
+            LogUnregisteredMemoryPool(Logger, poolId);
             return true;
         }
-
 
         return false;
     }
@@ -341,7 +330,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
 
     private async Task<RecoveryResult> AggressiveCleanupAsync(Models.MemoryRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogWarning("Performing aggressive memory cleanup due to high memory pressure");
+        LogPerformingAggressiveMemoryCleanup(Logger);
 
         // Clean up memory pools
 
@@ -355,7 +344,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to cleanup memory pool {PoolId}", poolState.PoolId);
+                LogFailedToCleanupMemoryPool(Logger, poolState.PoolId, ex);
             }
         }
 
@@ -371,8 +360,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
 
     private async Task<RecoveryResult> EmergencyRecoveryAsync(Models.MemoryRecoveryContext context, CancellationToken cancellationToken)
     {
-        Logger.LogCritical("Performing emergency memory recovery due to critical memory pressure");
-
+        LogPerformingEmergencyMemoryRecovery(Logger);
 
         try
         {
@@ -393,7 +381,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Emergency cleanup failed for pool {PoolId}", pool.PoolId);
+                        LogEmergencyCleanupFailedForPool(Logger, pool.PoolId, ex);
                     }
                 }, cancellationToken));
 
@@ -429,7 +417,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Emergency memory recovery failed");
+            LogEmergencyMemoryRecoveryFailed(Logger, ex);
             return Failure("Emergency recovery failed", ex);
         }
     }
@@ -476,7 +464,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
 
     private async Task DefragmentGpuMemoryAsync(string poolId, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Performing GPU memory defragmentation for pool {PoolId}", poolId);
+        LogPerformingGpuMemoryDefragmentation(Logger, poolId);
 
         if (_memoryPools.TryGetValue(poolId, out _))
         {
@@ -500,11 +488,11 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             try
             {
                 _emergencyReserve = new byte[targetSize * 1024 * 1024];
-                Logger.LogDebug("Emergency memory reserve initialized: {Size}MB", targetSize);
+                LogEmergencyMemoryReserveInitialized(Logger, targetSize);
             }
             catch (OutOfMemoryException)
             {
-                Logger.LogWarning("Could not initialize emergency memory reserve of {Size}MB", targetSize);
+                LogCouldNotInitializeEmergencyMemoryReserve(Logger, targetSize);
                 _emergencyReserve = null;
             }
         }
@@ -518,7 +506,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             {
                 var sizeMB = _emergencyReserve.Length / 1024 / 1024;
                 _emergencyReserve = null;
-                Logger.LogInformation("Released emergency memory reserve: {Size}MB", sizeMB);
+                LogReleasedEmergencyMemoryReserve(Logger, sizeMB);
 
                 // Force GC to immediately reclaim the memory
 
@@ -543,8 +531,7 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
 
             if (pressure.Level >= MemoryPressureLevel.Medium)
             {
-                Logger.LogInformation("Performing scheduled memory defragmentation (pressure: {Level})", pressure.Level);
-
+                LogPerformingScheduledMemoryDefragmentation(Logger, pressure.Level.ToString());
 
                 _ = Task.Run(async () =>
                 {
@@ -554,14 +541,14 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarning(ex, "Scheduled memory defragmentation failed");
+                        LogScheduledMemoryDefragmentationFailed(Logger, ex);
                     }
                 });
             }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error during periodic defragmentation check");
+            LogErrorDuringPeriodicDefragmentationCheck(Logger, ex);
         }
     }
     /// <summary>
@@ -578,10 +565,85 @@ public sealed class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models.MemoryR
             ReleaseEmergencyReserve();
             _disposed = true;
 
-
-            Logger.LogInformation("Memory Recovery Strategy disposed");
+            LogMemoryRecoveryStrategyDisposed(Logger);
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 13000, Level = LogLevel.Information, Message = "Memory Recovery Strategy initialized with {ReserveSize}MB emergency reserve")]
+    private static partial void LogMemoryRecoveryStrategyInitialized(ILogger logger, int reserveSize);
+
+    [LoggerMessage(EventId = 13001, Level = LogLevel.Warning, Message = "Memory error detected: {Error}. Available memory: {AvailableMemory}MB")]
+    private static partial void LogMemoryErrorDetected(ILogger logger, string error, long availableMemory);
+
+    [LoggerMessage(EventId = 13002, Level = LogLevel.Information, Message = "Using memory recovery strategy: {Strategy}")]
+    private static partial void LogUsingMemoryRecoveryStrategy(ILogger logger, string strategy);
+
+    [LoggerMessage(EventId = 13003, Level = LogLevel.Information, Message = "Memory recovery successful using {Strategy} in {Duration}ms. Memory after recovery: {MemoryAfter}MB")]
+    private static partial void LogMemoryRecoverySuccessful(ILogger logger, string strategy, long duration, long memoryAfter);
+
+    [LoggerMessage(EventId = 13004, Level = LogLevel.Warning, Message = "Memory allocation failed on attempt {Attempt}/{MaxRetries}, retrying after {Delay}ms")]
+    private static partial void LogMemoryAllocationFailed(ILogger logger, int attempt, int maxRetries, double delay);
+
+    [LoggerMessage(EventId = 13005, Level = LogLevel.Error, Message = "Memory allocation failed after {MaxRetries} attempts")]
+    private static partial void LogMemoryAllocationFailedAfterRetries(ILogger logger, int maxRetries);
+
+    [LoggerMessage(EventId = 13006, Level = LogLevel.Information, Message = "Starting memory defragmentation for pool: {PoolId}")]
+    private static partial void LogStartingMemoryDefragmentation(ILogger logger, string poolId);
+
+    [LoggerMessage(EventId = 13007, Level = LogLevel.Information, Message = "Memory defragmentation completed in {Duration}ms. Freed {MemoryFreed}MB")]
+    private static partial void LogMemoryDefragmentationCompleted(ILogger logger, long duration, long memoryFreed);
+
+    [LoggerMessage(EventId = 13008, Level = LogLevel.Error, Message = "Memory defragmentation failed")]
+    private static partial void LogMemoryDefragmentationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 13009, Level = LogLevel.Debug, Message = "Registered memory pool {PoolId} for recovery monitoring")]
+    private static partial void LogRegisteredMemoryPool(ILogger logger, string poolId);
+
+    [LoggerMessage(EventId = 13010, Level = LogLevel.Debug, Message = "Unregistered memory pool {PoolId}")]
+    private static partial void LogUnregisteredMemoryPool(ILogger logger, string poolId);
+
+    [LoggerMessage(EventId = 13011, Level = LogLevel.Warning, Message = "Performing aggressive memory cleanup due to high memory pressure")]
+    private static partial void LogPerformingAggressiveMemoryCleanup(ILogger logger);
+
+    [LoggerMessage(EventId = 13012, Level = LogLevel.Warning, Message = "Failed to cleanup memory pool {PoolId}")]
+    private static partial void LogFailedToCleanupMemoryPool(ILogger logger, string poolId, Exception ex);
+
+    [LoggerMessage(EventId = 13013, Level = LogLevel.Critical, Message = "Performing emergency memory recovery due to critical memory pressure")]
+    private static partial void LogPerformingEmergencyMemoryRecovery(ILogger logger);
+
+    [LoggerMessage(EventId = 13014, Level = LogLevel.Error, Message = "Emergency cleanup failed for pool {PoolId}")]
+    private static partial void LogEmergencyCleanupFailedForPool(ILogger logger, string poolId, Exception ex);
+
+    [LoggerMessage(EventId = 13015, Level = LogLevel.Critical, Message = "Emergency memory recovery failed")]
+    private static partial void LogEmergencyMemoryRecoveryFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 13016, Level = LogLevel.Information, Message = "Performing GPU memory defragmentation for pool {PoolId}")]
+    private static partial void LogPerformingGpuMemoryDefragmentation(ILogger logger, string poolId);
+
+    [LoggerMessage(EventId = 13017, Level = LogLevel.Debug, Message = "Emergency memory reserve initialized: {Size}MB")]
+    private static partial void LogEmergencyMemoryReserveInitialized(ILogger logger, int size);
+
+    [LoggerMessage(EventId = 13018, Level = LogLevel.Warning, Message = "Could not initialize emergency memory reserve of {Size}MB")]
+    private static partial void LogCouldNotInitializeEmergencyMemoryReserve(ILogger logger, int size);
+
+    [LoggerMessage(EventId = 13019, Level = LogLevel.Information, Message = "Released emergency memory reserve: {Size}MB")]
+    private static partial void LogReleasedEmergencyMemoryReserve(ILogger logger, int size);
+
+    [LoggerMessage(EventId = 13020, Level = LogLevel.Information, Message = "Performing scheduled memory defragmentation (pressure: {Level})")]
+    private static partial void LogPerformingScheduledMemoryDefragmentation(ILogger logger, string level);
+
+    [LoggerMessage(EventId = 13021, Level = LogLevel.Warning, Message = "Scheduled memory defragmentation failed")]
+    private static partial void LogScheduledMemoryDefragmentationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 13022, Level = LogLevel.Warning, Message = "Error during periodic defragmentation check")]
+    private static partial void LogErrorDuringPeriodicDefragmentationCheck(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 13023, Level = LogLevel.Information, Message = "Memory Recovery Strategy disposed")]
+    private static partial void LogMemoryRecoveryStrategyDisposed(ILogger logger);
+
+    #endregion
 }
 
 

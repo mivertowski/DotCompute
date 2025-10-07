@@ -92,7 +92,7 @@ public class IsolatedPluginLoadContext(
         _logger.LogDebugMessage("Loading unmanaged DLL: {unmanagedDllName}");
 
         // Check if unmanaged DLL loading is allowed
-        if (!_permissions.AllowedPermissions.Contains("LoadNativeDll"))
+        if (!_permissions.AllowedPermissions.Contains("LoadNativeDll", StringComparison.Ordinal))
         {
             _logger.LogWarningMessage("Unmanaged DLL load denied: {unmanagedDllName}");
             throw new SecurityException($"Unmanaged DLL load denied: {unmanagedDllName}");
@@ -145,14 +145,14 @@ public class IsolatedPluginLoadContext(
         {
             // Only allow if explicitly permitted
             return _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-                   _permissions.AllowedPermissions.Contains("LoadDangerousAssemblies");
+                   _permissions.AllowedPermissions.Contains("LoadDangerousAssemblies", StringComparison.Ordinal);
         }
 
         // Allow system assemblies and explicitly allowed assemblies
         return IsSystemAssembly(assemblyName) ||
 
                _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-               _permissions.AllowedPermissions.Contains("LoadAllAssemblies");
+               _permissions.AllowedPermissions.Contains("LoadAllAssemblies", StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ public class IsolatedPluginLoadContext(
             var fileName = Path.GetFileName(fullPath);
 
 
-            if (fileName.Contains("..") || fileName.Contains("~", StringComparison.CurrentCulture) || fileName.StartsWith("."))
+            if (fileName.Contains("..", StringComparison.Ordinal) || fileName.Contains("~", StringComparison.CurrentCulture) || fileName.StartsWith(".", StringComparison.Ordinal))
             {
                 _logger.LogWarningMessage("Unsafe assembly path detected: {assemblyPath}");
                 return false;
@@ -225,9 +225,9 @@ public class IsolatedPluginLoadContext(
     private static bool IsUnmanagedDllSafe(string dllName)
     {
         // Check for path traversal attacks
-        if (dllName.Contains("..") || dllName.Contains("~", StringComparison.CurrentCulture) ||
+        if (dllName.Contains("..", StringComparison.Ordinal) || dllName.Contains("~", StringComparison.CurrentCulture) ||
 
-            dllName.Contains(":", StringComparison.CurrentCulture) || dllName.StartsWith("."))
+            dllName.Contains(":", StringComparison.CurrentCulture) || dllName.StartsWith(".", StringComparison.Ordinal))
         {
             return false;
         }

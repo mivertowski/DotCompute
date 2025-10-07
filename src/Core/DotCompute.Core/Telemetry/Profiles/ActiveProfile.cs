@@ -53,7 +53,7 @@ public sealed class ActiveProfile
     /// Maps device IDs to their corresponding performance metrics.
     /// </summary>
     /// <value>A thread-safe dictionary mapping device IDs to profile metrics.</value>
-    public ConcurrentDictionary<string, DeviceProfileMetrics> DeviceMetrics { get; set; } = new();
+    public ConcurrentDictionary<string, DeviceProfileMetrics> DeviceMetrics { get; } = new();
 
     /// <summary>
     /// Gets or sets the collection of system performance snapshots captured during this session.

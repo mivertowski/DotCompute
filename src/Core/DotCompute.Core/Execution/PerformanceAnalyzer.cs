@@ -14,6 +14,8 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class PerformanceAnalyzer
 {
+    private readonly ILogger _logger;
+
     /// <summary>
     /// Initializes a new instance of the PerformanceAnalyzer class.
     /// </summary>

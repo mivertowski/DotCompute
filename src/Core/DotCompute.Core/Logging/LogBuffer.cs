@@ -728,7 +728,7 @@ public sealed class LogBufferOptions
     /// Gets or sets the custom filters.
     /// </summary>
     /// <value>The custom filters.</value>
-    public List<Func<StructuredLogEntry, bool>> CustomFilters { get; set; } = [];
+    public List<Func<StructuredLogEntry, bool>> CustomFilters { get; } = [];
 }
 /// <summary>
 /// A class that represents log buffer statistics.

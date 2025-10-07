@@ -16,8 +16,8 @@ namespace DotCompute.Core.Compute.Kernels
     /// Initializes a new instance of the <see cref="SimpleOptimizedKernel"/> class.
     /// </remarks>
     /// <param name="name">Name of the kernel.</param>
-    /// <param name="kernelInfo">Parsed kernel information.</param>
-    /// <param name="options">Compilation options.</param>
+    /// <param name="_kernelInfo">Parsed kernel information.</param>
+    /// <param name="_options">Compilation options.</param>
     /// <param name="logger">Logger instance.</param>
 #pragma warning disable CS9113 // Parameters reserved for enhanced kernel optimization and validation features
     internal class SimpleOptimizedKernel(string name, KernelInfo _kernelInfo, CompilationOptions _options, ILogger logger) : ICompiledKernel

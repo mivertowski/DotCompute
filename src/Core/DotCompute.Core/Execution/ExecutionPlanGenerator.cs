@@ -469,7 +469,7 @@ namespace DotCompute.Core.Execution
             // Compile kernel for the specific device type with appropriate optimizations
             _ = new KernelCompilationOptions
             {
-                OptimizationLevel = AbstractionsMemory.Types.OptimizationLevel.Balanced,
+                OptimizationLevel = AbstractionsMemory.Types.OptimizationLevel.O2,
                 TargetArchitecture = device.DeviceType.ToString(),
                 EnableAutoVectorization = device.DeviceType.ToString() == nameof(AcceleratorType.CPU),
                 GenerateDebugInfo = false

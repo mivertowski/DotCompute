@@ -31,7 +31,7 @@ public sealed class DeviceCapabilities
     /// <summary>
     /// Gets or sets the maximum work item sizes for each dimension
     /// </summary>
-    public IReadOnlyList<int> MaxWorkItemSizes { get; set; } = new int[3];
+    public IReadOnlyList<int> MaxWorkItemSizes { get; } = new int[3];
 
     /// <summary>
     /// Gets or sets the global memory size in bytes

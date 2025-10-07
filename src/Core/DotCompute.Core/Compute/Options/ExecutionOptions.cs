@@ -20,24 +20,24 @@ namespace DotCompute.Core.Compute.Options
         /// Gets or sets the global work size for kernel execution.
         /// </summary>
         /// <value>
-        /// An array of long values representing the total number of work items in each dimension.
+        /// A read-only list of long values representing the total number of work items in each dimension.
         /// Each element corresponds to a dimension (X, Y, Z) of the compute space.
         /// A null value indicates that the compute engine should determine the work size automatically
         /// based on the kernel requirements and available hardware.
         /// </value>
         /// <remarks>
         /// The global work size determines the total number of kernel instances that will be executed.
-        /// For multi-dimensional kernels, this array specifies the size in each dimension.
+        /// For multi-dimensional kernels, this list specifies the size in each dimension.
         /// The total number of work items is the product of all dimensions.
         /// Values must be positive and within the limits supported by the target backend.
         /// </remarks>
-        public long[]? GlobalWorkSize { get; set; }
+        public IReadOnlyList<long>? GlobalWorkSize { get; set; }
 
         /// <summary>
         /// Gets or sets the local work size (work group size) for kernel execution.
         /// </summary>
         /// <value>
-        /// An array of long values representing the number of work items in each work group dimension.
+        /// A read-only list of long values representing the number of work items in each work group dimension.
         /// Each element corresponds to a dimension (X, Y, Z) of the local work group.
         /// A null value allows the compute engine to select optimal work group sizes based on
         /// hardware capabilities and kernel characteristics.
@@ -48,13 +48,13 @@ namespace DotCompute.Core.Compute.Options
         /// Optimal work group sizes depend on the target hardware and kernel memory access patterns.
         /// Values must be positive and should be powers of 2 for best performance on most hardware.
         /// </remarks>
-        public long[]? LocalWorkSize { get; set; }
+        public IReadOnlyList<long>? LocalWorkSize { get; set; }
 
         /// <summary>
         /// Gets or sets the work group offset for kernel execution.
         /// </summary>
         /// <value>
-        /// An array of long values representing the offset applied to work item IDs in each dimension.
+        /// A read-only list of long values representing the offset applied to work item IDs in each dimension.
         /// Each element corresponds to a dimension (X, Y, Z) offset.
         /// A null value indicates no offset (starting from 0 in all dimensions).
         /// </value>
@@ -64,7 +64,7 @@ namespace DotCompute.Core.Compute.Options
         /// distributed computation scenarios where different kernel invocations process
         /// different regions of the same dataset.
         /// </remarks>
-        public long[]? WorkGroupOffset { get; set; }
+        public IReadOnlyList<long>? WorkGroupOffset { get; set; }
 
         /// <summary>
         /// Gets or sets the execution priority for kernel scheduling.

@@ -75,5 +75,5 @@ public sealed class TraceContext
     /// Maps device IDs to their corresponding operation traces.
     /// </summary>
     /// <value>A thread-safe dictionary mapping device IDs to operation traces.</value>
-    public ConcurrentDictionary<string, DeviceOperationTrace> DeviceOperations { get; set; } = new();
+    public ConcurrentDictionary<string, DeviceOperationTrace> DeviceOperations { get; } = new();
 }

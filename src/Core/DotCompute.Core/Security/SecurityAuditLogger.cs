@@ -36,11 +36,9 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         var result = new AuditExportResult
         {
-            StartDate = startDate,
-            EndDate = endDate,
-            ExportPath = exportPath,
-            Format = format,
-            ExportTime = DateTime.UtcNow
+            ExportFilePath = exportPath,
+            Format = format.ToString(),
+            ExportTime = DateTimeOffset.UtcNow
         };
 
         try
@@ -69,7 +67,6 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
             // Read and filter audit logs
             var entries = await ReadAndFilterAuditLogsAsync(startDate, endDate, null);
-            result.EntryCount = entries.Count;
 
             if (entries.Count == 0)
             {
@@ -83,11 +80,20 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
             // Calculate file size
             var fileInfo = new FileInfo(exportPath);
             result.FileSizeBytes = fileInfo.Length;
-            result.IsSuccessful = true;
 
-            _logger.LogInfoMessage($"Audit log export completed: {entries.Count} entries, {result.FileSizeBytes} bytes");
+            var successResult = new AuditExportResult
+            {
+                Success = true,
+                ExportFilePath = exportPath,
+                EntriesExported = entries.Count,
+                Format = format.ToString(),
+                ExportTime = DateTimeOffset.UtcNow,
+                FileSizeBytes = fileInfo.Length
+            };
 
-            return result;
+            _logger.LogInfoMessage($"Audit log export completed: {entries.Count} entries, {successResult.FileSizeBytes} bytes");
+
+            return successResult;
         }
         catch (Exception ex)
         {
@@ -276,7 +282,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
                           $"{EscapeCsv(entry.Message)}," +
                           $"{EscapeCsv(entry.UserId ?? "")}," +
                           $"{EscapeCsv(entry.ResourceId ?? "")}," +
-                          $"{EscapeCsv(entry.CorrelationId)}," +
+                          $"{EscapeCsv(entry.CorrelationId ?? "")}," +
                           $"{EscapeCsv(entry.CallerName ?? "")}");
         }
 
@@ -317,7 +323,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
                 await xmlWriter.WriteElementStringAsync(null, "ResourceId", null, entry.ResourceId);
             }
 
-            await xmlWriter.WriteElementStringAsync(null, "CorrelationId", null, entry.CorrelationId);
+            await xmlWriter.WriteElementStringAsync(null, "CorrelationId", null, entry.CorrelationId ?? "");
             await xmlWriter.WriteEndElementAsync();
         }
 

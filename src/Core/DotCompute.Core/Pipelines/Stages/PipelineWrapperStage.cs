@@ -59,7 +59,7 @@ namespace DotCompute.Core.Pipelines.Stages
                     Success = result.Success,
                     ExecutionTime = stopwatch.Elapsed,
                     MemoryUsed = result.Metrics?.PeakMemoryUsage ?? 0L,
-                    Error = result.Errors?.FirstOrDefault()?.Exception,
+                    Error = result.Errors is { Count: > 0 } ? result.Errors[0].Exception : null,
                     OutputData = result.Outputs?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
                 };
             }
@@ -91,7 +91,7 @@ namespace DotCompute.Core.Pipelines.Stages
             {
                 foreach (var error in pipelineValidation.Errors)
                 {
-                    errors.Add(new ValidationIssue(ValidationSeverity.Error, error.Message, "PIPELINE_001"));
+                    errors.Add(new ValidationIssue("PIPELINE_001", error.Message, ValidationSeverity.Error));
                 }
             }
 

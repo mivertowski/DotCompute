@@ -73,7 +73,7 @@ public class CompilationFallbackConfiguration
     /// <see cref="CompilationFallbackStrategy.AlternativeCompiler"/>,
     /// <see cref="CompilationFallbackStrategy.InterpreterMode"/>
     /// </value>
-    public IList<CompilationFallbackStrategy> FallbackStrategies { get; set; } =
+    public IList<CompilationFallbackStrategy> FallbackStrategies { get; } =
     [
         CompilationFallbackStrategy.ReduceOptimizations,
         CompilationFallbackStrategy.DisableFastMath,

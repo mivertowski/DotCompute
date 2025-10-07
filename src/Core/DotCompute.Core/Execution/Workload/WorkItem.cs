@@ -21,13 +21,13 @@ namespace DotCompute.Core.Execution.Workload
         /// Gets or sets the input data buffers for this work item.
         /// These contain the data that will be processed by this work unit.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> InputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets the output data buffers for this work item.
         /// These will contain the results after processing is complete.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> OutputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets the estimated processing time for this work item in milliseconds.

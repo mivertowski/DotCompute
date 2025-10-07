@@ -27,6 +27,16 @@ public class BottleneckAnalysis
     /// </summary>
     /// <value>The analysis time.</value>
     public DateTime AnalysisTime { get; set; }
+    /// <summary>
+    /// Gets or sets the overall performance score (0-100).
+    /// </summary>
+    /// <value>The overall performance score.</value>
+    public double OverallPerformanceScore { get; set; }
+    /// <summary>
+    /// Gets or sets the recommended optimizations.
+    /// </summary>
+    /// <value>The recommended optimizations.</value>
+    public IList<string> RecommendedOptimizations { get; init; } = [];
 }
 
 /// <summary>

@@ -719,7 +719,7 @@ namespace DotCompute.Backends.CUDA.P2P
         /// Gets or sets the optimal transfer paths.
         /// </summary>
         /// <value>The optimal transfer paths.</value>
-        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; set; } = [];
+        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; } = [];
     }
     /// <summary>
     /// A class that represents cuda p2 p transfer result.

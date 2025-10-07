@@ -94,8 +94,7 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await Task.CompletedTask; // Ensure async
-                _logger.LogTrace("Host to P2P buffer copy completed: {Bytes} bytes to {Device}",
-                    source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+                LogHostToP2PCompleted(_logger, source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (OperationCanceledException)
             {
@@ -126,8 +125,7 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await ValueTask.CompletedTask; // Ensure async
-                _logger.LogTrace("Host memory to P2P buffer copy completed: {Bytes} bytes to {Device}",
-                    source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+                LogHostMemoryToP2PCompleted(_logger, source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -158,8 +156,7 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await Task.CompletedTask; // Ensure async
-                _logger.LogTrace("P2P buffer to host copy completed: {Bytes} bytes from {Device}",
-                    destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+                LogP2PToHostCompleted(_logger, destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (OperationCanceledException)
             {
@@ -190,8 +187,7 @@ namespace DotCompute.Core.Memory
                 // Since _underlyingBuffer is non-generic, we need to handle the copy manually
                 // This is a P2P buffer implementation that needs to handle memory transfers
                 await ValueTask.CompletedTask; // Ensure async
-                _logger.LogTrace("P2P buffer to host memory copy completed: {Bytes} bytes from {Device}",
-                    destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+                LogP2PToHostMemoryCompleted(_logger, destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -224,8 +220,7 @@ namespace DotCompute.Core.Memory
                 }
 
 
-                _logger.LogTrace("Memory buffer to P2P buffer copy completed: {Bytes} bytes to {Device}",
-                    source.SizeInBytes, _accelerator.Info.Name);
+                LogMemoryBufferToP2PCompleted(_logger, source.SizeInBytes, _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -259,8 +254,7 @@ namespace DotCompute.Core.Memory
                     throw new NotSupportedException("Buffer type conversion not yet implemented");
                 }
 
-                _logger.LogTrace("P2P buffer to memory buffer copy completed: {Bytes} bytes from {Device}",
-                    SizeInBytes, _accelerator.Info.Name);
+                LogP2PToMemoryBufferCompleted(_logger, SizeInBytes, _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -335,7 +329,7 @@ namespace DotCompute.Core.Memory
             {
                 // Use device-specific optimized fill if available
                 await FillOptimizedAsync(value, cancellationToken);
-                _logger.LogTrace("P2P buffer fill completed with value on {Device}", _accelerator.Info.Name);
+                LogP2PFillCompleted(_logger, _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -366,8 +360,7 @@ namespace DotCompute.Core.Memory
             try
             {
                 await FillRangeOptimizedAsync(value, offset, count, cancellationToken);
-                _logger.LogTrace("P2P buffer range fill completed: offset={Offset}, count={Count} on {Device}",
-                    offset, count, _accelerator.Info.Name);
+                LogP2PRangeFillCompleted(_logger, offset, count, _accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -477,16 +470,14 @@ namespace DotCompute.Core.Memory
                 _accelerator.Info.Id != destination._accelerator.Info.Id)
             {
                 // Direct P2P copy
-                _logger.LogTrace("Using direct P2P copy from {Source} to {Destination}",
-                    _accelerator.Info.Name, destination._accelerator.Info.Name);
+                LogUsingDirectP2P(_logger, _accelerator.Info.Name, destination._accelerator.Info.Name);
 
                 await DirectP2PCopyAsync(destination, cancellationToken);
             }
             else
             {
                 // Host-mediated copy
-                _logger.LogTrace("Using host-mediated copy from {Source} to {Destination}",
-                    _accelerator.Info.Name, destination._accelerator.Info.Name);
+                LogUsingHostMediated(_logger, _accelerator.Info.Name, destination._accelerator.Info.Name);
 
                 await HostMediatedCopyAsync(destination, cancellationToken);
             }
@@ -573,8 +564,7 @@ namespace DotCompute.Core.Memory
                         break;
                 }
 
-                _logger.LogTrace("Direct P2P copy completed: {Bytes} bytes from {Source} to {Target}",
-                    SizeInBytes, _accelerator.Info.Name, destination._accelerator.Info.Name);
+                LogDirectP2PCopyCompleted(_logger, SizeInBytes, _accelerator.Info.Name, destination._accelerator.Info.Name);
             }
             catch (Exception ex)
             {
@@ -633,8 +623,7 @@ namespace DotCompute.Core.Memory
                         break;
                 }
 
-                _logger.LogTrace("Direct P2P range copy completed: {Elements} elements ({Bytes} bytes) from {Source}[{SrcOffset}] to {Target}[{DstOffset}]",
-                    count, transferSize, _accelerator.Info.Name, sourceOffset, destination._accelerator.Info.Name, destinationOffset);
+                LogDirectP2PRangeCopyCompleted(_logger, count, transferSize, _accelerator.Info.Name, sourceOffset, destination._accelerator.Info.Name, destinationOffset);
             }
             catch (Exception ex)
             {
@@ -756,7 +745,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("CUDA P2P copy executed: {Bytes} bytes", SizeInBytes);
+            LogCudaP2PCopyExecuted(_logger, SizeInBytes);
         }
 
         /// <summary>
@@ -782,8 +771,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("CUDA P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}",
-                transferSize, sourceOffsetBytes, destOffsetBytes);
+            LogCudaP2PRangeCopyExecuted(_logger, transferSize, sourceOffsetBytes, destOffsetBytes);
         }
 
         /// <summary>
@@ -804,7 +792,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("HIP P2P copy executed: {Bytes} bytes", SizeInBytes);
+            LogHipP2PCopyExecuted(_logger, SizeInBytes);
         }
 
         /// <summary>
@@ -830,8 +818,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("HIP P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}",
-                transferSize, sourceOffsetBytes, destOffsetBytes);
+            LogHipP2PRangeCopyExecuted(_logger, transferSize, sourceOffsetBytes, destOffsetBytes);
         }
 
         /// <summary>
@@ -853,7 +840,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("OpenCL P2P copy executed: {Bytes} bytes", SizeInBytes);
+            LogOpenClP2PCopyExecuted(_logger, SizeInBytes);
         }
 
         /// <summary>
@@ -876,8 +863,7 @@ namespace DotCompute.Core.Memory
 
             }, cancellationToken);
 
-            _logger.LogTrace("OpenCL P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}",
-                transferSize, sourceOffsetBytes, destOffsetBytes);
+            LogOpenClP2PRangeCopyExecuted(_logger, transferSize, sourceOffsetBytes, destOffsetBytes);
         }
 
         /// <summary>
@@ -904,12 +890,12 @@ namespace DotCompute.Core.Memory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Generic P2P copy failed, using host-mediated fallback");
+                    LogGenericP2PCopyFailed(_logger, ex);
                     throw; // Let caller handle fallback
                 }
             }, cancellationToken);
 
-            _logger.LogTrace("Generic P2P copy executed: {Bytes} bytes", SizeInBytes);
+            LogGenericP2PCopyExecuted(_logger, SizeInBytes);
         }
 
         /// <summary>
@@ -1009,6 +995,130 @@ namespace DotCompute.Core.Memory
             await _underlyingBuffer.DisposeAsync();
             _disposed = true;
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 14001,
+            Level = LogLevel.Trace,
+            Message = "Host to P2P buffer copy completed: {Bytes} bytes to {Device}")]
+        private static partial void LogHostToP2PCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14002,
+            Level = LogLevel.Trace,
+            Message = "Host memory to P2P buffer copy completed: {Bytes} bytes to {Device}")]
+        private static partial void LogHostMemoryToP2PCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14003,
+            Level = LogLevel.Trace,
+            Message = "P2P buffer to host copy completed: {Bytes} bytes from {Device}")]
+        private static partial void LogP2PToHostCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14004,
+            Level = LogLevel.Trace,
+            Message = "P2P buffer to host memory copy completed: {Bytes} bytes from {Device}")]
+        private static partial void LogP2PToHostMemoryCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14005,
+            Level = LogLevel.Trace,
+            Message = "Memory buffer to P2P buffer copy completed: {Bytes} bytes to {Device}")]
+        private static partial void LogMemoryBufferToP2PCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14006,
+            Level = LogLevel.Trace,
+            Message = "P2P buffer to memory buffer copy completed: {Bytes} bytes from {Device}")]
+        private static partial void LogP2PToMemoryBufferCompleted(ILogger logger, long bytes, string device);
+
+        [LoggerMessage(
+            EventId = 14007,
+            Level = LogLevel.Trace,
+            Message = "P2P buffer fill completed with value on {Device}")]
+        private static partial void LogP2PFillCompleted(ILogger logger, string device);
+
+        [LoggerMessage(
+            EventId = 14008,
+            Level = LogLevel.Trace,
+            Message = "P2P buffer range fill completed: offset={Offset}, count={Count} on {Device}")]
+        private static partial void LogP2PRangeFillCompleted(ILogger logger, int offset, int count, string device);
+
+        [LoggerMessage(
+            EventId = 14009,
+            Level = LogLevel.Trace,
+            Message = "Using direct P2P copy from {Source} to {Destination}")]
+        private static partial void LogUsingDirectP2P(ILogger logger, string source, string destination);
+
+        [LoggerMessage(
+            EventId = 14010,
+            Level = LogLevel.Trace,
+            Message = "Using host-mediated copy from {Source} to {Destination}")]
+        private static partial void LogUsingHostMediated(ILogger logger, string source, string destination);
+
+        [LoggerMessage(
+            EventId = 14011,
+            Level = LogLevel.Trace,
+            Message = "Direct P2P copy completed: {Bytes} bytes from {Source} to {Target}")]
+        private static partial void LogDirectP2PCopyCompleted(ILogger logger, long bytes, string source, string target);
+
+        [LoggerMessage(
+            EventId = 14012,
+            Level = LogLevel.Trace,
+            Message = "Direct P2P range copy completed: {Elements} elements ({Bytes} bytes) from {Source}[{SrcOffset}] to {Target}[{DstOffset}]")]
+        private static partial void LogDirectP2PRangeCopyCompleted(ILogger logger, int elements, long bytes, string source, int srcOffset, string target, int dstOffset);
+
+        [LoggerMessage(
+            EventId = 14013,
+            Level = LogLevel.Trace,
+            Message = "CUDA P2P copy executed: {Bytes} bytes")]
+        private static partial void LogCudaP2PCopyExecuted(ILogger logger, long bytes);
+
+        [LoggerMessage(
+            EventId = 14014,
+            Level = LogLevel.Trace,
+            Message = "CUDA P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}")]
+        private static partial void LogCudaP2PRangeCopyExecuted(ILogger logger, long bytes, long srcOffset, long dstOffset);
+
+        [LoggerMessage(
+            EventId = 14015,
+            Level = LogLevel.Trace,
+            Message = "HIP P2P copy executed: {Bytes} bytes")]
+        private static partial void LogHipP2PCopyExecuted(ILogger logger, long bytes);
+
+        [LoggerMessage(
+            EventId = 14016,
+            Level = LogLevel.Trace,
+            Message = "HIP P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}")]
+        private static partial void LogHipP2PRangeCopyExecuted(ILogger logger, long bytes, long srcOffset, long dstOffset);
+
+        [LoggerMessage(
+            EventId = 14017,
+            Level = LogLevel.Trace,
+            Message = "OpenCL P2P copy executed: {Bytes} bytes")]
+        private static partial void LogOpenClP2PCopyExecuted(ILogger logger, long bytes);
+
+        [LoggerMessage(
+            EventId = 14018,
+            Level = LogLevel.Trace,
+            Message = "OpenCL P2P range copy executed: {Bytes} bytes at offset {SrcOffset} -> {DstOffset}")]
+        private static partial void LogOpenClP2PRangeCopyExecuted(ILogger logger, long bytes, long srcOffset, long dstOffset);
+
+        [LoggerMessage(
+            EventId = 14019,
+            Level = LogLevel.Warning,
+            Message = "Generic P2P copy failed, using host-mediated fallback")]
+        private static partial void LogGenericP2PCopyFailed(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 14020,
+            Level = LogLevel.Trace,
+            Message = "Generic P2P copy executed: {Bytes} bytes")]
+        private static partial void LogGenericP2PCopyExecuted(ILogger logger, long bytes);
+
+        #endregion
     }
     /// <summary>
     /// An p2 p copy strategy enumeration.

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -12,8 +13,118 @@ namespace DotCompute.Core.Security;
 /// Manages cryptographic keys including generation, rotation, and secure storage.
 /// Provides secure key lifecycle management with automatic rotation capabilities.
 /// </summary>
-internal sealed class CryptographicKeyManager : IDisposable
+internal sealed partial class CryptographicKeyManager : IDisposable
 {
+    // LoggerMessage delegates - Event ID range 18400-18499 for CryptographicKeyManager (Security module)
+    private static readonly Action<ILogger, Exception?> _logManagerInitialized =
+        LoggerMessage.Define(
+            MsLogLevel.Information,
+            new EventId(18400, nameof(LogManagerInitialized)),
+            "CryptographicKeyManager initialized with automatic key rotation");
+
+    private static readonly Action<ILogger, string, int, string, Exception?> _logKeyGeneration =
+        LoggerMessage.Define<string, int, string>(
+            MsLogLevel.Information,
+            new EventId(18401, nameof(LogKeyGeneration)),
+            "Generating new cryptographic key: Type={KeyType}, Size={KeySize}, Id={Identifier}");
+
+    private static readonly Action<ILogger, string, string, Exception?> _logKeyGenerationSuccess =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Information,
+            new EventId(18402, nameof(LogKeyGenerationSuccess)),
+            "Key generated successfully: Id={Identifier}, Fingerprint={Fingerprint}");
+
+    private static readonly Action<ILogger, string, string, Exception?> _logKeyGenerationFailed =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Error,
+            new EventId(18403, nameof(LogKeyGenerationFailed)),
+            "Key generation failed: Type={KeyType}, Id={Identifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logKeyRetrieved =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18404, nameof(LogKeyRetrieved)),
+            "Key retrieved: Id={Identifier}");
+
+    private static readonly Action<ILogger, bool, Exception?> _logKeyRotationStarted =
+        LoggerMessage.Define<bool>(
+            MsLogLevel.Information,
+            new EventId(18405, nameof(LogKeyRotationStarted)),
+            "Starting key rotation: Force={ForceRotation}");
+
+    private static readonly Action<ILogger, string, Exception?> _logKeyRotationError =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18406, nameof(LogKeyRotationError)),
+            "Failed to rotate key: {KeyId}");
+
+    private static readonly Action<ILogger, int, int, Exception?> _logKeyRotationCompleted =
+        LoggerMessage.Define<int, int>(
+            MsLogLevel.Information,
+            new EventId(18407, nameof(LogKeyRotationCompleted)),
+            "Key rotation completed: Rotated={RotatedCount}, Failed={FailedCount}");
+
+    private static readonly Action<ILogger, string, Exception?> _logKeyDeleted =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Information,
+            new EventId(18408, nameof(LogKeyDeleted)),
+            "Key deleted successfully: Id={Identifier}");
+
+    private static readonly Action<ILogger, string, string, Exception?> _logKeyExported =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Information,
+            new EventId(18409, nameof(LogKeyExported)),
+            "Key exported successfully: Id={Identifier}, Format={Format}");
+
+    private static readonly Action<ILogger, string, Exception?> _logKeyExportFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18410, nameof(LogKeyExportFailed)),
+            "Key export failed: Id={Identifier}");
+
+    private static readonly Action<ILogger, Exception?> _logAutoRotationFailed =
+        LoggerMessage.Define(
+            MsLogLevel.Error,
+            new EventId(18411, nameof(LogAutoRotationFailed)),
+            "Automatic key rotation failed");
+
+    // Wrapper methods
+    private static void LogManagerInitialized(ILogger logger)
+        => _logManagerInitialized(logger, null);
+
+    private static void LogKeyGeneration(ILogger logger, string keyType, int keySize, string identifier)
+        => _logKeyGeneration(logger, keyType, keySize, identifier, null);
+
+    private static void LogKeyGenerationSuccess(ILogger logger, string identifier, string fingerprint)
+        => _logKeyGenerationSuccess(logger, identifier, fingerprint, null);
+
+    private static void LogKeyGenerationFailed(ILogger logger, Exception ex, string keyType, string identifier)
+        => _logKeyGenerationFailed(logger, keyType, identifier, ex);
+
+    private static void LogKeyRetrieved(ILogger logger, string identifier)
+        => _logKeyRetrieved(logger, identifier, null);
+
+    private static void LogKeyRotationStarted(ILogger logger, bool forceRotation)
+        => _logKeyRotationStarted(logger, forceRotation, null);
+
+    private static void LogKeyRotationError(ILogger logger, Exception ex, string keyId)
+        => _logKeyRotationError(logger, keyId, ex);
+
+    private static void LogKeyRotationCompleted(ILogger logger, int rotatedCount, int failedCount)
+        => _logKeyRotationCompleted(logger, rotatedCount, failedCount, null);
+
+    private static void LogKeyDeleted(ILogger logger, string identifier)
+        => _logKeyDeleted(logger, identifier, null);
+
+    private static void LogKeyExported(ILogger logger, string identifier, string format)
+        => _logKeyExported(logger, identifier, format, null);
+
+    private static void LogKeyExportFailed(ILogger logger, Exception ex, string identifier)
+        => _logKeyExportFailed(logger, identifier, ex);
+
+    private static void LogAutoRotationFailed(ILogger logger, Exception ex)
+        => _logAutoRotationFailed(logger, ex);
+
     private readonly ILogger<CryptographicKeyManager> _logger;
     private readonly CryptographicConfiguration _configuration;
     private readonly ConcurrentDictionary<string, SecureKeyContainer> _keyStore;
@@ -41,7 +152,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         _keyRotationTimer = new Timer(PerformKeyRotation, null,
             _configuration.KeyRotationInterval, _configuration.KeyRotationInterval);
 
-        _logger.LogInfoMessage("CryptographicKeyManager initialized with automatic key rotation");
+        LogManagerInitialized(_logger);
     }
 
     /// <summary>
@@ -60,7 +171,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogInfoMessage($"Generating new cryptographic key: Type={keyType}, Size={keySize}, Id={identifier}");
+            LogKeyGeneration(_logger, keyType.ToString(), keySize, identifier);
 
             var result = new KeyGenerationResult
             {
@@ -98,9 +209,9 @@ internal sealed class CryptographicKeyManager : IDisposable
             if (_keyStore.TryAdd(identifier, keyContainer))
             {
                 result.IsSuccessful = true;
-                result.KeyFingerprint = ComputeKeyFingerprint(keyContainer);
+                result.Fingerprint = ComputeKeyFingerprint(keyContainer);
 
-                _logger.LogInfoMessage($"Key generated successfully: Id={identifier}, Fingerprint={result.KeyFingerprint}");
+                LogKeyGenerationSuccess(_logger, identifier, result.Fingerprint);
             }
             else
             {
@@ -111,7 +222,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Key generation failed: Type={keyType}, Id={identifier}");
+            LogKeyGenerationFailed(_logger, ex, keyType.ToString(), identifier);
             return new KeyGenerationResult
             {
                 KeyType = keyType,
@@ -148,11 +259,11 @@ internal sealed class CryptographicKeyManager : IDisposable
                     return null;
                 }
 
-                _logger.LogDebugMessage($"Key retrieved: Id={identifier}");
+                LogKeyRetrieved(_logger, identifier);
                 return keyContainer;
             }
 
-            _logger.LogWarning("Key not found: {identifier}", identifier);
+            _logger.LogWarning("Key not found: {Identifier}", identifier);
             return null;
         }
         finally
@@ -171,7 +282,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogInfoMessage($"Starting key rotation: Force={forceRotation}");
+            LogKeyRotationStarted(_logger, forceRotation);
 
             var result = new KeyRotationResult
             {
@@ -213,14 +324,14 @@ internal sealed class CryptographicKeyManager : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, $"Failed to rotate key: {keyId}");
+                    LogKeyRotationError(_logger, ex, keyId);
                     result.FailedRotations.Add($"{keyId}: {ex.Message}");
                 }
             }
 
             result.IsSuccessful = result.FailedRotations.Count == 0;
 
-            _logger.LogInfoMessage($"Key rotation completed: Rotated={result.RotatedKeys.Count}, Failed={result.FailedRotations.Count}");
+            LogKeyRotationCompleted(_logger, result.RotatedKeys.Count, result.FailedRotations.Count);
 
             return result;
         }
@@ -245,11 +356,11 @@ internal sealed class CryptographicKeyManager : IDisposable
             {
                 // Securely dispose of key material
                 removedKey.Dispose();
-                _logger.LogInfoMessage($"Key deleted successfully: Id={identifier}");
+                LogKeyDeleted(_logger, identifier);
                 return true;
             }
 
-            _logger.LogWarning("Attempted to delete non-existent key: {identifier}", identifier);
+            _logger.LogWarning("Attempted to delete non-existent key: {Identifier}", identifier);
             return false;
         }
         finally
@@ -329,13 +440,13 @@ internal sealed class CryptographicKeyManager : IDisposable
             };
 
             result.IsSuccessful = true;
-            _logger.LogInfoMessage($"Key exported successfully: Id={identifier}, Format={format}");
+            LogKeyExported(_logger, identifier, format.ToString());
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Key export failed: Id={identifier}");
+            LogKeyExportFailed(_logger, ex, identifier);
             return new KeyExportResult
             {
                 Identifier = identifier,
@@ -413,7 +524,7 @@ internal sealed class CryptographicKeyManager : IDisposable
 
     private bool IsKeyExpired(SecureKeyContainer key)
     {
-        var maxAge = _configuration.KeyMaxAge;
+        var maxAge = _configuration.KeyLifetime;
         return DateTimeOffset.UtcNow - key.CreationTime > maxAge;
     }
 
@@ -487,7 +598,7 @@ internal sealed class CryptographicKeyManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Automatic key rotation failed");
+            LogAutoRotationFailed(_logger, ex);
         }
     }
     /// <summary>

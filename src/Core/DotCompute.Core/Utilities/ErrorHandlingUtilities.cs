@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Utilities.ErrorHandling.Enums;
 using DotCompute.Core.Utilities.ErrorHandling.Models;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Utilities;
 
@@ -20,6 +21,35 @@ namespace DotCompute.Core.Utilities;
 public static class ErrorHandlingUtilities
 {
     private static readonly ConcurrentDictionary<Type, ErrorClassification> ErrorClassificationCache = new();
+
+    // LoggerMessage delegates - Event ID range 20000-20099 for ErrorHandlingUtilities (Utilities module)
+    private static readonly Action<ILogger, LogLevel, Exception?> _logError =
+        LoggerMessage.Define<LogLevel>(
+            MsLogLevel.Error,
+            new EventId(20000, nameof(LogError)),
+            "Error occurred with severity: {LogLevel}");
+
+    private static readonly Action<ILogger, string, long, Exception?> _logOperationCompleted =
+        LoggerMessage.Define<string, long>(
+            MsLogLevel.Debug,
+            new EventId(20001, nameof(LogOperationCompleted)),
+            "Operation {Operation} completed successfully in {Duration}ms");
+
+    private static readonly Action<ILogger, string, int, int, double, string, Exception?> _logRetryAttempt =
+        LoggerMessage.Define<string, int, int, double, string>(
+            MsLogLevel.Warning,
+            new EventId(20002, nameof(LogRetryAttempt)),
+            "Operation {Operation} failed on attempt {Attempt}/{MaxAttempts}, retrying in {Delay}ms. Error: {Error}");
+
+    // Wrapper methods
+    private static void LogErrorWithLevel(ILogger logger, LogLevel logLevel, Exception? exception)
+        => _logError(logger, logLevel, exception);
+
+    private static void LogOperationCompleted(ILogger logger, string operationName, long durationMs)
+        => _logOperationCompleted(logger, operationName, durationMs, null);
+
+    private static void LogRetryAttempt(ILogger logger, string operationName, int attempt, int maxAttempts, double delayMs, string errorMessage, Exception? exception)
+        => _logRetryAttempt(logger, operationName, attempt, maxAttempts, delayMs, errorMessage, exception);
 
     /// <summary>
     /// Classifies an exception into predefined categories for appropriate handling.
@@ -107,7 +137,7 @@ public static class ErrorHandlingUtilities
             ["Severity"] = errorContext.Severity.ToString()
         });
 
-        logger.Log(logLevel, errorContext.Exception, message);
+        LogErrorWithLevel(logger, logLevel, errorContext.Exception);
 
         // Log additional context for high severity errors
         if (errorContext.Severity >= ErrorSeverity.High)
@@ -196,8 +226,7 @@ public static class ErrorHandlingUtilities
             var result = await operation();
             stopwatch.Stop();
 
-            logger.LogDebug("Operation {Operation} completed successfully in {Duration}ms",
-                operationName, stopwatch.ElapsedMilliseconds);
+            LogOperationCompleted(logger, operationName, stopwatch.ElapsedMilliseconds);
 
             return result;
         }
@@ -249,8 +278,7 @@ public static class ErrorHandlingUtilities
                 }
 
                 var retryDelay = CalculateRetryDelay(delay, attempt);
-                logger.LogWarning("Operation {Operation} failed on attempt {Attempt}/{MaxAttempts}, retrying in {Delay}ms. Error: {Error}",
-                    operationName, attempt, maxRetries + 1, retryDelay.TotalMilliseconds, ex.Message);
+                LogRetryAttempt(logger, operationName, attempt, maxRetries + 1, retryDelay.TotalMilliseconds, ex.Message, ex);
 
                 await Task.Delay(retryDelay, cancellationToken);
             }

@@ -6,8 +6,9 @@ This document tracks the systematic conversion of all direct `ILogger` calls to 
 
 **Status**: In Progress
 **Total Files**: 293+ files with logging
-**Files Fixed**: 3 (KernelExecutionService, AcceleratorUtilities, DisposalUtilities)
-**Estimated Remaining**: ~290 files
+**Files Fixed**: 5 (KernelExecutionService, AcceleratorUtilities, DisposalUtilities, BaseRecoveryStrategy, P2PBuffer)
+**Warnings Fixed**: 184+ total (90 in BaseRecoveryStrategy, 94 in P2PBuffer)
+**Estimated Remaining**: ~288 files
 
 ---
 
@@ -54,6 +55,35 @@ LogKernelRegistered(_logger, registration.FullName, string.Join(", ", registrati
 - Replaced all direct logger calls with null-checked delegate invocations
 - Handled nullable logger pattern with `if (logger != null)` checks
 - All CA1848 warnings eliminated
+
+### 4. BaseRecoveryStrategy.cs
+**Location**: `src/Core/DotCompute.Core/Recovery/`
+**Status**: ✅ Complete
+**Event IDs**: 13200-13212
+**Delegates**: 13 LoggerMessage delegates
+**Warnings Fixed**: 90
+
+**Changes**:
+- Converted class to `abstract partial`
+- Added `#region LoggerMessage Delegates` with 13 delegates
+- Replaced all direct logger calls throughout recovery logic
+- Covers initialization, recovery attempts, retries, rate limiting, cleanup, and disposal
+- All CA1848 warnings eliminated
+
+### 5. P2PBuffer.cs
+**Location**: `src/Core/DotCompute.Core/Memory/`
+**Status**: ✅ Complete
+**Event IDs**: 14001-14020
+**Delegates**: 20 LoggerMessage delegates
+**Warnings Fixed**: 94
+
+**Changes**:
+- Converted class to `partial` (sealed partial)
+- Added `#region LoggerMessage Delegates` with 20 delegates
+- Replaced all direct logger calls for P2P memory transfers
+- Covers host-to-device, device-to-host, direct P2P, CUDA/HIP/OpenCL execution
+- Includes buffer fill operations, range copies, and fallback strategies
+- All CA1848/XFIX003 warnings eliminated
 
 ---
 
@@ -128,8 +158,8 @@ To avoid conflicts, event IDs are allocated by module:
 | 10000-10999 | Execution | 🔄 Available |
 | 11000-11999 | Debugging | 🔄 Available |
 | 12000-12999 | Optimization | 🔄 Available |
-| 13000-13999 | Recovery | 🔄 Available |
-| 14000-14999 | Plugins | 🔄 Available |
+| 13000-13999 | Recovery | ✅ Allocated (13200-13212: BaseRecoveryStrategy) |
+| 14000-14999 | P2P Memory | ✅ Allocated (14001-14020: P2PBuffer) |
 | 15000-15999 | Algorithms | 🔄 Available |
 
 ---
@@ -292,12 +322,16 @@ private static partial void LogSomething(ILogger logger);
 
 Track your progress here:
 
-- [x] KernelExecutionService.cs (11 delegates)
-- [x] AcceleratorUtilities.cs (14 delegates)
-- [x] DisposalUtilities.cs (11 delegates)
+- [x] KernelExecutionService.cs (11 delegates) - Event IDs 1001-1011
+- [x] AcceleratorUtilities.cs (14 delegates) - Event IDs 3001-3014
+- [x] DisposalUtilities.cs (11 delegates) - Event IDs 2001-2011
+- [x] BaseRecoveryStrategy.cs (13 delegates) - Event IDs 13200-13212 ✨ 90 warnings fixed!
+- [x] P2PBuffer.cs (20 delegates) - Event IDs 14001-14020 ✨ 94 warnings fixed!
 - [ ] KernelUtilities.cs (8+ delegates needed)
 - [ ] CudaMemoryManager.cs (15+ delegates needed)
-- [ ] ... (290+ more files)
+- [ ] CompilationFallback.cs (Recovery module)
+- [ ] GpuRecoveryManager.cs (Recovery module)
+- [ ] ... (285+ more files)
 
 ---
 

@@ -14,7 +14,7 @@ namespace DotCompute.Core.Recovery;
 /// Eliminates over 1,800 lines of duplicate recovery code.
 /// </summary>
 /// <typeparam name="TContext">The specific context type for this recovery strategy</typeparam>
-public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContext>, IDisposable
+public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContext>, IDisposable
     where TContext : class
 {
     protected readonly ILogger Logger;
@@ -43,7 +43,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
             _cleanupTimer = new Timer(PerformCleanup, null, cleanupInterval.Value, cleanupInterval.Value);
         }
 
-        Logger.LogDebug("Recovery strategy {StrategyType} initialized", GetType().Name);
+        LogRecoveryStrategyInitialized(Logger, GetType().Name);
     }
 
     #region Abstract Properties and Methods
@@ -106,8 +106,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
         _ = Interlocked.Increment(ref _totalRecoveryAttempts);
 
-        Logger.LogInformation("Starting recovery attempt for error: {ErrorType} with strategy: {StrategyType}",
-            error.GetType().Name, GetType().Name);
+        LogStartingRecoveryAttempt(Logger, error.GetType().Name, GetType().Name);
 
         await _recoveryLock.WaitAsync(cancellationToken);
 
@@ -139,14 +138,12 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
             if (recoveryResult.Success)
             {
                 _ = Interlocked.Increment(ref _successfulRecoveries);
-                Logger.LogInformation("Recovery successful for {ErrorType} in {Duration}ms",
-                    error.GetType().Name, stopwatch.ElapsedMilliseconds);
+                LogRecoverySuccessful(Logger, error.GetType().Name, stopwatch.ElapsedMilliseconds);
             }
             else
             {
                 _ = Interlocked.Increment(ref _failedRecoveries);
-                Logger.LogWarning("Recovery failed for {ErrorType}: {Message}",
-                    error.GetType().Name, recoveryResult.Message);
+                LogRecoveryFailed(Logger, error.GetType().Name, recoveryResult.Message);
             }
 
             return recoveryResult;
@@ -163,7 +160,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         catch (Exception recoveryException)
         {
             stopwatch.Stop();
-            Logger.LogError(recoveryException, "Exception during recovery of {ErrorType}", error.GetType().Name);
+            LogExceptionDuringRecovery(Logger, recoveryException, error.GetType().Name);
 
             var result = CreateFailureResult($"Recovery failed with exception: {recoveryException.Message}",
                 error, recoveryException);
@@ -195,8 +192,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
         {
             try
             {
-                Logger.LogDebug("Recovery attempt {Attempt}/{MaxAttempts} for {ErrorType}",
-                    attempt, maxRetries + 1, error.GetType().Name);
+                LogRecoveryAttempt(Logger, attempt, maxRetries + 1, error.GetType().Name);
 
                 var result = await RecoverAsync(error, context, options, cancellationToken);
 
@@ -213,7 +209,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
                 if (attempt > maxRetries)
                 {
-                    Logger.LogError(ex, "Recovery failed after {MaxRetries} attempts", maxRetries);
+                    LogRecoveryFailedAfterRetries(Logger, ex, maxRetries);
                     throw;
                 }
             }
@@ -222,8 +218,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
             if (attempt <= maxRetries)
             {
                 var delay = CalculateRetryDelay(baseDelay, attempt, options.UseExponentialBackoff);
-                Logger.LogDebug("Waiting {Delay}ms before retry attempt {NextAttempt}",
-                    delay.TotalMilliseconds, attempt + 1);
+                LogWaitingBeforeRetry(Logger, delay.TotalMilliseconds, attempt + 1);
 
                 await Task.Delay(delay, cancellationToken);
             }
@@ -256,15 +251,14 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
         if (IsRateLimited(history, options))
         {
-            Logger.LogDebug("Recovery rate limited for context {ContextKey}", contextKey);
+            LogRecoveryRateLimited(Logger, contextKey);
             return false;
         }
 
         // Check consecutive failure threshold
         if (history.ConsecutiveFailures >= options.MaxConsecutiveFailures)
         {
-            Logger.LogWarning("Maximum consecutive failures ({MaxFailures}) reached for context {ContextKey}",
-                options.MaxConsecutiveFailures, contextKey);
+            LogMaxConsecutiveFailuresReached(Logger, options.MaxConsecutiveFailures, contextKey);
             return false;
         }
 
@@ -564,12 +558,12 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
             if (keysToRemove.Count > 0)
             {
-                Logger.LogDebug("Cleanup completed: removed {Count} old recovery contexts", keysToRemove.Count);
+                LogCleanupCompleted(Logger, keysToRemove.Count);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error during recovery strategy cleanup");
+            LogCleanupError(Logger, ex);
         }
     }
 
@@ -602,9 +596,7 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
 
             // Log final statistics
             var stats = GetStatistics();
-            Logger.LogInformation(
-                "Recovery strategy {StrategyType} disposed - Attempts: {Attempts}, Success Rate: {SuccessRate:P2}",
-                stats.StrategyType, stats.TotalAttempts, stats.SuccessRate);
+            LogRecoveryStrategyDisposed(Logger, stats.StrategyType, stats.TotalAttempts, stats.SuccessRate);
 
             // Dispose resources
             _cleanupTimer?.Dispose();
@@ -637,6 +629,88 @@ public abstract class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContex
             }
         }
     }
+
+    #endregion
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 13200,
+        Level = LogLevel.Debug,
+        Message = "Recovery strategy {StrategyType} initialized")]
+    private static partial void LogRecoveryStrategyInitialized(ILogger logger, string strategyType);
+
+    [LoggerMessage(
+        EventId = 13201,
+        Level = LogLevel.Information,
+        Message = "Starting recovery attempt for error: {ErrorType} with strategy: {StrategyType}")]
+    private static partial void LogStartingRecoveryAttempt(ILogger logger, string errorType, string strategyType);
+
+    [LoggerMessage(
+        EventId = 13202,
+        Level = LogLevel.Information,
+        Message = "Recovery successful for {ErrorType} in {Duration}ms")]
+    private static partial void LogRecoverySuccessful(ILogger logger, string errorType, long duration);
+
+    [LoggerMessage(
+        EventId = 13203,
+        Level = LogLevel.Warning,
+        Message = "Recovery failed for {ErrorType}: {Message}")]
+    private static partial void LogRecoveryFailed(ILogger logger, string errorType, string message);
+
+    [LoggerMessage(
+        EventId = 13204,
+        Level = LogLevel.Error,
+        Message = "Exception during recovery of {ErrorType}")]
+    private static partial void LogExceptionDuringRecovery(ILogger logger, Exception exception, string errorType);
+
+    [LoggerMessage(
+        EventId = 13205,
+        Level = LogLevel.Debug,
+        Message = "Recovery attempt {Attempt}/{MaxAttempts} for {ErrorType}")]
+    private static partial void LogRecoveryAttempt(ILogger logger, int attempt, int maxAttempts, string errorType);
+
+    [LoggerMessage(
+        EventId = 13206,
+        Level = LogLevel.Error,
+        Message = "Recovery failed after {MaxRetries} attempts")]
+    private static partial void LogRecoveryFailedAfterRetries(ILogger logger, Exception exception, int maxRetries);
+
+    [LoggerMessage(
+        EventId = 13207,
+        Level = LogLevel.Debug,
+        Message = "Waiting {Delay}ms before retry attempt {NextAttempt}")]
+    private static partial void LogWaitingBeforeRetry(ILogger logger, double delay, int nextAttempt);
+
+    [LoggerMessage(
+        EventId = 13208,
+        Level = LogLevel.Debug,
+        Message = "Recovery rate limited for context {ContextKey}")]
+    private static partial void LogRecoveryRateLimited(ILogger logger, string contextKey);
+
+    [LoggerMessage(
+        EventId = 13209,
+        Level = LogLevel.Warning,
+        Message = "Maximum consecutive failures ({MaxFailures}) reached for context {ContextKey}")]
+    private static partial void LogMaxConsecutiveFailuresReached(ILogger logger, int maxFailures, string contextKey);
+
+    [LoggerMessage(
+        EventId = 13210,
+        Level = LogLevel.Debug,
+        Message = "Cleanup completed: removed {Count} old recovery contexts")]
+    private static partial void LogCleanupCompleted(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 13211,
+        Level = LogLevel.Warning,
+        Message = "Error during recovery strategy cleanup")]
+    private static partial void LogCleanupError(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 13212,
+        Level = LogLevel.Information,
+        Message = "Recovery strategy {StrategyType} disposed - Attempts: {Attempts}, Success Rate: {SuccessRate:P2}")]
+    private static partial void LogRecoveryStrategyDisposed(ILogger logger, string strategyType, long attempts, double successRate);
 
     #endregion
 }

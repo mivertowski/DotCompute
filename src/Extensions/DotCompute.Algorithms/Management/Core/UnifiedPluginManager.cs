@@ -413,7 +413,7 @@ public sealed class PluginDiscoveryOptions
     /// <summary>
     /// Gets or sets file patterns to match.
     /// </summary>
-    public IList<string> FilePatterns { get; set; } = ["*.dll"];
+    public IList<string> FilePatterns { get; } = ["*.dll"];
 }
 
 /// <summary>

@@ -32,13 +32,13 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Gets or sets the input buffers specific to this device's work assignment.
         /// These contain the data this device needs to process its assigned work.
         /// </summary>
-        public required object[] InputBuffers { get; set; }
+        public required IReadOnlyList<object> InputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets the output buffers where this device should store its results.
         /// These will contain the processed data from this device's work assignment.
         /// </summary>
-        public required object[] OutputBuffers { get; set; }
+        public required IReadOnlyList<object> OutputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets whether work stealing is enabled for this device.

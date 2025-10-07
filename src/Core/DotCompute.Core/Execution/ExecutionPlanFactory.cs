@@ -27,7 +27,7 @@ namespace DotCompute.Core.Execution
     /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
     public sealed class ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
     {
-        private readonly ExecutionPlanGenerator _generator = new(logger, performanceMonitor);
+        private readonly ExecutionPlanGenerator _generator = new(logger);
         private readonly ExecutionPlanOptimizer _optimizer = new(logger, performanceMonitor);
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 

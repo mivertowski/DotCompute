@@ -35,7 +35,7 @@ public class WorkloadAnalysis
     /// Gets or sets the historical performance.
     /// </summary>
     /// <value>The historical performance.</value>
-    public Dictionary<string, BackendPerformanceStats> HistoricalPerformance { get; set; } = [];
+    public Dictionary<string, BackendPerformanceStats> HistoricalPerformance { get; init; } = [];
     /// <summary>
     /// Gets or sets the total history entries.
     /// </summary>

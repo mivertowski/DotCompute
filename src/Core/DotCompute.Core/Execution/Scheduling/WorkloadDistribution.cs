@@ -15,7 +15,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Gets or sets the list of work assignments for each device.
         /// Each assignment specifies what portion of the workload a device should handle.
         /// </summary>
-        public required List<DeviceWorkAssignment> DeviceAssignments { get; set; }
+        public required List<DeviceWorkAssignment> DeviceAssignments { get; init; }
 
         /// <summary>
         /// Gets or sets the load balancing strategy used for this distribution.

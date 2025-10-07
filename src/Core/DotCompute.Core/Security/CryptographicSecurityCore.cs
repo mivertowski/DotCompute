@@ -204,7 +204,7 @@ namespace DotCompute.Core.Security
             if (_weakAlgorithms.Contains(algorithm))
             {
                 result.IsApproved = false;
-                result.SecurityLevel = SecurityLevel.Weak;
+                result.SecurityLevel = SecurityLevel.Low;
                 result.ValidationMessage = $"Algorithm '{algorithm}' is considered weak and should not be used";
                 return result;
             }
@@ -212,13 +212,13 @@ namespace DotCompute.Core.Security
             if (_approvedCiphers.Contains(algorithm) || _approvedHashAlgorithms.Contains(algorithm))
             {
                 result.IsApproved = true;
-                result.SecurityLevel = SecurityLevel.Strong;
+                result.SecurityLevel = SecurityLevel.High;
                 result.ValidationMessage = $"Algorithm '{algorithm}' is approved for use";
             }
             else
             {
                 result.IsApproved = false;
-                result.SecurityLevel = SecurityLevel.Unknown;
+                result.SecurityLevel = SecurityLevel.None;
                 result.ValidationMessage = $"Algorithm '{algorithm}' is not in the approved list";
             }
 
@@ -575,7 +575,7 @@ namespace DotCompute.Core.Security
         /// Gets or sets the recommendations.
         /// </summary>
         /// <value>The recommendations.</value>
-        public IList<string> Recommendations { get; set; } = [];
+        public IList<string> Recommendations { get; } = [];
     }
     /// <summary>
     /// A class that represents secure key container.
@@ -614,6 +614,24 @@ namespace DotCompute.Core.Security
         /// </summary>
         /// <value>The public key data bytes, or null for symmetric keys.</value>
         public byte[]? PublicKeyData { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this key has been rotated.
+        /// </summary>
+        /// <value>True if the key has been rotated; otherwise, false.</value>
+        public bool IsRotated { get; set; }
+
+        /// <summary>
+        /// Gets or sets the rotation time.
+        /// </summary>
+        /// <value>The time when the key was rotated, or DateTimeOffset.MinValue if not rotated.</value>
+        public DateTimeOffset RotationTime { get; set; }
+
+        /// <summary>
+        /// Gets the key material as read-only memory.
+        /// </summary>
+        /// <value>The raw key data.</value>
+        public ReadOnlyMemory<byte> KeyMaterial => _keyData;
 
         private readonly byte[] _keyData;
         private bool _disposed;

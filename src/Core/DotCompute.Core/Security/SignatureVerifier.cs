@@ -4,13 +4,14 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
 /// <summary>
 /// Handles digital signature creation and verification with timing attack protection
 /// </summary>
-public sealed class SignatureVerifier : IDisposable
+public sealed partial class SignatureVerifier : IDisposable
 {
     private readonly ILogger _logger;
     private readonly RandomNumberGenerator _randomGenerator;
@@ -39,8 +40,126 @@ public sealed class SignatureVerifier : IDisposable
         _cacheCleanupTimer = new Timer(CleanupCache, null,
             TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
 
-        _logger.LogDebugMessage("Signature Verifier initialized");
+        LogVerifierInitialized(_logger);
     }
+
+    // LoggerMessage delegates - Event ID range 18700-18711 for SignatureVerifier
+    private static readonly Action<ILogger, Exception?> _logVerifierInitialized =
+        LoggerMessage.Define(
+            MsLogLevel.Debug,
+            new EventId(18700, nameof(LogVerifierInitialized)),
+            "Signature Verifier initialized");
+
+    private static void LogVerifierInitialized(ILogger logger)
+        => _logVerifierInitialized(logger, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logSigningFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18701, nameof(LogSigningFailed)),
+            "Signing failed for key {KeyId}");
+
+    private static void LogSigningFailed(ILogger logger, string keyId, Exception exception)
+        => _logSigningFailed(logger, keyId, exception);
+
+    private static readonly Action<ILogger, string, Exception?> _logCacheResult =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18702, nameof(LogCacheResult)),
+            "Signature verification result retrieved from cache: {KeyId}");
+
+    private static void LogCacheResult(ILogger logger, string keyId)
+        => _logCacheResult(logger, keyId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logVerificationFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18703, nameof(LogVerificationFailed)),
+            "Signature verification failed for key {KeyId}");
+
+    private static void LogVerificationFailed(ILogger logger, string keyId, Exception exception)
+        => _logVerificationFailed(logger, keyId, exception);
+
+    private static readonly Action<ILogger, string, bool, Exception?> _logAlgorithmValidated =
+        LoggerMessage.Define<string, bool>(
+            MsLogLevel.Debug,
+            new EventId(18704, nameof(LogAlgorithmValidated)),
+            "Signature algorithm validation completed: {Algorithm}, Approved={Approved}");
+
+    private static void LogAlgorithmValidated(ILogger logger, string algorithm, bool approved)
+        => _logAlgorithmValidated(logger, algorithm, approved, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logRsaSignatureCreated =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18705, nameof(LogRsaSignatureCreated)),
+            "RSA signature created successfully for key {KeyId}");
+
+    private static void LogRsaSignatureCreated(ILogger logger, string keyId)
+        => _logRsaSignatureCreated(logger, keyId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logRsaSigningFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18706, nameof(LogRsaSigningFailed)),
+            "RSA signing failed for key {KeyId}");
+
+    private static void LogRsaSigningFailed(ILogger logger, string keyId, Exception exception)
+        => _logRsaSigningFailed(logger, keyId, exception);
+
+    private static readonly Action<ILogger, string, Exception?> _logEcdsaSignatureCreated =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18707, nameof(LogEcdsaSignatureCreated)),
+            "ECDSA signature created successfully for key {KeyId}");
+
+    private static void LogEcdsaSignatureCreated(ILogger logger, string keyId)
+        => _logEcdsaSignatureCreated(logger, keyId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logEcdsaSigningFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18708, nameof(LogEcdsaSigningFailed)),
+            "ECDSA signing failed for key {KeyId}");
+
+    private static void LogEcdsaSigningFailed(ILogger logger, string keyId, Exception exception)
+        => _logEcdsaSigningFailed(logger, keyId, exception);
+
+    private static readonly Action<ILogger, string, bool, Exception?> _logRsaVerificationCompleted =
+        LoggerMessage.Define<string, bool>(
+            MsLogLevel.Debug,
+            new EventId(18709, nameof(LogRsaVerificationCompleted)),
+            "RSA signature verification completed for key {KeyId}: Valid={Valid}");
+
+    private static void LogRsaVerificationCompleted(ILogger logger, string keyId, bool valid)
+        => _logRsaVerificationCompleted(logger, keyId, valid, null);
+
+    private static readonly Action<ILogger, string, bool, Exception?> _logEcdsaVerificationCompleted =
+        LoggerMessage.Define<string, bool>(
+            MsLogLevel.Debug,
+            new EventId(18710, nameof(LogEcdsaVerificationCompleted)),
+            "ECDSA signature verification completed for key {KeyId}: Valid={Valid}");
+
+    private static void LogEcdsaVerificationCompleted(ILogger logger, string keyId, bool valid)
+        => _logEcdsaVerificationCompleted(logger, keyId, valid, null);
+
+    private static readonly Action<ILogger, int, Exception?> _logCacheCleanup =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Debug,
+            new EventId(18711, nameof(LogCacheCleanup)),
+            "Cleaned up {Count} expired signature verification cache entries");
+
+    private static void LogCacheCleanup(ILogger logger, int count)
+        => _logCacheCleanup(logger, count, null);
+
+    private static readonly Action<ILogger, Exception?> _logVerifierDisposed =
+        LoggerMessage.Define(
+            MsLogLevel.Debug,
+            new EventId(18712, nameof(LogVerifierDisposed)),
+            "Signature Verifier disposed");
+
+    private static void LogVerifierDisposed(ILogger logger)
+        => _logVerifierDisposed(logger, null);
 
     /// <summary>
     /// Generates an RSA key pair for signing operations
@@ -129,7 +248,7 @@ public sealed class SignatureVerifier : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Signing failed for key {keyContainer.Identifier}");
+            LogSigningFailed(_logger, keyContainer.Identifier, ex);
             return new SignatureResult
             {
                 Success = false,
@@ -164,7 +283,7 @@ public sealed class SignatureVerifier : IDisposable
                 if (_verificationCache.TryGetValue(cacheKey, out var cachedResult) &&
                     DateTimeOffset.UtcNow - cachedResult.ValidationTime < TimeSpan.FromMinutes(5))
                 {
-                    _logger.LogDebugMessage($"Signature verification result retrieved from cache: {keyContainer.Identifier}");
+                    LogCacheResult(_logger, keyContainer.Identifier);
                     return new SignatureVerificationResult
                     {
                         IsValid = cachedResult.IsValid,
@@ -210,7 +329,7 @@ public sealed class SignatureVerifier : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Signature verification failed for key {keyContainer.Identifier}");
+            LogVerificationFailed(_logger, keyContainer.Identifier, ex);
             return new SignatureVerificationResult
             {
                 IsValid = false,
@@ -262,7 +381,7 @@ public sealed class SignatureVerifier : IDisposable
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
-        _logger.LogDebugMessage($"Signature algorithm validation completed: {algorithm}, Approved={result.IsApproved}");
+        LogAlgorithmValidated(_logger, algorithm, result.IsApproved);
 
         return result;
     }
@@ -286,7 +405,7 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var signature = rsa.SignData(data.Span, hashName, RSASignaturePadding.Pkcs1);
-                _logger.LogDebugMessage($"RSA signature created successfully for key {keyContainer.Identifier}");
+                LogRsaSignatureCreated(_logger, keyContainer.Identifier);
                 return new SignatureResult
                 {
                     Success = true,
@@ -297,7 +416,7 @@ public sealed class SignatureVerifier : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"RSA signing failed for key {keyContainer.Identifier}");
+                LogRsaSigningFailed(_logger, keyContainer.Identifier, ex);
                 return new SignatureResult
                 {
                     Success = false,
@@ -328,7 +447,7 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var signature = ecdsa.SignData(data.Span, hashName);
-                _logger.LogDebugMessage($"ECDSA signature created successfully for key {keyContainer.Identifier}");
+                LogEcdsaSignatureCreated(_logger, keyContainer.Identifier);
                 return new SignatureResult
                 {
                     Success = true,
@@ -339,7 +458,7 @@ public sealed class SignatureVerifier : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"ECDSA signing failed for key {keyContainer.Identifier}");
+                LogEcdsaSigningFailed(_logger, keyContainer.Identifier, ex);
                 return new SignatureResult
                 {
                     Success = false,
@@ -380,7 +499,7 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var isValid = rsa.VerifyData(data.Span, signature.Span, hashName, RSASignaturePadding.Pkcs1);
-                _logger.LogDebugMessage($"RSA signature verification completed for key {keyContainer.Identifier}: Valid={isValid}");
+                LogRsaVerificationCompleted(_logger, keyContainer.Identifier, isValid);
                 return new SignatureVerificationResult
                 {
                     IsValid = isValid,
@@ -433,7 +552,7 @@ public sealed class SignatureVerifier : IDisposable
                 AddTimingProtection();
 
                 var isValid = ecdsa.VerifyData(data.Span, signature.Span, hashName);
-                _logger.LogDebugMessage($"ECDSA signature verification completed for key {keyContainer.Identifier}: Valid={isValid}");
+                LogEcdsaVerificationCompleted(_logger, keyContainer.Identifier, isValid);
                 return new SignatureVerificationResult
                 {
                     IsValid = isValid,
@@ -545,7 +664,7 @@ public sealed class SignatureVerifier : IDisposable
 
                 if (expiredEntries.Count > 0)
                 {
-                    _logger.LogDebugMessage($"Cleaned up {expiredEntries.Count} expired signature verification cache entries");
+                    LogCacheCleanup(_logger, expiredEntries.Count);
                 }
             }
         }
@@ -573,7 +692,7 @@ public sealed class SignatureVerifier : IDisposable
 
 
             _disposed = true;
-            _logger.LogDebugMessage("Signature Verifier disposed");
+            LogVerifierDisposed(_logger);
         }
     }
 }
@@ -619,7 +738,7 @@ public sealed class SignatureAlgorithmValidationResult
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>

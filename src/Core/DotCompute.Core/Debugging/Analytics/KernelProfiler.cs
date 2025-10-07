@@ -8,8 +8,6 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
-using PerformanceTrend = DotCompute.Abstractions.Types.PerformanceTrend;
-using TrendDirection = DotCompute.Abstractions.Types.TrendDirection;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -22,7 +20,7 @@ public sealed partial class KernelProfiler : IDisposable
     private readonly ConcurrentDictionary<string, ProfilingSession> _activeSessions;
     private readonly ConcurrentDictionary<string, List<ProfilingData>> _historicalData;
     private readonly Timer _performanceMonitor;
-    private DebugServiceOptions _options;
+    private readonly DebugServiceOptions _options;
     private bool _disposed;
     /// <summary>
     /// Initializes a new instance of the KernelProfiler class.
@@ -255,7 +253,7 @@ public sealed partial class KernelProfiler : IDisposable
                 MinExecutionTime = data.Min(d => d.ExecutionTime.TotalMilliseconds),
                 MaxExecutionTime = data.Max(d => d.ExecutionTime.TotalMilliseconds),
                 StandardDeviation = CalculateStandardDeviation(data.Select(d => d.ExecutionTime.TotalMilliseconds)),
-                AverageMemoryUsage = data.Average(d => d.MemoryUsage.AllocatedMemory),
+                AverageMemoryUsage = (long)Math.Round(data.Average(d => (double)(d.MemoryUsage?.AllocatedMemory ?? 0L))),
                 SuccessRate = data.Count(d => d.Success) / (double)data.Count * 100,
                 ThroughputScore = CalculateThroughputScore(data)
             };
@@ -268,8 +266,8 @@ public sealed partial class KernelProfiler : IDisposable
             KernelName = kernelName,
             ComparisonTime = DateTime.UtcNow,
             HasSufficientData = true,
-            AcceleratorSummaries = comparisons,
-            BestPerformingAccelerator = comparisons.OrderBy(kvp => kvp.Value.AverageExecutionTime).First().Key,
+            AcceleratorSummaries = comparisons.Values.ToList(),
+            BestPerformingAccelerator = comparisons.OrderBy(kvp => kvp.Value.AverageExecutionTimeMs).First().Key,
             MostReliableAccelerator = comparisons.OrderByDescending(kvp => kvp.Value.SuccessRate).First().Key,
             Recommendations = GenerateRecommendations(comparisons)
         };
@@ -285,7 +283,7 @@ public sealed partial class KernelProfiler : IDisposable
     /// <param name="kernelName">The kernel name.</param>
     /// <param name="timeRange">Time range for analysis.</param>
     /// <returns>Trend analysis results.</returns>
-    public PerformanceTrend GetPerformanceTrend(string kernelName, TimeSpan timeRange)
+    public DotCompute.Abstractions.Types.PerformanceTrend GetPerformanceTrend(string kernelName, TimeSpan timeRange)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -324,7 +322,7 @@ public sealed partial class KernelProfiler : IDisposable
     /// </summary>
     /// <param name="kernelName">The kernel name.</param>
     /// <returns>Collection of detected anomalies.</returns>
-    public IEnumerable<PerformanceAnomaly> DetectAnomalies(string kernelName)
+    public IEnumerable<DotCompute.Abstractions.Debugging.PerformanceAnomaly> DetectAnomalies(string kernelName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -338,10 +336,10 @@ public sealed partial class KernelProfiler : IDisposable
         if (allData.Count < 10) // Need sufficient data for anomaly detection
         {
             LogInsufficientDataForAnomalies(kernelName, allData.Count);
-            return Enumerable.Empty<PerformanceAnomaly>();
+            return Enumerable.Empty<DotCompute.Abstractions.Debugging.PerformanceAnomaly>();
         }
 
-        var anomalies = new List<PerformanceAnomaly>();
+        var anomalies = new List<DotCompute.Abstractions.Debugging.PerformanceAnomaly>();
 
         // Detect execution time anomalies
         var executionTimes = allData.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
@@ -351,35 +349,45 @@ public sealed partial class KernelProfiler : IDisposable
 
         foreach (var data in allData.Where(d => d.ExecutionTime.TotalMilliseconds > threshold))
         {
-            anomalies.Add(new PerformanceAnomaly
+            anomalies.Add(new DotCompute.Abstractions.Debugging.PerformanceAnomaly
             {
-                Type = AnomalyType.ExecutionTime,
                 SessionId = data.SessionId,
+                Timestamp = data.EndTime,
                 DetectedAt = data.EndTime,
-                Value = data.ExecutionTime.TotalMilliseconds,
+                Type = DotCompute.Abstractions.Debugging.AnomalyType.ExecutionTime,
+                Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)",
+                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev)
+                    ? DotCompute.Abstractions.Debugging.AnomalySeverity.High
+                    : DotCompute.Abstractions.Debugging.AnomalySeverity.Medium,
+                Metric = "ExecutionTime",
+                ActualValue = data.ExecutionTime.TotalMilliseconds,
                 ExpectedValue = meanTime,
-                Severity = data.ExecutionTime.TotalMilliseconds > meanTime + (3 * stdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                Description = $"Execution time ({data.ExecutionTime.TotalMilliseconds:F2}ms) significantly higher than average ({meanTime:F2}ms)"
+                Deviation = data.ExecutionTime.TotalMilliseconds - meanTime
             });
         }
 
         // Detect memory anomalies
-        var memoryUsages = allData.Select(d => (double)d.MemoryUsage.AllocatedMemory).ToList();
+        var memoryUsages = allData.Select(d => (double)(d.MemoryUsage?.AllocatedMemory ?? 0L)).ToList();
         var meanMemory = memoryUsages.Average();
         var memoryStdDev = CalculateStandardDeviation(memoryUsages);
         var memoryThreshold = meanMemory + (2 * memoryStdDev);
 
-        foreach (var data in allData.Where(d => d.MemoryUsage.AllocatedMemory > memoryThreshold))
+        foreach (var data in allData.Where(d => (d.MemoryUsage?.AllocatedMemory ?? 0L) > (long)memoryThreshold))
         {
-            anomalies.Add(new PerformanceAnomaly
+            anomalies.Add(new DotCompute.Abstractions.Debugging.PerformanceAnomaly
             {
-                Type = AnomalyType.Memory,
                 SessionId = data.SessionId,
+                Timestamp = data.EndTime,
                 DetectedAt = data.EndTime,
-                Value = data.MemoryUsage.AllocatedMemory,
+                Type = DotCompute.Abstractions.Debugging.AnomalyType.MemoryUsage,
+                Description = $"Memory usage ({data.MemoryUsage?.AllocatedMemory ?? 0L:N0} bytes) significantly higher than average ({meanMemory:F0} bytes)",
+                Severity = (data.MemoryUsage?.AllocatedMemory ?? 0L) > meanMemory + (3 * memoryStdDev)
+                    ? DotCompute.Abstractions.Debugging.AnomalySeverity.High
+                    : DotCompute.Abstractions.Debugging.AnomalySeverity.Medium,
+                Metric = "MemoryUsage",
+                ActualValue = data.MemoryUsage?.AllocatedMemory ?? 0L,
                 ExpectedValue = meanMemory,
-                Severity = data.MemoryUsage.AllocatedMemory > meanMemory + (3 * memoryStdDev) ? AnomalySeverity.High : AnomalySeverity.Medium,
-                Description = $"Memory usage ({data.MemoryUsage.AllocatedMemory:N0} bytes) significantly higher than average ({meanMemory:F0} bytes)"
+                Deviation = (data.MemoryUsage?.AllocatedMemory ?? 0L) - meanMemory
             });
         }
 
@@ -431,7 +439,7 @@ public sealed partial class KernelProfiler : IDisposable
         {
             // Monitor active sessions for long-running operations
             var longRunningsessions = _activeSessions.Values
-                .Where(s => DateTime.UtcNow - s.StartTime > _options.LongRunningThreshold)
+                .Where(s => (DateTime.UtcNow - s.StartTime).TotalMilliseconds > _options.LongRunningThreshold)
                 .ToList();
 
             foreach (var session in longRunningsessions)
@@ -490,9 +498,9 @@ public sealed partial class KernelProfiler : IDisposable
 
         return new PerformanceMetrics
         {
-            ExecutionTimeMs = executionTime.TotalMilliseconds,
+            ExecutionTimeMs = (long)Math.Round(executionTime.TotalMilliseconds),
             MemoryUsageBytes = memoryAllocated,
-            OperationsPerSecond = executionTime.TotalSeconds > 0 ? 1.0 / executionTime.TotalSeconds : 0.0,
+            OperationsPerSecond = executionTime.TotalSeconds > 0 ? (long)Math.Round(1.0 / executionTime.TotalSeconds) : 0L,
             ComputeUtilization = CalculateEfficiencyScore(executionTime, memoryAllocated)
         };
     }
@@ -510,29 +518,26 @@ public sealed partial class KernelProfiler : IDisposable
         return new Dictionary<string, object>
         {
             ["ExecutionTimeMs"] = metrics.ExecutionTimeMs,
-            ["MemoryAllocatedBytes"] = metrics.MemoryAllocatedBytes,
-            ["ThroughputOpsPerSec"] = metrics.ThroughputOpsPerSec,
-            ["EfficiencyScore"] = metrics.EfficiencyScore
+            ["MemoryUsageBytes"] = metrics.MemoryUsageBytes,
+            ["OperationsPerSecond"] = metrics.OperationsPerSecond,
+            ["ComputeUtilization"] = metrics.ComputeUtilization
         };
     }
 
     private static PerformanceAnalysis AnalyzePerformanceData(IReadOnlyList<ProfilingData> data)
     {
         var executionTimes = data.Select(d => d.ExecutionTime.TotalMilliseconds).ToList();
-        var memoryUsages = data.Select(d => (double)d.MemoryUsage.AllocatedMemory).ToList();
+        var memoryUsages = data.Select(d => (double)(d.MemoryUsage?.AllocatedMemory ?? 0L)).ToList();
 
         return new PerformanceAnalysis
         {
-            DataPoints = data.Count,
+            DataPointCount = data.Count,
             AverageExecutionTimeMs = executionTimes.Average(),
-            MedianExecutionTime = CalculateMedian(executionTimes),
-            MinExecutionTime = executionTimes.Min(),
-            MaxExecutionTime = executionTimes.Max(),
+            MinExecutionTimeMs = executionTimes.Min(),
+            MaxExecutionTimeMs = executionTimes.Max(),
             ExecutionTimeStdDev = CalculateStandardDeviation(executionTimes),
-            AverageMemoryUsage = memoryUsages.Average(),
-            PeakMemoryUsage = memoryUsages.Max(),
-            SuccessRate = data.Count(d => d.Success) / (double)data.Count * 100,
-            TotalExecutions = data.Count
+            AverageMemoryUsage = (long)memoryUsages.Average(),
+            PeakMemoryUsage = (long)memoryUsages.Max()
         };
     }
 
@@ -640,8 +645,8 @@ public sealed partial class KernelProfiler : IDisposable
             _ => DotCompute.Abstractions.Types.TrendDirection.Stable
         };
 
-        var firstTime = data.First().ExecutionTime.TotalMilliseconds;
-        var lastTime = data.Last().ExecutionTime.TotalMilliseconds;
+        var firstTime = data[0].ExecutionTime.TotalMilliseconds;
+        var lastTime = data[data.Count - 1].ExecutionTime.TotalMilliseconds;
         var averageChange = (lastTime - firstTime) / data.Count;
         var percentChange = firstTime != 0 ? (lastTime - firstTime) / firstTime : 0;
 
@@ -738,7 +743,7 @@ public sealed partial class KernelProfiler : IDisposable
     [LoggerMessage(Level = MsLogLevel.Information, Message = "Profiling data cleared for kernel {KernelName}")]
     private partial void LogKernelDataCleared(string kernelName);
 
-    [LoggerMessage(Level = MsLogLevel.Warning, Message = "Long-running session detected: {SessionId} for kernel {KernelName}, running for {Minutes:F1} minutes")]
+    [LoggerMessage(Level = MsLogLevel.Warning, Message = "Long-running session detected: {SessionId} for kernel {KernelName}, running for {Minutes} minutes")]
     private partial void LogLongRunningSession(string sessionId, string kernelName, double minutes);
 
     [LoggerMessage(Level = MsLogLevel.Warning, Message = "Memory pressure detected: {CurrentMemory:N0} bytes")]

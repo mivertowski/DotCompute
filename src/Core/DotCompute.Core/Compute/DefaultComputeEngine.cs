@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Diagnostics;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
 namespace DotCompute.Core.Compute
 {
 
@@ -61,7 +63,7 @@ namespace DotCompute.Core.Compute
     /// <param name="acceleratorManager">The accelerator manager for device discovery and selection.</param>
     /// <param name="logger">The logger instance for diagnostics and monitoring.</param>
     /// <exception cref="ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
-    public class DefaultComputeEngine(
+    public partial class DefaultComputeEngine(
         IAcceleratorManager acceleratorManager,
         ILogger<DefaultComputeEngine> logger) : IComputeEngine
     {
@@ -69,6 +71,209 @@ namespace DotCompute.Core.Compute
         private readonly ILogger<DefaultComputeEngine> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly List<ComputeBackendType> _availableBackends = [];
         private bool _disposed;
+
+        // LoggerMessage delegates for high-performance logging (CA1848/XFIX003)
+        // Event ID range: 16000-16099 (DefaultComputeEngine - Compute module)
+
+        private static readonly Action<ILogger, string, Exception?> _logCompilingKernel =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Information,
+                new EventId(16000, nameof(CompilingKernel)),
+                "Compiling kernel with entry point: {EntryPoint}");
+
+        private static readonly Action<ILogger, string, Exception?> _logKernelCompiled =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Information,
+                new EventId(16001, nameof(KernelCompiled)),
+                "Kernel compiled successfully: {KernelName}");
+
+        private static readonly Action<ILogger, string, ComputeBackendType, Exception?> _logExecutingKernel =
+            LoggerMessage.Define<string, ComputeBackendType>(
+                MsLogLevel.Information,
+                new EventId(16002, nameof(ExecutingKernel)),
+                "Executing kernel {KernelName} on backend {BackendType}");
+
+        private static readonly Action<ILogger, string, Exception?> _logKernelExecuted =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Information,
+                new EventId(16003, nameof(KernelExecuted)),
+                "Kernel {KernelName} executed successfully");
+
+        private static readonly Action<ILogger, Exception?> _logInitializingAcceleratorManager =
+            LoggerMessage.Define(
+                MsLogLevel.Information,
+                new EventId(16004, nameof(InitializingAcceleratorManager)),
+                "Initializing accelerator manager with CPU provider");
+
+        private static readonly Action<ILogger, Exception?> _logCudaBackendDetected =
+            LoggerMessage.Define(
+                MsLogLevel.Information,
+                new EventId(16005, nameof(CudaBackendDetected)),
+                "CUDA backend detected and available");
+
+        private static readonly Action<ILogger, Exception?> _logOpenClBackendDetected =
+            LoggerMessage.Define(
+                MsLogLevel.Information,
+                new EventId(16006, nameof(OpenClBackendDetected)),
+                "OpenCL backend detected and available");
+
+        private static readonly Action<ILogger, Exception?> _logMetalBackendDetected =
+            LoggerMessage.Define(
+                MsLogLevel.Information,
+                new EventId(16007, nameof(MetalBackendDetected)),
+                "Metal backend detected and available");
+
+        private static readonly Action<ILogger, int, string, Exception?> _logBackendsDetected =
+            LoggerMessage.Define<int, string>(
+                MsLogLevel.Information,
+                new EventId(16008, nameof(BackendsDetected)),
+                "Detected {BackendCount} compute backends: {Backends}");
+
+        private static readonly Action<ILogger, string, Exception?> _logCudaRuntimeFound =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(16009, nameof(CudaRuntimeFound)),
+                "CUDA runtime found: {Path}");
+
+        private static readonly Action<ILogger, string, Exception?> _logCheckingCudaPath =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Trace,
+                new EventId(16010, nameof(CheckingCudaPath)),
+                "Error checking CUDA path: {Path}");
+
+        private static readonly Action<ILogger, string, Exception?> _logNvidiaGpuDetected =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(16011, nameof(NvidiaGpuDetected)),
+                "NVIDIA GPU detected via nvidia-smi: {Output}");
+
+        private static readonly Action<ILogger, Exception?> _logNvidiaSmiCheckFailed =
+            LoggerMessage.Define(
+                MsLogLevel.Trace,
+                new EventId(16012, nameof(NvidiaSmiCheckFailed)),
+                "nvidia-smi check failed");
+
+        private static readonly Action<ILogger, Exception?> _logCudaNotAvailable =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16013, nameof(CudaNotAvailable)),
+                "CUDA not available - no runtime libraries or nvidia-smi found");
+
+        private static readonly Action<ILogger, Exception?> _logCudaDetectionFailed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16014, nameof(CudaDetectionFailed)),
+                "CUDA detection failed with exception");
+
+        private static readonly Action<ILogger, string, Exception?> _logOpenClLibraryFound =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(16015, nameof(OpenClLibraryFound)),
+                "OpenCL library found: {Path}");
+
+        private static readonly Action<ILogger, Exception?> _logOpenClNotAvailable =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16016, nameof(OpenClNotAvailable)),
+                "OpenCL not available - no libraries found");
+
+        private static readonly Action<ILogger, Exception?> _logOpenClDetectionFailed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16017, nameof(OpenClDetectionFailed)),
+                "OpenCL detection failed");
+
+        private static readonly Action<ILogger, string, Exception?> _logMetalFrameworkFound =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(16018, nameof(MetalFrameworkFound)),
+                "Metal framework found: {Path}");
+
+        private static readonly Action<ILogger, Exception?> _logMetalNotAvailable =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16019, nameof(MetalNotAvailable)),
+                "Metal not available - framework not found");
+
+        private static readonly Action<ILogger, Exception?> _logMetalDetectionFailed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(16020, nameof(MetalDetectionFailed)),
+                "Metal detection failed");
+
+        private static readonly Action<ILogger, Exception?> _logComputeEngineDisposed =
+            LoggerMessage.Define(
+                MsLogLevel.Information,
+                new EventId(16021, nameof(ComputeEngineDisposed)),
+                "ComputeEngine disposed");
+
+        // Wrapper methods for LoggerMessage delegates
+
+        private static void CompilingKernel(ILogger logger, string entryPoint)
+            => _logCompilingKernel(logger, entryPoint, null);
+
+        private static void KernelCompiled(ILogger logger, string kernelName)
+            => _logKernelCompiled(logger, kernelName, null);
+
+        private static void ExecutingKernel(ILogger logger, string kernelName, ComputeBackendType backendType)
+            => _logExecutingKernel(logger, kernelName, backendType, null);
+
+        private static void KernelExecuted(ILogger logger, string kernelName)
+            => _logKernelExecuted(logger, kernelName, null);
+
+        private static void InitializingAcceleratorManager(ILogger logger)
+            => _logInitializingAcceleratorManager(logger, null);
+
+        private static void CudaBackendDetected(ILogger logger)
+            => _logCudaBackendDetected(logger, null);
+
+        private static void OpenClBackendDetected(ILogger logger)
+            => _logOpenClBackendDetected(logger, null);
+
+        private static void MetalBackendDetected(ILogger logger)
+            => _logMetalBackendDetected(logger, null);
+
+        private static void BackendsDetected(ILogger logger, int backendCount, string backends)
+            => _logBackendsDetected(logger, backendCount, backends, null);
+
+        private static void CudaRuntimeFound(ILogger logger, string path)
+            => _logCudaRuntimeFound(logger, path, null);
+
+        private static void CheckingCudaPath(ILogger logger, string path, Exception ex)
+            => _logCheckingCudaPath(logger, path, ex);
+
+        private static void NvidiaGpuDetected(ILogger logger, string output)
+            => _logNvidiaGpuDetected(logger, output, null);
+
+        private static void NvidiaSmiCheckFailed(ILogger logger, Exception ex)
+            => _logNvidiaSmiCheckFailed(logger, ex);
+
+        private static void CudaNotAvailable(ILogger logger)
+            => _logCudaNotAvailable(logger, null);
+
+        private static void CudaDetectionFailed(ILogger logger, Exception ex)
+            => _logCudaDetectionFailed(logger, ex);
+
+        private static void OpenClLibraryFound(ILogger logger, string path)
+            => _logOpenClLibraryFound(logger, path, null);
+
+        private static void OpenClNotAvailable(ILogger logger)
+            => _logOpenClNotAvailable(logger, null);
+
+        private static void OpenClDetectionFailed(ILogger logger, Exception ex)
+            => _logOpenClDetectionFailed(logger, ex);
+
+        private static void MetalFrameworkFound(ILogger logger, string path)
+            => _logMetalFrameworkFound(logger, path, null);
+
+        private static void MetalNotAvailable(ILogger logger)
+            => _logMetalNotAvailable(logger, null);
+
+        private static void MetalDetectionFailed(ILogger logger, Exception ex)
+            => _logMetalDetectionFailed(logger, ex);
+
+        private static void ComputeEngineDisposed(ILogger logger)
+            => _logComputeEngineDisposed(logger, null);
 
         /// <summary>
         /// Gets the array of available compute backends on this system.
@@ -117,7 +322,7 @@ namespace DotCompute.Core.Compute
 
             await EnsureInitializedAsync();
 
-            _logger.LogInfoMessage($"Compiling kernel with entry point: {entryPoint ?? "default"}");
+            CompilingKernel(_logger, entryPoint ?? "default");
 
             // Get the first available accelerator
             var criteria = new AcceleratorSelectionCriteria
@@ -148,7 +353,7 @@ namespace DotCompute.Core.Compute
             // Compile the kernel
             var compiledKernel = await accelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-            _logger.LogInfoMessage($"Kernel compiled successfully: {compiledKernel.Name}");
+            KernelCompiled(_logger, compiledKernel.Name);
 
             return compiledKernel;
         }
@@ -189,7 +394,7 @@ namespace DotCompute.Core.Compute
 
             ArgumentNullException.ThrowIfNull(arguments);
 
-            _logger.LogInfoMessage($"Executing kernel {kernel.Name} on backend {backendType}");
+            ExecutingKernel(_logger, kernel.Name, backendType);
 
             // Convert arguments to KernelArguments
             var kernelArgs = new KernelArguments(arguments);
@@ -197,7 +402,7 @@ namespace DotCompute.Core.Compute
             // Execute the kernel
             await kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
-            _logger.LogInfoMessage($"Kernel {kernel.Name} executed successfully");
+            KernelExecuted(_logger, kernel.Name);
         }
 
         private async ValueTask EnsureInitializedAsync()
@@ -216,7 +421,7 @@ namespace DotCompute.Core.Compute
             catch (InvalidOperationException)
             {
                 // Not initialized, try to initialize with a CPU provider
-                _logger.LogInfoMessage("Initializing accelerator manager with CPU provider");
+                InitializingAcceleratorManager(_logger);
                 var cpuProvider = new CpuAcceleratorProvider(_logger as ILogger<CpuAcceleratorProvider> ??
                     new Microsoft.Extensions.Logging.Abstractions.NullLogger<CpuAcceleratorProvider>());
                 _acceleratorManager.RegisterProvider(cpuProvider);
@@ -240,24 +445,24 @@ namespace DotCompute.Core.Compute
             if (IsCudaAvailable())
             {
                 backends.Add(ComputeBackendType.CUDA);
-                _logger.LogInfoMessage("CUDA backend detected and available");
+                CudaBackendDetected(_logger);
             }
 
             // Check for OpenCL support
             if (IsOpenClAvailable())
             {
                 backends.Add(ComputeBackendType.OpenCL);
-                _logger.LogInfoMessage("OpenCL backend detected and available");
+                OpenClBackendDetected(_logger);
             }
 
             // Check for Metal support (macOS only)
             if (IsMetalAvailable())
             {
                 backends.Add(ComputeBackendType.Metal);
-                _logger.LogInfoMessage("Metal backend detected and available");
+                MetalBackendDetected(_logger);
             }
 
-            _logger.LogInfoMessage($"Detected {backends.Count} compute backends: {string.Join(", ", backends)}");
+            BackendsDetected(_logger, backends.Count, string.Join(", ", backends));
 
             return backends;
         }
@@ -307,20 +512,20 @@ namespace DotCompute.Core.Compute
                                 var files = Directory.GetFiles(directory, pattern);
                                 if (files.Length > 0)
                                 {
-                                    _logger.LogDebug("CUDA runtime found: {Path}", files[0]);
+                                    CudaRuntimeFound(_logger, files[0]);
                                     return true;
                                 }
                             }
                         }
                         else if (File.Exists(pathPattern))
                         {
-                            _logger.LogDebug("CUDA runtime found: {Path}", pathPattern);
+                            CudaRuntimeFound(_logger, pathPattern);
                             return true;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogTrace(ex, "Error checking CUDA path: {Path}", pathPattern);
+                        CheckingCudaPath(_logger, pathPattern, ex);
                     }
                 }
 
@@ -343,7 +548,7 @@ namespace DotCompute.Core.Compute
                             var output = process.StandardOutput.ReadToEnd();
                             if (!string.IsNullOrWhiteSpace(output))
                             {
-                                _logger.LogDebug("NVIDIA GPU detected via nvidia-smi: {Output}", output.Trim());
+                                NvidiaGpuDetected(_logger, output.Trim());
                                 return true;
                             }
                         }
@@ -351,15 +556,15 @@ namespace DotCompute.Core.Compute
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogTrace(ex, "nvidia-smi check failed");
+                    NvidiaSmiCheckFailed(_logger, ex);
                 }
 
-                _logger.LogDebug("CUDA not available - no runtime libraries or nvidia-smi found");
+                CudaNotAvailable(_logger);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "CUDA detection failed with exception");
+                CudaDetectionFailed(_logger, ex);
                 return false;
             }
         }
@@ -394,17 +599,17 @@ namespace DotCompute.Core.Compute
                 {
                     if (File.Exists(path))
                     {
-                        _logger.LogDebug("OpenCL library found: {Path}", path);
+                        OpenClLibraryFound(_logger, path);
                         return true;
                     }
                 }
 
-                _logger.LogDebug("OpenCL not available - no libraries found");
+                OpenClNotAvailable(_logger);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "OpenCL detection failed");
+                OpenClDetectionFailed(_logger, ex);
                 return false;
             }
         }
@@ -427,16 +632,16 @@ namespace DotCompute.Core.Compute
                 var metalPath = "/System/Library/Frameworks/Metal.framework/Metal";
                 if (File.Exists(metalPath))
                 {
-                    _logger.LogDebug("Metal framework found: {Path}", metalPath);
+                    MetalFrameworkFound(_logger, metalPath);
                     return true;
                 }
 
-                _logger.LogDebug("Metal not available - framework not found");
+                MetalNotAvailable(_logger);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Metal detection failed");
+                MetalDetectionFailed(_logger, ex);
                 return false;
             }
         }
@@ -455,7 +660,7 @@ namespace DotCompute.Core.Compute
             _disposed = true;
 
             // Clean up any resources
-            _logger.LogInfoMessage("ComputeEngine disposed");
+            ComputeEngineDisposed(_logger);
 
             await ValueTask.CompletedTask;
         }

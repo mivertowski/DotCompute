@@ -5,11 +5,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
 using DotCompute.Core.Execution.Plans;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-
 using DotCompute.Core.Execution.Metrics;
 namespace DotCompute.Core.Execution
 {
@@ -52,7 +52,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting data parallel execution {executionId} for kernel {plan.KernelName} on {plan.Devices.Length} devices");
+            _logger.LogInfoMessage($"Starting data parallel execution {executionId} for kernel {plan.KernelName} on {plan.Devices.Count} devices");
 
             try
             {
@@ -81,7 +81,6 @@ namespace DotCompute.Core.Execution
 
                 // Stop profiling and collect detailed metrics
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
-                result.ProfilingData = profilingData;
 
                 _logger.LogInfoMessage($"Completed data parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms with {deviceResults.Count(r => r.Success) * 100.0 / deviceResults.Length}% success rate");
 
@@ -120,7 +119,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting model parallel execution {executionId} for {plan.ModelLayers.Length} layers on {plan.Devices.Length} devices");
+            _logger.LogInfoMessage($"Starting model parallel execution {executionId} for {plan.ModelLayers.Count} layers on {plan.Devices.Count} devices");
 
             try
             {
@@ -138,7 +137,6 @@ namespace DotCompute.Core.Execution
                 _performanceMonitor.RecordExecution(result);
 
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
-                result.ProfilingData = profilingData;
 
                 _logger.LogInfoMessage($"Completed model parallel execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 
@@ -176,7 +174,7 @@ namespace DotCompute.Core.Execution
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();
 
-            _logger.LogInfoMessage($"Starting pipeline execution {executionId} with {plan.Stages.Length} stages and {plan.MicrobatchConfig.Count} microbatches");
+            _logger.LogInfoMessage($"Starting pipeline execution {executionId} with {plan.Stages.Count} stages and {plan.MicrobatchConfig.Count} microbatches");
 
             try
             {
@@ -194,7 +192,6 @@ namespace DotCompute.Core.Execution
                 _performanceMonitor.RecordExecution(result);
 
                 var profilingData = await _profiler.StopProfilingAsync(executionId, cancellationToken);
-                result.ProfilingData = profilingData;
 
                 _logger.LogInfoMessage($"Completed pipeline execution {executionId} in {stopwatch.Elapsed.TotalMilliseconds}ms");
 
@@ -228,7 +225,7 @@ namespace DotCompute.Core.Execution
             CancellationToken cancellationToken) where T : unmanaged
         {
             var deviceTasks = plan.DeviceTasks;
-            var results = new DeviceTaskResult[deviceTasks.Length];
+            var results = new DeviceTaskResult[deviceTasks.Count];
             var executionTasks = new List<Task<DeviceTaskResult>>();
 
             // Create completion events for synchronization
@@ -236,7 +233,7 @@ namespace DotCompute.Core.Execution
                 _coordinator.CreateEvent($"Device_{i}_Complete_{executionId}")).ToArray();
 
             // Start all device tasks
-            for (var i = 0; i < deviceTasks.Length; i++)
+            for (var i = 0; i < deviceTasks.Count; i++)
             {
                 var taskIndex = i;
                 var deviceTask = deviceTasks[i];
@@ -342,7 +339,7 @@ namespace DotCompute.Core.Execution
             var layers = plan.ModelLayers;
             var layerAssignments = plan.LayerAssignments;
             var communicationSchedule = plan.CommunicationSchedule;
-            var results = new LayerExecutionResult[layers.Length];
+            var results = new LayerExecutionResult[layers.Count];
 
             // Execute communication operations and layers according to schedule
             var executionOrder = GetLayerExecutionOrder(layers);
@@ -452,7 +449,7 @@ namespace DotCompute.Core.Execution
             var results = new List<StageExecutionResult>();
 
             _logger.LogTrace("Executing pipeline with {StageCount} stages and {MicrobatchCount} microbatches using {Strategy} scheduling",
-                stages.Length, microbatchConfig.Count, microbatchConfig.SchedulingStrategy);
+                stages.Count, microbatchConfig.Count, microbatchConfig.SchedulingStrategy);
 
             // Execute based on scheduling strategy
             switch (microbatchConfig.SchedulingStrategy)
@@ -485,7 +482,7 @@ namespace DotCompute.Core.Execution
                     microbatch + 1, microbatchConfig.Count);
 
                 // Process each stage sequentially for this microbatch
-                for (var stageIndex = 0; stageIndex < stages.Length; stageIndex++)
+                for (var stageIndex = 0; stageIndex < stages.Count; stageIndex++)
                 {
                     var stage = stages[stageIndex];
                     var result = await ExecutePipelineStageAsync(stage, microbatch, executionId, cancellationToken);
@@ -506,7 +503,7 @@ namespace DotCompute.Core.Execution
             var stageTasks = new List<Task>();
 
             // Start all stages in parallel, each processing their assigned microbatches
-            for (var stageIndex = 0; stageIndex < stages.Length; stageIndex++)
+            for (var stageIndex = 0; stageIndex < stages.Count; stageIndex++)
             {
                 var stage = stages[stageIndex];
                 var localStageIndex = stageIndex;
@@ -662,7 +659,7 @@ namespace DotCompute.Core.Execution
 
             var totalThroughput = successfulResults.Sum(r => r.ComputeFLOPS / 1e9);
             var avgMemoryBandwidth = deviceExecutionResults.Length > 0 ? deviceExecutionResults.Average(r => r.MemoryBandwidthGBps) : 0;
-            var efficiency = CalculateModelParallelEfficiency(layerResults, plan.ModelLayers.Length);
+            var efficiency = CalculateModelParallelEfficiency(layerResults, plan.ModelLayers.Count);
 
             await Task.CompletedTask.ConfigureAwait(false);
             return new ParallelExecutionResult
@@ -699,7 +696,7 @@ namespace DotCompute.Core.Execution
                 ErrorMessage = success ? null : string.Join("; ", g.Where(r => !r.Success).Select(r => r.ErrorMessage))
             }).ToArray();
 
-            var efficiency = CalculatePipelineEfficiency(stageResults, plan.Stages.Length, plan.MicrobatchConfig.Count);
+            var efficiency = CalculatePipelineEfficiency(stageResults, plan.Stages.Count, plan.MicrobatchConfig.Count);
 
             await Task.CompletedTask.ConfigureAwait(false);
             return new ParallelExecutionResult
@@ -791,7 +788,7 @@ namespace DotCompute.Core.Execution
             }
 
             var elementSize = global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
-            var totalBytes = (deviceTask.InputBuffers.Length + deviceTask.OutputBuffers.Length) * deviceTask.ElementCount * elementSize;
+            var totalBytes = (deviceTask.InputBuffers.Count + deviceTask.OutputBuffers.Count) * deviceTask.ElementCount * elementSize;
             var bytesPerSecond = (totalBytes / executionTimeMs) * 1000.0;
 
             return bytesPerSecond / (1024.0 * 1024.0 * 1024.0); // Convert to GB/s
@@ -901,7 +898,7 @@ namespace DotCompute.Core.Execution
             return result;
         }
 
-        private static void VisitLayer<T>(int layerId, ModelLayer<T>[] layers, HashSet<int> visited, IReadOnlyList<int> result) where T : unmanaged
+        private static void VisitLayer<T>(int layerId, ModelLayer<T>[] layers, HashSet<int> visited, List<int> result) where T : unmanaged
         {
             if (visited.Contains(layerId))
             {
@@ -945,5 +942,4 @@ namespace DotCompute.Core.Execution
             _logger.LogInfoMessage("ExecutionPlanExecutor disposed");
         }
     }
-
 }

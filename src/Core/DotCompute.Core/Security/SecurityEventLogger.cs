@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -12,7 +13,7 @@ namespace DotCompute.Core.Security;
 /// Handles security event logging with context and audit trail.
 /// Provides methods for logging various types of security events.
 /// </summary>
-public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
+public sealed partial class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
     SecurityLoggingConfiguration configuration,
     ConcurrentQueue<SecurityLogEntry> auditQueue,
     SemaphoreSlim logWriteLock,
@@ -24,6 +25,43 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
     private readonly SemaphoreSlim _logWriteLock = logWriteLock ?? throw new ArgumentNullException(nameof(logWriteLock));
     private readonly ConcurrentDictionary<string, CorrelationContext> _correlationContexts = correlationContexts ?? throw new ArgumentNullException(nameof(correlationContexts));
     private long _sequenceNumber;
+
+    // LoggerMessage delegates - Event ID range 18500-18515 for SecurityEventLogger
+    private static readonly Action<ILogger, string, Exception?> _logSecurityCritical =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Critical,
+            new EventId(18500, nameof(LogSecurityCritical)),
+            "[SECURITY-CRITICAL] {Message}");
+
+    private static void LogSecurityCritical(ILogger logger, string message)
+        => _logSecurityCritical(logger, message, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logSecurityHigh =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18501, nameof(LogSecurityHigh)),
+            "[SECURITY-HIGH] {Message}");
+
+    private static void LogSecurityHigh(ILogger logger, string message)
+        => _logSecurityHigh(logger, message, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logSecurityMedium =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18502, nameof(LogSecurityMedium)),
+            "[SECURITY-MEDIUM] {Message}");
+
+    private static void LogSecurityMedium(ILogger logger, string message)
+        => _logSecurityMedium(logger, message, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logSecurityLow =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Information,
+            new EventId(18503, nameof(LogSecurityLow)),
+            "[SECURITY-LOW] {Message}");
+
+    private static void LogSecurityLow(ILogger logger, string message)
+        => _logSecurityLow(logger, message, null);
 
     /// <summary>
     /// Logs a security event with full context and audit trail.
@@ -146,7 +184,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
 
         await LogSecurityEventAsync(SecurityEventType.AuthenticationFailure,
             $"Authentication failed for user '{userId}': {failureReason}",
-            SecurityLevel.Warning, userId, null, data, null, callerName, sourceFile, lineNumber);
+            SecurityLevel.Medium, userId, null, data, null, callerName, sourceFile, lineNumber);
     }
 
     /// <summary>
@@ -157,18 +195,18 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
         [CallerMemberName] string callerName = "", [CallerFilePath] string sourceFile = "",
         [CallerLineNumber] int lineNumber = 0)
     {
-        var eventType = result == AccessResult.Granted
+        var eventType = result.Granted
             ? SecurityEventType.AccessGranted
             : SecurityEventType.AccessDenied;
 
-        var level = result == AccessResult.Granted
+        var level = result.Granted
             ? SecurityLevel.Low
             : SecurityLevel.Medium;
 
         var data = new Dictionary<string, object>
         {
             ["Action"] = action,
-            ["Result"] = result.ToString(),
+            ["Result"] = result.Granted ? "Granted" : "Denied",
             ["Reason"] = reason ?? "Not specified"
         };
 
@@ -181,7 +219,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
         }
 
         await LogSecurityEventAsync(eventType,
-            $"Access {result.ToString().ToLowerInvariant()} for user '{userId}' to resource '{resource}' for action '{action}'",
+            $"Access {(result.Granted ? "granted" : "denied")} for user '{userId}' to resource '{resource}' for action '{action}'",
             level, userId, resource, data, null, callerName, sourceFile, lineNumber);
     }
 
@@ -246,7 +284,7 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
 
         var entry = new SecurityLogEntry
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             SequenceNumber = sequenceId,
             Timestamp = DateTimeOffset.UtcNow,
             EventType = eventType,
@@ -256,9 +294,9 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
             ResourceId = resourceId,
             CorrelationId = correlationId,
             CallerName = callerName,
-            SourceFile = _configuration.IncludeStackTraces ? sourceFile : null,
-            LineNumber = _configuration.IncludeStackTraces ? lineNumber : null,
-            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            SourceFile = _configuration.IncludeStackTraces ? sourceFile : string.Empty,
+            LineNumber = _configuration.IncludeStackTraces ? lineNumber : 0,
+            AdditionalData = additionalData?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
 
         // Update correlation context if enabled
@@ -283,16 +321,16 @@ public sealed class SecurityEventLogger(ILogger<SecurityEventLogger> logger,
         switch (entry.Level)
         {
             case SecurityLevel.Critical:
-                _logger.LogCritical("[SECURITY-CRITICAL] {Message}", message);
+                LogSecurityCritical(_logger, message);
                 break;
             case SecurityLevel.High:
-                _logger.LogError("[SECURITY-HIGH] {Message}", message);
+                LogSecurityHigh(_logger, message);
                 break;
             case SecurityLevel.Medium:
-                _logger.LogWarning("[SECURITY-MEDIUM] {Message}", message);
+                LogSecurityMedium(_logger, message);
                 break;
             case SecurityLevel.Low:
-                _logger.LogInformation("[SECURITY-LOW] {Message}", message);
+                LogSecurityLow(_logger, message);
                 break;
         }
     }

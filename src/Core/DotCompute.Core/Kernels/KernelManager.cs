@@ -279,9 +279,9 @@ namespace DotCompute.Core.Kernels
             return new KernelCacheStatistics
             {
                 CachedKernelCount = _kernelCache.Count,
-                TotalMemoryUsage = _kernelCache.Values.Sum(k => k.Binary.Length),
+                TotalMemoryUsage = _kernelCache.Values.Sum(k => k.Binary.Count),
                 KernelsByType = _kernelCache.Values
-                    .GroupBy(k => k.Parameters.Length > 0 ? "Complex" : "Simple")
+                    .GroupBy(k => k.Parameters.Count > 0 ? "Complex" : "Simple")
                     .ToDictionary(g => g.Key, g => g.Count())
             };
         }
@@ -343,8 +343,8 @@ namespace DotCompute.Core.Kernels
                 {
                     Name = generatedKernel.Name,
                     Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
-                    Parameters = generatedKernel.Parameters,
-                    RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
+                    Parameters = [.. generatedKernel.Parameters],
+                    RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize != null ? [.. generatedKernel.RequiredWorkGroupSize] : null,
                     SharedMemorySize = generatedKernel.SharedMemorySize
                 };
             }
@@ -402,8 +402,8 @@ namespace DotCompute.Core.Kernels
                 {
                     Name = generatedKernel.Name,
                     Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source),
-                    Parameters = generatedKernel.Parameters,
-                    RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
+                    Parameters = [.. generatedKernel.Parameters],
+                    RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize != null ? [.. generatedKernel.RequiredWorkGroupSize] : null,
                     SharedMemorySize = generatedKernel.SharedMemorySize
                 };
             }
@@ -584,8 +584,8 @@ namespace DotCompute.Core.Kernels
             {
                 Name = generatedKernel.Name,
                 Binary = global::System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source), // Fallback to source
-                Parameters = generatedKernel.Parameters,
-                RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
+                Parameters = [.. generatedKernel.Parameters],
+                RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize != null ? [.. generatedKernel.RequiredWorkGroupSize] : null,
                 SharedMemorySize = generatedKernel.SharedMemorySize
             };
         }

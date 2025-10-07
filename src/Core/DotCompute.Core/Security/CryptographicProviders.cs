@@ -177,8 +177,8 @@ internal sealed class CryptographicProviders : IDisposable
 
         var result = new SignatureResult
         {
-            KeyIdentifier = keyContainer.Identifier,
-            HashAlgorithm = hashAlgorithm,
+            KeyId = keyContainer.Identifier,
+            Algorithm = hashAlgorithm,
             OperationTime = DateTimeOffset.UtcNow
         };
 
@@ -235,8 +235,8 @@ internal sealed class CryptographicProviders : IDisposable
 
         var result = new SignatureVerificationResult
         {
-            KeyIdentifier = keyContainer.Identifier,
-            HashAlgorithm = hashAlgorithm,
+            KeyId = keyContainer.Identifier,
+            Algorithm = hashAlgorithm,
             OperationTime = DateTimeOffset.UtcNow
         };
 
@@ -326,7 +326,7 @@ internal sealed class CryptographicProviders : IDisposable
 
     // Private implementation methods
 
-    private async Task<EncryptionResult> EncryptAesGcmAsync(
+    private Task<EncryptionResult> EncryptAesGcmAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         byte[] nonce,
@@ -335,19 +335,19 @@ internal sealed class CryptographicProviders : IDisposable
     {
         using var aes = Aes.Create();
         aes.Key = keyContainer.KeyMaterial.ToArray();
-        aes.Mode = CipherMode.GCM;
 
         var tag = new byte[16]; // GCM tag size
         var ciphertext = new byte[data.Length];
 
-        aes.EncryptGcm(data.Span, ciphertext, tag, nonce, associatedData?.Span ?? ReadOnlySpan<byte>.Empty);
+        using var aesGcm = new AesGcm(aes.Key, 16); // 16-byte tag size
+        aesGcm.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
 
         result.EncryptedData = ciphertext;
-        result.Tag = tag;
-        return result;
+        result.AuthenticationTag = tag;
+        return Task.FromResult(result);
     }
 
-    private static async Task<EncryptionResult> EncryptAesCbcAsync(
+    private static Task<EncryptionResult> EncryptAesCbcAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         byte[] nonce,
@@ -363,20 +363,22 @@ internal sealed class CryptographicProviders : IDisposable
         var ciphertext = encryptor.TransformFinalBlock(data.ToArray(), 0, data.Length);
 
         result.EncryptedData = ciphertext;
-        return result;
+        return Task.FromResult(result);
     }
 
-    private async Task<EncryptionResult> EncryptChaCha20Poly1305Async(
+    private Task<EncryptionResult> EncryptChaCha20Poly1305Async(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         byte[] nonce,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
+    {
         // ChaCha20Poly1305 implementation would go here
         // For now, throw not implemented as .NET Core doesn't have built-in ChaCha20
-        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+    }
 
-    private async Task<DecryptionResult> DecryptAesGcmAsync(
+    private Task<DecryptionResult> DecryptAesGcmAsync(
         ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte> nonce,
@@ -387,18 +389,18 @@ internal sealed class CryptographicProviders : IDisposable
         if (!tag.HasValue)
         {
             result.ErrorMessage = "Tag is required for AES-GCM decryption";
-            return result;
+            return Task.FromResult(result);
         }
 
         using var aes = Aes.Create();
         aes.Key = keyContainer.KeyMaterial.ToArray();
-        aes.Mode = CipherMode.GCM;
 
         var plaintext = new byte[encryptedData.Length];
 
         try
         {
-            aes.DecryptGcm(encryptedData.Span, plaintext, tag.Value.Span, nonce.Span, associatedData?.Span ?? ReadOnlySpan<byte>.Empty);
+            using var aesGcm = new AesGcm(aes.Key, 16);
+            aesGcm.Decrypt(nonce.Span, encryptedData.Span, tag.Value.Span, plaintext, associatedData.HasValue ? associatedData.Value.Span : ReadOnlySpan<byte>.Empty);
             result.DecryptedData = plaintext;
         }
         catch (CryptographicException ex)
@@ -406,10 +408,10 @@ internal sealed class CryptographicProviders : IDisposable
             result.ErrorMessage = $"GCM decryption failed: {ex.Message}";
         }
 
-        return result;
+        return Task.FromResult(result);
     }
 
-    private static async Task<DecryptionResult> DecryptAesCbcAsync(
+    private static Task<DecryptionResult> DecryptAesCbcAsync(
         ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte> nonce,
@@ -425,20 +427,22 @@ internal sealed class CryptographicProviders : IDisposable
         var plaintext = decryptor.TransformFinalBlock(encryptedData.ToArray(), 0, encryptedData.Length);
 
         result.DecryptedData = plaintext;
-        return result;
+        return Task.FromResult(result);
     }
 
-    private async Task<DecryptionResult> DecryptChaCha20Poly1305Async(
+    private Task<DecryptionResult> DecryptChaCha20Poly1305Async(
         ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte> nonce,
         ReadOnlyMemory<byte>? tag,
         ReadOnlyMemory<byte>? associatedData,
         DecryptionResult result)
+    {
         // ChaCha20Poly1305 implementation would go here
-        => throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+        throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
+    }
 
-    private static async Task<SignatureResult> SignWithRsaAsync(
+    private static Task<SignatureResult> SignWithRsaAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         string hashAlgorithm,
@@ -451,10 +455,10 @@ internal sealed class CryptographicProviders : IDisposable
         var signature = rsa.SignData(data.ToArray(), hashName, RSASignaturePadding.Pkcs1);
 
         result.Signature = signature;
-        return result;
+        return Task.FromResult(result);
     }
 
-    private static async Task<SignatureResult> SignWithEcdsaAsync(
+    private static Task<SignatureResult> SignWithEcdsaAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
         string hashAlgorithm,
@@ -467,10 +471,10 @@ internal sealed class CryptographicProviders : IDisposable
         var signature = ecdsa.SignData(data.ToArray(), hashName);
 
         result.Signature = signature;
-        return result;
+        return Task.FromResult(result);
     }
 
-    private static async Task<bool> VerifyWithRsaAsync(
+    private static Task<bool> VerifyWithRsaAsync(
         ReadOnlyMemory<byte> data,
         ReadOnlyMemory<byte> signature,
         SecureKeyContainer keyContainer,
@@ -480,10 +484,10 @@ internal sealed class CryptographicProviders : IDisposable
         rsa.ImportSubjectPublicKeyInfo(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
-        return rsa.VerifyData(data.ToArray(), signature.ToArray(), hashName, RSASignaturePadding.Pkcs1);
+        return Task.FromResult(rsa.VerifyData(data.ToArray(), signature.ToArray(), hashName, RSASignaturePadding.Pkcs1));
     }
 
-    private static async Task<bool> VerifyWithEcdsaAsync(
+    private static Task<bool> VerifyWithEcdsaAsync(
         ReadOnlyMemory<byte> data,
         ReadOnlyMemory<byte> signature,
         SecureKeyContainer keyContainer,
@@ -493,7 +497,7 @@ internal sealed class CryptographicProviders : IDisposable
         ecdsa.ImportSubjectPublicKeyInfo(keyContainer.KeyMaterial.Span, out _);
 
         var hashName = GetHashAlgorithmName(hashAlgorithm);
-        return ecdsa.VerifyData(data.ToArray(), signature.ToArray(), hashName);
+        return Task.FromResult(ecdsa.VerifyData(data.ToArray(), signature.ToArray(), hashName));
     }
 
     private static HashAlgorithmName GetHashAlgorithmName(string algorithm)

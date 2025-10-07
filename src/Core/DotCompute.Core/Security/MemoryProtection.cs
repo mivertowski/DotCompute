@@ -8,6 +8,7 @@ using System.Security;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -15,7 +16,7 @@ namespace DotCompute.Core.Security;
 /// Provides comprehensive memory protection services including bounds checking,
 /// guard pages, and secure memory management with defense against common memory vulnerabilities.
 /// </summary>
-public sealed class MemoryProtection : IDisposable
+public sealed partial class MemoryProtection : IDisposable
 {
     private readonly ILogger _logger;
     private readonly MemoryProtectionConfiguration _configuration;
@@ -24,6 +25,119 @@ public sealed class MemoryProtection : IDisposable
     private readonly SemaphoreSlim _allocationLock = new(1, 1);
     private readonly Timer _integrityCheckTimer;
     private volatile bool _disposed;
+
+    #region LoggerMessage Delegates (Event ID Range: 18000-18099)
+
+    private static readonly Action<ILogger, long, nuint, object?, string?, Exception?> _logMemoryReadSuccessful =
+        LoggerMessage.Define<long, nuint, object?, string?>(
+            MsLogLevel.Trace,
+            new EventId(18000, nameof(MemoryReadSuccessful)),
+            "Memory read successful: Address={Address:X}, Size={Size}, Value={Value}");
+
+    private static void MemoryReadSuccessful(ILogger logger, long address, nuint size, object? value, string? typeName)
+        => _logMemoryReadSuccessful(logger, address, size, value, typeName, null);
+
+    private static readonly Action<ILogger, long, Exception?> _logMemoryReadError =
+        LoggerMessage.Define<long>(
+            MsLogLevel.Error,
+            new EventId(18001, nameof(MemoryReadError)),
+            "Error reading memory at address: {Address:X}");
+
+    private static void MemoryReadError(ILogger logger, Exception ex, long address)
+        => _logMemoryReadError(logger, address, ex);
+
+    private static readonly Action<ILogger, long, nuint, object?, Exception?> _logMemoryWriteSuccessful =
+        LoggerMessage.Define<long, nuint, object?>(
+            MsLogLevel.Trace,
+            new EventId(18002, nameof(MemoryWriteSuccessful)),
+            "Memory write successful: Address={Address:X}, Size={Size}, Value={Value}");
+
+    private static void MemoryWriteSuccessful(ILogger logger, long address, nuint size, object? value)
+        => _logMemoryWriteSuccessful(logger, address, size, value, null);
+
+    private static readonly Action<ILogger, long, Exception?> _logMemoryWriteError =
+        LoggerMessage.Define<long>(
+            MsLogLevel.Error,
+            new EventId(18003, nameof(MemoryWriteError)),
+            "Error writing memory at address: {Address:X}");
+
+    private static void MemoryWriteError(ILogger logger, Exception ex, long address)
+        => _logMemoryWriteError(logger, address, ex);
+
+    private static readonly Action<ILogger, long, long, Exception?> _logGuardPagesConfigured =
+        LoggerMessage.Define<long, long>(
+            MsLogLevel.Trace,
+            new EventId(18004, nameof(GuardPagesConfigured)),
+            "Guard pages configured: Before={BeforeAddress:X}, After={AfterAddress:X}");
+
+    private static void GuardPagesConfigured(ILogger logger, long beforeAddress, long afterAddress)
+        => _logGuardPagesConfigured(logger, beforeAddress, afterAddress, null);
+
+    private static readonly Action<ILogger, long, nuint, Exception?> _logSecureMemoryWipeCompleted =
+        LoggerMessage.Define<long, nuint>(
+            MsLogLevel.Trace,
+            new EventId(18005, nameof(SecureMemoryWipeCompleted)),
+            "Secure memory wipe completed: {Address:X}, Size={Size}");
+
+    private static void SecureMemoryWipeCompleted(ILogger logger, long address, nuint size)
+        => _logSecureMemoryWipeCompleted(logger, address, size, null);
+
+    private static readonly Action<ILogger, long, Exception?> _logSecureMemoryWipeFailed =
+        LoggerMessage.Define<long>(
+            MsLogLevel.Warning,
+            new EventId(18006, nameof(SecureMemoryWipeFailed)),
+            "Secure memory wipe failed: {Address:X}");
+
+    private static void SecureMemoryWipeFailed(ILogger logger, Exception ex, long address)
+        => _logSecureMemoryWipeFailed(logger, address, ex);
+
+    private static readonly Action<ILogger, MemoryViolationType, long, string?, nuint, Exception?> _logMemoryViolationDetected =
+        LoggerMessage.Define<MemoryViolationType, long, string?, nuint>(
+            MsLogLevel.Error,
+            new EventId(18007, nameof(MemoryViolationDetected)),
+            "Memory violation detected: Type={ViolationType}, Address={Address:X}, Operation={Operation}, Size={Size}");
+
+    private static void MemoryViolationDetected(ILogger logger, MemoryViolationType violationType, long address, string? operation, nuint size)
+        => _logMemoryViolationDetected(logger, violationType, address, operation, size, null);
+
+    private static readonly Action<ILogger, int, Exception?> _logIntegrityCheckFailed =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Error,
+            new EventId(18008, nameof(IntegrityCheckFailed)),
+            "Integrity check failed: {Count} corrupted memory regions detected");
+
+    private static void IntegrityCheckFailed(ILogger logger, int count)
+        => _logIntegrityCheckFailed(logger, count, null);
+
+    private static readonly Action<ILogger, string?, long, nuint, Exception?> _logCorruptedRegion =
+        LoggerMessage.Define<string?, long, nuint>(
+            MsLogLevel.Error,
+            new EventId(18009, nameof(CorruptedRegion)),
+            "Corrupted region: {Identifier}, Address={Address:X}, Size={Size}");
+
+    private static void CorruptedRegion(ILogger logger, string? identifier, long address, nuint size)
+        => _logCorruptedRegion(logger, identifier, address, size, null);
+
+    private static readonly Action<ILogger, Exception?> _logIntegrityCheckError =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(18010, nameof(IntegrityCheckError)),
+            "Error during integrity check");
+
+    private static void IntegrityCheckError(ILogger logger, Exception ex)
+        => _logIntegrityCheckError(logger, ex);
+
+    private static readonly Action<ILogger, string?, Exception?> _logMemoryRegionDisposeError =
+        LoggerMessage.Define<string?>(
+            MsLogLevel.Warning,
+            new EventId(18011, nameof(MemoryRegionDisposeError)),
+            "Error disposing memory region: {Identifier}");
+
+    private static void MemoryRegionDisposeError(ILogger logger, Exception ex, string? identifier)
+        => _logMemoryRegionDisposeError(logger, identifier, ex);
+
+    #endregion
+
     /// <summary>
     /// Initializes a new instance of the MemoryProtection class.
     /// </summary>
@@ -208,13 +322,12 @@ public sealed class MemoryProtection : IDisposable
         try
         {
             var value = Unsafe.Read<T>((void*)readAddress);
-            _logger.LogTrace("Memory read successful: Address={Address:X}, Size={Size}, Value={Value}",
-                readAddress.ToInt64(), readSize, value);
+            MemoryReadSuccessful(_logger, readAddress.ToInt64(), readSize, value, typeof(T).Name);
             return value;
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error reading memory at address: {readAddress.ToInt64():X}");
+            MemoryReadError(_logger, ex, readAddress.ToInt64());
             throw new AccessViolationException($"Failed to read memory at address {readAddress:X}", ex);
         }
     }
@@ -289,12 +402,11 @@ public sealed class MemoryProtection : IDisposable
         try
         {
             Unsafe.Write((void*)writeAddress, value);
-            _logger.LogTrace("Memory write successful: Address={Address:X}, Size={Size}, Value={Value}",
-                writeAddress.ToInt64(), writeSize, value);
+            MemoryWriteSuccessful(_logger, writeAddress.ToInt64(), writeSize, value);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error writing memory at address: {writeAddress.ToInt64():X}");
+            MemoryWriteError(_logger, ex, writeAddress.ToInt64());
             throw new AccessViolationException($"Failed to write memory at address {writeAddress:X}", ex);
         }
     }
@@ -321,7 +433,7 @@ public sealed class MemoryProtection : IDisposable
 
             if (!_protectedRegions.TryRemove(allocation.Region.BaseAddress, out var region))
             {
-                _logger.LogWarningMessage("Attempted to free unknown memory region: {allocation.Address.ToInt64()}");
+                _logger.LogWarningMessage($"Attempted to free unknown memory region: {allocation.Address.ToInt64()}");
                 return;
             }
 
@@ -330,7 +442,7 @@ public sealed class MemoryProtection : IDisposable
             // Verify integrity one final time
             if (_configuration.EnableIntegrityChecking && !VerifyCanaryValues(region))
             {
-                _logger.LogWarningMessage("Memory corruption detected during deallocation: {region.Identifier}");
+                _logger.LogWarningMessage($"Memory corruption detected during deallocation: {region.Identifier}");
             }
 
             // Secure memory wiping
@@ -370,7 +482,7 @@ public sealed class MemoryProtection : IDisposable
         {
             if (!_allocations.TryGetValue(address, out var metadata))
             {
-                _logger.LogWarningMessage("Access to unprotected memory detected: {address.ToInt64()}");
+                _logger.LogWarningMessage($"Access to unprotected memory detected: {address.ToInt64()}");
                 return false;
             }
 
@@ -499,8 +611,7 @@ public sealed class MemoryProtection : IDisposable
                 _ = mprotect(afterGuard, afterSize, 0);
             }
 
-            _logger.LogTrace("Guard pages configured: Before={BeforeAddress:X}, After={AfterAddress:X}",
-                beforeGuard.ToInt64(), afterGuard.ToInt64());
+            GuardPagesConfigured(_logger, beforeGuard.ToInt64(), afterGuard.ToInt64());
         }
         catch (Exception ex)
         {
@@ -580,12 +691,11 @@ public sealed class MemoryProtection : IDisposable
                 Marshal.Copy(random, 0, region.UserDataAddress, (int)region.Size);
             });
 
-            _logger.LogTrace("Secure memory wipe completed: {Address:X}, Size={Size}",
-                region.UserDataAddress.ToInt64(), region.Size);
+            SecureMemoryWipeCompleted(_logger, region.UserDataAddress.ToInt64(), region.Size);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Secure memory wipe failed: {Address:X}", region.UserDataAddress.ToInt64());
+            SecureMemoryWipeFailed(_logger, ex, region.UserDataAddress.ToInt64());
         }
     }
 
@@ -655,8 +765,7 @@ public sealed class MemoryProtection : IDisposable
             _ = Interlocked.Increment(ref _corruptionCount);
         }
 
-        _logger.LogError("Memory violation detected: Type={ViolationType}, Address={Address:X}, Operation={Operation}, Size={Size}",
-            violation.ViolationType, violation.Address.ToInt64(), violation.Operation, violation.Size);
+        MemoryViolationDetected(_logger, violation.ViolationType, violation.Address.ToInt64(), violation.Operation, violation.Size);
     }
 
     private void PerformIntegrityCheck(object? state)
@@ -681,20 +790,18 @@ public sealed class MemoryProtection : IDisposable
 
             if (corruptedRegions.Count != 0)
             {
-                _logger.LogError("Integrity check failed: {Count} corrupted memory regions detected",
-                    corruptedRegions.Count);
+                IntegrityCheckFailed(_logger, corruptedRegions.Count);
 
 
                 foreach (var region in corruptedRegions)
                 {
-                    _logger.LogError("Corrupted region: {Identifier}, Address={Address:X}, Size={Size}",
-                        region.Identifier, region.UserDataAddress.ToInt64(), region.Size);
+                    CorruptedRegion(_logger, region.Identifier, region.UserDataAddress.ToInt64(), region.Size);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during integrity check");
+            IntegrityCheckError(_logger, ex);
         }
     }
 
@@ -754,14 +861,14 @@ public sealed class MemoryProtection : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing memory region: {Identifier}", region.Identifier);
+                MemoryRegionDisposeError(_logger, ex, region.Identifier);
             }
         }
 
         _protectedRegions.Clear();
         _allocations.Clear();
 
-        _logger.LogInfoMessage("MemoryProtection disposed. Final statistics: Allocations={_allocations.Count}, Violations={_violationCount}");
+        _logger.LogInfoMessage($"MemoryProtection disposed. Final statistics: Allocations={_allocations.Count}, Violations={_violationCount}");
     }
 }
 

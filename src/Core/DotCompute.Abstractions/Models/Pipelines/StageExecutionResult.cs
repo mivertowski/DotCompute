@@ -140,7 +140,7 @@ public sealed class DefaultStageMetrics : IStageMetrics
     public long ErrorCount { get; set; }
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<string, double> CustomMetrics { get; set; } = new Dictionary<string, double>();
+    public IReadOnlyDictionary<string, double> CustomMetrics { get; } = new Dictionary<string, double>();
 }
 
 // Note: PipelineError is already defined in PipelineError.cs

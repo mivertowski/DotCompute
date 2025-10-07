@@ -170,7 +170,7 @@ namespace DotCompute.Core.Execution
             await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
             try
             {
-                LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count, null);
+                LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Count ?? _acceleratorManager.Count, null);
 
                 var startTime = Stopwatch.StartNew();
                 var devices = SelectOptimalDevices(options);
@@ -474,7 +474,8 @@ namespace DotCompute.Core.Execution
 
             if (gpuAccelerators.Length == 0)
             {
-                return [_acceleratorManager.Default];
+                var defaultAcc = _acceleratorManager.AvailableAccelerators.FirstOrDefault();
+                return defaultAcc != null ? [defaultAcc] : [];
             }
 
             // Select based on memory and compute capability
@@ -727,7 +728,7 @@ namespace DotCompute.Core.Execution
         private static double CalculateMemoryBandwidth<T>(DataParallelDeviceTask<T> task, double executionTimeMs) where T : unmanaged
         {
             var elementSize = global::System.Runtime.InteropServices.Marshal.SizeOf<T>();
-            var totalBytes = (task.InputBuffers.Length + task.OutputBuffers.Length) *
+            var totalBytes = (task.InputBuffers.Count + task.OutputBuffers.Count) *
                             task.ElementCount * elementSize;
             return (totalBytes / 1e9) / (executionTimeMs / 1000.0); // GB/s
         }
@@ -786,7 +787,7 @@ namespace DotCompute.Core.Execution
         private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
             ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
         {
-            LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Length, null);
+            LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Count, null);
 
             var deviceResults = new List<DeviceExecutionResult>();
             var startTime = Stopwatch.StartNew();
@@ -885,7 +886,7 @@ namespace DotCompute.Core.Execution
         private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(
             PipelineExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
         {
-            LogExecutingPipelinePlan(_logger, plan.Stages.Length, plan.MicrobatchConfig.Count, null);
+            LogExecutingPipelinePlan(_logger, plan.Stages.Count, plan.MicrobatchConfig.Count, null);
 
             var deviceResults = new List<DeviceExecutionResult>();
             var startTime = Stopwatch.StartNew();

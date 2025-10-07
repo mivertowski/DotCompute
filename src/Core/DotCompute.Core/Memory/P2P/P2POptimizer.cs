@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -12,7 +13,7 @@ namespace DotCompute.Core.Memory.P2P
     /// Advanced P2P Optimizer that provides intelligent transfer path selection,
     /// bandwidth optimization, and adaptive scheduling strategies.
     /// </summary>
-    public sealed class P2POptimizer : IAsyncDisposable
+    public sealed partial class P2POptimizer : IAsyncDisposable
     {
         private readonly ILogger _logger;
         private readonly P2PCapabilityMatrix _capabilityMatrix;
@@ -48,8 +49,108 @@ namespace DotCompute.Core.Memory.P2P
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs),
                 TimeSpan.FromMilliseconds(AdaptiveOptimizationIntervalMs));
 
-            _logger.LogDebugMessage("P2P Optimizer initialized with adaptive optimization");
+            LogOptimizerInitialized(_logger);
         }
+
+        // LoggerMessage delegates - Event ID range 14300-14315 for P2POptimizer
+        private static readonly Action<ILogger, Exception?> _logOptimizerInitialized =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(14300, nameof(LogOptimizerInitialized)),
+                "P2P Optimizer initialized with adaptive optimization");
+
+        private static void LogOptimizerInitialized(ILogger logger)
+            => _logOptimizerInitialized(logger, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logTopologyInitializing =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Information,
+                new EventId(14301, nameof(LogTopologyInitializing)),
+                "Initializing P2P topology optimization for {Count} device pairs");
+
+        private static void LogTopologyInitializing(ILogger logger, int count)
+            => _logTopologyInitializing(logger, count, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logTopologyInitialized =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Information,
+                new EventId(14302, nameof(LogTopologyInitialized)),
+                "P2P topology optimization initialized: {Count} optimization profiles created");
+
+        private static void LogTopologyInitialized(ILogger logger, int count)
+            => _logTopologyInitialized(logger, count, null);
+
+        private static readonly Action<ILogger, string, int, int, double, Exception?> _logTransferPlanCreated =
+            LoggerMessage.Define<string, int, int, double>(
+                MsLogLevel.Debug,
+                new EventId(14303, nameof(LogTransferPlanCreated)),
+                "Optimal transfer plan created: {Strategy}, {ChunkSize} bytes chunks, {PipelineDepth} pipeline depth, estimated {EstimatedTimeMs}ms");
+
+        private static void LogTransferPlanCreated(ILogger logger, string strategy, int chunkSize, int pipelineDepth, double estimatedTimeMs)
+            => _logTransferPlanCreated(logger, strategy, chunkSize, pipelineDepth, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, int, double, Exception?> _logScatterPlanCreated =
+            LoggerMessage.Define<int, double>(
+                MsLogLevel.Debug,
+                new EventId(14304, nameof(LogScatterPlanCreated)),
+                "Scatter plan created: {ChunkCount} chunks, estimated {EstimatedTimeMs}ms total time");
+
+        private static void LogScatterPlanCreated(ILogger logger, int chunkCount, double estimatedTimeMs)
+            => _logScatterPlanCreated(logger, chunkCount, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, int, double, Exception?> _logGatherPlanCreated =
+            LoggerMessage.Define<int, double>(
+                MsLogLevel.Debug,
+                new EventId(14305, nameof(LogGatherPlanCreated)),
+                "Gather plan created: {ChunkCount} chunks, estimated {EstimatedTimeMs}ms total time");
+
+        private static void LogGatherPlanCreated(ILogger logger, int chunkCount, double estimatedTimeMs)
+            => _logGatherPlanCreated(logger, chunkCount, estimatedTimeMs, null);
+
+        private static readonly Action<ILogger, string, Exception?> _logHistoryOptimizationApplied =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Trace,
+                new EventId(14306, nameof(LogHistoryOptimizationApplied)),
+                "Applied history-based optimization: strategy changed to {Strategy} based on past performance");
+
+        private static void LogHistoryOptimizationApplied(ILogger logger, string strategy)
+            => _logHistoryOptimizationApplied(logger, strategy, null);
+
+        private static readonly Action<ILogger, int, int, int, Exception?> _logRecommendationsGenerated =
+            LoggerMessage.Define<int, int, int>(
+                MsLogLevel.Debug,
+                new EventId(14307, nameof(LogRecommendationsGenerated)),
+                "Optimization recommendations generated: {PerformanceCount} performance, {TopologyCount} topology, {ConfigCount} configuration");
+
+        private static void LogRecommendationsGenerated(ILogger logger, int performanceCount, int topologyCount, int configCount)
+            => _logRecommendationsGenerated(logger, performanceCount, topologyCount, configCount, null);
+
+        private static readonly Action<ILogger, int, Exception?> _logAdaptiveOptimizationApplied =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Trace,
+                new EventId(14308, nameof(LogAdaptiveOptimizationApplied)),
+                "Adaptive optimization applied to {Count} optimization profiles");
+
+        private static void LogAdaptiveOptimizationApplied(ILogger logger, int count)
+            => _logAdaptiveOptimizationApplied(logger, count, null);
+
+        private static readonly Action<ILogger, Exception, Exception?> _logAdaptiveOptimizationError =
+            LoggerMessage.Define<Exception>(
+                MsLogLevel.Warning,
+                new EventId(14309, nameof(LogAdaptiveOptimizationError)),
+                "Error during adaptive optimization");
+
+        private static void LogAdaptiveOptimizationError(ILogger logger, Exception error)
+            => _logAdaptiveOptimizationError(logger, error, null);
+
+        private static readonly Action<ILogger, Exception?> _logOptimizerDisposed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(14310, nameof(LogOptimizerDisposed)),
+                "P2P Optimizer disposed");
+
+        private static void LogOptimizerDisposed(ILogger logger)
+            => _logOptimizerDisposed(logger, null);
 
         /// <summary>
         /// Initializes topology-aware optimization with device pair analysis.
@@ -58,7 +159,7 @@ namespace DotCompute.Core.Memory.P2P
             List<P2PDevicePair> devicePairs,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInfoMessage("Initializing P2P topology optimization for {devicePairs.Count} device pairs");
+            LogTopologyInitializing(_logger, devicePairs.Count);
 
             await _optimizerSemaphore.WaitAsync(cancellationToken);
             try
@@ -79,7 +180,6 @@ namespace DotCompute.Core.Memory.P2P
                             OptimalPipelineDepth = CalculateOptimalPipelineDepth(pair.Capability),
                             PreferredStrategy = DeterminePreferredStrategy(pair.Capability),
                             BandwidthUtilization = 0.0,
-                            ComputeUtilization = 1.0,
                             LastUpdated = DateTimeOffset.UtcNow
                         };
 
@@ -98,7 +198,7 @@ namespace DotCompute.Core.Memory.P2P
                     }
                 }
 
-                _logger.LogInfoMessage($"P2P topology optimization initialized: {_optimizationProfiles.Count} optimization profiles created");
+                LogTopologyInitialized(_logger, _optimizationProfiles.Count);
             }
             finally
             {
@@ -152,7 +252,7 @@ namespace DotCompute.Core.Memory.P2P
             // Update statistics
             UpdateOptimizationStatistics(transferPlan);
 
-            _logger.LogDebugMessage($"Optimal transfer plan created: {transferPlan.Strategy}, {transferPlan.ChunkSize} bytes chunks, {transferPlan.PipelineDepth} pipeline depth, estimated {transferPlan.EstimatedTransferTimeMs}ms");
+            LogTransferPlanCreated(_logger, transferPlan.Strategy.ToString(), transferPlan.ChunkSize, transferPlan.PipelineDepth, transferPlan.EstimatedTransferTimeMs);
 
             return transferPlan;
         }
@@ -214,7 +314,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentOffset += chunkSize;
             }
 
-            _logger.LogDebugMessage($"Scatter plan created: {scatterPlan.Chunks.Count} chunks, estimated {scatterPlan.EstimatedTotalTimeMs}ms total time");
+            LogScatterPlanCreated(_logger, scatterPlan.Chunks.Count, scatterPlan.EstimatedTotalTimeMs);
 
             return scatterPlan;
         }
@@ -271,7 +371,7 @@ namespace DotCompute.Core.Memory.P2P
                 currentDestOffset += sourceBuffer.Length;
             }
 
-            _logger.LogDebugMessage($"Gather plan created: {gatherPlan.Chunks.Count} chunks, estimated {gatherPlan.EstimatedTotalTimeMs}ms total time");
+            LogGatherPlanCreated(_logger, gatherPlan.Chunks.Count, gatherPlan.EstimatedTotalTimeMs);
 
             return gatherPlan;
         }
@@ -411,7 +511,7 @@ namespace DotCompute.Core.Memory.P2P
                     });
                 }
 
-                _logger.LogDebugMessage($"Optimization recommendations generated: {recommendations.PerformanceRecommendations.Count} performance, {recommendations.TopologyRecommendations.Count} topology, {recommendations.ConfigurationRecommendations.Count} configuration");
+                LogRecommendationsGenerated(_logger, recommendations.PerformanceRecommendations.Count, recommendations.TopologyRecommendations.Count, recommendations.ConfigurationRecommendations.Count);
 
                 return recommendations;
             }
@@ -470,7 +570,6 @@ namespace DotCompute.Core.Memory.P2P
                 OptimalPipelineDepth = CalculateOptimalPipelineDepth(capability),
                 PreferredStrategy = DeterminePreferredStrategy(capability),
                 BandwidthUtilization = 0.0,
-                ComputeUtilization = 1.0,
                 OptimizationScore = CalculateInitialOptimizationScore(capability),
                 LastUpdated = DateTimeOffset.UtcNow
             };
@@ -632,8 +731,7 @@ namespace DotCompute.Core.Memory.P2P
                         transferPlan.ChunkSize = bestTransfer.ChunkSize;
 
 
-                        _logger.LogTrace("Applied history-based optimization: strategy changed to {Strategy} based on past performance",
-                            bestTransfer.Strategy);
+                        LogHistoryOptimizationApplied(_logger, bestTransfer.Strategy.ToString());
                     }
                 }
             }
@@ -828,13 +926,12 @@ namespace DotCompute.Core.Memory.P2P
 
                 if (profilesNeedingOptimization.Count != 0)
                 {
-                    _logger.LogTrace("Adaptive optimization applied to {ProfileCount} optimization profiles",
-                        profilesNeedingOptimization.Count);
+                    LogAdaptiveOptimizationApplied(_logger, profilesNeedingOptimization.Count);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during adaptive optimization");
+                LogAdaptiveOptimizationError(_logger, ex);
             }
         }
 
@@ -862,7 +959,7 @@ namespace DotCompute.Core.Memory.P2P
             _optimizationProfiles.Clear();
             _transferHistory.Clear();
 
-            _logger.LogDebugMessage("P2P Optimizer disposed");
+            LogOptimizerDisposed(_logger);
             await Task.CompletedTask;
         }
     }

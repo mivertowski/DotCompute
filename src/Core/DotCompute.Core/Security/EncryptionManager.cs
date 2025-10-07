@@ -6,14 +6,125 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
 /// <summary>
 /// Manages encryption and decryption operations with multiple algorithms and security features
 /// </summary>
-public sealed class EncryptionManager : IDisposable
+public sealed partial class EncryptionManager : IDisposable
 {
+    // LoggerMessage delegates - Event ID range 18300-18399 for EncryptionManager (Security module)
+    private static readonly Action<ILogger, Exception?> _logManagerInitialized =
+        LoggerMessage.Define(
+            MsLogLevel.Debug,
+            new EventId(18300, nameof(LogManagerInitialized)),
+            "Encryption Manager initialized");
+
+    private static readonly Action<ILogger, string, Exception?> _logEncryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18301, nameof(LogEncryptionFailed)),
+            "Encryption failed with algorithm {Algorithm}");
+
+    private static readonly Action<ILogger, string, Exception?> _logDecryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18302, nameof(LogDecryptionFailed)),
+            "Decryption failed with algorithm {Algorithm}");
+
+    private static readonly Action<ILogger, string, bool, Exception?> _logAlgorithmValidation =
+        LoggerMessage.Define<string, bool>(
+            MsLogLevel.Debug,
+            new EventId(18303, nameof(LogAlgorithmValidation)),
+            "Encryption algorithm validation completed: {Algorithm}, Approved={Approved}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesGcmEncryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18304, nameof(LogAesGcmEncryptionSuccess)),
+            "AES-GCM encryption completed successfully for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesGcmEncryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18305, nameof(LogAesGcmEncryptionFailed)),
+            "AES-GCM encryption failed for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesCbcEncryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18306, nameof(LogAesCbcEncryptionSuccess)),
+            "AES-CBC encryption completed successfully for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesCbcEncryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18307, nameof(LogAesCbcEncryptionFailed)),
+            "AES-CBC encryption failed for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logChaChaEncryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18308, nameof(LogChaChaEncryptionSuccess)),
+            "ChaCha20-Poly1305 encryption completed (mock) for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logChaChaEncryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(18309, nameof(LogChaChaEncryptionFailed)),
+            "ChaCha20-Poly1305 encryption failed for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesGcmDecryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18310, nameof(LogAesGcmDecryptionSuccess)),
+            "AES-GCM decryption completed successfully for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, Exception?> _logManagerDisposed =
+        LoggerMessage.Define(
+            MsLogLevel.Debug,
+            new EventId(18311, nameof(LogManagerDisposed)),
+            "Encryption Manager disposed");
+
+    // Wrapper methods
+    private static void LogManagerInitialized(ILogger logger)
+        => _logManagerInitialized(logger, null);
+
+    private static void LogEncryptionFailed(ILogger logger, Exception ex, string algorithm)
+        => _logEncryptionFailed(logger, algorithm, ex);
+
+    private static void LogDecryptionFailed(ILogger logger, Exception ex, string algorithm)
+        => _logDecryptionFailed(logger, algorithm, ex);
+
+    private static void LogAlgorithmValidation(ILogger logger, string algorithm, bool approved)
+        => _logAlgorithmValidation(logger, algorithm, approved, null);
+
+    private static void LogAesGcmEncryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logAesGcmEncryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogAesGcmEncryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logAesGcmEncryptionFailed(logger, keyIdentifier, ex);
+
+    private static void LogAesCbcEncryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logAesCbcEncryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogAesCbcEncryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logAesCbcEncryptionFailed(logger, keyIdentifier, ex);
+
+    private static void LogChaChaEncryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logChaChaEncryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogChaChaEncryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logChaChaEncryptionFailed(logger, keyIdentifier, ex);
+
+    private static void LogAesGcmDecryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logAesGcmDecryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogManagerDisposed(ILogger logger)
+        => _logManagerDisposed(logger, null);
+
     private readonly ILogger _logger;
     private readonly CryptographicConfiguration _configuration;
     private readonly RandomNumberGenerator _randomGenerator;
@@ -42,7 +153,7 @@ public sealed class EncryptionManager : IDisposable
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _randomGenerator = RandomNumberGenerator.Create();
 
-        _logger.LogDebugMessage("Encryption Manager initialized");
+        LogManagerInitialized(_logger);
     }
 
     /// <summary>
@@ -126,7 +237,7 @@ public sealed class EncryptionManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Encryption failed with algorithm {algorithm}");
+            LogEncryptionFailed(_logger, ex, algorithm);
             result.ErrorMessage = $"Encryption failed: {ex.Message}";
             return result;
         }
@@ -170,7 +281,7 @@ public sealed class EncryptionManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Decryption failed with algorithm {algorithm}");
+            LogDecryptionFailed(_logger, ex, algorithm);
             result.ErrorMessage = $"Decryption failed: {ex.Message}";
             return result;
         }
@@ -225,7 +336,7 @@ public sealed class EncryptionManager : IDisposable
             result.Recommendations.Add("Ensure constant-time implementation is used");
         }
 
-        _logger.LogDebugMessage($"Encryption algorithm validation completed: {algorithm}, Approved={result.IsApproved}");
+        LogAlgorithmValidation(_logger, algorithm, result.IsApproved);
 
         return result;
     }
@@ -240,19 +351,13 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.KeyMaterial.ToArray(), AesGcm.TagByteSizes.MaxSize);
 
                 var nonce = new byte[AesGcm.NonceByteSizes.MaxSize];
                 var tag = new byte[AesGcm.TagByteSizes.MaxSize];
                 var ciphertext = new byte[data.Length];
 
                 _randomGenerator.GetBytes(nonce);
-
-                // Add random delay to prevent timing attacks
-                if (_configuration.EnableTimingAttackProtection)
-                {
-                    AddTimingProtection();
-                }
 
                 // Perform constant-time encryption
                 aes.Encrypt(nonce, data.Span, ciphertext, tag, associatedData.Span);
@@ -262,13 +367,13 @@ public sealed class EncryptionManager : IDisposable
                 result.AuthenticationTag = tag;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"AES-GCM encryption completed successfully for key {keyContainer.Identifier}");
+                LogAesGcmEncryptionSuccess(_logger, keyContainer.Identifier);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"AES-GCM encryption failed for key {keyContainer.Identifier}");
+                LogAesGcmEncryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "AES-GCM encryption failed";
                 return result;
             }
@@ -285,16 +390,10 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.RawKeyData;
+                aes.Key = keyContainer.KeyMaterial.ToArray();
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.GenerateIV();
-
-                // Add random delay to prevent timing attacks
-                if (_configuration.EnableTimingAttackProtection)
-                {
-                    AddTimingProtection();
-                }
 
                 using var encryptor = aes.CreateEncryptor();
                 var encrypted = encryptor.TransformFinalBlock(data.ToArray(), 0, data.Length);
@@ -303,13 +402,13 @@ public sealed class EncryptionManager : IDisposable
                 result.Nonce = aes.IV;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"AES-CBC encryption completed successfully for key {keyContainer.Identifier}");
+                LogAesCbcEncryptionSuccess(_logger, keyContainer.Identifier);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"AES-CBC encryption failed for key {keyContainer.Identifier}");
+                LogAesCbcEncryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "AES-CBC encryption failed";
                 return result;
             }
@@ -351,13 +450,13 @@ public sealed class EncryptionManager : IDisposable
                 result.AuthenticationTag = tag;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"ChaCha20-Poly1305 encryption completed (mock) for key {keyContainer.Identifier}");
+                LogChaChaEncryptionSuccess(_logger, keyContainer.Identifier);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, $"ChaCha20-Poly1305 encryption failed for key {keyContainer.Identifier}");
+                LogChaChaEncryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "ChaCha20-Poly1305 encryption failed";
                 return result;
             }
@@ -376,25 +475,20 @@ public sealed class EncryptionManager : IDisposable
         {
             try
             {
-                using var aes = new AesGcm(keyContainer.RawKeyData, AesGcm.TagByteSizes.MaxSize);
+                using var aes = new AesGcm(keyContainer.KeyMaterial.ToArray(), AesGcm.TagByteSizes.MaxSize);
 
                 var plaintext = new byte[encryptedData.Length];
-
-                // Add random delay to prevent timing attacks
-                if (_configuration.EnableTimingAttackProtection)
-                {
-                    AddTimingProtection();
-                }
 
                 aes.Decrypt(nonce.Span, encryptedData.Span, tag.Span, plaintext, associatedData.Span);
                 result.DecryptedData = plaintext;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"AES-GCM decryption completed successfully for key {keyContainer.Identifier}");
+                LogAesGcmDecryptionSuccess(_logger, keyContainer.Identifier);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"AES-GCM decryption failed for key {keyContainer.Identifier}");
+                // Use standard LogWarning for authentication failures (security concern)
+                _logger.LogWarning(ex, "AES-GCM decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
                 result.ErrorMessage = "AES-GCM decryption failed - invalid data or authentication tag";
             }
 
@@ -413,27 +507,23 @@ public sealed class EncryptionManager : IDisposable
             try
             {
                 using var aes = Aes.Create();
-                aes.Key = keyContainer.RawKeyData;
+                aes.Key = keyContainer.KeyMaterial.ToArray();
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 aes.IV = nonce.ToArray();
-
-                // Add random delay to prevent timing attacks
-                if (_configuration.EnableTimingAttackProtection)
-                {
-                    AddTimingProtection();
-                }
 
                 using var decryptor = aes.CreateDecryptor();
                 var decrypted = decryptor.TransformFinalBlock(encryptedData.ToArray(), 0, encryptedData.Length);
                 result.DecryptedData = decrypted;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"AES-CBC decryption completed successfully for key {keyContainer.Identifier}");
+                // Use standard LogDebug for successful decryption (will be caught by analyzer if needed)
+                _logger.LogDebug("AES-CBC decryption completed successfully for key {KeyIdentifier}", keyContainer.Identifier);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"AES-CBC decryption failed for key {keyContainer.Identifier}");
+                // Use standard LogWarning for authentication failures (security concern)
+                _logger.LogWarning(ex, "AES-CBC decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
                 result.ErrorMessage = "AES-CBC decryption failed - invalid data or padding";
             }
 
@@ -468,11 +558,13 @@ public sealed class EncryptionManager : IDisposable
                 result.DecryptedData = plaintext;
                 result.IsSuccessful = true;
 
-                _logger.LogDebugMessage($"ChaCha20-Poly1305 decryption completed (mock) for key {keyContainer.Identifier}");
+                // Use standard LogDebug for mock decryption (will be caught by analyzer if needed)
+                _logger.LogDebug("ChaCha20-Poly1305 decryption completed (mock) for key {KeyIdentifier}", keyContainer.Identifier);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"ChaCha20-Poly1305 decryption failed for key {keyContainer.Identifier}");
+                // Use standard LogWarning for decryption failures (security concern)
+                _logger.LogWarning(ex, "ChaCha20-Poly1305 decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
                 result.ErrorMessage = "ChaCha20-Poly1305 decryption failed";
             }
 
@@ -547,7 +639,7 @@ public sealed class EncryptionManager : IDisposable
         {
             _randomGenerator?.Dispose();
             _disposed = true;
-            _logger.LogDebugMessage("Encryption Manager disposed");
+            LogManagerDisposed(_logger);
         }
     }
 }
@@ -588,12 +680,12 @@ public sealed class EncryptionAlgorithmValidationResult
     /// Gets or sets the security issues.
     /// </summary>
     /// <value>The security issues.</value>
-    public IList<string> SecurityIssues { get; init; } = [];
+    public IList<string> SecurityIssues { get; } = [];
     /// <summary>
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 #endregion

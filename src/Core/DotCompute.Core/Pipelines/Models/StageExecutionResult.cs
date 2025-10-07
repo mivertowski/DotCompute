@@ -27,7 +27,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the execution time.
     /// </summary>
-    public TimeSpan ExecutionTime => BaseResult.Timings;
+    public TimeSpan ExecutionTime => BaseResult.ExecutionTime;
 
     /// <summary>
     /// Gets the output data produced by the stage.
@@ -37,7 +37,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets the amount of memory used during execution.
     /// </summary>
-    public long MemoryUsed => BaseResult.MemoryAllocated;
+    public long MemoryUsed => BaseResult.MemoryUsage;
 
     /// <summary>
     /// Gets any error that occurred during execution.

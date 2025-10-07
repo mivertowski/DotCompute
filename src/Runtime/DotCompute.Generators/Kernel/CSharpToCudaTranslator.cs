@@ -83,13 +83,13 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
     {
         // Heuristics for shared memory usage
         var type = variable.GetTypeDisplayString();
-        return type.Contains("[]") && !type.Contains("Span") &&
-               variable.Name.Contains("tile");
+        return type.IndexOf("[]", StringComparison.Ordinal) >= 0 && type.IndexOf("Span", StringComparison.Ordinal) < 0 &&
+               variable.Name.IndexOf("tile", StringComparison.Ordinal) >= 0;
     }
 
     private static bool IsConstantMemoryCandidate(ISymbol variable)
         // Heuristics for constant memory usage
-        => variable.IsStatic || variable.Name.Contains("const");
+        => variable.IsStatic || variable.Name.IndexOf("const", StringComparison.Ordinal) >= 0;
 
     private void TranslateBlockStatement(BlockSyntax block)
     {
@@ -245,7 +245,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         // Check if initializer contains thread/block index references
 
         var initText = variable.Initializer?.Value.ToString() ?? "";
-        return initText.Contains("idx") || initText.Contains("threadIdx") || initText.Contains("blockIdx");
+        return initText.IndexOf("idx", StringComparison.Ordinal) >= 0 || initText.IndexOf("threadIdx", StringComparison.Ordinal) >= 0 || initText.IndexOf("blockIdx", StringComparison.Ordinal) >= 0;
     }
 
     private void TranslateGridStrideLoop(ForStatementSyntax forStmt)
@@ -385,7 +385,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
         // Handle float literals
 
-        if (literal.Token.Text.EndsWith("f", StringComparison.Ordinal))
+        if (literal.Token.Text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
         {
             _ = _output.Append(literal.Token.Text);
         }
@@ -524,7 +524,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
     private static bool IsAtomicOperation(string methodName)
     {
         return methodName.StartsWith("Interlocked", StringComparison.Ordinal) ||
-               methodName.Contains("Atomic");
+               methodName.IndexOf("Atomic", StringComparison.Ordinal) >= 0;
     }
 
     private void TranslateAtomicOperation(string methodName, ArgumentListSyntax arguments)
@@ -671,12 +671,12 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
             "bool" => "bool",
             "char" => "char",
             "void" => "void",
-            _ when csharpType.Contains("float2") => "float2",
-            _ when csharpType.Contains("float3") => "float3",
-            _ when csharpType.Contains("float4") => "float4",
-            _ when csharpType.Contains("double2") => "double2",
-            _ when csharpType.Contains("double3") => "double3",
-            _ when csharpType.Contains("double4") => "double4",
+            _ when csharpType.IndexOf("float2", StringComparison.Ordinal) >= 0 => "float2",
+            _ when csharpType.IndexOf("float3", StringComparison.Ordinal) >= 0 => "float3",
+            _ when csharpType.IndexOf("float4", StringComparison.Ordinal) >= 0 => "float4",
+            _ when csharpType.IndexOf("double2", StringComparison.Ordinal) >= 0 => "double2",
+            _ when csharpType.IndexOf("double3", StringComparison.Ordinal) >= 0 => "double3",
+            _ when csharpType.IndexOf("double4", StringComparison.Ordinal) >= 0 => "double4",
             _ => "float" // Default fallback
         };
     }

@@ -14,9 +14,11 @@ using DotCompute.Core.Execution.Pipeline;
 using ExecutionStrategyType = DotCompute.Abstractions.Types.ExecutionStrategyType;
 using DotCompute.Core.Execution.Plans;
 using DotCompute.Abstractions.Debugging.Types;
+using DotCompute.Core.Execution.Models;
 
 // Type alias to resolve ambiguity between different BottleneckType enums
 using AnalysisBottleneckType = DotCompute.Abstractions.Types.BottleneckType;
+using AbsTrendDirection = DotCompute.Abstractions.Types.TrendDirection;
 
 namespace DotCompute.Core.Execution
 {
@@ -158,7 +160,18 @@ namespace DotCompute.Core.Execution
                 .OrderBy(e => e.Timestamp)
                 .ToArray();
 
-            return PerformanceAnalyzer.AnalyzeTrends(relevantExecutions);
+            var executionTrend = PerformanceAnalyzer.AnalyzeTrends(relevantExecutions);
+
+            // Convert ExecutionPerformanceTrend to PerformanceTrends
+            return new PerformanceTrends
+            {
+                ExecutionTimeTrend = new TrendAnalysis { Direction = ConvertToDebugTrendDirection(ConvertTrendDirection(executionTrend.EfficiencyTrend)) },
+                ThroughputTrend = new TrendAnalysis { Direction = ConvertToDebugTrendDirection(ConvertTrendDirection(executionTrend.ThroughputTrend)) },
+                MemoryUsageTrend = new TrendAnalysis { Direction = ConvertToDebugTrendDirection(ConvertTrendDirection(executionTrend.EfficiencyTrend)) },
+                OverallTrend = ConvertToDebugTrendDirection(ConvertTrendDirection(executionTrend.EfficiencyTrend)),
+                DataPoints = relevantExecutions.Length,
+                TimeWindow = timeWindow
+            };
         }
 
         /// <summary>
@@ -216,6 +229,28 @@ namespace DotCompute.Core.Execution
             _disposed = true;
 
             _logger.LogInfoMessage("Performance monitor disposed");
+        }
+
+        private static AbsTrendDirection ConvertTrendDirection(TrendDirection trend)
+        {
+            return trend switch
+            {
+                TrendDirection.Improving => AbsTrendDirection.Improving,
+                TrendDirection.Stable => AbsTrendDirection.Stable,
+                TrendDirection.Degrading => AbsTrendDirection.Degrading,
+                _ => AbsTrendDirection.Unknown
+            };
+        }
+
+        private static DotCompute.Abstractions.Debugging.TrendDirection ConvertToDebugTrendDirection(AbsTrendDirection trend)
+        {
+            return trend switch
+            {
+                AbsTrendDirection.Improving => DotCompute.Abstractions.Debugging.TrendDirection.Improving,
+                AbsTrendDirection.Stable => DotCompute.Abstractions.Debugging.TrendDirection.Stable,
+                AbsTrendDirection.Degrading => DotCompute.Abstractions.Debugging.TrendDirection.Degrading,
+                _ => DotCompute.Abstractions.Debugging.TrendDirection.Unknown
+            };
         }
 
         #region Private Methods

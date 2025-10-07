@@ -809,7 +809,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         /// <value>
         /// The most common errors.
         /// </value>
-        public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; set; } = [];
+        public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; } = [];
 
         /// <summary>
         /// Gets or sets the problematic operations.
@@ -817,7 +817,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         /// <value>
         /// The problematic operations.
         /// </value>
-        public List<KeyValuePair<string, int>> ProblematicOperations { get; set; } = [];
+        public List<KeyValuePair<string, int>> ProblematicOperations { get; } = [];
 
         /// <summary>
         /// Gets or sets the last error.

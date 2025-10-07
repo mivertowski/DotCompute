@@ -69,7 +69,7 @@ namespace DotCompute.Core.Execution.Pipeline
         /// <summary>
         /// Gets or sets the data shape or dimensions.
         /// </summary>
-        public int[] Shape { get; set; } = [];
+        public IReadOnlyList<int> Shape { get; } = Array.Empty<int>();
 
         /// <summary>
         /// Gets or sets the total number of elements in the data specification.

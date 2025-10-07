@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.System;
 
@@ -20,6 +21,99 @@ public sealed partial class SystemInfoManager : IDisposable
     private readonly Timer _monitoringTimer;
     private SystemInfo? _cachedInfo;
     private volatile bool _isMonitoring;
+
+    // LoggerMessage delegates for high-performance logging (Event ID range: 17000-17099)
+    private static readonly Action<ILogger, Exception?> _logWindowsMemoryWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17000, nameof(WindowsMemoryWarning)),
+            "Failed to get Windows memory info via WMI, using fallback");
+
+    private static readonly Action<ILogger, Exception?> _logLinuxMemoryWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17001, nameof(LinuxMemoryWarning)),
+            "Failed to read /proc/meminfo, using fallback");
+
+    private static readonly Action<ILogger, Exception?> _logMacOSMemoryWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17002, nameof(MacOSMemoryWarning)),
+            "Failed to get macOS memory info, using fallback");
+
+    private static readonly Action<ILogger, Exception?> _logVirtualMemoryWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17003, nameof(VirtualMemoryWarning)),
+            "Failed to get virtual memory info");
+
+    private static readonly Action<ILogger, Exception?> _logCpuInfoWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17004, nameof(CpuInfoWarning)),
+            "Failed to get detailed CPU info");
+
+    private static readonly Action<ILogger, Exception?> _logWindowsCpuWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17005, nameof(WindowsCpuWarning)),
+            "Failed to get Windows CPU info via WMI");
+
+    private static readonly Action<ILogger, Exception?> _logLinuxCpuWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17006, nameof(LinuxCpuWarning)),
+            "Failed to read /proc/cpuinfo");
+
+    private static readonly Action<ILogger, Exception?> _logMacOSCpuWarning =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(17007, nameof(MacOSCpuWarning)),
+            "Failed to get macOS CPU info");
+
+    private static readonly Action<ILogger, string, string, Exception?> _logCommandExecutionDebug =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Debug,
+            new EventId(17008, nameof(CommandExecutionDebug)),
+            "Failed to execute command: {Command} {Args}");
+
+    private static readonly Action<ILogger, PlatformType, string, int, double, double, double, Exception?> _logSystemInfo =
+        LoggerMessage.Define<PlatformType, string, int, double, double, double>(
+            MsLogLevel.Information,
+            new EventId(17009, nameof(SystemInfo)),
+            "System Info - Platform: {Platform}, CPU: {CPU} ({Cores} cores), Memory: {Memory:F2}GB ({Usage:F1}% used), Process: {ProcessMem:F2}MB");
+
+    // Wrapper methods for the delegates
+    private static void LogWindowsMemoryWarning(ILogger logger, Exception ex)
+        => _logWindowsMemoryWarning(logger, ex);
+
+    private static void LogLinuxMemoryWarning(ILogger logger, Exception ex)
+        => _logLinuxMemoryWarning(logger, ex);
+
+    private static void LogMacOSMemoryWarning(ILogger logger, Exception ex)
+        => _logMacOSMemoryWarning(logger, ex);
+
+    private static void LogVirtualMemoryWarning(ILogger logger, Exception ex)
+        => _logVirtualMemoryWarning(logger, ex);
+
+    private static void LogCpuInfoWarning(ILogger logger, Exception ex)
+        => _logCpuInfoWarning(logger, ex);
+
+    private static void LogWindowsCpuWarning(ILogger logger, Exception ex)
+        => _logWindowsCpuWarning(logger, ex);
+
+    private static void LogLinuxCpuWarning(ILogger logger, Exception ex)
+        => _logLinuxCpuWarning(logger, ex);
+
+    private static void LogMacOSCpuWarning(ILogger logger, Exception ex)
+        => _logMacOSCpuWarning(logger, ex);
+
+    private static void LogCommandExecutionDebug(ILogger logger, string command, string args, Exception ex)
+        => _logCommandExecutionDebug(logger, command, args, ex);
+
+    private static void LogSystemInfoMessage(ILogger logger, PlatformType platform, string cpu, int cores, double memory, double usage, double processMem)
+        => _logSystemInfo(logger, platform, cpu, cores, memory, usage, processMem, null);
+
     /// <summary>
     /// Initializes a new instance of the SystemInfoManager class.
     /// </summary>
@@ -302,7 +396,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get Windows memory info via WMI, using fallback");
+            LogWindowsMemoryWarning(_logger, ex);
             return GetFallbackMemoryInfo();
         }
 
@@ -366,7 +460,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to read /proc/meminfo, using fallback");
+            LogLinuxMemoryWarning(_logger, ex);
             return GetFallbackMemoryInfo();
         }
 
@@ -447,7 +541,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get macOS memory info, using fallback");
+            LogMacOSMemoryWarning(_logger, ex);
             return GetFallbackMemoryInfo();
         }
 
@@ -490,7 +584,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get virtual memory info");
+            LogVirtualMemoryWarning(_logger, ex);
         }
 
 
@@ -532,7 +626,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get detailed CPU info");
+            LogCpuInfoWarning(_logger, ex);
         }
 
 
@@ -584,7 +678,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get Windows CPU info via WMI");
+            LogWindowsCpuWarning(_logger, ex);
         }
     }
 
@@ -639,7 +733,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to read /proc/cpuinfo");
+            LogLinuxCpuWarning(_logger, ex);
         }
     }
 
@@ -670,7 +764,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get macOS CPU info");
+            LogMacOSCpuWarning(_logger, ex);
         }
     }
 
@@ -764,7 +858,7 @@ public sealed partial class SystemInfoManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to execute command: {Command} {Args}", command, arguments);
+            LogCommandExecutionDebug(_logger, command, arguments, ex);
             return string.Empty;
         }
     }
@@ -798,9 +892,8 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private void LogSystemInfo(SystemInfo info)
     {
-        _logger.LogInformation(
-            "System Info - Platform: {Platform}, CPU: {CPU} ({Cores} cores), " +
-            "Memory: {Memory:F2}GB ({Usage:F1}% used), Process: {ProcessMem:F2}MB",
+        LogSystemInfoMessage(
+            _logger,
             info.Platform,
             info.CpuName,
             info.CpuCores,

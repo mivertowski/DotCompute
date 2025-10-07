@@ -132,7 +132,7 @@ namespace DotCompute.Core.Pipelines.Stages
 
             if (_condition == null)
             {
-                errors.Add(new ValidationIssue(DotCompute.Abstractions.Validation.ValidationSeverity.Error, "Branch condition is required", "BRANCH_001"));
+                errors.Add(new ValidationIssue("BRANCH_001", "Branch condition is required", DotCompute.Abstractions.Validation.ValidationSeverity.Error));
             }
 
             var warnings = new List<string>();

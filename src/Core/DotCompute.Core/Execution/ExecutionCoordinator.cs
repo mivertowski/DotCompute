@@ -83,7 +83,8 @@ namespace DotCompute.Core.Execution
         public async ValueTask<ExecutionEvent> WaitForAnyEventAsync(ExecutionEvent[] events, CancellationToken cancellationToken = default)
         {
             var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken)).ToArray();
-            var completedIndex = await Task.WhenAny(waitTasks).Output.ConfigureAwait(false);
+            var completedTask = await Task.WhenAny(waitTasks).ConfigureAwait(false);
+            var completedIndex = await completedTask.ConfigureAwait(false);
             var completedEvent = events[completedIndex];
             _logger.LogDebugMessage($"Event completed first: {completedEvent.Name}");
             return completedEvent;

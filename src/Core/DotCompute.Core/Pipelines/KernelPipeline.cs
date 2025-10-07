@@ -293,10 +293,9 @@ namespace DotCompute.Core.Pipelines
             if (_stages.Count == 0)
             {
                 errors.Add(new ValidationIssue(
-                    ValidationSeverity.Error,
-                    "Pipeline must contain at least one stage",
                     "NO_STAGES",
-                    "Stages"));
+                    "Pipeline must contain at least one stage",
+                    ValidationSeverity.Error));
             }
 
             // Validate stage dependencies
@@ -309,10 +308,9 @@ namespace DotCompute.Core.Pipelines
                     foreach (var error in stageValidation.Errors)
                     {
                         errors.Add(new ValidationIssue(
-                            ValidationSeverity.Error,
-                            $"Stage '{stage.Name}': {error}",
                             $"STAGE_ERROR_{stage.Id}",
-                            $"Stages[{stage.Id}]"));
+                            $"Stage '{stage.Name}': {error}",
+                            ValidationSeverity.Error));
                     }
                 }
 
@@ -335,11 +333,9 @@ namespace DotCompute.Core.Pipelines
                     if (!stageIds.Contains(dep))
                     {
                         errors.Add(new ValidationIssue(
-                            ValidationSeverity.Error,
-                            $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
                             "INVALID_DEPENDENCY",
-                            $"Stages[{stage.Id}].Dependencies",
-                            dep));
+                            $"Stage '{stage.Name}' depends on non-existent stage '{dep}'",
+                            ValidationSeverity.Error));
                     }
                 }
             }
@@ -348,10 +344,9 @@ namespace DotCompute.Core.Pipelines
             if (HasCircularDependencies())
             {
                 errors.Add(new ValidationIssue(
-                    ValidationSeverity.Error,
-                    "Pipeline contains circular dependencies",
                     "CIRCULAR_DEPENDENCY",
-                    "Stages"));
+                    "Pipeline contains circular dependencies",
+                    ValidationSeverity.Error));
             }
 
             // Validate optimization settings
@@ -684,10 +679,9 @@ namespace DotCompute.Core.Pipelines
         private static IReadOnlyList<ValidationIssue> ConvertValidationIssues(IReadOnlyList<ValidationIssue> issues)
         {
             return issues.Select(issue => new ValidationIssue(
-                (ValidationSeverity)(int)issue.Severity,
+                issue.Code ?? "UNKNOWN",
                 issue.Message,
-                issue.Code,
-                issue.Source
+                (ValidationSeverity)(int)issue.Severity
             )).ToList();
         }
 

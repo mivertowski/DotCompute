@@ -18,7 +18,7 @@ namespace DotCompute.Core.Execution.Pipeline
         /// Stages are executed according to their dependency relationships, enabling both
         /// sequential and parallel execution patterns within the same pipeline.
         /// </summary>
-        public required List<PipelineStageDefinition> Stages { get; set; }
+        public required List<PipelineStageDefinition> Stages { get; init; }
 
         /// <summary>
         /// Gets or sets the input specification.

@@ -17,8 +17,8 @@ namespace DotCompute.Core.Execution
         public int? MaxDevices { get; init; }
 
         /// <summary>Gets or initializes the preferred device IDs for execution.</summary>
-        /// <value>Array of device identifiers, or null for automatic selection</value>
-        public string[]? PreferredDeviceIds { get; init; }
+        /// <value>Read-only list of device identifiers, or null for automatic selection</value>
+        public IReadOnlyList<string>? PreferredDeviceIds { get; init; }
 
         /// <summary>Gets or initializes the load balancing strategy to use.</summary>
         /// <value>The load balancing strategy, or null for automatic selection</value>

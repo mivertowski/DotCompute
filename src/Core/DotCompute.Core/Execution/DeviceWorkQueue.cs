@@ -16,6 +16,14 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     {
+        private readonly ILogger _logger;
+        private readonly IAccelerator _device;
+        private readonly int _deviceIndex;
+        private readonly ConcurrentQueue<WorkItem<T>> _workQueue = new();
+        private readonly SemaphoreSlim _workAvailable = new(0);
+        private readonly object _statsLock = new();
+        private DeviceQueueStatistics _statistics = new();
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceWorkQueue{T}"/> class.

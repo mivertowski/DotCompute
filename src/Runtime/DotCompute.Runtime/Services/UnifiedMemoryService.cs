@@ -70,10 +70,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     /// <returns>The allocated unified memory buffer</returns>
     public async Task<IUnifiedMemoryBuffer> AllocateUnifiedAsync(long sizeInBytes, params string[] acceleratorIds)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedMemoryService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
         ArgumentNullException.ThrowIfNull(acceleratorIds);
@@ -129,10 +126,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     /// <returns>A task representing the migration operation</returns>
     public async Task MigrateAsync(IUnifiedMemoryBuffer buffer, string sourceAcceleratorId, string targetAcceleratorId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedMemoryService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceAcceleratorId);
@@ -169,10 +163,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     /// <returns>A task representing the synchronization operation</returns>
     public async Task SynchronizeCoherenceAsync(IUnifiedMemoryBuffer buffer, params string[] acceleratorIds)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedMemoryService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(acceleratorIds);
@@ -213,10 +204,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async ValueTask TransferAsync(IUnifiedMemoryBuffer sourceBuffer, IUnifiedMemoryBuffer targetBuffer, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedMemoryService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(sourceBuffer);
         ArgumentNullException.ThrowIfNull(targetBuffer);
@@ -269,10 +257,7 @@ public sealed class UnifiedMemoryService : IUnifiedMemoryService, IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async ValueTask EnsureCoherencyAsync(IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedMemoryService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
 

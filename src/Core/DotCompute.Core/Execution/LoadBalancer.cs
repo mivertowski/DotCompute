@@ -2,7 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Execution.Workload;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution
@@ -12,6 +14,10 @@ namespace DotCompute.Core.Execution
     /// </summary>
     public class LoadBalancer
     {
+        private readonly IAccelerator[] _devices;
+        private readonly ILogger _logger;
+        private readonly Dictionary<string, DeviceQueueStatistics> _statistics = new();
+        private readonly object _statsLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoadBalancer"/> class.

@@ -152,22 +152,14 @@ public sealed partial class KernelDebugProfiler(
 
         LogTracingExecution(_logger, kernelName, backendType);
 
-        var trace = new KernelExecutionTrace
-        {
-            KernelName = kernelName,
-            BackendType = backendType,
-            TracePoints = new List<TracePoint>(),
-            TotalExecutionTime = TimeSpan.Zero,
-            Success = false
-        };
-
+        var tracePoints = new List<TracePoint>();
         var overallStopwatch = Stopwatch.StartNew();
 
         try
         {
             // Phase 1: Preparation
             var prepStopwatch = Stopwatch.StartNew();
-            trace.TracePoints.Add(new TracePoint
+            tracePoints.Add(new TracePoint
             {
                 Name = "Preparation",
                 ExecutionOrder = 1,
@@ -184,7 +176,7 @@ public sealed partial class KernelDebugProfiler(
 
             // Phase 2: Compilation
             var compileStopwatch = Stopwatch.StartNew();
-            trace.TracePoints.Add(new TracePoint
+            tracePoints.Add(new TracePoint
             {
                 Name = "Compilation",
                 ExecutionOrder = 2,
@@ -201,7 +193,7 @@ public sealed partial class KernelDebugProfiler(
 
             // Phase 3: Execution
             var execStopwatch = Stopwatch.StartNew();
-            trace.TracePoints.Add(new TracePoint
+            tracePoints.Add(new TracePoint
             {
                 Name = "Execution",
                 ExecutionOrder = 3,
@@ -218,7 +210,7 @@ public sealed partial class KernelDebugProfiler(
 
             // Phase 4: Cleanup
             var cleanupStopwatch = Stopwatch.StartNew();
-            trace.TracePoints.Add(new TracePoint
+            tracePoints.Add(new TracePoint
             {
                 Name = "Cleanup",
                 ExecutionOrder = 4,
@@ -252,7 +244,7 @@ public sealed partial class KernelDebugProfiler(
             {
                 KernelName = kernelName,
                 BackendType = backendType,
-                TracePoints = trace.TracePoints,
+                TracePoints = tracePoints,
                 TotalExecutionTime = overallStopwatch.Elapsed,
                 Success = true,
                 Result = new { Status = "Completed successfully" },
@@ -275,7 +267,7 @@ public sealed partial class KernelDebugProfiler(
             {
                 KernelName = kernelName,
                 BackendType = backendType,
-                TracePoints = trace.TracePoints,
+                TracePoints = tracePoints,
                 TotalExecutionTime = overallStopwatch.Elapsed,
                 Success = false,
                 ErrorMessage = ex.Message
@@ -312,7 +304,7 @@ public sealed partial class KernelDebugProfiler(
                 SuccessfulExecutions = 0,
                 FailedExecutions = 0,
                 SuccessRate = 0.0,
-                AverageExecutionTimeMs = TimeSpan.Zero,
+                AverageExecutionTime = TimeSpan.Zero,
                 BackendMetrics = new Dictionary<string, PerformanceMetrics>()
             });
         }
@@ -322,11 +314,12 @@ public sealed partial class KernelDebugProfiler(
 
         foreach (var group in backendGroups)
         {
-            var execTimes = group.Select(r => r.ExecutionTime.TotalMilliseconds).ToArray();
+            var execTimes = group.Select(r => r.Timings?.TotalTimeMs ?? 0).ToArray();
             var memoryUsages = group.Select(GetMemoryUsage).Where(m => m > 0).ToArray();
 
             // Convert to PerformanceMetrics (from Abstractions)
-            backendMetrics[group.Key] = new PerformanceMetrics
+            var backendKey = group.Key ?? "Unknown";
+            backendMetrics[backendKey] = new PerformanceMetrics
             {
                 ExecutionTimeMs = (long)execTimes.Average(),
                 MemoryUsageBytes = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0,
@@ -338,7 +331,7 @@ public sealed partial class KernelDebugProfiler(
 
         var successfulExecutions = relevantResults.Count(r => r.Success);
         var failedExecutions = relevantResults.Count - successfulExecutions;
-        var avgExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.ExecutionTime.TotalMilliseconds).DefaultIfEmpty(0).Average();
+        var avgExecutionTime = relevantResults.Where(r => r.Success).Select(r => r.Timings?.TotalTimeMs ?? 0).DefaultIfEmpty(0).Average();
 
         return Task.FromResult(new PerformanceReport
         {
@@ -348,7 +341,7 @@ public sealed partial class KernelDebugProfiler(
             SuccessfulExecutions = successfulExecutions,
             FailedExecutions = failedExecutions,
             SuccessRate = successfulExecutions / (double)relevantResults.Count,
-            AverageExecutionTimeMs = TimeSpan.FromMilliseconds(avgExecutionTime),
+            AverageExecutionTime = TimeSpan.FromMilliseconds(avgExecutionTime),
             BackendMetrics = backendMetrics,
             AverageMemoryUsage = relevantResults.Sum(GetMemoryUsage) / relevantResults.Count,
             GeneratedAt = DateTime.UtcNow
@@ -478,7 +471,10 @@ public sealed partial class KernelDebugProfiler(
             });
         }
 
-        var memoryUsages = relevantResults.Select(r => r.MemoryAllocated).ToList();
+        var memoryUsages = relevantResults
+            .Where(r => r.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
+            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"]))
+            .ToList();
 
         return Task.FromResult(new MemoryUsageAnalysis
         {
@@ -508,8 +504,8 @@ public sealed partial class KernelDebugProfiler(
 
         if (relevantResults.Count > 0)
         {
-            var avgExecutionTime = relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds);
-            var slowExecutions = relevantResults.Where(r => r.ExecutionTime.TotalMilliseconds > avgExecutionTime * 1.5);
+            var avgExecutionTime = relevantResults.Average(r => r.Timings?.TotalTimeMs ?? 0);
+            var slowExecutions = relevantResults.Where(r => (r.Timings?.TotalTimeMs ?? 0) > avgExecutionTime * 1.5);
 
             if (slowExecutions.Any())
             {
@@ -558,14 +554,13 @@ public sealed partial class KernelDebugProfiler(
                 TotalExecutions = 0,
                 SuccessfulExecutions = 0,
                 FailedExecutions = 0,
-                AverageExecutionTimeMs = TimeSpan.Zero,
+                AverageExecutionTimeMs = 0.0,
                 LastExecutionTime = null
             };
         }
 
         var successfulExecutions = relevantResults.Count(r => r.Success);
-        var avgTime = TimeSpan.FromMilliseconds(
-            relevantResults.Average(r => r.ExecutionTime.TotalMilliseconds));
+        var avgTime = relevantResults.Average(r => r.Timings?.TotalTimeMs ?? 0);
 
         return new ExecutionStatistics
         {

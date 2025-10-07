@@ -26,7 +26,7 @@ namespace DotCompute.Abstractions.Models.Pipelines
         /// <summary>
         /// Gets or sets the arguments to pass to the kernel.
         /// </summary>
-        public IReadOnlyList<object> Arguments { get; set; } = Array.Empty<object>();
+        public IReadOnlyList<object> Arguments { get; init; } = Array.Empty<object>();
 
         /// <summary>
         /// Gets or sets the execution order of this step.

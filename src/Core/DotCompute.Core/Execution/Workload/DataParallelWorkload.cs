@@ -21,12 +21,12 @@ namespace DotCompute.Core.Execution.Workload
         /// <summary>
         /// Gets or initializes the input buffers for the data parallel operation.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; init; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> InputBuffers { get; init; }
 
         /// <summary>
         /// Gets or initializes the output buffers for the data parallel operation.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; init; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> OutputBuffers { get; init; }
 
         /// <summary>
         /// Gets the workload type.

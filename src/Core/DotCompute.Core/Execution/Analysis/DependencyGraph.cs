@@ -182,7 +182,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <exception cref="InvalidOperationException">
         /// Thrown when a circular dependency is detected.
         /// </exception>
-        private void TopologicalSortVisit(int node, HashSet<int> visited, HashSet<int> visiting, IReadOnlyList<int> sorted)
+        private void TopologicalSortVisit(int node, HashSet<int> visited, HashSet<int> visiting, List<int> sorted)
         {
             if (visiting.Contains(node))
             {

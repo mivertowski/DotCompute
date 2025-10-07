@@ -107,7 +107,7 @@ public sealed class PipelineExecutionContext : DotCompute.Abstractions.Models.Pi
     /// <summary>
     /// Gets or sets the execution state dictionary.
     /// </summary>
-    public override Dictionary<string, object> State { get; set; } = [];
+    public override Dictionary<string, object> State { get; } = [];
 
     /// <summary>
     /// Gets or sets the session identifier.

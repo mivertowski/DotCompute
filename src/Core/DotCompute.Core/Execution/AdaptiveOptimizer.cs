@@ -39,9 +39,9 @@ public class AdaptiveOptimizer
 
     public static ExecutionStrategyRecommendation RecommendStrategy(
         string kernelName,
-        int[] inputSizes,
-        AcceleratorType[] availableAcceleratorTypes,
-        ExecutionRecord[] recentExecutions,
+        IReadOnlyList<int> inputSizes,
+        IReadOnlyList<AcceleratorType> availableAcceleratorTypes,
+        IReadOnlyList<ExecutionRecord> recentExecutions,
         KernelPerformanceProfile? kernelProfile)
     {
         // Simple heuristic-based recommendation (could be replaced with ML model)
@@ -146,13 +146,13 @@ public class AdaptiveOptimizer
     /// <summary>
     /// Estimates execution time for data parallel kernels.
     /// </summary>
-    public static double EstimateExecutionTime(string kernelName, ComputeDeviceType[] deviceTypes, int dataSize)
+    public static double EstimateExecutionTime(string kernelName, IReadOnlyList<ComputeDeviceType> deviceTypes, int dataSize)
     {
         // Simple estimation based on historical data or defaults
         const double baseTimeMs = 10.0; // Base execution time
         const double dataSizeMultiplier = 0.001; // Time per data element
 
-        var deviceMultiplier = deviceTypes.Length > 0 ? 1.0 / deviceTypes.Length : 1.0;
+        var deviceMultiplier = deviceTypes.Count > 0 ? 1.0 / deviceTypes.Count : 1.0;
         return (baseTimeMs + (dataSize * dataSizeMultiplier)) * deviceMultiplier;
     }
 
@@ -242,7 +242,7 @@ public class ExecutionRecord
     /// Gets or sets the device results.
     /// </summary>
     /// <value>The device results.</value>
-    public required DeviceExecutionResult[] DeviceResults { get; set; }
+    public required IReadOnlyList<DeviceExecutionResult> DeviceResults { get; init; }
     /// <summary>
     /// Gets or sets the error message.
     /// </summary>
@@ -261,7 +261,7 @@ public class KernelPerformanceProfile
     /// Gets or sets the device executions.
     /// </summary>
     /// <value>The device executions.</value>
-    public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; set; } = [];
+    public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; } = [];
     /// <summary>
     /// Performs add execution.
     /// </summary>

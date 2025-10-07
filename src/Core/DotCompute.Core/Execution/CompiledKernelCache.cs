@@ -108,11 +108,11 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Gets all device IDs that have cached kernels.
         /// </summary>
-        public string[] GetCachedDeviceIds()
+        public IReadOnlyList<string> GetCachedDeviceIds()
         {
             if (_disposed)
             {
-                return [];
+                return Array.Empty<string>();
             }
 
             return [.. _metadata.Values.Select(m => m.DeviceId)];
@@ -243,11 +243,11 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Gets kernels that haven't been accessed for the specified duration.
         /// </summary>
-        public string[] GetStaleKernels(TimeSpan maxAge)
+        public IReadOnlyList<string> GetStaleKernels(TimeSpan maxAge)
         {
             if (_disposed)
             {
-                return [];
+                return Array.Empty<string>();
             }
 
             var cutoffTime = DateTimeOffset.UtcNow - maxAge;
@@ -625,7 +625,7 @@ namespace DotCompute.Core.Execution
         public int TotalKernels { get; set; }
 
         /// <summary>Gets or sets the names of all cached kernels.</summary>
-        public string[] KernelNames { get; set; } = [];
+        public IReadOnlyList<string> KernelNames { get; init; } = Array.Empty<string>();
 
         /// <summary>Gets or sets when the last cleanup was performed.</summary>
         public DateTimeOffset LastCleanupTime { get; set; }

@@ -9,6 +9,7 @@ using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Telemetry;
 using Microsoft.Extensions.Logging;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Telemetry;
 
@@ -17,8 +18,37 @@ namespace DotCompute.Core.Telemetry;
 /// across all backend implementations (Metal, CUDA, OpenCL, CPU, LINQ).
 /// Eliminates over 2,500 lines of duplicate telemetry code.
 /// </summary>
-public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
+public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDisposable
 {
+    // LoggerMessage delegates - Event ID range 9200-9299 for BaseTelemetryProvider (Telemetry module)
+    private static readonly Action<ILogger, string, string, Exception?> _logProviderInitialized =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Debug,
+            new EventId(9200, nameof(LogProviderInitialized)),
+            "Base telemetry provider initialized for {ServiceName} v{ServiceVersion}");
+
+    private static readonly Action<ILogger, Exception, string, string, Exception?> _logTelemetryError =
+        LoggerMessage.Define<Exception, string, string>(
+            MsLogLevel.Warning,
+            new EventId(9201, nameof(LogTelemetryError)),
+            "Telemetry error in {Operation} for {Context}");
+
+    private static readonly Action<ILogger, long, long, double, Exception?> _logProviderDisposed =
+        LoggerMessage.Define<long, long, double>(
+            MsLogLevel.Information,
+            new EventId(9202, nameof(LogProviderDisposed)),
+            "Telemetry provider disposed - Operations: {Operations}, Errors: {Errors}, Overhead: {Overhead:F3}%");
+
+    // Wrapper methods
+    private static void LogProviderInitialized(ILogger logger, string serviceName, string serviceVersion)
+        => _logProviderInitialized(logger, serviceName, serviceVersion, null);
+
+    private static void LogTelemetryError(ILogger logger, Exception ex, string operation, string context)
+        => _logTelemetryError(logger, ex, operation, context, ex);
+
+    private static void LogProviderDisposed(ILogger logger, long operations, long errors, double overhead)
+        => _logProviderDisposed(logger, operations, errors, overhead, null);
+
     protected readonly ILogger Logger;
     protected readonly TelemetryConfiguration Configuration;
     protected readonly Meter Meter;
@@ -55,8 +85,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
 
         InitializeStandardMetrics();
 
-        Logger.LogDebug("Base telemetry provider initialized for {ServiceName} v{ServiceVersion}",
-            serviceName, serviceVersion);
+        LogProviderInitialized(Logger, serviceName, serviceVersion);
     }
 
     #region Core Telemetry Methods
@@ -243,7 +272,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
             };
 
             // Queue for async processing if configured
-            if (Configuration.EnableAsyncProcessing)
+            // Note: Always process synchronously unless async processing is explicitly enabled via AdditionalOptions
+            var enableAsync = Configuration.AdditionalOptions.TryGetValue("EnableAsyncProcessing", out var asyncValue)
+                && asyncValue is bool enableAsyncBool && enableAsyncBool;
+
+            if (enableAsync)
             {
                 _eventQueue.Enqueue(telemetryEvent);
             }
@@ -590,9 +623,13 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     {
         _ = Interlocked.Increment(ref _totalErrors);
 
-        if (Configuration.LogTelemetryErrors)
+        // Log errors unless explicitly disabled via AdditionalOptions
+        var suppressLogging = Configuration.AdditionalOptions.TryGetValue("SuppressTelemetryErrorLogging", out var suppressValue)
+            && suppressValue is bool suppressBool && suppressBool;
+
+        if (!suppressLogging)
         {
-            Logger.LogWarning(ex, "Telemetry error in {Operation} for {Context}", operation, context);
+            LogTelemetryError(Logger, ex, operation, context);
         }
     }
 
@@ -602,7 +639,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void UpdateTelemetryOverhead(long startTicks)
     {
-        if (Configuration.TrackOverhead)
+        // Track overhead if explicitly enabled via AdditionalOptions
+        var trackOverhead = Configuration.AdditionalOptions.TryGetValue("TrackOverhead", out var trackValue)
+            && trackValue is bool trackBool && trackBool;
+
+        if (trackOverhead)
         {
             var overheadTicks = Stopwatch.GetTimestamp() - startTicks;
             _ = Interlocked.Add(ref _telemetryOverheadTicks, overheadTicks);
@@ -634,7 +675,11 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
     /// </summary>
     protected virtual double CalculateOverheadPercentage()
     {
-        if (!Configuration.TrackOverhead)
+        // Check if overhead tracking is enabled via AdditionalOptions
+        var trackOverhead = Configuration.AdditionalOptions.TryGetValue("TrackOverhead", out var trackValue)
+            && trackValue is bool trackBool && trackBool;
+
+        if (!trackOverhead)
         {
             return 0.0;
         }
@@ -757,9 +802,7 @@ public abstract class BaseTelemetryProvider : ITelemetryProvider, IDisposable
 
             // Log final metrics
             var perfMetrics = GetPerformanceMetrics();
-            Logger.LogInformation(
-                "Telemetry provider disposed - Operations: {Operations}, Errors: {Errors}, Overhead: {Overhead:F3}%",
-                perfMetrics.TotalOperations, perfMetrics.TotalErrors, perfMetrics.OverheadPercentage);
+            LogProviderDisposed(Logger, perfMetrics.TotalOperations, perfMetrics.TotalErrors, perfMetrics.OverheadPercentage);
 
             // Dispose OpenTelemetry resources
             ActivitySource?.Dispose();

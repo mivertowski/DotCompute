@@ -768,7 +768,7 @@ public class SecurityAuditReport
     /// Gets or sets the recommendations generated.
     /// </summary>
     /// <value>The recommendations generated.</value>
-    public IList<string> RecommendationsGenerated { get; set; } = [];
+    public IList<string> RecommendationsGenerated { get; init; } = [];
     /// <summary>
     /// Gets or sets the security metrics.
     /// </summary>
@@ -848,6 +848,6 @@ public class SecurityMetrics
     // Collections
     public ConcurrentDictionary<string, long> UserEventCounts { get; } = new();
     public ConcurrentDictionary<string, long> ResourceEventCounts { get; } = new();
-    public Dictionary<SecurityEventType, long> EventsByType { get; set; } = new();
-    public Dictionary<SecurityLevel, long> EventsByLevel { get; set; } = new();
+    public Dictionary<SecurityEventType, long> EventsByType { get; } = new();
+    public Dictionary<SecurityLevel, long> EventsByLevel { get; } = new();
 }

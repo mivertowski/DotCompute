@@ -24,7 +24,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the target devices where the execution will take place.
         /// These are the accelerators (GPUs, CPUs, etc.) that will participate in the computation.
         /// </summary>
-        public required IAccelerator[] Devices { get; set; }
+        public required IReadOnlyList<IAccelerator> Devices { get; init; }
 
         /// <summary>
         /// Gets or sets the execution strategy type for this plan.

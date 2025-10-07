@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -14,8 +15,19 @@ namespace DotCompute.Core.Security;
 /// Comprehensive input sanitization service that validates and sanitizes all forms of input
 /// to prevent injection attacks, data corruption, and security vulnerabilities.
 /// </summary>
-public sealed class InputSanitizer : IDisposable
+public sealed partial class InputSanitizer : IDisposable
 {
+    // LoggerMessage delegates - Event ID range 18200-18299 for InputSanitizer (Security module)
+    private static readonly Action<ILogger, Exception?> _logStatisticsError =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(18200, nameof(LogStatisticsError)),
+            "Error logging statistics");
+
+    // Wrapper method
+    private static void LogStatisticsError(ILogger logger, Exception ex)
+        => _logStatisticsError(logger, ex);
+
     private readonly ILogger _logger;
     private readonly InputSanitizationConfiguration _configuration;
     private readonly ConcurrentDictionary<string, ValidationRule> _customRules = new();
@@ -221,8 +233,10 @@ public sealed class InputSanitizer : IDisposable
                     result.InvalidParameters.Add(key);
                 }
 
-
-                result.SecurityThreats.AddRange(paramResult.SecurityThreats);
+                foreach (var threat in paramResult.SecurityThreats)
+                {
+                    result.SecurityThreats.Add(threat);
+                }
             }
 
             result.IsValid = !result.HasInvalidParameters;
@@ -865,7 +879,7 @@ public sealed class InputSanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error logging statistics");
+            LogStatisticsError(_logger, ex);
         }
     }
     /// <summary>

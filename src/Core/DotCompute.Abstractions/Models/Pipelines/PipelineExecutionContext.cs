@@ -85,7 +85,7 @@ public abstract class PipelineExecutionContext
     /// Gets or sets the execution state dictionary.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA2227:Collection properties should be read only", Justification = "State needs to be settable for pipeline execution context")]
-    public abstract Dictionary<string, object> State { get; set; }
+    public abstract Dictionary<string, object> State { get; }
 
     /// <summary>
     /// Gets or sets the session identifier.

@@ -57,7 +57,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <value>The plan with minimum device usage, or null if no plans are available</value>
         public ExecutionPlan<T>? MinimalDevicePlan => AllAlternatives
-            .OrderBy(p => p.Devices.Length)
+            .OrderBy(p => p.Devices.Count)
             .FirstOrDefault();
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace DotCompute.Core.Execution
         /// <param name="deviceCount">The number of devices to filter by</param>
         /// <returns>Array of plans using the specified number of devices</returns>
         public ExecutionPlan<T>[] GetPlansByDeviceCount(int deviceCount)
-            => [.. AllAlternatives.Where(p => p.Devices.Length == deviceCount)];
+            => [.. AllAlternatives.Where(p => p.Devices.Count == deviceCount)];
 
         /// <summary>
         /// Gets execution plans within the specified execution time range.

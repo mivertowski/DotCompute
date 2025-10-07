@@ -34,7 +34,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// limitations identified during execution. These bottlenecks are ordered by
         /// severity and impact on overall performance.
         /// </value>
-        public IList<Analysis.BottleneckAnalysis> Bottlenecks { get; set; } = [];
+        public IList<Analysis.BottleneckAnalysis> Bottlenecks { get; init; } = [];
 
         /// <summary>
         /// Gets or sets optimization recommendations.
@@ -43,7 +43,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A list of specific, actionable recommendations for improving execution performance.
         /// These recommendations are based on the identified bottlenecks and performance patterns.
         /// </value>
-        public IList<string> OptimizationRecommendations { get; set; } = [];
+        public IList<string> OptimizationRecommendations { get; } = [];
 
         /// <summary>
         /// Gets or sets the recommended execution strategy.
@@ -61,7 +61,7 @@ namespace DotCompute.Core.Execution.Metrics
         /// A dictionary mapping device identifiers to their utilization percentages.
         /// This provides insights into load balancing and resource allocation effectiveness.
         /// </value>
-        public Dictionary<string, double> DeviceUtilizationAnalysis { get; set; } = [];
+        public Dictionary<string, double> DeviceUtilizationAnalysis { get; } = [];
 
         /// <summary>
         /// Gets the number of critical bottlenecks.
@@ -161,8 +161,12 @@ namespace DotCompute.Core.Execution.Metrics
             Bottlenecks.Add(bottleneck);
 
             // Sort bottlenecks by severity (highest first)
-
-            Bottlenecks.Sort((a, b) => b.Severity.CompareTo(a.Severity));
+            var sortedList = Bottlenecks.OrderByDescending(b => b.Severity).ToList();
+            Bottlenecks.Clear();
+            foreach (var item in sortedList)
+            {
+                Bottlenecks.Add(item);
+            }
         }
 
         /// <summary>

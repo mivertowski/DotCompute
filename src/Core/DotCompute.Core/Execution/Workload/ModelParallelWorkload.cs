@@ -15,17 +15,17 @@ namespace DotCompute.Core.Execution.Workload
         /// <summary>
         /// Gets or sets the model layers that define the neural network structure.
         /// </summary>
-        public required List<ModelLayer<T>> ModelLayers { get; set; }
+        public required List<ModelLayer<T>> ModelLayers { get; init; }
 
         /// <summary>
         /// Gets or sets the input tensors for the model.
         /// </summary>
-        public required TensorDescription<T>[] InputTensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> InputTensors { get; init; }
 
         /// <summary>
         /// Gets or sets the output tensors for the model.
         /// </summary>
-        public required TensorDescription<T>[] OutputTensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> OutputTensors { get; init; }
 
         /// <summary>
         /// Gets or sets the total memory requirement in bytes for the entire model.

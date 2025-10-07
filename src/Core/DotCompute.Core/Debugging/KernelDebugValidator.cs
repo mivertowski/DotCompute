@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -10,9 +11,11 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 
-// Using aliases to resolve ValidationIssue conflicts
+// Using aliases to resolve type conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
+using ResultComparison = DotCompute.Abstractions.Debugging.ResultComparison;
 
 namespace DotCompute.Core.Debugging;
 
@@ -85,7 +88,10 @@ internal sealed class KernelDebugValidator(
                         {
                             Severity = DebugValidationSeverity.Error,
                             Message = "No backends successfully executed the kernel",
-                            Details = string.Join("; ", results.Select(r => $"{r.BackendType}: {r.ErrorMessage}"))
+                            Details = new Dictionary<string, object>
+                            {
+                                ["errors"] = string.Join("; ", results.Select(r => $"{r.BackendType}: {r.ErrorMessage}"))
+                            }
                         }
                     ],
                     ExecutionTime = stopwatch.Elapsed
@@ -109,7 +115,13 @@ internal sealed class KernelDebugValidator(
                         {
                             Severity = DebugValidationSeverity.Error,
                             Message = $"Results differ between {successfulResults[i].BackendType} and {successfulResults[j].BackendType}",
-                            Details = $"Difference: {comparison.Difference:F6}, Tolerance: {tolerance:F6}"
+                            Details = new Dictionary<string, object>
+                            {
+                                ["difference"] = comparison.Difference,
+                                ["tolerance"] = tolerance,
+                                ["backend1"] = successfulResults[i].BackendType ?? "Unknown",
+                                ["backend2"] = successfulResults[j].BackendType ?? "Unknown"
+                            }
                         });
                     }
                 }
@@ -121,20 +133,26 @@ internal sealed class KernelDebugValidator(
 
             var isValid = issues.All(i => i.Severity != DebugValidationSeverity.Error);
 
+            var issuesCollection = new Collection<DebugValidationIssue>();
+            foreach (var issue in issues)
+            {
+                issuesCollection.Add(issue);
+            }
+
             return new KernelValidationResult
             {
                 KernelName = kernelName,
                 IsValid = isValid,
-                BackendsTested = successfulResults.Select(r => r.BackendType).ToArray(),
+                BackendsTested = successfulResults.Select(r => r.BackendType ?? "Unknown").ToArray(),
                 Results = successfulResults,
                 Comparisons = comparisonResults,
-                Issues = issues,
+                Issues = issuesCollection,
                 ExecutionTime = stopwatch.Elapsed
             };
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during kernel validation");
+            _logger.LogError(ex, "Error during kernel validation");
             return new KernelValidationResult
             {
                 KernelName = kernelName,
@@ -146,7 +164,11 @@ internal sealed class KernelDebugValidator(
                     {
                         Severity = DebugValidationSeverity.Error,
                         Message = "Validation failed with exception",
-                        Details = ex.Message
+                        Details = new Dictionary<string, object>
+                        {
+                            ["exception"] = ex.Message,
+                            ["exceptionType"] = ex.GetType().Name
+                        }
                     }
                 ],
                 ExecutionTime = stopwatch.Elapsed
@@ -215,7 +237,7 @@ internal sealed class KernelDebugValidator(
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogErrorMessage(ex, "Error executing kernel {kernelName} on {backendType}", kernelName, backendType);
+            _logger.LogError(ex, "Error executing kernel {KernelName} on {BackendType}", kernelName, backendType);
 
             var handle = new KernelExecutionHandle
             {
@@ -246,26 +268,26 @@ internal sealed class KernelDebugValidator(
 
     private static ResultComparison CompareResults(KernelExecutionResult result1, KernelExecutionResult result2, float tolerance)
     {
-        var comparison = new ResultComparison
-        {
-            Backend1 = result1.BackendType ?? "Unknown",
-            Backend2 = result2.BackendType ?? "Unknown",
-            IsMatch = false,
-            Difference = float.MaxValue
-        };
-
         if (result1.Output == null || result2.Output == null)
         {
-            comparison.IsMatch = result1.Output == result2.Output;
-            comparison.Difference = comparison.IsMatch ? 0f : 1f;
-            return comparison;
+            var nullMatch = result1.Output == result2.Output;
+            return new ResultComparison
+            {
+                Backend1 = result1.BackendType ?? "Unknown",
+                Backend2 = result2.BackendType ?? "Unknown",
+                IsMatch = nullMatch,
+                Difference = nullMatch ? 0f : 1f
+            };
         }
 
         var (isMatch, difference, _) = CompareObjects(result1.Output, result2.Output, tolerance);
-        comparison.IsMatch = isMatch;
-        comparison.Difference = difference;
-
-        return comparison;
+        return new ResultComparison
+        {
+            Backend1 = result1.BackendType ?? "Unknown",
+            Backend2 = result2.BackendType ?? "Unknown",
+            IsMatch = isMatch,
+            Difference = difference
+        };
     }
 
     private static (bool isMatch, float difference, string details) CompareObjects(object obj1, object obj2, float tolerance)
@@ -355,7 +377,12 @@ internal sealed class KernelDebugValidator(
             {
                 Severity = DebugValidationSeverity.Warning,
                 Message = "Significant performance variation detected across backends",
-                Details = $"Average: {average:F2}ms, Max deviation: {maxDeviation:F2}ms"
+                Details = new Dictionary<string, object>
+                {
+                    ["averageMs"] = average,
+                    ["maxDeviationMs"] = maxDeviation,
+                    ["deviationPercent"] = (maxDeviation / average) * 100.0
+                }
             });
         }
 
@@ -387,24 +414,24 @@ internal sealed class KernelDebugValidator(
         return available;
     }
 
-    private async Task<IAccelerator?> GetOrCreateAcceleratorAsync(string backendType)
+    private Task<IAccelerator?> GetOrCreateAcceleratorAsync(string backendType)
     {
         if (_accelerators.TryGetValue(backendType, out var existing))
         {
-            return existing;
+            return Task.FromResult<IAccelerator?>(existing);
         }
 
         try
         {
             // This is a simplified implementation - in practice, you'd use a factory
             // For now, we'll return null and let the caller handle missing accelerators
-            _logger.LogWarning("Accelerator {backendType} not available", backendType);
-            return null;
+            _logger.LogWarning("Accelerator {BackendType} not available", backendType);
+            return Task.FromResult<IAccelerator?>(null);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Failed to create accelerator for backend {backendType}", backendType);
-            return null;
+            _logger.LogError(ex, "Failed to create accelerator for backend {BackendType}", backendType);
+            return Task.FromResult<IAccelerator?>(null);
         }
     }
     /// <summary>

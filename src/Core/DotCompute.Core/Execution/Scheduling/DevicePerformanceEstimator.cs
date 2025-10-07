@@ -668,7 +668,7 @@ internal class DevicePerformanceEstimator
         // Estimate transfer overhead
         var transferOverhead = device.Type switch
         {
-            AcceleratorType.Cuda => 0.1,     // PCIe transfer overhead
+            AcceleratorType.CUDA => 0.1,     // PCIe transfer overhead
             AcceleratorType.CPU => 0.0,      // No transfer needed
             _ => 0.05                         // Default overhead
         };

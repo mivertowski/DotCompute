@@ -453,23 +453,28 @@ public class AdaptiveBackendSelector : IDisposable
             return cachedAnalysis;
         }
 
+        // Get historical performance data first
+        Dictionary<string, BackendPerformanceStats> historicalPerformance = [];
+        int totalHistoryEntries = 0;
+        bool hasSufficientHistory = false;
+
+        if (_performanceHistory.TryGetValue(signature, out var history))
+        {
+            historicalPerformance = history.GetPerformanceStats();
+            totalHistoryEntries = history.TotalEntries;
+            hasSufficientHistory = totalHistoryEntries >= _options.MinHistoryForLearning;
+        }
+
         var analysis = new WorkloadAnalysis
         {
             WorkloadSignature = signature,
             WorkloadPattern = signature.WorkloadPattern,
             EstimatedExecutionTimeMs = EstimateExecutionTime(characteristics),
             EstimatedMemoryUsageMB = EstimateMemoryUsage(characteristics),
-            HistoricalPerformance = [],
-            TotalHistoryEntries = 0
+            HistoricalPerformance = historicalPerformance,
+            TotalHistoryEntries = totalHistoryEntries,
+            HasSufficientHistory = hasSufficientHistory
         };
-
-        // Get historical performance data
-        if (_performanceHistory.TryGetValue(signature, out var history))
-        {
-            analysis.HistoricalPerformance = history.GetPerformanceStats();
-            analysis.TotalHistoryEntries = history.TotalEntries;
-            analysis.HasSufficientHistory = analysis.TotalHistoryEntries >= _options.MinHistoryForLearning;
-        }
 
         _ = _workloadAnalysisCache.TryAdd(cacheKey, analysis);
         await Task.CompletedTask;

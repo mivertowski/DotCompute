@@ -11,6 +11,8 @@ using DotCompute.Abstractions.Performance;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Analytics;
 
@@ -18,7 +20,7 @@ namespace DotCompute.Core.Debugging.Analytics;
 /// Advanced analytics and analysis tools for kernel debugging.
 /// Provides statistical analysis, pattern recognition, and optimization recommendations.
 /// </summary>
-public sealed class KernelDebugAnalyzer(
+public sealed partial class KernelDebugAnalyzer(
     ILogger<KernelDebugAnalyzer> logger,
 #pragma warning disable CS9113 // Parameter is captured for future use in advanced analytics features
     ConcurrentDictionary<string, IAccelerator> _accelerators,
@@ -26,6 +28,80 @@ public sealed class KernelDebugAnalyzer(
 #pragma warning restore CS9113
 {
     private readonly ILogger<KernelDebugAnalyzer> _logger = logger;
+
+    // Pre-compiled LoggerMessage delegates (Event ID range: 11300-11399)
+    private static readonly Action<ILogger, string, Exception?> _logEnhanceComparisonReportFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(11300, nameof(EnhanceComparisonReportAsync)),
+            "Failed to enhance comparison report for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, Exception?> _logEnhanceExecutionTraceFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(11301, nameof(EnhanceExecutionTraceAsync)),
+            "Failed to enhance execution trace for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAdvancedPerformanceAnalysisStarting =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(11302, nameof(PerformAdvancedPerformanceAnalysisAsync)),
+            "Performing advanced performance analysis for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAdvancedPerformanceAnalysisError =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(11303, nameof(PerformAdvancedPerformanceAnalysisAsync)),
+            "Error during advanced performance analysis for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, int, Exception?> _logDeterminismValidationStarting =
+        LoggerMessage.Define<string, int>(
+            MsLogLevel.Debug,
+            new EventId(11304, nameof(ValidateDeterminismAsync)),
+            "Starting determinism validation for kernel {KernelName} with {RunCount} runs");
+
+    private static readonly Action<ILogger, string, Exception?> _logDeterminismValidationError =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(11305, nameof(ValidateDeterminismAsync)),
+            "Error during determinism validation for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, Exception?> _logValidationPerformanceAnalysisFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(11306, nameof(AnalyzeValidationPerformanceAsync)),
+            "Failed to analyze validation performance for kernel {KernelName}");
+
+    private static readonly Action<ILogger, string, Exception?> _logMemoryPatternAnalysisFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(11307, nameof(AnalyzeMemoryPatternsAsync)),
+            "Failed to analyze memory patterns for kernel {KernelName}");
+
+    // Wrapper methods for logging
+    private static void LogEnhanceComparisonReportFailed(ILogger logger, string kernelName, Exception? exception)
+        => _logEnhanceComparisonReportFailed(logger, kernelName, exception);
+
+    private static void LogEnhanceExecutionTraceFailed(ILogger logger, string kernelName, Exception? exception)
+        => _logEnhanceExecutionTraceFailed(logger, kernelName, exception);
+
+    private static void LogAdvancedPerformanceAnalysisStarting(ILogger logger, string kernelName)
+        => _logAdvancedPerformanceAnalysisStarting(logger, kernelName, null);
+
+    private static void LogAdvancedPerformanceAnalysisError(ILogger logger, string kernelName, Exception? exception)
+        => _logAdvancedPerformanceAnalysisError(logger, kernelName, exception);
+
+    private static void LogDeterminismValidationStarting(ILogger logger, string kernelName, int runCount)
+        => _logDeterminismValidationStarting(logger, kernelName, runCount, null);
+
+    private static void LogDeterminismValidationError(ILogger logger, string kernelName, Exception? exception)
+        => _logDeterminismValidationError(logger, kernelName, exception);
+
+    private static void LogValidationPerformanceAnalysisFailed(ILogger logger, string kernelName, Exception? exception)
+        => _logValidationPerformanceAnalysisFailed(logger, kernelName, exception);
+
+    private static void LogMemoryPatternAnalysisFailed(ILogger logger, string kernelName, Exception? exception)
+        => _logMemoryPatternAnalysisFailed(logger, kernelName, exception);
     private readonly ConcurrentDictionary<string, KernelAnalysisProfile> _analysisProfiles = new();
     private bool _disposed;
 
@@ -58,7 +134,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to enhance comparison report for kernel {KernelName}", comparisonReport.KernelName);
+            LogEnhanceComparisonReportFailed(_logger, comparisonReport.KernelName, ex);
             return comparisonReport;
         }
     }
@@ -100,7 +176,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to enhance execution trace for kernel {KernelName}", trace.KernelName);
+            LogEnhanceExecutionTraceFailed(_logger, trace.KernelName, ex);
             return trace;
         }
     }
@@ -127,7 +203,7 @@ public sealed class KernelDebugAnalyzer(
 
         try
         {
-            _logger.LogDebug("Performing advanced performance analysis for kernel {KernelName}", kernelName);
+            LogAdvancedPerformanceAnalysisStarting(_logger, kernelName);
 
             // Analyze performance trends
             var trendAnalysis = AnalyzePerformanceTrends(kernelName, performanceReport);
@@ -163,7 +239,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during advanced performance analysis for kernel {KernelName}", kernelName);
+            LogAdvancedPerformanceAnalysisError(_logger, kernelName, ex);
             return new AdvancedPerformanceAnalysis
             {
                 KernelName = kernelName,
@@ -197,8 +273,7 @@ public sealed class KernelDebugAnalyzer(
             throw new ArgumentException("Run count must be at least 2", nameof(runCount));
         }
 
-
-        _logger.LogDebug("Starting determinism validation for kernel {KernelName} with {RunCount} runs", kernelName, runCount);
+        LogDeterminismValidationStarting(_logger, kernelName, runCount);
 
         try
         {
@@ -229,7 +304,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during determinism validation for kernel {KernelName}", kernelName);
+            LogDeterminismValidationError(_logger, kernelName, ex);
             return new DeterminismAnalysisResult
             {
                 KernelName = kernelName,
@@ -281,7 +356,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to analyze validation performance for kernel {KernelName}", validationResult.KernelName);
+            LogValidationPerformanceAnalysisFailed(_logger, validationResult.KernelName, ex);
             return new ValidationPerformanceInsights
             {
                 BackendPerformanceDistribution = [],
@@ -698,7 +773,7 @@ public sealed class KernelDebugAnalyzer(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to analyze memory patterns for kernel {KernelName}", kernelName);
+            LogMemoryPatternAnalysisFailed(_logger, kernelName, ex);
             throw;
         }
     }

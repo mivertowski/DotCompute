@@ -16,12 +16,12 @@ namespace DotCompute.Core.Execution.Pipeline
     {
         /// <summary>
         /// Gets or sets the output tensor descriptions.
-        /// An array of tensor specifications that define the structure, format,
+        /// A read-only list of tensor specifications that define the structure, format,
         /// and characteristics of output data. Each tensor description provides
         /// metadata needed for proper memory allocation, result validation,
         /// and device-specific optimizations during pipeline result processing.
         /// </summary>
-        public required TensorDescription<T>[] Tensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> Tensors { get; init; }
 
         /// <summary>
         /// Gets or sets the output format.

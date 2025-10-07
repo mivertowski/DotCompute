@@ -13,6 +13,7 @@ using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution
 {
@@ -20,8 +21,19 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Coordinates work-stealing execution across multiple devices for dynamic load balancing.
     /// </summary>
-    public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unmanaged
+    public sealed partial class WorkStealingCoordinator<T> : IAsyncDisposable where T : unmanaged
     {
+        // LoggerMessage delegates - Event ID range 23000-23099 for WorkStealingCoordinator (Execution module)
+        private static readonly Action<ILogger, Exception?> _logWorkItemInitError =
+            LoggerMessage.Define(
+                MsLogLevel.Error,
+                new EventId(23000, nameof(LogWorkItemInitError)),
+                "Cannot initialize work items: workload or work items is null");
+
+        // Wrapper method
+        private static void LogWorkItemInitError(ILogger logger)
+            => _logWorkItemInitError(logger, null);
+
         private readonly IAccelerator[] _devices;
         private readonly WorkStealingWorkload<T> _workload;
         private readonly IUnifiedMemoryManager _memoryManager;
@@ -168,7 +180,7 @@ namespace DotCompute.Core.Execution
         {
             if (_workload?.WorkItems == null)
             {
-                _logger.LogError("Cannot initialize work items: workload or work items is null");
+                LogWorkItemInitError(_logger);
                 return;
             }
 

@@ -247,11 +247,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             }
 
             // Note: SuccessRate not available on PerformanceAnalysis type
-            // Skipping this check
-            if (false) // Disabled: SuccessRate not available
-            {
-                recommendations.Add("Low success rate detected. Investigate and fix reliability issues.");
-            }
+            // This code is intentionally unreachable as SuccessRate property doesn't exist
         }
 
         // Add determinism recommendations
@@ -320,7 +316,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
         {
             _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "- **{0}** ({1}):", execResult.AcceleratorName, execResult.AcceleratorType));
             _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Success: {0}", execResult.Success ? "✅" : "❌"));
-            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Execution Time: {0:F2} ms", execResult.ExecutionTime.TotalMilliseconds));
+            _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Execution Time: {0:F2} ms", execResult.Timings?.TotalTimeMs ?? 0));
             if (execResult.Error != null)
             {
                 _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "  - Error: {0}", execResult.Error.Message));

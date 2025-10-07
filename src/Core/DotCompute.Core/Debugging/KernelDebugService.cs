@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using AbstractionsComparisonStrategy = DotCompute.Abstractions.Debugging.ComparisonStrategy;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 
 namespace DotCompute.Core.Debugging;
 
@@ -44,6 +45,7 @@ public partial class KernelDebugService : IKernelDebugService, IDisposable
     /// Initializes a new instance of the KernelDebugService class.
     /// </summary>
     /// <param name="logger">The logger.</param>
+    /// <param name="loggerFactory">The logger factory for creating component loggers.</param>
     /// <param name="primaryAccelerator">The primary accelerator.</param>
 
     public KernelDebugService(

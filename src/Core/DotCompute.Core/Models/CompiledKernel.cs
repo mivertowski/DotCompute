@@ -23,17 +23,17 @@ namespace DotCompute.Core.Models
         /// <summary>
         /// Gets or sets the binary code (cubin).
         /// </summary>
-        public byte[]? BinaryCode { get; set; }
+        public IReadOnlyList<byte>? BinaryCode { get; set; }
 
         /// <summary>
         /// Gets or sets the CUBIN binary data.
         /// </summary>
-        public byte[] Cubin { get; set; } = [];
+        public IReadOnlyList<byte> Cubin { get; } = Array.Empty<byte>();
 
         /// <summary>
         /// Gets or sets the compiled binary data.
         /// </summary>
-        public byte[] Binary { get; set; } = [];
+        public IReadOnlyList<byte> Binary { get; } = Array.Empty<byte>();
 
         /// <summary>
         /// Gets or sets the CUDA module handle.

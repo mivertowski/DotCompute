@@ -133,10 +133,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
     public override async ValueTask<IUnifiedMemoryBuffer<T>> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var buffer = await AllocateAsync<T>(source.Length, options, cancellationToken);
 
@@ -165,10 +162,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         int offset,
         int length)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -198,10 +192,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
     public override IUnifiedMemoryBuffer CreateView(IUnifiedMemoryBuffer buffer, long offset, long length)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
@@ -262,7 +253,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <param name="sourceOffset">The source offset.</param>
     /// <param name="destination">The destination.</param>
     /// <param name="destinationOffset">The destination offset.</param>
-    /// <param name="count">The count.</param>
+    /// <param name="length">The count.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
@@ -272,14 +263,14 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
-        int count,
+        int length,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
 
 
-        await source.CopyToAsync(sourceOffset, destination, destinationOffset, count, cancellationToken);
+        await source.CopyToAsync(sourceOffset, destination, destinationOffset, length, cancellationToken);
     }
     /// <summary>
     /// Gets copy to device asynchronously.
@@ -405,10 +396,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <returns>A memory buffer for the allocated elements.</returns>
     public override async ValueTask<IUnifiedMemoryBuffer> AllocateAsync<T>(int count)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
@@ -426,10 +414,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <returns>A task representing the async operation.</returns>
     public async Task CopyToDeviceAsync<T>(IUnifiedMemoryBuffer buffer, ReadOnlyMemory<T> data, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
 
@@ -447,10 +432,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <returns>A task representing the async operation.</returns>
     public async Task CopyFromDeviceAsync<T>(Memory<T> data, IUnifiedMemoryBuffer buffer, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(buffer);
 
@@ -628,10 +610,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
         CancellationToken cancellationToken)
     {
         // Delegate to our production-specific allocation logic
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 

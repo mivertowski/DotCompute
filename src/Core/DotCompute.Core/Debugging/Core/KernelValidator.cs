@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 // Using aliases to resolve ValidationIssue conflicts
 using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIssue;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -79,8 +80,7 @@ public sealed class KernelValidator(
                             Message = "Kernel failed to execute on all available backends",
                             BackendAffected = "All"
                         }
-                    ],
-                    TotalValidationTime = stopwatch.Elapsed
+                    ]
                 };
             }
 
@@ -126,10 +126,10 @@ public sealed class KernelValidator(
             {
                 KernelName = kernelName,
                 IsValid = issues.All(i => i.Severity != DebugValidationSeverity.Critical),
-                BackendsTested = successfulResults.Select(r => r.BackendType ?? "Unknown").ToArray(),
-                Results = successfulResults.ToDictionary(r => r.BackendType ?? "Unknown", r => r.Output ?? new object()),
+                BackendsTested = [.. successfulResults.Select(r => r.BackendType ?? "Unknown")],
+                Results = [],  // Not using Results as IReadOnlyList<KernelExecutionResult>
                 Issues = new Collection<DebugValidationIssue>(issues),
-                TotalValidationTime = stopwatch.Elapsed,
+                ExecutionTime = stopwatch.Elapsed,
                 MaxDifference = maxDifference,
                 RecommendedBackend = recommendedBackend
             };
@@ -149,8 +149,7 @@ public sealed class KernelValidator(
                         Message = $"Validation failed with exception: {ex.Message}",
                         BackendAffected = "All"
                     }
-                ],
-                TotalValidationTime = stopwatch.Elapsed
+                ]
             };
         }
     }
@@ -218,7 +217,7 @@ public sealed class KernelValidator(
             throw new ArgumentException("At least two results are required for comparison", nameof(results));
         }
 
-        var kernelName = resultsList[0].KernelName;
+        var kernelName = resultsList[0].KernelName ?? "Unknown";
         var backendNames = resultsList.Select(r => r.BackendType).ToArray();
         var differences = new List<ResultDifference>();
         var performanceComparison = new Dictionary<string, PerformanceMetrics>();
@@ -231,9 +230,9 @@ public sealed class KernelValidator(
 
             performanceComparison[result.BackendType ?? "Unknown"] = new PerformanceMetrics
             {
-                ExecutionTimeMs = (long)executionTimeMs,
+                ExecutionTimeMs = (long)Math.Round(executionTimeMs),
                 MemoryUsageBytes = memoryUsage,
-                OperationsPerSecond = CalculateThroughput(result)
+                OperationsPerSecond = (long)Math.Round(CalculateThroughput(result))
             };
         }
 
@@ -244,7 +243,7 @@ public sealed class KernelValidator(
         {
             KernelName = kernelName,
             ResultsMatch = resultsMatch,
-            BackendsCompared = backendNames,
+            BackendsCompared = (backendNames ?? Array.Empty<string?>()).Select(s => s ?? "Unknown").ToArray(),
             Differences = new Collection<ResultDifference>(differences),
             Strategy = comparisonStrategy,
             Tolerance = _options.VerbosityLevel == AbstractionsMemory.Debugging.LogLevel.Trace ? 1e-8f : 1e-6f,

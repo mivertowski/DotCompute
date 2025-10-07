@@ -196,7 +196,7 @@ public sealed class MetricsCollector : IDisposable
         {
             KernelName = kernelName,
             ExecutionCount = metrics.ExecutionCount,
-            AverageExecutionTimeMs = metrics.TotalExecutionTime.TotalMilliseconds / metrics.ExecutionCount,
+            AverageExecutionTime = metrics.TotalExecutionTime.TotalMilliseconds / metrics.ExecutionCount,
             MinExecutionTime = metrics.MinExecutionTime.TotalMilliseconds,
             MaxExecutionTime = metrics.MaxExecutionTime.TotalMilliseconds,
             SuccessRate = (double)metrics.SuccessCount / metrics.ExecutionCount,

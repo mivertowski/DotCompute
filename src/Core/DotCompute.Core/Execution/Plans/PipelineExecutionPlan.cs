@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Types;
 using DotCompute.Core.Execution.Types;
 
 namespace DotCompute.Core.Execution.Plans
@@ -18,7 +19,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the pipeline stages.
         /// Each stage represents a computational step that executes on a specific device.
         /// </summary>
-        public required PipelineStage<T>[] Stages { get; set; }
+        public required IReadOnlyList<PipelineStage<T>> Stages { get; init; }
 
         /// <summary>
         /// Gets or sets the microbatch configuration.
@@ -77,13 +78,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the input buffers for this stage.
         /// Buffers containing the input data that this stage will process.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] InputBuffers { get; set; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> InputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets the output buffers for this stage.
         /// Buffers where this stage will write its computed results.
         /// </summary>
-        public required IUnifiedMemoryBuffer<T>[] OutputBuffers { get; set; }
+        public required IReadOnlyList<IUnifiedMemoryBuffer<T>> OutputBuffers { get; init; }
 
         /// <summary>
         /// Gets or sets the processing time estimate for this stage in milliseconds.

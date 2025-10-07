@@ -10,6 +10,8 @@ using DotCompute.Abstractions.Types;
 using DotCompute.Abstractions.Debugging.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Interfaces.Kernels;
+using BottleneckAnalysis = DotCompute.Abstractions.Debugging.BottleneckAnalysis;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging.Core;
 
@@ -18,7 +20,7 @@ namespace DotCompute.Core.Debugging.Core;
 /// Tracks execution traces, memory usage, and performance metrics across backends.
 /// </summary>
 #pragma warning disable CS9113 // Parameter reserved for future configurable profiling options
-public sealed class KernelProfiler(
+public sealed partial class KernelProfiler(
     ILogger<KernelProfiler> logger,
     DebugServiceOptions options) : IDisposable
 #pragma warning restore CS9113
@@ -27,6 +29,43 @@ public sealed class KernelProfiler(
     private readonly ConcurrentQueue<KernelExecutionResult> _executionHistory = new();
     private readonly ConcurrentDictionary<string, PerformanceProfile> _performanceProfiles = new();
     private bool _disposed;
+
+    // LoggerMessage delegates - Event ID range 11100-11115 for KernelProfiler
+    private static readonly Action<ILogger, string, string, Exception?> _logStartingTrace =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Debug,
+            new EventId(11100, nameof(LogStartingTrace)),
+            "Starting kernel execution trace for {KernelName} on {BackendType}");
+
+    private static void LogStartingTrace(ILogger logger, string kernelName, string backendType)
+        => _logStartingTrace(logger, kernelName, backendType, null);
+
+    private static readonly Action<ILogger, string, bool, Exception?> _logTraceCompleted =
+        LoggerMessage.Define<string, bool>(
+            MsLogLevel.Debug,
+            new EventId(11101, nameof(LogTraceCompleted)),
+            "Completed kernel execution trace for {KernelName}: {Success}");
+
+    private static void LogTraceCompleted(ILogger logger, string kernelName, bool success)
+        => _logTraceCompleted(logger, kernelName, success, null);
+
+    private static readonly Action<ILogger, Exception, string, Exception?> _logTraceError =
+        LoggerMessage.Define<Exception, string>(
+            MsLogLevel.Error,
+            new EventId(11102, nameof(LogTraceError)),
+            "Error during kernel execution trace for {KernelName}");
+
+    private static void LogTraceError(ILogger logger, Exception error, string kernelName)
+        => _logTraceError(logger, error, kernelName, null);
+
+    private static readonly Action<ILogger, TimeSpan, Exception?> _logCleanupRequested =
+        LoggerMessage.Define<TimeSpan>(
+            MsLogLevel.Debug,
+            new EventId(11103, nameof(LogCleanupRequested)),
+            "Cleanup of execution history requested (age > {MaxAge})");
+
+    private static void LogCleanupRequested(ILogger logger, TimeSpan maxAge)
+        => _logCleanupRequested(logger, maxAge, null);
 
     /// <summary>
     /// Traces kernel execution with detailed performance analysis.
@@ -55,7 +94,7 @@ public sealed class KernelProfiler(
 
         try
         {
-            _logger.LogDebug("Starting kernel execution trace for {KernelName} on {BackendType}", kernelName, backendType);
+            LogStartingTrace(_logger, kernelName, backendType);
 
             // Record initial state
             var initialMemory = GetCurrentMemoryUsage();
@@ -114,17 +153,17 @@ public sealed class KernelProfiler(
                 Success = result != null,
                 Output = result,
                 Timings = new KernelExecutionTimings { KernelTimeMs = stopwatch.Elapsed.TotalMilliseconds, TotalTimeMs = stopwatch.Elapsed.TotalMilliseconds },
-                MemoryAllocated = finalMemory - initialMemory,
+                PerformanceCounters = new Dictionary<string, object> { ["MemoryUsed"] = finalMemory - initialMemory },
                 Handle = new KernelExecutionHandle { Id = Guid.NewGuid(), KernelName = kernelName, SubmittedAt = DateTimeOffset.UtcNow, IsCompleted = true }
             });
 
-            _logger.LogDebug("Completed kernel execution trace for {KernelName}: {Success}", kernelName, result != null);
+            LogTraceCompleted(_logger, kernelName, result != null);
             return trace;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error during kernel execution trace for {KernelName}", kernelName);
+            LogTraceError(_logger, ex, kernelName);
 
             return new KernelExecutionTrace
             {
@@ -169,7 +208,7 @@ public sealed class KernelProfiler(
         }
 
         // Group by backend for analysis
-        var backendGroups = relevantExecutions.GroupBy(e => e.BackendType).ToList();
+        var backendGroups = relevantExecutions.GroupBy(e => e.BackendType ?? "Unknown").ToList();
         var backendMetrics = new Dictionary<string, PerformanceMetrics>();
         var recommendations = new List<string>();
 
@@ -177,10 +216,10 @@ public sealed class KernelProfiler(
         {
             var executions = group.ToList();
             var metrics = AnalyzeExecutionGroup(executions);
-            backendMetrics[group.Key] = metrics;
+            backendMetrics[group.Key ?? "Unknown"] = metrics;
 
             // Generate backend-specific recommendations
-            var backendRecommendations = GenerateBackendRecommendations(group.Key, metrics, executions);
+            var backendRecommendations = GenerateBackendRecommendations(group.Key ?? "Unknown", metrics, executions);
             recommendations.AddRange(backendRecommendations);
         }
 
@@ -260,24 +299,24 @@ public sealed class KernelProfiler(
     /// </summary>
     /// <param name="kernelName">Name of the kernel to analyze.</param>
     /// <returns>Bottleneck analysis results.</returns>
-    public async Task<BottleneckAnalysis> DetectBottlenecksAsync(string kernelName)
+    public async Task<DotCompute.Abstractions.Debugging.BottleneckAnalysis> DetectBottlenecksAsync(string kernelName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
 
         await Task.CompletedTask; // Make async for consistency
 
-        var bottlenecks = new List<PerformanceBottleneck>();
+        var bottlenecks = new List<DotCompute.Abstractions.Debugging.PerformanceBottleneck>();
         var relevantExecutions = _executionHistory
             .Where(e => e.KernelName == kernelName)
             .ToList();
 
         if (relevantExecutions.Count < 5) // Need sufficient data
         {
-            return new BottleneckAnalysis
+            return new DotCompute.Abstractions.Debugging.BottleneckAnalysis
             {
                 KernelName = kernelName,
-                Bottlenecks = bottlenecks,
+                Bottlenecks = [],
                 OverallPerformanceScore = 0.5, // Neutral score
                 RecommendedOptimizations = ["Insufficient execution data for bottleneck analysis"]
             };
@@ -293,10 +332,10 @@ public sealed class KernelProfiler(
 
         if (executionTimes.Length > 0 && maxExecutionTime > avgExecutionTime * 2)
         {
-            bottlenecks.Add(new PerformanceBottleneck
+            bottlenecks.Add(new DotCompute.Abstractions.Debugging.PerformanceBottleneck
             {
-                Type = BottleneckType.Compute,
-                Severity = BottleneckSeverity.High,
+                Type = DotCompute.Abstractions.Types.BottleneckType.Compute,
+                Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.High,
                 Description = $"Execution time varies significantly (max: {maxExecutionTime:F2}ms, avg: {avgExecutionTime:F2}ms)",
                 AffectedComponents = ["Kernel execution"],
                 RecommendedActions = ["Profile kernel for hot paths", "Consider algorithmic optimizations"]
@@ -315,10 +354,10 @@ public sealed class KernelProfiler(
 
             if (maxMemory > avgMemory * 3)
             {
-                bottlenecks.Add(new PerformanceBottleneck
+                bottlenecks.Add(new DotCompute.Abstractions.Debugging.PerformanceBottleneck
                 {
-                    Type = BottleneckType.Memory,
-                    Severity = BottleneckSeverity.Medium,
+                    Type = DotCompute.Abstractions.Types.BottleneckType.Memory,
+                    Severity = DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium,
                     Description = $"Memory usage varies significantly (max: {maxMemory:N0} bytes, avg: {avgMemory:N0} bytes)",
                     AffectedComponents = ["Memory allocation"],
                     RecommendedActions = ["Implement memory pooling", "Review memory allocation patterns"]
@@ -329,7 +368,7 @@ public sealed class KernelProfiler(
         // Calculate overall performance score
         var performanceScore = CalculatePerformanceScore(relevantExecutions, bottlenecks);
 
-        return new BottleneckAnalysis
+        return new DotCompute.Abstractions.Debugging.BottleneckAnalysis
         {
             KernelName = kernelName,
             Bottlenecks = bottlenecks,
@@ -382,10 +421,7 @@ public sealed class KernelProfiler(
             SuccessfulExecutions = successful,
             FailedExecutions = failed,
             SuccessRate = successRate,
-            AverageExecutionTimeMs = executionTimes.Length > 0 ? executionTimes.Average() : 0,
-            MinExecutionTime = executionTimes.Length > 0 ? executionTimes.Min() : 0,
-            MaxExecutionTime = executionTimes.Length > 0 ? executionTimes.Max() : 0,
-            StandardDeviation = CalculateStandardDeviation(executionTimes)
+            AverageExecutionTimeMs = executionTimes.Length > 0 ? executionTimes.Average() : 0
         };
     }
 
@@ -400,7 +436,7 @@ public sealed class KernelProfiler(
         // Note: ConcurrentQueue doesn't support removal of specific items
         // In a real implementation, we might use a different data structure
         // or implement a background cleanup service
-        _logger.LogDebug("Cleanup of execution history requested (age > {MaxAge})", maxAge);
+        LogCleanupRequested(_logger, maxAge);
     }
 
     /// <summary>
@@ -480,11 +516,9 @@ public sealed class KernelProfiler(
 
         return new MemoryProfile
         {
-            InitialMemory = memoryReadings.FirstOrDefault(),
             PeakMemory = memoryReadings.Max(),
-            FinalMemory = memoryReadings.LastOrDefault(),
-            AverageMemory = (long)memoryReadings.Average(),
-            MemoryGrowth = memoryReadings.LastOrDefault() - memoryReadings.FirstOrDefault()
+            Allocations = memoryReadings.LastOrDefault() - memoryReadings.FirstOrDefault(),
+            Efficiency = 1.0f // Default efficiency, could be calculated based on memory growth
         };
     }
 
@@ -495,9 +529,9 @@ public sealed class KernelProfiler(
     {
         return new PerformanceMetrics
         {
-            ExecutionTime = totalTime,
-            ThroughputOpsPerSecond = totalTime.TotalSeconds > 0 ? (int)(1.0 / totalTime.TotalSeconds) : 0,
-            MemoryUsage = tracePoints.LastOrDefault()?.MemoryUsage ?? 0
+            ExecutionTimeMs = (long)totalTime.TotalMilliseconds,
+            OperationsPerSecond = totalTime.TotalSeconds > 0 ? (int)(1.0 / totalTime.TotalSeconds) : 0,
+            MemoryUsageBytes = tracePoints.LastOrDefault()?.MemoryUsage ?? 0
         };
     }
 
@@ -509,8 +543,8 @@ public sealed class KernelProfiler(
         return new AbstractionsMemory.Debugging.MemoryProfile
         {
             PeakMemory = coreProfile.PeakMemory,
-            Allocations = 0, // Not tracked in core profile
-            Efficiency = coreProfile.MemoryGrowth > 0 ? Math.Min(1.0f, (float)coreProfile.InitialMemory / coreProfile.PeakMemory) : 1.0f
+            Allocations = coreProfile.Allocations,
+            Efficiency = coreProfile.Efficiency
         };
     }
 
@@ -547,11 +581,11 @@ public sealed class KernelProfiler(
 
         return new PerformanceMetrics
         {
-            ExecutionTime = TimeSpan.FromMilliseconds(executionTimes.Length > 0 ? executionTimes.Average() : 0),
-            ThroughputOpsPerSecond = executionTimes.Length > 0 && executionTimes.Average() > 0
-                ? (int)(1000.0 / executionTimes.Average())
-                : 0,
-            MemoryUsage = memoryUsages.Length > 0 ? (long)memoryUsages.Average() : 0
+            ExecutionTimeMs = executionTimes.Length > 0 ? (long)Math.Round(executionTimes.Average()) : 0L,
+            OperationsPerSecond = executionTimes.Length > 0 && executionTimes.Average() > 0
+                ? (long)Math.Round(1000.0 / executionTimes.Average())
+                : 0L,
+            MemoryUsageBytes = memoryUsages.Length > 0 ? (long)Math.Round(memoryUsages.Average()) : 0L
         };
     }
 
@@ -562,7 +596,7 @@ public sealed class KernelProfiler(
     {
         var recommendations = new List<string>();
 
-        var avgTime = metrics.ExecutionTime.TotalMilliseconds;
+        var avgTime = metrics.ExecutionTimeMs;
         if (avgTime > 100) // > 100ms
         {
             recommendations.Add($"{backend}: Consider optimizing for faster execution (current avg: {avgTime:F2}ms)");
@@ -586,7 +620,7 @@ public sealed class KernelProfiler(
 
         if (backendMetrics.Count > 1)
         {
-            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.Timings).First();
+            var fastest = backendMetrics.OrderBy(kvp => kvp.Value.ExecutionTimeMs).First();
             recommendations.Add($"Consider using {fastest.Key} backend for best performance");
         }
 
@@ -616,7 +650,7 @@ public sealed class KernelProfiler(
     /// <summary>
     /// Calculates overall performance score.
     /// </summary>
-    private static double CalculatePerformanceScore(List<KernelExecutionResult> executions, IReadOnlyList<PerformanceBottleneck> bottlenecks)
+    private static double CalculatePerformanceScore(List<KernelExecutionResult> executions, IReadOnlyList<DotCompute.Abstractions.Debugging.PerformanceBottleneck> bottlenecks)
     {
         var baseScore = 1.0;
 
@@ -629,10 +663,10 @@ public sealed class KernelProfiler(
         {
             var reduction = bottleneck.Severity switch
             {
-                BottleneckSeverity.Low => 0.05,
-                BottleneckSeverity.Medium => 0.15,
-                BottleneckSeverity.High => 0.30,
-                BottleneckSeverity.Critical => 0.50,
+                DotCompute.Abstractions.Debugging.BottleneckSeverity.Low => 0.05,
+                DotCompute.Abstractions.Debugging.BottleneckSeverity.Medium => 0.15,
+                DotCompute.Abstractions.Debugging.BottleneckSeverity.High => 0.30,
+                DotCompute.Abstractions.Debugging.BottleneckSeverity.Critical => 0.50,
                 _ => 0
             };
             baseScore *= (1.0 - reduction);
@@ -644,7 +678,7 @@ public sealed class KernelProfiler(
     /// <summary>
     /// Generates optimization recommendations based on bottlenecks.
     /// </summary>
-    private static List<string> GenerateOptimizationRecommendations(IReadOnlyList<PerformanceBottleneck> bottlenecks)
+    private static List<string> GenerateOptimizationRecommendations(IReadOnlyList<DotCompute.Abstractions.Debugging.PerformanceBottleneck> bottlenecks)
     {
         var recommendations = new List<string>();
 
@@ -687,7 +721,10 @@ public sealed class KernelProfiler(
             _disposed = true;
 
             // Clear collections
-            while (_executionHistory.TryDequeue(out _)) { }
+            while (_executionHistory.TryDequeue(out _))
+            {
+            }
+
             _performanceProfiles.Clear();
         }
     }

@@ -291,13 +291,11 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
-        // Allocate buffer and wrap in DeviceMemory
-        var buffer = AllocateAsync(sizeInBytes, MemoryOptions.None, CancellationToken.None)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
-
-        return new DeviceMemory(buffer.DevicePointer, sizeInBytes);
+        // Legacy API: Backend-specific implementations should override this
+        // Base implementation throws NotSupportedException
+        throw new NotSupportedException(
+            "AllocateDevice is a legacy API that requires backend-specific implementation. " +
+            "Use AllocateAsync<T> for new code.");
     }
 
     /// <inheritdoc/>
@@ -327,7 +325,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
         // Backend-specific memset implementation - default to manual fill
         await Task.CompletedTask;
-        _logger.LogDebugMessage($"Memset device memory at {deviceMemory.Pointer:X} with value {value} for {sizeInBytes} bytes");
+        _logger.LogDebugMessage($"Memset device memory at {deviceMemory.Handle:X} with value {value} for {sizeInBytes} bytes");
     }
 
     /// <inheritdoc/>
@@ -360,7 +358,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
         // Backend-specific copy implementation
         await Task.CompletedTask;
-        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from host {hostPointer:X} to device {deviceMemory.Pointer:X}");
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from host {hostPointer:X} to device {deviceMemory.Handle:X}");
     }
 
     /// <inheritdoc/>
@@ -371,7 +369,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
         // Backend-specific copy implementation
         await Task.CompletedTask;
-        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {deviceMemory.Pointer:X} to host {hostPointer:X}");
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {deviceMemory.Handle:X} to host {hostPointer:X}");
     }
 
     /// <inheritdoc/>
@@ -381,7 +379,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
         // Backend-specific device-to-device copy implementation
-        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {sourceDevice.Pointer:X} to device {destinationDevice.Pointer:X}");
+        _logger.LogDebugMessage($"Copy {sizeInBytes} bytes from device {sourceDevice.Handle:X} to device {destinationDevice.Handle:X}");
     }
 
     /// <summary>

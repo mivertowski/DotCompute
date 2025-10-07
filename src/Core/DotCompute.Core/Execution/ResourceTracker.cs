@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Execution;
@@ -11,6 +12,9 @@ namespace DotCompute.Core.Execution;
 /// </summary>
 public class ResourceTracker : IAsyncDisposable
 {
+    private readonly ILogger _logger;
+    private readonly Dictionary<string, DeviceResourceUsage> _deviceUsage;
+
     /// <summary>
     /// Initializes a new instance of the ResourceTracker class.
     /// </summary>
@@ -76,6 +80,8 @@ public class ResourceTracker : IAsyncDisposable
     /// Gets dispose asynchronously.
     /// </summary>
     /// <returns>The result of the operation.</returns>
+
+    private bool _disposed;
 
     public async ValueTask DisposeAsync()
     {

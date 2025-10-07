@@ -147,6 +147,11 @@ public class ExecutionStatistics
 public class BottleneckAnalysis
 {
     /// <summary>
+    /// Name of the kernel analyzed.
+    /// </summary>
+    public string KernelName { get; set; } = string.Empty;
+
+    /// <summary>
     /// Identified bottlenecks.
     /// </summary>
     public IList<PerformanceBottleneck> Bottlenecks { get; init; } = [];

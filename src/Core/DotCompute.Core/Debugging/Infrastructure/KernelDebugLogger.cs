@@ -16,6 +16,8 @@ using DebugLogLevel = DotCompute.Abstractions.Debugging.LogLevel;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using AbstractionsPerformanceAnalysisResult = DotCompute.Abstractions.Debugging.PerformanceAnalysisResult;
+using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
+using BottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
 
@@ -23,7 +25,7 @@ namespace DotCompute.Core.Debugging.Infrastructure;
 /// Specialized logging infrastructure for kernel debugging operations.
 /// Provides structured logging, performance metrics tracking, and debug output formatting.
 /// </summary>
-public sealed class KernelDebugLogger(
+public sealed partial class KernelDebugLogger(
     ILogger<KernelDebugLogger> logger,
     DebugServiceOptions options) : IDisposable
 {
@@ -60,8 +62,7 @@ public sealed class KernelDebugLogger(
 
         if (_options.VerbosityLevel >= DebugLogLevel.Debug)
         {
-            _logger.LogDebug("Starting validation for kernel {KernelName} with {InputCount} inputs and tolerance {Tolerance}",
-                kernelName, inputs.Length, tolerance);
+            LogValidationStarting(_logger, kernelName, inputs.Length, tolerance);
         }
     }
 
@@ -93,8 +94,7 @@ public sealed class KernelDebugLogger(
         var logLevel = result.IsValid ? MsLogLevel.Information : MsLogLevel.Warning;
         await LogEntryAsync(logEntry, logLevel);
 
-        _logger.Log(logLevel, "Validation completed for kernel {KernelName}: {IsValid} ({BackendCount} backends tested, {IssueCount} issues)",
-            kernelName, result.IsValid, result.BackendsTested.Count, result.Issues.Count);
+        LogValidationCompleted(_logger, logLevel, kernelName, result.IsValid, result.BackendsTested.Count, result.Issues.Count);
 
         // Log individual issues if present
         foreach (var issue in result.Issues)
@@ -127,7 +127,7 @@ public sealed class KernelDebugLogger(
 
         await LogEntryAsync(logEntry, MsLogLevel.Error);
 
-        _logger.LogError(exception, "Validation failed for kernel {KernelName}", kernelName);
+        LogValidationFailed(_logger, exception, kernelName);
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public sealed class KernelDebugLogger(
 
         if (_options.VerbosityLevel >= DebugLogLevel.Debug)
         {
-            _logger.LogDebug("Starting execution of kernel {KernelName} on {BackendType}", kernelName, backendType);
+            LogExecutionStarting(_logger, kernelName, backendType);
         }
     }
 
@@ -195,13 +195,11 @@ public sealed class KernelDebugLogger(
         {
             if (result.Success)
             {
-                _logger.LogDebug("Execution completed for kernel {KernelName} on {BackendType} in {ExecutionTime}ms",
-                    kernelName, backendType, result.Timings?.TotalTimeMs ?? 0);
+                LogExecutionCompleted(_logger, kernelName, backendType, result.Timings?.TotalTimeMs ?? 0);
             }
             else
             {
-                _logger.LogWarning("Execution failed for kernel {KernelName} on {BackendType}: {ErrorMessage}",
-                    kernelName, backendType, result.ErrorMessage);
+                LogExecutionFailedWithError(_logger, kernelName, backendType, result.ErrorMessage ?? string.Empty);
             }
         }
     }
@@ -232,7 +230,7 @@ public sealed class KernelDebugLogger(
 
         await LogEntryAsync(logEntry, MsLogLevel.Error);
 
-        _logger.LogError(exception, "Execution failed for kernel {KernelName} on {BackendType}", kernelName, backendType);
+        LogExecutionError(_logger, exception, kernelName, backendType);
     }
 
     /// <summary>
@@ -261,16 +259,15 @@ public sealed class KernelDebugLogger(
         var logLevel = comparisonReport.ResultsMatch ? MsLogLevel.Information : MsLogLevel.Warning;
         await LogEntryAsync(logEntry, logLevel);
 
-        _logger.Log(logLevel, "Result comparison completed for kernel {KernelName}: {ResultsMatch} ({BackendCount} backends, {DifferenceCount} differences)",
-            comparisonReport.KernelName, comparisonReport.ResultsMatch, comparisonReport.BackendsCompared.Count, comparisonReport.Differences.Count);
+        LogComparisonCompleted(_logger, logLevel, comparisonReport.KernelName, comparisonReport.ResultsMatch,
+            comparisonReport.BackendsCompared.Count, comparisonReport.Differences.Count);
 
         // Log significant differences
         if (!comparisonReport.ResultsMatch && _options.VerbosityLevel >= DebugLogLevel.Warning)
         {
             foreach (var difference in comparisonReport.Differences.Take(5)) // Limit to first 5 differences
             {
-                _logger.LogWarning("Difference between {Backend1} and {Backend2}: {Difference:F6}",
-                    difference.Backend1, difference.Backend2, difference.Difference);
+                LogDifferenceBetweenBackends(_logger, difference.Backend1, difference.Backend2, difference.Difference);
             }
         }
     }
@@ -302,8 +299,7 @@ public sealed class KernelDebugLogger(
 
         if (_options.VerbosityLevel >= DebugLogLevel.Debug)
         {
-            _logger.LogDebug("Starting execution trace for kernel {KernelName} on {BackendType} with {TracePointCount} trace points",
-                kernelName, backendType, tracePoints.Length);
+            LogTracingStarting(_logger, kernelName, backendType, tracePoints.Length);
         }
     }
 
@@ -337,13 +333,11 @@ public sealed class KernelDebugLogger(
 
         if (trace.Success)
         {
-            _logger.LogInformation("Execution trace completed for kernel {KernelName}: {TracePointCount} trace points captured in {TotalTime}ms",
-                kernelName, trace.TracePoints.Count, trace.TotalExecutionTime.TotalMilliseconds);
+            LogTracingCompleted(_logger, kernelName, trace.TracePoints.Count, trace.TotalExecutionTime.TotalMilliseconds);
         }
         else
         {
-            _logger.LogWarning("Execution trace failed for kernel {KernelName}: {ErrorMessage}",
-                kernelName, trace.ErrorMessage);
+            LogTracingFailedWithError(_logger, kernelName, trace.ErrorMessage ?? string.Empty);
         }
     }
 
@@ -371,7 +365,7 @@ public sealed class KernelDebugLogger(
 
         await LogEntryAsync(logEntry, MsLogLevel.Error);
 
-        _logger.LogError(exception, "Execution trace failed for kernel {KernelName}", kernelName);
+        LogTracingError(_logger, exception, kernelName);
     }
 
     /// <summary>
@@ -401,14 +395,13 @@ public sealed class KernelDebugLogger(
 
         await LogEntryAsync(logEntry, MsLogLevel.Information);
 
-        _logger.LogInformation("Performance analysis completed for kernel {KernelName}: {ExecutionCount} executions, {SuccessRate:P1} success rate, {PerformanceScore:F2} performance score",
-            kernelName, analysisResult.ExecutionStatistics.TotalExecutions, analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
+        LogPerformanceAnalysisCompleted(_logger, kernelName, analysisResult.ExecutionStatistics.TotalExecutions,
+            analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
 
         // Log significant bottlenecks
-        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)CoreBottleneckSeverity.Medium))
+        foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)BottleneckSeverity.Medium))
         {
-            _logger.LogWarning("Performance bottleneck detected in kernel {KernelName}: {Description} (Severity: {Severity})",
-                kernelName, bottleneck.Description, bottleneck.Severity);
+            LogPerformanceBottleneck(_logger, kernelName, bottleneck.Description, bottleneck.Severity);
         }
     }
 
@@ -440,13 +433,11 @@ public sealed class KernelDebugLogger(
 
         if (analysisResult.IsDeterministic)
         {
-            _logger.LogInformation("Determinism analysis completed for kernel {KernelName}: Deterministic across {RunCount} runs",
-                kernelName, analysisResult.RunCount);
+            LogDeterminismAnalysisCompleted(_logger, kernelName, analysisResult.RunCount);
         }
         else
         {
-            _logger.LogWarning("Determinism analysis completed for kernel {KernelName}: Non-deterministic behavior detected (Variability: {VariabilityScore:F3})",
-                kernelName, analysisResult.VariabilityScore);
+            LogNonDeterministicBehavior(_logger, kernelName, analysisResult.VariabilityScore);
         }
     }
 
@@ -537,7 +528,7 @@ public sealed class KernelDebugLogger(
             _ = _debugHistory.RemoveAll(entry => entry.Timestamp < cutoffTime);
         }
 
-        _logger.LogDebug("Cleared debug history older than {MaxAge}", maxAge);
+        LogDebugHistoryCleared(_logger, maxAge);
     }
 
     /// <summary>
@@ -554,12 +545,11 @@ public sealed class KernelDebugLogger(
             _ => MsLogLevel.Debug
         };
 
-        _logger.Log(logLevel, "Validation issue for kernel {KernelName} ({Severity}): {Message} [Backend: {BackendAffected}]",
-            kernelName, issue.Severity, issue.Message, issue.BackendAffected);
+        LogValidationIssueDetected(_logger, logLevel, kernelName, issue.Severity, issue.Message, issue.BackendAffected);
 
         if (!string.IsNullOrEmpty(issue.Suggestion) && _options.VerbosityLevel >= DebugLogLevel.Debug)
         {
-            _logger.LogDebug("Suggestion for kernel {KernelName}: {Suggestion}", kernelName, issue.Suggestion);
+            LogValidationIssueSuggestion(_logger, kernelName, issue.Suggestion);
         }
     }
 
@@ -589,14 +579,14 @@ public sealed class KernelDebugLogger(
         if (ShouldLog(logLevel))
         {
             var message = $"[{entry.Operation}] {entry.KernelName}: {FormatLogEntryData(entry.Data)}";
-            _logger.Log(logLevel, message);
+            LogDebugEntry(_logger, logLevel, message);
         }
     }
 
     /// <summary>
     /// Determines if a log level should be logged based on options.
     /// </summary>
-    private static bool ShouldLog(MsLogLevel logLevel)
+    private bool ShouldLog(MsLogLevel logLevel)
     {
         return _options.VerbosityLevel switch
         {
@@ -659,6 +649,132 @@ public sealed class KernelDebugLogger(
             }
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 11100,
+        Level = MsLogLevel.Debug,
+        Message = "Starting validation for kernel {KernelName} with {InputCount} inputs and tolerance {Tolerance}")]
+    private static partial void LogValidationStarting(ILogger logger, string kernelName, int inputCount, float tolerance);
+
+    [LoggerMessage(
+        EventId = 11101,
+        Message = "Validation completed for kernel {KernelName}: {IsValid} ({BackendCount} backends tested, {IssueCount} issues)")]
+    private static partial void LogValidationCompleted(ILogger logger, MsLogLevel level, string kernelName, bool isValid, int backendCount, int issueCount);
+
+    [LoggerMessage(
+        EventId = 11102,
+        Level = MsLogLevel.Error,
+        Message = "Validation failed for kernel {KernelName}")]
+    private static partial void LogValidationFailed(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 11103,
+        Level = MsLogLevel.Debug,
+        Message = "Starting execution of kernel {KernelName} on {BackendType}")]
+    private static partial void LogExecutionStarting(ILogger logger, string kernelName, string backendType);
+
+    [LoggerMessage(
+        EventId = 11104,
+        Level = MsLogLevel.Debug,
+        Message = "Execution completed for kernel {KernelName} on {BackendType} in {ExecutionTime}ms")]
+    private static partial void LogExecutionCompleted(ILogger logger, string kernelName, string backendType, double executionTime);
+
+    [LoggerMessage(
+        EventId = 11105,
+        Level = MsLogLevel.Warning,
+        Message = "Execution failed for kernel {KernelName} on {BackendType}: {ErrorMessage}")]
+    private static partial void LogExecutionFailedWithError(ILogger logger, string kernelName, string backendType, string errorMessage);
+
+    [LoggerMessage(
+        EventId = 11106,
+        Level = MsLogLevel.Error,
+        Message = "Execution failed for kernel {KernelName} on {BackendType}")]
+    private static partial void LogExecutionError(ILogger logger, Exception exception, string kernelName, string backendType);
+
+    [LoggerMessage(
+        EventId = 11107,
+        Message = "Result comparison completed for kernel {KernelName}: {ResultsMatch} ({BackendCount} backends, {DifferenceCount} differences)")]
+    private static partial void LogComparisonCompleted(ILogger logger, MsLogLevel level, string kernelName, bool resultsMatch, int backendCount, int differenceCount);
+
+    [LoggerMessage(
+        EventId = 11108,
+        Level = MsLogLevel.Warning,
+        Message = "Difference between {Backend1} and {Backend2}: {Difference:F6}")]
+    private static partial void LogDifferenceBetweenBackends(ILogger logger, string backend1, string backend2, float difference);
+
+    [LoggerMessage(
+        EventId = 11109,
+        Level = MsLogLevel.Debug,
+        Message = "Starting execution trace for kernel {KernelName} on {BackendType} with {TracePointCount} trace points")]
+    private static partial void LogTracingStarting(ILogger logger, string kernelName, string backendType, int tracePointCount);
+
+    [LoggerMessage(
+        EventId = 11110,
+        Level = MsLogLevel.Information,
+        Message = "Execution trace completed for kernel {KernelName}: {TracePointCount} trace points captured in {TotalTime}ms")]
+    private static partial void LogTracingCompleted(ILogger logger, string kernelName, int tracePointCount, double totalTime);
+
+    [LoggerMessage(
+        EventId = 11111,
+        Level = MsLogLevel.Warning,
+        Message = "Execution trace failed for kernel {KernelName}: {ErrorMessage}")]
+    private static partial void LogTracingFailedWithError(ILogger logger, string kernelName, string errorMessage);
+
+    [LoggerMessage(
+        EventId = 11112,
+        Level = MsLogLevel.Error,
+        Message = "Execution trace failed for kernel {KernelName}")]
+    private static partial void LogTracingError(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 11113,
+        Level = MsLogLevel.Information,
+        Message = "Performance analysis completed for kernel {KernelName}: {ExecutionCount} executions, {SuccessRate:P1} success rate, {PerformanceScore:F2} performance score")]
+    private static partial void LogPerformanceAnalysisCompleted(ILogger logger, string kernelName, int executionCount, double successRate, float performanceScore);
+
+    [LoggerMessage(
+        EventId = 11114,
+        Level = MsLogLevel.Warning,
+        Message = "Performance bottleneck detected in kernel {KernelName}: {Description} (Severity: {Severity})")]
+    private static partial void LogPerformanceBottleneck(ILogger logger, string kernelName, string description, BottleneckSeverity severity);
+
+    [LoggerMessage(
+        EventId = 11115,
+        Level = MsLogLevel.Information,
+        Message = "Determinism analysis completed for kernel {KernelName}: Deterministic across {RunCount} runs")]
+    private static partial void LogDeterminismAnalysisCompleted(ILogger logger, string kernelName, int runCount);
+
+    [LoggerMessage(
+        EventId = 11116,
+        Level = MsLogLevel.Warning,
+        Message = "Determinism analysis completed for kernel {KernelName}: Non-deterministic behavior detected (Variability: {VariabilityScore:F3})")]
+    private static partial void LogNonDeterministicBehavior(ILogger logger, string kernelName, double variabilityScore);
+
+    [LoggerMessage(
+        EventId = 11117,
+        Level = MsLogLevel.Debug,
+        Message = "Cleared debug history older than {MaxAge}")]
+    private static partial void LogDebugHistoryCleared(ILogger logger, TimeSpan maxAge);
+
+    [LoggerMessage(
+        EventId = 11118,
+        Message = "Validation issue for kernel {KernelName} ({Severity}): {Message} [Backend: {BackendAffected}]")]
+    private static partial void LogValidationIssueDetected(ILogger logger, MsLogLevel level, string kernelName, DebugValidationSeverity severity, string message, string backendAffected);
+
+    [LoggerMessage(
+        EventId = 11119,
+        Level = MsLogLevel.Debug,
+        Message = "Suggestion for kernel {KernelName}: {Suggestion}")]
+    private static partial void LogValidationIssueSuggestion(ILogger logger, string kernelName, string suggestion);
+
+    [LoggerMessage(
+        EventId = 11120,
+        Message = "{Message}")]
+    private static partial void LogDebugEntry(ILogger logger, MsLogLevel level, string message);
+
+    #endregion
 }
 
 /// <summary>

@@ -150,20 +150,20 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
     {
         // Check if it's read-only
 
-        var isReadOnly = csharpType.Contains("ReadOnlySpan") ||
+        var isReadOnly = csharpType.IndexOf("ReadOnlySpan", StringComparison.Ordinal) >= 0 ||
                          paramName.StartsWith("input", StringComparison.Ordinal) ||
                          paramName.StartsWith("source", StringComparison.Ordinal);
 
         // Extract element type from Span<T> or array
 
         var elementType = "float";
-        if (csharpType.Contains("<") && csharpType.Contains(">"))
+        if (csharpType.IndexOf("<", StringComparison.Ordinal) >= 0 && csharpType.IndexOf(">", StringComparison.Ordinal) >= 0)
         {
             var start = csharpType.IndexOf('<') + 1;
             var end = csharpType.IndexOf('>');
             elementType = csharpType.Substring(start, end - start);
         }
-        else if (csharpType.Contains("[]"))
+        else if (csharpType.IndexOf("[]", StringComparison.Ordinal) >= 0)
         {
             elementType = csharpType.Replace("[]", "");
         }
@@ -219,10 +219,10 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
     {
         // Heuristics for threadgroup memory usage
         var type = variable.GetTypeDisplayString();
-        return type.Contains("[]") && !type.Contains("Span") &&
-               (variable.Name.Contains("shared") ||
-                variable.Name.Contains("tile") ||
-                variable.Name.Contains("local"));
+        return type.IndexOf("[]", StringComparison.Ordinal) >= 0 && type.IndexOf("Span", StringComparison.Ordinal) < 0 &&
+               (variable.Name.IndexOf("shared", StringComparison.Ordinal) >= 0 ||
+                variable.Name.IndexOf("tile", StringComparison.Ordinal) >= 0 ||
+                variable.Name.IndexOf("local", StringComparison.Ordinal) >= 0);
     }
 
     private static bool IsConstantCandidate(ISymbol variable)
@@ -238,7 +238,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
 
         return variable.IsStatic ||
-               variable.Name.Contains("const") ||
+               variable.Name.IndexOf("const", StringComparison.Ordinal) >= 0 ||
                isReadOnly;
     }
 
@@ -452,7 +452,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Handle atomic operations
 
-        if (methodName.Contains("Interlocked.Add") || methodName.Contains("atomic_add"))
+        if (methodName.IndexOf("Interlocked.Add", StringComparison.Ordinal) >= 0 || methodName.IndexOf("atomic_add", StringComparison.Ordinal) >= 0)
         {
             _ = _output.Append("atomic_fetch_add_explicit(");
             var args = invocation.ArgumentList.Arguments;
@@ -510,7 +510,7 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
             _ = _output.Append(')');
         }
         // Handle barrier/fence operations
-        else if (methodName.Contains("Barrier") || methodName.Contains("MemoryFence"))
+        else if (methodName.IndexOf("Barrier", StringComparison.Ordinal) >= 0 || methodName.IndexOf("MemoryFence", StringComparison.Ordinal) >= 0)
         {
             _ = _output.Append("threadgroup_barrier(mem_flags::mem_threadgroup)");
         }
@@ -756,12 +756,12 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
 
         // Check for ThreadId.Z usage
 
-        if (bodyText.Contains("ThreadId.Z") || bodyText.Contains("ThreadId.z"))
+        if (bodyText.IndexOf("ThreadId.Z", StringComparison.Ordinal) >= 0 || bodyText.IndexOf("ThreadId.z", StringComparison.Ordinal) >= 0)
         {
             return 3;
         }
         // Check for ThreadId.Y usage
-        else if (bodyText.Contains("ThreadId.Y") || bodyText.Contains("ThreadId.y"))
+        else if (bodyText.IndexOf("ThreadId.Y", StringComparison.Ordinal) >= 0 || bodyText.IndexOf("ThreadId.y", StringComparison.Ordinal) >= 0)
         {
             return 2;
         }

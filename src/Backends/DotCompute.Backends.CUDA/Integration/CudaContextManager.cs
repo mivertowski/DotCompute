@@ -52,10 +52,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public CudaContext GetOrCreateContext(int deviceId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_contextLock)
         {
@@ -84,10 +81,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public void SwitchToDevice(int deviceId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_currentDevice == deviceId)
         {
@@ -116,10 +110,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public void Synchronize()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -141,10 +132,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public async Task SynchronizeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Run(() =>
         {
@@ -192,10 +180,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public async Task OptimizeContextAsync(CudaWorkloadProfile profile, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Run(() =>
         {
@@ -267,10 +252,7 @@ public sealed class CudaContextManager : IDisposable
     /// </summary>
     public IReadOnlyDictionary<int, CudaContext> GetAllContexts()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContextManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_contextLock)
         {

@@ -34,6 +34,6 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         /// Gets or sets the optimal transfer paths between device pairs.
         /// Key is (source, destination) tuple, value is list of intermediate device IDs.
         /// </summary>
-        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; set; } = [];
+        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; } = [];
     }
 }

@@ -187,7 +187,7 @@ internal sealed class BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logg
         {
             PipelineId = pipelineId,
             ExecutionCount = 1,
-            AverageExecutionTimeMs = TimeSpan.FromMinutes(1),
+            AverageExecutionTime = TimeSpan.FromMinutes(1),
             MinExecutionTime = TimeSpan.FromSeconds(45),
             MaxExecutionTime = TimeSpan.FromSeconds(75),
             Trends = []

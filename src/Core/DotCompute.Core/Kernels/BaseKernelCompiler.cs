@@ -12,6 +12,7 @@ using DotCompute.Core.Kernels.Compilation;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 // Using aliases to resolve ValidationIssue conflicts
 
@@ -21,8 +22,19 @@ namespace DotCompute.Core.Kernels;
 /// Base abstract class for kernel compiler implementations, consolidating common patterns.
 /// This addresses the critical issue of 15+ duplicate compiler implementations.
 /// </summary>
-public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
+public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
 {
+    // LoggerMessage delegates - Event ID range 22000-22099 for BaseKernelCompiler (Kernels module)
+    private static readonly Action<ILogger, string, string, long, OptimizationLevel, Exception?> _logCompilationSuccess =
+        LoggerMessage.Define<string, string, long, OptimizationLevel>(
+            MsLogLevel.Information,
+            new EventId(22000, nameof(LogCompilationSuccess)),
+            "{CompilerName}: Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization");
+
+    // Wrapper method
+    private static void LogCompilationSuccess(ILogger logger, string compilerName, string kernelName, long elapsedMs, OptimizationLevel optimizationLevel)
+        => _logCompilationSuccess(logger, compilerName, kernelName, elapsedMs, optimizationLevel, null);
+
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, AbstractionsICompiledKernel> _compilationCache;
     private readonly ConcurrentDictionary<string, CompilationMetrics> _metricsCache;
@@ -154,9 +166,7 @@ public abstract class BaseKernelCompiler : IUnifiedKernelCompiler
             }
 
 
-            _logger.LogInformation(
-                "{CompilerName}: Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization",
-                CompilerName, definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
+            LogCompilationSuccess(_logger, CompilerName, definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
 
 
             return compiledKernel;

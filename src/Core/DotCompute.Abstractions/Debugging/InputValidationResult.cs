@@ -16,7 +16,7 @@ public sealed class InputValidationResult
     /// <summary>
     /// Gets the list of validation issues found.
     /// </summary>
-    public IReadOnlyList<string> Issues { get; set; } = [];
+    public IReadOnlyList<string> Issues { get; init; } = [];
 
     /// <summary>
     /// Gets the number of inputs validated.

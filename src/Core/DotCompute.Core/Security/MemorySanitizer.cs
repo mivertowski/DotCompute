@@ -11,6 +11,7 @@ using DotCompute.Core.Security.Configuration;
 using DotCompute.Core.Security.Enums;
 using DotCompute.Core.Security.Models;
 using DotCompute.Core.Security.Models.Internal;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -20,7 +21,7 @@ namespace DotCompute.Core.Security;
 /// with advanced security features for protecting sensitive data in memory.
 /// Implements production-grade memory safety with hardware-accelerated validation.
 /// </summary>
-public sealed class MemorySanitizer : IDisposable
+public sealed partial class MemorySanitizer : IDisposable
 {
     private readonly ILogger _logger;
     private readonly MemorySanitizerConfiguration _configuration;
@@ -39,6 +40,142 @@ public sealed class MemorySanitizer : IDisposable
 
     // Statistics
     private readonly SanitizerStatistics _statistics = new();
+
+    // LoggerMessage delegates - Event ID range 18600-18615 for MemorySanitizer
+    private static readonly Action<ILogger, string, Exception?> _logSanitizerInitialized =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Information,
+            new EventId(18600, nameof(LogSanitizerInitialized)),
+            "MemorySanitizer initialized with configuration: {Configuration}");
+
+    private static void LogSanitizerInitialized(ILogger logger, string configuration)
+        => _logSanitizerInitialized(logger, configuration, null);
+
+    private static readonly Action<ILogger, nuint, string, string, Exception?> _logAllocatingSanitizedMemory =
+        LoggerMessage.Define<nuint, string, string>(
+            MsLogLevel.Debug,
+            new EventId(18601, nameof(LogAllocatingSanitizedMemory)),
+            "Allocating sanitized memory: Size={Size}, Classification={Classification}, Id={Identifier}");
+
+    private static void LogAllocatingSanitizedMemory(ILogger logger, nuint size, string classification, string identifier)
+        => _logAllocatingSanitizedMemory(logger, size, classification, identifier, null);
+
+    private static readonly Action<ILogger, long, nuint, string, Exception?> _logMemoryAllocated =
+        LoggerMessage.Define<long, nuint, string>(
+            MsLogLevel.Debug,
+            new EventId(18602, nameof(LogMemoryAllocated)),
+            "Sanitized memory allocated: Address={Address}, Size={Size}, Id={Identifier}");
+
+    private static void LogMemoryAllocated(ILogger logger, long address, nuint size, string identifier)
+        => _logMemoryAllocated(logger, address, size, identifier, null);
+
+    private static readonly Action<ILogger, Exception, long, Exception?> _logReadError =
+        LoggerMessage.Define<Exception, long>(
+            MsLogLevel.Error,
+            new EventId(18603, nameof(LogReadError)),
+            "Error during sanitized memory read: Address={Address}");
+
+    private static void LogReadError(ILogger logger, Exception error, long address)
+        => _logReadError(logger, error, address, null);
+
+    private static readonly Action<ILogger, Exception, long, Exception?> _logWriteError =
+        LoggerMessage.Define<Exception, long>(
+            MsLogLevel.Error,
+            new EventId(18604, nameof(LogWriteError)),
+            "Error during sanitized memory write: Address={Address}");
+
+    private static void LogWriteError(ILogger logger, Exception error, long address)
+        => _logWriteError(logger, error, address, null);
+
+    private static readonly Action<ILogger, long, Exception?> _logDeallocatingMemory =
+        LoggerMessage.Define<long>(
+            MsLogLevel.Debug,
+            new EventId(18605, nameof(LogDeallocatingMemory)),
+            "Deallocating sanitized memory: Address={Address}");
+
+    private static void LogDeallocatingMemory(ILogger logger, long address)
+        => _logDeallocatingMemory(logger, address, null);
+
+    private static readonly Action<ILogger, long, nuint, string, Exception?> _logMemoryDeallocated =
+        LoggerMessage.Define<long, nuint, string>(
+            MsLogLevel.Debug,
+            new EventId(18606, nameof(LogMemoryDeallocated)),
+            "Sanitized memory deallocated: Address={Address}, Size={Size}, Id={Identifier}");
+
+    private static void LogMemoryDeallocated(ILogger logger, long address, nuint size, string identifier)
+        => _logMemoryDeallocated(logger, address, size, identifier, null);
+
+    private static readonly Action<ILogger, Exception?> _logPerformingLeakDetection =
+        LoggerMessage.Define(
+            MsLogLevel.Debug,
+            new EventId(18607, nameof(LogPerformingLeakDetection)),
+            "Performing memory leak detection");
+
+    private static void LogPerformingLeakDetection(ILogger logger)
+        => _logPerformingLeakDetection(logger, null);
+
+    private static readonly Action<ILogger, int, long, Exception?> _logLeaksDetected =
+        LoggerMessage.Define<int, long>(
+            MsLogLevel.Warning,
+            new EventId(18608, nameof(LogLeaksDetected)),
+            "Memory leak detection found {Count} high-suspicion allocations totaling {TotalBytes} bytes");
+
+    private static void LogLeaksDetected(ILogger logger, int count, long totalBytes)
+        => _logLeaksDetected(logger, count, totalBytes, null);
+
+    private static readonly Action<ILogger, Exception, Exception?> _logFreeMemoryError =
+        LoggerMessage.Define<Exception>(
+            MsLogLevel.Error,
+            new EventId(18609, nameof(LogFreeMemoryError)),
+            "Error freeing raw memory");
+
+    private static void LogFreeMemoryError(ILogger logger, Exception error)
+        => _logFreeMemoryError(logger, error, null);
+
+    private static readonly Action<ILogger, int, Exception?> _logLeakDetectionWarning =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Warning,
+            new EventId(18610, nameof(LogLeakDetectionWarning)),
+            "Memory leak detection: {Count} high-suspicion leaks detected");
+
+    private static void LogLeakDetectionWarning(ILogger logger, int count)
+        => _logLeakDetectionWarning(logger, count, null);
+
+    private static readonly Action<ILogger, Exception, Exception?> _logLeakDetectionError =
+        LoggerMessage.Define<Exception>(
+            MsLogLevel.Error,
+            new EventId(18611, nameof(LogLeakDetectionError)),
+            "Error during memory leak detection");
+
+    private static void LogLeakDetectionError(ILogger logger, Exception error)
+        => _logLeakDetectionError(logger, error, null);
+
+    private static readonly Action<ILogger, int, Exception?> _logIntegrityCheckWarning =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Warning,
+            new EventId(18612, nameof(LogIntegrityCheckWarning)),
+            "Integrity check found {Count} corrupted allocations");
+
+    private static void LogIntegrityCheckWarning(ILogger logger, int count)
+        => _logIntegrityCheckWarning(logger, count, null);
+
+    private static readonly Action<ILogger, Exception, Exception?> _logIntegrityCheckError =
+        LoggerMessage.Define<Exception>(
+            MsLogLevel.Error,
+            new EventId(18613, nameof(LogIntegrityCheckError)),
+            "Error during integrity check");
+
+    private static void LogIntegrityCheckError(ILogger logger, Exception error)
+        => _logIntegrityCheckError(logger, error, null);
+
+    private static readonly Action<ILogger, long, long, Exception?> _logSanitizerDisposed =
+        LoggerMessage.Define<long, long>(
+            MsLogLevel.Information,
+            new EventId(18614, nameof(LogSanitizerDisposed)),
+            "MemorySanitizer disposed. Final statistics: Allocations={Allocations}, Violations={Violations}");
+
+    private static void LogSanitizerDisposed(ILogger logger, long allocations, long violations)
+        => _logSanitizerDisposed(logger, allocations, violations, null);
     /// <summary>
     /// Initializes a new instance of the MemorySanitizer class.
     /// </summary>
@@ -60,7 +197,7 @@ public sealed class MemorySanitizer : IDisposable
             TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
 
 
-        _logger.LogInfoMessage($"MemorySanitizer initialized with configuration: {_configuration.ToString()}");
+        LogSanitizerInitialized(_logger, _configuration.ToString());
     }
 
     /// <summary>
@@ -99,7 +236,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebugMessage($"Allocating sanitized memory: Size={size}, Classification={classification}, Id={identifier}");
+            LogAllocatingSanitizedMemory(_logger, size, classification.ToString(), identifier ?? "null");
 
             var result = new SanitizedMemoryResult
             {
@@ -166,7 +303,7 @@ public sealed class MemorySanitizer : IDisposable
             _ = Interlocked.Add(ref _statistics.TotalBytesAllocated, (long)size);
             _ = _statistics.AllocationsByClassification.AddOrUpdate(classification, 1, (key, value) => value + 1);
 
-            _logger.LogDebugMessage($"Sanitized memory allocated: Address={userPtr.ToInt64()}, Size={size}, Id={result.Identifier}");
+            LogMemoryAllocated(_logger, userPtr.ToInt64(), size, result.Identifier);
 
             return result;
         }
@@ -256,7 +393,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error during sanitized memory read: Address={address.ToInt64():X}");
+            LogReadError(_logger, ex, address.ToInt64());
             throw;
         }
     }
@@ -338,7 +475,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error during sanitized memory write: Address={address.ToInt64():X}");
+            LogWriteError(_logger, ex, address.ToInt64());
             throw;
         }
     }
@@ -360,7 +497,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebugMessage("Deallocating sanitized memory: Address={address.ToInt64()}");
+            LogDeallocatingMemory(_logger, address.ToInt64());
 
             var result = new MemoryDeallocationResult
             {
@@ -453,7 +590,7 @@ public sealed class MemorySanitizer : IDisposable
             _ = Interlocked.Increment(ref _statistics.TotalDeallocations);
             _ = Interlocked.Add(ref _statistics.TotalBytesFreed, (long)allocation.RequestedSize);
 
-            _logger.LogDebugMessage($"Sanitized memory deallocated: Address={address.ToInt64()}, Size={allocation.RequestedSize}, Id={allocation.Identifier}");
+            LogMemoryDeallocated(_logger, address.ToInt64(), allocation.RequestedSize, allocation.Identifier);
 
             return result;
         }
@@ -479,7 +616,7 @@ public sealed class MemorySanitizer : IDisposable
         await _operationLock.WaitAsync();
         try
         {
-            _logger.LogDebugMessage("Performing memory leak detection");
+            LogPerformingLeakDetection(_logger);
 
             var report = new MemoryLeakReport
             {
@@ -521,7 +658,7 @@ public sealed class MemorySanitizer : IDisposable
 
             if (report.HighSuspicionCount > 0)
             {
-                _logger.LogWarningMessage($"Memory leak detection found {report.HighSuspicionCount} high-suspicion allocations totaling {report.TotalSuspiciousBytes} bytes");
+                LogLeaksDetected(_logger, report.HighSuspicionCount, report.TotalSuspiciousBytes);
             }
 
             return report;
@@ -777,7 +914,7 @@ public sealed class MemorySanitizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error freeing raw memory: Address={basePtr.ToInt64():X}");
+            LogFreeMemoryError(_logger, ex);
         }
     }
 
@@ -827,12 +964,12 @@ public sealed class MemorySanitizer : IDisposable
                 var report = await DetectMemoryLeaksAsync();
                 if (report.HighSuspicionCount > 0)
                 {
-                    _logger.LogWarningMessage($"Memory leak detection: {report.HighSuspicionCount} high-suspicion leaks detected");
+                    LogLeakDetectionWarning(_logger, report.HighSuspicionCount);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error during memory leak detection");
+                LogLeakDetectionError(_logger, ex);
             }
         });
     }
@@ -868,12 +1005,12 @@ public sealed class MemorySanitizer : IDisposable
 
                 if (corruptedCount > 0)
                 {
-                    _logger.LogWarningMessage("Integrity check found {corruptedCount} corrupted allocations");
+                    LogIntegrityCheckWarning(_logger, corruptedCount);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error during integrity check");
+                LogIntegrityCheckError(_logger, ex);
             }
         });
     }
@@ -919,7 +1056,7 @@ public sealed class MemorySanitizer : IDisposable
         _randomGenerator?.Dispose();
 
         var stats = GetStatistics();
-        _logger.LogInfoMessage($"MemorySanitizer disposed. Final statistics: Allocations={stats.TotalAllocations}, Violations={stats.TotalViolations}");
+        LogSanitizerDisposed(_logger, stats.TotalAllocations, stats.TotalViolations);
     }
 }
 

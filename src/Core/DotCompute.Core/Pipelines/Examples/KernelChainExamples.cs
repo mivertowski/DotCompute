@@ -30,9 +30,9 @@ namespace DotCompute.Core.Pipelines.Examples
         {
             var result = await KernelChain.Create()
                 .Kernel("LoadImage", imageData)
-                .Then("ApplyGaussianBlur", 2.0f)
-                .Then("EdgeDetection", 0.5f)
-                .Then("ConvertToGrayscale")
+                .ThenExecute("ApplyGaussianBlur", 2.0f)
+                .ThenExecute("EdgeDetection", 0.5f)
+                .ThenExecute("ConvertToGrayscale")
                 .WithProfiling("ImageProcessing")
                 .WithTimeout(TimeSpan.FromMinutes(2))
                 .OnError(ex => ex is ArgumentException ? ErrorHandlingStrategy.Skip : ErrorHandlingStrategy.Abort)
@@ -54,8 +54,8 @@ namespace DotCompute.Core.Pipelines.Examples
                     ("ApplyFilterB", new object[] { "high-pass", 0.8f }),
                     ("ApplyFilterC", new object[] { "band-pass", 0.3f, 0.7f })
                 )
-                .Then("CombineResults")
-                .Then("NormalizeOutput")
+                .ThenExecute("CombineResults")
+                .ThenExecute("NormalizeOutput")
                 .OnBackend("CUDA") // Prefer GPU execution
                 .Cache("processed_data_v1", TimeSpan.FromHours(1))
                 .ExecuteAsync<float[]>();
@@ -74,15 +74,15 @@ namespace DotCompute.Core.Pipelines.Examples
                 .Branch<AnalysisResult>(
                     condition: analysis => analysis.RequiresGpuProcessing,
                     truePath: chain => chain
-                        .Then("GpuAcceleratedKernel")
-                        .Then("GpuOptimizedPostProcess")
+                        .ThenExecute("GpuAcceleratedKernel")
+                        .ThenExecute("GpuOptimizedPostProcess")
                         .OnBackend("CUDA"),
                     falsePath: chain => chain
-                        .Then("CpuOptimizedKernel")
-                        .Then("CpuVectorizedPostProcess")
+                        .ThenExecute("CpuOptimizedKernel")
+                        .ThenExecute("CpuVectorizedPostProcess")
                         .OnBackend("CPU")
                 )
-                .Then("FinalizeResults")
+                .ThenExecute("FinalizeResults")
                 .WithValidation()
                 .ExecuteAsync<ProcessedData>();
 
@@ -97,17 +97,17 @@ namespace DotCompute.Core.Pipelines.Examples
         {
             var result = await KernelChain.Create()
                 .Kernel("LoadMLModel", "model_v2.bin")
-                .Then("PreprocessInput", inputData)
-                .Then("TokenizeText", 512)
+                .ThenExecute("PreprocessInput", inputData)
+                .ThenExecute("TokenizeText", 512)
                 .Parallel(
                     ("ComputeEmbeddings", Array.Empty<object>()),
                     ("ExtractFeatures", Array.Empty<object>()),
                     ("ApplyAttention", Array.Empty<object>())
                 )
-                .Then("ConcatenateFeatures")
-                .Then("RunInference")
-                .Then("ApplySoftmax")
-                .Then("ConvertToPrediction")
+                .ThenExecute("ConcatenateFeatures")
+                .ThenExecute("RunInference")
+                .ThenExecute("ApplySoftmax")
+                .ThenExecute("ConvertToPrediction")
                 .OnBackend("CUDA") // ML workloads benefit from GPU acceleration
                 .Cache($"ml_prediction_{inputData.GetHashCode()}", TimeSpan.FromMinutes(30))
                 .WithProfiling($"MLInference_{DateTime.Now:yyyyMMdd_HHmmss}")
@@ -125,19 +125,19 @@ namespace DotCompute.Core.Pipelines.Examples
         {
             var result = await KernelChain.Create()
                 .Kernel("InitializeSimulation", parameters)
-                .Then("SetupGrid", 1024)
-                .Then("ApplyBoundaryConditions")
+                .ThenExecute("SetupGrid", 1024)
+                .ThenExecute("ApplyBoundaryConditions")
                 .Branch<GridState>(
                     condition: state => state.RequiresHighPrecision,
                     truePath: chain => chain
-                        .Then("DoubleePrecisionSolver")
+                        .ThenExecute("DoubleePrecisionSolver")
                         .OnError(ex => ex is OutOfMemoryException ? ErrorHandlingStrategy.Fallback : ErrorHandlingStrategy.Abort),
                     falsePath: chain => chain
-                        .Then("SinglePrecisionSolver")
+                        .ThenExecute("SinglePrecisionSolver")
                 )
-                .Then("ComputeStatistics")
-                .Then("ValidateResults")
-                .Then("GenerateVisualization")
+                .ThenExecute("ComputeStatistics")
+                .ThenExecute("ValidateResults")
+                .ThenExecute("GenerateVisualization")
                 .OnBackend("CUDA")
                 .WithTimeout(TimeSpan.FromHours(2))
                 .WithProfiling("ScientificSimulation")
@@ -172,10 +172,10 @@ namespace DotCompute.Core.Pipelines.Examples
                 {
                     _ = await KernelChain.Create()
                         .Kernel("ValidateChunk", chunk)
-                        .Then("DecompressData")
-                        .Then("ApplyRealTimeFilter")
-                        .Then("UpdateRunningStatistics")
-                        .Then("TriggerAlerts")
+                        .ThenExecute("DecompressData")
+                        .ThenExecute("ApplyRealTimeFilter")
+                        .ThenExecute("UpdateRunningStatistics")
+                        .ThenExecute("TriggerAlerts")
                         .Cache($"chunk_{chunk.Id}", TimeSpan.FromSeconds(30))
                         .OnBackend("CPU") // Real-time processing often better on CPU for latency
                         .WithTimeout(TimeSpan.FromMilliseconds(100)) // Strict real-time constraints
@@ -214,14 +214,14 @@ namespace DotCompute.Core.Pipelines.Examples
         {
             var executionResult = await KernelChain.Create()
                 .Kernel("AnalyzeWorkload", workload)
-                .Then("OptimizeParameters")
+                .ThenExecute("OptimizeParameters")
                 .Parallel(
                     ("ProcessBatchA", Array.Empty<object>()),
                     ("ProcessBatchB", Array.Empty<object>()),
                     ("ProcessBatchC", Array.Empty<object>())
                 )
-                .Then("MergeResults")
-                .Then("ApplyPostProcessing")
+                .ThenExecute("MergeResults")
+                .ThenExecute("ApplyPostProcessing")
                 .WithProfiling("AdvancedWorkload")
                 .WithValidation()
                 .OnError(ex => ErrorHandlingStrategy.Retry)
@@ -342,12 +342,12 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 KernelName = interfaceMetrics.KernelName,
                 StepIndex = interfaceMetrics.StepIndex,
-                ExecutionTime = interfaceMetrics.Timings,
+                ExecutionTime = interfaceMetrics.ExecutionTime,
                 Success = interfaceMetrics.Success,
                 Backend = interfaceMetrics.Backend,
                 WasCached = interfaceMetrics.WasCached,
-                MemoryUsed = interfaceMetrics.MemoryAllocated,
-                StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.Timings),
+                MemoryUsed = interfaceMetrics.MemoryUsed,
+                StartTime = DateTime.UtcNow.Subtract(interfaceMetrics.ExecutionTime),
                 EndTime = DateTime.UtcNow,
                 Error = string.IsNullOrEmpty(interfaceMetrics.ErrorMessage) ? null : new Exception(interfaceMetrics.ErrorMessage),
                 Throughput = interfaceMetrics.ThroughputOpsPerSecond
@@ -386,7 +386,7 @@ namespace DotCompute.Core.Pipelines.Examples
             {
                 Success = interfaceResult.Success,
                 Result = null, // Set to null for this conversion - could be set to actual result if available
-                ExecutionTime = interfaceResult.Timings,
+                ExecutionTime = interfaceResult.ExecutionTime,
                 Backend = interfaceResult.Backend,
                 StepMetrics = interfaceResult.StepMetrics.Select(ConvertToResultsKernelStepMetrics).ToList(),
                 MemoryMetrics = ConvertToResultsKernelChainMemoryMetrics(interfaceResult.MemoryMetrics),

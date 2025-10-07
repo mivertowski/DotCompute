@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory
 {
@@ -15,7 +16,7 @@ namespace DotCompute.Core.Memory
     /// Device-specific buffer pool optimized for P2P operations and memory management.
     /// Provides different allocation strategies for various transfer patterns.
     /// </summary>
-    public sealed class DeviceBufferPool : IAsyncDisposable
+    public sealed partial class DeviceBufferPool : IAsyncDisposable
     {
         private readonly IAccelerator _device;
         private readonly DeviceCapabilities _deviceCapabilities;
@@ -32,6 +33,98 @@ namespace DotCompute.Core.Memory
         private const int MaxBuffersPerSize = 16;
         private const int LargeBufferPoolSize = 8;
         private const int CleanupIntervalMs = 30000; // 30 seconds
+
+        // Pre-compiled LoggerMessage delegates
+        private static readonly Action<ILogger, string, double, Exception?> _logPoolCreated =
+            LoggerMessage.Define<string, double>(
+                MsLogLevel.Debug,
+                new EventId(14100, nameof(PoolCreated)),
+                "Created buffer pool for device {DeviceName} with P2P bandwidth {P2PBandwidthGBps} GB/s");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logPooledBufferAllocated =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Trace,
+                new EventId(14101, nameof(PooledBufferAllocated)),
+                "Allocated pooled buffer: {SizeBytes} bytes from pool on {Device}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logNewBufferAllocated =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Trace,
+                new EventId(14102, nameof(NewBufferAllocated)),
+                "Allocated new buffer: {SizeBytes} bytes on {Device}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logBufferAllocationFailed =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Error,
+                new EventId(14103, nameof(BufferAllocationFailed)),
+                "Failed to allocate buffer of {SizeBytes} bytes on {DeviceName}");
+
+        private static readonly Action<ILogger, long, int, string, Exception?> _logStreamingBufferAllocated =
+            LoggerMessage.Define<long, int, string>(
+                MsLogLevel.Trace,
+                new EventId(14104, nameof(StreamingBufferAllocated)),
+                "Allocated streaming buffer: {SizeBytes} bytes with {ChunkSize} chunk size on {Device}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logStreamingBufferAllocationFailed =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Error,
+                new EventId(14105, nameof(StreamingBufferAllocationFailed)),
+                "Failed to allocate streaming buffer of {SizeBytes} bytes on {DeviceName}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logMemoryMappedBufferAllocated =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Trace,
+                new EventId(14106, nameof(MemoryMappedBufferAllocated)),
+                "Allocated memory-mapped buffer: {SizeBytes} bytes on {Device}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logMemoryMappedBufferAllocationFailed =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Error,
+                new EventId(14107, nameof(MemoryMappedBufferAllocationFailed)),
+                "Failed to allocate memory-mapped buffer of {SizeBytes} bytes on {DeviceName}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logBufferReturnedToPool =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Trace,
+                new EventId(14108, nameof(BufferReturnedToPool)),
+                "Returned buffer to pool: {SizeBytes} bytes on {Device}");
+
+        private static readonly Action<ILogger, long, string, Exception?> _logBufferDisposedNotPooled =
+            LoggerMessage.Define<long, string>(
+                MsLogLevel.Trace,
+                new EventId(14109, nameof(BufferDisposedNotPooled)),
+                "Buffer disposed (not pooled): {SizeBytes} bytes on {Device}");
+
+        private static readonly Action<ILogger, string, Exception?> _logBufferReturnFailed =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(14110, nameof(BufferReturnFailed)),
+                "Failed to return buffer to pool on {Device}");
+
+        private static readonly Action<ILogger, string, int, long, Exception?> _logPoolCleanupCompleted =
+            LoggerMessage.Define<string, int, long>(
+                MsLogLevel.Debug,
+                new EventId(14111, nameof(PoolCleanupCompleted)),
+                "Pool cleanup completed on {DeviceName}: {CleanupCount} buffers released, {ReleasedBytes} bytes freed");
+
+        private static readonly Action<ILogger, string, Exception?> _logPoolCleanupFailed =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(14112, nameof(PoolCleanupFailed)),
+                "Error during pool cleanup on {Device}");
+
+        private static readonly Action<ILogger, string, Exception?> _logPeriodicCleanupFailed =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(14113, nameof(PeriodicCleanupFailed)),
+                "Error in periodic pool cleanup on {Device}");
+
+        private static readonly Action<ILogger, string, int, Exception?> _logPoolDisposed =
+            LoggerMessage.Define<string, int>(
+                MsLogLevel.Debug,
+                new EventId(14114, nameof(PoolDisposed)),
+                "Disposed buffer pool on {DeviceName}: {DisposeCount} buffers disposed");
+
         /// <summary>
         /// Initializes a new instance of the DeviceBufferPool class.
         /// </summary>
@@ -57,7 +150,7 @@ namespace DotCompute.Core.Memory
                 TimeSpan.FromMilliseconds(CleanupIntervalMs),
                 TimeSpan.FromMilliseconds(CleanupIntervalMs));
 
-            _logger.LogDebugMessage($"Created buffer pool for device {device.Info.Name} with P2P bandwidth {deviceCapabilities.P2PBandwidthGBps} GB/s");
+            PoolCreated(_logger, device.Info.Name, deviceCapabilities.P2PBandwidthGBps, null);
         }
 
         /// <summary>
@@ -79,8 +172,7 @@ namespace DotCompute.Core.Memory
                     _statistics.ReuseCount++;
                 }
 
-                _logger.LogTrace("Allocated pooled buffer: {SizeBytes} bytes from pool on {Device}",
-                    sizeInBytes, _device.Info.Name);
+                PooledBufferAllocated(_logger, sizeInBytes, _device.Info.Name, null);
                 return pooledBuffer;
             }
 
@@ -105,7 +197,7 @@ namespace DotCompute.Core.Memory
                     }
                 }
 
-                _logger.LogTrace("Allocated new buffer: {SizeBytes} bytes on {Device}", sizeInBytes, _device.Info.Name);
+                NewBufferAllocated(_logger, sizeInBytes, _device.Info.Name, null);
                 return new PooledMemoryBuffer(buffer, this, sizeInBytes);
             }
             catch (Exception ex)
@@ -115,7 +207,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogErrorMessage(ex, $"Failed to allocate buffer of {sizeInBytes} bytes on {_device.Info.Name}");
+                BufferAllocationFailed(_logger, sizeInBytes, _device.Info.Name, ex);
                 throw;
             }
         }
@@ -147,8 +239,7 @@ namespace DotCompute.Core.Memory
                     _statistics.ActiveBuffers++;
                 }
 
-                _logger.LogTrace("Allocated streaming buffer: {SizeBytes} bytes with {ChunkSize} chunk size on {Device}",
-                    sizeInBytes, chunkSize, _device.Info.Name);
+                StreamingBufferAllocated(_logger, sizeInBytes, chunkSize, _device.Info.Name, null);
 
                 return new PooledMemoryBuffer(buffer, this, sizeInBytes);
             }
@@ -159,7 +250,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogErrorMessage(ex, $"Failed to allocate streaming buffer of {sizeInBytes} bytes on {_device.Info.Name}");
+                StreamingBufferAllocationFailed(_logger, sizeInBytes, _device.Info.Name, ex);
                 throw;
             }
         }
@@ -190,8 +281,7 @@ namespace DotCompute.Core.Memory
                     _statistics.ActiveBuffers++;
                 }
 
-                _logger.LogTrace("Allocated memory-mapped buffer: {SizeBytes} bytes on {Device}",
-                    sizeInBytes, _device.Info.Name);
+                MemoryMappedBufferAllocated(_logger, sizeInBytes, _device.Info.Name, null);
 
                 return new PooledMemoryBuffer(buffer, this, sizeInBytes);
             }
@@ -202,7 +292,7 @@ namespace DotCompute.Core.Memory
                     _statistics.AllocationFailures++;
                 }
 
-                _logger.LogErrorMessage(ex, $"Failed to allocate memory-mapped buffer of {sizeInBytes} bytes on {_device.Info.Name}");
+                MemoryMappedBufferAllocationFailed(_logger, sizeInBytes, _device.Info.Name, ex);
                 throw;
             }
         }
@@ -236,8 +326,7 @@ namespace DotCompute.Core.Memory
                             _statistics.ReturnedToPool++;
                         }
 
-                        _logger.LogTrace("Returned buffer to pool: {SizeBytes} bytes on {Device}",
-                            originalSize, _device.Info.Name);
+                        BufferReturnedToPool(_logger, originalSize, _device.Info.Name, null);
                         return;
                     }
                 }
@@ -252,12 +341,11 @@ namespace DotCompute.Core.Memory
                     _statistics.ActiveBuffers--;
                 }
 
-                _logger.LogTrace("Buffer disposed (not pooled): {SizeBytes} bytes on {Device}",
-                    originalSize, _device.Info.Name);
+                BufferDisposedNotPooled(_logger, originalSize, _device.Info.Name, null);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to return buffer to pool on {Device}", _device.Info.Name);
+                BufferReturnFailed(_logger, _device.Info.Name, ex);
 
                 try
                 {
@@ -345,12 +433,12 @@ namespace DotCompute.Core.Memory
 
                 if (cleanupCount > 0)
                 {
-                    _logger.LogDebugMessage($"Pool cleanup completed on {_device.Info.Name}: {cleanupCount} buffers released, {releasedBytes} bytes freed");
+                    PoolCleanupCompleted(_logger, _device.Info.Name, cleanupCount, releasedBytes, null);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during pool cleanup on {Device}", _device.Info.Name);
+                PoolCleanupFailed(_logger, _device.Info.Name, ex);
             }
         }
 
@@ -443,7 +531,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error in periodic pool cleanup on {Device}", _device.Info.Name);
+                PeriodicCleanupFailed(_logger, _device.Info.Name, ex);
             }
         }
 
@@ -485,8 +573,54 @@ namespace DotCompute.Core.Memory
 
             _sizeBasedPools.Clear();
 
-            _logger.LogDebugMessage($"Disposed buffer pool on {_device.Info.Name}: {disposeCount} buffers disposed");
+            PoolDisposed(_logger, _device.Info.Name, disposeCount, null);
         }
+
+        // LoggerMessage wrapper methods
+        private static void PoolCreated(ILogger logger, string deviceName, double p2pBandwidthGBps, Exception? exception)
+            => _logPoolCreated(logger, deviceName, p2pBandwidthGBps, exception);
+
+        private static void PooledBufferAllocated(ILogger logger, long sizeBytes, string device, Exception? exception)
+            => _logPooledBufferAllocated(logger, sizeBytes, device, exception);
+
+        private static void NewBufferAllocated(ILogger logger, long sizeBytes, string device, Exception? exception)
+            => _logNewBufferAllocated(logger, sizeBytes, device, exception);
+
+        private static void BufferAllocationFailed(ILogger logger, long sizeBytes, string deviceName, Exception? exception)
+            => _logBufferAllocationFailed(logger, sizeBytes, deviceName, exception);
+
+        private static void StreamingBufferAllocated(ILogger logger, long sizeBytes, int chunkSize, string device, Exception? exception)
+            => _logStreamingBufferAllocated(logger, sizeBytes, chunkSize, device, exception);
+
+        private static void StreamingBufferAllocationFailed(ILogger logger, long sizeBytes, string deviceName, Exception? exception)
+            => _logStreamingBufferAllocationFailed(logger, sizeBytes, deviceName, exception);
+
+        private static void MemoryMappedBufferAllocated(ILogger logger, long sizeBytes, string device, Exception? exception)
+            => _logMemoryMappedBufferAllocated(logger, sizeBytes, device, exception);
+
+        private static void MemoryMappedBufferAllocationFailed(ILogger logger, long sizeBytes, string deviceName, Exception? exception)
+            => _logMemoryMappedBufferAllocationFailed(logger, sizeBytes, deviceName, exception);
+
+        private static void BufferReturnedToPool(ILogger logger, long sizeBytes, string device, Exception? exception)
+            => _logBufferReturnedToPool(logger, sizeBytes, device, exception);
+
+        private static void BufferDisposedNotPooled(ILogger logger, long sizeBytes, string device, Exception? exception)
+            => _logBufferDisposedNotPooled(logger, sizeBytes, device, exception);
+
+        private static void BufferReturnFailed(ILogger logger, string device, Exception? exception)
+            => _logBufferReturnFailed(logger, device, exception);
+
+        private static void PoolCleanupCompleted(ILogger logger, string deviceName, int cleanupCount, long releasedBytes, Exception? exception)
+            => _logPoolCleanupCompleted(logger, deviceName, cleanupCount, releasedBytes, exception);
+
+        private static void PoolCleanupFailed(ILogger logger, string device, Exception? exception)
+            => _logPoolCleanupFailed(logger, device, exception);
+
+        private static void PeriodicCleanupFailed(ILogger logger, string device, Exception? exception)
+            => _logPeriodicCleanupFailed(logger, device, exception);
+
+        private static void PoolDisposed(ILogger logger, string deviceName, int disposeCount, Exception? exception)
+            => _logPoolDisposed(logger, deviceName, disposeCount, exception);
 
         /// <summary>
         /// Internal pool statistics tracking.

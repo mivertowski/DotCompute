@@ -161,6 +161,6 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the failures by type.
         /// </summary>
         /// <value>The failures by type.</value>
-        public Dictionary<string, int> FailuresByType { get; set; } = [];
+        public Dictionary<string, int> FailuresByType { get; } = [];
     }
 }

@@ -8,6 +8,7 @@ using DotCompute.Abstractions.Models.Pipelines;
 using DotCompute.Core.Pipelines.Services;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 // Type aliases to resolve ambiguous references
 using KernelChainExecutionResult = DotCompute.Abstractions.Interfaces.Pipelines.KernelChainExecutionResult;
@@ -31,7 +32,7 @@ namespace DotCompute.Core.Pipelines
     /// <param name="validator">Optional validator for chain validation</param>
     /// <param name="cacheService">Optional cache service for result caching</param>
     /// <param name="logger">Optional logger for diagnostic information</param>
-    public sealed class KernelChainBuilder(
+    public sealed partial class KernelChainBuilder(
         IComputeOrchestrator orchestrator,
         IKernelResolver? kernelResolver = null,
         IKernelChainProfiler? profiler = null,
@@ -39,6 +40,187 @@ namespace DotCompute.Core.Pipelines
         IKernelChainCacheService? cacheService = null,
         ILogger<KernelChainBuilder>? logger = null) : IKernelChainBuilder
     {
+        // LoggerMessage delegates - Event ID range 19000-19099 for KernelChainBuilder (Pipeline module)
+        private static readonly Action<ILogger, string, int, Exception?> _logKernelAdded =
+            LoggerMessage.Define<string, int>(
+                MsLogLevel.Debug,
+                new EventId(19000, nameof(Kernel)),
+                "Added kernel '{KernelName}' to chain at position {Position}");
+
+        private static readonly Action<ILogger, int, int, Exception?> _logParallelKernelsAdded =
+            LoggerMessage.Define<int, int>(
+                MsLogLevel.Debug,
+                new EventId(19001, nameof(Parallel)),
+                "Added {Count} kernels for parallel execution at position {Position}");
+
+        private static readonly Action<ILogger, int, Exception?> _logBranchAdded =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Debug,
+                new EventId(19002, nameof(Branch)),
+                "Added branch step at position {Position}");
+
+        private static readonly Action<ILogger, string, string, Exception?> _logCacheAdded =
+            LoggerMessage.Define<string, string>(
+                MsLogLevel.Debug,
+                new EventId(19003, nameof(Cache)),
+                "Added caching to step '{StepId}' with key '{CacheKey}'");
+
+        private static readonly Action<ILogger, string, Exception?> _logBackendSet =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(19004, nameof(OnBackend)),
+                "Set preferred backend to '{Backend}'");
+
+        private static readonly Action<ILogger, string, Exception?> _logAcceleratorSet =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(19005, nameof(OnAccelerator)),
+                "Set preferred accelerator to '{AcceleratorId}'");
+
+        private static readonly Action<ILogger, string, Exception?> _logProfilingEnabled =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(19006, nameof(WithProfiling)),
+                "Enabled profiling with name '{ProfileName}'");
+
+        private static readonly Action<ILogger, TimeSpan, Exception?> _logTimeoutSet =
+            LoggerMessage.Define<TimeSpan>(
+                MsLogLevel.Debug,
+                new EventId(19007, nameof(WithTimeout)),
+                "Set execution timeout to {Timeout}");
+
+        private static readonly Action<ILogger, int, Exception?> _logErrorHandlerAdded =
+            LoggerMessage.Define<int>(
+                MsLogLevel.Debug,
+                new EventId(19008, nameof(OnError)),
+                "Added error handler (total: {Count})");
+
+        private static readonly Action<ILogger, bool, Exception?> _logValidationSet =
+            LoggerMessage.Define<bool>(
+                MsLogLevel.Debug,
+                new EventId(19009, nameof(WithValidation)),
+                "Set validation enabled: {ValidationEnabled}");
+
+        private static readonly Action<ILogger, Exception> _logExecutionError =
+            LoggerMessage.Define(
+                MsLogLevel.Error,
+                new EventId(19010, "ExecutionError"),
+                "Error during kernel chain execution");
+
+        private static readonly Action<ILogger, Exception> _logProfilerStopError =
+            LoggerMessage.Define(
+                MsLogLevel.Warning,
+                new EventId(19011, "ProfilerStopError"),
+                "Error stopping profiler");
+
+        private static readonly Action<ILogger, string, Exception> _logStepContinueAfterError =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(19012, "StepContinueAfterError"),
+                "Continuing after error in step {StepId}");
+
+        private static readonly Action<ILogger, string, Exception> _logStepSkipAfterError =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(19013, "StepSkipAfterError"),
+                "Skipping step {StepId} after error");
+
+        private static readonly Action<ILogger, string, Exception> _logStepFallbackValue =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Warning,
+                new EventId(19014, "StepFallbackValue"),
+                "Using fallback value for step {StepId}");
+
+        private static readonly Action<ILogger, string, Exception?> _logCachedResult =
+            LoggerMessage.Define<string>(
+                MsLogLevel.Debug,
+                new EventId(19015, "CachedResult"),
+                "Using cached result for step {StepId}");
+
+        private static readonly Action<ILogger, Exception> _logErrorHandlerException =
+            LoggerMessage.Define(
+                MsLogLevel.Warning,
+                new EventId(19016, "ErrorHandlerException"),
+                "Error in error handler");
+
+        private static readonly Action<ILogger, Exception> _logProfilerStopErrorDisposal =
+            LoggerMessage.Define(
+                MsLogLevel.Warning,
+                new EventId(19017, "ProfilerStopErrorDisposal"),
+                "Error stopping profiler during disposal");
+
+        private static readonly Action<ILogger, Exception?> _logBuilderDisposed =
+            LoggerMessage.Define(
+                MsLogLevel.Debug,
+                new EventId(19018, "BuilderDisposed"),
+                "KernelChainBuilder disposed successfully");
+
+        private static readonly Action<ILogger, Exception> _logDisposalError =
+            LoggerMessage.Define(
+                MsLogLevel.Error,
+                new EventId(19019, "DisposalError"),
+                "Error during KernelChainBuilder disposal");
+
+        // Wrapper methods
+        private static void LogKernelAdded(ILogger logger, string kernelName, int position)
+            => _logKernelAdded(logger, kernelName, position, null);
+
+        private static void LogParallelKernelsAdded(ILogger logger, int count, int position)
+            => _logParallelKernelsAdded(logger, count, position, null);
+
+        private static void LogBranchAdded(ILogger logger, int position)
+            => _logBranchAdded(logger, position, null);
+
+        private static void LogCacheAdded(ILogger logger, string stepId, string cacheKey)
+            => _logCacheAdded(logger, stepId, cacheKey, null);
+
+        private static void LogBackendSet(ILogger logger, string backend)
+            => _logBackendSet(logger, backend, null);
+
+        private static void LogAcceleratorSet(ILogger logger, string acceleratorId)
+            => _logAcceleratorSet(logger, acceleratorId, null);
+
+        private static void LogProfilingEnabled(ILogger logger, string profileName)
+            => _logProfilingEnabled(logger, profileName, null);
+
+        private static void LogTimeoutSet(ILogger logger, TimeSpan timeout)
+            => _logTimeoutSet(logger, timeout, null);
+
+        private static void LogErrorHandlerAdded(ILogger logger, int count)
+            => _logErrorHandlerAdded(logger, count, null);
+
+        private static void LogValidationSet(ILogger logger, bool validationEnabled)
+            => _logValidationSet(logger, validationEnabled, null);
+
+        private static void LogExecutionError(ILogger logger, Exception ex)
+            => _logExecutionError(logger, ex);
+
+        private static void LogProfilerStopError(ILogger logger, Exception ex)
+            => _logProfilerStopError(logger, ex);
+
+        private static void LogStepContinueAfterError(ILogger logger, string stepId, Exception ex)
+            => _logStepContinueAfterError(logger, stepId, ex);
+
+        private static void LogStepSkipAfterError(ILogger logger, string stepId, Exception ex)
+            => _logStepSkipAfterError(logger, stepId, ex);
+
+        private static void LogStepFallbackValue(ILogger logger, string stepId, Exception ex)
+            => _logStepFallbackValue(logger, stepId, ex);
+
+        private static void LogCachedResult(ILogger logger, string stepId)
+            => _logCachedResult(logger, stepId, null);
+
+        private static void LogErrorHandlerException(ILogger logger, Exception ex)
+            => _logErrorHandlerException(logger, ex);
+
+        private static void LogProfilerStopErrorDisposal(ILogger logger, Exception ex)
+            => _logProfilerStopErrorDisposal(logger, ex);
+
+        private static void LogBuilderDisposed(ILogger logger)
+            => _logBuilderDisposed(logger, null);
+
+        private static void LogDisposalError(ILogger logger, Exception ex)
+            => _logDisposalError(logger, ex);
         private readonly IComputeOrchestrator _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         private readonly IKernelResolver? _kernelResolver = kernelResolver;
         private readonly IKernelChainProfiler? _profiler = profiler;
@@ -73,7 +255,10 @@ namespace DotCompute.Core.Pipelines
             };
 
             _steps.Add(step);
-            _logger?.LogDebug("Added kernel '{KernelName}' to chain at position {Position}", kernelName, _steps.Count - 1);
+            if (_logger != null)
+            {
+                LogKernelAdded(_logger, kernelName, _steps.Count - 1);
+            }
 
             return this;
         }
@@ -112,9 +297,10 @@ namespace DotCompute.Core.Pipelines
             };
 
             _steps.Add(parallelStep);
-            _logger?.LogDebug("Added {Count} kernels for parallel execution at position {Position}",
-
-                kernels.Length, _steps.Count - 1);
+            if (_logger != null)
+            {
+                LogParallelKernelsAdded(_logger, kernels.Length, _steps.Count - 1);
+            }
 
             return this;
         }
@@ -155,7 +341,10 @@ namespace DotCompute.Core.Pipelines
             };
 
             _steps.Add(branchStep);
-            _logger?.LogDebug("Added branch step at position {Position}", _steps.Count - 1);
+            if (_logger != null)
+            {
+                LogBranchAdded(_logger, _steps.Count - 1);
+            }
 
             return this;
         }
@@ -183,7 +372,10 @@ namespace DotCompute.Core.Pipelines
             lastStep.CacheKey = key;
             lastStep.CacheTtl = ttl;
 
-            _logger?.LogDebug("Added caching to step '{StepId}' with key '{CacheKey}'", lastStep.StepId, key);
+            if (_logger != null)
+            {
+                LogCacheAdded(_logger, lastStep.StepId, key);
+            }
 
             return this;
         }
@@ -203,7 +395,10 @@ namespace DotCompute.Core.Pipelines
             _preferredBackend = backendName;
             _preferredAccelerator = null; // Clear accelerator preference when backend is set
 
-            _logger?.LogDebug("Set preferred backend to '{Backend}'", backendName);
+            if (_logger != null)
+            {
+                LogBackendSet(_logger, backendName);
+            }
 
             return this;
         }
@@ -216,7 +411,10 @@ namespace DotCompute.Core.Pipelines
             _preferredAccelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
             _preferredBackend = null; // Clear backend preference when accelerator is set
 
-            _logger?.LogDebug("Set preferred accelerator to '{AcceleratorId}'", accelerator.Info.Id);
+            if (_logger != null)
+            {
+                LogAcceleratorSet(_logger, accelerator.Info.Id);
+            }
 
             return this;
         }
@@ -229,7 +427,10 @@ namespace DotCompute.Core.Pipelines
             _profilingEnabled = true;
             _profileName = profileName ?? string.Format(CultureInfo.InvariantCulture, "KernelChain_{0:N}", Guid.NewGuid());
 
-            _logger?.LogDebug("Enabled profiling with name '{ProfileName}'", _profileName);
+            if (_logger != null)
+            {
+                LogProfilingEnabled(_logger, _profileName);
+            }
 
             return this;
         }
@@ -248,7 +449,10 @@ namespace DotCompute.Core.Pipelines
 
             _timeout = timeout;
 
-            _logger?.LogDebug("Set execution timeout to {Timeout}", timeout);
+            if (_logger != null)
+            {
+                LogTimeoutSet(_logger, timeout);
+            }
 
             return this;
         }
@@ -262,7 +466,10 @@ namespace DotCompute.Core.Pipelines
 
             _errorHandlers.Add(errorHandler);
 
-            _logger?.LogDebug("Added error handler (total: {Count})", _errorHandlers.Count);
+            if (_logger != null)
+            {
+                LogErrorHandlerAdded(_logger, _errorHandlers.Count);
+            }
 
             return this;
         }
@@ -274,7 +481,10 @@ namespace DotCompute.Core.Pipelines
 
             _validationEnabled = validateInputs;
 
-            _logger?.LogDebug("Set validation enabled: {ValidationEnabled}", _validationEnabled);
+            if (_logger != null)
+            {
+                LogValidationSet(_logger, _validationEnabled);
+            }
 
             return this;
         }
@@ -364,7 +574,10 @@ namespace DotCompute.Core.Pipelines
             catch (Exception ex)
             {
                 errors.Add(ex);
-                _logger?.LogError(ex, "Error during kernel chain execution");
+                if (_logger != null)
+                {
+                    LogExecutionError(_logger, ex);
+                }
             }
             finally
             {
@@ -377,7 +590,10 @@ namespace DotCompute.Core.Pipelines
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogWarning(ex, "Error stopping profiler");
+                        if (_logger != null)
+                        {
+                            LogProfilerStopError(_logger, ex);
+                        }
                     }
                 }
 
@@ -439,17 +655,26 @@ namespace DotCompute.Core.Pipelines
                     switch (handlerResult)
                     {
                         case ErrorHandlingStrategy.Continue:
-                            _logger?.LogWarning(ex, "Continuing after error in step {StepId}", step.StepId);
+                            if (_logger != null)
+                            {
+                                LogStepContinueAfterError(_logger, step.StepId, ex);
+                            }
                             continue;
                         case ErrorHandlingStrategy.Skip:
-                            _logger?.LogWarning(ex, "Skipping step {StepId} after error", step.StepId);
+                            if (_logger != null)
+                            {
+                                LogStepSkipAfterError(_logger, step.StepId, ex);
+                            }
                             continue;
                         case ErrorHandlingStrategy.Abort:
                             errors.Add(ex);
                             throw;
                         case ErrorHandlingStrategy.Fallback:
                             currentResult = GetFallbackValue(step);
-                            _logger?.LogWarning(ex, "Using fallback value for step {StepId}", step.StepId);
+                            if (_logger != null)
+                            {
+                                LogStepFallbackValue(_logger, step.StepId, ex);
+                            }
                             continue;
                         case ErrorHandlingStrategy.Retry:
                             // Simple retry logic - could be enhanced with exponential backoff
@@ -497,7 +722,10 @@ namespace DotCompute.Core.Pipelines
                     {
                         result = cachedResult;
                         wasCached = true;
-                        _logger?.LogDebug("Using cached result for step {StepId}", step.StepId);
+                        if (_logger != null)
+                        {
+                            LogCachedResult(_logger, step.StepId);
+                        }
                     }
                 }
 
@@ -649,7 +877,10 @@ namespace DotCompute.Core.Pipelines
                 }
                 catch (Exception handlerEx)
                 {
-                    _logger?.LogWarning(handlerEx, "Error in error handler");
+                    if (_logger != null)
+                    {
+                        LogErrorHandlerException(_logger, handlerEx);
+                    }
                 }
             }
 
@@ -753,16 +984,25 @@ namespace DotCompute.Core.Pipelines
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogWarning(ex, "Error stopping profiler during disposal");
+                        if (_logger != null)
+                        {
+                            LogProfilerStopErrorDisposal(_logger, ex);
+                        }
                     }
                 }
 
                 _disposed = true;
-                _logger?.LogDebug("KernelChainBuilder disposed successfully");
+                if (_logger != null)
+                {
+                    LogBuilderDisposed(_logger);
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error during KernelChainBuilder disposal");
+                if (_logger != null)
+                {
+                    LogDisposalError(_logger, ex);
+                }
                 throw;
             }
         }

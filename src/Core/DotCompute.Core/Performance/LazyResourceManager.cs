@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Performance;
 
@@ -18,7 +19,7 @@ namespace DotCompute.Core.Performance;
 /// - Async-first design with cancellation support
 /// Target: 70-90% reduction in startup time and memory usage
 /// </summary>
-public sealed class LazyResourceManager<T> : IDisposable where T : class
+public sealed partial class LazyResourceManager<T> : IDisposable where T : class
 {
     private readonly Func<CancellationToken, Task<T>> _factory;
     private readonly Func<T, Task>? _disposer;
@@ -36,6 +37,125 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
     private long _totalDisposals;
     private long _averageInitializationTime;
     private volatile bool _disposed;
+
+    // LoggerMessage delegates (Event ID range: 15000-15099 for LazyResourceManager)
+    private static readonly Action<ILogger, string, object, Exception?> _logManagerInitialized =
+        LoggerMessage.Define<string, object>(
+            MsLogLevel.Debug,
+            new EventId(15001, nameof(LogManagerInitialized)),
+            "Lazy resource manager initialized for type {TypeName} with configuration {Config}");
+
+    private static readonly Action<ILogger, string, Exception?> _logResourceInvalidated =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(15002, nameof(LogResourceInvalidated)),
+            "Invalidated resource with key '{Key}'");
+
+    private static readonly Action<ILogger, int, Exception?> _logAllResourcesInvalidated =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Debug,
+            new EventId(15003, nameof(LogAllResourcesInvalidated)),
+            "Invalidated all {Count} resources");
+
+    private static readonly Action<ILogger, string, Exception?> _logResourceInitializing =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(15004, nameof(LogResourceInitializing)),
+            "Initializing resource with key '{Key}'");
+
+    private static readonly Action<ILogger, string, double, Exception?> _logResourceInitialized =
+        LoggerMessage.Define<string, double>(
+            MsLogLevel.Debug,
+            new EventId(15005, nameof(LogResourceInitialized)),
+            "Successfully initialized resource '{Key}' in {Time}ms");
+
+    private static readonly Action<ILogger, string, Exception?> _logResourceInitializationFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Error,
+            new EventId(15006, nameof(LogResourceInitializationFailed)),
+            "Failed to initialize resource with key '{Key}'");
+
+    private static readonly Action<ILogger, string, Exception?> _logResourceDisposed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Trace,
+            new EventId(15007, nameof(LogResourceDisposed)),
+            "Disposed resource with key '{Key}'");
+
+    private static readonly Action<ILogger, string, Exception?> _logResourceDisposalError =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(15008, nameof(LogResourceDisposalError)),
+            "Error disposing resource with key '{Key}'");
+
+    private static readonly Action<ILogger, Exception?> _logMaintenanceError =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(15009, nameof(LogMaintenanceError)),
+            "Error during resource manager maintenance");
+
+    private static readonly Action<ILogger, int, Exception?> _logExpiredResourcesCleanup =
+        LoggerMessage.Define<int>(
+            MsLogLevel.Debug,
+            new EventId(15010, nameof(LogExpiredResourcesCleanup)),
+            "Cleaned up {Count} expired resources");
+
+    private static readonly Action<ILogger, long, double, int, double, Exception?> _logStatistics =
+        LoggerMessage.Define<long, double, int, double>(
+            MsLogLevel.Trace,
+            new EventId(15011, nameof(LogStatistics)),
+            "Resource manager stats - Requests: {Requests}, Hit Rate: {HitRate:P2}, Active: {Active}, Avg Init Time: {InitTime}ms");
+
+    private static readonly Action<ILogger, Exception?> _logManagerDisposalError =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(15012, nameof(LogManagerDisposalError)),
+            "Error disposing resources during manager disposal");
+
+    private static readonly Action<ILogger, string, Exception?> _logManagerDisposed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(15013, nameof(LogManagerDisposed)),
+            "Lazy resource manager disposed for type {Type}");
+
+    // LoggerMessage wrapper methods
+    private static void LogManagerInitialized(ILogger logger, string typeName, object config)
+        => _logManagerInitialized(logger, typeName, config, null);
+
+    private static void LogResourceInvalidated(ILogger logger, string key)
+        => _logResourceInvalidated(logger, key, null);
+
+    private static void LogAllResourcesInvalidated(ILogger logger, int count)
+        => _logAllResourcesInvalidated(logger, count, null);
+
+    private static void LogResourceInitializing(ILogger logger, string key)
+        => _logResourceInitializing(logger, key, null);
+
+    private static void LogResourceInitialized(ILogger logger, string key, double timeMs)
+        => _logResourceInitialized(logger, key, timeMs, null);
+
+    private static void LogResourceInitializationFailed(ILogger logger, string key, Exception ex)
+        => _logResourceInitializationFailed(logger, key, ex);
+
+    private static void LogResourceDisposed(ILogger logger, string key)
+        => _logResourceDisposed(logger, key, null);
+
+    private static void LogResourceDisposalError(ILogger logger, string key, Exception ex)
+        => _logResourceDisposalError(logger, key, ex);
+
+    private static void LogMaintenanceError(ILogger logger, Exception ex)
+        => _logMaintenanceError(logger, ex);
+
+    private static void LogExpiredResourcesCleanup(ILogger logger, int count)
+        => _logExpiredResourcesCleanup(logger, count, null);
+
+    private static void LogStatistics(ILogger logger, long requests, double hitRate, int active, double initTimeMs)
+        => _logStatistics(logger, requests, hitRate, active, initTimeMs, null);
+
+    private static void LogManagerDisposalError(ILogger logger, Exception ex)
+        => _logManagerDisposalError(logger, ex);
+
+    private static void LogManagerDisposed(ILogger logger, string typeName)
+        => _logManagerDisposed(logger, typeName, null);
 
     /// <summary>
     /// Initializes a new lazy resource manager.
@@ -62,8 +182,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
         _maintenanceTimer = new Timer(PerformMaintenance, null,
             _config.MaintenanceInterval, _config.MaintenanceInterval);
 
-        _logger.LogDebug("Lazy resource manager initialized for type {Type} with configuration {Config}",
-            typeof(T).Name, _config);
+        LogManagerInitialized(_logger, typeof(T).Name, _config);
     }
 
     /// <summary>
@@ -209,7 +328,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
                 await DisposeResourceAsync(resource).ConfigureAwait(false);
             }
 
-            _logger.LogDebug("Invalidated resource with key '{Key}'", key);
+            LogResourceInvalidated(_logger, key);
         }
     }
 
@@ -234,7 +353,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             await Task.WhenAll(disposalTasks).ConfigureAwait(false);
         }
 
-        _logger.LogDebug("Invalidated all {Count} resources", resources.Length);
+        LogAllResourcesInvalidated(_logger, resources.Length);
     }
 
     /// <summary>
@@ -295,7 +414,7 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
             // Initialize the resource
             var startTime = DateTimeOffset.UtcNow;
-            _logger.LogDebug("Initializing resource with key '{Key}'", key);
+            LogResourceInitializing(_logger, key);
 
             try
             {
@@ -307,14 +426,13 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
                 _ = Interlocked.Increment(ref _totalInitializations);
                 RecordInitializationTime(initializationTime);
 
-                _logger.LogDebug("Successfully initialized resource '{Key}' in {Time}ms",
-                    key, initializationTime.TotalMilliseconds);
+                LogResourceInitialized(_logger, key, initializationTime.TotalMilliseconds);
 
                 return resource;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize resource with key '{Key}'", key);
+                LogResourceInitializationFailed(_logger, key, ex);
 
                 // Remove failed resource from cache
                 _ = _resources.TryRemove(key, out _);
@@ -351,11 +469,11 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             }
 
             _ = Interlocked.Increment(ref _totalDisposals);
-            _logger.LogTrace("Disposed resource with key '{Key}'", resource.Key);
+            LogResourceDisposed(_logger, resource.Key);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error disposing resource with key '{Key}'", resource.Key);
+            LogResourceDisposalError(_logger, resource.Key, ex);
         }
     }
 
@@ -372,12 +490,12 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             _ = Task.Run(async () =>
             {
                 await CleanupExpiredResourcesAsync().ConfigureAwait(false);
-                LogStatistics();
+                LogStatisticsInternal();
             });
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during resource manager maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
@@ -407,17 +525,14 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
 
         if (expiredKeys.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} expired resources", expiredKeys.Count);
+            LogExpiredResourcesCleanup(_logger, expiredKeys.Count);
         }
     }
 
-    private void LogStatistics()
+    private void LogStatisticsInternal()
     {
         var stats = Statistics;
-        _logger.LogTrace(
-            "Resource manager stats - Requests: {Requests}, Hit Rate: {HitRate:P2}, " +
-            "Active: {Active}, Avg Init Time: {InitTime}ms",
-            stats.TotalRequests, stats.HitRate, stats.ActiveResources,
+        LogStatistics(_logger, stats.TotalRequests, stats.HitRate, stats.ActiveResources,
             stats.AverageInitializationTime.TotalMilliseconds);
     }
 
@@ -474,11 +589,11 @@ public sealed class LazyResourceManager<T> : IDisposable where T : class
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing resources during manager disposal");
+                LogManagerDisposalError(_logger, ex);
             }
 
             _resources.Clear();
-            _logger.LogDebug("Lazy resource manager disposed for type {Type}", typeof(T).Name);
+            LogManagerDisposed(_logger, typeof(T).Name);
         }
     }
 }

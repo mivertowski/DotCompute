@@ -64,7 +64,7 @@ public class PluginRecoveryConfiguration
     /// <summary>
     /// List of critical exceptions that should trigger immediate recovery
     /// </summary>
-    public HashSet<string> CriticalExceptionTypes { get; set; } =
+    public HashSet<string> CriticalExceptionTypes { get; } =
     [
         typeof(OutOfMemoryException).FullName!,
         typeof(AccessViolationException).FullName!,

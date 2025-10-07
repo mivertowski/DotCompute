@@ -676,7 +676,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the device pairs.
         /// </summary>
         /// <value>The device pairs.</value>
-        public IList<P2PDevicePair> DevicePairs { get; set; } = [];
+        public IList<P2PDevicePair> DevicePairs { get; } = [];
     }
 
     /// <summary>

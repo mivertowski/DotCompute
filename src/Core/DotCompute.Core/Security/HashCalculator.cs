@@ -83,7 +83,7 @@ public sealed class HashCalculator : IDisposable
                         DateTimeOffset.UtcNow - cachedResult.CalculationTime < TimeSpan.FromMinutes(30))
                     {
                         _logger.LogDebugMessage($"Hash result retrieved from cache: {algorithm}");
-                        return cachedResult.Output;
+                        return cachedResult.Result;
                     }
                 }
             }
@@ -156,10 +156,10 @@ public sealed class HashCalculator : IDisposable
 
             foreach (var item in results)
             {
-                result.HashResults[item.Algorithm] = item.Output;
-                if (!item.Output.IsSuccessful)
+                result.HashResults[item.Algorithm] = item.Result;
+                if (!item.Result.IsSuccessful)
                 {
-                    result.Errors.Add($"{item.Algorithm}: {item.Output.ErrorMessage}");
+                    result.Errors.Add($"{item.Algorithm}: {item.Result.ErrorMessage}");
                 }
             }
 
@@ -531,7 +531,7 @@ public sealed class HashAlgorithmValidationResult
     /// <inheritdoc/>
     public IList<string> SecurityIssues { get; init; } = [];
     /// <inheritdoc/>
-    public IList<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; } = [];
 }
 
 /// <summary>

@@ -19,7 +19,7 @@ namespace DotCompute.Core.Execution.Configuration
         /// Device IDs should follow the format "device_type:device_index" (e.g., "cuda:0", "opencl:1").
         /// </summary>
         /// <value>
-        /// An array of device identifier strings, or null to use all available devices.
+        /// A read-only list of device identifier strings, or null to use all available devices.
         /// </value>
         /// <example>
         /// <code>
@@ -29,7 +29,7 @@ namespace DotCompute.Core.Execution.Configuration
         /// };
         /// </code>
         /// </example>
-        public string[]? TargetDevices { get; set; }
+        public IReadOnlyList<string>? TargetDevices { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of devices to use.

@@ -62,7 +62,7 @@ public sealed class CertificateValidator : IDisposable
                     DateTimeOffset.UtcNow - cachedResult.ValidationTime < TimeSpan.FromMinutes(15))
                 {
                     _logger.LogDebugMessage($"Certificate validation result retrieved from cache: {thumbprint}");
-                    return cachedResult.Output;
+                    return cachedResult.Result;
                 }
             }
 
@@ -124,7 +124,10 @@ public sealed class CertificateValidator : IDisposable
             if (!basicValidation.IsValid)
             {
                 result.IsValidForUsage = false;
-                result.Issues.AddRange(basicValidation.Errors);
+                foreach (var error in basicValidation.Errors)
+                {
+                    result.Issues.Add(error);
+                }
                 return result;
             }
 
@@ -205,12 +208,14 @@ public sealed class CertificateValidator : IDisposable
             };
 
             // Add chain elements to the collection
-            result.ChainElements.AddRange(chain.ChainElements.Cast<X509ChainElement>()
-                .Select(element => new ChainElementInfo
+            foreach (var element in chain.ChainElements.Cast<X509ChainElement>())
+            {
+                result.ChainElements.Add(new ChainElementInfo
                 {
                     Certificate = element.Certificate,
                     Status = element.ChainElementStatus
-                }));
+                });
+            }
 
             // Collect chain status information
             foreach (var status in chain.ChainStatus)
@@ -263,7 +268,10 @@ public sealed class CertificateValidator : IDisposable
         var chainValidation = ValidateCertificateChain(certificate, additionalCertificates);
         if (!chainValidation.IsValid)
         {
-            result.Errors.AddRange(chainValidation.ChainStatus);
+            foreach (var status in chainValidation.ChainStatus)
+            {
+                result.Errors.Add(status);
+            }
         }
         else
         {
@@ -451,10 +459,6 @@ public sealed class CertificateValidator : IDisposable
             _logger.LogDebugMessage("Certificate Validator disposed");
         }
     }
-}
-/// <summary>
-/// An certificate usage enumeration.
-/// </summary>
 
 #region Supporting Types
 
@@ -608,3 +612,4 @@ internal sealed class CachedCertificateValidation
 }
 
 #endregion
+}

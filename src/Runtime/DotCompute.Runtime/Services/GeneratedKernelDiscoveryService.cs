@@ -83,7 +83,7 @@ public class GeneratedKernelDiscoveryService(ILogger<GeneratedKernelDiscoverySer
         {
             // Look for generated KernelRegistry classes
             var kernelRegistryTypes = assembly.GetTypes()
-                .Where(t => t.Name == "KernelRegistry" && t.Namespace?.EndsWith(".Generated") == true)
+                .Where(t => t.Name == "KernelRegistry" && t.Namespace?.EndsWith(".Generated", StringComparison.Ordinal) == true)
                 .ToList();
 
             foreach (var registryType in kernelRegistryTypes)

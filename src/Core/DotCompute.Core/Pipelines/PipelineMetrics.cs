@@ -113,7 +113,7 @@ namespace DotCompute.Core.Pipelines
                 }
 
                 // Convert to Abstractions type
-                var groupedMetrics = recent.GroupBy(m => m.Name);
+                var groupedMetrics = recent.GroupBy(m => m.MetricName);
                 var result = new List<AbsTimeSeriesMetric>();
 
                 foreach (var group in groupedMetrics)

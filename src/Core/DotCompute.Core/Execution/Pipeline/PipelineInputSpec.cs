@@ -15,7 +15,7 @@ namespace DotCompute.Core.Execution.Pipeline
         public required string Name { get; set; }
 
         /// <summary>Gets or sets the tensor dimensions.</summary>
-        public required int[] Dimensions { get; set; }
+        public required IReadOnlyList<int> Dimensions { get; init; }
 
         /// <summary>Gets or sets the tensor data type.</summary>
         public required Type DataType { get; set; }
@@ -45,12 +45,12 @@ namespace DotCompute.Core.Execution.Pipeline
     {
         /// <summary>
         /// Gets or sets the input tensor descriptions.
-        /// An array of tensor specifications that define the structure, format,
+        /// A read-only list of tensor specifications that define the structure, format,
         /// and characteristics of input data. Each tensor description provides
         /// metadata needed for proper memory allocation, data validation,
         /// and device-specific optimizations during pipeline execution.
         /// </summary>
-        public required TensorDescription<T>[] Tensors { get; set; }
+        public required IReadOnlyList<TensorDescription<T>> Tensors { get; init; }
 
         /// <summary>
         /// Gets or sets the streaming configuration.

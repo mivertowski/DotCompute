@@ -168,7 +168,7 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         return new ParallelStage(
             $"Parallel_{Guid.NewGuid():N}",
             "Merged Parallel Execution",
-            stages,
+            [.. stages],
             Environment.ProcessorCount,
             SynchronizationMode.WaitAll,
             true);

@@ -18,8 +18,180 @@ namespace DotCompute.Core.Recovery;
 /// Comprehensive GPU error recovery manager with device hang detection,
 /// kernel timeout handling, and graceful degradation capabilities
 /// </summary>
-public sealed class GpuRecoveryManager : IDisposable
+public sealed partial class GpuRecoveryManager : IDisposable
 {
+    // LoggerMessage delegates - Event ID range 13100-13111 for GpuRecoveryManager
+    private static readonly Action<ILogger, string, Exception?> _logManagerInitialized =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13100, nameof(LogManagerInitialized)),
+            "GPU Recovery Manager initialized with configuration: {Config}");
+
+    private static void LogManagerInitialized(ILogger logger, string config)
+        => _logManagerInitialized(logger, config, null);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logGpuErrorDetected =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Warning,
+            new EventId(13101, nameof(LogGpuErrorDetected)),
+            "GPU error detected on device {DeviceId}: {ErrorMessage}");
+
+    private static void LogGpuErrorDetected(ILogger logger, string deviceId, string errorMessage)
+        => _logGpuErrorDetected(logger, deviceId, errorMessage, null);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logRecoveryStrategySelected =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(13102, nameof(LogRecoveryStrategySelected)),
+            "Using recovery strategy {Strategy} for device {DeviceId}");
+
+    private static void LogRecoveryStrategySelected(ILogger logger, string strategy, string deviceId)
+        => _logRecoveryStrategySelected(logger, strategy, deviceId, null);
+
+    private static readonly Action<ILogger, string, string, long, Exception?> _logRecoverySuccessful =
+        LoggerMessage.Define<string, string, long>(
+            LogLevel.Information,
+            new EventId(13103, nameof(LogRecoverySuccessful)),
+            "GPU recovery successful for device {DeviceId} using {Strategy} in {DurationMs}ms");
+
+    private static void LogRecoverySuccessful(ILogger logger, string deviceId, string strategy, long durationMs)
+        => _logRecoverySuccessful(logger, deviceId, strategy, durationMs, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logRecoveryException =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(13104, nameof(LogRecoveryException)),
+            "Exception during GPU recovery for device {DeviceId}");
+
+    private static void LogRecoveryException(ILogger logger, string deviceId, Exception exception)
+        => _logRecoveryException(logger, deviceId, exception);
+
+    private static readonly Action<ILogger, string, Exception?> _logDeviceResetAttempt =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(13105, nameof(LogDeviceResetAttempt)),
+            "Attempting device reset for {DeviceId}");
+
+    private static void LogDeviceResetAttempt(ILogger logger, string deviceId)
+        => _logDeviceResetAttempt(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logDeviceResetCompleted =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13106, nameof(LogDeviceResetCompleted)),
+            "Device reset completed for {DeviceId}");
+
+    private static void LogDeviceResetCompleted(ILogger logger, string deviceId)
+        => _logDeviceResetCompleted(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logDeviceResetFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(13107, nameof(LogDeviceResetFailed)),
+            "Device reset failed for {DeviceId}");
+
+    private static void LogDeviceResetFailed(ILogger logger, string deviceId, Exception exception)
+        => _logDeviceResetFailed(logger, deviceId, exception);
+
+    private static readonly Action<ILogger, string, Exception?> _logSimpleRetry =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13108, nameof(LogSimpleRetry)),
+            "Attempting simple retry for device {DeviceId}");
+
+    private static void LogSimpleRetry(ILogger logger, string deviceId)
+        => _logSimpleRetry(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logMemoryRecovery =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13109, nameof(LogMemoryRecovery)),
+            "Performing memory recovery for device {DeviceId}");
+
+    private static void LogMemoryRecovery(ILogger logger, string deviceId)
+        => _logMemoryRecovery(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logKernelTermination =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13110, nameof(LogKernelTermination)),
+            "Terminating hanging kernels for device {DeviceId}");
+
+    private static void LogKernelTermination(ILogger logger, string deviceId)
+        => _logKernelTermination(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logContextReset =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(13111, nameof(LogContextReset)),
+            "Resetting context for device {DeviceId}");
+
+    private static void LogContextReset(ILogger logger, string deviceId)
+        => _logContextReset(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logDeviceResetRecovery =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(13112, nameof(LogDeviceResetRecovery)),
+            "Performing device reset recovery for device {DeviceId}");
+
+    private static void LogDeviceResetRecovery(ILogger logger, string deviceId)
+        => _logDeviceResetRecovery(logger, deviceId, null);
+
+    private static readonly Action<ILogger, string, int, Exception?> _logDeviceHealthDegraded =
+        LoggerMessage.Define<string, int>(
+            LogLevel.Warning,
+            new EventId(13113, nameof(LogDeviceHealthDegraded)),
+            "Device {DeviceId} health degraded: {ConsecutiveFailures} consecutive failures");
+
+    private static void LogDeviceHealthDegraded(ILogger logger, string deviceId, int consecutiveFailures)
+        => _logDeviceHealthDegraded(logger, deviceId, consecutiveFailures, null);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logKernelHanging =
+        LoggerMessage.Define<string, string>(
+            LogLevel.Warning,
+            new EventId(13114, nameof(LogKernelHanging)),
+            "Kernel {KernelId} appears to be hanging (running for {ExecutionTime})");
+
+    private static void LogKernelHanging(ILogger logger, string kernelId, string executionTime)
+        => _logKernelHanging(logger, kernelId, executionTime, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logKernelCancelFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(13115, nameof(LogKernelCancelFailed)),
+            "Failed to auto-cancel hanging kernel {KernelId}");
+
+    private static void LogKernelCancelFailed(ILogger logger, string kernelId, Exception exception)
+        => _logKernelCancelFailed(logger, kernelId, exception);
+
+    private static readonly Action<ILogger, Exception?> _logHealthCheckError =
+        LoggerMessage.Define(
+            LogLevel.Error,
+            new EventId(13116, nameof(LogHealthCheckError)),
+            "Error during GPU health check");
+
+    private static void LogHealthCheckError(ILogger logger, Exception exception)
+        => _logHealthCheckError(logger, exception);
+
+    private static readonly Action<ILogger, Exception?> _logManagerDisposed =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(13117, nameof(LogManagerDisposed)),
+            "GPU Recovery Manager disposed");
+
+    private static void LogManagerDisposed(ILogger logger)
+        => _logManagerDisposed(logger, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logMonitorDisposeError =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(13118, nameof(LogMonitorDisposeError)),
+            "Error disposing kernel monitor {KernelId}");
+
+    private static void LogMonitorDisposeError(ILogger logger, string kernelId, Exception exception)
+        => _logMonitorDisposeError(logger, kernelId, exception);
+
     private readonly ILogger<GpuRecoveryManager> _logger;
     private readonly ConcurrentDictionary<string, DeviceRecoveryState> _deviceStates;
     private readonly ConcurrentDictionary<string, KernelExecutionMonitor> _kernelMonitors;
@@ -46,7 +218,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             _config.HealthCheckInterval, _config.HealthCheckInterval);
 
-        _logger.LogInfoMessage("GPU Recovery Manager initialized with configuration: {_config}");
+        LogManagerInitialized(_logger, _config.ToString() ?? "default");
     }
 
     /// <summary>
@@ -69,7 +241,7 @@ public sealed class GpuRecoveryManager : IDisposable
             Timestamp = DateTimeOffset.UtcNow
         };
 
-        _logger.LogWarningMessage("GPU error detected on device {DeviceId}: {deviceId, error.Message}");
+        LogGpuErrorDetected(_logger, deviceId, error.Message);
 
         try
         {
@@ -79,7 +251,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             // Determine recovery strategy based on error type and device state
             var strategy = DetermineRecoveryStrategy(error, deviceState);
-            _logger.LogInfoMessage("Using recovery strategy {Strategy} for device {strategy, deviceId}");
+            LogRecoveryStrategySelected(_logger, strategy.ToString(), deviceId);
 
             var result = await ExecuteRecoveryStrategyAsync(strategy, context, deviceState, cancellationToken);
 
@@ -90,7 +262,7 @@ public sealed class GpuRecoveryManager : IDisposable
             if (result.Success)
             {
                 deviceState.RecordSuccessfulRecovery();
-                _logger.LogInfoMessage($"GPU recovery successful for device {deviceId} using {strategy} in {stopwatch.ElapsedMilliseconds}ms");
+                LogRecoverySuccessful(_logger, deviceId, strategy.ToString(), stopwatch.ElapsedMilliseconds);
             }
             else
             {
@@ -105,7 +277,7 @@ public sealed class GpuRecoveryManager : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogErrorMessage(ex, $"Exception during GPU recovery for device {deviceId}");
+            LogRecoveryException(_logger, deviceId, ex);
             return new RecoveryResult
             {
                 Success = false,
@@ -141,7 +313,7 @@ public sealed class GpuRecoveryManager : IDisposable
     /// </summary>
     public async Task<bool> ResetDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
-        _logger.LogWarningMessage("Attempting device reset for {deviceId}");
+        LogDeviceResetAttempt(_logger, deviceId);
 
         try
         {
@@ -157,12 +329,12 @@ public sealed class GpuRecoveryManager : IDisposable
             // Platform-specific device reset would be implemented here
             await Task.Delay(100, cancellationToken); // Simulate reset time
 
-            _logger.LogInfoMessage("Device reset completed for {deviceId}");
+            LogDeviceResetCompleted(_logger, deviceId);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Device reset failed for {deviceId}");
+            LogDeviceResetFailed(_logger, deviceId, ex);
             return false;
         }
     }
@@ -195,11 +367,23 @@ public sealed class GpuRecoveryManager : IDisposable
         return new DeviceHealthReport
         {
             Timestamp = DateTimeOffset.UtcNow,
-            DeviceHealth = deviceHealth,
+            DeviceHealth = deviceHealth.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new DeviceHealth
+                {
+                    DeviceId = kvp.Key,
+                    Status = kvp.Value.IsHealthy ? DeviceStatus.Healthy :
+                             kvp.Value.ErrorRate > 0.5 ? DeviceStatus.Critical :
+                             kvp.Value.ErrorRate > 0.2 ? DeviceStatus.Warning :
+                             DeviceStatus.Healthy,
+                    HealthScore = kvp.Value.IsHealthy ? 1.0 : Math.Max(0.0, 1.0 - kvp.Value.ErrorRate),
+                    ErrorCount = kvp.Value.ConsecutiveFailures,
+                    LastError = kvp.Value.LastError?.Message,
+                    LastActivity = kvp.Value.LastHealthCheck
+                }
+            ),
             OverallHealth = CalculateOverallHealth(deviceHealth),
-            ActiveKernels = _kernelMonitors.Count,
-            TotalRecoveryAttempts = _metrics.TotalAttempts,
-            GlobalSuccessRate = _metrics.SuccessRate
+            ActiveKernels = _kernelMonitors.Count
         };
     }
 
@@ -241,7 +425,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> SimpleRetryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInfoMessage("Attempting simple retry for device {context.DeviceId}");
+        LogSimpleRetry(_logger, context.DeviceId);
 
 
         await Task.Delay(_config.RetryDelay, cancellationToken);
@@ -257,7 +441,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> MemoryRecoveryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInfoMessage("Performing memory recovery for device {context.DeviceId}");
+        LogMemoryRecovery(_logger, context.DeviceId);
 
         // Force garbage collection
 
@@ -281,7 +465,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> KernelTerminationAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInfoMessage("Terminating hanging kernels for device {context.DeviceId}");
+        LogKernelTermination(_logger, context.DeviceId);
 
 
         await CancelDeviceKernelsAsync(context.DeviceId, cancellationToken);
@@ -297,7 +481,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> ContextResetAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogInfoMessage("Resetting context for device {context.DeviceId}");
+        LogContextReset(_logger, context.DeviceId);
 
 
         if (_deviceStates.TryGetValue(context.DeviceId, out var deviceState))
@@ -319,7 +503,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
     private async Task<RecoveryResult> DeviceResetRecoveryAsync(GpuRecoveryContext context, CancellationToken cancellationToken)
     {
-        _logger.LogWarningMessage("Performing device reset recovery for device {context.DeviceId}");
+        LogDeviceResetRecovery(_logger, context.DeviceId);
 
 
         var success = await ResetDeviceAsync(context.DeviceId, cancellationToken);
@@ -371,7 +555,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
                 if (!deviceState.IsHealthy && deviceState.ConsecutiveFailures > _config.MaxConsecutiveFailures)
                 {
-                    _logger.LogWarningMessage($"Device {deviceState.DeviceId} health degraded: {deviceState.ConsecutiveFailures} consecutive failures");
+                    LogDeviceHealthDegraded(_logger, deviceState.DeviceId, deviceState.ConsecutiveFailures);
                 }
             }
 
@@ -382,7 +566,7 @@ public sealed class GpuRecoveryManager : IDisposable
 
             foreach (var hangingKernel in hangingKernels)
             {
-                _logger.LogWarningMessage($"Kernel {hangingKernel.KernelId} appears to be hanging (running for {hangingKernel.Timings})");
+                LogKernelHanging(_logger, hangingKernel.KernelId, hangingKernel.ExecutionTime.ToString());
 
                 // Auto-cancel hanging kernels
 
@@ -394,14 +578,14 @@ public sealed class GpuRecoveryManager : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogErrorMessage(ex, $"Failed to auto-cancel hanging kernel {hangingKernel.KernelId}");
+                        LogKernelCancelFailed(_logger, hangingKernel.KernelId, ex);
                     }
                 });
             }
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during GPU health check");
+            LogHealthCheckError(_logger, ex);
         }
     }
 
@@ -436,13 +620,13 @@ public sealed class GpuRecoveryManager : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error disposing kernel monitor {KernelId}", monitor.KernelId);
+                    LogMonitorDisposeError(_logger, monitor.KernelId, ex);
                 }
             }
 
 
             _disposed = true;
-            _logger.LogInfoMessage("GPU Recovery Manager disposed");
+            LogManagerDisposed(_logger);
         }
     }
 }

@@ -46,7 +46,7 @@ internal static class KernelAnalysisHelpers
         var hasSpanParameter = false;
         foreach (var p in methodSymbol.Parameters)
         {
-            if (p.Type.ToString().Contains("Span"))
+            if (p.Type.ToString().IndexOf("Span", StringComparison.Ordinal) >= 0)
             {
                 hasSpanParameter = true;
                 break;
@@ -80,8 +80,8 @@ internal static class KernelAnalysisHelpers
     public static bool IsValidKernelParameterType(ITypeSymbol type)
     {
         var typeName = type.ToDisplayString();
-        return typeName.Contains("Span<") ||
-               typeName.Contains("ReadOnlySpan<") ||
+        return typeName.IndexOf("Span<", StringComparison.Ordinal) >= 0 ||
+               typeName.IndexOf("ReadOnlySpan<", StringComparison.Ordinal) >= 0 ||
                type.SpecialType is SpecialType.System_Int32 or SpecialType.System_Single or SpecialType.System_Double;
     }
 
@@ -127,8 +127,8 @@ internal static class KernelAnalysisHelpers
         }
 
         var exprText = access.ArgumentList.Arguments[0].Expression.ToString();
-        return exprText.Contains("*") ||
-               exprText.Contains("%");
+        return exprText.IndexOf("*", StringComparison.Ordinal) >= 0 ||
+               exprText.IndexOf("%", StringComparison.Ordinal) >= 0;
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ internal static class KernelAnalysisHelpers
                 loopCount++;
             }
             else if (node is InvocationExpressionSyntax inv &&
-                     inv.ToString().Contains("Math."))
+                     inv.ToString().IndexOf("Math.", StringComparison.Ordinal) >= 0)
             {
                 mathOperations++;
             }
@@ -254,7 +254,7 @@ internal static class KernelAnalysisHelpers
     {
         return method.DescendantNodes()
             .OfType<MemberAccessExpressionSyntax>()
-            .Any(m => m.ToString().Contains("Kernel.ThreadId") || m.ToString().Contains("ThreadId."));
+            .Any(m => m.ToString().IndexOf("Kernel.ThreadId", StringComparison.Ordinal) >= 0 || m.ToString().IndexOf("ThreadId.", StringComparison.Ordinal) >= 0);
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ internal static class KernelAnalysisHelpers
             .Where(b => (b.IsKind(SyntaxKind.LessThanExpression) ||
                         b.IsKind(SyntaxKind.LessThanOrEqualExpression) ||
                         b.IsKind(SyntaxKind.GreaterThanOrEqualExpression)) &&
-                       (b.ToString().Contains("Length") || b.ToString().Contains(".Count")));
+                       (b.ToString().IndexOf("Length", StringComparison.Ordinal) >= 0 || b.ToString().IndexOf(".Count", StringComparison.Ordinal) >= 0));
 
         return boundsChecks.Any();
     }
@@ -301,8 +301,8 @@ internal static class KernelAnalysisHelpers
     {
         return methodSyntax.DescendantNodes()
             .OfType<AssignmentExpressionSyntax>()
-            .Count(a => !a.Left.ToString().Contains("[") &&
-                       !a.Left.ToString().Contains("ThreadId"));
+            .Count(a => a.Left.ToString().IndexOf("[", StringComparison.Ordinal) < 0 &&
+                       a.Left.ToString().IndexOf("ThreadId", StringComparison.Ordinal) < 0);
     }
 
     /// <summary>
@@ -315,8 +315,8 @@ internal static class KernelAnalysisHelpers
             .Any(inv =>
             {
                 var invString = inv.ToString();
-                return !invString.Contains("Math.") &&
-                       !invString.Contains("MathF.") &&
+                return invString.IndexOf("Math.", StringComparison.Ordinal) < 0 &&
+                       invString.IndexOf("MathF.", StringComparison.Ordinal) < 0 &&
                        !invString.StartsWith("System.", StringComparison.Ordinal);
             });
     }
