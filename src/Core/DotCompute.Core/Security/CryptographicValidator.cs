@@ -212,7 +212,12 @@ internal sealed class CryptographicValidator : IDisposable
             }
 
             // Generate security recommendations
-            result.Recommendations = await GenerateSecurityRecommendationsAsync((IReadOnlyList<OperationAuditResult>)result.OperationResults);
+            var recommendations = await GenerateSecurityRecommendationsAsync((IReadOnlyList<OperationAuditResult>)result.OperationResults);
+            result.Recommendations.Clear();
+            foreach (var recommendation in recommendations)
+            {
+                result.Recommendations.Add(recommendation);
+            }
 
             _logger.LogInfoMessage($"Security audit completed - Level: {result.OverallSecurityLevel}");
             return result;

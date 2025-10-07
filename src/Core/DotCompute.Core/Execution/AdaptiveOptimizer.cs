@@ -55,8 +55,8 @@ public class AdaptiveOptimizer
         if (totalElements > 1_000_000 && hasMultipleGpus)
         {
             // Large problem, multiple GPUs available
-            var dataParallelPerformance = GetStrategyPerformance(ExecutionStrategyType.DataParallel, recentExecutions);
-            var workStealingPerformance = GetStrategyPerformance(ExecutionStrategyType.WorkStealing, recentExecutions);
+            var dataParallelPerformance = GetStrategyPerformance(ExecutionStrategyType.DataParallel, [.. recentExecutions]);
+            var workStealingPerformance = GetStrategyPerformance(ExecutionStrategyType.WorkStealing, [.. recentExecutions]);
 
             if (workStealingPerformance > dataParallelPerformance * 1.1)
             {
@@ -101,7 +101,7 @@ public class AdaptiveOptimizer
             Strategy = (ExecutionStrategyType)recommendedStrategy,
             ConfidenceScore = confidenceScore,
             Reasoning = reasoning,
-            ExpectedImprovementPercentage = EstimateImprovement(recommendedStrategy, recentExecutions)
+            ExpectedImprovementPercentage = EstimateImprovement(recommendedStrategy, [.. recentExecutions])
         };
     }
 

@@ -123,12 +123,13 @@ namespace DotCompute.Core.Execution
 
             if (recentExecutions.Length == 0)
             {
-                return new ParallelExecutionAnalysis
+                var emptyAnalysis = new ParallelExecutionAnalysis
                 {
                     OverallRating = 5.0,
-                    RecommendedStrategy = ExecutionStrategyType.Single,
-                    OptimizationRecommendations = ["No execution data available for analysis."]
+                    RecommendedStrategy = ExecutionStrategyType.Single
                 };
+                emptyAnalysis.OptimizationRecommendations.Add("No execution data available for analysis.");
+                return emptyAnalysis;
             }
 
             return PerformanceAnalyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);

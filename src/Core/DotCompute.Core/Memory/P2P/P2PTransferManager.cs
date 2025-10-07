@@ -118,7 +118,11 @@ namespace DotCompute.Core.Memory.P2P
                 await _synchronizer.InitializeDevicesAsync(devices, cancellationToken);
 
                 initResult.TotalDevices = devices.Length;
-                initResult.DevicePairs = detectedPairs;
+                initResult.DevicePairs.Clear();
+                foreach (var pair in detectedPairs)
+                {
+                    initResult.DevicePairs.Add(pair);
+                }
                 initResult.IsSuccessful = initResult.SuccessfulConnections > 0;
 
                 _logger.LogInfoMessage($"P2P topology initialization completed: {initResult.SuccessfulConnections}/{initResult.TotalDevices * (initResult.TotalDevices - 1) / 2} connections, {initResult.FailedConnections} failed");

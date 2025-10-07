@@ -524,20 +524,13 @@ namespace DotCompute.Core.Execution
             DataParallelismOptions options,
             CancellationToken cancellationToken) where T : unmanaged
         {
-            var plan = new DataParallelExecutionPlan<T>
-            {
-                KernelName = kernelName,
-                Devices = devices,
-                StrategyType = ExecutionStrategyType.DataParallel,
-                InputBuffers = inputBuffers,
-                OutputBuffers = outputBuffers,
-                DeviceTasks = new DataParallelDeviceTask<T>[devices.Length]
-            };
-
             // Calculate work distribution
             var totalElements = (int)(inputBuffers[0].SizeInBytes / global::System.Runtime.InteropServices.Marshal.SizeOf<T>());
             var elementsPerDevice = totalElements / devices.Length;
             var remainingElements = totalElements % devices.Length;
+
+            // Build device tasks array
+            var deviceTasks = new DataParallelDeviceTask<T>[devices.Length];
 
             for (var i = 0; i < devices.Length; i++)
             {
@@ -555,7 +548,7 @@ namespace DotCompute.Core.Execution
                 var compiledKernel = await GetOrCompileKernelForDeviceAsync(
                     kernelName, devices[i], cancellationToken);
 
-                plan.DeviceTasks[i] = new DataParallelDeviceTask<T>
+                deviceTasks[i] = new DataParallelDeviceTask<T>
                 {
                     Device = devices[i],
                     CompiledKernel = compiledKernel,
@@ -565,6 +558,16 @@ namespace DotCompute.Core.Execution
                     ElementCount = elementCount
                 };
             }
+
+            var plan = new DataParallelExecutionPlan<T>
+            {
+                KernelName = kernelName,
+                Devices = devices,
+                StrategyType = ExecutionStrategyType.DataParallel,
+                InputBuffers = inputBuffers,
+                OutputBuffers = outputBuffers,
+                DeviceTasks = deviceTasks
+            };
 
             return plan;
         }

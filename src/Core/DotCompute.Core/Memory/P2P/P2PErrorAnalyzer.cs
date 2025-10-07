@@ -114,7 +114,11 @@ namespace DotCompute.Core.Memory.P2P
                 .GroupBy(d => d.ValidationType)
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            analysis.FailuresByType = failuresByType;
+            analysis.FailuresByType.Clear();
+            foreach (var kvp in failuresByType)
+            {
+                analysis.FailuresByType[kvp.Key] = kvp.Value;
+            }
             analysis.MostCommonFailureType = failuresByType.OrderByDescending(kvp => kvp.Value).First().Key;
             analysis.TotalFailures = failures.Count;
             analysis.DistinctFailureTypes = failuresByType.Keys.Count;

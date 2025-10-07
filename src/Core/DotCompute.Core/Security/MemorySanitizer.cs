@@ -652,7 +652,12 @@ public sealed partial class MemorySanitizer : IDisposable
                 }
             }
 
-            report.SuspiciousAllocations = [.. suspiciousAllocations.OrderByDescending(s => s.SuspicionLevel)];
+            var orderedSuspicious = suspiciousAllocations.OrderByDescending(s => s.SuspicionLevel);
+            report.SuspiciousAllocations.Clear();
+            foreach (var suspect in orderedSuspicious)
+            {
+                report.SuspiciousAllocations.Add(suspect);
+            }
             report.TotalSuspiciousBytes = suspiciousAllocations.Sum(s => (long)s.Size);
             report.HighSuspicionCount = suspiciousAllocations.Count(s => s.SuspicionLevel >= 0.8);
 

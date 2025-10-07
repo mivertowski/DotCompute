@@ -138,9 +138,9 @@ public sealed class PerformanceProfiler : IDisposable
                 Options = options,
                 KernelExecutions = [],
                 MemoryOperations = [],
-                DeviceMetrics = new ConcurrentDictionary<string, DeviceProfileMetrics>(),
                 SystemSnapshots = new ConcurrentQueue<SystemSnapshot>()
             };
+            // Note: DeviceMetrics is auto-initialized by the property's default value
 
 
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);
@@ -416,9 +416,12 @@ public sealed class PerformanceProfiler : IDisposable
         };
 
         // Generate optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateKernelOptimizationRecommendations(analysis);
-
+        var recommendations = GenerateKernelOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in recommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }
@@ -501,9 +504,12 @@ public sealed class PerformanceProfiler : IDisposable
         };
 
         // Generate memory optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateMemoryOptimizationRecommendations(analysis);
-
+        var memoryRecommendations = GenerateMemoryOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in memoryRecommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }
@@ -624,10 +630,16 @@ public sealed class PerformanceProfiler : IDisposable
 
             // Bottlenecks and recommendations
 
-            IdentifiedBottlenecks = IdentifyProfileBottlenecks(profile),
-            OptimizationRecommendations = GenerateProfileOptimizationRecommendations(profile)
+            IdentifiedBottlenecks = IdentifyProfileBottlenecks(profile)
         };
 
+        // Generate profile optimization recommendations
+        var profileRecommendations = GenerateProfileOptimizationRecommendations(profile);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in profileRecommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         return analysis;
     }

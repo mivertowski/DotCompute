@@ -396,7 +396,7 @@ public sealed partial class KernelDebugLogger(
         await LogEntryAsync(logEntry, MsLogLevel.Information);
 
         LogPerformanceAnalysisCompleted(_logger, kernelName, analysisResult.ExecutionStatistics.TotalExecutions,
-            analysisResult.ExecutionStatistics.SuccessRate, analysisResult.BottleneckAnalysis.OverallPerformanceScore);
+            analysisResult.ExecutionStatistics.SuccessRate, (float)analysisResult.BottleneckAnalysis.OverallPerformanceScore);
 
         // Log significant bottlenecks
         foreach (var bottleneck in analysisResult.BottleneckAnalysis.Bottlenecks.Where(b => (int)b.Severity >= (int)BottleneckSeverity.Medium))

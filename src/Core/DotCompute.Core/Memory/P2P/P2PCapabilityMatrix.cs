@@ -259,9 +259,26 @@ namespace DotCompute.Core.Memory.P2P
             analysis.P2PConnectivityRatio = totalConnections > 0 ? (double)p2pConnections / totalConnections : 0.0;
 
             // Identify topology clusters and bottlenecks
-            analysis.TopologyClusters = IdentifyTopologyClusters();
-            analysis.BandwidthBottlenecks = IdentifyBandwidthBottlenecks();
-            analysis.HighPerformancePaths = IdentifyHighPerformancePaths();
+            var topologyClusters = IdentifyTopologyClusters();
+            analysis.TopologyClusters.Clear();
+            foreach (var cluster in topologyClusters)
+            {
+                analysis.TopologyClusters.Add(cluster);
+            }
+
+            var bandwidthBottlenecks = IdentifyBandwidthBottlenecks();
+            analysis.BandwidthBottlenecks.Clear();
+            foreach (var bottleneck in bandwidthBottlenecks)
+            {
+                analysis.BandwidthBottlenecks.Add(bottleneck);
+            }
+
+            var highPerformancePaths = IdentifyHighPerformancePaths();
+            analysis.HighPerformancePaths.Clear();
+            foreach (var path in highPerformancePaths)
+            {
+                analysis.HighPerformancePaths.Add(path);
+            }
 
             // Calculate average bandwidth by connection type
             analysis.AverageNVLinkBandwidth = CalculateAverageConnectionBandwidth(P2PConnectionType.NVLink);
@@ -321,7 +338,11 @@ namespace DotCompute.Core.Memory.P2P
                     issues.Add($"High number of expired capabilities: {expiredCapabilities}");
                 }
 
-                validationResult.Issues = issues;
+                validationResult.Issues.Clear();
+                foreach (var issue in issues)
+                {
+                    validationResult.Issues.Add(issue);
+                }
                 validationResult.IsValid = issues.Count == 0;
                 validationResult.ValidationTime = DateTimeOffset.UtcNow;
 

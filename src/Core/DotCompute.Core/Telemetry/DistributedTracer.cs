@@ -215,9 +215,9 @@ public sealed partial class DistributedTracer : IDisposable
             Activity = activity,
             ParentSpanContext = parentSpanContext,
             Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
-            Spans = [],
-            DeviceOperations = new ConcurrentDictionary<string, DeviceOperationTrace>()
+            Spans = []
         };
+        // Note: DeviceOperations is auto-initialized by the property's default value
 
 
         _ = _activeTraces.TryAdd(correlationId, traceContext);
@@ -534,30 +534,49 @@ public sealed partial class DistributedTracer : IDisposable
         };
 
         // Analyze critical path
-
-        analysis.CriticalPath = IdentifyCriticalPath([.. traceData.Spans]);
+        var criticalPath = IdentifyCriticalPath([.. traceData.Spans]);
+        analysis.CriticalPath.Clear();
+        foreach (var span in criticalPath)
+        {
+            analysis.CriticalPath.Add(span);
+        }
         analysis.CriticalPathDuration = analysis.CriticalPath.Sum(span => span.Duration.TotalMilliseconds);
 
         // Analyze device utilization
-
-        analysis.DeviceUtilization = AnalyzeDeviceUtilization(new ConcurrentDictionary<string, DeviceOperationTrace>(traceData.DeviceOperations));
+        var deviceUtilization = AnalyzeDeviceUtilization(new ConcurrentDictionary<string, DeviceOperationTrace>(traceData.DeviceOperations));
+        analysis.DeviceUtilization.Clear();
+        foreach (var kvp in deviceUtilization)
+        {
+            analysis.DeviceUtilization[kvp.Key] = kvp.Value;
+        }
 
         // Identify bottlenecks
-
-        analysis.Bottlenecks = IdentifyBottlenecks([.. traceData.Spans]);
+        var bottlenecks = IdentifyBottlenecks([.. traceData.Spans]);
+        analysis.Bottlenecks.Clear();
+        foreach (var bottleneck in bottlenecks)
+        {
+            analysis.Bottlenecks.Add(bottleneck);
+        }
 
         // Analyze memory access patterns
-
-        analysis.MemoryAccessPatterns = AnalyzeMemoryAccessPatterns([.. traceData.Spans]);
+        var memoryPatterns = AnalyzeMemoryAccessPatterns([.. traceData.Spans]);
+        analysis.MemoryAccessPatterns.Clear();
+        foreach (var kvp in memoryPatterns)
+        {
+            analysis.MemoryAccessPatterns[kvp.Key] = kvp.Value;
+        }
 
         // Calculate efficiency metrics
-
         analysis.ParallelismEfficiency = CalculateParallelismEfficiency(traceData);
         analysis.DeviceEfficiency = CalculateDeviceEfficiency(traceData);
 
         // Generate optimization recommendations
-
-        analysis.OptimizationRecommendations = GenerateOptimizationRecommendations(analysis);
+        var recommendations = GenerateOptimizationRecommendations(analysis);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in recommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
 
         return analysis;

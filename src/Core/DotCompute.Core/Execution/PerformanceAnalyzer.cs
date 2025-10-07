@@ -60,13 +60,24 @@ public class PerformanceAnalyzer
             });
         }
 
-        analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, kernelBottlenecks)];
+        // Generate optimization recommendations
+        var recommendations = GenerateOptimizationRecommendations(executions, kernelBottlenecks);
+        analysis.OptimizationRecommendations.Clear();
+        foreach (var recommendation in recommendations)
+        {
+            analysis.OptimizationRecommendations.Add(recommendation);
+        }
 
         // Recommend optimal strategy
         analysis.RecommendedStrategy = (ExecutionStrategyType)RecommendStrategy(executions);
 
         // Analyze device utilization
-        analysis.DeviceUtilizationAnalysis = AnalyzeDeviceUtilization(deviceProfiles);
+        var deviceUtilization = AnalyzeDeviceUtilization(deviceProfiles);
+        analysis.DeviceUtilizationAnalysis.Clear();
+        foreach (var kvp in deviceUtilization)
+        {
+            analysis.DeviceUtilizationAnalysis[kvp.Key] = kvp.Value;
+        }
 
         return analysis;
     }

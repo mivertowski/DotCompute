@@ -29,34 +29,29 @@ public sealed class SecurityMetricsLogger(ILogger<SecurityMetricsLogger> logger,
         _metrics.ActiveCorrelations = _correlationContexts.Count;
 
         // Calculate average events per correlation
-
         if (!_correlationContexts.IsEmpty)
         {
             _metrics.AverageEventsPerCorrelation = _correlationContexts.Values
                 .Average(c => c.EventCount);
         }
 
-        // Calculate metrics by event type
-        _metrics.EventsByType = new Dictionary<SecurityEventType, long>
-        {
-            { SecurityEventType.AuthenticationSuccess, _metrics.AuthenticationSuccessCount },
-            { SecurityEventType.AuthenticationFailure, _metrics.AuthenticationFailureCount },
-            { SecurityEventType.AccessGranted, _metrics.AccessGrantedCount },
-            { SecurityEventType.AccessDenied, _metrics.AccessDeniedCount },
-            { SecurityEventType.SecurityViolation, _metrics.SecurityViolationCount },
-            { SecurityEventType.DataAccess, _metrics.DataAccessCount },
-            { SecurityEventType.DataModification, _metrics.DataModificationCount },
-            { SecurityEventType.DataDeletion, _metrics.DataDeletionCount }
-        };
+        // Populate metrics by event type (modify dictionary contents, not reassign)
+        _metrics.EventsByType.Clear();
+        _metrics.EventsByType[SecurityEventType.AuthenticationSuccess] = _metrics.AuthenticationSuccessCount;
+        _metrics.EventsByType[SecurityEventType.AuthenticationFailure] = _metrics.AuthenticationFailureCount;
+        _metrics.EventsByType[SecurityEventType.AccessGranted] = _metrics.AccessGrantedCount;
+        _metrics.EventsByType[SecurityEventType.AccessDenied] = _metrics.AccessDeniedCount;
+        _metrics.EventsByType[SecurityEventType.SecurityViolation] = _metrics.SecurityViolationCount;
+        _metrics.EventsByType[SecurityEventType.DataAccess] = _metrics.DataAccessCount;
+        _metrics.EventsByType[SecurityEventType.DataModification] = _metrics.DataModificationCount;
+        _metrics.EventsByType[SecurityEventType.DataDeletion] = _metrics.DataDeletionCount;
 
-        // Calculate metrics by security level
-        _metrics.EventsByLevel = new Dictionary<SecurityLevel, long>
-        {
-            { SecurityLevel.Critical, _metrics.CriticalEventCount },
-            { SecurityLevel.High, _metrics.HighEventCount },
-            { SecurityLevel.Medium, _metrics.MediumEventCount },
-            { SecurityLevel.Low, _metrics.LowEventCount + _metrics.InformationalEventCount }
-        };
+        // Populate metrics by security level (modify dictionary contents, not reassign)
+        _metrics.EventsByLevel.Clear();
+        _metrics.EventsByLevel[SecurityLevel.Critical] = _metrics.CriticalEventCount;
+        _metrics.EventsByLevel[SecurityLevel.High] = _metrics.HighEventCount;
+        _metrics.EventsByLevel[SecurityLevel.Medium] = _metrics.MediumEventCount;
+        _metrics.EventsByLevel[SecurityLevel.Low] = _metrics.LowEventCount + _metrics.InformationalEventCount;
 
         return _metrics;
     }

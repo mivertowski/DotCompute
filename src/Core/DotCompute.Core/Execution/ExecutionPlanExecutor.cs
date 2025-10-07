@@ -259,7 +259,7 @@ namespace DotCompute.Core.Execution
                 await _profiler.StartProfilingAsync(executionId, ExecutionStrategyType.DataParallel, cancellationToken);
 
                 // Track resource usage
-                await _resourceTracker.TrackExecutionStartAsync(plan.Devices, cancellationToken);
+                await _resourceTracker.TrackExecutionStartAsync([.. plan.Devices], cancellationToken);
 
                 // Execute device tasks in parallel with proper synchronization
                 var deviceResults = await ExecuteDataParallelDeviceTasksAsync(plan, executionId, cancellationToken);
@@ -323,7 +323,7 @@ namespace DotCompute.Core.Execution
             try
             {
                 await _profiler.StartProfilingAsync(executionId, ExecutionStrategyType.ModelParallel, cancellationToken);
-                await _resourceTracker.TrackExecutionStartAsync(plan.Devices, cancellationToken);
+                await _resourceTracker.TrackExecutionStartAsync([.. plan.Devices], cancellationToken);
 
                 // Execute layers according to dependency order with communication
                 var layerResults = await ExecuteModelParallelLayersAsync(plan, executionId, cancellationToken);
@@ -378,7 +378,7 @@ namespace DotCompute.Core.Execution
             try
             {
                 await _profiler.StartProfilingAsync(executionId, ExecutionStrategyType.PipelineParallel, cancellationToken);
-                await _resourceTracker.TrackExecutionStartAsync(plan.Devices, cancellationToken);
+                await _resourceTracker.TrackExecutionStartAsync([.. plan.Devices], cancellationToken);
 
                 // Execute pipeline with microbatch scheduling
                 var stageResults = await ExecutePipelineStagesAsync(plan, executionId, cancellationToken);
@@ -578,7 +578,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                LogLayerExecutionStarting(_logger, layer.LayerId, device.Info.Id);
+                LogLayerExecutionStarting(_logger, layer.LayerId.ToString(), device.Info.Id);
 
                 // Wait for dependencies
                 if (layer.Dependencies.Count > 0)
@@ -614,14 +614,14 @@ namespace DotCompute.Core.Execution
                     MemoryUsageBytes = layer.MemoryRequirementBytes
                 };
 
-                LogLayerExecutionCompleted(_logger, layer.LayerId, stopwatch.Elapsed.TotalMilliseconds);
+                LogLayerExecutionCompleted(_logger, layer.LayerId.ToString(), stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                LogLayerExecutionFailed(_logger, layer.LayerId, ex);
+                LogLayerExecutionFailed(_logger, layer.LayerId.ToString(), ex);
 
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
 
@@ -750,7 +750,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                LogExecutingStage(_logger, stage.StageId, microbatchIndex);
+                LogExecutingStage(_logger, stage.StageId.ToString(), microbatchIndex);
 
                 // Execute stage kernel for this microbatch
                 var kernelArgs = CreateStageKernelArguments(stage, microbatchIndex);
@@ -772,7 +772,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                LogStageExecutionFailed(_logger, stage.StageId, microbatchIndex, ex);
+                LogStageExecutionFailed(_logger, stage.StageId.ToString(), microbatchIndex, ex);
 
                 return new StageExecutionResult
                 {

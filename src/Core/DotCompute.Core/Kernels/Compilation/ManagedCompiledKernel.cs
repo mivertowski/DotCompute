@@ -93,7 +93,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
         return new CompiledKernel
         {
             Name = Name,
-            CompiledBinary = Binary,
+            CompiledBinary = new ReadOnlyMemory<byte>([.. Binary]),
             Metadata = metadata
         };
     }
@@ -230,7 +230,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
             try
             {
                 // Load assembly from binary data
-                var assembly = Assembly.Load(Binary);
+                var assembly = Assembly.Load([.. Binary]);
 
                 // Find the kernel entry point (typically the first public method in the first type)
                 var types = assembly.GetTypes();
