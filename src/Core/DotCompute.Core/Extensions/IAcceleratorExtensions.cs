@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -73,7 +74,7 @@ namespace DotCompute.Core.Extensions
             }
 
             // Default feature support based on accelerator type
-            return feature.ToLowerInvariant() switch
+            return feature.ToUpper(CultureInfo.InvariantCulture) switch
             {
                 "unified_memory" => accelerator.Info!.IsUnifiedMemory,
                 "double_precision" => accelerator.Info!.SupportsFloat64,
@@ -126,13 +127,13 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
-        /// Creates a new compute stream for asynchronous operations.
+        /// Creates a new compute execution context for asynchronous operations.
         /// For CUDA accelerators, this creates a CUDA stream.
         /// For other accelerators, returns a stub implementation.
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
-        /// <returns>A compute stream for the accelerator.</returns>
-        public static IComputeStream CreateStream(this IAccelerator accelerator)
+        /// <returns>A compute execution context for the accelerator.</returns>
+        public static IComputeExecution CreateStream(this IAccelerator accelerator)
         {
             // Check if the accelerator is a specific implementation that supports streams
             if (accelerator.GetType().Name.Contains("Cuda", StringComparison.OrdinalIgnoreCase))
@@ -141,12 +142,12 @@ namespace DotCompute.Core.Extensions
                 var method = accelerator.GetType().GetMethod("CreateStream");
                 if (method != null)
                 {
-                    return (IComputeStream)method.Invoke(accelerator, null)!;
+                    return (IComputeExecution)method.Invoke(accelerator, null)!;
                 }
             }
 
-            // For other accelerators or if reflection fails, return a stub stream
-            return new StubComputeStream();
+            // For other accelerators or if reflection fails, return a stub implementation
+            return new StubComputeExecution();
         }
 
         /// <summary>
@@ -170,9 +171,9 @@ namespace DotCompute.Core.Extensions
     }
 
     /// <summary>
-    /// Represents a compute stream for asynchronous operations.
+    /// Represents a compute execution context for asynchronous operations.
     /// </summary>
-    public interface IComputeStream : IDisposable
+    public interface IComputeExecution : IDisposable
     {
         /// <summary>
         /// Synchronizes the stream, waiting for all operations to complete.
@@ -188,17 +189,17 @@ namespace DotCompute.Core.Extensions
     }
 
     /// <summary>
-    /// Extension methods for IComputeStream to provide additional functionality.
+    /// Extension methods for IComputeExecution to provide additional functionality.
     /// </summary>
-    public static class ComputeStreamExtensions
+    public static class ComputeExecutionExtensions
     {
         /// <summary>
-        /// Begins capturing operations in this stream for graph construction.
+        /// Begins capturing operations in this execution context for graph construction.
         /// This is primarily used for CUDA graph functionality.
         /// </summary>
-        /// <param name="stream">The compute stream.</param>
+        /// <param name="stream">The compute execution context.</param>
         /// <returns>A task representing the begin capture operation.</returns>
-        public static ValueTask BeginCaptureAsync(this IComputeStream stream)
+        public static ValueTask BeginCaptureAsync(this IComputeExecution stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
 
@@ -219,7 +220,6 @@ namespace DotCompute.Core.Extensions
 
                     return new ValueTask(task);
                 }
-
             }
 
             // For other stream types, return completed task
@@ -228,12 +228,12 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
-        /// Ends capturing operations in this stream and returns the captured graph.
+        /// Ends capturing operations in this execution context and returns the captured graph.
         /// This is primarily used for CUDA graph functionality.
         /// </summary>
-        /// <param name="stream">The compute stream.</param>
+        /// <param name="stream">The compute execution context.</param>
         /// <returns>A task representing the end capture operation, returning the captured graph.</returns>
-        public static ValueTask<object?> EndCaptureAsync(this IComputeStream stream)
+        public static ValueTask<object?> EndCaptureAsync(this IComputeExecution stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
 
@@ -268,7 +268,6 @@ namespace DotCompute.Core.Extensions
 
                     return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result));
                 }
-
             }
 
             // For other stream types, return null
@@ -309,9 +308,9 @@ namespace DotCompute.Core.Extensions
     }
 
     /// <summary>
-    /// Stub implementation of IComputeStream for accelerators that don't support streams.
+    /// Stub implementation of IComputeExecution for accelerators that don't support execution contexts.
     /// </summary>
-    internal class StubComputeStream : IComputeStream
+    internal class StubComputeExecution : IComputeExecution
     {
         /// <summary>
         /// Performs synchronize.

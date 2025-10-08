@@ -29,8 +29,11 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 
     public AlgorithmPluginLifecycle(ILogger<AlgorithmPluginLifecycle> logger, AlgorithmPluginManagerOptions options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(options);
+
+        _logger = logger;
+        _options = options;
         _pluginStates = new ConcurrentDictionary<string, PluginLifecycleState>();
         _stateLock = new SemaphoreSlim(1, 1);
 

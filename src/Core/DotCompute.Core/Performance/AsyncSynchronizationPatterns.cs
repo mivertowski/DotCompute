@@ -184,7 +184,6 @@ public sealed class AsyncChannel<T> : IDisposable
         {
             _ = _writer.TryComplete();
         }
-
     }
 
     private void ThrowIfDisposed()
@@ -291,7 +290,6 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
 
                 return work;
             }
-
         }
 
         return default;
@@ -369,7 +367,6 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
         {
             _waitQueue = new ConcurrentQueue<TaskCompletionSource<TResource>>();
         }
-
     }
 
     /// <summary>
@@ -482,42 +479,8 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
 
                     disposable.Dispose();
                 }
-
             }
         }
-    }
-    /// <summary>
-    /// A pool statistics structure.
-    /// </summary>
-
-    public readonly record struct PoolStatistics
-    {
-        /// <summary>
-        /// Gets or sets the available resources.
-        /// </summary>
-        /// <value>The available resources.</value>
-        public int AvailableResources { get; init; }
-        /// <summary>
-        /// Gets or sets the total resources.
-        /// </summary>
-        /// <value>The total resources.</value>
-        public int TotalResources { get; init; }
-        /// <summary>
-        /// Gets or sets the waiting requests.
-        /// </summary>
-        /// <value>The waiting requests.</value>
-        public int WaitingRequests { get; init; }
-        /// <summary>
-        /// Gets or sets the used resources.
-        /// </summary>
-        /// <value>The used resources.</value>
-
-        public int UsedResources => TotalResources - AvailableResources;
-        /// <summary>
-        /// Gets or sets the utilization rate.
-        /// </summary>
-        /// <value>The utilization rate.</value>
-        public double UtilizationRate => TotalResources > 0 ? (double)UsedResources / TotalResources : 0.0;
     }
 }
 

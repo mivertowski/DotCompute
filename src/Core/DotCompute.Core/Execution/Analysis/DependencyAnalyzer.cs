@@ -90,7 +90,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
         public async ValueTask<DependencyGraph> AnalyzeLayerDependenciesAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             CancellationToken cancellationToken) where T : unmanaged
         {
             ArgumentNullException.ThrowIfNull(layers);
@@ -125,7 +125,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="stages"/> is null.</exception>
         public async ValueTask<DependencyGraph> AnalyzeStageDependenciesAsync(
-            List<PipelineStageDefinition> stages,
+            IList<PipelineStageDefinition> stages,
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(stages);
@@ -141,7 +141,7 @@ namespace DotCompute.Core.Execution.Analysis
                 // Add explicit dependencies
                 foreach (var depName in stage.Dependencies)
                 {
-                    var depIndex = stages.FindIndex(s => s.Name == depName);
+                    var depIndex = stages.Select((s, idx) => new { s, idx }).FirstOrDefault(x => x.s.Name == depName)?.idx ?? -1;
                     if (depIndex >= 0 && depIndex != i)
                     {
                         graph.AddDependency(depIndex, i, DependencyType.Structural);
@@ -182,7 +182,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
         private async ValueTask AnalyzeTensorDependenciesAsync<T>(
             ModelLayer<T> layer,
-            List<ModelLayer<T>> allLayers,
+            IList<ModelLayer<T>> allLayers,
             DependencyGraph graph,
             CancellationToken cancellationToken) where T : unmanaged
         {

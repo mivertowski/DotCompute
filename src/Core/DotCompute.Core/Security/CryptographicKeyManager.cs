@@ -629,10 +629,24 @@ internal sealed partial class CryptographicKeyManager : IDisposable
 /// </summary>
 
 // Supporting classes and enums
+/// <summary>
+/// Defines cryptographic key export formats.
+/// </summary>
 public enum KeyExportFormat
 {
+    /// <summary>
+    /// PKCS#8 format for private key export.
+    /// </summary>
     Pkcs8,
+
+    /// <summary>
+    /// PKCS#12 format for key and certificate bundle export.
+    /// </summary>
     Pkcs12,
+
+    /// <summary>
+    /// JSON Web Key (JWK) format for web-based key exchange.
+    /// </summary>
     Jwk
 }
 /// <summary>
@@ -707,7 +721,7 @@ public class KeyExportResult
     /// Gets or sets the exported data.
     /// </summary>
     /// <value>The exported data.</value>
-    public byte[]? ExportedData { get; set; }
+    public IReadOnlyList<byte>? ExportedData { get; set; }
     /// <summary>
     /// Gets or sets the export format.
     /// </summary>

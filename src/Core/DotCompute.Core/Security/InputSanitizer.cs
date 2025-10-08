@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -17,16 +18,93 @@ namespace DotCompute.Core.Security;
 /// </summary>
 public sealed partial class InputSanitizer : IDisposable
 {
-    // LoggerMessage delegates - Event ID range 18200-18299 for InputSanitizer (Security module)
-    private static readonly Action<ILogger, Exception?> _logStatisticsError =
-        LoggerMessage.Define(
-            MsLogLevel.Warning,
-            new EventId(18200, nameof(LogStatisticsError)),
-            "Error logging statistics");
+    #region LoggerMessage Delegates
 
-    // Wrapper method
-    private static void LogStatisticsError(ILogger logger, Exception ex)
-        => _logStatisticsError(logger, ex);
+    [LoggerMessage(
+        EventId = 8001,
+        Level = MsLogLevel.Information,
+        Message = "InputSanitizer initialized with configuration: {Configuration}")]
+    private static partial void LogInitialized(ILogger logger, string configuration);
+
+    [LoggerMessage(
+        EventId = 8002,
+        Level = MsLogLevel.Trace,
+        Message = "Sanitizing input: Context={Context}, Type={Type}, Length={Length}")]
+    private static partial void LogSanitizingInput(ILogger logger, string context, SanitizationType type, int length);
+
+    [LoggerMessage(
+        EventId = 8003,
+        Level = MsLogLevel.Trace,
+        Message = "Input sanitization completed: Context={Context}, Secure={IsSecure}, Threats={ThreatCount}")]
+    private static partial void LogSanitizationCompleted(ILogger logger, string context, bool isSecure, int threatCount);
+
+    [LoggerMessage(
+        EventId = 8004,
+        Level = MsLogLevel.Debug,
+        Message = "Validating kernel parameters: Kernel={KernelName}, ParameterCount={ParameterCount}")]
+    private static partial void LogValidatingKernelParameters(ILogger logger, string kernelName, int parameterCount);
+
+    [LoggerMessage(
+        EventId = 8005,
+        Level = MsLogLevel.Debug,
+        Message = "Kernel parameter validation completed: Kernel={KernelName}, Valid={IsValid}, Invalid={InvalidCount}")]
+    private static partial void LogKernelParameterValidationCompleted(ILogger logger, string kernelName, bool isValid, int invalidCount);
+
+    [LoggerMessage(
+        EventId = 8006,
+        Level = MsLogLevel.Trace,
+        Message = "Validating file path: Path={Path}, BaseDirectory={BaseDirectory}")]
+    private static partial void LogValidatingFilePath(ILogger logger, string path, string baseDirectory);
+
+    [LoggerMessage(
+        EventId = 8007,
+        Level = MsLogLevel.Trace,
+        Message = "File path validation completed: Valid={IsValid}, Threats={ThreatCount}")]
+    private static partial void LogFilePathValidationCompleted(ILogger logger, bool isValid, int threatCount);
+
+    [LoggerMessage(
+        EventId = 8008,
+        Level = MsLogLevel.Error,
+        Message = "Error validating file path: {FilePath}")]
+    private static partial void LogFilePathValidationError(ILogger logger, Exception ex, string filePath);
+
+    [LoggerMessage(
+        EventId = 8009,
+        Level = MsLogLevel.Trace,
+        Message = "Work group validation completed: Valid={IsValid}, Errors={ErrorCount}, Warnings={WarningCount}")]
+    private static partial void LogWorkGroupValidationCompleted(ILogger logger, bool isValid, int errorCount, int warningCount);
+
+    [LoggerMessage(
+        EventId = 8010,
+        Level = MsLogLevel.Error,
+        Message = "Error validating work group sizes")]
+    private static partial void LogWorkGroupValidationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 8011,
+        Level = MsLogLevel.Debug,
+        Message = "Added custom validation rule: Context={Context}, Rule={RuleName}")]
+    private static partial void LogCustomRuleAdded(ILogger logger, string context, string ruleName);
+
+    [LoggerMessage(
+        EventId = 8012,
+        Level = MsLogLevel.Information,
+        Message = "Input validation statistics: Validations={TotalValidations}, Threats={TotalThreats}, Violations={TotalViolations}")]
+    private static partial void LogStatistics(ILogger logger, long totalValidations, long totalThreats, long totalViolations);
+
+    [LoggerMessage(
+        EventId = 8013,
+        Level = MsLogLevel.Warning,
+        Message = "Error logging statistics")]
+    private static partial void LogStatisticsError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 8014,
+        Level = MsLogLevel.Information,
+        Message = "InputSanitizer disposed. Final statistics: Validations={TotalValidations}, Threats={TotalThreats}")]
+    private static partial void LogDisposed(ILogger logger, long totalValidations, long totalThreats);
+
+    #endregion
 
     private readonly ILogger _logger;
     private readonly InputSanitizationConfiguration _configuration;
@@ -106,7 +184,8 @@ public sealed partial class InputSanitizer : IDisposable
 
     public InputSanitizer(ILogger<InputSanitizer> logger, InputSanitizationConfiguration? configuration = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _configuration = configuration ?? InputSanitizationConfiguration.Default;
 
         // Initialize statistics collection
@@ -116,7 +195,7 @@ public sealed partial class InputSanitizer : IDisposable
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
 
-        _logger.LogInfoMessage($"InputSanitizer initialized with configuration: {_configuration.ToString()}");
+        LogInitialized(_logger, _configuration.ToString());
     }
 
     /// <summary>
@@ -131,11 +210,7 @@ public sealed partial class InputSanitizer : IDisposable
 
         SanitizationType sanitizationType = SanitizationType.General, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(InputSanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentNullException.ThrowIfNull(input);
@@ -144,9 +219,7 @@ public sealed partial class InputSanitizer : IDisposable
         await _validationLock.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogTrace("Sanitizing input: Context={Context}, Type={Type}, Length={Length}",
-
-                context, sanitizationType, input.Length);
+            LogSanitizingInput(_logger, context, sanitizationType, input.Length);
 
             var result = new SanitizationResult
             {
@@ -178,8 +251,7 @@ public sealed partial class InputSanitizer : IDisposable
             // Update statistics
             UpdateStatistics(result);
 
-            _logger.LogTrace("Input sanitization completed: Context={Context}, Secure={IsSecure}, Threats={ThreatCount}",
-                context, result.IsSecure, result.SecurityThreats.Count);
+            LogSanitizationCompleted(_logger, context, result.IsSecure, result.SecurityThreats.Count);
 
             return result;
         }
@@ -199,11 +271,7 @@ public sealed partial class InputSanitizer : IDisposable
     public async Task<ParameterValidationResult> ValidateKernelParametersAsync(
         IDictionary<string, object> parameters, string kernelName, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(InputSanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentNullException.ThrowIfNull(parameters);
@@ -212,7 +280,7 @@ public sealed partial class InputSanitizer : IDisposable
         await _validationLock.WaitAsync(cancellationToken);
         try
         {
-            _logger.LogDebugMessage($"Validating kernel parameters: Kernel={kernelName}, ParameterCount={parameters.Count}");
+            LogValidatingKernelParameters(_logger, kernelName, parameters.Count);
 
             var result = new ParameterValidationResult
             {
@@ -242,7 +310,7 @@ public sealed partial class InputSanitizer : IDisposable
             result.IsValid = !result.HasInvalidParameters;
             result.ValidationEndTime = DateTimeOffset.UtcNow;
 
-            _logger.LogDebugMessage($"Kernel parameter validation completed: Kernel={kernelName}, Valid={result.IsValid}, Invalid={result.InvalidParameters.Count}");
+            LogKernelParameterValidationCompleted(_logger, kernelName, result.IsValid, result.InvalidParameters.Count);
 
             return result;
         }
@@ -263,17 +331,13 @@ public sealed partial class InputSanitizer : IDisposable
 
         IEnumerable<string>? allowedExtensions = null)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(InputSanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
 
-        _logger.LogTrace("Validating file path: Path={Path}, BaseDirectory={BaseDirectory}", filePath, baseDirectory);
+        LogValidatingFilePath(_logger, filePath, baseDirectory);
 
         var result = new PathValidationResult
         {
@@ -318,8 +382,8 @@ public sealed partial class InputSanitizer : IDisposable
             // 3. Validate file extension if specified
             if (allowedExtensions != null)
             {
-                var extension = Path.GetExtension(fullPath).ToLowerInvariant();
-                var allowedList = allowedExtensions.Select(ext => ext.ToLowerInvariant()).ToList();
+                var extension = Path.GetExtension(fullPath).ToUpper(CultureInfo.InvariantCulture);
+                var allowedList = allowedExtensions.Select(ext => ext.ToUpper(CultureInfo.InvariantCulture)).ToList();
 
 
                 if (!allowedList.Contains(extension))
@@ -349,12 +413,11 @@ public sealed partial class InputSanitizer : IDisposable
 
             result.IsValid = !result.SecurityThreats.Any(t => t.Severity >= ThreatSeverity.High);
 
-            _logger.LogTrace("File path validation completed: Valid={IsValid}, Threats={ThreatCount}",
-                result.IsValid, result.SecurityThreats.Count);
+            LogFilePathValidationCompleted(_logger, result.IsValid, result.SecurityThreats.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Error validating file path: {filePath}");
+            LogFilePathValidationError(_logger, ex, filePath);
             result.IsValid = false;
             result.SecurityThreats.Add(new InputThreat
             {
@@ -379,11 +442,7 @@ public sealed partial class InputSanitizer : IDisposable
 
         int maxWorkGroupSize = 1024)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(InputSanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentNullException.ThrowIfNull(workGroupSize);
@@ -471,12 +530,11 @@ public sealed partial class InputSanitizer : IDisposable
                 result.IsValid = true;
             }
 
-            _logger.LogTrace("Work group validation completed: Valid={IsValid}, Errors={ErrorCount}, Warnings={WarningCount}",
-                result.IsValid, result.ValidationErrors.Count, result.ValidationWarnings.Count);
+            LogWorkGroupValidationCompleted(_logger, result.IsValid, result.ValidationErrors.Count, result.ValidationWarnings.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error validating work group sizes");
+            LogWorkGroupValidationError(_logger, ex);
             result.IsValid = false;
             result.ValidationErrors.Add($"Validation error: {ex.Message}");
         }
@@ -491,11 +549,7 @@ public sealed partial class InputSanitizer : IDisposable
     /// <param name="rule">Validation rule to add</param>
     public void AddCustomValidationRule(string context, ValidationRule rule)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(InputSanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
@@ -504,7 +558,7 @@ public sealed partial class InputSanitizer : IDisposable
         _ = _customRules.AddOrUpdate(context, rule, (key, existing) => rule);
 
 
-        _logger.LogDebugMessage($"Added custom validation rule: Context={context}, Rule={rule.Name}");
+        LogCustomRuleAdded(_logger, context, rule.Name);
     }
 
     /// <summary>
@@ -778,13 +832,13 @@ public sealed partial class InputSanitizer : IDisposable
 
     private static SanitizationType DetermineSanitizationType(string parameterName, object? parameterValue)
     {
-        return parameterName.ToLowerInvariant() switch
+        return parameterName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var name when name.Contains("path", StringComparison.OrdinalIgnoreCase) || name.Contains("file", StringComparison.CurrentCulture) => SanitizationType.FilePath,
-            var name when name.Contains("url", StringComparison.CurrentCulture) || name.Contains("uri", StringComparison.CurrentCulture) => SanitizationType.Url,
-            var name when name.Contains("email", StringComparison.CurrentCulture) => SanitizationType.Email,
-            var name when name.Contains("sql", StringComparison.CurrentCulture) || name.Contains("query", StringComparison.CurrentCulture) => SanitizationType.Sql,
-            var name when name.Contains("html", StringComparison.CurrentCulture) || name.Contains("markup", StringComparison.CurrentCulture) => SanitizationType.Html,
+            var name when name.Contains("PATH", StringComparison.OrdinalIgnoreCase) || name.Contains("FILE", StringComparison.OrdinalIgnoreCase) => SanitizationType.FilePath,
+            var name when name.Contains("URL", StringComparison.OrdinalIgnoreCase) || name.Contains("URI", StringComparison.OrdinalIgnoreCase) => SanitizationType.Url,
+            var name when name.Contains("EMAIL", StringComparison.OrdinalIgnoreCase) => SanitizationType.Email,
+            var name when name.Contains("SQL", StringComparison.OrdinalIgnoreCase) || name.Contains("QUERY", StringComparison.OrdinalIgnoreCase) => SanitizationType.Sql,
+            var name when name.Contains("HTML", StringComparison.OrdinalIgnoreCase) || name.Contains("MARKUP", StringComparison.OrdinalIgnoreCase) => SanitizationType.Html,
             _ when parameterValue is int or long or float or double => SanitizationType.Numeric,
             _ => SanitizationType.General
         };
@@ -812,22 +866,22 @@ public sealed partial class InputSanitizer : IDisposable
             "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"
         };
 
-        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
-        return suspiciousNames.Contains(nameWithoutExt);
+        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName).ToUpper(CultureInfo.InvariantCulture);
+        return suspiciousNames.Select(n => n.ToUpper(CultureInfo.InvariantCulture)).Contains(nameWithoutExt);
     }
 
     private static ThreatType GetThreatTypeFromPattern(string patternName)
     {
         return patternName switch
         {
-            var name when name.Contains("sql", StringComparison.CurrentCulture) => ThreatType.SqlInjection,
-            var name when name.Contains("xss", StringComparison.CurrentCulture) => ThreatType.XssInjection,
-            var name when name.Contains("command", StringComparison.CurrentCulture) => ThreatType.CommandInjection,
-            var name when name.Contains("path", StringComparison.CurrentCulture) => ThreatType.PathTraversal,
-            var name when name.Contains("ldap", StringComparison.CurrentCulture) => ThreatType.LdapInjection,
-            var name when name.Contains("code") => ThreatType.CodeInjection,
-            var name when name.Contains("xml", StringComparison.CurrentCulture) => ThreatType.XmlInjection,
-            var name when name.Contains("nosql", StringComparison.CurrentCulture) => ThreatType.NoSqlInjection,
+            var name when name.Contains("sql", StringComparison.OrdinalIgnoreCase) => ThreatType.SqlInjection,
+            var name when name.Contains("xss", StringComparison.OrdinalIgnoreCase) => ThreatType.XssInjection,
+            var name when name.Contains("command", StringComparison.OrdinalIgnoreCase) => ThreatType.CommandInjection,
+            var name when name.Contains("path", StringComparison.OrdinalIgnoreCase) => ThreatType.PathTraversal,
+            var name when name.Contains("ldap", StringComparison.OrdinalIgnoreCase) => ThreatType.LdapInjection,
+            var name when name.Contains("code", StringComparison.OrdinalIgnoreCase) => ThreatType.CodeInjection,
+            var name when name.Contains("xml", StringComparison.OrdinalIgnoreCase) => ThreatType.XmlInjection,
+            var name when name.Contains("nosql", StringComparison.OrdinalIgnoreCase) => ThreatType.NoSqlInjection,
             _ => ThreatType.GeneralMalicious
         };
     }
@@ -836,9 +890,9 @@ public sealed partial class InputSanitizer : IDisposable
     {
         return patternName switch
         {
-            var name when name.Contains("advanced", StringComparison.CurrentCulture) || name.Contains("powershell", StringComparison.CurrentCulture) => ThreatSeverity.Critical,
-            var name when name.Contains("injection", StringComparison.CurrentCulture) || name.Contains("traversal", StringComparison.CurrentCulture) => ThreatSeverity.High,
-            var name when name.Contains("basic", StringComparison.CurrentCulture) || name.Contains("html", StringComparison.CurrentCulture) => ThreatSeverity.Medium,
+            var name when name.Contains("advanced", StringComparison.OrdinalIgnoreCase) || name.Contains("powershell", StringComparison.OrdinalIgnoreCase) => ThreatSeverity.Critical,
+            var name when name.Contains("injection", StringComparison.OrdinalIgnoreCase) || name.Contains("traversal", StringComparison.OrdinalIgnoreCase) => ThreatSeverity.High,
+            var name when name.Contains("basic", StringComparison.OrdinalIgnoreCase) || name.Contains("html", StringComparison.OrdinalIgnoreCase) => ThreatSeverity.Medium,
             _ => ThreatSeverity.Low
         };
     }
@@ -875,7 +929,7 @@ public sealed partial class InputSanitizer : IDisposable
         try
         {
             var stats = GetStatistics();
-            _logger.LogInfoMessage($"Input validation statistics: Validations={stats.TotalValidations}, Threats={stats.TotalThreatsDetected}, Violations={stats.TotalSecurityViolations}");
+            LogStatistics(_logger, stats.TotalValidations, stats.TotalThreatsDetected, stats.TotalSecurityViolations);
         }
         catch (Exception ex)
         {
@@ -903,7 +957,7 @@ public sealed partial class InputSanitizer : IDisposable
         _validationLock?.Dispose();
 
 
-        _logger.LogInfoMessage($"InputSanitizer disposed. Final statistics: Validations={_statistics.TotalValidations}, Threats={_statistics.TotalThreatsDetected}");
+        LogDisposed(_logger, _statistics.TotalValidations, _statistics.TotalThreatsDetected);
     }
 }
 
@@ -975,14 +1029,23 @@ public sealed class InputSanitizationConfiguration
 /// </summary>
 public enum SanitizationType
 {
+    /// <summary>General purpose sanitization.</summary>
     General,
+    /// <summary>HTML content sanitization.</summary>
     Html,
+    /// <summary>SQL query parameter sanitization.</summary>
     Sql,
+    /// <summary>File path sanitization.</summary>
     FilePath,
+    /// <summary>URL sanitization.</summary>
     Url,
+    /// <summary>Email address sanitization.</summary>
     Email,
+    /// <summary>Alphanumeric character sanitization.</summary>
     AlphaNumeric,
+    /// <summary>Numeric value sanitization.</summary>
     Numeric,
+    /// <summary>Kernel parameter sanitization.</summary>
     KernelParameter
 }
 /// <summary>
@@ -994,22 +1057,39 @@ public enum SanitizationType
 /// </summary>
 public enum ThreatType
 {
+    /// <summary>SQL injection attack threat.</summary>
     SqlInjection,
+    /// <summary>Cross-site scripting (XSS) injection threat.</summary>
     XssInjection,
+    /// <summary>Command injection attack threat.</summary>
     CommandInjection,
+    /// <summary>Path traversal attack threat.</summary>
     PathTraversal,
+    /// <summary>LDAP injection attack threat.</summary>
     LdapInjection,
+    /// <summary>Code injection attack threat.</summary>
     CodeInjection,
+    /// <summary>XML injection attack threat.</summary>
     XmlInjection,
+    /// <summary>NoSQL injection attack threat.</summary>
     NoSqlInjection,
+    /// <summary>Buffer overflow attack threat.</summary>
     BufferOverflow,
+    /// <summary>Null byte injection threat.</summary>
     NullByteInjection,
+    /// <summary>Control character injection threat.</summary>
     ControlCharacters,
+    /// <summary>Excessive input length threat.</summary>
     ExcessiveLength,
+    /// <summary>Invalid file type threat.</summary>
     InvalidFileType,
+    /// <summary>Suspicious file name threat.</summary>
     SuspiciousFileName,
+    /// <summary>Sanitization process failure threat.</summary>
     SanitizationFailure,
+    /// <summary>Processing error threat.</summary>
     ProcessingError,
+    /// <summary>General malicious input threat.</summary>
     GeneralMalicious
 }
 /// <summary>
@@ -1021,9 +1101,13 @@ public enum ThreatType
 /// </summary>
 public enum ThreatSeverity
 {
+    /// <summary>Low severity threat.</summary>
     Low = 1,
+    /// <summary>Medium severity threat.</summary>
     Medium = 2,
+    /// <summary>High severity threat.</summary>
     High = 3,
+    /// <summary>Critical severity threat requiring immediate action.</summary>
     Critical = 4
 }
 
@@ -1209,12 +1293,12 @@ public sealed class WorkGroupValidationResult
     /// Gets or sets the work group size.
     /// </summary>
     /// <value>The work group size.</value>
-    public required int[] WorkGroupSize { get; init; }
+    public required IReadOnlyList<int> WorkGroupSize { get; init; }
     /// <summary>
     /// Gets or sets the global size.
     /// </summary>
     /// <value>The global size.</value>
-    public required int[] GlobalSize { get; init; }
+    public required IReadOnlyList<int> GlobalSize { get; init; }
     /// <summary>
     /// Gets or sets the max work group size.
     /// </summary>

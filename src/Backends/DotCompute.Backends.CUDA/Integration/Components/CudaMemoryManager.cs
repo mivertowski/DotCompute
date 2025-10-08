@@ -143,24 +143,24 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
     /// <typeparam name="T">The T type parameter.</typeparam>
     /// <param name="buffer">The buffer.</param>
     /// <param name="offset">The offset.</param>
-    /// <param name="count">The count.</param>
+    /// <param name="length">The length.</param>
     /// <returns>The created view.</returns>
 
     public IUnifiedMemoryBuffer<T> CreateView<T>(
         IUnifiedMemoryBuffer<T> buffer,
         int offset,
-        int count) where T : unmanaged
+        int length) where T : unmanaged
     {
         ThrowIfDisposed();
 
         try
         {
-            return _asyncAdapter.CreateView(buffer, offset, count);
+            return _asyncAdapter.CreateView(buffer, offset, length);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create memory view at offset {Offset} with count {Count}", offset, count);
-            throw new MemoryException($"Failed to create memory view at offset {offset} with count {count}", ex);
+            _logger.LogError(ex, "Failed to create memory view at offset {Offset} with length {Length}", offset, length);
+            throw new MemoryException($"Failed to create memory view at offset {offset} with length {length}", ex);
         }
     }
     /// <summary>

@@ -3,8 +3,8 @@
 
 using DotCompute.Abstractions;
 using System.Collections.Concurrent;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace DotCompute.Core.Execution.Scheduling;
 
@@ -268,12 +268,12 @@ internal class DevicePerformanceEstimator
         var workingMemory = (long)(inputDataSize * workingMemoryFactor);
 
         // Add algorithm-specific overhead
-        var algorithmOverhead = kernelName.ToLowerInvariant() switch
+        var algorithmOverhead = kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => inputDataSize / 2,     // Sorting needs extra space
-            var n when n.Contains("fft", StringComparison.CurrentCulture) => inputDataSize,          // FFT needs temporary buffers
-            var n when n.Contains("matrix", StringComparison.CurrentCulture) => inputDataSize / 4,    // Matrix ops need temp space
-            var n when n.Contains("reduce", StringComparison.CurrentCulture) => inputDataSize / 8,    // Reduction needs partial results
+            var n when n.Contains("sort", StringComparison.Ordinal) => inputDataSize / 2,     // Sorting needs extra space
+            var n when n.Contains("fft", StringComparison.Ordinal) => inputDataSize,          // FFT needs temporary buffers
+            var n when n.Contains("matrix", StringComparison.Ordinal) => inputDataSize / 4,    // Matrix ops need temp space
+            var n when n.Contains("reduce", StringComparison.Ordinal) => inputDataSize / 8,    // Reduction needs partial results
             _ => inputDataSize / 10                                  // Default overhead
         };
 
@@ -428,30 +428,30 @@ internal class DevicePerformanceEstimator
     private static KernelPerformanceModel AnalyzeKernelCharacteristics(string kernelName)
     {
         var model = new KernelPerformanceModel();
-        var lowerName = kernelName.ToLowerInvariant();
+        var lowerName = kernelName.ToUpper(CultureInfo.InvariantCulture);
 
         // Estimate compute intensity based on kernel name patterns
         model.ComputeIntensity = lowerName switch
         {
-            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => 50.0,     // Matrix operations are compute-intensive
-            var n when n.Contains("fft", StringComparison.CurrentCulture) || n.Contains("transform", StringComparison.CurrentCulture) => 30.0,   // FFT operations
-            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => 25.0,     // Convolution operations
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => 10.0,                            // Sorting operations
-            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("sum", StringComparison.CurrentCulture) => 5.0,       // Reduction operations
-            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => 1.0,      // Memory operations
+            var n when n.Contains("matrix", StringComparison.Ordinal) || n.Contains("gemm", StringComparison.Ordinal) => 50.0,     // Matrix operations are compute-intensive
+            var n when n.Contains("fft", StringComparison.Ordinal) || n.Contains("transform", StringComparison.Ordinal) => 30.0,   // FFT operations
+            var n when n.Contains("conv", StringComparison.Ordinal) || n.Contains("filter", StringComparison.Ordinal) => 25.0,     // Convolution operations
+            var n when n.Contains("sort", StringComparison.Ordinal) => 10.0,                            // Sorting operations
+            var n when n.Contains("reduce", StringComparison.Ordinal) || n.Contains("sum", StringComparison.Ordinal) => 5.0,       // Reduction operations
+            var n when n.Contains("copy", StringComparison.Ordinal) || n.Contains("memcpy", StringComparison.Ordinal) => 1.0,      // Memory operations
             _ => 10.0                                                          // Default estimate
         };
 
         // Estimate memory access pattern complexity
         model.MemoryAccessPatternFactor = lowerName switch
         {
-            var n when n.Contains("matrix", StringComparison.CurrentCulture) => 2.5,       // Complex access patterns
-            var n when n.Contains("transpose", StringComparison.CurrentCulture) => 3.0,    // Irregular access
-            var n when n.Contains("gather", StringComparison.CurrentCulture) => 2.8,       // Scattered access
-            var n when n.Contains("scatter", StringComparison.CurrentCulture) => 2.8,      // Scattered access
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => 2.2,         // Irregular during sorting
-            var n when n.Contains("scan", StringComparison.CurrentCulture) => 1.8,         // Somewhat irregular
-            var n when n.Contains("reduce", StringComparison.CurrentCulture) => 1.5,       // Tree-like access
+            var n when n.Contains("matrix", StringComparison.Ordinal) => 2.5,       // Complex access patterns
+            var n when n.Contains("transpose", StringComparison.Ordinal) => 3.0,    // Irregular access
+            var n when n.Contains("gather", StringComparison.Ordinal) => 2.8,       // Scattered access
+            var n when n.Contains("scatter", StringComparison.Ordinal) => 2.8,      // Scattered access
+            var n when n.Contains("sort", StringComparison.Ordinal) => 2.2,         // Irregular during sorting
+            var n when n.Contains("scan", StringComparison.Ordinal) => 1.8,         // Somewhat irregular
+            var n when n.Contains("reduce", StringComparison.Ordinal) => 1.5,       // Tree-like access
             _ => 1.2                                       // Mostly sequential
         };
 
@@ -633,19 +633,19 @@ internal class DevicePerformanceEstimator
     /// </summary>
     private static double CalculateCompatibilityFactor(string kernelName, string deviceType)
     {
-        var lowerKernel = kernelName.ToLowerInvariant();
+        var lowerKernel = kernelName.ToUpper(CultureInfo.InvariantCulture);
 
         // GPU-friendly kernels
         if (deviceType is "CUDA" or "METAL" or "OPENCL")
         {
             return lowerKernel switch
             {
-                var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => 1.2,     // Excellent for GPU
-                var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => 1.15,    // Very good for GPU
-                var n when n.Contains("fft", StringComparison.CurrentCulture) || n.Contains("transform", StringComparison.CurrentCulture) => 1.1,   // Good for GPU
-                var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("sum", StringComparison.CurrentCulture) => 1.05,     // Good for GPU
-                var n when n.Contains("sort", StringComparison.CurrentCulture) => 0.9,                            // Less ideal for GPU
-                var n when n.Contains("scan", StringComparison.CurrentCulture) => 0.95,                           // Moderate for GPU
+                var n when n.Contains("matrix", StringComparison.Ordinal) || n.Contains("gemm", StringComparison.Ordinal) => 1.2,     // Excellent for GPU
+                var n when n.Contains("conv", StringComparison.Ordinal) || n.Contains("filter", StringComparison.Ordinal) => 1.15,    // Very good for GPU
+                var n when n.Contains("fft", StringComparison.Ordinal) || n.Contains("transform", StringComparison.Ordinal) => 1.1,   // Good for GPU
+                var n when n.Contains("reduce", StringComparison.Ordinal) || n.Contains("sum", StringComparison.Ordinal) => 1.05,     // Good for GPU
+                var n when n.Contains("sort", StringComparison.Ordinal) => 0.9,                            // Less ideal for GPU
+                var n when n.Contains("scan", StringComparison.Ordinal) => 0.95,                           // Moderate for GPU
                 _ => 1.0
             };
         }
@@ -653,9 +653,9 @@ internal class DevicePerformanceEstimator
         // CPU excels at different patterns
         return lowerKernel switch
         {
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => 1.1,        // Good for CPU
-            var n when n.Contains("scan", StringComparison.CurrentCulture) => 1.05,       // Good for CPU
-            var n when n.Contains("complex", StringComparison.CurrentCulture) => 1.05,    // Complex algorithms good for CPU
+            var n when n.Contains("sort", StringComparison.Ordinal) => 1.1,        // Good for CPU
+            var n when n.Contains("scan", StringComparison.Ordinal) => 1.05,       // Good for CPU
+            var n when n.Contains("complex", StringComparison.Ordinal) => 1.05,    // Complex algorithms good for CPU
             _ => 1.0
         };
     }

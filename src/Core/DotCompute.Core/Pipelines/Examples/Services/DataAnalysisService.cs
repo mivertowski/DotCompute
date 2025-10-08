@@ -7,7 +7,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for data analysis using kernel chains.
 /// Demonstrates high-performance data processing workflows.
 /// </summary>
-public class DataAnalysisService
+public static class DataAnalysisService
 {
     /// <summary>
     /// Analyzes data using parallel processing kernel chains.

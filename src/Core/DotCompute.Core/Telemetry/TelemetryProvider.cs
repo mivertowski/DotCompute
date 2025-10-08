@@ -50,10 +50,16 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
         MetricsCollector metricsCollector,
         PerformanceProfiler performanceProfiler)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-        _metricsCollector = metricsCollector ?? throw new ArgumentNullException(nameof(metricsCollector));
-        _performanceProfiler = performanceProfiler ?? throw new ArgumentNullException(nameof(performanceProfiler));
+        ArgumentNullException.ThrowIfNull(metricsCollector);
+
+        _metricsCollector = metricsCollector;
+        ArgumentNullException.ThrowIfNull(performanceProfiler);
+
+        _performanceProfiler = performanceProfiler;
 
 
         _correlationContext = new ConcurrentDictionary<string, object>();
@@ -159,7 +165,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     /// <summary>
     /// Records kernel execution metrics with detailed performance data.
     /// </summary>
-    public override void RecordKernelExecution(string kernelName, TimeSpan duration,
+    public override void RecordKernelExecution(string kernelName, TimeSpan executionTime,
 
         string deviceId, bool success, Dictionary<string, object> metadata)
     {
@@ -184,7 +190,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
 
 
         _kernelExecutionCounter.Add(1, [.. tags]);
-        _kernelExecutionDuration.Record(duration.TotalSeconds, [.. tags]);
+        _kernelExecutionDuration.Record(executionTime.TotalSeconds, [.. tags]);
 
 
         if (!success)
@@ -413,11 +419,7 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(ProductionTelemetryProvider));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

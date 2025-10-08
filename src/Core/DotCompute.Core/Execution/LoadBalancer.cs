@@ -40,21 +40,17 @@ namespace DotCompute.Core.Execution
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="workItems">The work items.</param>
-        /// <param name="deviceQueues">The device queues.</param>
+        /// <param name="deviceQueues">The device schedulers.</param>
         /// <exception cref="ArgumentNullException">workItems</exception>
-        /// <exception cref="ArgumentException">Device queues cannot be null or empty - deviceQueues</exception>
-        public void DistributeWorkItems<T>(List<WorkItem<T>> workItems, DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
+        /// <exception cref="ArgumentException">Device schedulers cannot be null or empty - deviceQueues</exception>
+        public void DistributeWorkItems<T>(IList<WorkItem<T>> workItems, DeviceWorkScheduler<T>[] deviceQueues) where T : unmanaged
         {
-            if (workItems == null)
-            {
-                _logger.LogError("Cannot distribute null work items");
-                throw new ArgumentNullException(nameof(workItems));
-            }
+            ArgumentNullException.ThrowIfNull(workItems);
 
             if (deviceQueues == null || deviceQueues.Length == 0)
             {
-                _logger.LogError("Cannot distribute work items: no device queues available");
-                throw new ArgumentException("Device queues cannot be null or empty", nameof(deviceQueues));
+                _logger.LogError("Cannot distribute work items: no device schedulers available");
+                throw new ArgumentException("Device schedulers cannot be null or empty", nameof(deviceQueues));
             }
 
             var validWorkItems = workItems.Where(item => item != null).ToList();
@@ -95,9 +91,9 @@ namespace DotCompute.Core.Execution
         /// Calculates the load imbalance.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="deviceQueues">The device queues.</param>
+        /// <param name="deviceQueues">The device schedulers.</param>
         /// <returns></returns>
-        public static double CalculateLoadImbalance<T>(DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
+        public static double CalculateLoadImbalance<T>(DeviceWorkScheduler<T>[] deviceQueues) where T : unmanaged
         {
             var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();
             var maxWork = workCounts.Max();
@@ -110,10 +106,10 @@ namespace DotCompute.Core.Execution
         /// Rebalances the work asynchronous.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="deviceQueues">The device queues.</param>
+        /// <param name="deviceQueues">The device schedulers.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        public async ValueTask RebalanceWorkAsync<T>(DeviceWorkQueue<T>[] deviceQueues, CancellationToken cancellationToken) where T : unmanaged
+        public async ValueTask RebalanceWorkAsync<T>(DeviceWorkScheduler<T>[] deviceQueues, CancellationToken cancellationToken) where T : unmanaged
         {
             _logger.LogDebugMessage("Rebalancing work across {deviceQueues.Length} devices");
 

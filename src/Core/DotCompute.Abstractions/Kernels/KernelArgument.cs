@@ -86,7 +86,9 @@ public sealed class KernelArgument
     /// <param name="value">The argument value</param>
     public KernelArgument(string name, object? value)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
+
+        Name = name;
         Value = value;
         Type = value?.GetType() ?? typeof(object);
 
@@ -105,8 +107,11 @@ public sealed class KernelArgument
     /// <param name="value">The argument value</param>
     public KernelArgument(string name, Type type, object? value)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type ?? throw new ArgumentNullException(nameof(type));
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(type);
+
+        Name = name;
+        Type = type;
         Value = value;
 
         if (value != null)

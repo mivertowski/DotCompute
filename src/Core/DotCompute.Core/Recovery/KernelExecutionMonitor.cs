@@ -10,7 +10,7 @@ namespace DotCompute.Core.Recovery;
 /// <summary>
 /// Implementation of kernel execution monitoring
 /// </summary>
-public class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
+public sealed class KernelExecutionMonitor(string kernelId, TimeSpan timeout, ILogger logger, string deviceId = "unknown") : IKernelExecutionMonitor
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly CancellationTokenSource _cancellationTokenSource = new();

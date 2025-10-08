@@ -55,13 +55,7 @@ public sealed class NumaScheduler : IDisposable
     public Task ScheduleOnNodeAsync(Action action, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
-
-        if (action == null)
-        {
-
-            throw new ArgumentNullException(nameof(action));
-        }
-
+        ArgumentNullException.ThrowIfNull(action);
 
         if (nodeId < 0 || nodeId >= _topology.NodeCount)
         {
@@ -84,13 +78,7 @@ public sealed class NumaScheduler : IDisposable
     public Task<T> ScheduleOnNodeAsync<T>(Func<T> function, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
-
-        if (function == null)
-        {
-
-            throw new ArgumentNullException(nameof(function));
-        }
-
+        ArgumentNullException.ThrowIfNull(function);
 
         if (nodeId < 0 || nodeId >= _topology.NodeCount)
         {
@@ -113,13 +101,7 @@ public sealed class NumaScheduler : IDisposable
     public Task<T> ScheduleOnNodeAsync<T>(Func<Task<T>> asyncFunction, int nodeId, TaskPriority priority = TaskPriority.Normal)
     {
         ThrowIfDisposed();
-
-        if (asyncFunction == null)
-        {
-
-            throw new ArgumentNullException(nameof(asyncFunction));
-        }
-
+        ArgumentNullException.ThrowIfNull(asyncFunction);
 
         if (nodeId < 0 || nodeId >= _topology.NodeCount)
         {

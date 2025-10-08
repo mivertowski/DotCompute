@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
@@ -113,7 +114,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <returns>Enhanced comparison report with additional insights.</returns>
     public async Task<ResultComparisonReport> EnhanceComparisonReportAsync(
         ResultComparisonReport comparisonReport,
-        List<KernelExecutionResult> executionResults)
+        IList<KernelExecutionResult> executionResults)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(comparisonReport);
@@ -285,7 +286,7 @@ public sealed partial class KernelDebugAnalyzer(
             var variabilityScore = CalculateVariabilityScore(kernelName, runCount);
             var isDeterministic = variabilityScore < 0.01; // Less than 1% variability
 
-            var nonDeterministicComponents = new List<string>();
+            IReadOnlyList<string> nonDeterministicComponents = new List<string>();
             if (!isDeterministic)
             {
                 nonDeterministicComponents = IdentifyNonDeterministicComponents(kernelName, variabilityScore);
@@ -297,7 +298,7 @@ public sealed partial class KernelDebugAnalyzer(
                 RunCount = runCount,
                 IsDeterministic = isDeterministic,
                 VariabilityScore = variabilityScore,
-                NonDeterministicComponents = nonDeterministicComponents,
+                NonDeterministicComponents = (IReadOnlyList<string>)nonDeterministicComponents,
                 Recommendations = GenerateDeterminismRecommendations(isDeterministic, nonDeterministicComponents),
                 AnalysisTimestamp = DateTime.UtcNow
             };
@@ -371,12 +372,12 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes performance variations across execution results.
     /// </summary>
-    private static PerformanceVariationAnalysis AnalyzePerformanceVariations(List<KernelExecutionResult> results)
+    private static PerformanceVariationAnalysis AnalyzePerformanceVariations(IList<KernelExecutionResult> results)
     {
         var executionTimes = results.Where(r => r.Timings != null).Select(r => r.Timings!.TotalTimeMs).ToArray();
         var memoryUsages = results
             .Where(r => r.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
-            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"]))
+            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"], CultureInfo.InvariantCulture))
             .ToArray();
 
         return new PerformanceVariationAnalysis
@@ -392,7 +393,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Analyzes trace point patterns to identify execution characteristics.
     /// </summary>
-    private static TracePointPatternAnalysis AnalyzeTracePointPatterns(List<TracePoint> tracePoints)
+    private static TracePointPatternAnalysis AnalyzeTracePointPatterns(IList<TracePoint> tracePoints)
     {
         if (tracePoints.Count == 0)
         {
@@ -454,7 +455,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Detects performance anomalies in trace points.
     /// </summary>
-    private static List<PerformanceAnomaly> DetectPerformanceAnomalies(IReadOnlyList<TracePoint> tracePoints)
+    private static IReadOnlyList<PerformanceAnomaly> DetectPerformanceAnomalies(IReadOnlyList<TracePoint> tracePoints)
     {
         var anomalies = new List<PerformanceAnomaly>();
 
@@ -559,7 +560,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Identifies optimization opportunities based on analysis.
     /// </summary>
-    private static List<OptimizationOpportunity> IdentifyOptimizationOpportunities(
+    private static IReadOnlyList<OptimizationOpportunity> IdentifyOptimizationOpportunities(
         PerformanceReport performanceReport,
         MemoryUsageAnalysis memoryAnalysis,
         Core.BottleneckAnalysis bottleneckAnalysis)
@@ -662,7 +663,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Identifies non-deterministic components.
     /// </summary>
-    private static List<string> IdentifyNonDeterministicComponents(string kernelName, double variabilityScore)
+    private static IReadOnlyList<string> IdentifyNonDeterministicComponents(string kernelName, double variabilityScore)
     {
         var components = new List<string>();
 
@@ -687,7 +688,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// <summary>
     /// Generates determinism recommendations.
     /// </summary>
-    private static List<string> GenerateDeterminismRecommendations(bool isDeterministic, IReadOnlyList<string> nonDeterministicComponents)
+    private static IReadOnlyList<string> GenerateDeterminismRecommendations(bool isDeterministic, IReadOnlyList<string> nonDeterministicComponents)
     {
         var recommendations = new List<string>();
 
@@ -854,7 +855,7 @@ public sealed partial class KernelDebugAnalyzer(
         return coefficient < 0.1 ? ExecutionPattern.Regular : ExecutionPattern.Irregular;
     }
 
-    private static List<string> IdentifyExecutionCharacteristics(List<TracePoint> tracePoints, IReadOnlyList<double> timingIntervals)
+    private static IReadOnlyList<string> IdentifyExecutionCharacteristics(IList<TracePoint> tracePoints, IReadOnlyList<double> timingIntervals)
     {
         var characteristics = new List<string>();
 
@@ -869,7 +870,6 @@ public sealed partial class KernelDebugAnalyzer(
             {
                 characteristics.Add("Low-frequency execution");
             }
-
         }
 
         return characteristics;
@@ -1365,40 +1365,146 @@ public record ScalingPredictions
 /// </summary>
 
 // Enums for analytics
-public enum ExecutionPattern { Unknown, Regular, Irregular, Burst, Adaptive }
+public enum ExecutionPattern
+{
+    /// <summary>Unknown execution pattern.</summary>
+    Unknown,
+    /// <summary>Regular execution pattern with consistent timing.</summary>
+    Regular,
+    /// <summary>Irregular execution pattern with variable timing.</summary>
+    Irregular,
+    /// <summary>Burst execution pattern with periodic spikes.</summary>
+    Burst,
+    /// <summary>Adaptive execution pattern that adjusts over time.</summary>
+    Adaptive
+}
 /// <summary>
 /// An memory growth pattern enumeration.
 /// </summary>
-public enum MemoryGrowthPattern { Unknown, Stable, Increasing, Decreasing, Oscillating }
+public enum MemoryGrowthPattern
+{
+    /// <summary>Unknown memory growth pattern.</summary>
+    Unknown,
+    /// <summary>Stable memory usage with no significant growth.</summary>
+    Stable,
+    /// <summary>Increasing memory usage over time.</summary>
+    Increasing,
+    /// <summary>Decreasing memory usage over time.</summary>
+    Decreasing,
+    /// <summary>Oscillating memory usage pattern.</summary>
+    Oscillating
+}
 /// <summary>
 /// An anomaly type enumeration.
 /// </summary>
-public enum AnomalyType { Timing, Memory, Throughput, Resource }
+public enum AnomalyType
+{
+    /// <summary>Timing-related performance anomaly.</summary>
+    Timing,
+    /// <summary>Memory-related anomaly.</summary>
+    Memory,
+    /// <summary>Throughput-related anomaly.</summary>
+    Throughput,
+    /// <summary>Resource utilization anomaly.</summary>
+    Resource
+}
 /// <summary>
 /// An anomaly severity enumeration.
 /// </summary>
-public enum AnomalySeverity { Low, Medium, High, Critical }
+public enum AnomalySeverity
+{
+    /// <summary>Low severity anomaly.</summary>
+    Low,
+    /// <summary>Medium severity anomaly.</summary>
+    Medium,
+    /// <summary>High severity anomaly.</summary>
+    High,
+    /// <summary>Critical severity anomaly requiring immediate attention.</summary>
+    Critical
+}
 /// <summary>
 /// An performance trend enumeration.
 /// </summary>
-public enum PerformanceTrend { Unknown, Improving, Degrading, Stable, Volatile }
+public enum PerformanceTrend
+{
+    /// <summary>Unknown performance trend.</summary>
+    Unknown,
+    /// <summary>Improving performance over time.</summary>
+    Improving,
+    /// <summary>Degrading performance over time.</summary>
+    Degrading,
+    /// <summary>Stable performance with minimal variation.</summary>
+    Stable,
+    /// <summary>Volatile performance with significant fluctuations.</summary>
+    Volatile
+}
 /// <summary>
 /// An trend direction enumeration.
 /// </summary>
-public enum TrendDirection { Up, Down, Neutral }
+public enum TrendDirection
+{
+    /// <summary>Upward trend direction.</summary>
+    Up,
+    /// <summary>Downward trend direction.</summary>
+    Down,
+    /// <summary>Neutral trend with no significant direction.</summary>
+    Neutral
+}
 /// <summary>
 /// An optimization type enumeration.
 /// </summary>
-public enum OptimizationType { Memory, Performance, Resource, Algorithm }
+public enum OptimizationType
+{
+    /// <summary>Memory-related optimization.</summary>
+    Memory,
+    /// <summary>Performance-related optimization.</summary>
+    Performance,
+    /// <summary>Resource utilization optimization.</summary>
+    Resource,
+    /// <summary>Algorithm-related optimization.</summary>
+    Algorithm
+}
 /// <summary>
 /// An optimization impact enumeration.
 /// </summary>
-public enum OptimizationImpact { Low, Medium, High, Critical }
+public enum OptimizationImpact
+{
+    /// <summary>Low impact optimization.</summary>
+    Low,
+    /// <summary>Medium impact optimization.</summary>
+    Medium,
+    /// <summary>High impact optimization.</summary>
+    High,
+    /// <summary>Critical impact optimization with significant performance improvement.</summary>
+    Critical
+}
 /// <summary>
 /// An analysis quality enumeration.
 /// </summary>
-public enum AnalysisQuality { Insufficient, Poor, Fair, Good, Excellent }
+public enum AnalysisQuality
+{
+    /// <summary>Insufficient data for quality analysis.</summary>
+    Insufficient,
+    /// <summary>Poor quality analysis with limited accuracy.</summary>
+    Poor,
+    /// <summary>Fair quality analysis with moderate accuracy.</summary>
+    Fair,
+    /// <summary>Good quality analysis with high accuracy.</summary>
+    Good,
+    /// <summary>Excellent quality analysis with very high accuracy.</summary>
+    Excellent
+}
 /// <summary>
 /// An validation strategy enumeration.
 /// </summary>
-public enum ValidationStrategy { Standard, Comprehensive, Sampling, Adaptive }
+public enum ValidationStrategy
+{
+    /// <summary>Standard validation strategy with basic checks.</summary>
+    Standard,
+    /// <summary>Comprehensive validation strategy with extensive checks.</summary>
+    Comprehensive,
+    /// <summary>Sampling-based validation strategy for large datasets.</summary>
+    Sampling,
+    /// <summary>Adaptive validation strategy that adjusts based on context.</summary>
+    Adaptive
+}

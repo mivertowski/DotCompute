@@ -48,7 +48,6 @@ namespace DotCompute.Core.Extensions
 
                     return stats.TotalAvailable;
                 }
-
             }
 
             // Fallback to calculating from interface properties
@@ -98,7 +97,6 @@ namespace DotCompute.Core.Extensions
 
                     return stats.TotalAllocated;
                 }
-
             }
 
             // Fallback to interface property
@@ -147,7 +145,6 @@ namespace DotCompute.Core.Extensions
 
                     return stats.CurrentUsage;
                 }
-
             }
 
             // Fallback to interface property
@@ -295,7 +292,6 @@ namespace DotCompute.Core.Extensions
 
                     return valueTask;
                 }
-
             }
 
             // Fall back to regular allocation with unified memory flag

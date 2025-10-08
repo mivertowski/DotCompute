@@ -320,7 +320,7 @@ public partial class DebugIntegratedOrchestrator(
                 var determinismReport = await _debugService.ValidateDeterminismAsync(kernelName, args, 3);
                 if (!determinismReport.IsDeterministic)
                 {
-                    LogNonDeterministicBehavior(_logger, kernelName, determinismReport.NonDeterminismSource, executionId);
+                    LogNonDeterministicBehavior(_logger, kernelName, determinismReport.NonDeterminismSource ?? "Unknown", executionId);
                 }
             }
         }
@@ -354,7 +354,7 @@ public partial class DebugIntegratedOrchestrator(
             }
             else
             {
-                LogCrossBackendValidationPassed(_logger, kernelName, validationResult.RecommendedBackend, executionId);
+                LogCrossBackendValidationPassed(_logger, kernelName, validationResult.RecommendedBackend ?? "Unknown", executionId);
             }
         }
         catch (Exception ex)
@@ -478,18 +478,25 @@ public partial class DebugIntegratedOrchestrator(
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-
-        (_baseOrchestrator as IDisposable)?.Dispose();
-        (_debugService as IDisposable)?.Dispose();
-
+        if (disposing)
+        {
+            // Dispose managed resources
+            (_baseOrchestrator as IDisposable)?.Dispose();
+            (_debugService as IDisposable)?.Dispose();
+        }
 
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 
     private class ValidationResult
@@ -673,17 +680,17 @@ public class DebugExecutionOptions
     /// <summary>
     /// Whether to validate kernels after execution.
     /// </summary>
-    public bool ValidateAfterExecution { get; set; } = false;
+    public bool ValidateAfterExecution { get; set; }
 
     /// <summary>
     /// Whether to fail execution if validation errors occur.
     /// </summary>
-    public bool FailOnValidationErrors { get; set; } = false;
+    public bool FailOnValidationErrors { get; set; }
 
     /// <summary>
     /// Whether to enable cross-backend validation.
     /// </summary>
-    public bool EnableCrossBackendValidation { get; set; } = false;
+    public bool EnableCrossBackendValidation { get; set; }
 
     /// <summary>
     /// Probability (0-1) of performing cross-backend validation.
@@ -703,12 +710,12 @@ public class DebugExecutionOptions
     /// <summary>
     /// Whether to store performance history for trend analysis.
     /// </summary>
-    public bool StorePerformanceHistory { get; set; } = false;
+    public bool StorePerformanceHistory { get; set; }
 
     /// <summary>
     /// Whether to test for deterministic behavior.
     /// </summary>
-    public bool TestDeterminism { get; set; } = false;
+    public bool TestDeterminism { get; set; }
 
     /// <summary>
     /// Whether to analyze errors when execution fails.

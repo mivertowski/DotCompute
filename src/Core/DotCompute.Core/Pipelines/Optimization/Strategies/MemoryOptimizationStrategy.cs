@@ -213,7 +213,6 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
         {
             await context.MemoryManager.CollectAsync();
         }
-
     }
 
     private static async ValueTask CleanupMemoryAsync(AbstractionsMemory.Models.Pipelines.PipelineExecutionContext context)
@@ -224,6 +223,5 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
 
             await context.MemoryManager.CollectAsync();
         }
-
     }
 }

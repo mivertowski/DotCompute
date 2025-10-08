@@ -14,8 +14,8 @@ namespace DotCompute.Core.Execution
     {
         private readonly ILogger _logger;
         private readonly int _deviceCount;
-        private readonly int[,] _successfulSteals;
-        private readonly int[,] _failedSteals;
+        private readonly int[][] _successfulSteals;
+        private readonly int[][] _failedSteals;
         private readonly object _statsLock = new();
 
         /// <summary>
@@ -28,8 +28,15 @@ namespace DotCompute.Core.Execution
         {
             _deviceCount = deviceCount;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _successfulSteals = new int[deviceCount, deviceCount];
-            _failedSteals = new int[deviceCount, deviceCount];
+
+            // Initialize jagged arrays instead of multidimensional
+            _successfulSteals = new int[deviceCount][];
+            _failedSteals = new int[deviceCount][];
+            for (int i = 0; i < deviceCount; i++)
+            {
+                _successfulSteals[i] = new int[deviceCount];
+                _failedSteals[i] = new int[deviceCount];
+            }
         }
 
         /// <summary>
@@ -41,7 +48,7 @@ namespace DotCompute.Core.Execution
         {
             lock (_statsLock)
             {
-                _successfulSteals[thiefIndex, victimIndex]++;
+                _successfulSteals[thiefIndex][victimIndex]++;
             }
         }
 
@@ -56,7 +63,7 @@ namespace DotCompute.Core.Execution
         {
             lock (_statsLock)
             {
-                _failedSteals[thiefIndex, victimIndex]++;
+                _failedSteals[thiefIndex][victimIndex]++;
             }
         }
 
@@ -79,8 +86,8 @@ namespace DotCompute.Core.Execution
                     {
                         for (var j = 0; j < _deviceCount; j++)
                         {
-                            totalSuccessful += _successfulSteals[i, j];
-                            totalFailed += _failedSteals[i, j];
+                            totalSuccessful += _successfulSteals[i][j];
+                            totalFailed += _failedSteals[i][j];
                         }
                     }
 

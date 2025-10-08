@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -312,13 +313,13 @@ public static class ErrorHandlingUtilities
         }
 
         var message = new StringBuilder();
-        _ = message.AppendLine($"Multiple errors occurred during {operation}:");
+        _ = message.AppendLine(CultureInfo.InvariantCulture, $"Multiple errors occurred during {operation}:");
 
         for (var i = 0; i < errorList.Count; i++)
         {
             var error = errorList[i];
             var classification = ClassifyError(error);
-            _ = message.AppendLine($"  {i + 1}. [{classification}] {error.Message}");
+            _ = message.AppendLine(CultureInfo.InvariantCulture, $"  {i + 1}. [{classification}] {error.Message}");
         }
 
         var aggregateException = new AggregateException(message.ToString(), errorList);
@@ -359,17 +360,17 @@ public static class ErrorHandlingUtilities
 
     private static ErrorClassification ClassifyAcceleratorException(AcceleratorException exception)
     {
-        var message = exception.Message.ToLowerInvariant();
+        var message = exception.Message.ToUpper(CultureInfo.InvariantCulture);
 
         return message switch
         {
             var m when m.Contains("memory", StringComparison.OrdinalIgnoreCase) => ErrorClassification.MemoryExhaustion,
-            var m when m.Contains("device", StringComparison.OrdinalIgnoreCase) && m.Contains("not", StringComparison.CurrentCulture) && m.Contains("found", StringComparison.CurrentCulture) => ErrorClassification.DeviceNotFound,
-            var m when m.Contains("busy", StringComparison.CurrentCulture) || m.Contains("in use", StringComparison.CurrentCulture) => ErrorClassification.DeviceBusy,
-            var m when m.Contains("timeout", StringComparison.CurrentCulture) => ErrorClassification.Timeout,
-            var m when m.Contains("hardware", StringComparison.CurrentCulture) || m.Contains("driver", StringComparison.CurrentCulture) => ErrorClassification.HardwareFailure,
+            var m when m.Contains("device", StringComparison.OrdinalIgnoreCase) && m.Contains("not", StringComparison.Ordinal) && m.Contains("found", StringComparison.Ordinal) => ErrorClassification.DeviceNotFound,
+            var m when m.Contains("busy", StringComparison.Ordinal) || m.Contains("in use", StringComparison.Ordinal) => ErrorClassification.DeviceBusy,
+            var m when m.Contains("timeout", StringComparison.Ordinal) => ErrorClassification.Timeout,
+            var m when m.Contains("hardware", StringComparison.Ordinal) || m.Contains("driver", StringComparison.Ordinal) => ErrorClassification.HardwareFailure,
             var m when m.Contains("invalid", StringComparison.OrdinalIgnoreCase) => ErrorClassification.InvalidInput,
-            var m when m.Contains("permission", StringComparison.CurrentCulture) || m.Contains("access", StringComparison.CurrentCulture) => ErrorClassification.PermissionDenied,
+            var m when m.Contains("permission", StringComparison.Ordinal) || m.Contains("access", StringComparison.Ordinal) => ErrorClassification.PermissionDenied,
             _ => ErrorClassification.ComputeError
         };
     }
@@ -404,7 +405,6 @@ public static class ErrorHandlingUtilities
 
                 return priority;
             }
-
         }
 
         return ErrorClassification.Unknown;
@@ -522,7 +522,7 @@ public static class ErrorHandlingUtilities
         exception.Data["Severity"] = context.Severity.ToString();
         exception.Data["Backend"] = context.BackendType;
         exception.Data["Operation"] = context.Operation;
-        exception.Data["Timestamp"] = context.Timestamp.ToString("O");
+        exception.Data["Timestamp"] = context.Timestamp.ToString("O", CultureInfo.InvariantCulture);
 
         return exception;
     }

@@ -168,8 +168,8 @@ public enum UnifiedOperatorType
     /// <summary>Last operation.</summary>
     Last,
 
-    /// <summary>Single operation.</summary>
-    Single,
+    /// <summary>Single element operation (LINQ Single method).</summary>
+    SingleElement,
 
     /// <summary>Any operation.</summary>
     Any,
@@ -430,7 +430,7 @@ public static class UnifiedOperatorTypeExtensions
         [UnifiedOperatorType.Comparison] = ["Equal", "NotEqual", "LessThan", "GreaterThan", "LessThanOrEqual", "GreaterThanOrEqual"],
         [UnifiedOperatorType.Filter] = ["Where"],
         [UnifiedOperatorType.Projection] = ["Select", "SelectMany"],
-        [UnifiedOperatorType.Aggregation] = ["Sum", "Count", "Average", "Min", "Max", "First", "Last", "Single", "Any", "All"],
+        [UnifiedOperatorType.Aggregation] = ["Sum", "Count", "Average", "Min", "Max", "First", "Last", "SingleElement", "Any", "All"],
         [UnifiedOperatorType.Sort] = ["OrderBy", "OrderByDescending", "ThenBy", "ThenByDescending"],
         [UnifiedOperatorType.Group] = ["GroupBy"],
         [UnifiedOperatorType.Join] = ["Join", "GroupJoin", "LeftJoin", "RightJoin", "InnerJoin", "OuterJoin"],

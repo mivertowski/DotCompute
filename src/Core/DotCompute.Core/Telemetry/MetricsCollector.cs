@@ -35,7 +35,9 @@ public sealed class MetricsCollector : IDisposable
 
     public MetricsCollector(ILogger<MetricsCollector> logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _deviceMetrics = new ConcurrentDictionary<string, DeviceMetrics>();
         _kernelMetrics = new ConcurrentDictionary<string, KernelMetrics>();
         _memoryOperations = new ConcurrentQueue<MemoryOperation>();
@@ -308,7 +310,7 @@ public sealed class MetricsCollector : IDisposable
     /// <summary>
     /// Detects performance bottlenecks and returns optimization recommendations.
     /// </summary>
-    public List<PerformanceBottleneck> DetectBottlenecks()
+    public IReadOnlyList<PerformanceBottleneck> DetectBottlenecks()
     {
         ThrowIfDisposed();
 
@@ -528,11 +530,7 @@ public sealed class MetricsCollector : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MetricsCollector));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

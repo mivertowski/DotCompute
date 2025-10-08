@@ -49,7 +49,7 @@ namespace DotCompute.Core.Execution.Models
         /// <value>
         /// The device statistics.
         /// </value>
-        public DotCompute.Abstractions.Debugging.Types.DeviceQueueStatistics[] DeviceStatistics { get; set; } = [];
+        public IReadOnlyList<DotCompute.Abstractions.Debugging.Types.DeviceQueueStatistics> DeviceStatistics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the stealing statistics.

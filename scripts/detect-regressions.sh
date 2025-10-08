@@ -1,90 +1,190 @@
 #!/bin/bash
-# Regression detection script
-# Compares current build against baseline and previous runs
+# Regression Detection Script
+# Hive Mind - Tester Agent
+# Run after each fix batch to detect regressions
 
-BASELINE_LOG="/tmp/build-baseline.log"
-CURRENT_LOG="/tmp/build-current-$(date +%Y%m%d-%H%M%S).log"
-MEMORY_DB=".swarm/memory.db"
+set -e
 
-echo "============================================"
-echo "Regression Detector"
-echo "============================================"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+RESULTS_DIR="$PROJECT_ROOT/TestResults"
+
+echo "=================================="
+echo "Regression Detection"
+echo "=================================="
+echo "Date: $(date -Iseconds)"
 echo ""
 
-# Run current build
-echo "Running build..."
-dotnet build DotCompute.sln --configuration Release 2>&1 | tee "$CURRENT_LOG"
-
-# Extract error categories from baseline
-if [ ! -f "$BASELINE_LOG" ]; then
-    echo "⚠️  Baseline log not found at $BASELINE_LOG"
-    echo "Creating new baseline..."
-    cp "$CURRENT_LOG" "$BASELINE_LOG"
-    exit 0
+# Check if baseline exists
+if [ ! -f "$RESULTS_DIR/.baseline_established" ]; then
+    echo "❌ ERROR: No baseline established"
+    echo "Run: ./scripts/establish-test-baseline.sh"
+    exit 1
 fi
 
-echo ""
-echo "Comparing against baseline..."
+BASELINE_DATE=$(cat "$RESULTS_DIR/.baseline_established")
+echo "Baseline from: $BASELINE_DATE"
 echo ""
 
-# Count errors
-BASELINE_CS=$(grep -c "error CS" "$BASELINE_LOG" 2>/dev/null || echo 0)
-CURRENT_CS=$(grep -c "error CS" "$CURRENT_LOG" 2>/dev/null || echo 0)
+# Build check
+echo "Verifying build..."
+if ! dotnet build "$PROJECT_ROOT/DotCompute.sln" --no-restore > /dev/null 2>&1; then
+    echo "❌ ERROR: Build failed. Fix compilation errors first."
 
-BASELINE_CA=$(grep -c "error CA" "$BASELINE_LOG" 2>/dev/null || echo 0)
-CURRENT_CA=$(grep -c "error CA" "$CURRENT_LOG" 2>/dev/null || echo 0)
+    # Report build failure
+    npx claude-flow@alpha hooks notify \
+        --message "REGRESSION DETECTED: Build now fails (was passing at baseline)" \
+        --level "error"
 
-BASELINE_TOTAL=$(grep -cE "(error|warning)" "$BASELINE_LOG" 2>/dev/null || echo 0)
-CURRENT_TOTAL=$(grep -cE "(error|warning)" "$CURRENT_LOG" 2>/dev/null || echo 0)
+    exit 1
+fi
 
-# Calculate changes
-CS_DIFF=$((CURRENT_CS - BASELINE_CS))
-CA_DIFF=$((CURRENT_CA - BASELINE_CA))
-TOTAL_DIFF=$((CURRENT_TOTAL - BASELINE_TOTAL))
-
-echo "CS Errors:    $CURRENT_CS (baseline: $BASELINE_CS, change: $CS_DIFF)"
-echo "CA Errors:    $CURRENT_CA (baseline: $BASELINE_CA, change: $CA_DIFF)"
-echo "Total:        $CURRENT_TOTAL (baseline: $BASELINE_TOTAL, change: $TOTAL_DIFF)"
+echo "✅ Build successful"
 echo ""
 
-# Detect regressions (new errors introduced)
-REGRESSION=0
+# Run current tests
+echo "Running current test suite..."
+dotnet test "$PROJECT_ROOT/DotCompute.sln" \
+    --no-build \
+    --verbosity normal \
+    --logger "trx;LogFileName=current.trx" \
+    --logger "json;LogFileName=current.json" \
+    --results-directory "$RESULTS_DIR" \
+    > "$RESULTS_DIR/current_output.txt" 2>&1
 
-if [ "$CS_DIFF" -gt 0 ]; then
-    echo "🚨 REGRESSION: CS errors increased by $CS_DIFF"
-    echo ""
-    echo "New CS error types:"
-    comm -13 \
-        <(grep "error CS" "$BASELINE_LOG" | sed 's/.*error //' | cut -d':' -f1 | sort -u) \
-        <(grep "error CS" "$CURRENT_LOG" | sed 's/.*error //' | cut -d':' -f1 | sort -u)
-    REGRESSION=1
-fi
+TEST_EXIT_CODE=$?
 
-if [ "$CA_DIFF" -gt 0 ]; then
-    echo "⚠️  WARNING: CA analyzer errors increased by $CA_DIFF"
-    REGRESSION=1
-fi
+# Parse current results
+CURRENT_TOTAL=$(grep -oP 'Total tests: \K\d+' "$RESULTS_DIR/current_output.txt" || echo "0")
+CURRENT_PASSED=$(grep -oP 'Passed: \K\d+' "$RESULTS_DIR/current_output.txt" || echo "0")
+CURRENT_FAILED=$(grep -oP 'Failed: \K\d+' "$RESULTS_DIR/current_output.txt" || echo "0")
+CURRENT_SKIPPED=$(grep -oP 'Skipped: \K\d+' "$RESULTS_DIR/current_output.txt" || echo "0")
 
-if [ "$CS_DIFF" -lt 0 ]; then
-    echo "✅ IMPROVEMENT: CS errors decreased by ${CS_DIFF#-}"
-fi
+# Load baseline
+BASELINE_DATA=$(npx claude-flow@alpha memory retrieve "hive/tester/baseline_results" || echo '{}')
+BASELINE_PASSED=$(echo "$BASELINE_DATA" | jq -r '.test_counts.passed // 0')
+BASELINE_FAILED=$(echo "$BASELINE_DATA" | jq -r '.test_counts.failed // 0')
+BASELINE_TOTAL=$(echo "$BASELINE_DATA" | jq -r '.test_counts.total // 0')
 
-if [ "$CA_DIFF" -lt 0 ]; then
-    echo "✅ IMPROVEMENT: CA errors decreased by ${CA_DIFF#-}"
-fi
-
-if [ "$TOTAL_DIFF" -lt 0 ]; then
-    echo "✅ IMPROVEMENT: Total errors decreased by ${TOTAL_DIFF#-}"
-fi
-
+echo "=================================="
+echo "Comparison Results"
+echo "=================================="
 echo ""
-echo "============================================"
+echo "Metric          Baseline    Current     Delta"
+echo "------------------------------------------------"
+printf "Total           %-11s %-11s %+d\n" "$BASELINE_TOTAL" "$CURRENT_TOTAL" "$((CURRENT_TOTAL - BASELINE_TOTAL))"
+printf "Passed          %-11s %-11s %+d\n" "$BASELINE_PASSED" "$CURRENT_PASSED" "$((CURRENT_PASSED - BASELINE_PASSED))"
+printf "Failed          %-11s %-11s %+d\n" "$BASELINE_FAILED" "$CURRENT_FAILED" "$((CURRENT_FAILED - BASELINE_FAILED))"
+printf "Skipped         %-11s %-11s %+d\n" "$BASELINE_SKIPPED" "$CURRENT_SKIPPED" "$((CURRENT_SKIPPED - BASELINE_SKIPPED))"
+echo ""
 
-# Notify hive
-if [ "$REGRESSION" -eq 1 ]; then
-    npx claude-flow@alpha hooks notify --message "🚨 REGRESSION DETECTED: CS +$CS_DIFF, Total +$TOTAL_DIFF"
+# Detect regressions
+REGRESSIONS_FOUND=0
+REGRESSION_MESSAGE=""
+
+# Check for reduced passing tests
+if [ $CURRENT_PASSED -lt $BASELINE_PASSED ]; then
+    REGRESSIONS_FOUND=1
+    LOST_TESTS=$((BASELINE_PASSED - CURRENT_PASSED))
+    REGRESSION_MESSAGE="${REGRESSION_MESSAGE}❌ REGRESSION: Lost $LOST_TESTS passing tests\n"
+fi
+
+# Check for increased failures
+if [ $CURRENT_FAILED -gt $BASELINE_FAILED ]; then
+    REGRESSIONS_FOUND=1
+    NEW_FAILURES=$((CURRENT_FAILED - BASELINE_FAILED))
+    REGRESSION_MESSAGE="${REGRESSION_MESSAGE}❌ REGRESSION: $NEW_FAILURES new test failures\n"
+fi
+
+# Check for reduced total tests
+if [ $CURRENT_TOTAL -lt $BASELINE_TOTAL ]; then
+    REGRESSIONS_FOUND=1
+    MISSING_TESTS=$((BASELINE_TOTAL - CURRENT_TOTAL))
+    REGRESSION_MESSAGE="${REGRESSION_MESSAGE}⚠️  WARNING: $MISSING_TESTS tests missing from suite\n"
+fi
+
+# Report results
+if [ $REGRESSIONS_FOUND -eq 1 ]; then
+    echo "=================================="
+    echo "⚠️  REGRESSIONS DETECTED"
+    echo "=================================="
+    echo -e "$REGRESSION_MESSAGE"
+
+    # Store regression report
+    cat > "$RESULTS_DIR/regression_report.json" <<EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "regressions_detected": true,
+  "baseline": {
+    "total": $BASELINE_TOTAL,
+    "passed": $BASELINE_PASSED,
+    "failed": $BASELINE_FAILED
+  },
+  "current": {
+    "total": $CURRENT_TOTAL,
+    "passed": $CURRENT_PASSED,
+    "failed": $CURRENT_FAILED
+  },
+  "deltas": {
+    "total": $((CURRENT_TOTAL - BASELINE_TOTAL)),
+    "passed": $((CURRENT_PASSED - BASELINE_PASSED)),
+    "failed": $((CURRENT_FAILED - BASELINE_FAILED))
+  },
+  "message": "$REGRESSION_MESSAGE"
+}
+EOF
+
+    # Notify hive
+    npx claude-flow@alpha hooks notify \
+        --message "REGRESSION DETECTED: $REGRESSION_MESSAGE" \
+        --level "error"
+
+    # Store in memory
+    npx claude-flow@alpha memory store "hive/tester/regression_log" \
+        "$(cat $RESULTS_DIR/regression_report.json)" \
+        --namespace "default"
+
     exit 1
 else
-    npx claude-flow@alpha hooks notify --message "✅ No regressions: CS $CS_DIFF, Total $TOTAL_DIFF"
+    echo "=================================="
+    echo "✅ NO REGRESSIONS DETECTED"
+    echo "=================================="
+
+    if [ $CURRENT_PASSED -gt $BASELINE_PASSED ]; then
+        IMPROVEMENTS=$((CURRENT_PASSED - BASELINE_PASSED))
+        echo "🎉 IMPROVEMENT: $IMPROVEMENTS more tests passing!"
+    fi
+
+    echo ""
+    echo "All test metrics maintained or improved"
+
+    # Store success report
+    cat > "$RESULTS_DIR/regression_report.json" <<EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "regressions_detected": false,
+  "baseline": {
+    "total": $BASELINE_TOTAL,
+    "passed": $BASELINE_PASSED,
+    "failed": $BASELINE_FAILED
+  },
+  "current": {
+    "total": $CURRENT_TOTAL,
+    "passed": $CURRENT_PASSED,
+    "failed": $CURRENT_FAILED
+  },
+  "deltas": {
+    "total": $((CURRENT_TOTAL - BASELINE_TOTAL)),
+    "passed": $((CURRENT_PASSED - BASELINE_PASSED)),
+    "failed": $((CURRENT_FAILED - BASELINE_FAILED))
+  }
+}
+EOF
+
+    # Update current results in memory
+    npx claude-flow@alpha memory store "hive/tester/current_results" \
+        "$(cat $RESULTS_DIR/regression_report.json)" \
+        --namespace "default"
+
     exit 0
 fi

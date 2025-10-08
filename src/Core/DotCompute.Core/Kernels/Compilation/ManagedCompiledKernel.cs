@@ -263,7 +263,6 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
                     $"Kernel '{Name}' execution failed: {ex.InnerException?.Message ?? ex.Message}",
                     ex.InnerException ?? ex);
             }
-
         }, cancellationToken).ConfigureAwait(false);
     }
 

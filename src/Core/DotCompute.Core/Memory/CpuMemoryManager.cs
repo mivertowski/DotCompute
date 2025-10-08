@@ -209,9 +209,9 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
 
     /// <inheritdoc/>
     protected override IUnifiedMemoryBuffer CreateViewCore(
-        IUnifiedMemoryBuffer sourceBuffer,
-        long offsetInBytes,
-        long sizeInBytes)
+        IUnifiedMemoryBuffer buffer,
+        long offset,
+        long length)
         // CPU memory doesn't support views in this implementation
         // Would need to implement a view wrapper for CPU buffers
 
@@ -222,7 +222,7 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
 /// <summary>
 /// CPU memory buffer implementation.
 /// </summary>
-public class CpuMemoryBuffer : IUnifiedMemoryBuffer
+public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer
 {
     private readonly byte[] _data;
     private bool _disposed;
@@ -317,6 +317,11 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         GC.SuppressFinalize(this);
     }
@@ -330,11 +335,11 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
     /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long destinationOffset, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
         var sourceBytes = MemoryMarshal.AsBytes(source.Span);
-        sourceBytes.CopyTo(_data.AsSpan((int)destinationOffset));
+        sourceBytes.CopyTo(_data.AsSpan((int)offset));
         State = BufferState.HostReady;
         return ValueTask.CompletedTask;
     }
@@ -347,11 +352,11 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
     /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyToAsync<T>(Memory<T> destination, long sourceOffset, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyToAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
         var destBytes = MemoryMarshal.AsBytes(destination.Span);
-        _data.AsSpan((int)sourceOffset, destBytes.Length).CopyTo(destBytes);
+        _data.AsSpan((int)offset, destBytes.Length).CopyTo(destBytes);
         return ValueTask.CompletedTask;
     }
     /// <summary>
@@ -375,7 +380,7 @@ public class CpuMemoryBuffer : IUnifiedMemoryBuffer
 /// <summary>
 /// CPU memory buffer implementation with type safety.
 /// </summary>
-public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int length) : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
     private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
     private readonly int _length = length;
@@ -520,9 +525,9 @@ public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int lengt
     /// <returns>The result of the operation.</returns>
 
 
-    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
-        var slice = AsMemory().Slice(sourceOffset, length);
+        var slice = AsMemory().Slice(sourceOffset, count);
         return destination.CopyFromAsync(slice, cancellationToken);
     }
     /// <summary>
@@ -548,9 +553,9 @@ public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int lengt
     /// <returns>The result of the operation.</returns>
 
 
-    public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
-        AsSpan().Slice(offset, length).Fill(value);
+        AsSpan().Slice(offset, count).Fill(value);
         return ValueTask.CompletedTask;
     }
     /// <summary>
@@ -725,11 +730,11 @@ public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int lengt
     /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
         {
-            var span = cpuBuffer.GetData().AsSpan()[(int)destinationOffset..];
+            var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             MemoryMarshal.AsBytes(source.Span).CopyTo(span);
         }
         return ValueTask.CompletedTask;
@@ -743,11 +748,11 @@ public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int lengt
     /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
         {
-            var span = cpuBuffer.GetData().AsSpan()[(int)sourceOffset..];
+            var span = cpuBuffer.GetData().AsSpan()[(int)offset..];
             var destBytes = MemoryMarshal.AsBytes(destination.Span);
             span.Slice(0, Math.Min(span.Length, destBytes.Length)).CopyTo(destBytes);
         }
@@ -768,7 +773,7 @@ public class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, int lengt
 /// <summary>
 /// CPU memory buffer view implementation.
 /// </summary>
-public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
+public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanaged
 {
     private readonly CpuMemoryBuffer<T> _parent;
     private readonly int _offset;
@@ -925,9 +930,9 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     /// <returns>The result of the operation.</returns>
 
 
-    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
+    public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
     {
-        var slice = AsMemory().Slice(sourceOffset, length);
+        var slice = AsMemory().Slice(sourceOffset, count);
         return destination.CopyFromAsync(slice, cancellationToken);
     }
     /// <summary>
@@ -953,9 +958,9 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     /// <returns>The result of the operation.</returns>
 
 
-    public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
+    public ValueTask FillAsync(T value, int offset, int count, CancellationToken cancellationToken = default)
     {
-        AsSpan().Slice(offset, length).Fill(value);
+        AsSpan().Slice(offset, count).Fill(value);
         return ValueTask.CompletedTask;
     }
     /// <summary>
@@ -1117,7 +1122,7 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     /// <param name="destinationOffset">Offset into this view in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
         {
@@ -1140,7 +1145,7 @@ public class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : unmanage
     /// <param name="sourceOffset">Offset into this view in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         if (typeof(TDest) != typeof(T))
         {

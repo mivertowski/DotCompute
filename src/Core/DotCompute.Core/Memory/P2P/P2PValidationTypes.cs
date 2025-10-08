@@ -38,7 +38,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the validation details.
         /// </summary>
         /// <value>The validation details.</value>
-        public required List<P2PValidationDetail> ValidationDetails { get; init; }
+        public required IList<P2PValidationDetail> ValidationDetails { get; init; }
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the transfer sizes.
         /// </summary>
         /// <value>The transfer sizes.</value>
-        public required List<P2PTransferBenchmark> TransferSizes { get; init; }
+        public required IList<P2PTransferBenchmark> TransferSizes { get; init; }
         /// <summary>
         /// Gets or sets the peak throughput g bps.
         /// </summary>
@@ -268,12 +268,12 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the measurements.
         /// </summary>
         /// <value>The measurements.</value>
-        public required List<double> Measurements { get; init; }
+        public required IList<double> Measurements { get; init; }
         /// <summary>
         /// Gets or sets the latency measurements.
         /// </summary>
         /// <value>The latency measurements.</value>
-        public required List<double> LatencyMeasurements { get; init; }
+        public required IList<double> LatencyMeasurements { get; init; }
     }
 
     /// <summary>
@@ -358,22 +358,22 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the pairwise benchmarks.
         /// </summary>
         /// <value>The pairwise benchmarks.</value>
-        public required List<P2PBenchmarkResult> PairwiseBenchmarks { get; init; }
+        public required IList<P2PBenchmarkResult> PairwiseBenchmarks { get; init; }
         /// <summary>
         /// Gets or sets the scatter benchmarks.
         /// </summary>
         /// <value>The scatter benchmarks.</value>
-        public required List<P2PScatterBenchmarkResult> ScatterBenchmarks { get; init; }
+        public required IList<P2PScatterBenchmarkResult> ScatterBenchmarks { get; init; }
         /// <summary>
         /// Gets or sets the gather benchmarks.
         /// </summary>
         /// <value>The gather benchmarks.</value>
-        public required List<P2PGatherBenchmarkResult> GatherBenchmarks { get; init; }
+        public required IList<P2PGatherBenchmarkResult> GatherBenchmarks { get; init; }
         /// <summary>
         /// Gets or sets the all to all benchmarks.
         /// </summary>
         /// <value>The all to all benchmarks.</value>
-        public required List<P2PAllToAllBenchmarkResult> AllToAllBenchmarks { get; init; }
+        public required IList<P2PAllToAllBenchmarkResult> AllToAllBenchmarks { get; init; }
         /// <summary>
         /// Gets or sets the peak pairwise throughput g bps.
         /// </summary>

@@ -33,13 +33,13 @@ public class PerformanceAnalyzer
 
     public static ParallelExecutionAnalysis AnalyzePerformance(ExecutionRecord[] executions, DevicePerformanceProfile[] deviceProfiles)
     {
-        var analysis = new ParallelExecutionAnalysis();
+        var bottlenecks = IdentifyBottlenecks(executions, deviceProfiles).ToList();
 
-        // Calculate overall rating
-        analysis.OverallRating = CalculateOverallRating(executions);
-
-        // Identify bottlenecks
-        analysis.Bottlenecks = [.. IdentifyBottlenecks(executions, deviceProfiles)];
+        var analysis = new ParallelExecutionAnalysis
+        {
+            OverallRating = CalculateOverallRating(executions),
+            Bottlenecks = [.. bottlenecks]
+        };
 
         // Generate optimization recommendations
         // Convert execution bottlenecks to kernel bottlenecks for recommendations
@@ -270,6 +270,10 @@ public class PerformanceAnalyzer
     }
 }
 
+/// <summary>
+/// Represents the performance profile for a compute device.
+/// Tracks execution history, utilization metrics, and bottleneck analysis.
+/// </summary>
 public class DevicePerformanceProfile
 {
     /// <summary>
@@ -326,7 +330,7 @@ public class DevicePerformanceProfile
     /// </summary>
     /// <returns>The optimization recommendations.</returns>
 
-    public List<string> GetOptimizationRecommendations()
+    public IReadOnlyList<string> GetOptimizationRecommendations()
     {
         var recommendations = new List<string>();
 
@@ -363,6 +367,10 @@ public class DevicePerformanceProfile
     }
 }
 
+/// <summary>
+/// Provides detailed utilization analysis for a compute device.
+/// Includes utilization percentages, bottleneck severity, and optimization recommendations.
+/// </summary>
 public class DeviceUtilizationAnalysis
 {
     /// <summary>

@@ -11,7 +11,18 @@ namespace DotCompute.Backends.CUDA.Integration.Components.Enums;
 /// </summary>
 public enum ErrorTrendDirection
 {
+    /// <summary>
+    /// Error rate is improving (decreasing errors).
+    /// </summary>
     Improving,
+
+    /// <summary>
+    /// Error rate is stable (no significant change).
+    /// </summary>
     Stable,
+
+    /// <summary>
+    /// Error rate is deteriorating (increasing errors).
+    /// </summary>
     Deteriorating
 }

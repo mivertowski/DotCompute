@@ -236,9 +236,9 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         => CopyFromHostToCpuBufferAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length)
         // Create typed view of the buffer
-        => CreateTypedBufferView(buffer, offset, count);
+        => CreateTypedBufferView(buffer, offset, length);
 
     /// <inheritdoc/>
     public override void Clear()

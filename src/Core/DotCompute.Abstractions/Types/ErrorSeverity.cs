@@ -9,6 +9,11 @@ namespace DotCompute.Abstractions.Types;
 public enum ErrorSeverity
 {
     /// <summary>
+    /// No error or unknown severity level.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Information level - not an error.
     /// </summary>
     Info,

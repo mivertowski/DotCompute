@@ -149,7 +149,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
         /// <exception cref="ArgumentException">Thrown when no layers or devices are provided</exception>
         public async ValueTask<Dictionary<int, IAccelerator>> AssignLayersToDevicesAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             IAccelerator[] devices,
             ModelParallelismOptions options,
             CancellationToken cancellationToken) where T : unmanaged
@@ -196,7 +196,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
         /// <exception cref="ArgumentException">Thrown when no stages or devices are provided</exception>
         public async ValueTask<Dictionary<string, IAccelerator>> AssignStagesToDevicesAsync(
-            List<PipelineStageDefinition> stages,
+            IList<PipelineStageDefinition> stages,
             IAccelerator[] devices,
             PipelineParallelismOptions options,
             CancellationToken cancellationToken)
@@ -358,7 +358,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Assigns layers sequentially to devices in round-robin fashion.
         /// </summary>
         private static async ValueTask<Dictionary<int, IAccelerator>> AssignLayersSequentiallyAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -378,7 +378,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Assigns layers in interleaved fashion across devices.
         /// </summary>
         private static async ValueTask<Dictionary<int, IAccelerator>> AssignLayersInterleavedAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
         {
@@ -406,7 +406,7 @@ namespace DotCompute.Core.Execution.Scheduling
         /// Assigns layers automatically based on resource requirements and device capabilities.
         /// </summary>
         private async ValueTask<Dictionary<int, IAccelerator>> AssignLayersAutomaticallyAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             IAccelerator[] devices,
             CancellationToken cancellationToken) where T : unmanaged
         {

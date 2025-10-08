@@ -726,8 +726,11 @@ namespace DotCompute.Core.Pipelines
 
         public MemoryPool(Type elementType, MemoryPoolOptions options)
         {
-            _elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(elementType);
+            ArgumentNullException.ThrowIfNull(options);
+
+            _elementType = elementType;
+            _options = options;
             _pool = new ConcurrentQueue<PooledMemoryEntry>();
 
             // Setup cleanup timer for retention policies

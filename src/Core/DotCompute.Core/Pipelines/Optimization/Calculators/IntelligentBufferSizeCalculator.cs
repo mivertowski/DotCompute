@@ -4,6 +4,7 @@
 using DotCompute.Core.Pipelines.Stages;
 using DotCompute.Abstractions.Pipelines.Enums;
 using System;
+using System.Globalization;
 
 namespace DotCompute.Core.Pipelines.Optimization.Calculators;
 
@@ -509,38 +510,38 @@ internal sealed class IntelligentBufferSizeCalculator
         }
 
         // Try to infer from stage name
-        var name = stage.Name.ToLowerInvariant();
+        var name = stage.Name.ToUpper(CultureInfo.InvariantCulture);
         if (name.Contains("add", StringComparison.OrdinalIgnoreCase))
         {
             return OperationType.VectorAdd;
         }
 
-        if (name.Contains("multiply", StringComparison.OrdinalIgnoreCase) || name.Contains("mul", StringComparison.CurrentCulture))
+        if (name.Contains("multiply", StringComparison.OrdinalIgnoreCase) || name.Contains("mul", StringComparison.Ordinal))
         {
             return OperationType.VectorMultiply;
         }
 
-        if (name.Contains("matrix", StringComparison.CurrentCulture))
+        if (name.Contains("matrix", StringComparison.Ordinal))
         {
             return OperationType.MatrixMultiply;
         }
 
-        if (name.Contains("conv", StringComparison.CurrentCulture))
+        if (name.Contains("conv", StringComparison.Ordinal))
         {
             return OperationType.Convolution;
         }
 
-        if (name.Contains("fft", StringComparison.CurrentCulture))
+        if (name.Contains("fft", StringComparison.Ordinal))
         {
             return OperationType.FFT;
         }
 
-        if (name.Contains("reduce", StringComparison.CurrentCulture))
+        if (name.Contains("reduce", StringComparison.Ordinal))
         {
             return OperationType.Reduction;
         }
 
-        if (name.Contains("map", StringComparison.CurrentCulture))
+        if (name.Contains("map", StringComparison.Ordinal))
         {
             return OperationType.Map;
         }
@@ -658,9 +659,13 @@ internal sealed class KernelMemoryAnalysis
 /// </summary>
 internal enum OperationComplexity
 {
+    /// <summary>Simple operation with minimal overhead.</summary>
     Simple,
+    /// <summary>Moderate complexity with typical overhead.</summary>
     Moderate,
+    /// <summary>Complex operation with significant overhead.</summary>
     Complex,
+    /// <summary>Very complex operation with high overhead.</summary>
     VeryComplex
 }
 /// <summary>
@@ -672,12 +677,20 @@ internal enum OperationComplexity
 /// </summary>
 internal enum OperationType
 {
+    /// <summary>Unknown operation type.</summary>
     Unknown,
+    /// <summary>Vector addition operation.</summary>
     VectorAdd,
+    /// <summary>Vector multiplication operation.</summary>
     VectorMultiply,
+    /// <summary>Matrix multiplication operation.</summary>
     MatrixMultiply,
+    /// <summary>Convolution operation.</summary>
     Convolution,
+    /// <summary>Fast Fourier Transform operation.</summary>
     FFT,
+    /// <summary>Reduction operation.</summary>
     Reduction,
+    /// <summary>Map/transform operation.</summary>
     Map
 }

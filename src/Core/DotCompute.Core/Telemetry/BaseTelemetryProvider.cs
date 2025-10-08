@@ -4,11 +4,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions.Interfaces.Telemetry;
 using DotCompute.Abstractions.Telemetry;
 using Microsoft.Extensions.Logging;
-using System;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Telemetry;
@@ -660,7 +660,7 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
         if (activity != null)
         {
             _ = activity.SetTag("event.name", telemetryEvent.Name);
-            _ = activity.SetTag("event.timestamp", telemetryEvent.Timestamp.ToString("O"));
+            _ = activity.SetTag("event.timestamp", telemetryEvent.Timestamp.ToString("O", CultureInfo.InvariantCulture));
             _ = activity.SetTag("event.source", telemetryEvent.Source);
 
             foreach (var attr in telemetryEvent.Attributes)
@@ -728,17 +728,17 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     /// </summary>
     protected static string ExtractKernelCategory(string kernelName)
     {
-        var name = kernelName.ToLowerInvariant();
+        var name = kernelName.ToUpper(CultureInfo.InvariantCulture);
         return name switch
         {
             var n when n.Contains("add", StringComparison.OrdinalIgnoreCase) || n.Contains("sum", StringComparison.OrdinalIgnoreCase) => "arithmetic",
-            var n when n.Contains("mul", StringComparison.CurrentCulture) || n.Contains("multiply", StringComparison.CurrentCulture) => "arithmetic",
-            var n when n.Contains("matrix", StringComparison.CurrentCulture) || n.Contains("gemm", StringComparison.CurrentCulture) => "linear_algebra",
-            var n when n.Contains("reduce", StringComparison.CurrentCulture) || n.Contains("scan", StringComparison.CurrentCulture) => "reduction",
-            var n when n.Contains("sort", StringComparison.CurrentCulture) => "sorting",
-            var n when n.Contains("fft", StringComparison.CurrentCulture) => "transform",
-            var n when n.Contains("conv", StringComparison.CurrentCulture) || n.Contains("filter", StringComparison.CurrentCulture) => "convolution",
-            var n when n.Contains("copy", StringComparison.CurrentCulture) || n.Contains("memcpy", StringComparison.CurrentCulture) => "memory",
+            var n when n.Contains("mul", StringComparison.Ordinal) || n.Contains("multiply", StringComparison.Ordinal) => "arithmetic",
+            var n when n.Contains("matrix", StringComparison.Ordinal) || n.Contains("gemm", StringComparison.Ordinal) => "linear_algebra",
+            var n when n.Contains("reduce", StringComparison.Ordinal) || n.Contains("scan", StringComparison.Ordinal) => "reduction",
+            var n when n.Contains("sort", StringComparison.Ordinal) => "sorting",
+            var n when n.Contains("fft", StringComparison.Ordinal) => "transform",
+            var n when n.Contains("conv", StringComparison.Ordinal) || n.Contains("filter", StringComparison.Ordinal) => "convolution",
+            var n when n.Contains("copy", StringComparison.Ordinal) || n.Contains("memcpy", StringComparison.Ordinal) => "memory",
             _ => "general"
         };
     }
@@ -748,7 +748,7 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     /// </summary>
     protected static string GetAcceleratorCategory(string acceleratorType)
     {
-        return acceleratorType.ToLowerInvariant() switch
+        return acceleratorType.ToUpper(CultureInfo.InvariantCulture) switch
         {
             "cuda" or "nvidia" => "gpu",
             "metal" => "gpu",
@@ -763,7 +763,7 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     /// </summary>
     protected static string GetTransferType(string direction)
     {
-        return direction.ToLowerInvariant() switch
+        return direction.ToUpper(CultureInfo.InvariantCulture) switch
         {
             "host_to_device" or "h2d" => "upload",
             "device_to_host" or "d2h" => "download",
@@ -794,12 +794,21 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     /// <summary>
     /// Disposes the telemetry provider and releases all resources.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
     {
-        if (!_disposed)
-        {
-            _disposed = true;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
             // Log final metrics
             var perfMetrics = GetPerformanceMetrics();
             LogProviderDisposed(Logger, perfMetrics.TotalOperations, perfMetrics.TotalErrors, perfMetrics.OverheadPercentage);
@@ -814,9 +823,9 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
             _gauges.Clear();
             _observableGauges.Clear();
             _performanceMetrics.Clear();
-
-            GC.SuppressFinalize(this);
         }
+
+        _disposed = true;
     }
 
     #endregion

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -184,7 +185,8 @@ public sealed partial class MemorySanitizer : IDisposable
 
     public MemorySanitizer(ILogger<MemorySanitizer> logger, MemorySanitizerConfiguration? configuration = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _configuration = configuration ?? MemorySanitizerConfiguration.Default;
         _randomGenerator = RandomNumberGenerator.Create();
 
@@ -217,11 +219,7 @@ public sealed partial class MemorySanitizer : IDisposable
 
         [CallerLineNumber] int callerLine = 0)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemorySanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (size == 0 || size > _configuration.MaxAllocationSize)
@@ -242,7 +240,7 @@ public sealed partial class MemorySanitizer : IDisposable
             {
                 RequestedSize = size,
                 Classification = classification,
-                Identifier = identifier ?? Guid.NewGuid().ToString("N")[..8],
+                Identifier = identifier ?? Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8],
                 AllocationTime = DateTimeOffset.UtcNow
             };
 
@@ -322,11 +320,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <returns>Read value or throws security exception</returns>
     public unsafe T ReadSanitized<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemorySanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (!_trackedAllocations.TryGetValue(address, out var allocation))
@@ -407,11 +401,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <param name="offset">Offset from base address</param>
     public unsafe void WriteSanitized<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemorySanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (!_trackedAllocations.TryGetValue(address, out var allocation))
@@ -487,11 +477,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <returns>Deallocation result with security information</returns>
     public async Task<MemoryDeallocationResult> DeallocateSanitizedMemoryAsync(IntPtr address)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemorySanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         await _operationLock.WaitAsync();
@@ -606,11 +592,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <returns>Memory leak detection report</returns>
     public async Task<MemoryLeakReport> DetectMemoryLeaksAsync()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemorySanitizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         await _operationLock.WaitAsync();

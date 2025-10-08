@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using System.Globalization;
 using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Core.Security;
@@ -340,7 +341,7 @@ internal sealed class CryptographicValidator : IDisposable
     private static Task ValidateForContextAsync(string algorithm, int keySize, string context, AlgorithmValidationResult result)
     {
         // Context-specific validation logic
-        switch (context.ToLowerInvariant())
+        switch (context.ToUpper(CultureInfo.InvariantCulture))
         {
             case "payment" or "financial":
                 if (!algorithm.Contains("AES", StringComparison.OrdinalIgnoreCase) && !algorithm.Contains("RSA", StringComparison.OrdinalIgnoreCase))
@@ -357,7 +358,7 @@ internal sealed class CryptographicValidator : IDisposable
                 break;
 
             case "government" or "classified":
-                if (!algorithm.Contains("AES-256", StringComparison.CurrentCulture) && !algorithm.Contains("RSA-3072", StringComparison.CurrentCulture))
+                if (!algorithm.Contains("AES-256", StringComparison.Ordinal) && !algorithm.Contains("RSA-3072", StringComparison.Ordinal))
                 {
                     result.IsApproved = false;
                     result.Issues.Add("Government contexts require AES-256 or RSA-3072 minimum");
@@ -370,13 +371,13 @@ internal sealed class CryptographicValidator : IDisposable
     private static Task ValidateImplementationSecurityAsync(string algorithm, AlgorithmValidationResult result)
     {
         // Check for implementation-specific security considerations
-        if (algorithm.Contains("CBC", StringComparison.CurrentCulture))
+        if (algorithm.Contains("CBC", StringComparison.Ordinal))
         {
             result.Warnings.Add("CBC mode requires proper IV handling to prevent padding oracle attacks");
             result.Recommendations.Add("Consider using GCM mode for authenticated encryption");
         }
 
-        if (algorithm.Contains("RSA", StringComparison.CurrentCulture) && !algorithm.Contains("OAEP", StringComparison.CurrentCulture) && !algorithm.Contains("PSS", StringComparison.CurrentCulture))
+        if (algorithm.Contains("RSA", StringComparison.Ordinal) && !algorithm.Contains("OAEP", StringComparison.Ordinal) && !algorithm.Contains("PSS", StringComparison.Ordinal))
         {
             result.Warnings.Add("RSA without OAEP padding may be vulnerable to chosen ciphertext attacks");
             result.Recommendations.Add("Use RSA with OAEP padding for encryption or PSS for signatures");
@@ -449,13 +450,13 @@ internal sealed class CryptographicValidator : IDisposable
     {
         var recommendations = new List<string>();
 
-        var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm", StringComparison.CurrentCulture))).ToList();
+        var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm", StringComparison.Ordinal))).ToList();
         if (weakAlgorithms.Any())
         {
             recommendations.Add("Replace weak cryptographic algorithms with approved alternatives");
         }
 
-        var smallKeys = results.Where(r => r.Issues.Any(i => i.Contains("Key size too small", StringComparison.CurrentCulture))).ToList();
+        var smallKeys = results.Where(r => r.Issues.Any(i => i.Contains("Key size too small", StringComparison.Ordinal))).ToList();
         if (smallKeys.Any())
         {
             recommendations.Add("Increase key sizes to meet current security standards");
@@ -587,9 +588,21 @@ public class SecurityStandard
 
 public enum EntropyQuality
 {
+    /// <summary>
+    /// Poor entropy quality indicating insufficient randomness for cryptographic operations.
+    /// </summary>
     Poor,
+    /// <summary>
+    /// Fair entropy quality indicating acceptable but not optimal randomness.
+    /// </summary>
     Fair,
+    /// <summary>
+    /// Good entropy quality indicating strong randomness suitable for most cryptographic operations.
+    /// </summary>
     Good,
+    /// <summary>
+    /// Excellent entropy quality indicating optimal randomness from high-quality sources.
+    /// </summary>
     Excellent
 }
 /// <summary>

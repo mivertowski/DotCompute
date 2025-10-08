@@ -359,14 +359,22 @@ internal sealed class NullOperationTimer : IOperationTimer
     /// <param name="operationName">The operation name.</param>
     /// <param name="operation">The operation.</param>
     /// <returns>The result of the operation.</returns>
-    public TimeSpan TimeOperation(string operationName, Action operation) { operation(); return TimeSpan.Zero; }
+    public TimeSpan TimeOperation(string operationName, Action operation)
+    {
+        operation();
+        return TimeSpan.Zero;
+    }
     /// <summary>
     /// Gets time operation asynchronously.
     /// </summary>
     /// <param name="operationName">The operation name.</param>
     /// <param name="operation">The operation.</param>
     /// <returns>The result of the operation.</returns>
-    public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation) { await operation(); return TimeSpan.Zero; }
+    public async Task<TimeSpan> TimeOperationAsync(string operationName, Func<Task> operation)
+    {
+        await operation();
+        return TimeSpan.Zero;
+    }
     /// <summary>
     /// Performs record timing.
     /// </summary>

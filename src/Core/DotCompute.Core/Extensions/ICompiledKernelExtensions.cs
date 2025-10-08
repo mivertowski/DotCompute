@@ -134,30 +134,30 @@ namespace DotCompute.Core.Extensions
         }
 
         /// <summary>
-        /// Launches the kernel with launch configuration and stream support.
+        /// Launches the kernel with launch configuration and execution context support.
         /// This overload supports CUDA streams for concurrent execution.
-        /// Uses IComputeStream interface to match test expectations.
+        /// Uses IComputeExecution interface to match test expectations.
         /// </summary>
         /// <param name="kernel">The compiled kernel to execute</param>
         /// <param name="launchConfig">Launch configuration (grid/block dimensions)</param>
-        /// <param name="stream">CUDA stream or execution stream (IComputeStream interface)</param>
+        /// <param name="stream">CUDA stream or execution context (IComputeExecution interface)</param>
         /// <param name="arguments">Variable number of kernel arguments</param>
         /// <returns>A ValueTask representing the asynchronous operation</returns>
         public static ValueTask LaunchAsync(this ICompiledKernel kernel,
             object launchConfig,
-            IComputeStream stream,
+            IComputeExecution stream,
             params object[] arguments)
         {
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(stream);
             ArgumentNullException.ThrowIfNull(arguments);
 
-            // Console.WriteLine($"[DEBUG] LaunchAsync with IComputeStream called with launchConfig={launchConfig?.GetType().Name}, stream={stream?.GetType().Name}, arguments.Length={arguments?.Length}");
+            // Console.WriteLine($"[DEBUG] LaunchAsync with IComputeExecution called with launchConfig={launchConfig?.GetType().Name}, stream={stream?.GetType().Name}, arguments.Length={arguments?.Length}");
 
 
             var kernelArgs = CreateKernelArgumentsFromObjects(arguments ?? []);
 
-            // Store launch configuration and stream for backend-specific handling
+            // Store launch configuration and execution context for backend-specific handling
 
             if (launchConfig != null)
             {

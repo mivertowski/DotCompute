@@ -10,6 +10,11 @@ namespace DotCompute.Core.Utilities.ErrorHandling.Enums;
 public enum ErrorSeverity
 {
     /// <summary>
+    /// No error or unknown severity level.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Low severity - informational errors that don't impact functionality.
     /// </summary>
     Low = 1,

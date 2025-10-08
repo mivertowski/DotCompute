@@ -63,12 +63,14 @@ public sealed class TraceContext
     /// <value>A dictionary of tag key-value pairs.</value>
     public Dictionary<string, object?> Tags { get; init; } = [];
 
+    private readonly ConcurrentBag<SpanData> _spans = [];
+
     /// <summary>
-    /// Gets or sets the collection of spans belonging to this trace.
+    /// Gets the collection of spans belonging to this trace.
     /// Spans represent individual operations within the trace.
     /// </summary>
     /// <value>A thread-safe collection of span data.</value>
-    public ConcurrentBag<SpanData> Spans { get; set; } = [];
+    public ConcurrentBag<SpanData> Spans => _spans;
 
     /// <summary>
     /// Gets or sets the device operations tracked within this trace.

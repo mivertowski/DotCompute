@@ -276,7 +276,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         {
             _ = csv.AppendLine($"{EscapeCsv(entry.Id.ToString())}," +
                           $"{entry.SequenceNumber}," +
-                          $"{EscapeCsv(entry.Timestamp.ToString("O"))}," +
+                          $"{EscapeCsv(entry.Timestamp.ToString("O", CultureInfo.InvariantCulture))}," +
                           $"{EscapeCsv(entry.EventType.ToString())}," +
                           $"{EscapeCsv(entry.Level.ToString())}," +
                           $"{EscapeCsv(entry.Message)}," +
@@ -308,7 +308,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
             await xmlWriter.WriteStartElementAsync(null, "Entry", null);
             await xmlWriter.WriteAttributeStringAsync(null, "id", null, entry.Id.ToString());
             await xmlWriter.WriteAttributeStringAsync(null, "sequenceNumber", null, entry.SequenceNumber.ToString());
-            await xmlWriter.WriteAttributeStringAsync(null, "timestamp", null, entry.Timestamp.ToString("O"));
+            await xmlWriter.WriteAttributeStringAsync(null, "timestamp", null, entry.Timestamp.ToString("O", CultureInfo.InvariantCulture));
             await xmlWriter.WriteAttributeStringAsync(null, "eventType", null, entry.EventType.ToString());
             await xmlWriter.WriteAttributeStringAsync(null, "level", null, entry.Level.ToString());
             await xmlWriter.WriteElementStringAsync(null, "Message", null, entry.Message);

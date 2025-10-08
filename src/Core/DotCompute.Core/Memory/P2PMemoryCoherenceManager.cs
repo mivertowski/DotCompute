@@ -1067,9 +1067,12 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum CoherenceLevel
     {
-        None = 0,      // Multiple writers or completely incoherent
-        Weak = 1,      // Single writer, multiple readers
-        Strong = 2     // All copies identical, no recent writes
+        /// <summary>No coherence level - multiple writers or completely incoherent state.</summary>
+        None = 0,
+        /// <summary>Weak coherence level - single writer with multiple readers.</summary>
+        Weak = 1,
+        /// <summary>Strong coherence level - all copies identical with no recent writes.</summary>
+        Strong = 2
     }
     /// <summary>
     /// An access pattern enumeration.
@@ -1080,10 +1083,14 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum AccessPattern
     {
-        Sequential = 0,  // Sequential access pattern
-        Random = 1,      // Random access pattern
-        Broadcast = 2,   // One-to-many pattern
-        Gather = 3       // Many-to-one pattern
+        /// <summary>Sequential access pattern.</summary>
+        Sequential = 0,
+        /// <summary>Random access pattern.</summary>
+        Random = 1,
+        /// <summary>Broadcast pattern - one-to-many distribution.</summary>
+        Broadcast = 2,
+        /// <summary>Gather pattern - many-to-one collection.</summary>
+        Gather = 3
     }
     /// <summary>
     /// An access type enumeration.
@@ -1094,7 +1101,9 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum AccessType
     {
+        /// <summary>Read access type.</summary>
         Read = 0,
+        /// <summary>Write access type.</summary>
         Write = 1
     }
     /// <summary>
@@ -1106,9 +1115,12 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum SyncStrategy
     {
-        DirectP2P = 0,     // Direct P2P transfer
-        HostMediated = 1,  // Via host memory
-        Streamed = 2       // Chunked streaming
+        /// <summary>Direct peer-to-peer transfer synchronization strategy.</summary>
+        DirectP2P = 0,
+        /// <summary>Host-mediated synchronization strategy via host memory.</summary>
+        HostMediated = 1,
+        /// <summary>Streamed synchronization strategy using chunked streaming.</summary>
+        Streamed = 2
     }
     /// <summary>
     /// An optimization type enumeration.
@@ -1119,9 +1131,12 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum OptimizationType
     {
-        LoadBalancing = 0,  // Balance load across devices
-        LocalityOptimization = 1,  // Optimize data locality
-        BandwidthOptimization = 2  // Optimize bandwidth usage
+        /// <summary>Load balancing optimization across devices.</summary>
+        LoadBalancing = 0,
+        /// <summary>Data locality optimization.</summary>
+        LocalityOptimization = 1,
+        /// <summary>Bandwidth usage optimization.</summary>
+        BandwidthOptimization = 2
     }
 }
 

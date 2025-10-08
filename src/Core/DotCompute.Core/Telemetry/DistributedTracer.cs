@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -151,7 +152,9 @@ public sealed partial class DistributedTracer : IDisposable
 
     public DistributedTracer(ILogger<DistributedTracer> logger, IOptions<DistributedTracingOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new DistributedTracingOptions();
 
 
@@ -187,7 +190,7 @@ public sealed partial class DistributedTracer : IDisposable
         _ = (activity?.SetTag("correlation_id", correlationId));
         _ = (activity?.SetTag("operation_name", operationName));
         _ = (activity?.SetTag("component", "dotcompute.core"));
-        _ = (activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O")));
+        _ = (activity?.SetTag("trace_start_time", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)));
 
 
         if (parentSpanContext != null)
@@ -864,18 +867,14 @@ public sealed partial class DistributedTracer : IDisposable
         }
     }
 
-    private static string GenerateCorrelationId() => Guid.NewGuid().ToString("N")[..16];
+    private static string GenerateCorrelationId() => Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..16];
     private static string GenerateTraceId() => ActivityTraceId.CreateRandom().ToString();
     private static string GenerateSpanId() => ActivitySpanId.CreateRandom().ToString();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(DistributedTracer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

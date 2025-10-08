@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
@@ -242,8 +243,8 @@ public sealed partial class SecurityEventLogger(ILogger<SecurityEventLogger> log
 
         var level = isSuccessful ? SecurityLevel.Low : SecurityLevel.Medium;
         var message = isSuccessful
-            ? $"Data {operation.ToString().ToLowerInvariant()} operation successful for user '{userId}' on {dataType}"
-            : $"Data {operation.ToString().ToLowerInvariant()} operation failed for user '{userId}' on {dataType}: {failureReason}";
+            ? $"Data {operation.ToString().ToUpper(CultureInfo.InvariantCulture)} operation successful for user '{userId}' on {dataType}"
+            : $"Data {operation.ToString().ToUpper(CultureInfo.InvariantCulture)} operation failed for user '{userId}' on {dataType}: {failureReason}";
 
         var data = new Dictionary<string, object>
         {

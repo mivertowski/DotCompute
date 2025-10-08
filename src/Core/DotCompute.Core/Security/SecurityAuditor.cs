@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using System.Globalization;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
@@ -172,8 +173,12 @@ public sealed partial class SecurityAuditor : IDisposable
 
     public SecurityAuditor(ILogger logger, CryptographicConfiguration configuration)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        _configuration = configuration;
 
         SecurityAuditorInitialized(_logger);
     }
@@ -187,10 +192,7 @@ public sealed partial class SecurityAuditor : IDisposable
     /// <returns>True if parameters are valid, false otherwise</returns>
     public bool ValidateKeyParameters(KeyType keyType, int keySize, KeyGenerationResult result)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SecurityAuditor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var validSizes = keyType switch
         {
@@ -228,10 +230,7 @@ public sealed partial class SecurityAuditor : IDisposable
     /// <returns>True if algorithm is approved, false otherwise</returns>
     public bool ValidateAlgorithm<T>(string algorithm, T result) where T : ICryptographicResult
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SecurityAuditor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
@@ -271,10 +270,7 @@ public sealed partial class SecurityAuditor : IDisposable
     /// <returns>True if hash algorithm is approved, false otherwise</returns>
     public bool ValidateHashAlgorithm<T>(string hashAlgorithm, T result) where T : ICryptographicResult
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SecurityAuditor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(hashAlgorithm);
 
@@ -315,10 +311,7 @@ public sealed partial class SecurityAuditor : IDisposable
     /// <returns>Detailed algorithm validation result</returns>
     public AlgorithmValidationResult ValidateCryptographicAlgorithm(string algorithm, int keySize, string context)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SecurityAuditor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
@@ -452,7 +445,7 @@ public sealed partial class SecurityAuditor : IDisposable
     private static void ValidateAlgorithmContext(string algorithm, string context, AlgorithmValidationResult result)
     {
         // Context-specific validations
-        switch (context.ToLowerInvariant())
+        switch (context.ToUpper(CultureInfo.InvariantCulture))
         {
             case "storage":
                 if (!algorithm.Contains("GCM", StringComparison.Ordinal) && !algorithm.Contains("Poly1305", StringComparison.Ordinal))

@@ -315,11 +315,7 @@ namespace DotCompute.Core.Extensions
 
             T[] data, CancellationToken cancellationToken = default) where T : unmanaged
         {
-            if (data == null)
-            {
-
-                throw new ArgumentNullException(nameof(data));
-            }
+            ArgumentNullException.ThrowIfNull(data);
 
             // Simulate async write operation
 

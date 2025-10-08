@@ -83,7 +83,9 @@ public sealed class PerformanceProfiler : IDisposable
 
     public PerformanceProfiler(ILogger<PerformanceProfiler> logger, IOptions<PerformanceProfilerOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new PerformanceProfilerOptions();
 
 
@@ -951,11 +953,7 @@ public sealed class PerformanceProfiler : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PerformanceProfiler));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

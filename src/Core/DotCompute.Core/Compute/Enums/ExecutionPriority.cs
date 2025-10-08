@@ -14,8 +14,18 @@ namespace DotCompute.Core.Compute.Enums;
 [Obsolete("Use DotCompute.Abstractions.Execution.ExecutionPriority directly")]
 public enum ExecutionPriority
 {
-    Low = AbstractionsMemory.Execution.ExecutionPriority.Low,
-    Normal = AbstractionsMemory.Execution.ExecutionPriority.Normal,
-    High = AbstractionsMemory.Execution.ExecutionPriority.High,
-    Critical = AbstractionsMemory.Execution.ExecutionPriority.Critical
+    /// <summary>No priority specified.</summary>
+    None = 0,
+
+    /// <summary>Low priority execution.</summary>
+    Low = 1,
+
+    /// <summary>Normal priority execution.</summary>
+    Normal = 3,
+
+    /// <summary>High priority execution.</summary>
+    High = 5,
+
+    /// <summary>Critical priority execution.</summary>
+    Critical = 6
 }

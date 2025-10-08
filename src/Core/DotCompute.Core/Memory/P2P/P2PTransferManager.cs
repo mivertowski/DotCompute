@@ -947,7 +947,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the transfer results.
         /// </summary>
         /// <value>The transfer results.</value>
-        public P2PTransferResult[] TransferResults { get; set; } = [];
+        public IReadOnlyList<P2PTransferResult> TransferResults { get; set; } = [];
     }
 
     /// <summary>
@@ -984,7 +984,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the transfer results.
         /// </summary>
         /// <value>The transfer results.</value>
-        public P2PTransferResult[] TransferResults { get; set; } = [];
+        public IReadOnlyList<P2PTransferResult> TransferResults { get; set; } = [];
     }
 
     /// <summary>
@@ -1052,13 +1052,21 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public enum P2PTransferStatus
     {
+        /// <summary>Transfer is being initialized.</summary>
         Initializing,
+        /// <summary>Transfer has been planned and scheduled.</summary>
         Planned,
+        /// <summary>Transfer is actively in progress.</summary>
         Transferring,
+        /// <summary>Transfer is being validated for correctness.</summary>
         Validating,
+        /// <summary>Transfer completed successfully.</summary>
         Completed,
+        /// <summary>Transfer completed but validation failed.</summary>
         ValidationFailed,
+        /// <summary>Transfer failed with an error.</summary>
         Failed,
+        /// <summary>Transfer was cancelled by user or system.</summary>
         Cancelled
     }
     /// <summary>
@@ -1070,10 +1078,14 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public enum P2PTransferStrategy
     {
-        DirectP2P,      // Single direct P2P transfer
-        ChunkedP2P,     // Chunked P2P transfers
-        PipelinedP2P,   // Pipelined overlapped transfers
-        HostMediated    // Host-mediated fallback
+        /// <summary>Single direct peer-to-peer transfer.</summary>
+        DirectP2P,
+        /// <summary>Chunked peer-to-peer transfers for large data.</summary>
+        ChunkedP2P,
+        /// <summary>Pipelined overlapped transfers for maximum throughput.</summary>
+        PipelinedP2P,
+        /// <summary>Host-mediated transfer as fallback when P2P unavailable.</summary>
+        HostMediated
     }
     /// <summary>
     /// An p2 p transfer priority enumeration.
@@ -1084,9 +1096,13 @@ namespace DotCompute.Core.Memory.P2P
     /// </summary>
     public enum P2PTransferPriority
     {
+        /// <summary>Low priority transfer.</summary>
         Low,
+        /// <summary>Normal priority transfer.</summary>
         Normal,
+        /// <summary>High priority transfer.</summary>
         High,
+        /// <summary>Critical priority transfer requiring immediate execution.</summary>
         Critical
     }
 

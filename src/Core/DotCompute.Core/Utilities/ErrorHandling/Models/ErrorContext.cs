@@ -54,7 +54,7 @@ public sealed class ErrorContext
     /// <summary>
     /// Gets or sets the collection of inner exceptions.
     /// </summary>
-    public required List<Exception> InnerExceptions { get; init; }
+    public required IList<Exception> InnerExceptions { get; init; }
 
     /// <summary>
     /// Gets or sets additional contextual information.

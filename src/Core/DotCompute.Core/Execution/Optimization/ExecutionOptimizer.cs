@@ -184,7 +184,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-            LogOptimizingDataParallel(_logger, plan.Devices.Length);
+            LogOptimizingDataParallel(_logger, plan.Devices.Count);
 
             // 1. Optimize memory allocation patterns
             await OptimizeMemoryAllocationAsync(plan, cancellationToken);
@@ -212,7 +212,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-            LogOptimizingModelParallel(_logger, plan.ModelLayers.Length);
+            LogOptimizingModelParallel(_logger, plan.ModelLayers.Count);
 
             // 1. Optimize layer placement for minimal communication
             await OptimizeLayerPlacementAsync(plan, cancellationToken);
@@ -240,7 +240,7 @@ namespace DotCompute.Core.Execution.Optimization
         {
             ArgumentNullException.ThrowIfNull(plan);
 
-            LogOptimizingPipeline(_logger, plan.Stages.Length);
+            LogOptimizingPipeline(_logger, plan.Stages.Count);
 
             // 1. Optimize microbatch sizing
             await OptimizeMicrobatchSizeAsync(plan, cancellationToken);

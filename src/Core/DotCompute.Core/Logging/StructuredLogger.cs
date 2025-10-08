@@ -893,9 +893,28 @@ public sealed class DeviceOperationMetrics
 
 public enum SecurityEventType
 {
+    /// <summary>
+    /// Event triggered when a resource is accessed.
+    /// </summary>
     ResourceAccess,
+
+    /// <summary>
+    /// Event triggered when unauthorized access is attempted.
+    /// </summary>
     UnauthorizedAccess,
+
+    /// <summary>
+    /// Event triggered when invalid input is detected.
+    /// </summary>
     InvalidInput,
+
+    /// <summary>
+    /// Event triggered when a security violation occurs.
+    /// </summary>
     SecurityViolation,
+
+    /// <summary>
+    /// Event triggered when configuration is changed.
+    /// </summary>
     ConfigurationChange
 }

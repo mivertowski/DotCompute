@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
+
 namespace DotCompute.Backends.CUDA.Execution.Types
 {
     /// <summary>
@@ -42,7 +44,7 @@ namespace DotCompute.Backends.CUDA.Execution.Types
         /// Returns a string representation of this EventId.
         /// </summary>
         /// <returns>A shortened string representation of the underlying GUID.</returns>
-        public override string ToString() => _id.ToString("N")[..8];
+        public override string ToString() => _id.ToString("N", CultureInfo.InvariantCulture)[..8];
 
         /// <summary>
         /// Determines whether two EventId instances are equal.

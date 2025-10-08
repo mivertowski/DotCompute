@@ -16,7 +16,7 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// </remarks>
     /// <param name="serviceProvider">The service provider for kernel discovery</param>
     /// <param name="logger">Optional logger for diagnostics</param>
-    public sealed class DefaultKernelResolver(
+    public sealed partial class DefaultKernelResolver(
         IServiceProvider serviceProvider,
         ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
     {
@@ -24,6 +24,76 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         private readonly ILogger<DefaultKernelResolver>? _logger = logger;
         private readonly ConcurrentDictionary<string, ICompiledKernel?> _kernelCache = new();
         private volatile bool _initialized;
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 10100,
+            Level = LogLevel.Debug,
+            Message = "Kernel '{KernelName}' found in cache")]
+        private static partial void LogKernelFoundInCache(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 10101,
+            Level = LogLevel.Debug,
+            Message = "Successfully resolved kernel '{KernelName}'")]
+        private static partial void LogKernelResolved(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 10102,
+            Level = LogLevel.Warning,
+            Message = "Kernel '{KernelName}' not found")]
+        private static partial void LogKernelNotFound(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 10103,
+            Level = LogLevel.Error,
+            Message = "Error resolving kernel '{KernelName}'")]
+        private static partial void LogKernelResolutionError(ILogger logger, Exception ex, string kernelName);
+
+        [LoggerMessage(
+            EventId = 10104,
+            Level = LogLevel.Debug,
+            Message = "Found {Count} available kernels")]
+        private static partial void LogAvailableKernelsCount(ILogger logger, int count);
+
+        [LoggerMessage(
+            EventId = 10105,
+            Level = LogLevel.Error,
+            Message = "Error getting available kernel names")]
+        private static partial void LogGetKernelNamesError(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 10106,
+            Level = LogLevel.Debug,
+            Message = "Initializing kernel resolver")]
+        private static partial void LogInitializing(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 10107,
+            Level = LogLevel.Information,
+            Message = "Kernel resolver initialized successfully")]
+        private static partial void LogInitialized(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 10108,
+            Level = LogLevel.Error,
+            Message = "Error initializing kernel resolver")]
+        private static partial void LogInitializationError(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 10109,
+            Level = LogLevel.Debug,
+            Message = "Pre-populated kernel cache with {Count} kernels")]
+        private static partial void LogCachePrePopulated(ILogger logger, int count);
+
+        [LoggerMessage(
+            EventId = 10110,
+            Level = LogLevel.Warning,
+            Message = "Error pre-populating kernel cache")]
+        private static partial void LogCachePrePopulationWarning(ILogger logger, Exception ex);
+
+        #endregion
 
         /// <inheritdoc/>
         public async Task<ICompiledKernel?> ResolveKernelAsync(string kernelName, CancellationToken cancellationToken = default)
@@ -36,7 +106,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             // Check cache first
             if (_kernelCache.TryGetValue(kernelName, out var cachedKernel))
             {
-                _logger?.LogDebug("Kernel '{KernelName}' found in cache", kernelName);
+                if (_logger != null)
+                {
+                    LogKernelFoundInCache(_logger, kernelName);
+                }
                 return cachedKernel;
             }
 
@@ -60,18 +133,27 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
                 if (kernel != null)
                 {
-                    _logger?.LogDebug("Successfully resolved kernel '{KernelName}'", kernelName);
+                    if (_logger != null)
+                    {
+                        LogKernelResolved(_logger, kernelName);
+                    }
                 }
                 else
                 {
-                    _logger?.LogWarning("Kernel '{KernelName}' not found", kernelName);
+                    if (_logger != null)
+                    {
+                        LogKernelNotFound(_logger, kernelName);
+                    }
                 }
 
                 return kernel;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error resolving kernel '{KernelName}'", kernelName);
+                if (_logger != null)
+                {
+                    LogKernelResolutionError(_logger, ex, kernelName);
+                }
                 return null;
             }
         }
@@ -89,15 +171,19 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                 // This would interface with the discovery service to get all available kernel names
                 var kernelNames = await GetKernelNamesFromDiscoveryServiceAsync(cancellationToken);
 
-
-                _logger?.LogDebug("Found {Count} available kernels", kernelNames.Count);
-
+                if (_logger != null)
+                {
+                    LogAvailableKernelsCount(_logger, kernelNames.Count);
+                }
 
                 return kernelNames;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting available kernel names");
+                if (_logger != null)
+                {
+                    LogGetKernelNamesError(_logger, ex);
+                }
                 return Array.Empty<string>();
             }
         }
@@ -134,7 +220,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
             try
             {
-                _logger?.LogDebug("Initializing kernel resolver");
+                if (_logger != null)
+                {
+                    LogInitializing(_logger);
+                }
 
                 // Pre-populate cache with known kernels if available
 
@@ -142,11 +231,17 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
 
                 _initialized = true;
-                _logger?.LogInformation("Kernel resolver initialized successfully");
+                if (_logger != null)
+                {
+                    LogInitialized(_logger);
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error initializing kernel resolver");
+                if (_logger != null)
+                {
+                    LogInitializationError(_logger, ex);
+                }
                 throw;
             }
         }
@@ -172,12 +267,17 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
                     }
                 }
 
-
-                _logger?.LogDebug("Pre-populated kernel cache with {Count} kernels", _kernelCache.Count);
+                if (_logger != null)
+                {
+                    LogCachePrePopulated(_logger, _kernelCache.Count);
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Error pre-populating kernel cache");
+                if (_logger != null)
+                {
+                    LogCachePrePopulationWarning(_logger, ex);
+                }
                 // Don't fail initialization if pre-population fails
             }
         }

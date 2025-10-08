@@ -11,13 +11,22 @@ namespace DotCompute.Core.Telemetry;
 /// </summary>
 public enum TelemetryEventType
 {
+    /// <summary>Pipeline execution started event.</summary>
     PipelineStarted,
+    /// <summary>Pipeline execution completed event.</summary>
     PipelineCompleted,
+    /// <summary>Pipeline stage started event.</summary>
     PipelineStageStarted,
+    /// <summary>Pipeline stage completed event.</summary>
     PipelineStageCompleted,
+    /// <summary>Kernel execution event.</summary>
     KernelExecuted,
+    /// <summary>Memory allocation event.</summary>
     MemoryAllocated,
+    /// <summary>Cache access event.</summary>
     CacheAccess,
+    /// <summary>Error event.</summary>
     Error,
+    /// <summary>Performance metric event.</summary>
     Performance
 }

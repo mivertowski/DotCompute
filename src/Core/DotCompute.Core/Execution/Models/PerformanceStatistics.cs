@@ -79,7 +79,10 @@ public class PerformanceStatistics
     public void UpdatePercentiles(IEnumerable<double> executionTimes)
     {
         var sortedTimes = executionTimes.OrderBy(t => t).ToArray();
-        if (sortedTimes.Length == 0) return;
+        if (sortedTimes.Length == 0)
+        {
+            return;
+        }
 
         Percentiles["P50"] = GetPercentile(sortedTimes, 0.50);
         Percentiles["P90"] = GetPercentile(sortedTimes, 0.90);
@@ -89,13 +92,19 @@ public class PerformanceStatistics
 
     private static double GetPercentile(double[] sortedValues, double percentile)
     {
-        if (sortedValues.Length == 0) return 0;
+        if (sortedValues.Length == 0)
+        {
+            return 0;
+        }
 
         var index = percentile * (sortedValues.Length - 1);
         var lower = (int)Math.Floor(index);
         var upper = (int)Math.Ceiling(index);
 
-        if (lower == upper) return sortedValues[lower];
+        if (lower == upper)
+        {
+            return sortedValues[lower];
+        }
 
         var weight = index - lower;
         return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;

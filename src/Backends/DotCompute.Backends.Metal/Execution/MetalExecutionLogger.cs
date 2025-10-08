@@ -380,7 +380,9 @@ public sealed class MetalExecutionTelemetry : IDisposable
 
     public MetalExecutionTelemetry(ILogger logger, TimeSpan? reportingInterval = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _metrics = new ConcurrentDictionary<string, object>();
         _events = new ConcurrentQueue<MetalTelemetryEvent>();
 

@@ -98,7 +98,7 @@ internal abstract class TransferOperation
     public override string ToString()
     {
         var sizeStr = ExpectedSize >= 0 ? $"{ExpectedSize / (1024.0 * 1024.0):F2} MB" : "Unknown size";
-        var durationStr = EstimatedDuration?.TotalSeconds.ToString("F2") + "s" ?? "Unknown duration";
+        var durationStr = EstimatedDuration?.TotalSeconds.ToString("F2", CultureInfo.InvariantCulture) + "s" ?? "Unknown duration";
 
         return $"{GetType().Name} [ID: {Id:D}, Priority: {Priority}, Size: {sizeStr}, Duration: {durationStr}]";
     }

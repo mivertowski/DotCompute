@@ -16,6 +16,7 @@ using DebugValidationIssue = DotCompute.Abstractions.Debugging.DebugValidationIs
 using DebugValidationSeverity = DotCompute.Abstractions.Validation.ValidationSeverity;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
 using ResultComparison = DotCompute.Abstractions.Debugging.ResultComparison;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging;
 
@@ -23,7 +24,7 @@ namespace DotCompute.Core.Debugging;
 /// Handles cross-backend kernel validation and verification.
 /// Provides comprehensive validation logic for ensuring kernel consistency across different backends.
 /// </summary>
-internal sealed class KernelDebugValidator(
+internal sealed partial class KernelDebugValidator(
     ILogger<KernelDebugValidator> logger,
     ConcurrentDictionary<string, IAccelerator> accelerators,
     KernelDebugProfiler profiler) : IDisposable
@@ -33,6 +34,40 @@ internal sealed class KernelDebugValidator(
     private readonly KernelDebugProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
     private DebugServiceOptions _options = new();
     private bool _disposed;
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 11001,
+        Level = MsLogLevel.Information,
+        Message = "Starting cross-backend validation for kernel {KernelName}")]
+    private static partial void LogValidationStarted(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 11002,
+        Level = MsLogLevel.Error,
+        Message = "Error during kernel validation")]
+    private static partial void LogValidationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 11003,
+        Level = MsLogLevel.Error,
+        Message = "Error executing kernel {KernelName} on {BackendType}")]
+    private static partial void LogKernelExecutionError(ILogger logger, Exception ex, string kernelName, string backendType);
+
+    [LoggerMessage(
+        EventId = 11004,
+        Level = MsLogLevel.Warning,
+        Message = "Accelerator {BackendType} not available")]
+    private static partial void LogAcceleratorNotAvailable(ILogger logger, string backendType);
+
+    [LoggerMessage(
+        EventId = 11005,
+        Level = MsLogLevel.Error,
+        Message = "Failed to create accelerator for backend {BackendType}")]
+    private static partial void LogAcceleratorCreationFailed(ILogger logger, Exception ex, string backendType);
+
+    #endregion
     /// <summary>
     /// Performs configure.
     /// </summary>
@@ -56,7 +91,7 @@ internal sealed class KernelDebugValidator(
         ArgumentException.ThrowIfNullOrEmpty(kernelName);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogInformation("Starting cross-backend validation for kernel {kernelName}", kernelName);
+        LogValidationStarted(_logger, kernelName);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -152,7 +187,7 @@ internal sealed class KernelDebugValidator(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during kernel validation");
+            LogValidationError(_logger, ex);
             return new KernelValidationResult
             {
                 KernelName = kernelName,
@@ -237,7 +272,7 @@ internal sealed class KernelDebugValidator(
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error executing kernel {KernelName} on {BackendType}", kernelName, backendType);
+            LogKernelExecutionError(_logger, ex, kernelName, backendType);
 
             var handle = new KernelExecutionHandle
             {
@@ -425,12 +460,12 @@ internal sealed class KernelDebugValidator(
         {
             // This is a simplified implementation - in practice, you'd use a factory
             // For now, we'll return null and let the caller handle missing accelerators
-            _logger.LogWarning("Accelerator {BackendType} not available", backendType);
+            LogAcceleratorNotAvailable(_logger, backendType);
             return Task.FromResult<IAccelerator?>(null);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create accelerator for backend {BackendType}", backendType);
+            LogAcceleratorCreationFailed(_logger, ex, backendType);
             return Task.FromResult<IAccelerator?>(null);
         }
     }

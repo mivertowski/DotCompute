@@ -947,7 +947,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the intermediate devices.
         /// </summary>
         /// <value>The intermediate devices.</value>
-        public required IAccelerator[] IntermediateDevices { get; init; }
+        public required IReadOnlyList<IAccelerator> IntermediateDevices { get; init; }
         /// <summary>
         /// Gets or sets the total bandwidth g bps.
         /// </summary>
@@ -1068,7 +1068,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the device ids.
         /// </summary>
         /// <value>The device ids.</value>
-        public required List<string> DeviceIds { get; init; }
+        public required IList<string> DeviceIds { get; init; }
         /// <summary>
         /// Gets or sets the average bandwidth.
         /// </summary>

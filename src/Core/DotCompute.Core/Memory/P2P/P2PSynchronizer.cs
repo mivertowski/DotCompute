@@ -823,7 +823,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the participant devices.
         /// </summary>
         /// <value>The participant devices.</value>
-        public required List<string> ParticipantDevices { get; init; }
+        public required IList<string> ParticipantDevices { get; init; }
         /// <summary>
         /// Gets or sets the expected participants.
         /// </summary>
@@ -870,7 +870,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the devices.
         /// </summary>
         /// <value>The devices.</value>
-        public required IAccelerator[] Devices { get; init; }
+        public required IReadOnlyList<IAccelerator> Devices { get; init; }
         /// <summary>
         /// Gets or sets a value indicating whether active.
         /// </summary>
@@ -897,7 +897,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the participant devices.
         /// </summary>
         /// <value>The participant devices.</value>
-        public required List<string> ParticipantDevices { get; init; }
+        public required IList<string> ParticipantDevices { get; init; }
         /// <summary>
         /// Gets or sets the event type.
         /// </summary>
@@ -991,12 +991,12 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the active barriers.
         /// </summary>
         /// <value>The active barriers.</value>
-        public required List<string> ActiveBarriers { get; init; }
+        public required IList<string> ActiveBarriers { get; init; }
         /// <summary>
         /// Gets or sets the active events.
         /// </summary>
         /// <value>The active events.</value>
-        public required List<string> ActiveEvents { get; init; }
+        public required IList<string> ActiveEvents { get; init; }
         /// <summary>
         /// Gets or sets the last sync operation.
         /// </summary>

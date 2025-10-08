@@ -210,12 +210,12 @@ public sealed class SecurityConfiguration
     /// <summary>
     /// Gets or sets whether digital signature validation is required.
     /// </summary>
-    public bool RequireDigitalSignature { get; set; } = false;
+    public bool RequireDigitalSignature { get; set; }
 
     /// <summary>
     /// Gets or sets whether strong name validation is required.
     /// </summary>
-    public bool RequireStrongName { get; set; } = false;
+    public bool RequireStrongName { get; set; }
 
     /// <summary>
     /// Gets or sets whether malware scanning is enabled.

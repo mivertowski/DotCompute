@@ -10,7 +10,7 @@ namespace DotCompute.Core.Recovery;
 /// <summary>
 /// Manager for plugin recovery operations
 /// </summary>
-public class PluginRecoveryManager(
+public sealed class PluginRecoveryManager(
     ILogger<PluginRecoveryManager> logger,
     PluginRecoveryConfiguration? config = null) : IDisposable
 {
@@ -23,11 +23,7 @@ public class PluginRecoveryManager(
     /// </summary>
     public async Task<bool> AttemptRecoveryAsync(PluginRecoveryContext context, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PluginRecoveryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         try
@@ -60,11 +56,7 @@ public class PluginRecoveryManager(
 
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PluginRecoveryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         try

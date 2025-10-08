@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
-using System;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.System;
@@ -26,55 +26,55 @@ public sealed partial class SystemInfoManager : IDisposable
     private static readonly Action<ILogger, Exception?> _logWindowsMemoryWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17000, nameof(WindowsMemoryWarning)),
+            new EventId(17000, "WindowsMemoryWarning"),
             "Failed to get Windows memory info via WMI, using fallback");
 
     private static readonly Action<ILogger, Exception?> _logLinuxMemoryWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17001, nameof(LinuxMemoryWarning)),
+            new EventId(17001, "LinuxMemoryWarning"),
             "Failed to read /proc/meminfo, using fallback");
 
     private static readonly Action<ILogger, Exception?> _logMacOSMemoryWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17002, nameof(MacOSMemoryWarning)),
+            new EventId(17002, "MacOSMemoryWarning"),
             "Failed to get macOS memory info, using fallback");
 
     private static readonly Action<ILogger, Exception?> _logVirtualMemoryWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17003, nameof(VirtualMemoryWarning)),
+            new EventId(17003, "VirtualMemoryWarning"),
             "Failed to get virtual memory info");
 
     private static readonly Action<ILogger, Exception?> _logCpuInfoWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17004, nameof(CpuInfoWarning)),
+            new EventId(17004, "CpuInfoWarning"),
             "Failed to get detailed CPU info");
 
     private static readonly Action<ILogger, Exception?> _logWindowsCpuWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17005, nameof(WindowsCpuWarning)),
+            new EventId(17005, "WindowsCpuWarning"),
             "Failed to get Windows CPU info via WMI");
 
     private static readonly Action<ILogger, Exception?> _logLinuxCpuWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17006, nameof(LinuxCpuWarning)),
+            new EventId(17006, "LinuxCpuWarning"),
             "Failed to read /proc/cpuinfo");
 
     private static readonly Action<ILogger, Exception?> _logMacOSCpuWarning =
         LoggerMessage.Define(
             MsLogLevel.Warning,
-            new EventId(17007, nameof(MacOSCpuWarning)),
+            new EventId(17007, "MacOSCpuWarning"),
             "Failed to get macOS CPU info");
 
     private static readonly Action<ILogger, string, string, Exception?> _logCommandExecutionDebug =
         LoggerMessage.Define<string, string>(
             MsLogLevel.Debug,
-            new EventId(17008, nameof(CommandExecutionDebug)),
+            new EventId(17008, "CommandExecutionDebug"),
             "Failed to execute command: {Command} {Args}");
 
     private static readonly Action<ILogger, PlatformType, string, int, double, double, double, Exception?> _logSystemInfo =
@@ -376,8 +376,8 @@ public sealed partial class SystemInfoManager : IDisposable
 
                     foreach (var mo in collection)
                     {
-                        info.Total = Convert.ToInt64(mo["TotalVisibleMemorySize"]) * 1024;
-                        info.Available = Convert.ToInt64(mo["FreePhysicalMemory"]) * 1024;
+                        info.Total = Convert.ToInt64(CultureInfo.InvariantCulture, mo["TotalVisibleMemorySize"]) * 1024;
+                        info.Available = Convert.ToInt64(CultureInfo.InvariantCulture, mo["FreePhysicalMemory"]) * 1024;
                         info.Used = info.Total - info.Available;
                         info.UsagePercentage = (double)info.Used / info.Total * 100;
                         break;
@@ -512,15 +512,15 @@ public sealed partial class SystemInfoManager : IDisposable
                 {
                     freePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages inactive:", StringComparison.CurrentCulture))
+                else if (line.Contains("Pages inactive:", StringComparison.Ordinal))
                 {
                     inactivePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages active:", StringComparison.CurrentCulture))
+                else if (line.Contains("Pages active:", StringComparison.Ordinal))
                 {
                     activePages = ParseMacOSPages(line);
                 }
-                else if (line.Contains("Pages wired down:", StringComparison.CurrentCulture))
+                else if (line.Contains("Pages wired down:", StringComparison.Ordinal))
                 {
                     wiredPages = ParseMacOSPages(line);
                 }
@@ -917,37 +917,40 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Memory information.
     /// </summary>
+    /// <summary>
+    /// Physical memory information structure.
+    /// </summary>
     private struct MemoryInfo
     {
         /// <summary>
-        /// The total.
+        /// Total physical memory available in bytes.
         /// </summary>
         public long Total;
         /// <summary>
-        /// The available.
+        /// Available physical memory in bytes that can be allocated.
         /// </summary>
         public long Available;
         /// <summary>
-        /// The used.
+        /// Used physical memory in bytes (Total - Available).
         /// </summary>
         public long Used;
         /// <summary>
-        /// The usage percentage.
+        /// Physical memory usage as a percentage (0-100).
         /// </summary>
         public double UsagePercentage;
     }
 
     /// <summary>
-    /// Virtual memory information.
+    /// Virtual memory information structure.
     /// </summary>
     private struct VirtualMemoryInfo
     {
         /// <summary>
-        /// The total.
+        /// Total virtual memory available in bytes (physical + page file).
         /// </summary>
         public long Total;
         /// <summary>
-        /// The available.
+        /// Available virtual memory in bytes that can be allocated.
         /// </summary>
         public long Available;
     }
@@ -997,18 +1000,21 @@ public sealed partial class SystemInfoManager : IDisposable
     /// <summary>
     /// Disk information.
     /// </summary>
+    /// <summary>
+    /// Disk storage information structure.
+    /// </summary>
     private struct DiskInfo
     {
         /// <summary>
-        /// The total.
+        /// Total disk storage capacity in bytes.
         /// </summary>
         public long Total;
         /// <summary>
-        /// The available.
+        /// Available disk storage space in bytes that can be used.
         /// </summary>
         public long Available;
         /// <summary>
-        /// The used.
+        /// Used disk storage space in bytes (Total - Available).
         /// </summary>
         public long Used;
     }
@@ -1022,10 +1028,15 @@ public sealed partial class SystemInfoManager : IDisposable
 /// </summary>
 public enum PlatformType
 {
+    /// <summary>Unknown platform type.</summary>
     Unknown,
+    /// <summary>Windows operating system.</summary>
     Windows,
+    /// <summary>Linux operating system.</summary>
     Linux,
+    /// <summary>macOS operating system.</summary>
     MacOS,
+    /// <summary>FreeBSD operating system.</summary>
     FreeBSD
 }
 

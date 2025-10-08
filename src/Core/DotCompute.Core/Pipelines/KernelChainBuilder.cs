@@ -408,7 +408,10 @@ namespace DotCompute.Core.Pipelines
         {
             ThrowIfDisposed();
 
-            _preferredAccelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+            ArgumentNullException.ThrowIfNull(accelerator);
+
+
+            _preferredAccelerator = accelerator;
             _preferredBackend = null; // Clear backend preference when accelerator is set
 
             if (_logger != null)
@@ -953,10 +956,7 @@ namespace DotCompute.Core.Pipelines
         /// </summary>
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(KernelChainBuilder));
-            }
+        ObjectDisposedException.ThrowIf(_disposed, this);
         }
 
         /// <inheritdoc/>

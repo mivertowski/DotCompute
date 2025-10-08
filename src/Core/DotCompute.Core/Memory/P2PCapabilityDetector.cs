@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
+using System.Globalization;
 
 namespace DotCompute.Core.Memory
 {
@@ -761,7 +762,7 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private static DeviceVendor GetDeviceVendor(IAccelerator device)
         {
-            var name = device.Info.Name.ToLowerInvariant();
+            var name = device.Info.Name.ToUpper(CultureInfo.InvariantCulture);
 
             // Check accelerator type first for mock devices
             if (device.Type == AcceleratorType.CUDA || name.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
@@ -772,14 +773,14 @@ namespace DotCompute.Core.Memory
                 return DeviceVendor.NVIDIA;
             }
 
-            if (name.Contains("rocm", StringComparison.CurrentCulture) || name.Contains("mi210", StringComparison.CurrentCulture) || name.Contains("mi250", StringComparison.CurrentCulture) ||
-            name.Contains("amd", StringComparison.CurrentCulture) || name.Contains("radeon", StringComparison.CurrentCulture) || name.Contains("instinct", StringComparison.CurrentCulture))
+            if (name.Contains("rocm", StringComparison.Ordinal) || name.Contains("mi210", StringComparison.Ordinal) || name.Contains("mi250", StringComparison.Ordinal) ||
+            name.Contains("amd", StringComparison.Ordinal) || name.Contains("radeon", StringComparison.Ordinal) || name.Contains("instinct", StringComparison.Ordinal))
             {
                 return DeviceVendor.AMD;
             }
 
-            if (device.Type == AcceleratorType.CPU || name.Contains("cpu", StringComparison.CurrentCulture) ||
-            name.Contains("intel", StringComparison.CurrentCulture) || name.Contains("iris", StringComparison.CurrentCulture) || name.Contains("arc", StringComparison.CurrentCulture))
+            if (device.Type == AcceleratorType.CPU || name.Contains("cpu", StringComparison.Ordinal) ||
+            name.Contains("intel", StringComparison.Ordinal) || name.Contains("iris", StringComparison.Ordinal) || name.Contains("arc", StringComparison.Ordinal))
             {
                 return DeviceVendor.Intel;
             }
@@ -792,8 +793,8 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private static bool IsOpenCLDevice(IAccelerator device)
         {
-            var name = device.Info.Name.ToLowerInvariant();
-            return name.Contains("opencl", StringComparison.CurrentCulture);
+            var name = device.Info.Name.ToUpper(CultureInfo.InvariantCulture);
+            return name.Contains("opencl", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -802,7 +803,7 @@ namespace DotCompute.Core.Memory
         private static bool IsCudaDevice(IAccelerator device)
         {
             return device.Type == AcceleratorType.CUDA ||
-                   device.Info.Name.ToLowerInvariant().Contains("cuda", StringComparison.CurrentCulture);
+                   device.Info.Name.ToUpper(CultureInfo.InvariantCulture).Contains("cuda", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -810,8 +811,8 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private static bool IsAmdDevice(IAccelerator device)
         {
-            var name = device.Info.Name.ToLowerInvariant();
-            return name.Contains("rocm", StringComparison.CurrentCulture) || name.Contains("amd", StringComparison.CurrentCulture) || name.Contains("radeon", StringComparison.CurrentCulture);
+            var name = device.Info.Name.ToUpper(CultureInfo.InvariantCulture);
+            return name.Contains("rocm", StringComparison.Ordinal) || name.Contains("amd", StringComparison.Ordinal) || name.Contains("radeon", StringComparison.Ordinal);
         }
         /// <summary>
         /// Gets dispose asynchronously.
@@ -865,10 +866,15 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum P2PConnectionType
     {
+        /// <summary>No P2P connection available.</summary>
         None = 0,
+        /// <summary>PCIe peer-to-peer connection.</summary>
         PCIe = 1,
+        /// <summary>NVIDIA NVLink high-speed interconnect.</summary>
         NVLink = 2,
+        /// <summary>InfiniBand network connection.</summary>
         InfiniBand = 3,
+        /// <summary>AMD DirectGMA connection.</summary>
         DirectGMA = 4
     }
 
@@ -924,9 +930,13 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum TransferType
     {
+        /// <summary>Transfer mediated through host memory.</summary>
         HostMediated = 0,
+        /// <summary>Direct peer-to-peer transfer between devices.</summary>
         DirectP2P = 1,
+        /// <summary>Streaming transfer with chunked data.</summary>
         Streaming = 2,
+        /// <summary>Memory-mapped transfer.</summary>
         MemoryMapped = 3
     }
 
@@ -965,9 +975,13 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal enum DeviceVendor
     {
+        /// <summary>Unknown or unsupported vendor.</summary>
         Unknown = 0,
+        /// <summary>NVIDIA GPU vendor.</summary>
         NVIDIA = 1,
+        /// <summary>AMD GPU vendor.</summary>
         AMD = 2,
+        /// <summary>Intel GPU vendor.</summary>
         Intel = 3
     }
 }

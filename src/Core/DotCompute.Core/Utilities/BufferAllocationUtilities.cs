@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -48,7 +49,6 @@ public static class BufferAllocationUtilities
             throw new ArgumentOutOfRangeException(nameof(count),
                 "Allocation size exceeds maximum for 32-bit process");
         }
-
     }
 
     /// <summary>
@@ -78,7 +78,6 @@ public static class BufferAllocationUtilities
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
                 "Allocation size exceeds maximum for 32-bit process");
         }
-
     }
 
     /// <summary>
@@ -101,16 +100,8 @@ public static class BufferAllocationUtilities
         IUnifiedMemoryBuffer<T> destination, int destinationOffset,
         int count) where T : unmanaged
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
-
-
-        if (destination == null)
-        {
-            throw new ArgumentNullException(nameof(destination));
-        }
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
 
 
         if (sourceOffset < 0)
@@ -157,7 +148,6 @@ public static class BufferAllocationUtilities
 
             throw new ObjectDisposedException(nameof(destination), "Destination buffer has been disposed");
         }
-
     }
 
     /// <summary>
@@ -168,10 +158,7 @@ public static class BufferAllocationUtilities
         int offset,
         int count) where T : unmanaged
     {
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (offset < 0)
         {
@@ -197,7 +184,6 @@ public static class BufferAllocationUtilities
 
             throw new ObjectDisposedException(nameof(buffer), "Buffer has been disposed");
         }
-
     }
 
     /// <summary>
@@ -276,7 +262,7 @@ public static class BufferAllocationUtilities
     {
         var elementSize = GetElementSize<T>();
 
-        return backendType.ToLowerInvariant() switch
+        return backendType.ToUpper(CultureInfo.InvariantCulture) switch
         {
             "cuda" => Math.Max(elementSize, 32), // CUDA prefers 32-byte alignment
             "metal" => Math.Max(elementSize, 16), // Metal prefers 16-byte alignment
@@ -327,7 +313,7 @@ public static class BufferAllocationUtilities
         var alignment = CalculateOptimalAlignment<T>(backendType);
 
         // Calculate overhead based on backend and options
-        var overhead = backendType.ToLowerInvariant() switch
+        var overhead = backendType.ToUpper(CultureInfo.InvariantCulture) switch
         {
             "cuda" => baseSize * 0.05, // 5% overhead for CUDA metadata
             "metal" => baseSize * 0.03, // 3% overhead for Metal metadata
@@ -374,11 +360,30 @@ public static class BufferAllocationUtilities
 /// </summary>
 public enum AllocationStrategy
 {
-    Fast,       // Optimize for speed
-    Standard,   // Balanced approach
-    Pooled,     // Use memory pools
-    Pinned,     // Use pinned memory
-    Unified     // Use unified memory (GPU/CPU)
+    /// <summary>
+    /// Optimize for speed, prioritizing allocation performance.
+    /// </summary>
+    Fast,
+
+    /// <summary>
+    /// Balanced approach between speed and memory efficiency.
+    /// </summary>
+    Standard,
+
+    /// <summary>
+    /// Use memory pools for reduced allocation overhead.
+    /// </summary>
+    Pooled,
+
+    /// <summary>
+    /// Use pinned memory for optimal GPU transfer performance.
+    /// </summary>
+    Pinned,
+
+    /// <summary>
+    /// Use unified memory accessible from both GPU and CPU.
+    /// </summary>
+    Unified
 }
 
 /// <summary>

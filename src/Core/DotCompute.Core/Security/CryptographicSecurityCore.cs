@@ -46,7 +46,9 @@ namespace DotCompute.Core.Security
 
         public CryptographicSecurityCore(ILogger<CryptographicSecurityCore> logger, CryptographicConfiguration? configuration = null)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(logger);
+
+            _logger = logger;
             _configuration = configuration ?? CryptographicConfiguration.Default;
             _randomGenerator = RandomNumberGenerator.Create();
 
@@ -63,10 +65,7 @@ namespace DotCompute.Core.Security
         public async Task<KeyGenerationResult> GenerateKeyAsync(KeyType keyType, int keySize,
             string identifier, string purpose)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CryptographicSecurityCore));
-            }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
@@ -110,10 +109,7 @@ namespace DotCompute.Core.Security
         public async Task<EncryptionResult> EncryptAsync(ReadOnlyMemory<byte> data, string keyIdentifier,
             string algorithm, ReadOnlyMemory<byte> associatedData = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CryptographicSecurityCore));
-            }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var result = new EncryptionResult
@@ -139,10 +135,7 @@ namespace DotCompute.Core.Security
             string algorithm, ReadOnlyMemory<byte> nonce = default, ReadOnlyMemory<byte> tag = default,
             ReadOnlyMemory<byte> associatedData = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CryptographicSecurityCore));
-            }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
             var result = new DecryptionResult
             {
@@ -471,17 +464,17 @@ namespace DotCompute.Core.Security
         /// Gets or sets the encrypted data.
         /// </summary>
         /// <value>The encrypted data.</value>
-        public byte[]? EncryptedData { get; set; }
+        public IReadOnlyList<byte>? EncryptedData { get; set; }
         /// <summary>
         /// Gets or sets the nonce.
         /// </summary>
         /// <value>The nonce.</value>
-        public byte[]? Nonce { get; set; }
+        public IReadOnlyList<byte>? Nonce { get; set; }
         /// <summary>
         /// Gets or sets the authentication tag.
         /// </summary>
         /// <value>The authentication tag.</value>
-        public byte[]? AuthenticationTag { get; set; }
+        public IReadOnlyList<byte>? AuthenticationTag { get; set; }
     }
     /// <summary>
     /// A class that represents decryption result.
@@ -518,7 +511,7 @@ namespace DotCompute.Core.Security
         /// Gets or sets the decrypted data.
         /// </summary>
         /// <value>The decrypted data.</value>
-        public byte[]? DecryptedData { get; set; }
+        public IReadOnlyList<byte>? DecryptedData { get; set; }
     }
     /// <summary>
     /// A class that represents algorithm validation result.
@@ -581,7 +574,7 @@ namespace DotCompute.Core.Security
     /// A class that represents secure key container.
     /// </summary>
 
-    public class SecureKeyContainer : IDisposable
+    public sealed class SecureKeyContainer : IDisposable
     {
         /// <summary>
         /// Gets or sets the key type.
@@ -613,7 +606,7 @@ namespace DotCompute.Core.Security
         /// Gets or sets the public key data for asymmetric keys.
         /// </summary>
         /// <value>The public key data bytes, or null for symmetric keys.</value>
-        public byte[]? PublicKeyData { get; set; }
+        public IReadOnlyList<byte>? PublicKeyData { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this key has been rotated.
@@ -661,10 +654,7 @@ namespace DotCompute.Core.Security
 
         public byte[] GetKeyBytes()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(SecureKeyContainer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var copy = new byte[_keyData.Length];

@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Performance;
@@ -49,14 +50,14 @@ public sealed partial class KernelProfiler(
     private static void LogTraceCompleted(ILogger logger, string kernelName, bool success)
         => _logTraceCompleted(logger, kernelName, success, null);
 
-    private static readonly Action<ILogger, Exception, string, Exception?> _logTraceError =
-        LoggerMessage.Define<Exception, string>(
+    private static readonly Action<ILogger, string, Exception?> _logTraceError =
+        LoggerMessage.Define<string>(
             MsLogLevel.Error,
             new EventId(11102, nameof(LogTraceError)),
             "Error during kernel execution trace for {KernelName}");
 
     private static void LogTraceError(ILogger logger, Exception error, string kernelName)
-        => _logTraceError(logger, error, kernelName, null);
+        => _logTraceError(logger, kernelName, error);
 
     private static readonly Action<ILogger, TimeSpan, Exception?> _logCleanupRequested =
         LoggerMessage.Define<TimeSpan>(
@@ -253,7 +254,7 @@ public sealed partial class KernelProfiler(
         var relevantExecutions = _executionHistory
             .Where(e => e.KernelName == kernelName
                 && e.PerformanceCounters?.ContainsKey("MemoryUsed") == true
-                && Convert.ToInt64(e.PerformanceCounters["MemoryUsed"]) > 0)
+                && Convert.ToInt64(e.PerformanceCounters["MemoryUsed"], CultureInfo.InvariantCulture) > 0)
             .ToList();
 
         if (relevantExecutions.Count == 0)
@@ -269,7 +270,7 @@ public sealed partial class KernelProfiler(
         }
 
         var memoryUsages = relevantExecutions
-            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"], CultureInfo.InvariantCulture))
             .ToArray();
         var average = memoryUsages.Average();
         var peak = memoryUsages.Max();
@@ -345,7 +346,7 @@ public sealed partial class KernelProfiler(
         // Analyze memory usage patterns
         var memoryUsages = relevantExecutions
             .Where(e => e.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
-            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"], CultureInfo.InvariantCulture))
             .ToArray();
         if (memoryUsages.Length > 0)
         {
@@ -576,7 +577,7 @@ public sealed partial class KernelProfiler(
             .ToArray();
         var memoryUsages = executions
             .Where(e => e.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
-            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"]))
+            .Select(e => Convert.ToInt64(e.PerformanceCounters!["MemoryUsed"], CultureInfo.InvariantCulture))
             .ToArray();
 
         return new PerformanceMetrics

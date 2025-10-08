@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions;
@@ -14,7 +15,6 @@ using DotCompute.Core.Optimization.Models;
 using DotCompute.Core.Optimization.Performance;
 using DotCompute.Core.Optimization.Selection;
 using DotCompute.Abstractions.Performance;
-using System;
 
 namespace DotCompute.Core.Optimization;
 
@@ -61,8 +61,8 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         LoggerMessage.Define<string, string, double, string>(LogLevel.Trace, new EventId(9208, nameof(LogPerformanceRecorded)),
             "Recorded performance result for {KernelName} on {Backend}: {ExecutionTime}ms [ID: {ExecutionId}]");
 
-    private static readonly Action<ILogger, string, string, Exception> LogProfilingFinishFailed =
-        LoggerMessage.Define<string, string>(LogLevel.Warning, new EventId(9209, nameof(LogProfilingFinishFailed)),
+    private static readonly Action<ILogger, string, Exception?> LogProfilingFinishFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9209, nameof(LogProfilingFinishFailed)),
             "Failed to finish performance profiling for {CorrelationId}");
     private readonly IComputeOrchestrator _baseOrchestrator;
     private readonly AdaptiveBackendSelector _backendSelector;
@@ -259,7 +259,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
         LogWorkloadAnalyzed(_logger, kernelName,
-            (characteristics.DataSize / 1024 / 1024).ToString("F2"),
+            (characteristics.DataSize / 1024 / 1024).ToString("F2", CultureInfo.InvariantCulture),
             characteristics.ComputeIntensity, characteristics.MemoryIntensity, characteristics.ParallelismLevel, null);
 
         await Task.CompletedTask;
@@ -411,7 +411,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
             }
             catch (Exception ex)
             {
-                LogProfilingFinishFailed(_logger, correlationId, string.Empty, ex);
+                LogProfilingFinishFailed(_logger, correlationId, ex);
             }
         }
 
@@ -491,7 +491,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var elementsProcessed = dataSize / 4; // Assuming float elements
 
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
             var name when name.Contains("matrix", StringComparison.Ordinal) => elementsProcessed * elementsProcessed, // O(n²)
             var name when name.Contains("sort", StringComparison.Ordinal) => (long)(elementsProcessed * Math.Log(elementsProcessed)), // O(n log n)
@@ -522,7 +522,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         }
 
         // Heuristic based on kernel name
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
             var name when name.Contains("fft", StringComparison.Ordinal) || name.Contains("fwt", StringComparison.Ordinal) => 0.9,
             var name when name.Contains("matrix", StringComparison.Ordinal) && name.Contains("multiply", StringComparison.Ordinal) => 0.85,
@@ -545,7 +545,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var operationCount = EstimateOperationCount(kernelName, args);
         var memoryOperationRatio = (double)dataSize / Math.Max(1, operationCount);
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
             var name when name.Contains("copy", StringComparison.Ordinal) || name.Contains("transpose", StringComparison.Ordinal) => 0.9,
             var name when name.Contains("reduce", StringComparison.Ordinal) || name.Contains("scan", StringComparison.Ordinal) => 0.7,
@@ -565,7 +565,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
         var elementCount = dataSize / 4; // Assuming float elements
 
 
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
             var name when name.Contains("element", StringComparison.Ordinal) || name.Contains("map", StringComparison.Ordinal) => 0.95,
             var name when name.Contains("matrix", StringComparison.Ordinal) && !name.Contains("multiply", StringComparison.Ordinal) => 0.9,
@@ -579,7 +579,7 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     private static MemoryAccessPattern DetermineAccessPattern(string kernelName, object[] args)
     {
-        return kernelName.ToLowerInvariant() switch
+        return kernelName.ToUpper(CultureInfo.InvariantCulture) switch
         {
             var name when name.Contains("transpose", StringComparison.Ordinal) => MemoryAccessPattern.Strided,
             var name when name.Contains("random", StringComparison.Ordinal) => MemoryAccessPattern.Random,
@@ -740,18 +740,25 @@ public class PerformanceOptimizedOrchestrator : IComputeOrchestrator, IDisposabl
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-
-        (_baseOrchestrator as IDisposable)?.Dispose();
-        _backendSelector?.Dispose();
-
+        if (disposing)
+        {
+            // Dispose managed resources
+            (_baseOrchestrator as IDisposable)?.Dispose();
+            _backendSelector?.Dispose();
+        }
 
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -841,7 +848,7 @@ public class PerformanceOptimizationOptions
     /// Gets or sets the enable detailed profiling.
     /// </summary>
     /// <value>The enable detailed profiling.</value>
-    public bool EnableDetailedProfiling { get; set; } = false;
+    public bool EnableDetailedProfiling { get; set; }
     /// <summary>
     /// Gets or sets the profiling sample interval ms.
     /// </summary>
@@ -866,7 +873,13 @@ public class PerformanceOptimizationOptions
     /// Gets or sets the preferred backends.
     /// </summary>
     /// <value>The preferred backends.</value>
-    public List<string>? PreferredBackends { get; set; }
+    /// <remarks>
+    /// This property allows setting for configuration purposes but returns a read-only view.
+    /// CA2227 is acceptable here as this is a configuration options class used with object initializers.
+    /// </remarks>
+#pragma warning disable CA2227 // Collection properties should be read only
+    public IList<string>? PreferredBackends { get; set; }
+#pragma warning restore CA2227
 }
 /// <summary>
 /// An optimization strategy enumeration.
@@ -875,10 +888,28 @@ public class PerformanceOptimizationOptions
 /// <summary>
 /// Optimization strategies for performance tuning.
 /// </summary>
+/// <summary>
+/// Defines optimization strategies for performance tuning.
+/// </summary>
 public enum OptimizationStrategy
 {
-    Conservative,  // Prioritize reliability over performance
-    Balanced,      // Balance performance and reliability
-    Aggressive,    // Maximize performance
-    Adaptive       // Adapt strategy based on workload
+    /// <summary>
+    /// Prioritize reliability over performance.
+    /// </summary>
+    Conservative,
+
+    /// <summary>
+    /// Balance performance and reliability.
+    /// </summary>
+    Balanced,
+
+    /// <summary>
+    /// Maximize performance at the cost of some reliability.
+    /// </summary>
+    Aggressive,
+
+    /// <summary>
+    /// Adapt strategy dynamically based on workload characteristics.
+    /// </summary>
+    Adaptive
 }

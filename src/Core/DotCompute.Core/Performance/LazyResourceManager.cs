@@ -170,7 +170,9 @@ public sealed partial class LazyResourceManager<T> : IDisposable where T : class
         ILogger<LazyResourceManager<T>>? logger = null,
         LazyResourceConfiguration? config = null)
     {
-        _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        ArgumentNullException.ThrowIfNull(factory);
+
+        _factory = factory;
         _disposer = disposer;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<LazyResourceManager<T>>.Instance;
         _config = config ?? LazyResourceConfiguration.Default;
@@ -561,10 +563,7 @@ public sealed partial class LazyResourceManager<T> : IDisposable where T : class
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(LazyResourceManager<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, typeof(LazyResourceManager<>));
     }
     /// <summary>
     /// Performs dispose.
@@ -872,8 +871,19 @@ public readonly record struct ResourceInfo
 /// </summary>
 public enum PreloadPriority
 {
+    /// <summary>
+    /// Low priority - resource loaded when system is idle.
+    /// </summary>
     Low,
+
+    /// <summary>
+    /// Normal priority - resource loaded at standard scheduling priority.
+    /// </summary>
     Normal,
+
+    /// <summary>
+    /// High priority - resource loaded immediately when requested.
+    /// </summary>
     High
 }
 
@@ -916,7 +926,11 @@ public static class LazyResourceManager
     {
         var asyncFactory = new Func<CancellationToken, Task<T>>(_ => Task.FromResult(factory()));
         var asyncDisposer = disposer != null
-            ? new Func<T, Task>(resource => { disposer(resource); return Task.CompletedTask; })
+            ? new Func<T, Task>(resource =>
+            {
+                disposer(resource);
+                return Task.CompletedTask;
+            })
             : null;
 
         return new LazyResourceManager<T>(asyncFactory, asyncDisposer, logger, config);

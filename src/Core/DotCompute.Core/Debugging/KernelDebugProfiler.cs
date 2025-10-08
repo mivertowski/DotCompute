@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions;
@@ -473,7 +474,7 @@ public sealed partial class KernelDebugProfiler(
 
         var memoryUsages = relevantResults
             .Where(r => r.PerformanceCounters?.ContainsKey("MemoryUsed") == true)
-            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"]))
+            .Select(r => Convert.ToInt64(r.PerformanceCounters!["MemoryUsed"], CultureInfo.InvariantCulture))
             .ToList();
 
         return Task.FromResult(new MemoryUsageAnalysis

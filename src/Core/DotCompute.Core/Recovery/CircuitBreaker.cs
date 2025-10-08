@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -64,7 +65,7 @@ public sealed class CircuitBreaker : IDisposable
         }
 
         var stopwatch = Stopwatch.StartNew();
-        var operationId = Guid.NewGuid().ToString("N")[..8];
+        var operationId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8];
 
         _logger.LogDebugMessage("Executing operation {OperationId} for service {operationId, serviceName}");
 

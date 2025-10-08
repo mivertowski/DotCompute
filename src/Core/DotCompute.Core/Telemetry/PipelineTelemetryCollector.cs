@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -83,7 +84,9 @@ public sealed class PipelineTelemetryCollector : IDisposable
         ILogger<PipelineTelemetryCollector> logger,
         IOptions<PipelineTelemetryOptions> options)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new PipelineTelemetryOptions();
 
 
@@ -158,7 +161,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
         var context = new PipelineExecutionContext
         {
             PipelineId = pipelineId,
-            CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),
+            CorrelationId = correlationId ?? Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture),
             StartTime = DateTime.UtcNow,
             Activity = _options.EnableDistributedTracing
 
@@ -542,12 +545,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PipelineTelemetryCollector));
-        }
-
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.
@@ -799,7 +797,6 @@ public sealed class PipelineMetricsSnapshot(
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
 
         // Update maximum
@@ -812,7 +809,6 @@ public sealed class PipelineMetricsSnapshot(
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
 
 
@@ -931,7 +927,6 @@ public sealed class StageMetricsSnapshot(
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _minDurationTicks, durationTicks, currentMin) != currentMin);
 
         // Update maximum
@@ -944,7 +939,6 @@ public sealed class StageMetricsSnapshot(
             {
                 break;
             }
-
         } while (Interlocked.CompareExchange(ref _maxDurationTicks, durationTicks, currentMax) != currentMax);
 
 

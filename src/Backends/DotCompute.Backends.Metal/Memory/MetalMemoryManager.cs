@@ -277,21 +277,16 @@ public sealed class MetalMemoryManager : BaseMemoryManager
     }
 
     /// <inheritdoc/>
-    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int count)
+    public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-
-
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         // Calculate byte offsets
 
         var elementSize = Unsafe.SizeOf<T>();
         var offsetBytes = (long)offset * elementSize;
-        var lengthBytes = (long)count * elementSize;
+        var lengthBytes = (long)length * elementSize;
 
         // Use the non-generic CreateViewCore which handles the actual view creation
 

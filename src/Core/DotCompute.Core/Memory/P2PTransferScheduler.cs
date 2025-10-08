@@ -843,10 +843,25 @@ namespace DotCompute.Core.Memory
     /// </summary>
     public enum P2PTransferPriority
     {
+        /// <summary>
+        /// Background priority level for low-importance transfers that can be deferred.
+        /// </summary>
         Background = 0,
+        /// <summary>
+        /// Low priority level for transfers that are not time-sensitive.
+        /// </summary>
         Low = 1,
+        /// <summary>
+        /// Normal priority level for standard transfers (default priority).
+        /// </summary>
         Normal = 2,
+        /// <summary>
+        /// High priority level for time-sensitive transfers that should be expedited.
+        /// </summary>
         High = 3,
+        /// <summary>
+        /// Critical priority level for urgent transfers that must be processed immediately.
+        /// </summary>
         Critical = 4
     }
 

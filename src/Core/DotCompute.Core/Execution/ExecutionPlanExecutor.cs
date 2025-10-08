@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -540,7 +541,7 @@ namespace DotCompute.Core.Execution
             var results = new LayerExecutionResult[layers.Count];
 
             // Execute communication operations and layers according to schedule
-            var executionOrder = GetLayerExecutionOrder(layers);
+            var executionOrder = GetLayerExecutionOrder<T>([.. layers]);
             var layerEvents = new Dictionary<int, ExecutionEvent>();
 
             // Create events for each layer
@@ -645,19 +646,19 @@ namespace DotCompute.Core.Execution
             var microbatchConfig = plan.MicrobatchConfig;
             var results = new List<StageExecutionResult>();
 
-            LogPipelineExecuting(_logger, plan.Stages.Count, plan.MicrobatchConfig.Count, plan.SchedulingStrategy.ToString());
+            LogPipelineExecuting(_logger, plan.Stages.Count, plan.MicrobatchConfig.Count, microbatchConfig.SchedulingStrategy.ToString());
 
             // Execute based on scheduling strategy
             switch (microbatchConfig.SchedulingStrategy)
             {
                 case MicrobatchSchedulingStrategy.Sequential:
-                    results.AddRange(await ExecuteSequentialPipelineAsync(stages, microbatchConfig, executionId, cancellationToken));
+                    results.AddRange(await ExecuteSequentialPipelineAsync<T>([.. stages], microbatchConfig, executionId, cancellationToken));
                     break;
                 case MicrobatchSchedulingStrategy.Interleaved:
-                    results.AddRange(await ExecuteInterleavedPipelineAsync(stages, microbatchConfig, executionId, cancellationToken));
+                    results.AddRange(await ExecuteInterleavedPipelineAsync<T>([.. stages], microbatchConfig, executionId, cancellationToken));
                     break;
                 case MicrobatchSchedulingStrategy.OneForwardOneBackward:
-                    results.AddRange(await ExecuteOneForwardOneBackwardPipelineAsync(stages, microbatchConfig, executionId, cancellationToken));
+                    results.AddRange(await ExecuteOneForwardOneBackwardPipelineAsync<T>([.. stages], microbatchConfig, executionId, cancellationToken));
                     break;
             }
 
@@ -674,10 +675,10 @@ namespace DotCompute.Core.Execution
 
             for (var microbatch = 0; microbatch < microbatchConfig.Count; microbatch++)
             {
-                LogProcessingMicrobatch(_logger, microbatch, plan.MicrobatchConfig.Count);
+                LogProcessingMicrobatch(_logger, microbatch, microbatchConfig.Count);
 
                 // Process each stage sequentially for this microbatch
-                for (var stageIndex = 0; stageIndex < stages.Count; stageIndex++)
+                for (var stageIndex = 0; stageIndex < stages.Length; stageIndex++)
                 {
                     var stage = stages[stageIndex];
                     var result = await ExecutePipelineStageAsync(stage, microbatch, executionId, cancellationToken);
@@ -698,7 +699,7 @@ namespace DotCompute.Core.Execution
             var stageTasks = new List<Task>();
 
             // Start all stages in parallel, each processing their assigned microbatches
-            for (var stageIndex = 0; stageIndex < stages.Count; stageIndex++)
+            for (var stageIndex = 0; stageIndex < stages.Length; stageIndex++)
             {
                 var stage = stages[stageIndex];
                 var localStageIndex = stageIndex;

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -146,7 +147,9 @@ public sealed partial class MemoryProtection : IDisposable
 
     public MemoryProtection(ILogger<MemoryProtection> logger, MemoryProtectionConfiguration? configuration = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _configuration = configuration ?? MemoryProtectionConfiguration.Default;
 
         // Start integrity monitoring
@@ -169,11 +172,7 @@ public sealed partial class MemoryProtection : IDisposable
 
         nuint alignment = 8, bool canExecute = false, string? identifier = null)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemoryProtection));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (size == 0 || size > _configuration.MaxAllocationSize)
@@ -215,7 +214,7 @@ public sealed partial class MemoryProtection : IDisposable
                 TotalSize = alignedSize,
                 GuardPageSize = guardPageSize,
                 CanExecute = canExecute,
-                Identifier = identifier ?? Guid.NewGuid().ToString("N")[..8],
+                Identifier = identifier ?? Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8],
                 AllocationTime = DateTimeOffset.UtcNow
             };
 
@@ -261,11 +260,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <returns>The value read from memory</returns>
     public unsafe T ReadMemory<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemoryProtection));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (!_allocations.TryGetValue(address, out var metadata))
@@ -341,11 +336,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <param name="offset">Offset in bytes from the base address</param>
     public unsafe void WriteMemory<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemoryProtection));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (!_allocations.TryGetValue(address, out var metadata))
@@ -417,11 +408,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <param name="allocation">The protected memory allocation to free</param>
     public async Task FreeProtectedMemoryAsync(ProtectedMemoryAllocation allocation)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(MemoryProtection));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentNullException.ThrowIfNull(allocation);

@@ -33,19 +33,12 @@ public static unsafe class UnsafeMemoryOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CopyMemory(void* source, void* destination, nuint byteCount)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
+
         if (byteCount == 0)
         {
             return;
-        }
-
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
-
-        if (destination == null)
-        {
-            throw new ArgumentNullException(nameof(destination));
         }
 
         // Use platform-specific optimized copy
@@ -100,14 +93,11 @@ public static unsafe class UnsafeMemoryOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void FillMemory(void* destination, byte value, nuint byteCount)
     {
+        ArgumentNullException.ThrowIfNull(destination);
+
         if (byteCount == 0)
         {
             return;
-        }
-
-        if (destination == null)
-        {
-            throw new ArgumentNullException(nameof(destination));
         }
 
         // Use platform-specific optimized fill

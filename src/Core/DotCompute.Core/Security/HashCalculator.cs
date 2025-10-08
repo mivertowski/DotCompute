@@ -33,7 +33,8 @@ public sealed class HashCalculator : IDisposable
     /// <inheritdoc/>
     public HashCalculator(ILogger logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _hashCache = [];
 
         // Set up cache cleanup timer
@@ -51,10 +52,7 @@ public sealed class HashCalculator : IDisposable
         string algorithm = "SHA-256",
         bool enableCaching = true)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HashCalculator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
@@ -130,10 +128,7 @@ public sealed class HashCalculator : IDisposable
         ReadOnlyMemory<byte> data,
         string[] algorithms)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HashCalculator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(algorithms);
 
@@ -186,10 +181,7 @@ public sealed class HashCalculator : IDisposable
         ReadOnlyMemory<byte> expectedHash,
         string algorithm = "SHA-256")
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HashCalculator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
 
@@ -215,7 +207,7 @@ public sealed class HashCalculator : IDisposable
             result.ExpectedHash = expectedHash.ToArray();
 
             // Compare hashes using constant-time comparison
-            result.IsValid = hashResult.HashValue != null && ConstantTimeEquals(hashResult.HashValue, expectedHash.ToArray());
+            result.IsValid = hashResult.HashValue != null && ConstantTimeEquals([.. hashResult.HashValue], expectedHash.ToArray());
             result.IsSuccessful = true;
 
             _logger.LogDebugMessage($"Hash verification completed: {algorithm}, Valid={result.IsValid}");
@@ -242,10 +234,7 @@ public sealed class HashCalculator : IDisposable
     /// </summary>
     public async Task<string> CalculateKeyFingerprintAsync(SecureKeyContainer keyContainer)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HashCalculator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(keyContainer);
 
@@ -258,7 +247,7 @@ public sealed class HashCalculator : IDisposable
             }
 
             // Return first 16 characters of hex representation
-            return Convert.ToHexString(hashResult.HashValue!)[..16];
+            return Convert.ToHexString([.. hashResult.HashValue!])[..16];
         }
         catch (Exception ex)
         {
@@ -272,10 +261,7 @@ public sealed class HashCalculator : IDisposable
     /// </summary>
     public HashAlgorithmValidationResult ValidateHashAlgorithm(string algorithm, string context)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(HashCalculator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrWhiteSpace(algorithm);
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
@@ -458,7 +444,7 @@ public sealed class HashResult
     /// <inheritdoc/>
     public int InputSize { get; init; }
     /// <inheritdoc/>
-    public byte[]? HashValue { get; set; }
+    public IReadOnlyList<byte>? HashValue { get; set; }
     /// <inheritdoc/>
     public int HashSize { get; set; }
     /// <inheritdoc/>
@@ -502,9 +488,9 @@ public sealed class HashVerificationResult
     /// <inheritdoc/>
     public int ExpectedHashSize { get; init; }
     /// <inheritdoc/>
-    public byte[]? CalculatedHash { get; set; }
+    public IReadOnlyList<byte>? CalculatedHash { get; set; }
     /// <inheritdoc/>
-    public byte[]? ExpectedHash { get; set; }
+    public IReadOnlyList<byte>? ExpectedHash { get; set; }
     /// <inheritdoc/>
     public bool IsValid { get; set; }
     /// <inheritdoc/>

@@ -56,7 +56,7 @@ public sealed class PluginRecoveryConfiguration
     /// <summary>
     /// Enable state persistence
     /// </summary>
-    public bool EnableStatePersistence { get; set; } = false;
+    public bool EnableStatePersistence { get; set; }
 
     /// <summary>
     /// Path for persisting recovery state

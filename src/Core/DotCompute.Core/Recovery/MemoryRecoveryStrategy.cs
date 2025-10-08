@@ -233,8 +233,13 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
             LogMemoryDefragmentationFailed(Logger, ex);
 
             // Ensure emergency reserve is restored even on failure
-
-            try { InitializeEmergencyReserve(); } catch { }
+            try
+            {
+                InitializeEmergencyReserve();
+            }
+            catch
+            {
+            }
 
             return new Models.MemoryDefragmentationResult
             {
@@ -438,8 +443,14 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
         _ = Task.Run(() =>
         {
-            try { InitializeEmergencyReserve(); }
-            catch { /* Ignore during emergency */ }
+            try
+            {
+                InitializeEmergencyReserve();
+            }
+            catch
+            {
+                /* Ignore during emergency */
+            }
         }, CancellationToken.None);
     }
 
@@ -555,9 +566,9 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
     /// Performs dispose.
     /// </summary>
 
-    public override void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (!_disposed && disposing)
         {
             _defragmentationTimer?.Dispose();
             _recoveryLock?.Dispose();
@@ -567,6 +578,8 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
             LogMemoryRecoveryStrategyDisposed(Logger);
         }
+
+        base.Dispose(disposing);
     }
 
     #region LoggerMessage Delegates

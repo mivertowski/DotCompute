@@ -32,7 +32,8 @@ public sealed partial class SignatureVerifier : IDisposable
 
     public SignatureVerifier(ILogger logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _randomGenerator = RandomNumberGenerator.Create();
         _verificationCache = [];
 
@@ -169,10 +170,7 @@ public sealed partial class SignatureVerifier : IDisposable
         string identifier,
         string purpose)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SignatureVerifier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return await Task.Run(() =>
         {
@@ -194,10 +192,7 @@ public sealed partial class SignatureVerifier : IDisposable
         string identifier,
         string purpose)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SignatureVerifier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return await Task.Run(() =>
         {
@@ -220,10 +215,7 @@ public sealed partial class SignatureVerifier : IDisposable
         string hashAlgorithm,
         SignatureResult result)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SignatureVerifier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -269,10 +261,7 @@ public sealed partial class SignatureVerifier : IDisposable
         string hashAlgorithm,
         SignatureVerificationResult result)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SignatureVerifier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -349,10 +338,7 @@ public sealed partial class SignatureVerifier : IDisposable
         int keySize,
         string context)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(SignatureVerifier));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var result = new SignatureAlgorithmValidationResult
         {
@@ -484,7 +470,7 @@ public sealed partial class SignatureVerifier : IDisposable
             // Use public key if available, otherwise private key
             if (keyContainer.PublicKeyData != null)
             {
-                rsa.ImportRSAPublicKey(keyContainer.PublicKeyData, out _);
+                rsa.ImportRSAPublicKey([.. keyContainer.PublicKeyData], out _);
             }
             else
             {
@@ -537,7 +523,7 @@ public sealed partial class SignatureVerifier : IDisposable
             // Use public key if available, otherwise private key
             if (keyContainer.PublicKeyData != null)
             {
-                ecdsa.ImportSubjectPublicKeyInfo(keyContainer.PublicKeyData, out _);
+                ecdsa.ImportSubjectPublicKeyInfo([.. keyContainer.PublicKeyData], out _);
             }
             else
             {

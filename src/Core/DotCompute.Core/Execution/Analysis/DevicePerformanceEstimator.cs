@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -203,7 +204,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// <returns>A factor representing the relative efficiency for this workload type.</returns>
         private static double GetWorkloadTypeFactor(string workloadType)
         {
-            return workloadType.ToLowerInvariant() switch
+            return workloadType.ToUpper(CultureInfo.InvariantCulture) switch
             {
                 "matrix_multiply" => 1.2,
                 "convolution" => 1.1,

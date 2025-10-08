@@ -11,11 +11,18 @@ namespace DotCompute.Core.Optimization.Enums;
 /// </summary>
 public enum WorkloadPattern
 {
+    /// <summary>Sequential access pattern.</summary>
     Sequential,
+    /// <summary>Compute-intensive workload pattern.</summary>
     ComputeIntensive,
+    /// <summary>Memory-intensive workload pattern.</summary>
     MemoryIntensive,
+    /// <summary>Highly parallel workload pattern.</summary>
     HighlyParallel,
+    /// <summary>Balanced workload pattern.</summary>
     Balanced,
+    /// <summary>I/O-bound workload pattern.</summary>
     IOBound,
+    /// <summary>Mixed workload pattern.</summary>
     Mixed
 }

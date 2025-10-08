@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -15,7 +16,6 @@ using DotCompute.Core.Execution.Analysis;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Core.Execution.Optimization;
-using System;
 
 namespace DotCompute.Core.Execution
 {
@@ -311,7 +311,7 @@ namespace DotCompute.Core.Execution
                     OutputBuffers = [.. assignment.OutputBuffers.Cast<IUnifiedMemoryBuffer<T>>()],
                     StartIndex = assignment.StartIndex,
                     ElementCount = assignment.ElementCount,
-                    Dependencies = dependencyGraph.GetDependencies(i)
+                    Dependencies = (IList<int>)dependencyGraph.GetDependencies(i)
                 };
 
                 tasks.Add(deviceTask);
@@ -324,7 +324,7 @@ namespace DotCompute.Core.Execution
         /// Creates communication schedule for model parallel execution.
         /// </summary>
         private static async ValueTask<CommunicationSchedule<T>> CreateCommunicationScheduleAsync<T>(
-            List<ModelLayer<T>> layers,
+            IList<ModelLayer<T>> layers,
             Dictionary<int, IAccelerator> layerAssignments,
             DependencyGraph dependencies,
             CancellationToken cancellationToken) where T : unmanaged
@@ -589,7 +589,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Performs topological sort on model layers.
         /// </summary>
-        private static List<ModelLayer<T>> TopologicalSort<T>(List<ModelLayer<T>> layers, DependencyGraph dependencies) where T : unmanaged
+        private static List<ModelLayer<T>> TopologicalSort<T>(IList<ModelLayer<T>> layers, DependencyGraph dependencies) where T : unmanaged
         {
             var sorted = new List<ModelLayer<T>>();
             var visited = new HashSet<int>();
@@ -609,7 +609,7 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Visits a node during topological sort.
         /// </summary>
-        private static void TopologicalSortVisit<T>(int layerId, List<ModelLayer<T>> layers,
+        private static void TopologicalSortVisit<T>(int layerId, IList<ModelLayer<T>> layers,
             DependencyGraph dependencies, HashSet<int> visited, HashSet<int> visiting, List<ModelLayer<T>> sorted) where T : unmanaged
         {
             if (visiting.Contains(layerId))
@@ -646,13 +646,13 @@ namespace DotCompute.Core.Execution
             long totalElements)
         {
             // Base execution time estimation based on kernel complexity and device performance
-            var baseTime = kernelName.ToLowerInvariant() switch
+            var baseTime = kernelName.ToUpper(CultureInfo.InvariantCulture) switch
             {
                 var name when name.Contains("add", StringComparison.OrdinalIgnoreCase) => 1.0,
                 var name when name.Contains("multiply", StringComparison.OrdinalIgnoreCase) => 1.5,
-                var name when name.Contains("matrix", StringComparison.CurrentCulture) => 5.0,
-                var name when name.Contains("reduce", StringComparison.CurrentCulture) => 3.0,
-                var name when name.Contains("conv", StringComparison.CurrentCulture) => 8.0,
+                var name when name.Contains("matrix", StringComparison.Ordinal) => 5.0,
+                var name when name.Contains("reduce", StringComparison.Ordinal) => 3.0,
+                var name when name.Contains("conv", StringComparison.Ordinal) => 8.0,
                 _ => 2.0
             };
 
@@ -729,13 +729,13 @@ namespace DotCompute.Core.Execution
             AcceleratorType deviceType)
         {
             // Stage processing time based on kernel complexity and device type
-            var baseTime = kernelName.ToLowerInvariant() switch
+            var baseTime = kernelName.ToUpper(CultureInfo.InvariantCulture) switch
             {
-                var name when name.Contains("linear", StringComparison.CurrentCulture) => 2.0,
-                var name when name.Contains("conv", StringComparison.CurrentCulture) => 5.0,
-                var name when name.Contains("attention", StringComparison.CurrentCulture) => 8.0,
-                var name when name.Contains("norm", StringComparison.CurrentCulture) => 1.5,
-                var name when name.Contains("activate", StringComparison.CurrentCulture) => 1.0,
+                var name when name.Contains("linear", StringComparison.Ordinal) => 2.0,
+                var name when name.Contains("conv", StringComparison.Ordinal) => 5.0,
+                var name when name.Contains("attention", StringComparison.Ordinal) => 8.0,
+                var name when name.Contains("norm", StringComparison.Ordinal) => 1.5,
+                var name when name.Contains("activate", StringComparison.Ordinal) => 1.0,
                 _ => 3.0
             };
 

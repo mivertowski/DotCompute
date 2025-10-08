@@ -12,6 +12,11 @@ namespace DotCompute.Core.Pipelines.Types;
 public enum ErrorSeverity
 {
     /// <summary>
+    /// No error or unknown severity level.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Informational message, not an actual error.
     /// Used for logging and diagnostic purposes.
     /// </summary>

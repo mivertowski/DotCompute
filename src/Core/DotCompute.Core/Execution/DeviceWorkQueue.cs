@@ -12,9 +12,9 @@ using Microsoft.Extensions.Logging;
 namespace DotCompute.Core.Execution
 {
     /// <summary>
-    /// Work queue for a specific device in work-stealing execution.
+    /// Work scheduler for a specific device in work-stealing execution.
     /// </summary>
-    public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
+    public sealed class DeviceWorkScheduler<T> : IAsyncDisposable where T : unmanaged
     {
         private readonly ILogger _logger;
         private readonly IAccelerator _device;
@@ -26,7 +26,7 @@ namespace DotCompute.Core.Execution
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DeviceWorkQueue{T}"/> class.
+        /// Initializes a new instance of the <see cref="DeviceWorkScheduler{T}"/> class.
         /// </summary>
         /// <param name="device">The device.</param>
         /// <param name="deviceIndex">Index of the device.</param>
@@ -36,7 +36,7 @@ namespace DotCompute.Core.Execution
         /// or
         /// logger
         /// </exception>
-        public DeviceWorkQueue(IAccelerator device, int deviceIndex, ILogger logger)
+        public DeviceWorkScheduler(IAccelerator device, int deviceIndex, ILogger logger)
         {
             _device = device ?? throw new ArgumentNullException(nameof(device));
             _deviceIndex = deviceIndex;

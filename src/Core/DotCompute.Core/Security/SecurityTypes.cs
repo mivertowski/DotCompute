@@ -360,7 +360,7 @@ public sealed class SignatureResult : ICryptographicResult
     /// <summary>
     /// Gets the generated signature bytes.
     /// </summary>
-    public byte[] Signature { get; set; } = [];
+    public IReadOnlyList<byte> Signature { get; set; } = [];
 
     /// <summary>
     /// Gets the algorithm used for signing.

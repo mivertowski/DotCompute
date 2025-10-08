@@ -160,13 +160,13 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the communication operations.
         /// Ordered list of data transfer operations between devices.
         /// </summary>
-        public required List<CommunicationOperation<T>> Operations { get; init; }
+        public required IList<CommunicationOperation<T>> Operations { get; init; }
 
         /// <summary>
         /// Gets or sets the synchronization points.
         /// Points in the execution where devices must wait for each other.
         /// </summary>
-        public required List<SynchronizationPoint> SynchronizationPoints { get; init; }
+        public required IList<SynchronizationPoint> SynchronizationPoints { get; init; }
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ namespace DotCompute.Core.Execution.Plans
         /// Gets or sets the participating devices.
         /// List of devices that must reach this synchronization point.
         /// </summary>
-        public required List<IAccelerator> ParticipatingDevices { get; init; }
+        public required IList<IAccelerator> ParticipatingDevices { get; init; }
 
         /// <summary>
         /// Gets or sets the synchronization type.

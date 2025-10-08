@@ -32,7 +32,9 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
 
     protected BaseRecoveryStrategy(ILogger logger, TimeSpan? cleanupInterval = null)
     {
-        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        Logger = logger;
         _recoveryHistory = new ConcurrentDictionary<string, RecoveryAttemptHistory>();
         _recoveryLock = new SemaphoreSlim(1, 1);
         _recentMetrics = new ConcurrentQueue<RecoveryMetric>();
@@ -88,16 +90,8 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     {
         ThrowIfDisposed();
 
-        if (error == null)
-        {
-            throw new ArgumentNullException(nameof(error));
-        }
-
-
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
+        ArgumentNullException.ThrowIfNull(error);
+        ArgumentNullException.ThrowIfNull(context);
 
 
         var recoveryOptions = options ?? RecoveryOptions.Default;
@@ -573,12 +567,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(GetType().Name);
-        }
-
+        ObjectDisposedException.ThrowIf(_disposed, GetType());
     }
 
     #endregion
@@ -588,26 +577,37 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// <summary>
     /// Disposes the recovery strategy and releases all resources.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
     {
-        if (!_disposed)
-        {
-            _disposed = true;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
             // Log final statistics
             var stats = GetStatistics();
             LogRecoveryStrategyDisposed(Logger, stats.StrategyType, stats.TotalAttempts, stats.SuccessRate);
 
-            // Dispose resources
+            // Dispose managed resources
             _cleanupTimer?.Dispose();
             _recoveryLock?.Dispose();
 
             // Clear collections
             _recoveryHistory.Clear();
-            while (_recentMetrics.TryDequeue(out _)) { }
-
-            GC.SuppressFinalize(this);
+            while (_recentMetrics.TryDequeue(out _))
+            {
+            }
         }
+
+        _disposed = true;
     }
 
     /// <summary>
@@ -956,7 +956,7 @@ public sealed class RecoveryOptions
     /// Gets or sets the allow concurrent recovery.
     /// </summary>
     /// <value>The allow concurrent recovery.</value>
-    public bool AllowConcurrentRecovery { get; init; } = false;
+    public bool AllowConcurrentRecovery { get; init; }
     /// <summary>
     /// Gets or sets the recovery timeout.
     /// </summary>
@@ -1015,13 +1015,21 @@ public sealed class RecoveryResult
 [Flags]
 public enum RecoveryCapability
 {
+    /// <summary>No recovery capability.</summary>
     None = 0,
+    /// <summary>Memory-related error recovery.</summary>
     MemoryErrors = 1 << 0,
+    /// <summary>Device-related error recovery.</summary>
     DeviceErrors = 1 << 1,
+    /// <summary>Kernel execution error recovery.</summary>
     KernelErrors = 1 << 2,
+    /// <summary>Network-related error recovery.</summary>
     NetworkErrors = 1 << 3,
+    /// <summary>Timeout error recovery.</summary>
     TimeoutErrors = 1 << 4,
+    /// <summary>Resource exhaustion error recovery.</summary>
     ResourceExhaustion = 1 << 5,
+    /// <summary>All recovery capabilities combined.</summary>
     All = MemoryErrors | DeviceErrors | KernelErrors | NetworkErrors | TimeoutErrors | ResourceExhaustion
 }
 

@@ -23,7 +23,7 @@ namespace DotCompute.Core.Debugging;
 /// - KernelDebugReporter: Report generation and result comparison
 /// - KernelDebugOrchestrator: Coordinates all debugging components
 /// </summary>
-public partial class KernelDebugService : IKernelDebugService, IDisposable
+public sealed partial class KernelDebugService : IKernelDebugService, IDisposable
 {
     private readonly Services.KernelDebugOrchestrator _orchestrator;
     private readonly ILogger<KernelDebugService> _logger;

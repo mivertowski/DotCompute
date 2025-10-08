@@ -32,9 +32,9 @@ public class AdaptiveBackendSelector : IDisposable
         LoggerMessage.Define<string, string, double, double>(LogLevel.Trace, new EventId(9301, nameof(_logPerformanceRecorded)),
             "Recorded performance result for {Kernel} on {Backend}: {ExecutionTime}ms, {Throughput} ops/sec");
 
-    private static readonly Action<ILogger, int, Exception> _logPerformanceUpdateFailed =
+    private static readonly Action<ILogger, int, Exception?> _logPerformanceUpdateFailed =
         LoggerMessage.Define<int>(LogLevel.Warning, new EventId(9302, nameof(_logPerformanceUpdateFailed)),
-            "Error updating backend performance states");
+            "Error updating backend performance states for {BackendCount} backends");
     private readonly ILogger<AdaptiveBackendSelector> _logger;
     private readonly PerformanceProfiler _performanceProfiler;
     private readonly AdaptiveSelectionOptions _options;
@@ -742,15 +742,24 @@ public class AdaptiveBackendSelector : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
+        if (disposing)
+        {
+            // Dispose managed resources
+            _performanceUpdateTimer?.Dispose();
+        }
 
-        _performanceUpdateTimer?.Dispose();
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }
 

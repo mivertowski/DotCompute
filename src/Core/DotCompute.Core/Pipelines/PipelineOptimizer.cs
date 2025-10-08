@@ -143,11 +143,7 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public async Task<PipelineAnalysisResult> AnalyzeAsync(IKernelPipeline pipeline, CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -196,11 +192,7 @@ namespace DotCompute.Core.Pipelines
             PipelineOptimizationSettings? settings = null,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
             var optimizationSettings = settings ?? new PipelineOptimizationSettings
@@ -218,18 +210,10 @@ namespace DotCompute.Core.Pipelines
             FusionCriteria fusionCriteria,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (fusionCriteria == null)
-            {
-
-                throw new ArgumentNullException(nameof(fusionCriteria));
-            }
+            ArgumentNullException.ThrowIfNull(fusionCriteria);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -253,18 +237,10 @@ namespace DotCompute.Core.Pipelines
             MemoryConstraints memoryConstraints,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (memoryConstraints == null)
-            {
-
-                throw new ArgumentNullException(nameof(memoryConstraints));
-            }
+            ArgumentNullException.ThrowIfNull(memoryConstraints);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -288,18 +264,10 @@ namespace DotCompute.Core.Pipelines
             IEnumerable<string> targetBackends,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (targetBackends == null)
-            {
-
-                throw new ArgumentNullException(nameof(targetBackends));
-            }
+            ArgumentNullException.ThrowIfNull(targetBackends);
 
 
             var backendList = targetBackends.ToList();
@@ -336,18 +304,10 @@ namespace DotCompute.Core.Pipelines
             ParallelismGoals parallelismGoals,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (parallelismGoals == null)
-            {
-
-                throw new ArgumentNullException(nameof(parallelismGoals));
-            }
+            ArgumentNullException.ThrowIfNull(parallelismGoals);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -371,18 +331,10 @@ namespace DotCompute.Core.Pipelines
             LoopOptimizations loopOptimizations,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (loopOptimizations == null)
-            {
-
-                throw new ArgumentNullException(nameof(loopOptimizations));
-            }
+            ArgumentNullException.ThrowIfNull(loopOptimizations);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -411,18 +363,10 @@ namespace DotCompute.Core.Pipelines
             DataLayoutPreferences layoutPreferences,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
-            if (layoutPreferences == null)
-            {
-
-                throw new ArgumentNullException(nameof(layoutPreferences));
-            }
+            ArgumentNullException.ThrowIfNull(layoutPreferences);
 
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -532,11 +476,7 @@ namespace DotCompute.Core.Pipelines
             IEnumerable<OptimizationType> proposedOptimizations,
             CancellationToken cancellationToken = default)
         {
-            if (pipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(pipeline));
-            }
+            ArgumentNullException.ThrowIfNull(pipeline);
 
 
             if (proposedOptimizations == null)
@@ -599,19 +539,13 @@ namespace DotCompute.Core.Pipelines
         /// <inheritdoc/>
         public void RegisterOptimizationStrategy(string strategyName, IOptimizationStrategy strategy)
         {
+            ArgumentNullException.ThrowIfNull(strategyName);
+            ArgumentNullException.ThrowIfNull(strategy);
+
             if (string.IsNullOrEmpty(strategyName))
             {
-
-                throw new ArgumentNullException(nameof(strategyName));
+                throw new ArgumentException("Strategy name cannot be empty.", nameof(strategyName));
             }
-
-
-            if (strategy == null)
-            {
-
-                throw new ArgumentNullException(nameof(strategy));
-            }
-
 
             _namedStrategies[strategyName] = strategy;
 

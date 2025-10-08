@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Options;
@@ -59,9 +60,13 @@ public sealed class PrometheusExporter : IDisposable
     public PrometheusExporter(ILogger<PrometheusExporter> logger, IOptions<PrometheusExporterOptions> options,
         MetricsCollector metricsCollector)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
         _options = options?.Value ?? new PrometheusExporterOptions();
-        _metricsCollector = metricsCollector ?? throw new ArgumentNullException(nameof(metricsCollector));
+        ArgumentNullException.ThrowIfNull(metricsCollector);
+
+        _metricsCollector = metricsCollector;
 
         // Initialize Prometheus metrics
 
@@ -100,7 +105,7 @@ public sealed class PrometheusExporter : IDisposable
 
         try
         {
-            var labels = new[] { kernelName, deviceId, success.ToString().ToLowerInvariant() };
+            var labels = new[] { kernelName, deviceId, success.ToString().ToUpper(CultureInfo.InvariantCulture) };
 
             // Core metrics
 
@@ -151,7 +156,7 @@ public sealed class PrometheusExporter : IDisposable
 
         try
         {
-            var labels = new[] { operationType, deviceId, success.ToString().ToLowerInvariant() };
+            var labels = new[] { operationType, deviceId, success.ToString().ToUpper(CultureInfo.InvariantCulture) };
             var sizeCategory = CategorizeMemorySize(bytes);
 
 
@@ -233,7 +238,7 @@ public sealed class PrometheusExporter : IDisposable
 
         try
         {
-            var labels = new[] { kernelName, deviceId, success.ToString().ToLowerInvariant() };
+            var labels = new[] { kernelName, deviceId, success.ToString().ToUpper(CultureInfo.InvariantCulture) };
 
 
             _compilationEvents.WithLabels(labels).Inc();
@@ -477,11 +482,7 @@ public sealed class PrometheusExporter : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PrometheusExporter));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

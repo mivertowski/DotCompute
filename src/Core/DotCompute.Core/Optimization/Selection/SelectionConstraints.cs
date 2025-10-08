@@ -9,10 +9,14 @@ namespace DotCompute.Core.Optimization.Selection;
 public class SelectionConstraints
 {
     /// <summary>Backends that are explicitly allowed</summary>
+    /// <remarks>CA2227: Acceptable for constraint configuration objects that support fluent initialization.</remarks>
+#pragma warning disable CA2227 // Collection properties should be read only
     public HashSet<string>? AllowedBackends { get; set; }
 
     /// <summary>Backends that are explicitly disallowed</summary>
+    /// <remarks>CA2227: Acceptable for constraint configuration objects that support fluent initialization.</remarks>
     public HashSet<string>? DisallowedBackends { get; set; }
+#pragma warning restore CA2227
 
     /// <summary>Maximum acceptable execution time in milliseconds</summary>
     public double? MaxExecutionTimeMs { get; set; }
@@ -24,7 +28,7 @@ public class SelectionConstraints
     public float? MinConfidenceScore { get; set; }
 
     /// <summary>Custom constraint predicates</summary>
-    public List<Func<string, bool>> CustomConstraints { get; } = [];
+    public ICollection<Func<string, bool>> CustomConstraints { get; } = [];
 
     /// <summary>
     /// Checks if a backend is allowed based on all constraints.

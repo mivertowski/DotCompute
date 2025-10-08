@@ -156,7 +156,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Initializes topology-aware optimization with device pair analysis.
         /// </summary>
         public async Task InitializeTopologyAsync(
-            List<P2PDevicePair> devicePairs,
+            IList<P2PDevicePair> devicePairs,
             CancellationToken cancellationToken = default)
         {
             LogTopologyInitializing(_logger, devicePairs.Count);
@@ -1183,12 +1183,12 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the destination buffers.
         /// </summary>
         /// <value>The destination buffers.</value>
-        public required object[] DestinationBuffers { get; init; }
+        public required IReadOnlyList<object> DestinationBuffers { get; init; }
         /// <summary>
         /// Gets or sets the chunks.
         /// </summary>
         /// <value>The chunks.</value>
-        public required List<P2PTransferChunk> Chunks { get; init; }
+        public required IList<P2PTransferChunk> Chunks { get; init; }
         /// <summary>
         /// Gets or sets the estimated total time ms.
         /// </summary>
@@ -1215,7 +1215,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the source buffers.
         /// </summary>
         /// <value>The source buffers.</value>
-        public required object[] SourceBuffers { get; init; }
+        public required IReadOnlyList<object> SourceBuffers { get; init; }
         /// <summary>
         /// Gets or sets the destination buffer.
         /// </summary>
@@ -1225,7 +1225,7 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the chunks.
         /// </summary>
         /// <value>The chunks.</value>
-        public required List<P2PTransferChunk> Chunks { get; init; }
+        public required IList<P2PTransferChunk> Chunks { get; init; }
         /// <summary>
         /// Gets or sets the estimated total time ms.
         /// </summary>
@@ -1284,17 +1284,17 @@ namespace DotCompute.Core.Memory.P2P
         /// Gets or sets the performance recommendations.
         /// </summary>
         /// <value>The performance recommendations.</value>
-        public required List<P2PPerformanceRecommendation> PerformanceRecommendations { get; init; }
+        public required IList<P2PPerformanceRecommendation> PerformanceRecommendations { get; init; }
         /// <summary>
         /// Gets or sets the topology recommendations.
         /// </summary>
         /// <value>The topology recommendations.</value>
-        public required List<P2PTopologyRecommendation> TopologyRecommendations { get; init; }
+        public required IList<P2PTopologyRecommendation> TopologyRecommendations { get; init; }
         /// <summary>
         /// Gets or sets the configuration recommendations.
         /// </summary>
         /// <value>The configuration recommendations.</value>
-        public required List<P2PConfigurationRecommendation> ConfigurationRecommendations { get; init; }
+        public required IList<P2PConfigurationRecommendation> ConfigurationRecommendations { get; init; }
     }
 
     /// <summary>

@@ -228,11 +228,11 @@ namespace DotCompute.Core.Execution
                 SyncStrategy = constraints.SynchronizationStrategy ?? SynchronizationStrategy.EventBased
             };
 
-            return await _generator.GenerateDataParallelPlanAsync(
+            return await _generator.GenerateDataParallelPlanAsync<T>(
                 dataParallelWorkload.KernelName,
                 availableDevices,
-                dataParallelWorkload.InputBuffers,
-                dataParallelWorkload.OutputBuffers,
+                [.. dataParallelWorkload.InputBuffers],
+                [.. dataParallelWorkload.OutputBuffers],
                 options,
                 cancellationToken);
         }
@@ -317,11 +317,11 @@ namespace DotCompute.Core.Execution
 
             if (workload is DataParallelWorkload<T> dataWorkload)
             {
-                return await _generator.GenerateDataParallelPlanAsync(
+                return await _generator.GenerateDataParallelPlanAsync<T>(
                     dataWorkload.KernelName,
                     [bestDevice],
-                    dataWorkload.InputBuffers,
-                    dataWorkload.OutputBuffers,
+                    [.. dataWorkload.InputBuffers],
+                    [.. dataWorkload.OutputBuffers],
                     options,
                     cancellationToken);
             }

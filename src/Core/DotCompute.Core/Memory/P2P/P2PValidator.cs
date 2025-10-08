@@ -77,7 +77,10 @@ namespace DotCompute.Core.Memory.P2P
                 };
 
                 var validationDetails = await Task.WhenAll(validationTasks);
-                validationResult.ValidationDetails.AddRange(validationDetails);
+                foreach (var detail in validationDetails)
+                {
+                    validationResult.ValidationDetails.Add(detail);
+                }
 
                 // Check if any validation failed
                 var failedValidations = validationDetails.Where(d => !d.IsValid).ToList();

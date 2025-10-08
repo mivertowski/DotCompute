@@ -35,7 +35,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
 
     /// <inheritdoc/>
-    public abstract MemoryStatistics Statistics { get; }
+    public abstract MemoryStatistics CurrentStatistics { get; }
 
 
     /// <inheritdoc/>
@@ -121,7 +121,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
-        int length,
+        int count,
         CancellationToken cancellationToken = default) where T : unmanaged;
 
 

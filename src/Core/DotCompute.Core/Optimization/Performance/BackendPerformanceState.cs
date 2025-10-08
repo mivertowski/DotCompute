@@ -35,12 +35,14 @@ public class BackendPerformanceState
     /// </summary>
     /// <value>The last execution time.</value>
     public DateTimeOffset LastExecutionTime { get; set; }
+    private readonly Queue<PerformanceResult> _recentResults = new();
+    private readonly object _lock = new();
+
     /// <summary>
-    /// Gets or sets the recent results.
+    /// Gets the recent results.
     /// </summary>
     /// <value>The recent results.</value>
-    public Queue<PerformanceResult> RecentResults { get; set; } = new();
-    private readonly object _lock = new();
+    public IReadOnlyCollection<PerformanceResult> RecentResults => _recentResults;
     /// <summary>
     /// Performs record execution.
     /// </summary>
@@ -50,12 +52,12 @@ public class BackendPerformanceState
     {
         lock (_lock)
         {
-            RecentResults.Enqueue(result);
+            _recentResults.Enqueue(result);
 
             // Keep only last 100 results
-            while (RecentResults.Count > 100)
+            while (_recentResults.Count > 100)
             {
-                _ = RecentResults.Dequeue();
+                _ = _recentResults.Dequeue();
             }
 
             UpdateAverages();
@@ -97,13 +99,13 @@ public class BackendPerformanceState
 
     private void UpdateAverages()
     {
-        if (RecentResults.Count == 0)
+        if (_recentResults.Count == 0)
         {
             return;
         }
 
-        RecentAverageExecutionTimeMs = RecentResults.Average(r => r.ExecutionTimeMs);
-        RecentExecutionCount = RecentResults.Count;
+        RecentAverageExecutionTimeMs = _recentResults.Average(r => r.ExecutionTimeMs);
+        RecentExecutionCount = _recentResults.Count;
     }
 
     private double CalculateCurrentUtilization(SystemPerformanceSnapshot snapshot)

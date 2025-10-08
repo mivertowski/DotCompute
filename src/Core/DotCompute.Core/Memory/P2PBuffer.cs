@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.CompilerServices;
+using System.Globalization;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
-using System;
 namespace DotCompute.Core.Memory
 {
 
@@ -680,8 +680,8 @@ namespace DotCompute.Core.Memory
         /// </summary>
         private static P2PCopyStrategy DetermineP2PCopyStrategy(IAccelerator source, IAccelerator destination)
         {
-            var sourceName = source.Info.Name.ToLowerInvariant();
-            var destName = destination.Info.Name.ToLowerInvariant();
+            var sourceName = source.Info.Name.ToUpper(CultureInfo.InvariantCulture);
+            var destName = destination.Info.Name.ToUpper(CultureInfo.InvariantCulture);
 
             // CUDA devices
             if (IsCUDADevice(sourceName) && IsCUDADevice(destName))
@@ -708,21 +708,21 @@ namespace DotCompute.Core.Memory
         private static bool IsCUDADevice(string deviceName)
         {
             return deviceName.Contains("nvidia", StringComparison.OrdinalIgnoreCase) || deviceName.Contains("geforce", StringComparison.OrdinalIgnoreCase) ||
-                   deviceName.Contains("quadro", StringComparison.CurrentCulture) || deviceName.Contains("tesla", StringComparison.CurrentCulture) ||
-                   deviceName.Contains("titan", StringComparison.CurrentCulture) || deviceName.Contains("rtx", StringComparison.CurrentCulture);
+                   deviceName.Contains("quadro", StringComparison.Ordinal) || deviceName.Contains("tesla", StringComparison.Ordinal) ||
+                   deviceName.Contains("titan", StringComparison.Ordinal) || deviceName.Contains("rtx", StringComparison.Ordinal);
         }
 
         private static bool IsROCmDevice(string deviceName)
         {
-            return deviceName.Contains("amd", StringComparison.CurrentCulture) || deviceName.Contains("radeon", StringComparison.CurrentCulture) ||
-                   deviceName.Contains("instinct", StringComparison.CurrentCulture) || deviceName.Contains("vega", StringComparison.CurrentCulture) ||
-                   deviceName.Contains("navi", StringComparison.CurrentCulture) || deviceName.Contains("rdna", StringComparison.CurrentCulture);
+            return deviceName.Contains("amd", StringComparison.Ordinal) || deviceName.Contains("radeon", StringComparison.Ordinal) ||
+                   deviceName.Contains("instinct", StringComparison.Ordinal) || deviceName.Contains("vega", StringComparison.Ordinal) ||
+                   deviceName.Contains("navi", StringComparison.Ordinal) || deviceName.Contains("rdna", StringComparison.Ordinal);
         }
 
         private static bool IsOpenCLDevice(string deviceName)
         {
-            return deviceName.Contains("intel", StringComparison.CurrentCulture) || deviceName.Contains("iris", StringComparison.CurrentCulture) ||
-                   deviceName.Contains("arc", StringComparison.CurrentCulture) || deviceName.Contains("opencl", StringComparison.CurrentCulture);
+            return deviceName.Contains("intel", StringComparison.Ordinal) || deviceName.Contains("iris", StringComparison.Ordinal) ||
+                   deviceName.Contains("arc", StringComparison.Ordinal) || deviceName.Contains("opencl", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1129,9 +1129,13 @@ namespace DotCompute.Core.Memory
     /// </summary>
     internal enum P2PCopyStrategy
     {
-        Generic = 0,     // Generic/unknown device fallback
-        CUDA = 1,        // NVIDIA CUDA devices
-        HIP = 2,         // AMD ROCm/HIP devices
-        OpenCL = 3,      // Intel/OpenCL devices
+        /// <summary>Generic/unknown device fallback strategy.</summary>
+        Generic = 0,
+        /// <summary>NVIDIA CUDA device strategy.</summary>
+        CUDA = 1,
+        /// <summary>AMD ROCm/HIP device strategy.</summary>
+        HIP = 2,
+        /// <summary>Intel/OpenCL device strategy.</summary>
+        OpenCL = 3,
     }
 }

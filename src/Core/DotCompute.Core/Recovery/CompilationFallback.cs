@@ -24,7 +24,7 @@ namespace DotCompute.Core.Recovery;
 /// Comprehensive compilation fallback system with progressive optimization reduction,
 /// alternative compilation strategies, and interpreter fallbacks
 /// </summary>
-public sealed partial class CompilationFallback : BaseRecoveryStrategy<CompilationRecoveryContext>, IDisposable
+public sealed partial class CompilationFallback : BaseRecoveryStrategy<CompilationRecoveryContext>
 {
     private readonly ConcurrentDictionary<string, CompilationHistory> _compilationHistory;
     private readonly ConcurrentDictionary<string, CachedCompilationResult> _compilationCache;
@@ -651,9 +651,9 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
     /// Performs dispose.
     /// </summary>
 
-    public override void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (!_disposed && disposing)
         {
             _cacheCleanupTimer?.Dispose();
 
@@ -668,6 +668,8 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
             _disposed = true;
             LogSystemDisposed(Logger);
         }
+
+        base.Dispose(disposing);
     }
 
     #region LoggerMessage Delegates

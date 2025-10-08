@@ -28,7 +28,7 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// </remarks>
 /// <param name="kernelName">The name of the kernel to track.</param>
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> is null.</exception>
-public class CompilationHistory(string kernelName) : IDisposable
+public sealed class CompilationHistory(string kernelName) : IDisposable
 {
     private readonly string _kernelName = kernelName ?? throw new ArgumentNullException(nameof(kernelName));
     private readonly List<Exception> _recentErrors = [];

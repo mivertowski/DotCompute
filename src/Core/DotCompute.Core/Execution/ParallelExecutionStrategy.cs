@@ -650,7 +650,7 @@ namespace DotCompute.Core.Execution
                         // Memory transfers are synchronous in current implementation
 
                         // Execute kernel on device
-                        var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
+                        var kernelArgs = CreateKernelArguments<T>([.. task.InputBuffers], [.. task.OutputBuffers]);
                         // Convert Execution.ManagedCompiledKernel to Kernels.ManagedCompiledKernel
                         var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
                         var executionResult = await _kernelManager.ExecuteKernelAsync(

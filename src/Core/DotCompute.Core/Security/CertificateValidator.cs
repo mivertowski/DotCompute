@@ -25,7 +25,8 @@ public sealed class CertificateValidator : IDisposable
 
     public CertificateValidator(ILogger logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
         _validationCache = [];
 
         // Set up cache cleanup timer
@@ -43,10 +44,7 @@ public sealed class CertificateValidator : IDisposable
         X509Certificate2Collection? additionalCertificates = null,
         bool checkRevocation = true)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CertificateValidator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(certificate);
 
@@ -103,10 +101,7 @@ public sealed class CertificateValidator : IDisposable
         X509Certificate2 certificate,
         CertificateUsage intendedUsage)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CertificateValidator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(certificate);
 
@@ -171,10 +166,7 @@ public sealed class CertificateValidator : IDisposable
         X509Certificate2 certificate,
         X509Certificate2Collection? additionalCertificates = null)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CertificateValidator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentNullException.ThrowIfNull(certificate);
 
@@ -459,157 +451,4 @@ public sealed class CertificateValidator : IDisposable
             _logger.LogDebugMessage("Certificate Validator disposed");
         }
     }
-
-#region Supporting Types
-
-/// <summary>
-/// Certificate usage types
-/// </summary>
-public enum CertificateUsage
-{
-    DigitalSignature,
-    DataEncryption,
-    KeyAgreement,
-    CertificateSigning,
-    ServerAuthentication,
-    ClientAuthentication,
-    CodeSigning
-}
-
-/// <summary>
-/// Result of certificate validation
-/// </summary>
-public sealed class CertificateValidationResult
-{
-    /// <summary>
-    /// Gets or sets the certificate.
-    /// </summary>
-    /// <value>The certificate.</value>
-    public required X509Certificate2 Certificate { get; init; }
-    /// <summary>
-    /// Gets or sets a value indicating whether valid.
-    /// </summary>
-    /// <value>The is valid.</value>
-    public bool IsValid { get; set; }
-    /// <summary>
-    /// Gets or sets the validation time.
-    /// </summary>
-    /// <value>The validation time.</value>
-    public DateTimeOffset ValidationTime { get; init; }
-    /// <summary>
-    /// Gets or sets the errors.
-    /// </summary>
-    /// <value>The errors.</value>
-    public IList<string> Errors { get; init; } = [];
-    /// <summary>
-    /// Gets or sets the warnings.
-    /// </summary>
-    /// <value>The warnings.</value>
-    public IList<string> Warnings { get; init; } = [];
-    /// <summary>
-    /// Gets or sets the chain info.
-    /// </summary>
-    /// <value>The chain info.</value>
-    public CertificateChainValidationResult? ChainInfo { get; set; }
-}
-
-/// <summary>
-/// Result of certificate usage validation
-/// </summary>
-public sealed class CertificateUsageValidationResult
-{
-    /// <summary>
-    /// Gets or sets the certificate.
-    /// </summary>
-    /// <value>The certificate.</value>
-    public required X509Certificate2 Certificate { get; init; }
-    /// <summary>
-    /// Gets or sets the intended usage.
-    /// </summary>
-    /// <value>The intended usage.</value>
-    public required CertificateUsage IntendedUsage { get; init; }
-    /// <summary>
-    /// Gets or sets a value indicating whether valid for usage.
-    /// </summary>
-    /// <value>The is valid for usage.</value>
-    public bool IsValidForUsage { get; set; }
-    /// <summary>
-    /// Gets or sets the validation time.
-    /// </summary>
-    /// <value>The validation time.</value>
-    public DateTimeOffset ValidationTime { get; init; }
-    /// <summary>
-    /// Gets or sets a value indicating whether sues.
-    /// </summary>
-    /// <value>The issues.</value>
-    public IList<string> Issues { get; init; } = [];
-}
-
-/// <summary>
-/// Result of certificate chain validation
-/// </summary>
-public sealed class CertificateChainValidationResult
-{
-    /// <summary>
-    /// Gets or sets the certificate.
-    /// </summary>
-    /// <value>The certificate.</value>
-    public required X509Certificate2 Certificate { get; init; }
-    /// <summary>
-    /// Gets or sets a value indicating whether valid.
-    /// </summary>
-    /// <value>The is valid.</value>
-    public bool IsValid { get; set; }
-    /// <summary>
-    /// Gets or sets the validation time.
-    /// </summary>
-    /// <value>The validation time.</value>
-    public DateTimeOffset ValidationTime { get; init; }
-    /// <summary>
-    /// Gets or sets the chain status.
-    /// </summary>
-    /// <value>The chain status.</value>
-    public IList<string> ChainStatus { get; init; } = [];
-    /// <summary>
-    /// Gets or sets the chain elements.
-    /// </summary>
-    /// <value>The chain elements.</value>
-    public IList<ChainElementInfo> ChainElements { get; init; } = [];
-}
-
-/// <summary>
-/// Information about a certificate chain element
-/// </summary>
-public sealed class ChainElementInfo
-{
-    /// <summary>
-    /// Gets or sets the certificate.
-    /// </summary>
-    /// <value>The certificate.</value>
-    public required X509Certificate2 Certificate { get; init; }
-    /// <summary>
-    /// Gets or sets the status.
-    /// </summary>
-    /// <value>The status.</value>
-    public required X509ChainStatus[] Status { get; init; }
-}
-
-/// <summary>
-/// Cached certificate validation result
-/// </summary>
-internal sealed class CachedCertificateValidation
-{
-    /// <summary>
-    /// Gets or sets the result.
-    /// </summary>
-    /// <value>The result.</value>
-    public required CertificateValidationResult Result { get; init; }
-    /// <summary>
-    /// Gets or sets the validation time.
-    /// </summary>
-    /// <value>The validation time.</value>
-    public DateTimeOffset ValidationTime { get; init; }
-}
-
-#endregion
 }

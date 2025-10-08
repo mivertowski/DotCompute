@@ -191,7 +191,7 @@ namespace DotCompute.Core.Execution
                     PeakUtilizationPercentage = profile.PeakUtilizationPercentage,
                     IdleTimePercentage = profile.IdleTimePercentage,
                     BottleneckSeverity = profile.PrimaryBottleneck?.Severity ?? 0,
-                    RecommendedOptimizations = profile.GetOptimizationRecommendations()
+                    RecommendedOptimizations = (IList<string>)profile.GetOptimizationRecommendations()
                 };
             }
 
@@ -203,7 +203,9 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public void Reset()
         {
-            while (_executionHistory.TryDequeue(out _)) { }
+            while (_executionHistory.TryDequeue(out _))
+            {
+            }
 
             _kernelProfiles.Clear();
             _deviceProfiles.Clear();

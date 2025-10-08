@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using DotCompute.Core.Aot;
 using DotCompute.Abstractions.Interfaces.Pipelines.Interfaces;
@@ -385,7 +386,7 @@ namespace DotCompute.Core.Pipelines
 
             foreach (var customMetric in CustomMetrics)
             {
-                var metricName = customMetric.Key.ToLowerInvariant().Replace(' ', '_');
+                var metricName = customMetric.Key.ToUpper(CultureInfo.InvariantCulture).Replace(' ', '_');
                 lines.Add($"# TYPE dotcompute_pipeline_custom_{metricName} gauge");
                 lines.Add($"dotcompute_pipeline_custom_{metricName}{{pipeline_id=\"{PipelineId}\"}} {customMetric.Value}");
             }

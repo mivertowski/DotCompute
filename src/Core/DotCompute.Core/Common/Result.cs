@@ -142,6 +142,13 @@ public class Result
     }
 
     /// <summary>
+    /// Named alternate for implicit bool conversion.
+    /// </summary>
+    /// <param name="result">The result to convert.</param>
+    /// <returns>True if the result is successful, false otherwise.</returns>
+    public static bool ToBoolean(Result result) => result.IsSuccess;
+
+    /// <summary>
     /// Returns a string representation of the result.
     /// </summary>
     /// <returns>A string describing the result state.</returns>
@@ -359,6 +366,13 @@ public class Result<T> : Result
     }
 
     /// <summary>
+    /// Named alternate for implicit value conversion.
+    /// </summary>
+    /// <param name="value">The value to convert to a result.</param>
+    /// <returns>A successful result containing the value.</returns>
+    public static Result<T> FromT(T value) => Success(value);
+
+    /// <summary>
     /// Implicitly converts a Result&lt;T&gt; to a boolean indicating success.
     /// </summary>
     /// <param name="result">The result to convert.</param>
@@ -367,6 +381,13 @@ public class Result<T> : Result
     {
         return result.IsSuccess;
     }
+
+    /// <summary>
+    /// Named alternate for implicit bool conversion.
+    /// </summary>
+    /// <param name="result">The result to convert.</param>
+    /// <returns>True if the result is successful, false otherwise.</returns>
+    public static bool ToBoolean(Result<T> result) => result.IsSuccess;
 
     /// <summary>
     /// Returns a string representation of the result.

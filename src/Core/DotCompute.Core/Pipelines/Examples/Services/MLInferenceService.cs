@@ -9,7 +9,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for machine learning inference using kernel chains.
 /// Demonstrates AI/ML workloads with GPU acceleration.
 /// </summary>
-public class MLInferenceService
+public static class MLInferenceService
 {
     /// <summary>
     /// Performs ML inference using optimized kernel chains.

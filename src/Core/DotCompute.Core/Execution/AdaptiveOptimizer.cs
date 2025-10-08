@@ -196,6 +196,9 @@ public class AdaptiveOptimizer
 }
 
 // Supporting data structures
+/// <summary>
+/// Represents a record of a kernel execution for performance tracking.
+/// </summary>
 public class ExecutionRecord
 {
     /// <summary>
@@ -250,6 +253,9 @@ public class ExecutionRecord
     public string? ErrorMessage { get; set; }
 }
 
+/// <summary>
+/// Performance profile for a kernel across different devices.
+/// </summary>
 public class KernelPerformanceProfile
 {
     /// <summary>
@@ -292,6 +298,9 @@ public class KernelPerformanceProfile
     }
 }
 
+/// <summary>
+/// Represents a single kernel execution result.
+/// </summary>
 public class KernelExecution
 {
     /// <summary>
@@ -316,6 +325,9 @@ public class KernelExecution
     public double MemoryBandwidthGBps { get; set; }
 }
 
+/// <summary>
+/// Characteristics of a kernel's performance profile.
+/// </summary>
 public class KernelCharacteristics
 {
     /// <summary>

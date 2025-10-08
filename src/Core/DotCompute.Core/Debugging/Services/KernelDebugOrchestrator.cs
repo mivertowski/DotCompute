@@ -791,13 +791,22 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
             }
 
             report.CriticalIssues.Clear();
-            foreach (var issue in criticalIssues) report.CriticalIssues.Add(issue);
+            foreach (var issue in criticalIssues)
+            {
+                report.CriticalIssues.Add(issue);
+            }
 
             report.Warnings.Clear();
-            foreach (var warning in warnings) report.Warnings.Add(warning);
+            foreach (var warning in warnings)
+            {
+                report.Warnings.Add(warning);
+            }
 
             report.Recommendations.Clear();
-            foreach (var rec in recommendations) report.Recommendations.Add(rec);
+            foreach (var rec in recommendations)
+            {
+                report.Recommendations.Add(rec);
+            }
 
             // Calculate overall health score
             var healthScore = 100.0;

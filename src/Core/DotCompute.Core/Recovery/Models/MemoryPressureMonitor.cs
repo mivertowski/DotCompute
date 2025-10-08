@@ -11,7 +11,7 @@ namespace DotCompute.Core.Recovery.Models;
 /// <summary>
 /// Monitors system memory pressure and provides real-time pressure information.
 /// </summary>
-public class MemoryPressureMonitor : IDisposable
+public sealed class MemoryPressureMonitor : IDisposable
 {
     private readonly ILogger<MemoryPressureMonitor> _logger;
     private readonly Timer _monitoringTimer;

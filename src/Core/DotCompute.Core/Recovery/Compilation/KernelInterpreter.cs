@@ -35,7 +35,7 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// <exception cref="ArgumentNullException">
 /// Thrown when <paramref name="sourceCode"/> or <paramref name="logger"/> is null.
 /// </exception>
-public class KernelInterpreter(string sourceCode, ILogger logger) : IDisposable
+public sealed class KernelInterpreter(string sourceCode, ILogger logger) : IDisposable
 {
     private readonly string _sourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));

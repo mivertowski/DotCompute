@@ -69,7 +69,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A list of node identifiers that the specified node depends on.
         /// Returns an empty list if the node has no dependencies.
         /// </returns>
-        public List<int> GetDependencies(int taskId)
+        public IReadOnlyList<int> GetDependencies(int taskId)
             => _dependencies.TryGetValue(taskId, out var deps) ? [.. deps] : [];
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// A list of <see cref="DependencyType"/> values representing the types of
         /// dependencies for the specified node. Returns an empty list if the node has no dependencies.
         /// </returns>
-        public List<DependencyType> GetDependencyTypes(int taskId)
+        public IReadOnlyList<DependencyType> GetDependencyTypes(int taskId)
             => _dependencyTypes.TryGetValue(taskId, out var types) ? [.. types] : [];
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// The returned order ensures that dependencies are satisfied before execution.
         /// Nodes with no dependencies will appear earlier in the list.
         /// </remarks>
-        public List<int> TopologicalSort()
+        public IReadOnlyList<int> TopologicalSort()
         {
             var sorted = new List<int>();
             var visited = new HashSet<int>();
@@ -129,7 +129,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// Gets all nodes that have dependencies but are not dependencies of others.
         /// </summary>
         /// <returns>A list of node identifiers that represent leaf nodes in the dependency graph.</returns>
-        public List<int> GetLeafNodes()
+        public IReadOnlyList<int> GetLeafNodes()
         {
             var allNodes = GetAllNodes();
             var dependencyNodes = _dependencies.Values.SelectMany(deps => deps).ToHashSet();
@@ -140,7 +140,7 @@ namespace DotCompute.Core.Execution.Analysis
         /// Gets all nodes that have no dependencies (root nodes).
         /// </summary>
         /// <returns>A list of node identifiers that can be executed immediately.</returns>
-        public List<int> GetRootNodes()
+        public IReadOnlyList<int> GetRootNodes()
         {
             var allNodes = GetAllNodes();
             return [.. allNodes.Where(node => !HasDependencies(node))];

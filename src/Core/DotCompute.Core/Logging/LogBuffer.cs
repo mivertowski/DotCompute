@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
@@ -339,7 +340,7 @@ public sealed class LogBuffer : IDisposable
         CancellationToken cancellationToken)
     {
         // Add batch-level metadata
-        var batchId = Guid.NewGuid().ToString("N")[..8];
+        var batchId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8];
         var batchTimestamp = DateTimeOffset.UtcNow;
 
 
@@ -728,7 +729,7 @@ public sealed class LogBufferOptions
     /// Gets or sets the custom filters.
     /// </summary>
     /// <value>The custom filters.</value>
-    public List<Func<StructuredLogEntry, bool>> CustomFilters { get; } = [];
+    public ICollection<Func<StructuredLogEntry, bool>> CustomFilters { get; } = [];
 }
 /// <summary>
 /// A class that represents log buffer statistics.

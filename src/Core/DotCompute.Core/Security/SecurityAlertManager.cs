@@ -4,6 +4,7 @@
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace DotCompute.Core.Security;
 
@@ -123,7 +124,7 @@ public sealed class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
             {
                 foreach (var kvp in additionalData)
                 {
-                    switch (kvp.Key.ToLowerInvariant())
+                    switch (kvp.Key.ToUpper(CultureInfo.InvariantCulture))
                     {
                         case "ipaddress":
                             // Check against known malicious IP lists

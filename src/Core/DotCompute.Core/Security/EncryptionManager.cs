@@ -149,8 +149,10 @@ public sealed partial class EncryptionManager : IDisposable
 
     public EncryptionManager(ILogger logger, CryptographicConfiguration configuration)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(configuration);
+        _logger = logger;
+        _configuration = configuration;
         _randomGenerator = RandomNumberGenerator.Create();
 
         LogManagerInitialized(_logger);
@@ -164,10 +166,7 @@ public sealed partial class EncryptionManager : IDisposable
         string identifier,
         string purpose)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EncryptionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return await Task.Run(() =>
         {
@@ -187,10 +186,7 @@ public sealed partial class EncryptionManager : IDisposable
         string identifier,
         string purpose)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EncryptionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return await Task.Run(() =>
         {
@@ -211,10 +207,7 @@ public sealed partial class EncryptionManager : IDisposable
         ReadOnlyMemory<byte> associatedData,
         EncryptionResult result)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EncryptionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -255,10 +248,7 @@ public sealed partial class EncryptionManager : IDisposable
         ReadOnlyMemory<byte> associatedData,
         DecryptionResult result)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EncryptionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -295,10 +285,7 @@ public sealed partial class EncryptionManager : IDisposable
         int keySize,
         string context)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EncryptionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var result = new EncryptionAlgorithmValidationResult
         {

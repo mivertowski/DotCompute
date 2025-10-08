@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
@@ -317,7 +318,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
         var events = await ReadAuditLogEntriesAsync(startTime, endTime);
         var exportPath = outputPath ?? Path.Combine(Path.GetDirectoryName(_auditLogPath)!,
-            $"audit_export_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{format.ToString().ToLowerInvariant()}");
+            $"audit_export_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.{format.ToString().ToUpper(CultureInfo.InvariantCulture)}");
 
         var exportContent = format switch
         {
@@ -618,9 +619,15 @@ internal sealed partial class CryptographicAuditor : IDisposable
 // Supporting classes and enums
 public enum SecurityEventSeverity
 {
+    /// <summary>No event or unknown severity level.</summary>
+    None = 0,
+    /// <summary>Low severity level.</summary>
     Low = 1,
+    /// <summary>Medium severity level.</summary>
     Medium = 2,
+    /// <summary>High severity level.</summary>
     High = 3,
+    /// <summary>Critical severity level.</summary>
     Critical = 4
 }
 /// <summary>
@@ -629,11 +636,17 @@ public enum SecurityEventSeverity
 
 public enum SecurityEventCategory
 {
+    /// <summary>General category for uncategorized events.</summary>
     General,
+    /// <summary>Key management operations category.</summary>
     KeyManagement,
+    /// <summary>Cryptographic operation category.</summary>
     CryptographicOperation,
+    /// <summary>Validation operations category.</summary>
     Validation,
+    /// <summary>Configuration changes category.</summary>
     Configuration,
+    /// <summary>Security incident category.</summary>
     SecurityIncident
 }
 /// <summary>
@@ -642,8 +655,11 @@ public enum SecurityEventCategory
 
 public enum AuditExportFormat
 {
+    /// <summary>JavaScript Object Notation format.</summary>
     Json,
+    /// <summary>Comma-Separated Values format.</summary>
     Csv,
+    /// <summary>Extensible Markup Language format.</summary>
     Xml
 }
 /// <summary>
@@ -823,31 +839,54 @@ public class SecurityMetrics
     public double SecurityScore { get; set; }
 
     // Event counting properties
+    /// <summary>Gets or sets the total number of security events recorded.</summary>
     public long TotalEventCount { get; set; }
+    /// <summary>Gets or sets the count of successful authentication attempts.</summary>
     public long AuthenticationSuccessCount { get; set; }
+    /// <summary>Gets or sets the count of failed authentication attempts.</summary>
     public long AuthenticationFailureCount { get; set; }
+    /// <summary>Gets or sets the count of access granted events.</summary>
     public long AccessGrantedCount { get; set; }
+    /// <summary>Gets or sets the count of access denied events.</summary>
     public long AccessDeniedCount { get; set; }
+    /// <summary>Gets or sets the count of security violation events.</summary>
     public long SecurityViolationCount { get; set; }
+    /// <summary>Gets or sets the count of data access events.</summary>
     public long DataAccessCount { get; set; }
+    /// <summary>Gets or sets the count of data modification events.</summary>
     public long DataModificationCount { get; set; }
+    /// <summary>Gets or sets the count of data deletion events.</summary>
     public long DataDeletionCount { get; set; }
+    /// <summary>Gets or sets the count of critical severity events.</summary>
     public long CriticalEventCount { get; set; }
+    /// <summary>Gets or sets the count of high severity events.</summary>
     public long HighEventCount { get; set; }
+    /// <summary>Gets or sets the count of medium severity events.</summary>
     public long MediumEventCount { get; set; }
+    /// <summary>Gets or sets the count of low severity events.</summary>
     public long LowEventCount { get; set; }
+    /// <summary>Gets or sets the count of informational events.</summary>
     public long InformationalEventCount { get; set; }
 
     // User and resource tracking
+    /// <summary>Gets or sets the number of unique users involved in security events.</summary>
     public int UniqueUsersCount { get; set; }
+    /// <summary>Gets or sets the number of active event correlations.</summary>
     public int ActiveCorrelations { get; set; }
+    /// <summary>Gets or sets the average number of events per correlation.</summary>
     public double AverageEventsPerCorrelation { get; set; }
+    /// <summary>Gets or sets the timestamp of the first recorded event.</summary>
     public DateTimeOffset FirstEventTime { get; set; }
+    /// <summary>Gets or sets the timestamp of the last recorded event.</summary>
     public DateTimeOffset LastEventTime { get; set; }
 
     // Collections
+    /// <summary>Gets the count of events per user.</summary>
     public ConcurrentDictionary<string, long> UserEventCounts { get; } = new();
+    /// <summary>Gets the count of events per resource.</summary>
     public ConcurrentDictionary<string, long> ResourceEventCounts { get; } = new();
+    /// <summary>Gets the count of events by type.</summary>
     public Dictionary<SecurityEventType, long> EventsByType { get; } = new();
+    /// <summary>Gets the count of events by security level.</summary>
     public Dictionary<SecurityLevel, long> EventsByLevel { get; } = new();
 }

@@ -28,7 +28,7 @@ public class CachedCompilationResult
     /// <summary>
     /// Gets or sets the compiled kernel data
     /// </summary>
-    public byte[]? CompiledData { get; set; }
+    public IReadOnlyList<byte>? CompiledData { get; set; }
 
     /// <summary>
     /// Gets or sets the compilation timestamp

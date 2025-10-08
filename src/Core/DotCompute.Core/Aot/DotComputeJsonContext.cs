@@ -443,12 +443,12 @@ namespace DotCompute.Core.Aot
         /// <summary>
         /// Gets or sets the pipeline metrics.
         /// </summary>
-        public object[] PipelineMetrics { get; set; } = [];
+        public IReadOnlyList<object> PipelineMetrics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the stage metrics.
         /// </summary>
-        public object[] StageMetrics { get; set; } = [];
+        public IReadOnlyList<object> StageMetrics { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the global stats.
@@ -464,6 +464,6 @@ namespace DotCompute.Core.Aot
         /// <summary>
         /// Gets or sets the resource metrics.
         /// </summary>
-        public object[] ResourceMetrics { get; set; } = [];
+        public IReadOnlyList<object> ResourceMetrics { get; set; } = [];
     }
 }

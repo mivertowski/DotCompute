@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotCompute.Algorithms.LinearAlgebra;
@@ -547,7 +548,7 @@ public sealed class AutoTuner : IDisposable
         _profiles[algorithmName] = profile;
 
 
-        _optimizers[algorithmName] = optimizer.ToLower() switch
+        _optimizers[algorithmName] = optimizer.ToLowerInvariant() switch
         {
             "grid" => new GridSearchOptimizer(),
             "random" => new RandomSearchOptimizer(),

@@ -7,7 +7,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for image processing using kernel chains.
 /// Demonstrates production-ready image processing workflows.
 /// </summary>
-public class ImageProcessingService
+public static class ImageProcessingService
 {
     /// <summary>
     /// Processes an image using the kernel chain pipeline.

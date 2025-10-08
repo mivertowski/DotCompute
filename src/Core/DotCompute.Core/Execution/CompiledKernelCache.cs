@@ -492,14 +492,14 @@ namespace DotCompute.Core.Execution
             {
                 _statistics.TotalCaches = _cachesByKernel.Count;
                 _statistics.TotalKernels = _cachesByKernel.Values.Sum(c => c.Count);
-                _statistics.KernelNames = [.. _cachesByKernel.Keys];
-                _statistics.LastCleanupTime = _statistics.LastCleanupTime; // Keep existing value
+                // Don't assign to init-only property - use in new object instead
+                var kernelNames = _cachesByKernel.Keys.ToList();
 
                 return new GlobalCacheStatistics
                 {
                     TotalCaches = _statistics.TotalCaches,
                     TotalKernels = _statistics.TotalKernels,
-                    KernelNames = [.. _statistics.KernelNames],
+                    KernelNames = [.. kernelNames],
                     LastCleanupTime = _statistics.LastCleanupTime,
                     CleanupCount = _statistics.CleanupCount
                 };

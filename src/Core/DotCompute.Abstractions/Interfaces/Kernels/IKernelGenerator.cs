@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Kernels.Types;

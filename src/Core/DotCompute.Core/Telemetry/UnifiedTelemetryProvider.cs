@@ -16,7 +16,7 @@ namespace DotCompute.Core.Telemetry;
 /// Unified telemetry provider implementation.
 /// This consolidates all telemetry functionality.
 /// </summary>
-public class UnifiedTelemetryProvider : ITelemetryProvider
+public sealed class UnifiedTelemetryProvider : ITelemetryProvider
 {
     private readonly TelemetryConfiguration _configuration;
     private readonly Meter _meter;
@@ -369,7 +369,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             var tags = new Dictionary<string, object?>
             {
                 ["accelerator.type"] = acceleratorType,
-                ["accelerator.category"] = acceleratorType.ToLowerInvariant() switch
+                ["accelerator.category"] = acceleratorType.ToUpper(CultureInfo.InvariantCulture) switch
                 {
                     "cuda" or "nvidia" => "gpu",
                     "metal" => "gpu",
@@ -489,7 +489,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
             var tags = new Dictionary<string, object?>
             {
                 ["transfer.direction"] = direction,
-                ["transfer.type"] = direction.ToLowerInvariant() switch
+                ["transfer.type"] = direction.ToUpper(CultureInfo.InvariantCulture) switch
                 {
                     "host_to_device" or "h2d" => "upload",
                     "device_to_host" or "d2h" => "download",
@@ -564,7 +564,7 @@ public class UnifiedTelemetryProvider : ITelemetryProvider
 
     private static string ExtractKernelCategory(string kernelName)
     {
-        var name = kernelName.ToLowerInvariant();
+        var name = kernelName.ToUpper(CultureInfo.InvariantCulture);
         return name switch
         {
             var n when n.Contains("add", StringComparison.Ordinal) || n.Contains("sum", StringComparison.Ordinal) => "arithmetic",

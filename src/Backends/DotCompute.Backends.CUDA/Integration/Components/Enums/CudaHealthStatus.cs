@@ -11,7 +11,18 @@ namespace DotCompute.Backends.CUDA.Integration.Components.Enums;
 /// </summary>
 public enum CudaHealthStatus
 {
+    /// <summary>
+    /// CUDA device is operating normally.
+    /// </summary>
     Healthy,
+
+    /// <summary>
+    /// CUDA device has warnings but is still operational.
+    /// </summary>
     Warning,
+
+    /// <summary>
+    /// CUDA device has critical issues affecting operation.
+    /// </summary>
     Critical
 }

@@ -38,7 +38,7 @@ namespace DotCompute.Core.Execution
         private readonly WorkStealingWorkload<T> _workload;
         private readonly IUnifiedMemoryManager _memoryManager;
         private readonly ILogger _logger;
-        private readonly DeviceWorkQueue<T>[] _deviceQueues;
+        private readonly DeviceWorkScheduler<T>[] _deviceQueues;
         private readonly ConcurrentDictionary<int, WorkItemStatus<T>> _workItemStatuses;
         private readonly StealingCoordinator _stealingCoordinator;
         private readonly LoadBalancer _loadBalancer;
@@ -79,7 +79,7 @@ namespace DotCompute.Core.Execution
 
             _deviceQueues = [.. _devices.Select((device, index) =>
 
-            new DeviceWorkQueue<T>(device, index, logger))];
+            new DeviceWorkScheduler<T>(device, index, logger))];
 
             _workItemStatuses = new ConcurrentDictionary<int, WorkItemStatus<T>>();
             _stealingCoordinator = new StealingCoordinator(_devices.Length, logger);

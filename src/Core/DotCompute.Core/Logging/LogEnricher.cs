@@ -13,7 +13,7 @@ namespace DotCompute.Core.Logging;
 /// Production-grade log enricher that adds correlation IDs, contextual data, and security features.
 /// Provides automatic sensitive data redaction, performance context injection, and distributed tracing integration.
 /// </summary>
-public sealed class LogEnricher : IDisposable
+public sealed partial class LogEnricher : IDisposable
 {
     private readonly ILogger<LogEnricher> _logger;
     private readonly LogEnricherOptions _options;
@@ -22,20 +22,46 @@ public sealed class LogEnricher : IDisposable
     private readonly Timer _contextCleanupTimer;
     private volatile bool _disposed;
 
-    // Sensitive data patterns for redaction
+    // Sensitive data patterns for redaction - using GeneratedRegex for performance
+
+    [GeneratedRegex(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled)]
+    private static partial Regex EmailPattern();
+
+    [GeneratedRegex(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled)]
+    private static partial Regex CreditCardPattern();
+
+    [GeneratedRegex(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled)]
+    private static partial Regex SsnPattern();
+
+    [GeneratedRegex(@"\bBearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*\b", RegexOptions.Compiled)]
+    private static partial Regex JwtPattern();
+
+    [GeneratedRegex(@"\b[A-Za-z0-9]{32,}\b", RegexOptions.Compiled)]
+    private static partial Regex ApiKeyPattern();
+
+    [GeneratedRegex(@"password[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PasswordPattern();
+
+    [GeneratedRegex(@"secret[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex SecretPattern();
+
+    [GeneratedRegex(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TokenPattern();
+
+    [GeneratedRegex(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex KeyPattern();
 
     private static readonly Regex[] SensitivePatterns =
-
     [
-        new(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled), // Email
-        new(@"\b(?:\d{4}[-\s]?){3}\d{4}\b", RegexOptions.Compiled), // Credit card
-        new(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled), // SSN
-        new(@"\bBearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*\b", RegexOptions.Compiled), // JWT
-        new(@"\b[A-Za-z0-9]{32,}\b", RegexOptions.Compiled), // API keys (32+ chars)
-        new(@"password[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"secret[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"token[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"key[""']?\s*[:=]\s*[""']?[^""'\s]+[""']?", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        EmailPattern(),
+        CreditCardPattern(),
+        SsnPattern(),
+        JwtPattern(),
+        ApiKeyPattern(),
+        PasswordPattern(),
+        SecretPattern(),
+        TokenPattern(),
+        KeyPattern()
     ];
     /// <summary>
     /// Initializes a new instance of the LogEnricher class.
@@ -347,7 +373,7 @@ public sealed class LogEnricher : IDisposable
             else
             {
                 // Generate a new correlation ID
-                logEntry.CorrelationId = Guid.NewGuid().ToString("N")[..12];
+                logEntry.CorrelationId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..12];
             }
         }
 
@@ -597,13 +623,13 @@ public sealed class LogEnricher : IDisposable
 
     private static bool IsSensitivePropertyName(string propertyName)
     {
-        var lowerName = propertyName.ToLowerInvariant();
-        return lowerName.Contains("password", StringComparison.CurrentCulture) ||
-               lowerName.Contains("secret", StringComparison.CurrentCulture) ||
-               lowerName.Contains("token", StringComparison.CurrentCulture) ||
-               lowerName.Contains("key", StringComparison.CurrentCulture) ||
-               lowerName.Contains("credential", StringComparison.CurrentCulture) ||
-               lowerName.Contains("auth", StringComparison.CurrentCulture);
+        var lowerName = propertyName.ToUpper(CultureInfo.InvariantCulture);
+        return lowerName.Contains("password", StringComparison.Ordinal) ||
+               lowerName.Contains("secret", StringComparison.Ordinal) ||
+               lowerName.Contains("token", StringComparison.Ordinal) ||
+               lowerName.Contains("key", StringComparison.Ordinal) ||
+               lowerName.Contains("credential", StringComparison.Ordinal) ||
+               lowerName.Contains("auth", StringComparison.Ordinal);
     }
 
     private static string HashString(string input)
@@ -738,8 +764,11 @@ public sealed class LogEnricherOptions
 
 public enum ContextScope
 {
+    /// <summary>Global context scope.</summary>
     Global,
+    /// <summary>Thread-local context scope.</summary>
     Thread,
+    /// <summary>Request-scoped context.</summary>
     Request
 }
 /// <summary>

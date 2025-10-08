@@ -369,7 +369,7 @@ public class CodeAccessSecurityOptions
     /// <summary>
     /// Gets or sets whether reflection emit is allowed.
     /// </summary>
-    public bool AllowReflectionEmit { get; set; } = false;
+    public bool AllowReflectionEmit { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum memory usage in bytes.
