@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System.Diagnostics;
 using System.Globalization;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
@@ -12,10 +13,17 @@ namespace DotCompute.Core.Security;
 /// Handles critical security event alerts and attack pattern analysis.
 /// Provides real-time security monitoring and incident response.
 /// </summary>
-public sealed class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
+public sealed partial class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
     SecurityLoggingConfiguration configuration,
     Dictionary<string, object> sessionMetadata)
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 25201, Level = MsLogLevel.Critical, Message = "Critical security event detected: {EventType} - {Message}")]
+    private static partial void LogCriticalSecurityEvent(ILogger logger, string eventType, string message);
+
+    #endregion
+
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly SecurityLoggingConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     private readonly Dictionary<string, object> _sessionMetadata = sessionMetadata ?? throw new ArgumentNullException(nameof(sessionMetadata));
@@ -30,8 +38,7 @@ public sealed class SecurityAlertManager(ILogger<SecurityAlertManager> logger,
             return;
         }
 
-        _logger.LogCritical("Critical security event detected: {EventType} - {Message}",
-            entry.EventType, entry.Message);
+        LogCriticalSecurityEvent(_logger, entry.EventType.ToString(), entry.Message);
 
         // Analyze for attack patterns
         if (entry.EventType == SecurityEventType.SecurityViolation)

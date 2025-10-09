@@ -3,14 +3,25 @@
 
 using DotCompute.Abstractions.Types;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution;
 
 /// <summary>
 /// Provides execution profiling capabilities to track performance metrics during parallel execution.
 /// </summary>
-public class ExecutionProfiler : IAsyncDisposable
+public partial class ExecutionProfiler : IAsyncDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 10006, Level = MsLogLevel.Trace, Message = "Started profiling for execution {ExecutionId} with strategy {Strategy}")]
+    private static partial void LogProfilingStarted(ILogger logger, Guid executionId, string strategy);
+
+    [LoggerMessage(EventId = 10007, Level = MsLogLevel.Trace, Message = "Stopped profiling for execution {ExecutionId}, duration: {Duration:F2}ms")]
+    private static partial void LogProfilingStopped(ILogger logger, Guid executionId, double duration);
+
+    #endregion
+
     private readonly ILogger _logger;
     private readonly Dictionary<string, ExecutionProfilingData> _profilingData;
     private bool _disposed;
@@ -43,7 +54,7 @@ public class ExecutionProfiler : IAsyncDisposable
             Events = []
         };
 
-        _logger.LogTrace("Started profiling for execution {ExecutionId} with strategy {Strategy}", executionId, strategy);
+        LogProfilingStarted(_logger, executionId, strategy.ToString());
         await ValueTask.CompletedTask;
     }
     /// <summary>
@@ -60,8 +71,7 @@ public class ExecutionProfiler : IAsyncDisposable
             data.EndTime = DateTimeOffset.UtcNow;
             data.TotalDuration = data.EndTime - data.StartTime;
 
-            _logger.LogTrace("Stopped profiling for execution {ExecutionId}, duration: {Duration:F2}ms",
-                executionId, data.TotalDuration.TotalMilliseconds);
+            LogProfilingStopped(_logger, executionId, data.TotalDuration.TotalMilliseconds);
 
             return data;
         }

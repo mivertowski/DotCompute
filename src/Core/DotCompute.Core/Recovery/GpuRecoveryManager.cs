@@ -192,6 +192,15 @@ public sealed partial class GpuRecoveryManager : IDisposable
     private static void LogMonitorDisposeError(ILogger logger, string kernelId, Exception exception)
         => _logMonitorDisposeError(logger, kernelId, exception);
 
+    private static readonly Action<ILogger, string, string, string, Exception?> _logRecoveryFailed =
+        LoggerMessage.Define<string, string, string>(
+            Microsoft.Extensions.Logging.LogLevel.Error,
+            new EventId(13119, nameof(LogRecoveryFailed)),
+            "GPU recovery failed for device {DeviceId} using {Strategy}: {Message}");
+
+    private static void LogRecoveryFailed(ILogger logger, string deviceId, string strategy, string message)
+        => _logRecoveryFailed(logger, deviceId, strategy, message, null);
+
     private readonly ILogger<GpuRecoveryManager> _logger;
     private readonly ConcurrentDictionary<string, DeviceRecoveryState> _deviceStates;
     private readonly ConcurrentDictionary<string, KernelExecutionMonitor> _kernelMonitors;
@@ -267,9 +276,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
             else
             {
                 deviceState.RecordFailedRecovery();
-                _logger.LogError("GPU recovery failed for device {DeviceId} using {Strategy}: {Message}",
-
-                    deviceId, strategy, result.Message);
+                LogRecoveryFailed(_logger, deviceId, strategy.ToString(), result.Message);
             }
 
             return result;
@@ -532,7 +539,7 @@ public sealed partial class GpuRecoveryManager : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to cancel kernel {KernelId}", monitor.KernelId);
+                LogKernelCancelFailed(_logger, monitor.KernelId, ex);
             }
         }
     }

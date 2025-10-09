@@ -4,6 +4,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Debugging.Types;
@@ -20,6 +21,39 @@ using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidatio
 using BottleneckSeverity = DotCompute.Abstractions.Debugging.BottleneckSeverity;
 
 namespace DotCompute.Core.Debugging.Infrastructure;
+
+/// <summary>
+/// DTO for exporting debug history entries.
+/// </summary>
+internal sealed class DebugHistoryExportDto
+{
+    public required string KernelName { get; init; }
+    public DateTime ExportedAt { get; init; }
+    public required string TimeWindow { get; init; }
+    public int EntryCount { get; init; }
+    public required List<DebugLogEntryDto> Entries { get; init; }
+}
+
+/// <summary>
+/// DTO for individual debug log entries.
+/// </summary>
+internal sealed class DebugLogEntryDto
+{
+    public DateTime Timestamp { get; init; }
+    public required string Operation { get; init; }
+    public required string KernelName { get; init; }
+    public required Dictionary<string, string> Data { get; init; }
+}
+
+/// <summary>
+/// JSON source generation context for AOT compatibility.
+/// </summary>
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(DebugHistoryExportDto))]
+[JsonSerializable(typeof(DebugLogEntryDto))]
+internal partial class KernelDebugLoggerJsonContext : JsonSerializerContext
+{
+}
 
 /// <summary>
 /// Specialized logging infrastructure for kernel debugging operations.
@@ -496,22 +530,22 @@ public sealed partial class KernelDebugLogger(
         var cutoffTime = DateTime.UtcNow - (timeWindow ?? TimeSpan.FromHours(24));
         var relevantEntries = GetRelevantLogEntries(kernelName, cutoffTime);
 
-        var exportData = new
+        var exportData = new DebugHistoryExportDto
         {
             KernelName = kernelName,
             ExportedAt = DateTime.UtcNow,
             TimeWindow = timeWindow?.ToString() ?? "24 hours",
             EntryCount = relevantEntries.Count,
-            Entries = relevantEntries.Select(e => new
+            Entries = relevantEntries.Select(e => new DebugLogEntryDto
             {
-                e.Timestamp,
-                e.Operation,
-                e.KernelName,
-                Data = e.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString())
-            })
+                Timestamp = e.Timestamp,
+                Operation = e.Operation,
+                KernelName = e.KernelName,
+                Data = e.Data.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString() ?? "")
+            }).ToList()
         };
 
-        return JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+        return JsonSerializer.Serialize(exportData, KernelDebugLoggerJsonContext.Default.DebugHistoryExportDto);
     }
 
     /// <summary>

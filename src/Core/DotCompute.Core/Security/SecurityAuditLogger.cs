@@ -22,6 +22,19 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     SemaphoreSlim logWriteLock,
     string auditLogPath)
 {
+    // CA1869: Cached JsonSerializerOptions for performance
+    private static readonly JsonSerializerOptions s_compactJsonOptions = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    private static readonly JsonSerializerOptions s_indentedJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly SecurityLoggingConfiguration _configuration = configuration;
     private readonly ConcurrentQueue<SecurityLogEntry> _auditQueue = auditQueue ?? throw new ArgumentNullException(nameof(auditQueue));
@@ -164,11 +177,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         try
         {
-            var jsonEntry = JsonSerializer.Serialize(entry, new JsonSerializerOptions
-            {
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var jsonEntry = JsonSerializer.Serialize(entry, s_compactJsonOptions);
 
             await File.AppendAllTextAsync(_auditLogPath, jsonEntry + Environment.NewLine);
         }
@@ -208,10 +217,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
                     try
                     {
-                        var entry = JsonSerializer.Deserialize<SecurityLogEntry>(line, new JsonSerializerOptions
-                        {
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        });
+                        var entry = JsonSerializer.Deserialize<SecurityLogEntry>(line, s_compactJsonOptions);
 
                         if (entry != null &&
                             entry.Timestamp >= startDate &&
@@ -256,11 +262,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
     private static async Task ExportAsJsonAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath)
     {
-        var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var json = JsonSerializer.Serialize(entries, s_indentedJsonOptions);
         await File.WriteAllTextAsync(exportPath, json);
     }
 
@@ -274,7 +276,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         // Write entries
         foreach (var entry in entries)
         {
-            _ = csv.AppendLine($"{EscapeCsv(entry.Id.ToString())}," +
+            _ = csv.AppendLine(CultureInfo.InvariantCulture, $"{EscapeCsv(entry.Id.ToString())}," +
                           $"{entry.SequenceNumber}," +
                           $"{EscapeCsv(entry.Timestamp.ToString("O", CultureInfo.InvariantCulture))}," +
                           $"{EscapeCsv(entry.EventType.ToString())}," +
@@ -307,7 +309,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
         {
             await xmlWriter.WriteStartElementAsync(null, "Entry", null);
             await xmlWriter.WriteAttributeStringAsync(null, "id", null, entry.Id.ToString());
-            await xmlWriter.WriteAttributeStringAsync(null, "sequenceNumber", null, entry.SequenceNumber.ToString());
+            await xmlWriter.WriteAttributeStringAsync(null, "sequenceNumber", null, entry.SequenceNumber.ToString(CultureInfo.InvariantCulture));
             await xmlWriter.WriteAttributeStringAsync(null, "timestamp", null, entry.Timestamp.ToString("O", CultureInfo.InvariantCulture));
             await xmlWriter.WriteAttributeStringAsync(null, "eventType", null, entry.EventType.ToString());
             await xmlWriter.WriteAttributeStringAsync(null, "level", null, entry.Level.ToString());
@@ -340,7 +342,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
         if (value.Contains(',', StringComparison.OrdinalIgnoreCase) || value.Contains('"', StringComparison.OrdinalIgnoreCase) || value.Contains('\n', StringComparison.CurrentCulture) || value.Contains('\r', StringComparison.CurrentCulture))
         {
-            return $"\"{value.Replace("\"", "\"\"")}\";";
+            return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\";";
         }
 
         return value;
@@ -349,7 +351,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     private static bool IsFileInDateRange(string filePath, DateTime startDate, DateTime endDate)
     {
         var fileName = Path.GetFileNameWithoutExtension(filePath);
-        var datePart = fileName.Replace("security_audit_", "");
+        var datePart = fileName.Replace("security_audit_", "", StringComparison.Ordinal);
 
         if (DateTime.TryParseExact(datePart, "yyyyMMdd", null,
             DateTimeStyles.None, out var fileDate))

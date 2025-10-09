@@ -6,6 +6,7 @@ using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 // Type aliases to resolve ambiguous references
 using ErrorHandlingStrategy = DotCompute.Abstractions.Interfaces.Pipelines.ErrorHandlingStrategy;
@@ -20,8 +21,21 @@ namespace DotCompute.Core.Pipelines.Examples
     /// These examples show how to leverage the existing sophisticated pipeline infrastructure
     /// through an intuitive fluent interface.
     /// </summary>
-    public static class KernelChainExamples
+    public static partial class KernelChainExamples
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 15011, Level = MsLogLevel.Information, Message = "Kernel chain diagnostics: {Diagnostics}")]
+        private static partial void LogKernelChainDiagnostics(ILogger logger, string diagnostics);
+
+        [LoggerMessage(EventId = 15012, Level = MsLogLevel.Information, Message = "Kernel chaining system initialized successfully")]
+        private static partial void LogKernelChainInitialized(ILogger logger);
+
+        [LoggerMessage(EventId = 15013, Level = MsLogLevel.Error, Message = "Kernel chaining system initialization failed")]
+        private static partial void LogKernelChainInitFailed(ILogger logger);
+
+        #endregion
+
         /// <summary>
         /// Example: Simple sequential kernel chain for image processing.
         /// Demonstrates basic kernel chaining with error handling.
@@ -293,16 +307,15 @@ namespace DotCompute.Core.Pipelines.Examples
             var diagnostics = KernelChain.GetDiagnostics();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-
-            logger.LogInformation("Kernel chain diagnostics: {@Diagnostics}", diagnostics);
+            LogKernelChainDiagnostics(logger, diagnostics.ToString());
 
             if (diagnostics.ContainsKey("IsConfigured") && (bool)diagnostics["IsConfigured"])
             {
-                logger.LogInformation("Kernel chaining system initialized successfully");
+                LogKernelChainInitialized(logger);
             }
             else
             {
-                logger.LogError("Kernel chaining system initialization failed");
+                LogKernelChainInitFailed(logger);
             }
 
             return Task.CompletedTask;

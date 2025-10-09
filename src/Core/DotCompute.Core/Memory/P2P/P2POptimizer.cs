@@ -152,6 +152,15 @@ namespace DotCompute.Core.Memory.P2P
         private static void LogOptimizerDisposed(ILogger logger)
             => _logOptimizerDisposed(logger, null);
 
+        private static readonly Action<ILogger, long, double, double, double, Exception?> _logTransferResultRecorded =
+            LoggerMessage.Define<long, double, double, double>(
+                MsLogLevel.Trace,
+                new EventId(14311, nameof(LogTransferResultRecorded)),
+                "Transfer result recorded: {TransferSize} bytes, {ActualTimeMs:F1}ms, {ThroughputGBps:F2} GB/s, efficiency {EfficiencyPercent:P1}");
+
+        private static void LogTransferResultRecorded(ILogger logger, long transferSize, double actualTimeMs, double throughputGBps, double efficiencyPercent)
+            => _logTransferResultRecorded(logger, transferSize, actualTimeMs, throughputGBps, efficiencyPercent, null);
+
         /// <summary>
         /// Initializes topology-aware optimization with device pair analysis.
         /// </summary>
@@ -436,9 +445,7 @@ namespace DotCompute.Core.Memory.P2P
                         .Average(r => r.ThroughputGBps);
                 }
 
-                _logger.LogTrace("Transfer result recorded: {TransferSize} bytes, {ActualTime:F1}ms, {Throughput:F2} GB/s, efficiency {Efficiency:P1}",
-                    transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,
-
+                LogTransferResultRecorded(_logger, transferPlan.TransferSize, actualTransferTimeMs, actualThroughputGBps,
                     Math.Min(1.0, transferPlan.EstimatedTransferTimeMs / actualTransferTimeMs));
             }
             finally

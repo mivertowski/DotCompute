@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Utilities;
 
@@ -15,8 +16,15 @@ namespace DotCompute.Core.Utilities;
 /// across all backend implementations. Eliminates duplicate allocation logic
 /// and provides consistent error handling and performance optimization.
 /// </summary>
-public static class BufferAllocationUtilities
+public static partial class BufferAllocationUtilities
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 5001, Level = MsLogLevel.Warning, Message = "Memory allocation failed on attempt {Attempt}/{MaxRetries}, retrying after {DelayMs}ms")]
+    private static partial void LogAllocationRetry(ILogger logger, int attempt, int maxRetries, double delayMs);
+
+    #endregion
+
     private static readonly ConcurrentDictionary<Type, int> TypeSizeCache = new();
 
     /// <summary>
@@ -206,8 +214,7 @@ public static class BufferAllocationUtilities
             }
             catch (OutOfMemoryException) when (attempt < maxRetries)
             {
-                logger.LogWarning("Memory allocation failed on attempt {Attempt}/{MaxRetries}, retrying after {Delay}ms",
-                    attempt, maxRetries, delay.TotalMilliseconds);
+                LogAllocationRetry(logger, attempt, maxRetries, delay.TotalMilliseconds);
 
                 // Force garbage collection to free up memory
                 GC.Collect(2, GCCollectionMode.Forced, true);

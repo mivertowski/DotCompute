@@ -88,6 +88,36 @@ public sealed partial class EncryptionManager : IDisposable
             new EventId(18311, nameof(LogManagerDisposed)),
             "Encryption Manager disposed");
 
+    private static readonly Action<ILogger, string, Exception?> _logAesGcmDecryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18312, nameof(LogAesGcmDecryptionFailed)),
+            "AES-GCM decryption failed for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesCbcDecryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18313, nameof(LogAesCbcDecryptionSuccess)),
+            "AES-CBC decryption completed successfully for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logAesCbcDecryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18314, nameof(LogAesCbcDecryptionFailed)),
+            "AES-CBC decryption failed for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logChaChaDecryptionSuccess =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Debug,
+            new EventId(18315, nameof(LogChaChaDecryptionSuccess)),
+            "ChaCha20-Poly1305 decryption completed (mock) for key {KeyIdentifier}");
+
+    private static readonly Action<ILogger, string, Exception?> _logChaChaDecryptionFailed =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18316, nameof(LogChaChaDecryptionFailed)),
+            "ChaCha20-Poly1305 decryption failed for key {KeyIdentifier}");
+
     // Wrapper methods
     private static void LogManagerInitialized(ILogger logger)
         => _logManagerInitialized(logger, null);
@@ -124,6 +154,21 @@ public sealed partial class EncryptionManager : IDisposable
 
     private static void LogManagerDisposed(ILogger logger)
         => _logManagerDisposed(logger, null);
+
+    private static void LogAesGcmDecryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logAesGcmDecryptionFailed(logger, keyIdentifier, ex);
+
+    private static void LogAesCbcDecryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logAesCbcDecryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogAesCbcDecryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logAesCbcDecryptionFailed(logger, keyIdentifier, ex);
+
+    private static void LogChaChaDecryptionSuccess(ILogger logger, string keyIdentifier)
+        => _logChaChaDecryptionSuccess(logger, keyIdentifier, null);
+
+    private static void LogChaChaDecryptionFailed(ILogger logger, Exception ex, string keyIdentifier)
+        => _logChaChaDecryptionFailed(logger, keyIdentifier, ex);
 
     private readonly ILogger _logger;
     private readonly CryptographicConfiguration _configuration;
@@ -474,8 +519,7 @@ public sealed partial class EncryptionManager : IDisposable
             }
             catch (Exception ex)
             {
-                // Use standard LogWarning for authentication failures (security concern)
-                _logger.LogWarning(ex, "AES-GCM decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
+                LogAesGcmDecryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "AES-GCM decryption failed - invalid data or authentication tag";
             }
 
@@ -504,13 +548,11 @@ public sealed partial class EncryptionManager : IDisposable
                 result.DecryptedData = decrypted;
                 result.IsSuccessful = true;
 
-                // Use standard LogDebug for successful decryption (will be caught by analyzer if needed)
-                _logger.LogDebug("AES-CBC decryption completed successfully for key {KeyIdentifier}", keyContainer.Identifier);
+                LogAesCbcDecryptionSuccess(_logger, keyContainer.Identifier);
             }
             catch (Exception ex)
             {
-                // Use standard LogWarning for authentication failures (security concern)
-                _logger.LogWarning(ex, "AES-CBC decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
+                LogAesCbcDecryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "AES-CBC decryption failed - invalid data or padding";
             }
 
@@ -545,13 +587,11 @@ public sealed partial class EncryptionManager : IDisposable
                 result.DecryptedData = plaintext;
                 result.IsSuccessful = true;
 
-                // Use standard LogDebug for mock decryption (will be caught by analyzer if needed)
-                _logger.LogDebug("ChaCha20-Poly1305 decryption completed (mock) for key {KeyIdentifier}", keyContainer.Identifier);
+                LogChaChaDecryptionSuccess(_logger, keyContainer.Identifier);
             }
             catch (Exception ex)
             {
-                // Use standard LogWarning for decryption failures (security concern)
-                _logger.LogWarning(ex, "ChaCha20-Poly1305 decryption failed for key {KeyIdentifier}", keyContainer.Identifier);
+                LogChaChaDecryptionFailed(_logger, ex, keyContainer.Identifier);
                 result.ErrorMessage = "ChaCha20-Poly1305 decryption failed";
             }
 

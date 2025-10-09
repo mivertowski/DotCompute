@@ -523,7 +523,7 @@ namespace DotCompute.Core.Pipelines
 
             try
             {
-                return (T)Convert.ChangeType(result.Result, typeof(T));
+                return (T)Convert.ChangeType(result.Result, typeof(T), CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {

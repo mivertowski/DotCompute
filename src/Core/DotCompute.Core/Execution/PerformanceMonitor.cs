@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Models.Device;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 using DotCompute.Core.Execution.Metrics;
 using DotCompute.Core.Execution.Workload;
@@ -26,8 +27,15 @@ namespace DotCompute.Core.Execution
     /// <summary>
     /// Monitors and analyzes parallel execution performance with machine learning-based optimization.
     /// </summary>
-    public sealed class PerformanceMonitor(ILogger logger) : IDisposable
+    public sealed partial class PerformanceMonitor(ILogger logger) : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10801, Level = MsLogLevel.Trace, Message = "Recorded kernel execution: {KernelName} on {DeviceId}, Time={ExecutionTimeMs:F2}ms, Throughput={ThroughputGFLOPS:F2} GFLOPS")]
+        private static partial void LogKernelExecutionRecorded(ILogger logger, string kernelName, string deviceId, double executionTimeMs, double throughputGFLOPS);
+
+        #endregion
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentQueue<ExecutionRecord> _executionHistory = new();
         private readonly ConcurrentDictionary<string, KernelPerformanceProfile> _kernelProfiles = new();
@@ -91,8 +99,7 @@ namespace DotCompute.Core.Execution
 
             profile.AddExecution(deviceId, executionTimeMs, throughputGFLOPS);
 
-            _logger.LogTrace("Recorded kernel execution: {KernelName} on {DeviceId}, Time={ExecutionTimeMs:F2}ms, Throughput={ThroughputGFLOPS:F2} GFLOPS",
-                kernelName, deviceId, executionTimeMs, throughputGFLOPS);
+            LogKernelExecutionRecorded(_logger, kernelName, deviceId, executionTimeMs, throughputGFLOPS);
         }
 
         /// <summary>

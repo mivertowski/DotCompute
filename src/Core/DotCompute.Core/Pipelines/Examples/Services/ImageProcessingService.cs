@@ -7,12 +7,12 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for image processing using kernel chains.
 /// Demonstrates production-ready image processing workflows.
 /// </summary>
-public static class ImageProcessingService
+public class ImageProcessingService
 {
     /// <summary>
     /// Processes an image using the kernel chain pipeline.
     /// </summary>
     /// <param name="imageData">Raw image data to process</param>
     /// <returns>Processed image data</returns>
-    public static async Task<byte[]> ProcessImageAsync(byte[] imageData) => await KernelChainExamples.ImageProcessingChainExampleAsync(imageData);
+    public async Task<byte[]> ProcessImageAsync(byte[] imageData) => await KernelChainExamples.ImageProcessingChainExampleAsync(imageData);
 }

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Logging;
 
@@ -10,8 +11,18 @@ namespace DotCompute.Core.Logging;
 /// High-performance asynchronous log buffer with batching, compression, and multiple sink support.
 /// Designed to minimize performance impact on the main application thread while ensuring reliable log delivery.
 /// </summary>
-public sealed class LogBuffer : IDisposable
+public sealed partial class LogBuffer : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 9001, Level = MsLogLevel.Trace, Message = "Processed batch of {Count} log entries across {SinkCount} sinks")]
+    private static partial void LogBatchProcessed(ILogger logger, int count, int sinkCount);
+
+    [LoggerMessage(EventId = 9002, Level = MsLogLevel.Trace, Message = "Failed to write individual entry to sink: {SinkType}")]
+    private static partial void LogSinkWriteFailed(ILogger logger, Exception ex, string sinkType);
+
+    #endregion
+
     private readonly ILogger<LogBuffer> _logger;
     private readonly LogBufferOptions _options;
     private readonly Channel<StructuredLogEntry> _logChannel;
@@ -320,10 +331,7 @@ public sealed class LogBuffer : IDisposable
             _ = Interlocked.Add(ref _totalProcessed, batch.Count);
             _ = Interlocked.Increment(ref _batchesProcessed);
 
-
-            _logger.LogTrace("Processed batch of {Count} log entries across {SinkCount} sinks",
-
-                batch.Count, _sinks.Count);
+            LogBatchProcessed(_logger, batch.Count, _sinks.Count);
         }
         catch (Exception ex)
         {
@@ -402,9 +410,7 @@ public sealed class LogBuffer : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogTrace(ex, "Failed to write individual entry to sink: {SinkType}",
-
-                        sink.GetType().Name);
+                    LogSinkWriteFailed(_logger, ex, sink.GetType().Name);
                 }
             }
         }

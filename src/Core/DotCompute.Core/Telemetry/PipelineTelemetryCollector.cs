@@ -391,24 +391,24 @@ public sealed class PipelineTelemetryCollector : IDisposable
 
         // Global metrics
 
-        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_executions_total counter");
-        _ = prometheus.AppendLine($"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_executions_total counter");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_executions_total {Interlocked.Read(ref _totalPipelineExecutions)}");
 
 
-        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_active_count gauge");
-        _ = prometheus.AppendLine($"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_active_count gauge");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_active_count {Interlocked.Read(ref _activePipelineCount)}");
 
 
-        _ = prometheus.AppendLine($"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
-        _ = prometheus.AppendLine($"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"# TYPE dotcompute_pipeline_cache_hit_ratio gauge");
+        _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_cache_hit_ratio {GetAverageCacheHitRatio():F3}");
 
         // Per-pipeline metrics
         foreach (var snapshot in _pipelineSnapshots.Values)
         {
             var labels = $"{{pipeline_id=\"{snapshot.PipelineId}\"}}";
-            _ = prometheus.AppendLine($"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
-            _ = prometheus.AppendLine($"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
-            _ = prometheus.AppendLine($"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_executions_total{labels} {snapshot.ExecutionCount}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_success_rate{labels} {snapshot.SuccessRate:F3}");
+            _ = prometheus.AppendLine(CultureInfo.InvariantCulture, $"dotcompute_pipeline_avg_duration_seconds{labels} {snapshot.AverageDuration.TotalSeconds:F6}");
         }
 
         return await Task.FromResult(prometheus.ToString());

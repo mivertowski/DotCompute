@@ -113,55 +113,63 @@ public sealed partial class InputSanitizer : IDisposable
     private readonly Timer _statisticsTimer;
     private volatile bool _disposed;
 
+    // Source-generated regex patterns for AOT compatibility
+    [GeneratedRegex(@"('|(--|;)|(\||(\*|%))|(\b(select|insert|update|delete|drop|create|alter|exec|execute|union|script)\b))", RegexOptions.IgnoreCase)]
+    private static partial Regex SqlInjectionBasicRegex();
+
+    [GeneratedRegex(@"(\b(sleep|benchmark|pg_sleep|waitfor|delay)\b)|(\b(xp_cmdshell|sp_executesql)\b)|(\b(information_schema|sys\.|master\.)\b)", RegexOptions.IgnoreCase)]
+    private static partial Regex SqlInjectionAdvancedRegex();
+
+    [GeneratedRegex(@"<script[^>]*>.*?</script>|javascript:|vbscript:|on\w+\s*=", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex XssScriptRegex();
+
+    [GeneratedRegex(@"<\s*(iframe|object|embed|applet|meta|link|style|img|svg)[^>]*>", RegexOptions.IgnoreCase)]
+    private static partial Regex XssHtmlRegex();
+
+    [GeneratedRegex(@"[;&|`$(){}[\]<>*?~]|(\\x[0-9a-f]{2})|(%[0-9a-f]{2})", RegexOptions.IgnoreCase)]
+    private static partial Regex CommandInjectionRegex();
+
+    [GeneratedRegex(@"(invoke-expression|iex|invoke-command|icm|start-process|saps|new-object|downloadstring)", RegexOptions.IgnoreCase)]
+    private static partial Regex PowershellInjectionRegex();
+
+    [GeneratedRegex(@"(\.\.[\\/])+|(%2e%2e[\\/])+|(\.\.%2f)|(\.\.%5c)", RegexOptions.IgnoreCase)]
+    private static partial Regex PathTraversalRegex();
+
+    [GeneratedRegex(@"[()&|!>=<~*/]|(\\\*)|(\\\()|(\\\))")]
+    private static partial Regex LdapInjectionRegex();
+
+    [GeneratedRegex(@"(eval|exec|system|shell_exec|passthru|popen|proc_open|file_get_contents|readfile|include|require)", RegexOptions.IgnoreCase)]
+    private static partial Regex CodeInjectionRegex();
+
+    [GeneratedRegex(@"(<!\[CDATA\[)|(<\?xml)|(<!\-\-)|(\]\]>)|(&lt;)|(&gt;)|(&amp;)|(&quot;)|(&apos;)", RegexOptions.IgnoreCase)]
+    private static partial Regex XmlInjectionRegex();
+
+    [GeneratedRegex(@"(\$where|\$regex|\$ne|\$gt|\$lt|\$or|\$and|\$in|\$nin)", RegexOptions.IgnoreCase)]
+    private static partial Regex NoSqlInjectionRegex();
+
+    [GeneratedRegex(@"[^\w@.-]")]
+    private static partial Regex EmailSanitizeRegex();
+
+    [GeneratedRegex(@"[^a-zA-Z0-9]")]
+    private static partial Regex AlphaNumericSanitizeRegex();
+
+    [GeneratedRegex(@"[^0-9.-]")]
+    private static partial Regex NumericSanitizeRegex();
+
     // Pre-compiled regex patterns for common attacks
-    private static readonly Dictionary<string, Regex> SecurityPatterns = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, Func<Regex>> SecurityPatterns = new(StringComparer.OrdinalIgnoreCase)
     {
-        // SQL Injection patterns
-        ["sql_injection_basic"] = new Regex(@"('|(--|;)|(\||(\*|%))|(\b(select|insert|update|delete|drop|create|alter|exec|execute|union|script)\b))",
-
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        ["sql_injection_advanced"] = new Regex(@"(\b(sleep|benchmark|pg_sleep|waitfor|delay)\b)|(\b(xp_cmdshell|sp_executesql)\b)|(\b(information_schema|sys\.|master\.)\b)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // XSS patterns
-
-        ["xss_script"] = new Regex(@"<script[^>]*>.*?</script>|javascript:|vbscript:|on\w+\s*=",
-
-            RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline),
-        ["xss_html"] = new Regex(@"<\s*(iframe|object|embed|applet|meta|link|style|img|svg)[^>]*>",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // Command injection patterns
-
-        ["command_injection"] = new Regex(@"[;&|`$(){}[\]<>*?~]|(\\x[0-9a-f]{2})|(%[0-9a-f]{2})",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-        ["powershell_injection"] = new Regex(@"(invoke-expression|iex|invoke-command|icm|start-process|saps|new-object|downloadstring)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // Path traversal patterns
-
-        ["path_traversal"] = new Regex(@"(\.\.[\\/])+|(%2e%2e[\\/])+|(\.\.%2f)|(\.\.%5c)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // LDAP injection patterns
-
-        ["ldap_injection"] = new Regex(@"[()&|!>=<~*/]|(\\\*)|(\\\()|(\\\))",
-            RegexOptions.Compiled),
-
-        // Code injection patterns
-
-        ["code_injection"] = new Regex(@"(eval|exec|system|shell_exec|passthru|popen|proc_open|file_get_contents|readfile|include|require)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // XML injection patterns
-
-        ["xml_injection"] = new Regex(@"(<!\[CDATA\[)|(<\?xml)|(<!\-\-)|(\]\]>)|(&lt;)|(&gt;)|(&amp;)|(&quot;)|(&apos;)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled),
-
-        // NoSQL injection patterns
-
-        ["nosql_injection"] = new Regex(@"(\$where|\$regex|\$ne|\$gt|\$lt|\$or|\$and|\$in|\$nin)",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled)
+        ["sql_injection_basic"] = SqlInjectionBasicRegex,
+        ["sql_injection_advanced"] = SqlInjectionAdvancedRegex,
+        ["xss_script"] = XssScriptRegex,
+        ["xss_html"] = XssHtmlRegex,
+        ["command_injection"] = CommandInjectionRegex,
+        ["powershell_injection"] = PowershellInjectionRegex,
+        ["path_traversal"] = PathTraversalRegex,
+        ["ldap_injection"] = LdapInjectionRegex,
+        ["code_injection"] = CodeInjectionRegex,
+        ["xml_injection"] = XmlInjectionRegex,
+        ["nosql_injection"] = NoSqlInjectionRegex
     };
 
     // Dangerous characters that need encoding/escaping
@@ -348,7 +356,7 @@ public sealed partial class InputSanitizer : IDisposable
         try
         {
             // 1. Check for path traversal patterns
-            if (SecurityPatterns["path_traversal"].IsMatch(filePath))
+            if (SecurityPatterns["path_traversal"]().IsMatch(filePath))
             {
                 result.SecurityThreats.Add(new InputThreat
                 {
@@ -640,10 +648,11 @@ public sealed partial class InputSanitizer : IDisposable
     {
         await Task.Run(() =>
         {
-            foreach (var (patternName, regex) in SecurityPatterns)
+            foreach (var (patternName, regexFactory) in SecurityPatterns)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var regex = regexFactory();
                 var matches = regex.Matches(input);
                 foreach (Match match in matches)
                 {
@@ -707,19 +716,19 @@ public sealed partial class InputSanitizer : IDisposable
     private static string SanitizeSql(string input)
     {
         // Escape single quotes and remove/escape dangerous SQL keywords
-        return input.Replace("'", "''")
-                   .Replace(";", "\\;")
-                   .Replace("--", "\\--")
-                   .Replace("/*", "\\/*")
-                   .Replace("*/", "\\*/");
+        return input.Replace("'", "''", StringComparison.Ordinal)
+                   .Replace(";", "\\;", StringComparison.Ordinal)
+                   .Replace("--", "\\--", StringComparison.Ordinal)
+                   .Replace("/*", "\\/*", StringComparison.Ordinal)
+                   .Replace("*/", "\\*/", StringComparison.Ordinal);
     }
 
     private static string SanitizeFilePath(string input)
     {
         // Remove path traversal patterns and dangerous characters
-        var sanitized = input.Replace("..", "")
-                            .Replace("~", "")
-                            .Replace("\\", "/");
+        var sanitized = input.Replace("..", "", StringComparison.Ordinal)
+                            .Replace("~", "", StringComparison.Ordinal)
+                            .Replace("\\", "/", StringComparison.Ordinal);
 
         // Remove control characters and null bytes
 
@@ -752,15 +761,11 @@ public sealed partial class InputSanitizer : IDisposable
 
     private static string SanitizeEmail(string input)
         // Basic email sanitization - remove dangerous characters
+        => EmailSanitizeRegex().Replace(input, "");
 
+    private static string SanitizeAlphaNumeric(string input) => AlphaNumericSanitizeRegex().Replace(input, "");
 
-
-
-        => Regex.Replace(input, @"[^\w@.-]", "", RegexOptions.Compiled);
-
-    private static string SanitizeAlphaNumeric(string input) => Regex.Replace(input, @"[^a-zA-Z0-9]", "", RegexOptions.Compiled);
-
-    private static string SanitizeNumeric(string input) => Regex.Replace(input, @"[^0-9.-]", "", RegexOptions.Compiled);
+    private static string SanitizeNumeric(string input) => NumericSanitizeRegex().Replace(input, "");
 
     private static string SanitizeKernelParameter(string input)
     {
@@ -771,7 +776,7 @@ public sealed partial class InputSanitizer : IDisposable
 
         foreach (var dangerousChar in dangerous)
         {
-            result = result.Replace(dangerousChar.ToString(), "");
+            result = result.Replace(dangerousChar.ToString(), "", StringComparison.Ordinal);
         }
 
 
@@ -801,10 +806,11 @@ public sealed partial class InputSanitizer : IDisposable
         await Task.Run(() =>
         {
             // Verify that sanitization was effective
-            foreach (var (patternName, regex) in SecurityPatterns)
+            foreach (var (patternName, regexFactory) in SecurityPatterns)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var regex = regexFactory();
                 if (regex.IsMatch(sanitizedInput))
                 {
                     result.SecurityThreats.Add(new InputThreat

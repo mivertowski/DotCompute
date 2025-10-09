@@ -269,8 +269,8 @@ public sealed class MetricsCollector : IDisposable
 
         // Collect histogram data for response times
 
-        var recentOperations = GetRecentMemoryOperations(TimeSpan.FromMinutes(5));
-        if (recentOperations.Any())
+        var recentOperations = GetRecentMemoryOperations(TimeSpan.FromMinutes(5)).ToList();
+        if (recentOperations.Count > 0)
         {
             var durations = recentOperations.Select(op => op.Duration.TotalMilliseconds).ToArray();
             metrics.Histograms["memory_operation_duration_ms"] = durations;
@@ -288,18 +288,18 @@ public sealed class MetricsCollector : IDisposable
         ThrowIfDisposed();
 
 
-        var recentOperations = GetRecentMemoryOperations(timeWindow);
+        var recentOperations = GetRecentMemoryOperations(timeWindow).ToList();
 
 
         return new MemoryAccessAnalysis
         {
-            TotalOperations = recentOperations.Count(),
-            AverageBandwidth = recentOperations.Any() ? recentOperations.Average(op => op.Bandwidth) : 0,
-            PeakBandwidth = recentOperations.Any() ? recentOperations.Max(op => op.Bandwidth) : 0,
+            TotalOperations = recentOperations.Count,
+            AverageBandwidth = recentOperations.Count > 0 ? recentOperations.Average(op => op.Bandwidth) : 0,
+            PeakBandwidth = recentOperations.Count > 0 ? recentOperations.Max(op => op.Bandwidth) : 0,
             AccessPatterns = recentOperations
                 .GroupBy(op => op.AccessPattern)
                 .ToDictionary(g => g.Key, g => g.Count()),
-            AverageCoalescingEfficiency = recentOperations.Any() ?
+            AverageCoalescingEfficiency = recentOperations.Count > 0 ?
 
                 recentOperations.Average(op => op.CoalescingEfficiency) : 0,
             TimeWindow = timeWindow,

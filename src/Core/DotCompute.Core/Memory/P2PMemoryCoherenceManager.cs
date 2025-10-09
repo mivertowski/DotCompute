@@ -151,6 +151,24 @@ namespace DotCompute.Core.Memory
         private static void LogManagerDisposed(ILogger logger)
             => _logManagerDisposed(logger, null);
 
+        private static readonly Action<ILogger, Exception?> _logCoherenceMonitoringError =
+            LoggerMessage.Define(
+                LogLevel.Warning,
+                new EventId(14515, nameof(LogCoherenceMonitoringError)),
+                "Error in coherence health monitoring");
+
+        private static void LogCoherenceMonitoringError(ILogger logger, Exception exception)
+            => _logCoherenceMonitoringError(logger, exception);
+
+        private static readonly Action<ILogger, Guid, Exception?> _logBackgroundSyncFailed =
+            LoggerMessage.Define<Guid>(
+                LogLevel.Warning,
+                new EventId(14516, nameof(LogBackgroundSyncFailed)),
+                "Background synchronization failed for buffer {BufferId}");
+
+        private static void LogBackgroundSyncFailed(ILogger logger, Guid bufferId, Exception exception)
+            => _logBackgroundSyncFailed(logger, bufferId, exception);
+
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<object, P2PBufferCoherenceInfo> _bufferTracking;
         private readonly ConcurrentDictionary<string, DeviceCoherenceState> _deviceStates;
@@ -768,7 +786,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error in coherence health monitoring");
+                LogCoherenceMonitoringError(_logger, ex);
             }
         }
 
@@ -793,8 +811,7 @@ namespace DotCompute.Core.Memory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Background synchronization failed for buffer {BufferId}",
-                        bufferInfo.BufferId);
+                    LogBackgroundSyncFailed(_logger, bufferInfo.BufferId, ex);
                 }
             }
         }

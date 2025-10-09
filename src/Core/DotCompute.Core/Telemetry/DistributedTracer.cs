@@ -134,6 +134,33 @@ public sealed partial class DistributedTracer : IDisposable
     private static void LogCleanupError(ILogger logger, Exception ex)
         => _logCleanupError(logger, ex);
 
+    private static readonly Action<ILogger, string, string, string, string, Exception?> _logSpanStarted =
+        LoggerMessage.Define<string, string, string, string>(
+            MsLogLevel.Trace,
+            new EventId(9117, nameof(LogSpanStarted)),
+            "Started span {SpanId} '{SpanName}' on device {DeviceId} for trace {TraceId}");
+
+    private static void LogSpanStarted(ILogger logger, string spanId, string spanName, string deviceId, string traceId)
+        => _logSpanStarted(logger, spanId, spanName, deviceId, traceId, null);
+
+    private static readonly Action<ILogger, string, string, Exception?> _logEventRecorded =
+        LoggerMessage.Define<string, string>(
+            MsLogLevel.Trace,
+            new EventId(9118, nameof(LogEventRecorded)),
+            "Recorded event '{EventName}' in span {SpanId}");
+
+    private static void LogEventRecorded(ILogger logger, string eventName, string spanId)
+        => _logEventRecorded(logger, eventName, spanId, null);
+
+    private static readonly Action<ILogger, string, string, string, double, Exception?> _logSpanFinished =
+        LoggerMessage.Define<string, string, string, double>(
+            MsLogLevel.Trace,
+            new EventId(9119, nameof(LogSpanFinished)),
+            "Finished span {SpanId} '{SpanName}' with status {Status} after {DurationMs}ms");
+
+    private static void LogSpanFinished(ILogger logger, string spanId, string spanName, string status, double durationMs)
+        => _logSpanFinished(logger, spanId, spanName, status, durationMs, null);
+
     private static readonly ActivitySource ActivitySource = new("DotCompute.DistributedTracer", "1.0.0");
 
 
@@ -217,10 +244,9 @@ public sealed partial class DistributedTracer : IDisposable
             StartTime = DateTimeOffset.UtcNow,
             Activity = activity,
             ParentSpanContext = parentSpanContext,
-            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? [],
-            Spans = []
+            Tags = tags?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
-        // Note: DeviceOperations is auto-initialized by the property's default value
+        // Note: Spans and DeviceOperations are auto-initialized by their property defaults
 
 
         _ = _activeTraces.TryAdd(correlationId, traceContext);
@@ -311,8 +337,7 @@ public sealed partial class DistributedTracer : IDisposable
             });
 
 
-        _logger.LogTrace("Started span {SpanId} '{SpanName}' on device {DeviceId} for trace {TraceId}",
-            spanId, spanName, deviceId, traceContext.TraceId);
+        LogSpanStarted(_logger, spanId, spanName, deviceId, traceContext.TraceId);
 
 
         return spanContext;
@@ -346,7 +371,7 @@ public sealed partial class DistributedTracer : IDisposable
                 new KeyValuePair<string, object?>(kvp.Key, kvp.Value))])));
 
 
-        _logger.LogTrace("Recorded event '{EventName}' in span {SpanId}", eventName, spanContext.SpanId);
+        LogEventRecorded(_logger, eventName, spanContext.SpanId);
     }
 
     /// <summary>
@@ -448,8 +473,7 @@ public sealed partial class DistributedTracer : IDisposable
         }
 
 
-        _logger.LogTrace("Finished span {SpanId} '{SpanName}' with status {Status} after {Duration}ms",
-            spanContext.SpanId, spanContext.SpanName, status, duration.TotalMilliseconds);
+        LogSpanFinished(_logger, spanContext.SpanId, spanContext.SpanName, status.ToString(), duration.TotalMilliseconds);
     }
 
     /// <summary>
@@ -784,10 +808,11 @@ public sealed partial class DistributedTracer : IDisposable
             .Select(d => (d.LastOperationTime - d.FirstOperationTime).TotalMilliseconds /
 
                         traceData.TotalDuration.TotalMilliseconds)
-            .Where(u => u > 0);
+            .Where(u => u > 0)
+            .ToList();
 
 
-        return deviceUtilizations.Any() ? deviceUtilizations.Average() : 0;
+        return deviceUtilizations.Count > 0 ? deviceUtilizations.Average() : 0;
     }
 
     private static List<string> GenerateOptimizationRecommendations(TraceAnalysis analysis)

@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Recovery.Statistics;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Recovery;
 
@@ -12,8 +13,18 @@ namespace DotCompute.Core.Recovery;
 /// <remarks>
 /// Creates a new service circuit state
 /// </remarks>
-public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration config, ILogger logger)
+public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration config, ILogger logger)
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 13100, Level = MsLogLevel.Warning, Message = "Service {ServiceName} circuit forced to {State}")]
+    private static partial void LogCircuitForced(ILogger logger, string serviceName, CircuitState state);
+
+    [LoggerMessage(EventId = 13101, Level = MsLogLevel.Information, Message = "Service {ServiceName} transitioned to HalfOpen for testing")]
+    private static partial void LogHalfOpenTransition(ILogger logger, string serviceName);
+
+    #endregion
+
     /// <summary>
     /// Service identifier
     /// </summary>
@@ -250,7 +261,10 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
     public void ForceState(CircuitState state)
     {
         TransitionTo(state, _config?.OpenCircuitTimeout);
-        _logger?.LogWarning("Service {ServiceName} circuit forced to {State}", ServiceName, state);
+        if (_logger != null)
+        {
+            LogCircuitForced(_logger, ServiceName, state);
+        }
     }
 
 
@@ -263,7 +277,10 @@ public class ServiceCircuitState(string serviceName, CircuitBreakerConfiguration
         if (State == CircuitState.Open && NextRetryTime.HasValue && DateTimeOffset.UtcNow >= NextRetryTime.Value)
         {
             TransitionTo(CircuitState.HalfOpen);
-            _logger?.LogInformation("Service {ServiceName} transitioned to HalfOpen for testing", ServiceName);
+            if (_logger != null)
+            {
+                LogHalfOpenTransition(_logger, ServiceName);
+            }
         }
     }
 

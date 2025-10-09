@@ -4,11 +4,25 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Debugging.Services;
+
+/// <summary>
+/// JSON source generation context for AOT compatibility.
+/// </summary>
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(DebugData))]
+[JsonSerializable(typeof(CrossValidationResult))]
+[JsonSerializable(typeof(PerformanceAnalysis))]
+[JsonSerializable(typeof(DeterminismTestResult))]
+[JsonSerializable(typeof(MemoryPatternAnalysis))]
+internal partial class DebugReportJsonContext : JsonSerializerContext
+{
+}
 
 /// <summary>
 /// Generates comprehensive debug reports and documentation.
@@ -438,31 +452,31 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
         // HTML generation implementation
         => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Debug Report: {0}</h1></body></html>", debugData.KernelName);
 
-    private static string GenerateJsonReport(DebugData debugData) => JsonSerializer.Serialize(debugData, new JsonSerializerOptions { WriteIndented = true });
+    private static string GenerateJsonReport(DebugData debugData) => JsonSerializer.Serialize(debugData, DebugReportJsonContext.Default.DebugData);
 
     private static string GeneratePlainTextReport(DebugData debugData) => string.Format(CultureInfo.InvariantCulture, "Debug Report for {0}\nGenerated: {1}", debugData.KernelName, DateTime.UtcNow);
 
     private static string GenerateHtmlCrossValidationReport(CrossValidationResult result) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Cross-Validation: {0}</h1></body></html>", result.KernelName);
 
-    private static string GenerateJsonCrossValidationReport(CrossValidationResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+    private static string GenerateJsonCrossValidationReport(CrossValidationResult result) => JsonSerializer.Serialize(result, DebugReportJsonContext.Default.CrossValidationResult);
 
     private static string GeneratePlainTextCrossValidationReport(CrossValidationResult result) => string.Format(CultureInfo.InvariantCulture, "Cross-Validation Report for {0}\nStatus: {1}", result.KernelName, result.IsValid ? "PASSED" : "FAILED");
 
     private static string GenerateHtmlPerformanceReport(PerformanceAnalysis performance) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Performance Analysis: {0}</h1></body></html>", performance.KernelName);
 
-    private static string GenerateJsonPerformanceReport(PerformanceAnalysis performance) => JsonSerializer.Serialize(performance, new JsonSerializerOptions { WriteIndented = true });
+    private static string GenerateJsonPerformanceReport(PerformanceAnalysis performance) => JsonSerializer.Serialize(performance, DebugReportJsonContext.Default.PerformanceAnalysis);
 
     private static string GeneratePlainTextPerformanceReport(PerformanceAnalysis performance) => string.Format(CultureInfo.InvariantCulture, "Performance Analysis for {0}\nData Points: {1}", performance.KernelName, performance.DataPoints);
 
     private static string GenerateHtmlDeterminismReport(DeterminismTestResult result) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Determinism Test: {0}</h1></body></html>", result.KernelName);
 
-    private static string GenerateJsonDeterminismReport(DeterminismTestResult result) => JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+    private static string GenerateJsonDeterminismReport(DeterminismTestResult result) => JsonSerializer.Serialize(result, DebugReportJsonContext.Default.DeterminismTestResult);
 
     private static string GeneratePlainTextDeterminismReport(DeterminismTestResult result) => string.Format(CultureInfo.InvariantCulture, "Determinism Test for {0}\nStatus: {1}", result.KernelName, result.IsDeterministic ? "DETERMINISTIC" : "NON-DETERMINISTIC");
 
     private static string GenerateHtmlMemoryReport(MemoryPatternAnalysis analysis) => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Memory Analysis: {0}</h1></body></html>", analysis.KernelName);
 
-    private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis) => JsonSerializer.Serialize(analysis, new JsonSerializerOptions { WriteIndented = true });
+    private static string GenerateJsonMemoryReport(MemoryPatternAnalysis analysis) => JsonSerializer.Serialize(analysis, DebugReportJsonContext.Default.MemoryPatternAnalysis);
 
     private static string GeneratePlainTextMemoryReport(MemoryPatternAnalysis analysis) => string.Format(CultureInfo.InvariantCulture, "Memory Analysis for {0}\nStatus: {1}", analysis.KernelName, analysis.IsMemorySafe ? "SAFE" : "ISSUES DETECTED");
     /// <summary>

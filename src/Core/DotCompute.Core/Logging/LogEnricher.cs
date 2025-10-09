@@ -356,7 +356,7 @@ public sealed partial class LogEnricher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to initialize some system context information");
+            LogFailedToInitializeSystemContext(_logger, ex);
         }
     }
 
@@ -480,7 +480,7 @@ public sealed partial class LogEnricher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to add performance context");
+            LogFailedToAddPerformanceContext(_logger, ex);
         }
     }
 
@@ -519,7 +519,7 @@ public sealed partial class LogEnricher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogTrace(ex, "Failed to add security context");
+            LogFailedToAddSecurityContext(_logger, ex);
         }
     }
 
@@ -708,6 +708,20 @@ public sealed partial class LogEnricher : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 9001, Level = LogLevel.Warning, Message = "Failed to initialize some system context information")]
+    private static partial void LogFailedToInitializeSystemContext(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 9002, Level = LogLevel.Trace, Message = "Failed to add performance context")]
+    private static partial void LogFailedToAddPerformanceContext(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 9003, Level = LogLevel.Trace, Message = "Failed to add security context")]
+    private static partial void LogFailedToAddSecurityContext(ILogger logger, Exception ex);
+
+    #endregion
+
     /// <summary>
     /// Performs dispose.
     /// </summary>

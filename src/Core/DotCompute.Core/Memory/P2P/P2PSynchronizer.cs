@@ -345,8 +345,7 @@ namespace DotCompute.Core.Memory.P2P
                 barrier.ArrivedParticipants++;
 
 
-                _logger.LogTrace("Device {DeviceId} arrived at barrier {BarrierId} ({Arrived}/{Expected})",
-                    deviceId, barrierId, barrier.ArrivedParticipants, barrier.ExpectedParticipants);
+                LogBarrierArrival(_logger, deviceId, barrierId, barrier.ArrivedParticipants, barrier.ExpectedParticipants);
 
                 // Check if all participants have arrived
                 if (barrier.ArrivedParticipants >= barrier.ExpectedParticipants)

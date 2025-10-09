@@ -506,13 +506,13 @@ public sealed partial class KernelDebugProfiler(
         if (relevantResults.Count > 0)
         {
             var avgExecutionTime = relevantResults.Average(r => r.Timings?.TotalTimeMs ?? 0);
-            var slowExecutions = relevantResults.Where(r => (r.Timings?.TotalTimeMs ?? 0) > avgExecutionTime * 1.5);
+            var slowExecutions = relevantResults.Where(r => (r.Timings?.TotalTimeMs ?? 0) > avgExecutionTime * 1.5).ToList();
 
-            if (slowExecutions.Any())
+            if (slowExecutions.Count > 0)
             {
                 bottlenecks.Add(new PerformanceBottleneck
                 {
-                    Description = $"Slow execution detected in {slowExecutions.Count()} runs - {(slowExecutions.Count() / (double)relevantResults.Count * 100):F1}% of executions",
+                    Description = $"Slow execution detected in {slowExecutions.Count} runs - {(slowExecutions.Count / (double)relevantResults.Count * 100):F1}% of executions",
                     Severity = BottleneckSeverity.Medium,
                     Component = "Execution Performance"
                 });

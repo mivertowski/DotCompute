@@ -88,6 +88,15 @@ internal sealed partial class CryptographicKeyManager : IDisposable
             new EventId(18411, nameof(LogAutoRotationFailed)),
             "Automatic key rotation failed");
 
+    [LoggerMessage(EventId = 18412, Level = MsLogLevel.Warning, Message = "Attempted to access expired key: {Identifier}")]
+    private static partial void LogExpiredKeyAccess(ILogger logger, string identifier);
+
+    [LoggerMessage(EventId = 18413, Level = MsLogLevel.Warning, Message = "Key not found: {Identifier}")]
+    private static partial void LogKeyNotFound(ILogger logger, string identifier);
+
+    [LoggerMessage(EventId = 18414, Level = MsLogLevel.Warning, Message = "Attempted to delete non-existent key: {Identifier}")]
+    private static partial void LogNonExistentKeyDelete(ILogger logger, string identifier);
+
     // Wrapper methods
     private static void LogManagerInitialized(ILogger logger)
         => _logManagerInitialized(logger, null);
@@ -255,7 +264,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
                 // Check if key is expired
                 if (IsKeyExpired(keyContainer))
                 {
-                    _logger.LogWarning("Attempted to access expired key: {identifier}", identifier);
+                    LogExpiredKeyAccess(_logger, identifier);
                     return null;
                 }
 
@@ -263,7 +272,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
                 return keyContainer;
             }
 
-            _logger.LogWarning("Key not found: {Identifier}", identifier);
+            LogKeyNotFound(_logger, identifier);
             return null;
         }
         finally
@@ -360,7 +369,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
                 return true;
             }
 
-            _logger.LogWarning("Attempted to delete non-existent key: {Identifier}", identifier);
+            LogNonExistentKeyDelete(_logger, identifier);
             return false;
         }
         finally

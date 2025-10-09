@@ -243,6 +243,63 @@ public enum KeyType
 }
 
 /// <summary>
+/// Represents intended usage types for certificate validation operations.
+/// </summary>
+public enum CertificateUsage
+{
+    /// <summary>
+    /// Certificate is intended for digital signature operations.
+    /// </summary>
+    DigitalSignature,
+
+    /// <summary>
+    /// Certificate is intended for data encryption operations.
+    /// </summary>
+    DataEncryption,
+
+    /// <summary>
+    /// Certificate is intended for key agreement operations.
+    /// </summary>
+    KeyAgreement,
+
+    /// <summary>
+    /// Certificate is intended for signing other certificates (CA usage).
+    /// </summary>
+    CertificateSigning,
+
+    /// <summary>
+    /// Certificate is intended for server authentication (TLS/SSL server).
+    /// </summary>
+    ServerAuthentication,
+
+    /// <summary>
+    /// Certificate is intended for client authentication (TLS/SSL client).
+    /// </summary>
+    ClientAuthentication,
+
+    /// <summary>
+    /// Certificate is intended for code signing operations.
+    /// </summary>
+    CodeSigning
+}
+
+/// <summary>
+/// Represents a cached certificate validation result with timestamp for cache management.
+/// </summary>
+internal readonly struct CachedCertificateValidation
+{
+    /// <summary>
+    /// Gets the cached validation result.
+    /// </summary>
+    public required CertificateValidationResult Result { get; init; }
+
+    /// <summary>
+    /// Gets the timestamp when the validation was performed and cached.
+    /// </summary>
+    public required DateTimeOffset ValidationTime { get; init; }
+}
+
+/// <summary>
 /// Types of security events that can be logged.
 /// </summary>
 public enum SecurityEventType

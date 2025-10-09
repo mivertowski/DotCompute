@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -13,8 +14,21 @@ namespace DotCompute.Core.Memory.P2P
     /// High-performance P2P pipeline that implements overlapped transfers
     /// with asynchronous staging and optimal bandwidth utilization.
     /// </summary>
-    internal sealed class P2PPipeline<T> : IAsyncDisposable where T : unmanaged
+    internal sealed partial class P2PPipeline<T> : IAsyncDisposable where T : unmanaged
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 14701, Level = MsLogLevel.Trace, Message = "Pipeline progress: {Progress:F1}% ({Completed}/{Total} chunks)")]
+        private static partial void LogPipelineProgress(ILogger logger, double progress, int completed, int total);
+
+        [LoggerMessage(EventId = 14702, Level = MsLogLevel.Trace, Message = "Initialized {StageCount} pipeline stages with {ElementsPerChunk} elements each")]
+        private static partial void LogPipelineInitialized(ILogger logger, int stageCount, int elementsPerChunk);
+
+        [LoggerMessage(EventId = 14703, Level = MsLogLevel.Trace, Message = "P2P Pipeline disposed")]
+        private static partial void LogPipelineDisposed(ILogger logger);
+
+        #endregion
+
         private readonly IUnifiedMemoryBuffer<T> _sourceBuffer;
         private readonly IUnifiedMemoryBuffer<T> _destinationBuffer;
         private readonly int _chunkSize;
@@ -97,8 +111,7 @@ namespace DotCompute.Core.Memory.P2P
                             if (completed % Math.Max(1, totalChunks / 10) == 0)
                             {
                                 var progress = (double)completed / totalChunks * 100.0;
-                                _logger.LogTrace("Pipeline progress: {Progress:F1}% ({Completed}/{Total} chunks)",
-                                    progress, completed, totalChunks);
+                                LogPipelineProgress(_logger, progress, completed, totalChunks);
                             }
 
                             if (t.IsFaulted && t.Exception != null)
@@ -270,8 +283,7 @@ namespace DotCompute.Core.Memory.P2P
                 _availableStages.Enqueue(stage);
             }
 
-            _logger.LogTrace("Initialized {StageCount} pipeline stages with {ElementsPerChunk} elements each",
-                _pipelineDepth, elementsPerChunk);
+            LogPipelineInitialized(_logger, _pipelineDepth, elementsPerChunk);
         }
         /// <summary>
         /// Gets dispose asynchronously.
@@ -311,7 +323,7 @@ namespace DotCompute.Core.Memory.P2P
                 // Staging buffers will be garbage collected
             }
 
-            _logger.LogTrace("P2P Pipeline disposed");
+            LogPipelineDisposed(_logger);
         }
 
         /// <summary>

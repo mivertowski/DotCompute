@@ -177,6 +177,43 @@ public sealed partial class MemorySanitizer : IDisposable
 
     private static void LogSanitizerDisposed(ILogger logger, long allocations, long violations)
         => _logSanitizerDisposed(logger, allocations, violations, null);
+
+    private static readonly Action<ILogger, long, nuint, nuint, Exception?> _logReadSuccess =
+        LoggerMessage.Define<long, nuint, nuint>(
+            MsLogLevel.Trace,
+            new EventId(18615, nameof(LogReadSuccess)),
+            "Sanitized read successful: Address={Address:X}, Offset={Offset}, Size={Size}");
+
+    private static void LogReadSuccess(ILogger logger, long address, nuint offset, nuint size)
+        => _logReadSuccess(logger, address, offset, size, null);
+
+    private static readonly Action<ILogger, long, nuint, nuint, Exception?> _logWriteSuccess =
+        LoggerMessage.Define<long, nuint, nuint>(
+            MsLogLevel.Trace,
+            new EventId(18616, nameof(LogWriteSuccess)),
+            "Sanitized write successful: Address={Address:X}, Offset={Offset}, Size={Size}");
+
+    private static void LogWriteSuccess(ILogger logger, long address, nuint offset, nuint size)
+        => _logWriteSuccess(logger, address, offset, size, null);
+
+    private static readonly Action<ILogger, SanitizationViolationType, long, string, Exception?> _logSanitizationViolation =
+        LoggerMessage.Define<SanitizationViolationType, long, string>(
+            MsLogLevel.Error,
+            new EventId(18617, nameof(LogMemorySanitizationViolation)),
+            "Memory sanitization violation: {ViolationType} at {Address:X} - {Description}");
+
+    private static void LogMemorySanitizationViolation(ILogger logger, SanitizationViolationType violationType, long address, string description)
+        => _logSanitizationViolation(logger, violationType, address, description, null);
+
+    private static readonly Action<ILogger, string, Exception?> _logAllocationDisposeError =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18618, nameof(LogAllocationDisposeError)),
+            "Error disposing allocation: {Identifier}");
+
+    private static void LogAllocationDisposeError(ILogger logger, Exception ex, string identifier)
+        => _logAllocationDisposeError(logger, identifier, ex);
+
     /// <summary>
     /// Initializes a new instance of the MemorySanitizer class.
     /// </summary>
@@ -378,10 +415,7 @@ public sealed partial class MemorySanitizer : IDisposable
             allocation.AccessCount++;
             allocation.LastAccessTime = DateTimeOffset.UtcNow;
 
-
-            _logger.LogTrace("Sanitized read successful: Address={Address:X}, Offset={Offset}, Size={Size}",
-                address.ToInt64(), offset, readSize);
-
+            LogReadSuccess(_logger, address.ToInt64(), offset, readSize);
 
             return value;
         }
@@ -459,9 +493,7 @@ public sealed partial class MemorySanitizer : IDisposable
             allocation.AccessCount++;
             allocation.LastAccessTime = DateTimeOffset.UtcNow;
 
-
-            _logger.LogTrace("Sanitized write successful: Address={Address:X}, Offset={Offset}, Size={Size}",
-                address.ToInt64(), offset, writeSize);
+            LogWriteSuccess(_logger, address.ToInt64(), offset, writeSize);
         }
         catch (Exception ex)
         {
@@ -932,8 +964,7 @@ public sealed partial class MemorySanitizer : IDisposable
                 break;
         }
 
-        _logger.LogError("Memory sanitization violation: {ViolationType} at {Address:X} - {Description}",
-            violation.ViolationType, violation.Address.ToInt64(), violation.Description);
+        LogMemorySanitizationViolation(_logger, violation.ViolationType, violation.Address.ToInt64(), violation.Description);
     }
 
     private void DetectMemoryLeaks(object? state)
@@ -1030,7 +1061,7 @@ public sealed partial class MemorySanitizer : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing allocation: {Identifier}", allocation.Identifier);
+                LogAllocationDisposeError(_logger, ex, allocation.Identifier);
             }
         }
 

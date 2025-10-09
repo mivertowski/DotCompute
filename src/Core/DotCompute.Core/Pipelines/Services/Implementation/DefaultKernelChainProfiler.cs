@@ -3,14 +3,28 @@
 
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines.Services.Implementation
 {
     /// <summary>
     /// Default implementation of kernel chain profiling service.
     /// </summary>
-    public sealed class DefaultKernelChainProfiler(ILogger<DefaultKernelChainProfiler>? logger = null) : IKernelChainProfiler
+    public sealed partial class DefaultKernelChainProfiler(ILogger<DefaultKernelChainProfiler>? logger = null) : IKernelChainProfiler
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 15101, Level = MsLogLevel.Debug, Message = "Started profiling session '{ProfileName}'")]
+        private static partial void LogProfilingStarted(ILogger logger, string profileName);
+
+        [LoggerMessage(EventId = 15102, Level = MsLogLevel.Debug, Message = "Stopped profiling session '{ProfileName}'")]
+        private static partial void LogProfilingStopped(ILogger logger, string profileName);
+
+        [LoggerMessage(EventId = 15103, Level = MsLogLevel.Debug, Message = "Recorded kernel execution: {KernelName} in {ExecutionTimeMs}ms on {Backend}")]
+        private static partial void LogKernelExecutionRecorded(ILogger logger, string kernelName, double executionTimeMs, string backend);
+
+        #endregion
+
         private readonly ILogger<DefaultKernelChainProfiler>? _logger = logger;
         private readonly ConcurrentDictionary<string, KernelChainProfilingResult> _profiles = new();
         private volatile string? _currentProfile;
@@ -26,7 +40,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
         {
             _currentProfile = profileName;
             _startTime = DateTime.UtcNow;
-            _logger?.LogDebug("Started profiling session '{ProfileName}'", profileName);
+            if (_logger != null)
+            {
+                LogProfilingStarted(_logger, profileName);
+            }
             await Task.CompletedTask;
         }
         /// <summary>
@@ -53,7 +70,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
 
                 _ = _profiles.TryAdd(_currentProfile, result);
-                _logger?.LogDebug("Stopped profiling session '{ProfileName}'", _currentProfile);
+                if (_logger != null)
+                {
+                    LogProfilingStopped(_logger, _currentProfile);
+                }
                 _currentProfile = null;
             }
             await Task.CompletedTask;
@@ -83,9 +103,10 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
 
         public async Task RecordKernelExecutionAsync(string kernelName, TimeSpan executionTime, long memoryUsed, string backend, CancellationToken cancellationToken = default)
         {
-            _logger?.LogDebug("Recorded kernel execution: {KernelName} in {ExecutionTime}ms on {Backend}",
-
-                kernelName, executionTime.TotalMilliseconds, backend);
+            if (_logger != null)
+            {
+                LogKernelExecutionRecorded(_logger, kernelName, executionTime.TotalMilliseconds, backend);
+            }
             await Task.CompletedTask;
         }
     }

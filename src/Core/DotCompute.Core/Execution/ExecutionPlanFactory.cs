@@ -13,6 +13,8 @@ using DotCompute.Core.Execution.Optimization;
 using DotCompute.Core.Execution.Types;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
 namespace DotCompute.Core.Execution
 {
     /// <summary>
@@ -25,8 +27,15 @@ namespace DotCompute.Core.Execution
     /// <param name="logger">Logger for factory operations</param>
     /// <param name="performanceMonitor">Performance monitor for execution estimation</param>
     /// <exception cref="ArgumentNullException">Thrown when logger or performanceMonitor is null</exception>
-    public sealed class ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
+    public sealed partial class ExecutionPlanFactory(ILogger logger, PerformanceMonitor performanceMonitor)
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10501, Level = MsLogLevel.Warning, Message = "Failed to generate plan for strategy {Strategy}")]
+        private static partial void LogPlanGenerationFailed(ILogger logger, ExecutionStrategyType strategy, Exception ex);
+
+        #endregion
+
         private readonly ExecutionPlanGenerator _generator = new(logger);
         private readonly ExecutionPlanOptimizer _optimizer = new(logger, performanceMonitor);
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -105,7 +114,7 @@ namespace DotCompute.Core.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to generate plan for strategy {Strategy}", strategy);
+                    LogPlanGenerationFailed(_logger, strategy, ex);
                 }
             }
 

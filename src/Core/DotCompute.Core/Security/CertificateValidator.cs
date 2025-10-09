@@ -5,14 +5,22 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
 /// <summary>
 /// Validates digital certificates and certificate chains for cryptographic operations
 /// </summary>
-public sealed class CertificateValidator : IDisposable
+public sealed partial class CertificateValidator : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 18801, Level = MsLogLevel.Warning, Message = "Error during certificate validation cache cleanup")]
+    private static partial void LogCacheCleanupError(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly ILogger _logger;
     private readonly Dictionary<string, CachedCertificateValidation> _validationCache;
     private readonly Timer _cacheCleanupTimer;
@@ -429,7 +437,7 @@ public sealed class CertificateValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during certificate validation cache cleanup");
+            LogCacheCleanupError(_logger, ex);
         }
     }
     /// <summary>

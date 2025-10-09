@@ -27,7 +27,6 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
 
     /// <inheritdoc/>
     public override MemoryStatistics Statistics => new()
-
     {
         TotalAllocated = _currentAllocatedBytes,
         CurrentUsed = _currentAllocatedBytes,
@@ -730,7 +729,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
         {
@@ -748,7 +747,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public virtual ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         if (_underlyingBuffer is CpuMemoryBuffer cpuBuffer)
         {

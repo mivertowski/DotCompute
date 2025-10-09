@@ -190,17 +190,18 @@ internal sealed class CryptographicValidator : IDisposable
 
         _logger.LogInfoMessage($"Performing security audit for context: {auditContext}");
 
+        var operationsList = operations.ToList();
         var result = new SecurityAuditResult
         {
             AuditContext = auditContext,
             AuditTime = DateTimeOffset.UtcNow,
-            OperationsAudited = operations.Count(),
+            OperationsAudited = operationsList.Count,
             OverallSecurityLevel = SecurityLevel.High
         };
 
         try
         {
-            foreach (var operation in operations)
+            foreach (var operation in operationsList)
             {
                 var operationResult = await AuditSingleOperationAsync(operation);
                 result.OperationResults.Add(operationResult);

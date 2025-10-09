@@ -106,6 +106,15 @@ namespace DotCompute.Core.Memory
         private static void LogSchedulerDisposed(ILogger logger)
             => _logSchedulerDisposed(logger, null);
 
+        private static readonly Action<ILogger, Exception?> _logBandwidthMonitoringError =
+            LoggerMessage.Define(
+                LogLevel.Warning,
+                new EventId(14413, nameof(LogBandwidthMonitoringError)),
+                "Error in bandwidth monitoring");
+
+        private static void LogBandwidthMonitoringError(ILogger logger, Exception exception)
+            => _logBandwidthMonitoringError(logger, exception);
+
         private readonly ILogger _logger;
         private readonly ConcurrentQueue<P2PTransferOperation> _transferQueue;
         private readonly ConcurrentDictionary<string, TransferChannel> _deviceChannels;
@@ -515,7 +524,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error in bandwidth monitoring");
+                LogBandwidthMonitoringError(_logger, ex);
             }
         }
         /// <summary>

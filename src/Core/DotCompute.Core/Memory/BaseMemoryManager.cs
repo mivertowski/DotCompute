@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Memory;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory;
 
@@ -14,8 +15,18 @@ namespace DotCompute.Core.Memory;
 /// Base memory manager that provides common memory management patterns for all backends.
 /// Eliminates 7,625 lines of duplicate code across 5+ implementations.
 /// </summary>
-public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
+public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager, IAsyncDisposable, IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 4001, Level = MsLogLevel.Warning, Message = "Error disposing buffer during memory manager cleanup")]
+    private static partial void LogBufferDisposalError(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 4002, Level = MsLogLevel.Warning, Message = "Error disposing buffer during async memory manager cleanup")]
+    private static partial void LogAsyncBufferDisposalError(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, WeakReference<IUnifiedMemoryBuffer>> _activeBuffers = new();
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -35,7 +46,12 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
 
 
     /// <inheritdoc/>
-    public abstract MemoryStatistics CurrentStatistics { get; }
+    public abstract MemoryStatistics Statistics { get; }
+
+    /// <summary>
+    /// Gets the current memory statistics (alias for Statistics for compatibility).
+    /// </summary>
+    public MemoryStatistics CurrentStatistics => Statistics;
 
 
     /// <inheritdoc/>
@@ -489,7 +505,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Error disposing buffer during memory manager cleanup");
+                            LogBufferDisposalError(_logger, ex);
                         }
                     }
                 }
@@ -541,7 +557,7 @@ public abstract class BaseMemoryManager(ILogger logger) : IUnifiedMemoryManager,
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error disposing buffer during async memory manager cleanup");
+                    LogAsyncBufferDisposalError(_logger, ex);
                 }
             }
 

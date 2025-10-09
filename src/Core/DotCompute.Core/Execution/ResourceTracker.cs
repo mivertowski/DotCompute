@@ -4,14 +4,25 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution;
 
 /// <summary>
 /// Tracks resource usage across multiple devices during execution.
 /// </summary>
-public class ResourceTracker : IAsyncDisposable
+public partial class ResourceTracker : IAsyncDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 10701, Level = MsLogLevel.Trace, Message = "Started resource tracking for {DeviceCount} devices")]
+    private static partial void LogResourceTrackingStarted(ILogger logger, int deviceCount);
+
+    [LoggerMessage(EventId = 10702, Level = MsLogLevel.Trace, Message = "Ended resource tracking, total execution time: {MaxExecutionTimeMs:F2}ms")]
+    private static partial void LogResourceTrackingEnded(ILogger logger, double maxExecutionTimeMs);
+
+    #endregion
+
     private readonly ILogger _logger;
     private readonly Dictionary<string, DeviceResourceUsage> _deviceUsage;
 
@@ -44,7 +55,7 @@ public class ResourceTracker : IAsyncDisposable
             };
         }
 
-        _logger.LogTrace("Started resource tracking for {DeviceCount} devices", devices.Length);
+        LogResourceTrackingStarted(_logger, devices.Length);
         await ValueTask.CompletedTask;
     }
     /// <summary>
@@ -64,8 +75,7 @@ public class ResourceTracker : IAsyncDisposable
             usage.TotalExecutionTime = endTime - usage.StartTime;
         }
 
-        _logger.LogTrace("Ended resource tracking, total execution time: {MaxExecutionTime:F2}ms",
-            _deviceUsage.Values.Max(u => u.TotalExecutionTime.TotalMilliseconds));
+        LogResourceTrackingEnded(_logger, _deviceUsage.Values.Max(u => u.TotalExecutionTime.TotalMilliseconds));
 
         await ValueTask.CompletedTask;
     }

@@ -5,6 +5,8 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
 namespace DotCompute.Core.Execution.Analysis
 {
     /// <summary>
@@ -20,8 +22,21 @@ namespace DotCompute.Core.Execution.Analysis
     /// </remarks>
     /// <param name="logger">The logger instance for diagnostic information.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-    public sealed class DevicePerformanceEstimator(ILogger logger)
+    public sealed partial class DevicePerformanceEstimator(ILogger logger)
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10001, Level = MsLogLevel.Trace, Message = "Device {DeviceId} score: {Score:F2} (memory: {MemScore:F2}, compute: {CompScore:F2}, capability: {CapScore:F2}, historical: {HistFactor:F2})")]
+        private static partial void LogDeviceScore(ILogger logger, Guid deviceId, double score, double memScore, double compScore, double capScore, double histFactor);
+
+        [LoggerMessage(EventId = 10002, Level = MsLogLevel.Trace, Message = "Estimated execution time for device {DeviceId}: {Time:F2}ms (workload: {Size}, type: {Type})")]
+        private static partial void LogEstimatedTime(ILogger logger, Guid deviceId, double time, long size, string type);
+
+        [LoggerMessage(EventId = 10003, Level = MsLogLevel.Trace, Message = "Updated performance data for device {DeviceId}: success rate {SuccessRate:P2}, efficiency {Efficiency:F1}%")]
+        private static partial void LogPerformanceUpdate(ILogger logger, Guid deviceId, double successRate, double efficiency);
+
+        #endregion
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly Dictionary<string, DevicePerformanceCache> _performanceCache = [];
 
@@ -53,8 +68,7 @@ namespace DotCompute.Core.Execution.Analysis
 
             var score = (memoryScore * 0.3 + computeScore * 0.4 + capabilityScore * 0.2) * historicalFactor;
 
-            _logger.LogTrace("Device {DeviceId} score: {Score:F2} (memory: {MemScore:F2}, compute: {CompScore:F2}, capability: {CapScore:F2}, historical: {HistFactor:F2})",
-                device.Info.Id, score, memoryScore, computeScore, capabilityScore, historicalFactor);
+            LogDeviceScore(_logger, device.Info.Id, score, memoryScore, computeScore, capabilityScore, historicalFactor);
 
             return score;
         }
@@ -110,8 +124,7 @@ namespace DotCompute.Core.Execution.Analysis
             var overheadFactor = GetOverheadFactor(device.Info.DeviceType);
             var estimatedTime = baseTime * overheadFactor;
 
-            _logger.LogTrace("Estimated execution time for device {DeviceId}: {Time:F2}ms (workload: {Size}, type: {Type})",
-                device.Info.Id, estimatedTime, workloadSize, workloadType);
+            LogEstimatedTime(_logger, device.Info.Id, estimatedTime, workloadSize, workloadType);
 
             return estimatedTime;
         }
@@ -155,8 +168,7 @@ namespace DotCompute.Core.Execution.Analysis
             cache.TotalExecutions = totalExecutions;
             cache.LastUpdated = DateTime.UtcNow;
 
-            _logger.LogTrace("Updated performance data for device {DeviceId}: success rate {SuccessRate:P2}, efficiency {Efficiency:F1}%",
-                deviceId, cache.SuccessRate, cache.AverageEfficiency);
+            LogPerformanceUpdate(_logger, deviceId, cache.SuccessRate, cache.AverageEfficiency);
         }
 
         /// <summary>

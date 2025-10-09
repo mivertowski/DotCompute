@@ -4,14 +4,22 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Security;
 
 /// <summary>
 /// Provides secure hash calculation with multiple algorithms and integrity verification
 /// </summary>
-public sealed class HashCalculator : IDisposable
+public sealed partial class HashCalculator : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 18701, Level = MsLogLevel.Warning, Message = "Error during hash cache cleanup")]
+    private static partial void LogCacheCleanupError(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly ILogger _logger;
     private readonly Dictionary<string, CachedHashResult> _hashCache;
     private readonly Timer _cacheCleanupTimer;
@@ -329,15 +337,25 @@ public sealed class HashCalculator : IDisposable
 
     private static HashAlgorithm CreateHashAlgorithm(string algorithm)
     {
+#pragma warning disable CA5350, CA5351 // Do not use weak cryptographic algorithms
+        // SECURITY JUSTIFICATION:
+        // MD5 and SHA-1 are intentionally supported for backward compatibility and non-security scenarios:
+        // - Legacy data integrity verification where algorithm cannot be changed
+        // - Checksum generation for non-cryptographic purposes (file identification, deduplication)
+        // - Compatibility with external systems that require these algorithms
+        // - These algorithms are marked as "weak" in WeakHashAlgorithms set and trigger validation warnings
+        // - Production code should use SHA-256 or higher; MD5/SHA-1 generate explicit warnings in ValidateHashAlgorithm()
+        // - For security-critical operations, always use approved algorithms (SHA-256, SHA-384, SHA-512)
         return algorithm.ToUpperInvariant() switch
         {
             "SHA-256" => SHA256.Create(),
             "SHA-384" => SHA384.Create(),
             "SHA-512" => SHA512.Create(),
-            "MD5" => MD5.Create(),
-            "SHA-1" => SHA1.Create(),
+            "MD5" => MD5.Create(),      // Legacy compatibility only - not approved for security
+            "SHA-1" => SHA1.Create(),   // Legacy compatibility only - not approved for security
             _ => throw new ArgumentException($"Unsupported hash algorithm: {algorithm}")
         };
+#pragma warning restore CA5350, CA5351
     }
 
     private static bool ValidateHashAlgorithm(string algorithm, HashResult result)
@@ -408,7 +426,7 @@ public sealed class HashCalculator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during hash cache cleanup");
+            LogCacheCleanupError(_logger, ex);
         }
     }
 

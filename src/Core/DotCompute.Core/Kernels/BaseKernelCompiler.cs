@@ -31,6 +31,18 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
             new EventId(22000, nameof(LogCompilationSuccess)),
             "{CompilerName}: Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization");
 
+    [LoggerMessage(EventId = 22001, Level = MsLogLevel.Debug, Message = "{CompilerName}: Kernel '{KernelName}' compilation metrics: Time={CompilationTime}ms, Size={ByteCodeSize}")]
+    private static partial void LogCompilationMetrics(ILogger logger, string compilerName, string kernelName, double compilationTime, string byteCodeSize);
+
+    [LoggerMessage(EventId = 22002, Level = MsLogLevel.Error, Message = "Failed to compile kernel from IKernelSource: {SourceType}")]
+    private static partial void LogCompilationError(ILogger logger, Exception ex, string sourceType);
+
+    [LoggerMessage(EventId = 22003, Level = MsLogLevel.Error, Message = "Failed to validate kernel from IKernelSource: {SourceType}")]
+    private static partial void LogValidationError(ILogger logger, Exception ex, string sourceType);
+
+    [LoggerMessage(EventId = 22004, Level = MsLogLevel.Error, Message = "Failed to compile kernel {KernelName} in batch operation")]
+    private static partial void LogBatchCompilationError(ILogger logger, Exception ex, string kernelName);
+
     // Wrapper method
     private static void LogCompilationSuccess(ILogger logger, string compilerName, string kernelName, long elapsedMs, OptimizationLevel optimizationLevel)
         => _logCompilationSuccess(logger, compilerName, kernelName, elapsedMs, optimizationLevel, null);
@@ -311,11 +323,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
     /// </summary>
     protected void LogCompilationMetrics(string kernelName, TimeSpan compilationTime, long? byteCodeSize = null)
     {
-        _logger.LogDebug(
-            "{CompilerName}: Kernel '{KernelName}' compilation metrics: Time={CompilationTime}ms, Size={ByteCodeSize}",
-            CompilerName,
-            kernelName,
-            compilationTime.TotalMilliseconds,
+        LogCompilationMetrics(_logger, CompilerName, kernelName, compilationTime.TotalMilliseconds,
             byteCodeSize?.ToString(global::System.Globalization.CultureInfo.InvariantCulture) ?? "N/A");
     }
 
@@ -425,7 +433,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile kernel from IKernelSource: {SourceType}", source.GetType().Name);
+            LogCompilationError(_logger, ex, source.GetType().Name);
             throw;
         }
     }
@@ -463,7 +471,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to validate kernel from IKernelSource: {SourceType}", source.GetType().Name);
+            LogValidationError(_logger, ex, source.GetType().Name);
 
             return new KernelValidationResult
             {
@@ -598,7 +606,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to compile kernel {KernelName} in batch operation", kernelDef.Name);
+                LogBatchCompilationError(_logger, ex, kernelDef.Name);
                 throw new KernelCompilationException($"Batch compilation failed for kernel {kernelDef.Name}: {ex.Message}", ex);
             }
         }

@@ -114,7 +114,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
             if (severity >= SecurityEventSeverity.High)
             {
                 await FlushAuditLogsAsync();
-                _logger.LogWarning("High severity security event: {eventType} - {description}", eventType, description);
+                LogHighSeveritySecurityEvent(_logger, eventType, description);
             }
 
             LogSecurityEventRecorded(_logger, eventType, severity);
@@ -226,7 +226,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
         // Immediately flush critical security events
         await FlushAuditLogsAsync();
 
-        _logger.LogError("Security violation detected: {violationType} - {description}", violationType, description);
+        LogSecurityViolationDetected(_logger, violationType, description);
     }
 
     /// <summary>
@@ -470,7 +470,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
             }
             catch (JsonException ex)
             {
-                _logger.LogWarning("Failed to parse audit log entry: {error}", ex.Message);
+                LogFailedToParseAuditLogEntry(_logger, ex.Message);
             }
         }
 
@@ -487,7 +487,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
             recommendations.Add($"Review {securityIncidents} security incidents and implement preventive measures");
         }
 
-        var failedOperations = events.Where(e => e.AdditionalData?.Contains("\"Success\":false") == true).Count();
+        var failedOperations = events.Where(e => e.AdditionalData?.Contains("\"Success\":false", StringComparison.Ordinal) == true).Count();
         if (failedOperations > events.Count * 0.1) // More than 10% failure rate
         {
             recommendations.Add("High failure rate detected - review system configuration and error handling");
@@ -507,8 +507,8 @@ internal sealed partial class CryptographicAuditor : IDisposable
         return new SecurityMetrics
         {
             TotalOperations = events.Count,
-            SuccessfulOperations = events.Count(e => e.AdditionalData?.Contains("\"Success\":true") == true),
-            FailedOperations = events.Count(e => e.AdditionalData?.Contains("\"Success\":false") == true),
+            SuccessfulOperations = events.Count(e => e.AdditionalData?.Contains("\"Success\":true", StringComparison.Ordinal) == true),
+            FailedOperations = events.Count(e => e.AdditionalData?.Contains("\"Success\":false", StringComparison.Ordinal) == true),
             SecurityIncidents = events.Count(e => e.Category == SecurityEventCategory.SecurityIncident),
             KeyManagementOperations = events.Count(e => e.Category == SecurityEventCategory.KeyManagement),
             CryptographicOperations = events.Count(e => e.Category == SecurityEventCategory.CryptographicOperation),
@@ -519,7 +519,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
     private static double CalculateAverageResponseTime(IReadOnlyList<SecurityEvent> events)
     {
-        var operationsWithTiming = events.Where(e => e.AdditionalData?.Contains("ExecutionTimeMs") == true).ToList();
+        var operationsWithTiming = events.Where(e => e.AdditionalData?.Contains("ExecutionTimeMs", StringComparison.Ordinal) == true).ToList();
         if (!operationsWithTiming.Any())
         {
             return 0;
@@ -555,7 +555,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
         foreach (var evt in events)
         {
             _ = csv.AppendLine($"{evt.EventId},{evt.Timestamp:O},{evt.EventType},{evt.Severity},{evt.Category}," +
-                          $"\"{evt.Description.Replace("\"", "\"\"")}\",{evt.UserId},{evt.SessionId}");
+                          $"\"{evt.Description.Replace("\"", "\"\"", StringComparison.Ordinal)}\",{evt.UserId},{evt.SessionId}");
         }
 
         return csv.ToString();
@@ -611,6 +611,15 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
     [LoggerMessage(EventId = 8011, Level = LogLevel.Error, Message = "Error flushing audit logs during disposal")]
     private static partial void LogErrorFlushingAuditLogsDuringDisposal(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 8012, Level = LogLevel.Warning, Message = "High severity security event: {EventType} - {Description}")]
+    private static partial void LogHighSeveritySecurityEvent(ILogger logger, string eventType, string description);
+
+    [LoggerMessage(EventId = 8013, Level = LogLevel.Error, Message = "Security violation detected: {ViolationType} - {Description}")]
+    private static partial void LogSecurityViolationDetected(ILogger logger, string violationType, string description);
+
+    [LoggerMessage(EventId = 8014, Level = LogLevel.Warning, Message = "Failed to parse audit log entry: {Error}")]
+    private static partial void LogFailedToParseAuditLogEntry(ILogger logger, string error);
 }
 /// <summary>
 /// An security event severity enumeration.

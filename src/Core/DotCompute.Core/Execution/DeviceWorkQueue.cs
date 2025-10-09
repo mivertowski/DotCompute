@@ -3,18 +3,19 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
 using DotCompute.Abstractions.Execution;
-using DotCompute.Abstractions.Debugging.Types;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution
 {
     /// <summary>
     /// Work scheduler for a specific device in work-stealing execution.
     /// </summary>
-    public sealed class DeviceWorkScheduler<T> : IAsyncDisposable where T : unmanaged
+    public sealed partial class DeviceWorkScheduler<T> : IAsyncDisposable where T : unmanaged
     {
         private readonly ILogger _logger;
         private readonly IAccelerator _device;
@@ -43,7 +44,11 @@ namespace DotCompute.Core.Execution
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _workQueue = new ConcurrentQueue<WorkItem<T>>();
             _workAvailable = new SemaphoreSlim(0);
-            _statistics = new DeviceQueueStatistics { DeviceIndex = deviceIndex };
+            _statistics = new DeviceQueueStatistics
+            {
+                DeviceIndex = deviceIndex,
+                CurrentQueueSize = 0
+            };
         }
 
         /// <summary>Gets whether the queue has work available.</summary>
@@ -85,8 +90,7 @@ namespace DotCompute.Core.Execution
                     _statistics.TotalEnqueued++;
                 }
 
-                _logger.LogTrace("Enqueued work item {WorkItemId} to device {DeviceId}",
-                    workItem.Id, _device.Info.Id);
+                LogWorkItemEnqueued(_logger, workItem.Id, _device.Info.Id.ToString());
             }
             catch (Exception ex)
             {
@@ -115,8 +119,7 @@ namespace DotCompute.Core.Execution
                         _statistics.TotalDequeued++;
                     }
 
-                    _logger.LogTrace("Dequeued work item {WorkItemId} from device {DeviceId}",
-                        workItem.Id, _device.Info.Id);
+                    LogWorkItemDequeued(_logger, workItem.Id, _device.Info.Id);
 
                     return workItem;
                 }
@@ -157,8 +160,7 @@ namespace DotCompute.Core.Execution
                     _statistics.TotalStolen++;
                 }
 
-                _logger.LogTrace("Work item {WorkItemId} stolen from device {DeviceId}",
-                    workItem.Id, _device.Info.Id);
+                LogWorkItemStolen(_logger, workItem.Id, _device.Info.Id);
 
                 return workItem;
             }
@@ -213,5 +215,19 @@ namespace DotCompute.Core.Execution
             _disposed = true;
             await ValueTask.CompletedTask;
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10001, Level = MsLogLevel.Trace, Message = "Enqueued work item {WorkItemId} to device {DeviceId}")]
+        private static partial void LogWorkItemEnqueued(ILogger logger, int workItemId, string deviceId);
+
+        [LoggerMessage(EventId = 10002, Level = MsLogLevel.Trace, Message = "Dequeued work item {WorkItemId} from device {DeviceId}")]
+        private static partial void LogWorkItemDequeued(ILogger logger, int workItemId, Guid deviceId);
+
+        [LoggerMessage(EventId = 10003, Level = MsLogLevel.Trace, Message = "Work item {WorkItemId} stolen from device {DeviceId}")]
+        private static partial void LogWorkItemStolen(ILogger logger, int workItemId, Guid deviceId);
+
+        #endregion
     }
+
 }

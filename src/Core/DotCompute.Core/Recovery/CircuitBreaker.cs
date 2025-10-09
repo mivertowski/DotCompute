@@ -7,6 +7,7 @@ using System.Globalization;
 using DotCompute.Core.Recovery.Statistics;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Recovery;
 
@@ -14,8 +15,15 @@ namespace DotCompute.Core.Recovery;
 /// Circuit breaker implementation for network/distributed system failures
 /// with exponential backoff, failure rate monitoring, and automatic recovery
 /// </summary>
-public sealed class CircuitBreaker : IDisposable
+public sealed partial class CircuitBreaker : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 13201, Level = MsLogLevel.Warning, Message = "Operation {OperationId} failed for service {ServiceName} after {DurationMs}ms")]
+    private static partial void LogOperationFailed(ILogger logger, string operationId, string serviceName, long durationMs, Exception ex);
+
+    #endregion
+
     private readonly ILogger<CircuitBreaker> _logger;
     private readonly CircuitBreakerConfiguration _config;
     private readonly ConcurrentDictionary<string, ServiceCircuitState> _serviceStates;
@@ -94,8 +102,7 @@ public sealed class CircuitBreaker : IDisposable
             stopwatch.Stop();
             RecordFailure(serviceName, ex);
 
-            _logger.LogWarning(ex, "Operation {OperationId} failed for service {ServiceName} after {Duration}ms",
-                operationId, serviceName, stopwatch.ElapsedMilliseconds);
+            LogOperationFailed(_logger, operationId, serviceName, stopwatch.ElapsedMilliseconds, ex);
 
             throw;
         }

@@ -12,6 +12,7 @@ using DotCompute.Core.Recovery.Statistics;
 using DotCompute.Core.Recovery.Types;
 using CompilationRecoveryContext = DotCompute.Core.Recovery.Compilation.CompilationRecoveryContext;
 using CompilationFallbackResult = DotCompute.Core.Recovery.Compilation.CompilationFallbackResult;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Recovery;
 
@@ -19,8 +20,15 @@ namespace DotCompute.Core.Recovery;
 /// Central coordinator for all error recovery operations in DotCompute.
 /// Orchestrates GPU, Memory, Compilation, Network, and Plugin recovery strategies.
 /// </summary>
-public sealed class RecoveryCoordinator : IDisposable
+public sealed partial class RecoveryCoordinator : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 13301, Level = MsLogLevel.Warning, Message = "Error reporting recovery metrics")]
+    private static partial void LogMetricsReportingError(ILogger logger, Exception ex);
+
+    #endregion
+
     private readonly ILogger<RecoveryCoordinator> _logger;
     private readonly ConcurrentDictionary<Type, IRecoveryStrategy<object>> _strategies;
     private readonly RecoveryCoordinatorConfiguration _config;
@@ -466,7 +474,7 @@ public sealed class RecoveryCoordinator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error reporting recovery metrics");
+            LogMetricsReportingError(_logger, ex);
         }
     }
     /// <summary>

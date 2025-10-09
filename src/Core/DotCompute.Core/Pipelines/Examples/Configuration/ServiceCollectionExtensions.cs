@@ -6,14 +6,28 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Pipelines.Examples.Services;
 using DotCompute.Core.Pipelines.Examples.Models;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Pipelines.Examples.Configuration;
 
 /// <summary>
 /// Extension methods for configuring kernel chain example services.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static partial class ServiceCollectionExtensions
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 15001, Level = MsLogLevel.Information, Message = "Kernel chain diagnostics: {@Diagnostics}")]
+    private static partial void LogKernelChainDiagnostics(ILogger logger, object diagnostics);
+
+    [LoggerMessage(EventId = 15002, Level = MsLogLevel.Information, Message = "Kernel chaining system initialized successfully")]
+    private static partial void LogKernelChainInitialized(ILogger logger);
+
+    [LoggerMessage(EventId = 15003, Level = MsLogLevel.Error, Message = "Kernel chaining system initialization failed")]
+    private static partial void LogKernelChainInitFailed(ILogger logger);
+
+    #endregion
+
     /// <summary>
     /// Configures services for kernel chain examples in dependency injection container.
     /// </summary>
@@ -46,15 +60,15 @@ public static class ServiceCollectionExtensions
         var diagnostics = KernelChain.GetDiagnostics();
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-        logger.LogInformation("Kernel chain diagnostics: {@Diagnostics}", diagnostics);
+        LogKernelChainDiagnostics(logger, diagnostics);
 
         if (diagnostics.ContainsKey("IsConfigured") && (bool)diagnostics["IsConfigured"])
         {
-            logger.LogInformation("Kernel chaining system initialized successfully");
+            LogKernelChainInitialized(logger);
         }
         else
         {
-            logger.LogError("Kernel chaining system initialization failed");
+            LogKernelChainInitFailed(logger);
         }
 
         return Task.CompletedTask;

@@ -579,7 +579,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                LogLayerExecutionStarting(_logger, layer.LayerId.ToString(), device.Info.Id);
+                LogLayerExecutionStarting(_logger, layer.LayerId.ToString(CultureInfo.InvariantCulture), device.Info.Id);
 
                 // Wait for dependencies
                 if (layer.Dependencies.Count > 0)
@@ -615,14 +615,14 @@ namespace DotCompute.Core.Execution
                     MemoryUsageBytes = layer.MemoryRequirementBytes
                 };
 
-                LogLayerExecutionCompleted(_logger, layer.LayerId.ToString(), stopwatch.Elapsed.TotalMilliseconds);
+                LogLayerExecutionCompleted(_logger, layer.LayerId.ToString(CultureInfo.InvariantCulture), stopwatch.Elapsed.TotalMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                LogLayerExecutionFailed(_logger, layer.LayerId.ToString(), ex);
+                LogLayerExecutionFailed(_logger, layer.LayerId.ToString(CultureInfo.InvariantCulture), ex);
 
                 await _coordinator.SignalEventAsync(completionEvent, CancellationToken.None);
 
@@ -751,7 +751,7 @@ namespace DotCompute.Core.Execution
 
             try
             {
-                LogExecutingStage(_logger, stage.StageId.ToString(), microbatchIndex);
+                LogExecutingStage(_logger, stage.StageId.ToString(CultureInfo.InvariantCulture), microbatchIndex);
 
                 // Execute stage kernel for this microbatch
                 var kernelArgs = CreateStageKernelArguments(stage, microbatchIndex);
@@ -773,7 +773,7 @@ namespace DotCompute.Core.Execution
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                LogStageExecutionFailed(_logger, stage.StageId.ToString(), microbatchIndex, ex);
+                LogStageExecutionFailed(_logger, stage.StageId.ToString(CultureInfo.InvariantCulture), microbatchIndex, ex);
 
                 return new StageExecutionResult
                 {

@@ -64,6 +64,15 @@ public sealed partial class StructuredLogger : ILogger, IDisposable
 
     private static void LogFinalFlushFailed(ILogger logger, Exception ex) => _logFinalFlushFailed(logger, ex);
 
+    private static readonly Action<ILogger, string, Exception?> _logSecurityViolation =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(25105, nameof(LogSecurityViolation)),
+            "Security violation detected: {Description}");
+
+    private static void LogSecurityViolation(ILogger logger, string description)
+        => _logSecurityViolation(logger, description, null);
+
     #endregion
     /// <summary>
     /// Initializes a new instance of the StructuredLogger class.
@@ -421,8 +430,7 @@ public sealed partial class StructuredLogger : ILogger, IDisposable
 
         if (eventType == SecurityEventType.SecurityViolation)
         {
-            _baseLogger.LogWarning("Security violation detected: {Description} with context {@Context}",
-                description, context ?? []);
+            LogSecurityViolation(_baseLogger, description);
         }
     }
 

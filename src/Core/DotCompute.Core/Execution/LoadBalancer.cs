@@ -6,14 +6,22 @@ using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Core.Execution.Workload;
 using DotCompute.Core.Logging;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution
 {
     /// <summary>
     /// Manages load balancing across devices.
     /// </summary>
-    public class LoadBalancer
+    public partial class LoadBalancer
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10601, Level = MsLogLevel.Error, Message = "Cannot distribute work items: no device schedulers available")]
+        private static partial void LogNoDeviceSchedulers(ILogger logger);
+
+        #endregion
+
         private readonly IAccelerator[] _devices;
         private readonly ILogger _logger;
         private readonly Dictionary<string, DeviceQueueStatistics> _statistics = new();
@@ -49,7 +57,7 @@ namespace DotCompute.Core.Execution
 
             if (deviceQueues == null || deviceQueues.Length == 0)
             {
-                _logger.LogError("Cannot distribute work items: no device schedulers available");
+                LogNoDeviceSchedulers(_logger);
                 throw new ArgumentException("Device schedulers cannot be null or empty", nameof(deviceQueues));
             }
 

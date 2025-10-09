@@ -11,6 +11,7 @@ using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using KernelValidationResult = DotCompute.Abstractions.Debugging.KernelValidationResult;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Debugging;
 
@@ -18,8 +19,15 @@ namespace DotCompute.Core.Debugging;
 /// Handles report generation and metrics for kernel debugging operations.
 /// Provides comprehensive reporting capabilities and result comparison.
 /// </summary>
-internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) : IDisposable
+internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> logger) : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 16001, Level = MsLogLevel.Information, Message = "Comparing results between {Backend1} and {Backend2}")]
+    private static partial void LogResultComparison(ILogger logger, string backend1, string backend2);
+
+    #endregion
+
     private readonly ILogger<KernelDebugReporter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private DebugServiceOptions _options = new();
     private bool _disposed;
@@ -46,8 +54,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
         ArgumentNullException.ThrowIfNull(result1);
         ArgumentNullException.ThrowIfNull(result2);
 
-        _logger.LogInformation("Comparing results between {backend1} and {backend2}",
-            result1.BackendType, result2.BackendType);
+        LogResultComparison(_logger, result1.BackendType, result2.BackendType);
 
         try
         {
@@ -447,7 +454,7 @@ internal sealed class KernelDebugReporter(ILogger<KernelDebugReporter> logger) :
                 {
                     var execTime = result.Timings?.TotalTimeMs ?? 0;
                     var memUsage = GetMemoryUsage(result);
-                    csv.AppendLine($"{result.KernelName},{result.BackendType},{result.Success}," +
+                    _ = csv.AppendLine(CultureInfo.InvariantCulture, $"{result.KernelName},{result.BackendType},{result.Success}," +
                                  $"{execTime},{memUsage}");
                 }
             }

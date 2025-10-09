@@ -22,6 +22,12 @@ public sealed partial class SystemInfoManager : IDisposable
     private SystemInfo? _cachedInfo;
     private volatile bool _isMonitoring;
 
+    [GeneratedRegex(@"(\d+) bytes")]
+    private static partial Regex PageSizeBytesRegex();
+
+    [GeneratedRegex(@"(\d+)\.")]
+    private static partial Regex MacOSPagesRegex();
+
     // LoggerMessage delegates for high-performance logging (Event ID range: 17000-17099)
     private static readonly Action<ILogger, Exception?> _logWindowsMemoryWarning =
         LoggerMessage.Define(
@@ -431,7 +437,7 @@ public sealed partial class SystemInfoManager : IDisposable
                 if (match.Success)
                 {
                     var key = match.Groups[1].Value;
-                    var value = long.Parse(match.Groups[2].Value) * 1024; // Convert KB to bytes
+                    var value = long.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) * 1024; // Convert KB to bytes
                     memValues[key] = value;
                 }
             }
@@ -502,10 +508,10 @@ public sealed partial class SystemInfoManager : IDisposable
             {
                 if (line.Contains("page size of", StringComparison.OrdinalIgnoreCase))
                 {
-                    var match = Regex.Match(line, @"(\d+) bytes");
+                    var match = PageSizeBytesRegex().Match(line);
                     if (match.Success)
                     {
-                        pageSize = long.Parse(match.Groups[1].Value);
+                        pageSize = long.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                     }
                 }
                 else if (line.Contains("Pages free:", StringComparison.OrdinalIgnoreCase))
@@ -868,8 +874,8 @@ public sealed partial class SystemInfoManager : IDisposable
     /// </summary>
     private static long ParseMacOSPages(string line)
     {
-        var match = Regex.Match(line, @"(\d+)\.");
-        return match.Success ? long.Parse(match.Groups[1].Value) : 0;
+        var match = MacOSPagesRegex().Match(line);
+        return match.Success ? long.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
     }
 
     /// <summary>

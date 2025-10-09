@@ -9,12 +9,12 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for machine learning inference using kernel chains.
 /// Demonstrates AI/ML workloads with GPU acceleration.
 /// </summary>
-public static class MLInferenceService
+public class MLInferenceService
 {
     /// <summary>
     /// Performs ML inference using optimized kernel chains.
     /// </summary>
     /// <param name="input">Input data for prediction</param>
     /// <returns>ML prediction result</returns>
-    public static async Task<MLPrediction> PredictAsync(MLInputData input) => await KernelChainExamples.MachineLearningInferenceExampleAsync(input);
+    public async Task<MLPrediction> PredictAsync(MLInputData input) => await KernelChainExamples.MachineLearningInferenceExampleAsync(input);
 }

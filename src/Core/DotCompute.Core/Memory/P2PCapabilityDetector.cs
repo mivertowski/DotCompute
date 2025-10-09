@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 using System;
 using System.Globalization;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory
 {
@@ -13,8 +14,15 @@ namespace DotCompute.Core.Memory
     /// <summary>
     /// Detects and manages P2P capabilities between accelerator devices.
     /// </summary>
-    public sealed class P2PCapabilityDetector(ILogger logger) : IAsyncDisposable
+    public sealed partial class P2PCapabilityDetector(ILogger logger) : IAsyncDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 14601, Level = MsLogLevel.Warning, Message = "Failed to query {Vendor} device capabilities")]
+        private static partial void LogCapabilityQueryFailed(ILogger logger, string vendor, Exception ex);
+
+        #endregion
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private bool _disposed;
 
@@ -411,7 +419,7 @@ namespace DotCompute.Core.Memory
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to query {Vendor} device capabilities", vendor);
+                LogCapabilityQueryFailed(_logger, vendor.ToString(), ex);
                 throw;
             }
         }

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Memory.P2P
 {
@@ -12,8 +13,18 @@ namespace DotCompute.Core.Memory.P2P
     /// P2P Capability Matrix that maintains comprehensive topology information
     /// and provides fast lookups for device-to-device capabilities.
     /// </summary>
-    public sealed class P2PCapabilityMatrix : IAsyncDisposable
+    public sealed partial class P2PCapabilityMatrix : IAsyncDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 14801, Level = MsLogLevel.Trace, Message = "Checking for expired P2P capabilities")]
+        private static partial void LogCheckingExpiredCapabilities(ILogger logger);
+
+        [LoggerMessage(EventId = 14802, Level = MsLogLevel.Warning, Message = "Error during capability refresh")]
+        private static partial void LogCapabilityRefreshError(ILogger logger, Exception ex);
+
+        #endregion
+
         private readonly ILogger _logger;
         private readonly P2PCapabilityDetector _detector;
         private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, P2PConnectionCapability>> _matrix;
@@ -822,11 +833,11 @@ namespace DotCompute.Core.Memory.P2P
             {
                 // Background task to refresh expired capabilities
                 // In a real implementation, this would check timestamps and refresh expired entries - TODO
-                _logger.LogTrace("Checking for expired P2P capabilities");
+                LogCheckingExpiredCapabilities(_logger);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during capability refresh");
+                LogCapabilityRefreshError(_logger, ex);
             }
         }
         /// <summary>

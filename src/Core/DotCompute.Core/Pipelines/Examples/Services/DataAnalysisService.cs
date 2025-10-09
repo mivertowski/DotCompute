@@ -7,12 +7,12 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// Service for data analysis using kernel chains.
 /// Demonstrates high-performance data processing workflows.
 /// </summary>
-public static class DataAnalysisService
+public class DataAnalysisService
 {
     /// <summary>
     /// Analyzes data using parallel processing kernel chains.
     /// </summary>
     /// <param name="data">Raw data to analyze</param>
     /// <returns>Analyzed data results</returns>
-    public static async Task<float[]> AnalyzeDataAsync(float[] data) => await KernelChainExamples.ParallelDataProcessingExampleAsync(data);
+    public async Task<float[]> AnalyzeDataAsync(float[] data) => await KernelChainExamples.ParallelDataProcessingExampleAsync(data);
 }

@@ -12,9 +12,15 @@ namespace DotCompute.Core.Compute.Parsing
     /// OpenCL kernel parser that identifies kernel types and extracts parameters.
     /// Analyzes OpenCL kernel source code to determine optimization strategies and parameter information.
     /// </summary>
-    internal class OpenCLKernelParser(ILogger logger)
+    internal partial class OpenCLKernelParser(ILogger logger)
     {
         private readonly ILogger _logger = logger;
+
+        [GeneratedRegex(@"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase)]
+        private static partial Regex KernelSignatureRegex();
+
+        [GeneratedRegex(@"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase)]
+        private static partial Regex ParameterRegex();
 
         /// <summary>
         /// Patterns for detecting different kernel types based on source code analysis.
@@ -85,11 +91,11 @@ namespace DotCompute.Core.Compute.Parsing
             var parameters = new List<KernelParameter>();
 
             // Extract function signature parameters
-            var signatureMatch = Regex.Match(kernelSource, @"__kernel\s+void\s+\w+\s*\(([^)]+)\)", RegexOptions.IgnoreCase);
+            var signatureMatch = KernelSignatureRegex().Match(kernelSource);
             if (signatureMatch.Success)
             {
                 var paramString = signatureMatch.Groups[1].Value;
-                var paramMatches = Regex.Matches(paramString, @"(__global\s+(?:const\s+)?(\w+\*?)\s+(\w+))|(\w+\s+(\w+))", RegexOptions.IgnoreCase);
+                var paramMatches = ParameterRegex().Matches(paramString);
 
                 foreach (Match match in paramMatches)
                 {

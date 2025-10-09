@@ -687,11 +687,12 @@ namespace DotCompute.Core.Pipelines
 
         private static bool HasDependencyCycles(IEnumerable<IPipelineStage> stages)
         {
-            var stageMap = stages.ToDictionary(s => s.Id);
+            var stagesList = stages.ToList();
+            var stageMap = stagesList.ToDictionary(s => s.Id);
             var visited = new HashSet<string>();
             var recursionStack = new HashSet<string>();
 
-            foreach (var stage in stages)
+            foreach (var stage in stagesList)
             {
                 if (!visited.Contains(stage.Id))
                 {

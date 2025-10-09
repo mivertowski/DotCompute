@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using System.Collections.Concurrent;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Execution.Scheduling;
 
@@ -12,8 +13,15 @@ namespace DotCompute.Core.Execution.Scheduling;
 /// Production-grade device performance estimator that uses historical data, device capabilities,
 /// and machine learning models to predict optimal device assignments for kernel execution.
 /// </summary>
-internal class DevicePerformanceEstimator
+internal partial class DevicePerformanceEstimator
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 11001, Level = MsLogLevel.Debug, Message = "Updated performance metrics for {Kernel} on {Device}: {ThroughputMBps:F2} MB/s")]
+    private static partial void LogPerformanceMetricsUpdated(ILogger logger, string kernel, string device, double throughputMBps);
+
+    #endregion
+
     private readonly ConcurrentDictionary<string, PerformanceHistory> _performanceHistory = new();
     private readonly ConcurrentDictionary<string, DeviceCapabilities> _deviceCapabilities = new();
     private readonly ConcurrentDictionary<string, double> _devicePerformanceScores = new();
@@ -176,8 +184,10 @@ internal class DevicePerformanceEstimator
             UpdateKernelModel(kernelName, history);
         }
 
-        _logger?.LogDebug("Updated performance metrics for {Kernel} on {Device}: {Throughput:F2} MB/s",
-            kernelName, device.Info.Name, throughput / (1024 * 1024));
+        if (_logger != null)
+        {
+            LogPerformanceMetricsUpdated(_logger, kernelName, device.Info.Name, throughput / (1024 * 1024));
+        }
     }
 
     /// <summary>

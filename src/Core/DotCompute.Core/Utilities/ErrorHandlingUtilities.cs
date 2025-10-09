@@ -19,7 +19,7 @@ namespace DotCompute.Core.Utilities;
 /// across all backend implementations. Provides consistent error classification,
 /// logging, and recovery strategies with production-grade reliability.
 /// </summary>
-public static class ErrorHandlingUtilities
+public static partial class ErrorHandlingUtilities
 {
     private static readonly ConcurrentDictionary<Type, ErrorClassification> ErrorClassificationCache = new();
 
@@ -41,6 +41,9 @@ public static class ErrorHandlingUtilities
             MsLogLevel.Warning,
             new EventId(20002, nameof(LogRetryAttempt)),
             "Operation {Operation} failed on attempt {Attempt}/{MaxAttempts}, retrying in {Delay}ms. Error: {Error}");
+
+    [LoggerMessage(EventId = 20003, Level = MsLogLevel.Error, Message = "{ErrorDetails}")]
+    private static partial void LogDetailedError(ILogger logger, string errorDetails);
 
     // Wrapper methods
     private static void LogErrorWithLevel(ILogger logger, LogLevel logLevel, Exception? exception)
@@ -465,20 +468,20 @@ public static class ErrorHandlingUtilities
     private static void LogDetailedErrorContext(ILogger logger, ErrorContext errorContext)
     {
         var details = new StringBuilder();
-        _ = details.AppendLine($"Detailed Error Context for {errorContext.ErrorId}:");
-        _ = details.AppendLine($"  Operation: {errorContext.Operation}");
-        _ = details.AppendLine($"  Backend: {errorContext.BackendType}");
-        _ = details.AppendLine($"  Classification: {errorContext.Classification}");
-        _ = details.AppendLine($"  Severity: {errorContext.Severity}");
-        _ = details.AppendLine($"  Timestamp: {errorContext.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"Detailed Error Context for {errorContext.ErrorId}:");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Operation: {errorContext.Operation}");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Backend: {errorContext.BackendType}");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Classification: {errorContext.Classification}");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Severity: {errorContext.Severity}");
+        _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Timestamp: {errorContext.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC");
 
         if (errorContext.InnerExceptions.Count > 0)
         {
-            _ = details.AppendLine($"  Inner Exceptions ({errorContext.InnerExceptions.Count}):");
+            _ = details.AppendLine(CultureInfo.InvariantCulture, $"  Inner Exceptions ({errorContext.InnerExceptions.Count}):");
             for (var i = 0; i < errorContext.InnerExceptions.Count; i++)
             {
                 var inner = errorContext.InnerExceptions[i];
-                _ = details.AppendLine($"    {i + 1}. {inner.GetType().Name}: {inner.Message}");
+                _ = details.AppendLine(CultureInfo.InvariantCulture, $"    {i + 1}. {inner.GetType().Name}: {inner.Message}");
             }
         }
 
@@ -487,11 +490,11 @@ public static class ErrorHandlingUtilities
             _ = details.AppendLine("  Additional Context:");
             foreach (var kvp in errorContext.AdditionalContext)
             {
-                _ = details.AppendLine($"    {kvp.Key}: {kvp.Value}");
+                _ = details.AppendLine(CultureInfo.InvariantCulture, $"    {kvp.Key}: {kvp.Value}");
             }
         }
 
-        logger.LogError(details.ToString());
+        LogDetailedError(logger, details.ToString());
     }
 
     private static TimeSpan CalculateRetryDelay(TimeSpan baseDelay, int attemptNumber)

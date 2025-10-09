@@ -22,7 +22,7 @@ namespace DotCompute.Core.Execution.Optimization
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="logger"/> or <paramref name="performanceMonitor"/> is null.
     /// </exception>
-    public sealed class ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
+    public sealed partial class ExecutionPlanOptimizer(ILogger logger, PerformanceMonitor performanceMonitor)
     {
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
@@ -121,18 +121,31 @@ namespace DotCompute.Core.Execution.Optimization
                 switch (deviceType)
                 {
                     case "GPU":
-                        _logger.LogTrace("Applying GPU-specific optimizations for device {DeviceId}", device.Info.Id);
+                        LogApplyingGpuOptimizations(_logger, device.Info.Id);
                         break;
                     case "CPU":
-                        _logger.LogTrace("Applying CPU-specific optimizations for device {DeviceId}", device.Info.Id);
+                        LogApplyingCpuOptimizations(_logger, device.Info.Id);
                         break;
                     case "TPU":
-                        _logger.LogTrace("Applying TPU-specific optimizations for device {DeviceId}", device.Info.Id);
+                        LogApplyingTpuOptimizations(_logger, device.Info.Id);
                         break;
                 }
             }
 
             await ValueTask.CompletedTask;
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 12001, Level = LogLevel.Trace, Message = "Applying GPU-specific optimizations for device {DeviceId}")]
+        private static partial void LogApplyingGpuOptimizations(ILogger logger, string deviceId);
+
+        [LoggerMessage(EventId = 12002, Level = LogLevel.Trace, Message = "Applying CPU-specific optimizations for device {DeviceId}")]
+        private static partial void LogApplyingCpuOptimizations(ILogger logger, string deviceId);
+
+        [LoggerMessage(EventId = 12003, Level = LogLevel.Trace, Message = "Applying TPU-specific optimizations for device {DeviceId}")]
+        private static partial void LogApplyingTpuOptimizations(ILogger logger, string deviceId);
+
+        #endregion
     }
 }

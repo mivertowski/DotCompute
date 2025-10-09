@@ -7,6 +7,8 @@ using DotCompute.Core.Execution.Plans;
 using DotCompute.Core.Execution.Pipeline;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
 namespace DotCompute.Core.Execution.Analysis
 {
     /// <summary>
@@ -22,8 +24,18 @@ namespace DotCompute.Core.Execution.Analysis
     /// </remarks>
     /// <param name="logger">The logger instance for diagnostic information.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-    public sealed class DependencyAnalyzer(ILogger logger)
+    public sealed partial class DependencyAnalyzer(ILogger logger)
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(EventId = 10004, Level = MsLogLevel.Trace, Message = "Found data dependency between input {InputIndex} and output {OutputIndex}")]
+        private static partial void LogDataDependency(ILogger logger, int inputIndex, int outputIndex);
+
+        [LoggerMessage(EventId = 10005, Level = MsLogLevel.Trace, Message = "Found tensor dependency: Layer {FromLayer} -> Layer {ToLayer} via tensor {TensorName}")]
+        private static partial void LogTensorDependency(ILogger logger, int fromLayer, int toLayer, string tensorName);
+
+        #endregion
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
@@ -62,7 +74,7 @@ namespace DotCompute.Core.Execution.Analysis
                     if (BuffersOverlap(inputBuffers[i], outputBuffers[j]))
                     {
                         graph.AddDependency(i, j, DependencyType.DataHazard);
-                        _logger.LogTrace("Found data dependency between input {InputIndex} and output {OutputIndex}", i, j);
+                        LogDataDependency(_logger, i, j);
                     }
                 }
             }
@@ -198,8 +210,7 @@ namespace DotCompute.Core.Execution.Analysis
                     if (inputTensors.Any(input => input.Name == outputTensor.Name))
                     {
                         graph.AddDependency(otherLayer.LayerId, layer.LayerId, DependencyType.DataFlow);
-                        _logger.LogTrace("Found tensor dependency: Layer {FromLayer} -> Layer {ToLayer} via tensor {TensorName}",
-                            otherLayer.LayerId, layer.LayerId, outputTensor.Name);
+                        LogTensorDependency(_logger, otherLayer.LayerId, layer.LayerId, outputTensor.Name);
                     }
                 }
             }

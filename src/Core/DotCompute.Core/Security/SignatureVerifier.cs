@@ -162,6 +162,33 @@ public sealed partial class SignatureVerifier : IDisposable
     private static void LogVerifierDisposed(ILogger logger)
         => _logVerifierDisposed(logger, null);
 
+    private static readonly Action<ILogger, string, Exception?> _logRsaVerificationWarning =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18713, nameof(LogRsaVerificationWarning)),
+            "RSA signature verification failed for key {KeyId}");
+
+    private static void LogRsaVerificationWarning(ILogger logger, string keyId, Exception exception)
+        => _logRsaVerificationWarning(logger, keyId, exception);
+
+    private static readonly Action<ILogger, string, Exception?> _logEcdsaVerificationWarning =
+        LoggerMessage.Define<string>(
+            MsLogLevel.Warning,
+            new EventId(18714, nameof(LogEcdsaVerificationWarning)),
+            "ECDSA signature verification failed for key {KeyId}");
+
+    private static void LogEcdsaVerificationWarning(ILogger logger, string keyId, Exception exception)
+        => _logEcdsaVerificationWarning(logger, keyId, exception);
+
+    private static readonly Action<ILogger, Exception?> _logCacheCleanupError =
+        LoggerMessage.Define(
+            MsLogLevel.Warning,
+            new EventId(18715, nameof(LogCacheCleanupError)),
+            "Error during signature verification cache cleanup");
+
+    private static void LogCacheCleanupError(ILogger logger, Exception exception)
+        => _logCacheCleanupError(logger, exception);
+
     /// <summary>
     /// Generates an RSA key pair for signing operations
     /// </summary>
@@ -496,7 +523,7 @@ public sealed partial class SignatureVerifier : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"RSA signature verification failed for key {keyContainer.Identifier}");
+                LogRsaVerificationWarning(_logger, keyContainer.Identifier, ex);
                 return new SignatureVerificationResult
                 {
                     IsValid = false,
@@ -549,7 +576,7 @@ public sealed partial class SignatureVerifier : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"ECDSA signature verification failed for key {keyContainer.Identifier}");
+                LogEcdsaVerificationWarning(_logger, keyContainer.Identifier, ex);
                 return new SignatureVerificationResult
                 {
                     IsValid = false,
@@ -656,7 +683,7 @@ public sealed partial class SignatureVerifier : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during signature verification cache cleanup");
+            LogCacheCleanupError(_logger, ex);
         }
     }
     /// <summary>
