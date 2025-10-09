@@ -378,15 +378,11 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
     {
         ThrowIfDisposed();
 
-        var timeoutCts = timeout == default ?
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken) :
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
+        var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         if (timeout != default)
         {
             timeoutCts.CancelAfter(timeout);
         }
-
 
         try
         {
@@ -505,6 +501,13 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     public TResource Resource => _resource;
 
     /// <summary>
+    /// Converts the pooled resource to the underlying resource type.
+    /// </summary>
+    /// <param name="pooled">The pooled resource.</param>
+    /// <returns>The underlying resource.</returns>
+    public static TResource ToTResource(PooledResource<TResource> pooled) => pooled._resource;
+
+    /// <summary>
     /// Implicitly converts to the resource type.
     /// </summary>
     public static implicit operator TResource(PooledResource<TResource> pooled) => pooled._resource;
@@ -513,6 +516,45 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// </summary>
 
     public void Dispose() => _pool?.Return(_resource);
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>true if the specified object is equal to the current instance; otherwise, false.</returns>
+    public override bool Equals(object? obj) => obj is PooledResource<TResource> other && Equals(other);
+
+    /// <summary>
+    /// Determines whether the specified PooledResource is equal to the current instance.
+    /// </summary>
+    /// <param name="other">The PooledResource to compare with the current instance.</param>
+    /// <returns>true if the specified PooledResource is equal to the current instance; otherwise, false.</returns>
+    public bool Equals(PooledResource<TResource> other) =>
+        ReferenceEquals(_resource, other._resource) && ReferenceEquals(_pool, other._pool);
+
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
+    public override int GetHashCode() => HashCode.Combine(_resource, _pool);
+
+    /// <summary>
+    /// Determines whether two specified PooledResource instances are equal.
+    /// </summary>
+    /// <param name="left">The first PooledResource to compare.</param>
+    /// <param name="right">The second PooledResource to compare.</param>
+    /// <returns>true if left and right are equal; otherwise, false.</returns>
+    public static bool operator ==(PooledResource<TResource> left, PooledResource<TResource> right) =>
+        left.Equals(right);
+
+    /// <summary>
+    /// Determines whether two specified PooledResource instances are not equal.
+    /// </summary>
+    /// <param name="left">The first PooledResource to compare.</param>
+    /// <param name="right">The second PooledResource to compare.</param>
+    /// <returns>true if left and right are not equal; otherwise, false.</returns>
+    public static bool operator !=(PooledResource<TResource> left, PooledResource<TResource> right) =>
+        !left.Equals(right);
 }
 
 /// <summary>

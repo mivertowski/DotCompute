@@ -84,7 +84,7 @@ internal partial class DevicePerformanceEstimator
         var performanceKey = GetPerformanceKey(kernelName, device);
 
         // Try to get historical performance data
-        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history != null && history.Measurements.Count() > 0)
+        if (_performanceHistory.TryGetValue(performanceKey, out var history) && history != null && history.Measurements.Any())
         {
             return EstimateFromHistoricalData(history!, dataSize);
         }
@@ -825,7 +825,7 @@ internal partial class DevicePerformanceEstimator
         /// Gets or sets the sample count.
         /// </summary>
         /// <value>The sample count.</value>
-        public int SampleCount { get; set; } = 0;
+        public int SampleCount { get; set; }
     }
 
     #endregion

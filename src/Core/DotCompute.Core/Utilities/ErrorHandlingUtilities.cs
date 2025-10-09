@@ -122,8 +122,6 @@ public static partial class ErrorHandlingUtilities
         ErrorContext errorContext,
         string? customMessage = null)
     {
-        var message = customMessage ?? $"Error in {errorContext.Operation}: {errorContext.Exception.Message}";
-
         var logLevel = errorContext.Severity switch
         {
             ErrorSeverity.Critical => LogLevel.Critical,

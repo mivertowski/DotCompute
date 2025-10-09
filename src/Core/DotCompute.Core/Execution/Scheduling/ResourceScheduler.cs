@@ -462,9 +462,8 @@ namespace DotCompute.Core.Execution.Scheduling
 
                     // Update the fallback device's load
 
-                    if (deviceLoads.ContainsKey(fallbackDevice))
+                    if (deviceLoads.TryGetValue(fallbackDevice, out var currentLoad))
                     {
-                        var currentLoad = deviceLoads[fallbackDevice];
                         deviceLoads[fallbackDevice] = (
                             currentLoad.memory + layer.MemoryRequirementBytes,
                             currentLoad.compute + layer.ComputeRequirementFLOPS

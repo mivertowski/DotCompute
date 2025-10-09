@@ -90,7 +90,7 @@ public class AdaptiveOptimizer
         if (kernelProfile != null)
         {
             var kernelCharacteristics = AnalyzeKernelCharacteristics(kernelProfile);
-            if (kernelCharacteristics.IsMemoryBound && recommendedStrategy != ExecutionStrategyType.PipelineParallel)
+            if (kernelCharacteristics.IsMemoryBound)
             {
                 reasoning += "; Consider pipeline parallelism for memory-bound kernels";
             }

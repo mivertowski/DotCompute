@@ -36,6 +36,9 @@ namespace DotCompute.Core.Pipelines.Examples
 
         #endregion
 
+        // Sample data for examples
+        private static readonly int[] _sampleSortArray = [3, 1, 4, 1, 5, 9];
+
         /// <summary>
         /// Example: Simple sequential kernel chain for image processing.
         /// Demonstrates basic kernel chaining with error handling.
@@ -263,16 +266,16 @@ namespace DotCompute.Core.Pipelines.Examples
         public static async Task QuickOperationsExampleAsync()
         {
             // Simple one-shot kernel execution
-            var result1 = await KernelChain.QuickAsync<float[]>("GenerateRandomNumbers", 1000);
+            _ = await KernelChain.QuickAsync<float[]>("GenerateRandomNumbers", 1000);
 
             // Quick execution with backend preference
-            var result2 = await KernelChain.OnBackend("CUDA")
-                .Kernel("MatrixMultiply", new float[,] { { 1, 2 }, { 3, 4 } }, new float[,] { { 5, 6 }, { 7, 8 } })
-                .ExecuteAsync<float[,]>();
+            _ = await KernelChain.OnBackend("CUDA")
+                .Kernel("MatrixMultiply", new float[][] { new float[] { 1, 2 }, new float[] { 3, 4 } }, new float[][] { new float[] { 5, 6 }, new float[] { 7, 8 } })
+                .ExecuteAsync<float[][]>();
 
             // Quick execution with profiling
-            var result3 = await KernelChain.WithProfiling("QuickTest")
-                .Kernel("SortArray", new int[] { 3, 1, 4, 1, 5, 9 })
+            _ = await KernelChain.WithProfiling("QuickTest")
+                .Kernel("SortArray", _sampleSortArray)
                 .ExecuteAsync<int[]>();
         }
 
@@ -307,9 +310,9 @@ namespace DotCompute.Core.Pipelines.Examples
             var diagnostics = KernelChain.GetDiagnostics();
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-            LogKernelChainDiagnostics(logger, diagnostics.ToString());
+            LogKernelChainDiagnostics(logger, diagnostics?.ToString() ?? "No diagnostics available");
 
-            if (diagnostics.ContainsKey("IsConfigured") && (bool)diagnostics["IsConfigured"])
+            if (diagnostics != null && diagnostics.ContainsKey("IsConfigured") && (bool)diagnostics["IsConfigured"])
             {
                 LogKernelChainInitialized(logger);
             }

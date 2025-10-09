@@ -499,7 +499,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
         return new SecureKeyContainer(KeyType.AES, keyBytes, identifier, purpose, keySize);
     }
 
-    private SecureKeyContainer GenerateRsaKey(int keySize, string identifier, string purpose)
+    private static SecureKeyContainer GenerateRsaKey(int keySize, string identifier, string purpose)
     {
         using var rsa = RSA.Create(keySize);
         var privateKey = rsa.ExportPkcs8PrivateKey();
@@ -507,7 +507,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
         return new SecureKeyContainer(KeyType.RSA, privateKey, identifier, purpose, keySize);
     }
 
-    private SecureKeyContainer GenerateEcdsaKey(int keySize, string identifier, string purpose)
+    private static SecureKeyContainer GenerateEcdsaKey(int keySize, string identifier, string purpose)
     {
         var curve = keySize switch
         {
@@ -633,9 +633,6 @@ internal sealed partial class CryptographicKeyManager : IDisposable
         }
     }
 }
-/// <summary>
-/// An key export format enumeration.
-/// </summary>
 
 // Supporting classes and enums
 /// <summary>

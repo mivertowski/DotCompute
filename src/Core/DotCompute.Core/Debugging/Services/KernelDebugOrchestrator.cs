@@ -568,7 +568,7 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
                 ExecutionCount = determinismResult.RunCount,
                 AllResults = [], // Not available in core result
                 MaxVariation = 0.0f, // Not available in core result
-                NonDeterminismSource = determinismResult.NonDeterministicComponents.FirstOrDefault(),
+                NonDeterminismSource = determinismResult.NonDeterministicComponents.Count > 0 ? determinismResult.NonDeterministicComponents[0] : null,
                 Recommendations = determinismResult.Recommendations
             };
 
@@ -1009,7 +1009,7 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
         };
 
         // Populate per-backend statistics
-        foreach (var (backendType, accelerator) in _accelerators)
+        foreach (var (backendType, _) in _accelerators)
         {
             var executionStats = _profiler.GetExecutionStatistics($"*_{backendType}"); // Would need proper kernel name tracking
 
@@ -1169,7 +1169,7 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
             MaxVariation = 0.0f, // Not available in core result
             VariabilityScore = coreResult.VariabilityScore,
             NonDeterministicComponents = [.. coreResult.NonDeterministicComponents],
-            NonDeterminismSource = coreResult.NonDeterministicComponents.FirstOrDefault(),
+            NonDeterminismSource = coreResult.NonDeterministicComponents.Count > 0 ? coreResult.NonDeterministicComponents[0] : null,
             Recommendations = [.. coreResult.Recommendations],
             AllResults = [], // Not available in core result
             StatisticalAnalysis = []

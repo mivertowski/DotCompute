@@ -501,8 +501,8 @@ public sealed partial class DebugMetricsCollector : IDisposable
             _ => TrendDirection.Stable
         };
 
-        var firstValue = points.First().Value;
-        var lastValue = points.Last().Value;
+        var firstValue = points[0].Value;
+        var lastValue = points[^1].Value;
         var averageChange = (lastValue - firstValue) / points.Count;
         var percentChange = firstValue != 0 ? (lastValue - firstValue) / firstValue : 0;
 

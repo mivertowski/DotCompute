@@ -16,5 +16,7 @@ public class MLInferenceService
     /// </summary>
     /// <param name="input">Input data for prediction</param>
     /// <returns>ML prediction result</returns>
+#pragma warning disable CA1822 // Mark members as static - Intentionally instance method for DI registration
     public async Task<MLPrediction> PredictAsync(MLInputData input) => await KernelChainExamples.MachineLearningInferenceExampleAsync(input);
+#pragma warning restore CA1822 // Mark members as static
 }

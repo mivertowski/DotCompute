@@ -23,7 +23,7 @@ namespace DotCompute.Core.Execution
         private readonly ConcurrentQueue<WorkItem<T>> _workQueue = new();
         private readonly SemaphoreSlim _workAvailable = new(0);
         private readonly object _statsLock = new();
-        private DeviceQueueStatistics _statistics = new();
+        private readonly DeviceQueueStatistics _statistics = new();
         private bool _disposed;
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace DotCompute.Core.Execution
                         _statistics.TotalDequeued++;
                     }
 
-                    LogWorkItemDequeued(_logger, workItem.Id, _device.Info.Id);
+                    LogWorkItemDequeued(_logger, workItem.Id, _device.Info.Id.ToString());
 
                     return workItem;
                 }
@@ -160,7 +160,7 @@ namespace DotCompute.Core.Execution
                     _statistics.TotalStolen++;
                 }
 
-                LogWorkItemStolen(_logger, workItem.Id, _device.Info.Id);
+                LogWorkItemStolen(_logger, workItem.Id, _device.Info.Id.ToString());
 
                 return workItem;
             }
@@ -222,12 +222,11 @@ namespace DotCompute.Core.Execution
         private static partial void LogWorkItemEnqueued(ILogger logger, int workItemId, string deviceId);
 
         [LoggerMessage(EventId = 10002, Level = MsLogLevel.Trace, Message = "Dequeued work item {WorkItemId} from device {DeviceId}")]
-        private static partial void LogWorkItemDequeued(ILogger logger, int workItemId, Guid deviceId);
+        private static partial void LogWorkItemDequeued(ILogger logger, int workItemId, string deviceId);
 
         [LoggerMessage(EventId = 10003, Level = MsLogLevel.Trace, Message = "Work item {WorkItemId} stolen from device {DeviceId}")]
-        private static partial void LogWorkItemStolen(ILogger logger, int workItemId, Guid deviceId);
+        private static partial void LogWorkItemStolen(ILogger logger, int workItemId, string deviceId);
 
         #endregion
     }
-
 }

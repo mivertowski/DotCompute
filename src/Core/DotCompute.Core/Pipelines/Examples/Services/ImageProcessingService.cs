@@ -14,5 +14,7 @@ public class ImageProcessingService
     /// </summary>
     /// <param name="imageData">Raw image data to process</param>
     /// <returns>Processed image data</returns>
+#pragma warning disable CA1822 // Mark members as static - Intentionally instance method for DI registration
     public async Task<byte[]> ProcessImageAsync(byte[] imageData) => await KernelChainExamples.ImageProcessingChainExampleAsync(imageData);
+#pragma warning restore CA1822 // Mark members as static
 }

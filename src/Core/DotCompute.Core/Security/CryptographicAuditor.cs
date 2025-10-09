@@ -18,6 +18,7 @@ namespace DotCompute.Core.Security;
 /// </summary>
 internal sealed partial class CryptographicAuditor : IDisposable
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly ILogger<CryptographicAuditor> _logger;
     private readonly CryptographicConfiguration _configuration;
     private readonly ConcurrentQueue<SecurityEvent> _auditQueue;
@@ -322,7 +323,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
         var exportContent = format switch
         {
-            AuditExportFormat.Json => JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true }),
+            AuditExportFormat.Json => JsonSerializer.Serialize(events, _jsonOptions),
             AuditExportFormat.Csv => ConvertToCsv(events),
             AuditExportFormat.Xml => ConvertToXml(events),
             _ => throw new NotSupportedException($"Export format not supported: {format}")

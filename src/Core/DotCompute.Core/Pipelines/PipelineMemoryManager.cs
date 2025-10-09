@@ -651,7 +651,7 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0 || length <= 0 || offset + length > parent.ElementCount)
             {
-                throw new ArgumentOutOfRangeException("Invalid view bounds");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view bounds");
             }
 
             Parent = parent;
@@ -673,7 +673,7 @@ namespace DotCompute.Core.Pipelines
         {
             if (offset < 0 || length <= 0 || offset + length > Length)
             {
-                throw new ArgumentOutOfRangeException("Invalid sub-view bounds");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid sub-view bounds");
             }
 
             return new PipelineMemoryView<T>(Parent, Offset + offset, length);
@@ -796,13 +796,15 @@ namespace DotCompute.Core.Pipelines
         {
             if (_isDisposed || memory == null)
             {
-                _ = memory?.DisposeAsync();
+                // Fire and forget disposal - acceptable for cleanup
+                _ = memory?.DisposeAsync().AsTask();
                 return;
             }
 
             if (_pool.Count >= _options.MaxSize)
             {
-                _ = memory.DisposeAsync();
+                // Fire and forget disposal - acceptable for pool overflow
+                _ = memory.DisposeAsync().AsTask();
                 return;
             }
 
@@ -853,7 +855,8 @@ namespace DotCompute.Core.Pipelines
             // Dispose removed entries
             foreach (var entry in entriesToRemove)
             {
-                _ = entry.Memory.DisposeAsync();
+                // Fire and forget disposal - acceptable for cleanup
+                _ = entry.Memory.DisposeAsync().AsTask();
                 lock (_statsLock)
                 {
                     _totalBytesPooled -= entry.SizeInBytes;
@@ -893,7 +896,8 @@ namespace DotCompute.Core.Pipelines
 
             while (_pool.TryDequeue(out var entry))
             {
-                _ = entry.Memory.DisposeAsync();
+                // Fire and forget disposal - acceptable during pool disposal
+                _ = entry.Memory.DisposeAsync().AsTask();
             }
 
             lock (_statsLock)

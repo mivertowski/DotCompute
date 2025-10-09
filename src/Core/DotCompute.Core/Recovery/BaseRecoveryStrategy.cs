@@ -63,13 +63,13 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// <summary>
     /// Determines if this strategy can handle the given error and context.
     /// </summary>
-    public abstract bool CanHandle(Exception error, TContext context);
+    public abstract bool CanHandle(Exception exception, TContext context);
 
     /// <summary>
     /// Performs the actual recovery operation specific to the implementing strategy.
     /// </summary>
     public abstract Task<RecoveryResult> RecoverAsync(
-        Exception error,
+        Exception exception,
         TContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken = default);
@@ -83,14 +83,14 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)] // Ensure proper stack traces for debugging
     public async Task<RecoveryResult> AttemptRecoveryAsync(
-        Exception error,
+        Exception exception,
         TContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
-        ArgumentNullException.ThrowIfNull(error);
+        ArgumentNullException.ThrowIfNull(exception);
         ArgumentNullException.ThrowIfNull(context);
 
 
@@ -100,25 +100,25 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
 
         _ = Interlocked.Increment(ref _totalRecoveryAttempts);
 
-        LogStartingRecoveryAttempt(Logger, error.GetType().Name, GetType().Name);
+        LogStartingRecoveryAttempt(Logger, exception.GetType().Name, GetType().Name);
 
         await _recoveryLock.WaitAsync(cancellationToken);
 
         try
         {
             // Check if we should attempt recovery based on history
-            if (!ShouldAttemptRecovery(error, context, recoveryOptions))
+            if (!ShouldAttemptRecovery(exception, context, recoveryOptions))
             {
-                var result = CreateFailureResult("Recovery skipped due to rate limiting or consecutive failures", error);
+                var result = CreateFailureResult("Recovery skipped due to rate limiting or consecutive failures", exception);
                 RecordRecoveryAttempt(contextKey, result, stopwatch.Elapsed);
                 return result;
             }
 
             // Perform pre-recovery validation and preparation
-            await PrepareForRecoveryAsync(error, context, recoveryOptions, cancellationToken);
+            await PrepareForRecoveryAsync(exception, context, recoveryOptions, cancellationToken);
 
             // Execute the actual recovery
-            var recoveryResult = await ExecuteRecoveryWithRetriesAsync(error, context, recoveryOptions, cancellationToken);
+            var recoveryResult = await ExecuteRecoveryWithRetriesAsync(exception, context, recoveryOptions, cancellationToken);
 
             // Post-recovery validation and cleanup
             await PostRecoveryValidationAsync(recoveryResult, context, cancellationToken);
@@ -132,12 +132,12 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
             if (recoveryResult.Success)
             {
                 _ = Interlocked.Increment(ref _successfulRecoveries);
-                LogRecoverySuccessful(Logger, error.GetType().Name, stopwatch.ElapsedMilliseconds);
+                LogRecoverySuccessful(Logger, exception.GetType().Name, stopwatch.ElapsedMilliseconds);
             }
             else
             {
                 _ = Interlocked.Increment(ref _failedRecoveries);
-                LogRecoveryFailed(Logger, error.GetType().Name, recoveryResult.Message);
+                LogRecoveryFailed(Logger, exception.GetType().Name, recoveryResult.Message);
             }
 
             return recoveryResult;
@@ -145,7 +145,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             stopwatch.Stop();
-            var result = CreateFailureResult("Recovery cancelled", error);
+            var result = CreateFailureResult("Recovery cancelled", exception);
             result.Duration = stopwatch.Elapsed;
             RecordRecoveryAttempt(contextKey, result, stopwatch.Elapsed);
             _ = Interlocked.Increment(ref _failedRecoveries);
@@ -154,10 +154,10 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         catch (Exception recoveryException)
         {
             stopwatch.Stop();
-            LogExceptionDuringRecovery(Logger, recoveryException, error.GetType().Name);
+            LogExceptionDuringRecovery(Logger, recoveryException, exception.GetType().Name);
 
             var result = CreateFailureResult($"Recovery failed with exception: {recoveryException.Message}",
-                error, recoveryException);
+                exception, recoveryException);
             result.Duration = stopwatch.Elapsed;
             RecordRecoveryAttempt(contextKey, result, stopwatch.Elapsed);
             _ = Interlocked.Increment(ref _failedRecoveries);
@@ -173,29 +173,29 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// Executes recovery with configurable retry logic and exponential backoff.
     /// </summary>
     protected virtual async Task<RecoveryResult> ExecuteRecoveryWithRetriesAsync(
-        Exception error,
+        Exception exception,
         TContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken)
     {
         var maxRetries = options.MaxRetryAttempts;
         var baseDelay = options.RetryDelay;
-        var lastException = error;
+        var lastException = exception;
 
         for (var attempt = 1; attempt <= maxRetries + 1; attempt++)
         {
             try
             {
-                LogRecoveryAttempt(Logger, attempt, maxRetries + 1, error.GetType().Name);
+                LogRecoveryAttempt(Logger, attempt, maxRetries + 1, exception.GetType().Name);
 
-                var result = await RecoverAsync(error, context, options, cancellationToken);
+                var result = await RecoverAsync(exception, context, options, cancellationToken);
 
                 if (result.Success || attempt > maxRetries)
                 {
                     return result;
                 }
 
-                lastException = result.Exception ?? error;
+                lastException = result.Exception ?? exception;
             }
             catch (Exception ex)
             {
@@ -221,7 +221,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         // If we get here, all retries failed
         return CreateFailureResult(
             $"Recovery failed after {maxRetries} retries. Last error: {lastException.Message}",
-            error, lastException);
+            exception, lastException);
     }
 
     #endregion
@@ -231,7 +231,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// <summary>
     /// Determines if recovery should be attempted based on history and options.
     /// </summary>
-    protected virtual bool ShouldAttemptRecovery(Exception error, TContext context, RecoveryOptions options)
+    protected virtual bool ShouldAttemptRecovery(Exception exception, TContext context, RecoveryOptions options)
     {
         var contextKey = GetContextKey(context);
 
@@ -257,7 +257,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         }
 
         // Check error-specific conditions
-        return ShouldAttemptRecoveryForError(error, history, options);
+        return ShouldAttemptRecoveryForError(exception, history, options);
     }
 
     /// <summary>
@@ -281,7 +281,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// <summary>
     /// Override for error-specific recovery decision logic.
     /// </summary>
-    protected virtual bool ShouldAttemptRecoveryForError(Exception error, RecoveryAttemptHistory history, RecoveryOptions options)
+    protected virtual bool ShouldAttemptRecoveryForError(Exception exception, RecoveryAttemptHistory history, RecoveryOptions options)
         // Base implementation allows recovery for all errors
         // Override in derived classes for specific error handling
         => true;
@@ -294,7 +294,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// Prepares for recovery - override for strategy-specific preparation.
     /// </summary>
     protected virtual Task PrepareForRecoveryAsync(
-        Exception error,
+        Exception exception,
         TContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken)
@@ -1051,20 +1051,20 @@ public interface IRecoveryStrategy<in TContext> where TContext : class
     /// <summary>
     /// Determines whether handle.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The error.</param>
     /// <param name="context">The context.</param>
     /// <returns>true if the condition is met; otherwise, false.</returns>
-    public bool CanHandle(Exception error, TContext context);
+    public bool CanHandle(Exception exception, TContext context);
     /// <summary>
     /// Gets attempt recovery asynchronously.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The error.</param>
     /// <param name="context">The context.</param>
     /// <param name="options">The options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
     public Task<RecoveryResult> AttemptRecoveryAsync(
-        Exception error,
+        Exception exception,
         TContext context,
         RecoveryOptions? options = null,
         CancellationToken cancellationToken = default);

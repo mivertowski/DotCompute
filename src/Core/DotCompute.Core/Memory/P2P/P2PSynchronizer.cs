@@ -28,12 +28,21 @@ namespace DotCompute.Core.Memory.P2P
                 new EventId(14201, nameof(LogMonitoringError)),
                 "Error in synchronization health monitoring");
 
+        private static readonly Action<ILogger, string, string, int, int, Exception?> _logBarrierArrival =
+            LoggerMessage.Define<string, string, int, int>(
+                MsLogLevel.Trace,
+                new EventId(14202, nameof(LogBarrierArrival)),
+                "Device {DeviceId} arrived at barrier {BarrierId} ({Arrived}/{Expected})");
+
         // Wrapper methods
         private static void LogSyncMonitor(ILogger logger, int activeBarriers, int activeEvents)
             => _logSyncMonitor(logger, activeBarriers, activeEvents, null);
 
         private static void LogMonitoringError(ILogger logger, Exception ex)
             => _logMonitoringError(logger, ex);
+
+        private static void LogBarrierArrival(ILogger logger, string deviceId, string barrierId, int arrived, int expected)
+            => _logBarrierArrival(logger, deviceId, barrierId, arrived, expected, null);
 
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, P2PSyncBarrier> _barriers;

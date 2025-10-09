@@ -56,7 +56,7 @@ public sealed partial class KernelDebugger(ILogger<KernelDebugger> logger, Debug
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_accelerators.TryRemove(name, out var accelerator))
+        if (_accelerators.TryRemove(name, out _))
         {
             LogAcceleratorRemoved(name);
             return true;

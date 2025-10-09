@@ -28,6 +28,7 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
 
     #endregion
 
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly ILogger<KernelDebugReporter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private DebugServiceOptions _options = new();
     private bool _disposed;
@@ -54,7 +55,7 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
         ArgumentNullException.ThrowIfNull(result1);
         ArgumentNullException.ThrowIfNull(result2);
 
-        LogResultComparison(_logger, result1.BackendType, result2.BackendType);
+        LogResultComparison(_logger, result1.BackendType ?? "Unknown", result2.BackendType ?? "Unknown");
 
         try
         {
@@ -298,7 +299,7 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
         {
             return format switch
             {
-                ReportFormat.Json => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }),
+                ReportFormat.Json => JsonSerializer.Serialize(report, _jsonOptions),
                 ReportFormat.Xml => await ExportToXmlAsync(report),
                 ReportFormat.Csv => await ExportToCsvAsync(report),
                 ReportFormat.PlainText => await ExportToTextAsync(report),

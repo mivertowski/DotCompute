@@ -4,7 +4,7 @@ namespace DotCompute.Core.Pipelines.Stages;
 /// Represents a custom synchronization strategy for parallel stage execution.
 /// Provides flexible synchronization patterns beyond standard barrier and async approaches.
 /// </summary>
-public abstract class CustomSyncStrategy
+public abstract class CustomSyncStrategy : IAsyncDisposable
 {
     /// <summary>
     /// Gets the name of this synchronization strategy.
@@ -85,9 +85,8 @@ public abstract class CustomSyncStrategy
     /// <summary>
     /// Performs cleanup and releases any resources held by the strategy.
     /// </summary>
-    /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the cleanup operation.</returns>
-    public virtual Task DisposeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    /// <returns>A ValueTask representing the cleanup operation.</returns>
+    public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -126,11 +125,11 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
     }
 
     /// <inheritdoc />
-    public override Task DisposeAsync(CancellationToken cancellationToken = default)
+    public override ValueTask DisposeAsync()
     {
         _barrier?.Dispose();
         _barrier = null;
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }
 
@@ -182,11 +181,11 @@ public sealed class CountdownSyncStrategy(int requiredCount = 0) : CustomSyncStr
     }
 
     /// <inheritdoc />
-    public override Task DisposeAsync(CancellationToken cancellationToken = default)
+    public override ValueTask DisposeAsync()
     {
         _countdown?.Dispose();
         _countdown = null;
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }
 

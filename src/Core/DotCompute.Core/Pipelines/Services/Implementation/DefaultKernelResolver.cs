@@ -197,9 +197,9 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
             }
 
             // Check cache first
-            if (_kernelCache.ContainsKey(kernelName))
+            if (_kernelCache.TryGetValue(kernelName, out var cachedKernel))
             {
-                return _kernelCache[kernelName] != null;
+                return cachedKernel != null;
             }
 
             // Try to resolve to check existence

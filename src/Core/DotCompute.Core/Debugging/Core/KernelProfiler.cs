@@ -532,7 +532,7 @@ public sealed partial class KernelProfiler(
         {
             ExecutionTimeMs = (long)totalTime.TotalMilliseconds,
             OperationsPerSecond = totalTime.TotalSeconds > 0 ? (int)(1.0 / totalTime.TotalSeconds) : 0,
-            MemoryUsageBytes = tracePoints.LastOrDefault()?.MemoryUsage ?? 0
+            MemoryUsageBytes = tracePoints.Count > 0 ? tracePoints[^1].MemoryUsage : 0
         };
     }
 

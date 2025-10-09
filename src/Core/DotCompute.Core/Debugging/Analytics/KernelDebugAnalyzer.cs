@@ -24,8 +24,8 @@ namespace DotCompute.Core.Debugging.Analytics;
 public sealed partial class KernelDebugAnalyzer(
     ILogger<KernelDebugAnalyzer> logger,
 #pragma warning disable CS9113 // Parameter is captured for future use in advanced analytics features
-    ConcurrentDictionary<string, IAccelerator> _accelerators,
-    KernelDebugProfiler _profiler) : IDisposable
+    ConcurrentDictionary<string, IAccelerator> accelerators,
+    KernelDebugProfiler profiler) : IDisposable
 #pragma warning restore CS9113
 {
     private readonly ILogger<KernelDebugAnalyzer> _logger = logger;
@@ -738,7 +738,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// </summary>
     private static string IdentifyOptimalBackendForInputs(KernelValidationResult validationResult, object[] inputs)
         // Simplified backend selection
-        => validationResult.RecommendedBackend ?? validationResult.BackendsTested.FirstOrDefault() ?? "Unknown";
+        => validationResult.RecommendedBackend ?? (validationResult.BackendsTested.Count > 0 ? validationResult.BackendsTested[0] : null) ?? "Unknown";
 
     /// <summary>
     /// Calculates validation confidence scores.

@@ -247,16 +247,16 @@ namespace DotCompute.Core.Execution
             LogCoordinatorDisposing(_logger);
 
             // Dispose all events and barriers
-            var disposeTasks = new List<ValueTask>();
+            var disposeTasks = new List<Task>();
 
             foreach (var kvp in _events)
             {
-                disposeTasks.Add(kvp.Value.DisposeAsync());
+                disposeTasks.Add(kvp.Value.DisposeAsync().AsTask());
             }
 
             foreach (var kvp in _barriers)
             {
-                disposeTasks.Add(kvp.Value.DisposeAsync());
+                disposeTasks.Add(kvp.Value.DisposeAsync().AsTask());
             }
 
             foreach (var task in disposeTasks)

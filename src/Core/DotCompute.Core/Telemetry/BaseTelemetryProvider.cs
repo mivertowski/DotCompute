@@ -703,7 +703,7 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     /// <summary>
     /// Initializes standard metrics used across all backends.
     /// </summary>
-    protected virtual void InitializeStandardMetrics()
+    protected void InitializeStandardMetrics()
     {
         // Pre-create commonly used metrics to reduce creation overhead
         _ = _counters.TryAdd("operation.timer.started",

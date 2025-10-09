@@ -197,7 +197,7 @@ public sealed class PipelineExecutionContext : DotCompute.Abstractions.Models.Pi
     /// <summary>
     /// Gets or sets the execution priority.
     /// </summary>
-    public int Priority { get; set; } = 0;
+    public int Priority { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the execution has been cancelled.

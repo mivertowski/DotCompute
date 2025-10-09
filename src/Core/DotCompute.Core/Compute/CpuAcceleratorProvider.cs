@@ -218,7 +218,7 @@ namespace DotCompute.Core.Compute
                         {
                             var output = process.StandardOutput.ReadToEnd();
                             var lines = output.Split('\n');
-                            var modelLine = lines.FirstOrDefault(l => !l.StartsWith("#", StringComparison.CurrentCulture) && !string.IsNullOrWhiteSpace(l));
+                            var modelLine = lines.FirstOrDefault(l => !l.StartsWith('#') && !string.IsNullOrWhiteSpace(l));
                             if (!string.IsNullOrWhiteSpace(modelLine))
                             {
                                 return modelLine.Trim();

@@ -465,9 +465,9 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     }
 
     /// <summary>
-    /// Gets memory statistics for this manager.
+    /// Gets refreshed memory statistics for this manager after cleaning up unused buffers.
     /// </summary>
-    public virtual MemoryStatistics GetStatistics()
+    public virtual MemoryStatistics GetRefreshedStatistics()
     {
         CleanupUnusedBuffers();
 
@@ -537,14 +537,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         if (!_disposed)
         {
             // Dispose all active buffers asynchronously
-            var disposeTasks = new List<ValueTask>();
+            var disposeTasks = new List<Task>();
 
 
             foreach (var kvp in _activeBuffers)
             {
                 if (kvp.Value.TryGetTarget(out var buffer))
                 {
-                    disposeTasks.Add(buffer.DisposeAsync());
+                    disposeTasks.Add(buffer.DisposeAsync().AsTask());
                 }
             }
 

@@ -14,5 +14,7 @@ public class DataAnalysisService
     /// </summary>
     /// <param name="data">Raw data to analyze</param>
     /// <returns>Analyzed data results</returns>
+#pragma warning disable CA1822 // Mark members as static - Intentionally instance method for DI registration
     public async Task<float[]> AnalyzeDataAsync(float[] data) => await KernelChainExamples.ParallelDataProcessingExampleAsync(data);
+#pragma warning restore CA1822 // Mark members as static
 }

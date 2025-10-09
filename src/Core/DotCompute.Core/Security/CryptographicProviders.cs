@@ -81,20 +81,14 @@ internal sealed class CryptographicProviders : IDisposable
                 return result;
             }
 
-            // Generate random nonce/IV
-            var nonce = new byte[GetNonceSize(algorithm)];
-            _randomGenerator.GetBytes(nonce);
-
-            // Perform encryption based on algorithm
+            // Perform encryption based on algorithm (nonce/IV generated within each method)
             result = algorithm.ToUpperInvariant() switch
             {
-                "AES-256-GCM" or "AES-192-GCM" => await EncryptAesGcmAsync(data, keyContainer, nonce, associatedData, result),
-                "AES-256-CBC" or "AES-192-CBC" => await EncryptAesCbcAsync(data, keyContainer, nonce, result),
-                "CHACHA20-POLY1305" => await EncryptChaCha20Poly1305Async(data, keyContainer, nonce, associatedData, result),
+                "AES-256-GCM" or "AES-192-GCM" => await EncryptAesGcmAsync(data, keyContainer, associatedData, result),
+                "AES-256-CBC" or "AES-192-CBC" => await EncryptAesCbcAsync(data, keyContainer, result),
+                "CHACHA20-POLY1305" => await EncryptChaCha20Poly1305Async(data, keyContainer, associatedData, result),
                 _ => throw new NotSupportedException($"Algorithm not implemented: {algorithm}")
             };
-
-            result.Nonce = nonce;
             result.IsSuccessful = true;
 
             _logger.LogDebugMessage($"Data encryption completed successfully: Algorithm={algorithm}");
@@ -326,15 +320,17 @@ internal sealed class CryptographicProviders : IDisposable
 
     // Private implementation methods
 
-    private Task<EncryptionResult> EncryptAesGcmAsync(
+    private static Task<EncryptionResult> EncryptAesGcmAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
-        byte[] nonce,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
     {
         using var aes = Aes.Create();
         aes.Key = keyContainer.KeyMaterial.ToArray();
+
+        var nonce = new byte[12]; // 96 bits for GCM
+        RandomNumberGenerator.Fill(nonce);
 
         var tag = new byte[16]; // GCM tag size
         var ciphertext = new byte[data.Length];
@@ -344,32 +340,32 @@ internal sealed class CryptographicProviders : IDisposable
 
         result.EncryptedData = ciphertext;
         result.AuthenticationTag = tag;
+        result.Nonce = nonce;
         return Task.FromResult(result);
     }
 
     private static Task<EncryptionResult> EncryptAesCbcAsync(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
-        byte[] nonce,
         EncryptionResult result)
     {
         using var aes = Aes.Create();
         aes.Key = keyContainer.KeyMaterial.ToArray();
-        aes.IV = nonce;
         aes.Mode = CipherMode.CBC;
         aes.Padding = PaddingMode.PKCS7;
+        aes.GenerateIV(); // Let AES generate a cryptographically random IV
 
         using var encryptor = aes.CreateEncryptor();
         var ciphertext = encryptor.TransformFinalBlock(data.ToArray(), 0, data.Length);
 
         result.EncryptedData = ciphertext;
+        result.Nonce = aes.IV; // Store the generated IV
         return Task.FromResult(result);
     }
 
     private Task<EncryptionResult> EncryptChaCha20Poly1305Async(
         ReadOnlyMemory<byte> data,
         SecureKeyContainer keyContainer,
-        byte[] nonce,
         ReadOnlyMemory<byte>? associatedData,
         EncryptionResult result)
     {
@@ -378,7 +374,7 @@ internal sealed class CryptographicProviders : IDisposable
         throw new NotImplementedException("ChaCha20-Poly1305 implementation pending");
     }
 
-    private Task<DecryptionResult> DecryptAesGcmAsync(
+    private static Task<DecryptionResult> DecryptAesGcmAsync(
         ReadOnlyMemory<byte> encryptedData,
         SecureKeyContainer keyContainer,
         ReadOnlyMemory<byte> nonce,
@@ -418,12 +414,10 @@ internal sealed class CryptographicProviders : IDisposable
         DecryptionResult result)
     {
         using var aes = Aes.Create();
-        aes.Key = keyContainer.KeyMaterial.ToArray();
-        aes.IV = nonce.ToArray();
         aes.Mode = CipherMode.CBC;
         aes.Padding = PaddingMode.PKCS7;
 
-        using var decryptor = aes.CreateDecryptor();
+        using var decryptor = aes.CreateDecryptor(keyContainer.KeyMaterial.ToArray(), nonce.ToArray());
         var plaintext = decryptor.TransformFinalBlock(encryptedData.ToArray(), 0, encryptedData.Length);
 
         result.DecryptedData = plaintext;

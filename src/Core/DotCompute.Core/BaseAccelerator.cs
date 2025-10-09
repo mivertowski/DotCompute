@@ -45,7 +45,6 @@ public abstract partial class BaseAccelerator : IAccelerator
     {
         ArgumentNullException.ThrowIfNull(info);
         ArgumentNullException.ThrowIfNull(memory);
-        ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(logger);
 
 

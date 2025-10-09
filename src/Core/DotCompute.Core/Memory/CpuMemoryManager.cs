@@ -331,7 +331,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer
     /// </summary>
     /// <typeparam name="T">Type of elements to copy.</typeparam>
     /// <param name="source">Source data to copy from.</param>
-    /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+    /// <param name="offset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
@@ -348,7 +348,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer
     /// </summary>
     /// <typeparam name="T">Type of elements to copy.</typeparam>
     /// <param name="destination">Destination memory to copy to.</param>
-    /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+    /// <param name="offset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
@@ -519,7 +519,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <param name="sourceOffset">The source offset.</param>
     /// <param name="destination">The destination.</param>
     /// <param name="destinationOffset">The destination offset.</param>
-    /// <param name="length">The length.</param>
+    /// <param name="count">The count of elements to copy.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
@@ -547,7 +547,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// </summary>
     /// <param name="value">The value.</param>
     /// <param name="offset">The offset.</param>
-    /// <param name="length">The length.</param>
+    /// <param name="count">The count of elements to fill.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
@@ -726,7 +726,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// </summary>
     /// <typeparam name="TSource">Type of elements to copy.</typeparam>
     /// <param name="source">Source data to copy from.</param>
-    /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+    /// <param name="offset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
@@ -744,7 +744,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// </summary>
     /// <typeparam name="TDest">Type of elements to copy.</typeparam>
     /// <param name="destination">Destination memory to copy to.</param>
-    /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+    /// <param name="offset">Offset into this buffer in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
     public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
@@ -924,7 +924,7 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
     /// <param name="sourceOffset">The source offset.</param>
     /// <param name="destination">The destination.</param>
     /// <param name="destinationOffset">The destination offset.</param>
-    /// <param name="length">The length.</param>
+    /// <param name="count">The count of elements to copy.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
@@ -952,7 +952,7 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
     /// </summary>
     /// <param name="value">The value.</param>
     /// <param name="offset">The offset.</param>
-    /// <param name="length">The length.</param>
+    /// <param name="count">The count of elements to fill.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 

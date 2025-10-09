@@ -305,8 +305,7 @@ public sealed partial class CertificateValidator : IDisposable
         CertificateUsage intendedUsage,
         CertificateUsageValidationResult result)
     {
-        var keyUsageExtension = certificate.Extensions["2.5.29.15"] as X509KeyUsageExtension;
-        if (keyUsageExtension == null)
+        if (certificate.Extensions["2.5.29.15"] is not X509KeyUsageExtension keyUsageExtension)
         {
             result.Issues.Add("Certificate does not have Key Usage extension");
             return false;
@@ -328,8 +327,7 @@ public sealed partial class CertificateValidator : IDisposable
         CertificateUsage intendedUsage,
         CertificateUsageValidationResult result)
     {
-        var ekuExtension = certificate.Extensions["2.5.29.37"] as X509EnhancedKeyUsageExtension;
-        if (ekuExtension == null)
+        if (certificate.Extensions["2.5.29.37"] is not X509EnhancedKeyUsageExtension ekuExtension)
         {
             result.Issues.Add("Certificate does not have Extended Key Usage extension");
             return false;

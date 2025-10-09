@@ -236,14 +236,14 @@ namespace DotCompute.Core.Pipelines
         private string? _preferredBackend;
         private BackendFallbackStrategy _fallbackStrategy = BackendFallbackStrategy.Auto;
         private TimeSpan? _timeout;
-        private int _maxRetries = 0;
+        private int _maxRetries;
         private RetryStrategy _retryStrategy = RetryStrategy.ExponentialBackoff;
         private string? _cacheKey;
         private TimeSpan? _cacheTtl;
         private ExecutionPriority _executionPriority = ExecutionPriority.Normal;
         private Func<object[], ValidationResult>? _inputValidator;
         private Func<object, object>? _outputTransformer;
-        private bool _profilingEnabled = false;
+        private bool _profilingEnabled;
         private readonly List<string> _customMetrics = [];
         private ResourceRequirements? _resourceRequirements;
         private Func<Exception, ErrorHandlingResult>? _errorHandler;
@@ -476,14 +476,14 @@ namespace DotCompute.Core.Pipelines
         private LoadBalancingStrategy _loadBalancingStrategy = LoadBalancingStrategy.RoundRobin;
         private Func<IEnumerable<object>, object>? _resultAggregator;
         private ParallelErrorStrategy _errorStrategy = ParallelErrorStrategy.FailFast;
-        private bool _continueOnError = false;
+        private bool _continueOnError;
         private TimeSpan? _timeout;
         private MemorySharingMode _memorySharingMode = MemorySharingMode.None;
         private Func<object, IEnumerable<object>>? _workPartitioner;
         private ExecutionPriority _priority = ExecutionPriority.Normal;
         private readonly List<string> _barrierPoints = [];
         private ResourceAllocationStrategy _resourceAllocationStrategy = ResourceAllocationStrategy.FirstFit;
-        private bool _enableDetailedMetrics = false;
+        private bool _enableDetailedMetrics;
         private readonly List<AffinityRule> _affinityRules = [];
         private AdaptationPolicy _adaptationPolicy = AdaptationPolicy.Conservative;
         /// <summary>

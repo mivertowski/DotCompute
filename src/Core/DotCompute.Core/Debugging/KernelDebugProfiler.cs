@@ -566,7 +566,7 @@ public sealed partial class KernelDebugProfiler(
         return new ExecutionStatistics
         {
             KernelName = kernelName,
-            TotalExecutions = relevantResults.Count(),
+            TotalExecutions = relevantResults.Count,
             SuccessfulExecutions = successfulExecutions,
             FailedExecutions = relevantResults.Count - successfulExecutions,
             AverageExecutionTimeMs = avgTime,

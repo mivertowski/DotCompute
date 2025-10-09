@@ -422,7 +422,7 @@ internal sealed class CryptographicValidator : IDisposable
         return Task.CompletedTask;
     }
 
-    private Task<OperationAuditResult> AuditSingleOperationAsync(CryptographicOperation operation)
+    private static Task<OperationAuditResult> AuditSingleOperationAsync(CryptographicOperation operation)
     {
         var result = new OperationAuditResult
         {

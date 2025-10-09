@@ -277,7 +277,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         // Use kernel name, code hash, and optimization level for cache key
         var codeHash = definition.Code != null
 
-            ? BitConverter.ToString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code))).Replace("-", "", StringComparison.Ordinal)
+            ? Convert.ToHexString(global::System.Security.Cryptography.SHA256.HashData(global::System.Text.Encoding.UTF8.GetBytes(definition.Code)))
             : "empty";
 
 
@@ -561,8 +561,8 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
 
         try
         {
-            var validationResult = Validate(kernelDefinition);
-            return Task.FromResult(validationResult.IsValid);
+            var validationResult = await ValidateAsync(kernelDefinition, CancellationToken.None).ConfigureAwait(false);
+            return validationResult.IsValid;
         }
         catch
         {

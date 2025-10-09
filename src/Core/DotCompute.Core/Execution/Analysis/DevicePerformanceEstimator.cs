@@ -27,13 +27,13 @@ namespace DotCompute.Core.Execution.Analysis
         #region LoggerMessage Delegates
 
         [LoggerMessage(EventId = 10001, Level = MsLogLevel.Trace, Message = "Device {DeviceId} score: {Score:F2} (memory: {MemScore:F2}, compute: {CompScore:F2}, capability: {CapScore:F2}, historical: {HistFactor:F2})")]
-        private static partial void LogDeviceScore(ILogger logger, Guid deviceId, double score, double memScore, double compScore, double capScore, double histFactor);
+        private static partial void LogDeviceScore(ILogger logger, string deviceId, double score, double memScore, double compScore, double capScore, double histFactor);
 
         [LoggerMessage(EventId = 10002, Level = MsLogLevel.Trace, Message = "Estimated execution time for device {DeviceId}: {Time:F2}ms (workload: {Size}, type: {Type})")]
-        private static partial void LogEstimatedTime(ILogger logger, Guid deviceId, double time, long size, string type);
+        private static partial void LogEstimatedTime(ILogger logger, string deviceId, double time, long size, string type);
 
         [LoggerMessage(EventId = 10003, Level = MsLogLevel.Trace, Message = "Updated performance data for device {DeviceId}: success rate {SuccessRate:P2}, efficiency {Efficiency:F1}%")]
-        private static partial void LogPerformanceUpdate(ILogger logger, Guid deviceId, double successRate, double efficiency);
+        private static partial void LogPerformanceUpdate(ILogger logger, string deviceId, double successRate, double efficiency);
 
         #endregion
 
@@ -64,11 +64,11 @@ namespace DotCompute.Core.Execution.Analysis
             var capabilityScore = info.ComputeCapability?.Major ?? 1;
 
             // Historical performance factor
-            var historicalFactor = GetHistoricalPerformanceFactor(device.Info.Id);
+            var historicalFactor = GetHistoricalPerformanceFactor(device.Info.Id.ToString());
 
             var score = (memoryScore * 0.3 + computeScore * 0.4 + capabilityScore * 0.2) * historicalFactor;
 
-            LogDeviceScore(_logger, device.Info.Id, score, memoryScore, computeScore, capabilityScore, historicalFactor);
+            LogDeviceScore(_logger, device.Info.Id.ToString(), score, memoryScore, computeScore, capabilityScore, historicalFactor);
 
             return score;
         }
@@ -124,7 +124,7 @@ namespace DotCompute.Core.Execution.Analysis
             var overheadFactor = GetOverheadFactor(device.Info.DeviceType);
             var estimatedTime = baseTime * overheadFactor;
 
-            LogEstimatedTime(_logger, device.Info.Id, estimatedTime, workloadSize, workloadType);
+            LogEstimatedTime(_logger, device.Info.Id.ToString(), estimatedTime, workloadSize, workloadType);
 
             return estimatedTime;
         }

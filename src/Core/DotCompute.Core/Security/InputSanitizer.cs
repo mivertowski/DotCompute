@@ -1107,6 +1107,8 @@ public enum ThreatType
 /// </summary>
 public enum ThreatSeverity
 {
+    /// <summary>No threat detected.</summary>
+    None = 0,
     /// <summary>Low severity threat.</summary>
     Low = 1,
     /// <summary>Medium severity threat.</summary>

@@ -397,7 +397,7 @@ namespace DotCompute.Core.Execution
 
             LogDisposingStrategy(_logger, null);
 
-            _shutdownTokenSource.Cancel();
+            await _shutdownTokenSource.CancelAsync().ConfigureAwait(false);
 
             try
             {
@@ -474,7 +474,7 @@ namespace DotCompute.Core.Execution
 
             if (gpuAccelerators.Length == 0)
             {
-                var defaultAcc = _acceleratorManager.AvailableAccelerators.FirstOrDefault();
+                var defaultAcc = _acceleratorManager.AvailableAccelerators.Count > 0 ? _acceleratorManager.AvailableAccelerators[0] : null;
                 return defaultAcc != null ? [defaultAcc] : [];
             }
 

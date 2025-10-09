@@ -31,10 +31,10 @@ namespace DotCompute.Core.Execution
                 "Cannot initialize work items: workload or work items is null");
 
         [LoggerMessage(EventId = 23001, Level = MsLogLevel.Trace, Message = "Device {ThiefDevice} stole work item {WorkItemId} from device {VictimDevice}")]
-        private static partial void LogWorkItemStolen(ILogger logger, Guid thiefDevice, int workItemId, Guid victimDevice);
+        private static partial void LogWorkItemStolen(ILogger logger, string thiefDevice, int workItemId, string victimDevice);
 
         [LoggerMessage(EventId = 23002, Level = MsLogLevel.Trace, Message = "Work item {WorkItemId} executed on device {DeviceId} in {ExecutionTimeMs:F2}ms")]
-        private static partial void LogWorkItemExecuted(ILogger logger, int workItemId, Guid deviceId, double executionTimeMs);
+        private static partial void LogWorkItemExecuted(ILogger logger, int workItemId, string deviceId, double executionTimeMs);
 
         // Wrapper method
         private static void LogWorkItemInitError(ILogger logger)
@@ -308,7 +308,7 @@ namespace DotCompute.Core.Execution
             if (stolenWork != null)
             {
                 _stealingCoordinator.RecordSuccessfulSteal(deviceIndex, victimIndex);
-                LogWorkItemStolen(_logger, _devices[deviceIndex].Info.Id, stolenWork.Id, _devices[victimIndex].Info.Id);
+                LogWorkItemStolen(_logger, _devices[deviceIndex].Info.Id.ToString(), stolenWork.Id, _devices[victimIndex].Info.Id.ToString());
             }
             else
             {
@@ -476,7 +476,7 @@ namespace DotCompute.Core.Execution
                 var endTime = DateTimeOffset.UtcNow;
                 var executionTimeMs = (endTime - startTime).TotalMilliseconds;
 
-                LogWorkItemExecuted(_logger, workItem.Id, device.Info.Id, executionTimeMs);
+                LogWorkItemExecuted(_logger, workItem.Id, device.Info.Id.ToString(), executionTimeMs);
 
                 return executionTimeMs;
             }

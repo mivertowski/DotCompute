@@ -84,7 +84,8 @@ namespace DotCompute.Core.Execution.Memory
         {
             if (_disposed || buffer == null)
             {
-                _ = (buffer?.DisposeAsync());
+                // Fire and forget disposal - acceptable for cleanup on disposed pool
+                _ = buffer?.DisposeAsync().AsTask();
                 return;
             }
 
