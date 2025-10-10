@@ -202,7 +202,10 @@ public partial class DebugIntegratedOrchestrator(
             // Cross-backend validation (if enabled)
             if (_options.EnableCrossBackendValidation && _options.CrossValidationProbability > 0)
             {
-                var shouldValidate = new Random().NextDouble() < _options.CrossValidationProbability;
+                // Determine if we should perform cross-validation
+#pragma warning disable CA5394 // Random is used for probabilistic sampling in debugging, not security
+                var shouldValidate = Random.Shared.NextDouble() < _options.CrossValidationProbability;
+#pragma warning restore CA5394
                 if (shouldValidate)
                 {
                     _ = Task.Run(async () =>

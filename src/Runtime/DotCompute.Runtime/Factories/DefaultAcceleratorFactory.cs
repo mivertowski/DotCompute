@@ -491,7 +491,9 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     {
         try
         {
+#pragma warning disable IL2090 // 'this' argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Factory requires runtime type instantiation
             var constructor = typeof(T).GetConstructor(Type.EmptyTypes);
+#pragma warning restore IL2090
             if (constructor != null)
             {
                 instance = (T)constructor.Invoke(null);
@@ -554,5 +556,6 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         _providerTypes.Clear();
 
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Xml;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Core.Aot;
 using System.Globalization;
 using System;
 
@@ -22,21 +23,10 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     SemaphoreSlim logWriteLock,
     string auditLogPath)
 {
-    // CA1869: Cached JsonSerializerOptions for performance
-    private static readonly JsonSerializerOptions s_compactJsonOptions = new()
-    {
-        WriteIndented = false,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
-    private static readonly JsonSerializerOptions s_indentedJsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+#pragma warning disable CA1823 // Avoid unused private fields - Configuration reserved for future audit logging customization
     private readonly SecurityLoggingConfiguration _configuration = configuration;
+#pragma warning restore CA1823
     private readonly ConcurrentQueue<SecurityLogEntry> _auditQueue = auditQueue ?? throw new ArgumentNullException(nameof(auditQueue));
     private readonly SemaphoreSlim _logWriteLock = logWriteLock ?? throw new ArgumentNullException(nameof(logWriteLock));
     private readonly string _auditLogPath = auditLogPath ?? throw new ArgumentNullException(nameof(auditLogPath));
@@ -177,7 +167,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
     {
         try
         {
-            var jsonEntry = JsonSerializer.Serialize(entry, s_compactJsonOptions);
+            var jsonEntry = JsonSerializer.Serialize(entry, DotComputeCompactJsonContext.Default.SecurityLogEntry);
 
             await File.AppendAllTextAsync(_auditLogPath, jsonEntry + Environment.NewLine);
         }
@@ -217,7 +207,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
                     try
                     {
-                        var entry = JsonSerializer.Deserialize<SecurityLogEntry>(line, s_compactJsonOptions);
+                        var entry = JsonSerializer.Deserialize(line, DotComputeCompactJsonContext.Default.SecurityLogEntry);
 
                         if (entry != null &&
                             entry.Timestamp >= startDate &&
@@ -262,7 +252,7 @@ public sealed class SecurityAuditLogger(ILogger<SecurityAuditLogger> logger,
 
     private static async Task ExportAsJsonAsync(IReadOnlyList<SecurityLogEntry> entries, string exportPath)
     {
-        var json = JsonSerializer.Serialize(entries, s_indentedJsonOptions);
+        var json = JsonSerializer.Serialize(entries, DotComputeJsonContext.Default.IReadOnlyListSecurityLogEntry);
         await File.WriteAllTextAsync(exportPath, json);
     }
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -133,6 +134,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
         /// <returns>A compute execution context for the accelerator.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic method lookup for accelerator-specific CreateStream method is intentional")]
         public static IComputeExecution CreateStream(this IAccelerator accelerator)
         {
             // Check if the accelerator is a specific implementation that supports streams
@@ -156,6 +158,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="accelerator">The accelerator instance.</param>
         /// <returns>Performance metrics for the accelerator.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic method lookup for accelerator-specific GetPerformanceMetrics method is intentional")]
         public static IPerformanceMetrics GetPerformanceMetrics(this IAccelerator accelerator)
         {
             // Check if the accelerator has a native GetPerformanceMetrics method
@@ -199,6 +202,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="stream">The compute execution context.</param>
         /// <returns>A task representing the begin capture operation.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic method lookup for stream-specific BeginCapture method is intentional")]
         public static ValueTask BeginCaptureAsync(this IComputeExecution stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
@@ -233,6 +237,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="stream">The compute execution context.</param>
         /// <returns>A task representing the end capture operation, returning the captured graph.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic method lookup for stream-specific EndCapture method is intentional")]
         public static ValueTask<object?> EndCaptureAsync(this IComputeExecution stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
@@ -259,14 +264,14 @@ namespace DotCompute.Core.Extensions
                 if (result is ValueTask<object> valueTaskNonNull)
                 {
 
-                    return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Result));
+                    return new ValueTask<object?>(valueTaskNonNull.AsTask().ContinueWith(t => (object?)t.Result, TaskScheduler.Default));
                 }
 
 
                 if (result is Task<object> taskNonNull)
                 {
 
-                    return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result));
+                    return new ValueTask<object?>(taskNonNull.ContinueWith(t => (object?)t.Result, TaskScheduler.Default));
                 }
             }
 

@@ -352,7 +352,7 @@ public sealed partial class LogEnricher : IDisposable
             var assembly = typeof(LogEnricher).Assembly;
             _contextualData["Application.Name"] = "DotCompute";
             _contextualData["Application.Version"] = assembly.GetName().Version?.ToString() ?? "Unknown";
-            _contextualData["Application.Location"] = assembly.Location;
+            _contextualData["Application.Location"] = AppContext.BaseDirectory;
         }
         catch (Exception ex)
         {

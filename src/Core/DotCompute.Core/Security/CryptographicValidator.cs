@@ -452,13 +452,13 @@ internal sealed class CryptographicValidator : IDisposable
         var recommendations = new List<string>();
 
         var weakAlgorithms = results.Where(r => r.Issues.Any(i => i.Contains("weak algorithm", StringComparison.Ordinal))).ToList();
-        if (weakAlgorithms.Any())
+        if (weakAlgorithms.Count > 0)
         {
             recommendations.Add("Replace weak cryptographic algorithms with approved alternatives");
         }
 
         var smallKeys = results.Where(r => r.Issues.Any(i => i.Contains("Key size too small", StringComparison.Ordinal))).ToList();
-        if (smallKeys.Any())
+        if (smallKeys.Count > 0)
         {
             recommendations.Add("Increase key sizes to meet current security standards");
         }

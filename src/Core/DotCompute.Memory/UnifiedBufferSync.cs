@@ -241,7 +241,7 @@ public sealed partial class UnifiedBuffer<T>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _asyncLock.WaitAsync();
+        await _asyncLock.WaitAsync(cancellationToken);
         try
         {
             switch (_state)

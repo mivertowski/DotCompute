@@ -183,12 +183,12 @@ public class SandboxPermissions
     /// <summary>
     /// Gets or sets the list of allowed permissions.
     /// </summary>
-    public IList<string> AllowedPermissions { get; } = [];
+    public IList<string> AllowedPermissions { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the list of explicitly denied permissions.
     /// </summary>
-    public IList<string> DeniedPermissions { get; } = [];
+    public IList<string> DeniedPermissions { get; init; } = [];
 
     /// <summary>
     /// Gets or sets resource limits for the plugin.
@@ -316,12 +316,12 @@ public class SecurityContext
     /// <summary>
     /// Gets or sets the allowed permissions.
     /// </summary>
-    public HashSet<string> AllowedPermissions { get; } = [];
+    public HashSet<string> AllowedPermissions { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the denied permissions.
     /// </summary>
-    public HashSet<string> DeniedPermissions { get; } = [];
+    public HashSet<string> DeniedPermissions { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the resource limits.
@@ -382,5 +382,5 @@ public class ResourceUsage
     /// <summary>
     /// Gets the list of violated resource limits.
     /// </summary>
-    public IList<string> ViolatedLimits { get; } = [];
+    public IList<string> ViolatedLimits { get; init; } = [];
 }

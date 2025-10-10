@@ -12,8 +12,10 @@ namespace DotCompute.Core.Telemetry.Implementation;
 /// </summary>
 internal sealed class OperationTimer(string operationName, IDictionary<string, object?>? tags) : IOperationTimer
 {
+#pragma warning disable CA1823 // Avoid unused private fields - Fields reserved for future duration recording (see TODO at line 146)
     private readonly string _operationName = operationName;
     private readonly IDictionary<string, object?>? _tags = tags;
+#pragma warning restore CA1823
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     /// <summary>
     /// Gets or sets a value indicating whether enabled.

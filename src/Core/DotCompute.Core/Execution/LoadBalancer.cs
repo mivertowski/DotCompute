@@ -24,8 +24,6 @@ namespace DotCompute.Core.Execution
 
         private readonly IAccelerator[] _devices;
         private readonly ILogger _logger;
-        private readonly Dictionary<string, DeviceQueueStatistics> _statistics = new();
-        private readonly object _statsLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoadBalancer"/> class.

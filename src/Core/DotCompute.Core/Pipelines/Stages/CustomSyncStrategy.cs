@@ -86,7 +86,11 @@ public abstract class CustomSyncStrategy : IAsyncDisposable
     /// Performs cleanup and releases any resources held by the strategy.
     /// </summary>
     /// <returns>A ValueTask representing the cleanup operation.</returns>
-    public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public virtual ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -125,11 +129,12 @@ public sealed class BarrierSyncStrategy : CustomSyncStrategy
     }
 
     /// <inheritdoc />
-    public override ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         _barrier?.Dispose();
         _barrier = null;
-        return ValueTask.CompletedTask;
+        GC.SuppressFinalize(this);
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 }
 
@@ -181,11 +186,12 @@ public sealed class CountdownSyncStrategy(int requiredCount = 0) : CustomSyncStr
     }
 
     /// <inheritdoc />
-    public override ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         _countdown?.Dispose();
         _countdown = null;
-        return ValueTask.CompletedTask;
+        GC.SuppressFinalize(this);
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 }
 

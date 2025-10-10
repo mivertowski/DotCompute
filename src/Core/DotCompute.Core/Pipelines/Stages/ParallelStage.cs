@@ -95,11 +95,11 @@ namespace DotCompute.Core.Pipelines.Stages
                         break;
 
                     case SynchronizationMode.FireAndForget:
-                        // Performance optimization: Use ThreadPool directly for fire-and-forget
+                        // Performance optimization: Use Task.Run for fire-and-forget async operations
                         foreach (var stage in _parallelStages)
                         {
                             var capturedStage = stage;
-                            _ = ThreadPool.QueueUserWorkItem(async _ =>
+                            _ = Task.Run(async () =>
                             {
                                 try
                                 {
@@ -109,7 +109,7 @@ namespace DotCompute.Core.Pipelines.Stages
                                 {
                                     // Fire and forget - ignore errors
                                 }
-                            });
+                            }, cancellationToken);
                         }
                         break;
 

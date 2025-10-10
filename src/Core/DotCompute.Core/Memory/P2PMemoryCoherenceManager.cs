@@ -419,12 +419,15 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets coherence overhead percentage.
         /// </summary>
-        public double GetOverheadPercentage()
+        public double OverheadPercentage
         {
-            lock (_statistics)
+            get
             {
-                var totalBuffers = _statistics.TotalTrackedBuffers;
-                return totalBuffers > 0 ? (double)_statistics.IncoherentBuffers / totalBuffers * 100 : 0;
+                lock (_statistics)
+                {
+                    var totalBuffers = _statistics.TotalTrackedBuffers;
+                    return totalBuffers > 0 ? (double)_statistics.IncoherentBuffers / totalBuffers * 100 : 0;
+                }
             }
         }
 
@@ -768,7 +771,7 @@ namespace DotCompute.Core.Memory
         {
             try
             {
-                var incoherentRatio = GetOverheadPercentage() / 100.0;
+                var incoherentRatio = OverheadPercentage / 100.0;
 
                 if (incoherentRatio > IncoherentThresholdRatio)
                 {

@@ -81,8 +81,9 @@ public class BackendPerformanceState
     /// Gets the summary.
     /// </summary>
     /// <returns>The summary.</returns>
-
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object
     public BackendPerformanceStateSummary GetSummary()
+#pragma warning restore CA1024
     {
         lock (_lock)
         {

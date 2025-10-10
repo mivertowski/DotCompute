@@ -220,7 +220,7 @@ namespace DotCompute.Runtime.Services
             ArgumentNullException.ThrowIfNull(parameters);
 
             // Validate kernel arguments if present
-            if (parameters.Arguments == null || parameters.Arguments.Length == 0)
+            if (parameters.Arguments == null || parameters.Arguments.Count == 0)
             {
                 throw new ArgumentException("Kernel parameters must include arguments", nameof(parameters));
             }

@@ -242,6 +242,7 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         _pluginServices.Clear();
 
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 

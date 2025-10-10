@@ -67,7 +67,9 @@ namespace DotCompute.Core.Compute
         IAcceleratorManager acceleratorManager,
         ILogger<DefaultComputeEngine> logger) : IComputeEngine
     {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly IAcceleratorManager _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
+#pragma warning restore CA2213
         private readonly ILogger<DefaultComputeEngine> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly List<ComputeBackendType> _availableBackends = [];
         private bool _disposed;
@@ -662,6 +664,7 @@ namespace DotCompute.Core.Compute
             // Clean up any resources
             ComputeEngineDisposed(_logger);
 
+            GC.SuppressFinalize(this);
             await ValueTask.CompletedTask;
         }
     }

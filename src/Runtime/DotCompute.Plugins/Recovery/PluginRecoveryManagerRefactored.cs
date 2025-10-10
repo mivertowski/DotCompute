@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using DotCompute.Core.Recovery;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
@@ -32,7 +32,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     /// </summary>
     /// <value>The capability.</value>
 
-    public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors;
+    public override RecoveryCapability Capability => RecoveryCapability.PluginErrors;
     /// <summary>
     /// Gets or sets the priority.
     /// </summary>
@@ -417,7 +417,7 @@ public sealed class PluginRecoveryManagerRefactored : BaseRecoveryStrategy<Plugi
     /// Performs dispose.
     /// </summary>
 
-    public override void Dispose()
+    public void Dispose()
     {
         if (!_disposed)
         {

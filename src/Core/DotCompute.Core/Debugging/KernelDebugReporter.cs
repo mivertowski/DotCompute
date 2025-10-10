@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Core.Aot;
 using DotCompute.Abstractions.Debugging;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Abstractions.Validation;
@@ -28,7 +29,6 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
 
     #endregion
 
-    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly ILogger<KernelDebugReporter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private DebugServiceOptions _options = new();
     private bool _disposed;
@@ -299,7 +299,7 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
         {
             return format switch
             {
-                ReportFormat.Json => JsonSerializer.Serialize(report, _jsonOptions),
+                ReportFormat.Json => JsonSerializer.Serialize(report, DotComputeJsonContext.Default.Object),
                 ReportFormat.Xml => await ExportToXmlAsync(report),
                 ReportFormat.Csv => await ExportToCsvAsync(report),
                 ReportFormat.PlainText => await ExportToTextAsync(report),
@@ -436,7 +436,7 @@ internal sealed partial class KernelDebugReporter(ILogger<KernelDebugReporter> l
         await Task.CompletedTask;
 
         // Simplified XML export - in practice, you'd use a proper XML serializer
-        return $"<Report>{JsonSerializer.Serialize(report)}</Report>";
+        return $"<Report>{JsonSerializer.Serialize(report, DotComputeJsonContext.Default.Object)}</Report>";
     }
 
     private static async Task<string> ExportToCsvAsync(object report)

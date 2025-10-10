@@ -467,10 +467,6 @@ internal sealed class LocalPool<T>(int capacity) where T : class
         return false;
     }
 }
-/// <summary>
-/// A pooled object structure.
-/// </summary>
-/// <typeparam name="T">The T type parameter.</typeparam>
 
 /// <summary>
 /// Wrapper for pooled objects with metadata.

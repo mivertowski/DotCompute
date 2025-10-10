@@ -17,7 +17,9 @@ namespace DotCompute.Core.Recovery;
 public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy<TContext>, IDisposable
     where TContext : class
 {
+#pragma warning disable CA1051 // Do not declare visible instance fields - Protected field intended for use by derived classes
     protected readonly ILogger Logger;
+#pragma warning restore CA1051
     private readonly ConcurrentDictionary<string, RecoveryAttemptHistory> _recoveryHistory;
     private readonly SemaphoreSlim _recoveryLock;
     private readonly Timer? _cleanupTimer;
@@ -447,7 +449,9 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         var delayMs = baseDelay.TotalMilliseconds * multiplier;
 
         // Add jitter to prevent thundering herd
+#pragma warning disable CA5394 // Random is used for exponential backoff jitter, not security
         var jitter = Random.Shared.NextDouble() * 0.1; // ±10% jitter
+#pragma warning restore CA5394
         delayMs *= (1.0 + jitter);
 
         // Cap at reasonable maximum

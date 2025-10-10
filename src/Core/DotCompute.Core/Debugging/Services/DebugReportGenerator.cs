@@ -30,7 +30,9 @@ internal partial class DebugReportJsonContext : JsonSerializerContext
 public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> logger, DebugServiceOptions? options = null) : IDisposable
 {
     private readonly ILogger<DebugReportGenerator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+#pragma warning disable CA1823 // Avoid unused private fields - Options reserved for future debug report customization
     private readonly DebugServiceOptions? _options = options;
+#pragma warning restore CA1823
     private bool _disposed;
 
     /// <summary>
@@ -395,7 +397,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
         _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Test Time:** {0:yyyy-MM-dd HH:mm:ss} UTC", result.TestTime));
         _ = md.AppendLine();
 
-        if (result.Issues.Any())
+        if (result.Issues.Count > 0)
         {
             _ = md.AppendLine("## Issues and Recommendations");
             foreach (var issue in result.Issues)
@@ -418,7 +420,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
         _ = md.AppendLine(string.Format(CultureInfo.InvariantCulture, "**Total Input Memory:** {0:N0} bytes", analysis.TotalInputMemory));
         _ = md.AppendLine();
 
-        if (analysis.Issues.Any())
+        if (analysis.Issues.Count > 0)
         {
             _ = md.AppendLine("## Memory Issues");
             foreach (var issue in analysis.Issues)
@@ -432,7 +434,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
             _ = md.AppendLine();
         }
 
-        if (analysis.Recommendations.Any())
+        if (analysis.Recommendations.Count > 0)
         {
             _ = md.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)

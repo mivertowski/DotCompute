@@ -501,7 +501,9 @@ public static partial class ErrorHandlingUtilities
         var delayMs = baseDelay.TotalMilliseconds * multiplier;
 
         // Add jitter to prevent thundering herd
+#pragma warning disable CA5394 // Random is used for retry jitter to prevent thundering herd, not security
         var jitter = Random.Shared.NextDouble() * 0.1; // ±10% jitter
+#pragma warning restore CA5394
         delayMs *= (1.0 + jitter);
 
         // Cap at reasonable maximum

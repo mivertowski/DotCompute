@@ -539,8 +539,7 @@ internal sealed partial class CryptographicKeyManager : IDisposable
 
     private static string ComputeKeyFingerprint(SecureKeyContainer key)
     {
-        using var sha256 = SHA256.Create();
-        var hash = sha256.ComputeHash(key.GetKeyBytes());
+        var hash = SHA256.HashData(key.GetKeyBytes());
         return Convert.ToHexString(hash)[..16]; // First 16 chars for readability
     }
 

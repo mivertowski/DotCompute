@@ -234,7 +234,7 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets the number of pending transfers.
         /// </summary>
-        public int GetPendingTransferCount() => _transferQueue.Count;
+        public int PendingTransferCount => _transferQueue.Count;
 
         /// <summary>
         /// Gets comprehensive transfer statistics.
@@ -547,7 +547,9 @@ namespace DotCompute.Core.Memory
             try
             {
                 // Wait for scheduler to finish
+#pragma warning disable VSTHRD003 // Intentional pattern: awaiting background task started in constructor
                 await _schedulerTask.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
             }
             catch (OperationCanceledException)
             {

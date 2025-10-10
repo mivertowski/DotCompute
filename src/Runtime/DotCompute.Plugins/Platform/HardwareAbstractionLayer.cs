@@ -742,12 +742,12 @@ namespace DotCompute.Plugins.Platform
         /// Gets or sets the supported features.
         /// </summary>
         /// <value>The supported features.</value>
-        public IList<string> SupportedFeatures { get; } = [];
+        public IList<string> SupportedFeatures { get; init; } = [];
         /// <summary>
         /// Gets or sets the validation errors.
         /// </summary>
         /// <value>The validation errors.</value>
-        public IList<string> ValidationErrors { get; } = [];
+        public IList<string> ValidationErrors { get; init; } = [];
     }
 
     /// <summary>

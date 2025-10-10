@@ -598,7 +598,11 @@ public sealed partial class StructuredLogger : ILogger, IDisposable
         try
         {
             // Final flush
+            // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+            // This is a final cleanup operation during disposal.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             _logBuffer.FlushAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
         }
         catch (Exception ex)
         {

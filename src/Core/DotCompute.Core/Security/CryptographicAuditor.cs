@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
+using DotCompute.Core.Aot;
 using System.Text;
 using System.Security;
 using DotCompute.Abstractions.Security;
@@ -18,7 +19,6 @@ namespace DotCompute.Core.Security;
 /// </summary>
 internal sealed partial class CryptographicAuditor : IDisposable
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly ILogger<CryptographicAuditor> _logger;
     private readonly CryptographicConfiguration _configuration;
     private readonly ConcurrentQueue<SecurityEvent> _auditQueue;
@@ -103,7 +103,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
                 UserId = userId,
                 SessionId = sessionId,
                 Category = EventCategories.GetValueOrDefault(eventType.ToUpperInvariant(), SecurityEventCategory.General),
-                AdditionalData = additionalData != null ? JsonSerializer.Serialize(additionalData) : null,
+                AdditionalData = additionalData != null ? JsonSerializer.Serialize(additionalData, DotComputeCompactJsonContext.Default.Object) : null,
                 SourceAddress = GetSourceAddress(),
                 ProcessId = Environment.ProcessId,
                 ThreadId = Environment.CurrentManagedThreadId
@@ -323,7 +323,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
         var exportContent = format switch
         {
-            AuditExportFormat.Json => JsonSerializer.Serialize(events, _jsonOptions),
+            AuditExportFormat.Json => JsonSerializer.Serialize(events, DotComputeJsonContext.Default.ListSecurityEvent),
             AuditExportFormat.Csv => ConvertToCsv(events),
             AuditExportFormat.Xml => ConvertToXml(events),
             _ => throw new NotSupportedException($"Export format not supported: {format}")
@@ -429,23 +429,8 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
     private string FormatLogEntry(SecurityEvent securityEvent)
     {
-        var logEntry = new
-        {
-            securityEvent.EventId,
-            securityEvent.Timestamp,
-            securityEvent.EventType,
-            securityEvent.Severity,
-            securityEvent.Category,
-            securityEvent.Description,
-            securityEvent.UserId,
-            securityEvent.SessionId,
-            securityEvent.SourceAddress,
-            securityEvent.ProcessId,
-            securityEvent.ThreadId,
-            securityEvent.AdditionalData
-        };
-
-        return JsonSerializer.Serialize(logEntry);
+        // For compact log format, serialize the SecurityEvent directly
+        return JsonSerializer.Serialize(securityEvent, DotComputeCompactJsonContext.Default.SecurityEvent);
     }
 
     private async Task<List<SecurityEvent>> ReadAuditLogEntriesAsync(DateTimeOffset startTime, DateTimeOffset endTime)
@@ -463,7 +448,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
         {
             try
             {
-                var eventData = JsonSerializer.Deserialize<SecurityEvent>(line);
+                var eventData = JsonSerializer.Deserialize(line, DotComputeCompactJsonContext.Default.SecurityEvent);
                 if (eventData != null && eventData.Timestamp >= startTime && eventData.Timestamp <= endTime)
                 {
                     events.Add(eventData);
@@ -521,7 +506,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
     private static double CalculateAverageResponseTime(IReadOnlyList<SecurityEvent> events)
     {
         var operationsWithTiming = events.Where(e => e.AdditionalData?.Contains("ExecutionTimeMs", StringComparison.Ordinal) == true).ToList();
-        if (!operationsWithTiming.Any())
+        if (operationsWithTiming.Count == 0)
         {
             return 0;
         }
@@ -555,7 +540,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
         foreach (var evt in events)
         {
-            _ = csv.AppendLine($"{evt.EventId},{evt.Timestamp:O},{evt.EventType},{evt.Severity},{evt.Category}," +
+            _ = csv.AppendLine(CultureInfo.InvariantCulture, $"{evt.EventId},{evt.Timestamp:O},{evt.EventType},{evt.Severity},{evt.Category}," +
                           $"\"{evt.Description.Replace("\"", "\"\"", StringComparison.Ordinal)}\",{evt.UserId},{evt.SessionId}");
         }
 
@@ -571,11 +556,11 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
         foreach (var evt in events)
         {
-            _ = xml.AppendLine($"  <Event id=\"{evt.EventId}\" timestamp=\"{evt.Timestamp:O}\">");
-            _ = xml.AppendLine($"    <Type>{evt.EventType}</Type>");
-            _ = xml.AppendLine($"    <Severity>{evt.Severity}</Severity>");
-            _ = xml.AppendLine($"    <Category>{evt.Category}</Category>");
-            _ = xml.AppendLine($"    <Description>{SecurityElement.Escape(evt.Description)}</Description>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"  <Event id=\"{evt.EventId}\" timestamp=\"{evt.Timestamp:O}\">");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <Type>{evt.EventType}</Type>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <Severity>{evt.Severity}</Severity>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <Category>{evt.Category}</Category>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <Description>{SecurityElement.Escape(evt.Description)}</Description>");
             _ = xml.AppendLine("  </Event>");
         }
 
@@ -597,7 +582,11 @@ internal sealed partial class CryptographicAuditor : IDisposable
             // Flush any remaining audit logs
             try
             {
+                // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+                // Using a timeout to prevent indefinite blocking during disposal.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
                 _ = FlushAuditLogsAsync().Wait(TimeSpan.FromSeconds(5));
+#pragma warning restore VSTHRD002
             }
             catch (Exception ex)
             {

@@ -84,7 +84,7 @@ public class ConcurrentTransferResult
     /// Gets or sets the list of individual transfer results.
     /// </summary>
     /// <value>A list containing the result of each individual transfer operation.</value>
-    public IList<AdvancedTransferResult> IndividualResults { get; } = [];
+    public IList<AdvancedTransferResult> IndividualResults { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the list of errors encountered during transfers.
@@ -151,14 +151,10 @@ public class ConcurrentTransferResult
     }
 
     /// <summary>
-    /// Gets or sets the list of individual transfer results (alias for IndividualResults).
+    /// Gets the list of individual transfer results (alias for IndividualResults).
     /// </summary>
     /// <value>A read-only list containing the result of each individual transfer operation.</value>
-    public IReadOnlyList<AdvancedTransferResult> Results
-    {
-        get => IndividualResults;
-        set => IndividualResults = value?.ToList() ?? [];
-    }
+    public IReadOnlyList<AdvancedTransferResult> Results => (IReadOnlyList<AdvancedTransferResult>)IndividualResults;
 
     /// <summary>
     /// Gets the success rate as a percentage.

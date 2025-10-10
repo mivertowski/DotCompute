@@ -378,6 +378,7 @@ namespace DotCompute.Core.Compute
             _providers.Clear();
             _default = null;
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

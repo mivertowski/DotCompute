@@ -37,7 +37,9 @@ namespace DotCompute.Core.Recovery.Compilation;
 /// </exception>
 public sealed class KernelInterpreter(string sourceCode, ILogger logger) : IDisposable
 {
+#pragma warning disable CA1823 // Avoid unused private fields - Field reserved for kernel interpretation implementation (see TODO at line 69)
     private readonly string _sourceCode = sourceCode ?? throw new ArgumentNullException(nameof(sourceCode));
+#pragma warning restore CA1823
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private bool _prepared;
     private bool _disposed;

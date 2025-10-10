@@ -35,18 +35,18 @@ public sealed class ActiveProfile
     public ProfileOptions Options { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the collection of kernel execution profiles captured during this session.
+    /// Gets the collection of kernel execution profiles captured during this session.
     /// Each profile represents the performance data from a single kernel execution.
     /// </summary>
     /// <value>A thread-safe collection of kernel execution profiles.</value>
-    public ConcurrentBag<KernelExecutionProfile> KernelExecutions { get; set; } = [];
+    public ConcurrentBag<KernelExecutionProfile> KernelExecutions { get; } = [];
 
     /// <summary>
-    /// Gets or sets the collection of memory operation profiles captured during this session.
+    /// Gets the collection of memory operation profiles captured during this session.
     /// Each profile represents the performance data from a memory operation.
     /// </summary>
     /// <value>A thread-safe collection of memory operation profiles.</value>
-    public ConcurrentBag<MemoryOperationProfile> MemoryOperations { get; set; } = [];
+    public ConcurrentBag<MemoryOperationProfile> MemoryOperations { get; } = [];
 
     /// <summary>
     /// Gets or sets the device-specific metrics collected during this session.
@@ -56,9 +56,9 @@ public sealed class ActiveProfile
     public ConcurrentDictionary<string, DeviceProfileMetrics> DeviceMetrics { get; } = new();
 
     /// <summary>
-    /// Gets or sets the collection of system performance snapshots captured during this session.
+    /// Gets the collection of system performance snapshots captured during this session.
     /// Each snapshot represents system state at a specific point in time.
     /// </summary>
     /// <value>A thread-safe queue of system performance snapshots.</value>
-    public ConcurrentQueue<SystemSnapshot> SystemSnapshots { get; set; } = new();
+    public ConcurrentQueue<SystemSnapshot> SystemSnapshots { get; } = new();
 }

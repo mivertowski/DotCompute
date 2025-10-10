@@ -103,7 +103,9 @@ public static class ServiceCollectionExtensions
                 throw new ArgumentException($"Type {providerType.Name} does not implement IAcceleratorProvider");
             }
 
+#pragma warning disable IL2072 // Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Plugin system requires runtime type registration
             services.TryAddTransient(typeof(IAcceleratorProvider), providerType);
+#pragma warning restore IL2072
         }
 
         return services;

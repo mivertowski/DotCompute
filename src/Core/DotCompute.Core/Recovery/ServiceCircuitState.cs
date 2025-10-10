@@ -222,7 +222,9 @@ public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfi
     /// <summary>
     /// Gets a summary of the circuit state
     /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object
     public CircuitStateSummary GetSummary()
+#pragma warning restore CA1024
     {
         return new CircuitStateSummary
         {

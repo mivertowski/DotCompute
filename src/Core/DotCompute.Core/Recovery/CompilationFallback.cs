@@ -65,13 +65,13 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
     /// <summary>
     /// Determines whether handle.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The exception.</param>
     /// <param name="context">The context.</param>
     /// <returns>true if the condition is met; otherwise, false.</returns>
 
-    public override bool CanHandle(Exception error, CompilationRecoveryContext context)
+    public override bool CanHandle(Exception exception, CompilationRecoveryContext context)
     {
-        return error switch
+        return exception switch
         {
             CompilationException => true,
             InvalidOperationException ioEx when ioEx.Message.Contains("compil", StringComparison.OrdinalIgnoreCase) => true,
@@ -83,14 +83,14 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
     /// <summary>
     /// Gets recover asynchronously.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The exception.</param>
     /// <param name="context">The context.</param>
     /// <param name="options">The options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
-        Exception error,
+        Exception exception,
         CompilationRecoveryContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken = default)
@@ -99,7 +99,7 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
         var kernelHash = CalculateKernelHash(context.SourceCode);
 
 
-        LogCompilationErrorDetected(Logger, context.KernelName, error.Message);
+        LogCompilationErrorDetected(Logger, context.KernelName, exception.Message);
 
         // Check cache first
         if (_compilationCache.TryGetValue(kernelHash, out var cached) && cached.IsValid)
@@ -110,12 +110,12 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
 
         // Get or create compilation history
         var history = _compilationHistory.GetOrAdd(kernelHash, _ => new CompilationHistory(context.KernelName));
-        history.RecordFailure(error, context.CompilationOptions);
+        history.RecordFailure(exception, context.CompilationOptions);
 
         try
         {
             // Determine fallback strategy based on error and history
-            var strategy = DetermineFallbackStrategy(error, context, history);
+            var strategy = DetermineFallbackStrategy(exception, context, history);
             LogUsingFallbackStrategy(Logger, strategy.ToString());
 
             var result = await ExecuteFallbackStrategyAsync(strategy, context, history, options, cancellationToken);
@@ -553,8 +553,9 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
             successRate = 0.99; // Interpreter almost always works
         }
 
-
+#pragma warning disable CA5394 // Random is used for compilation simulation/testing, not security
         var success = Random.Shared.NextDouble() < successRate;
+#pragma warning restore CA5394
 
         return success
 
@@ -584,8 +585,7 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
 
     private static string CalculateKernelHash(string sourceCode)
     {
-        using var sha256 = global::System.Security.Cryptography.SHA256.Create();
-        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(sourceCode));
+        var hash = global::System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(sourceCode));
         return Convert.ToBase64String(hash);
     }
 

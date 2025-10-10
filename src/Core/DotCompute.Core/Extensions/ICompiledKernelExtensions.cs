@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -324,6 +325,7 @@ namespace DotCompute.Core.Extensions
         /// <param name="parameters">Execution parameters object (duck-typed compatibility)</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>A Task representing the asynchronous operation</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property lookup for LINQ-style execution parameters is intentional for duck-typed compatibility")]
         public static Task ExecuteAsync(this ICompiledKernel kernel,
             object parameters,
             CancellationToken cancellationToken = default)
@@ -417,6 +419,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="kernel">The compiled kernel</param>
         /// <returns>True if the kernel is disposed, false otherwise</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property lookup for kernel disposal detection is intentional for different kernel implementations")]
         public static bool IsDisposed(this ICompiledKernel kernel)
         {
             ArgumentNullException.ThrowIfNull(kernel);
@@ -445,6 +448,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="kernel">The compiled kernel</param>
         /// <returns>The kernel name or a default value</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property lookup for kernel name is intentional for different kernel implementations")]
         private static string GetKernelName(ICompiledKernel kernel)
         {
             try
@@ -470,6 +474,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         /// <param name="kernel">The compiled kernel</param>
         /// <returns>The kernel ID or a default value</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic property lookup for kernel ID is intentional for different kernel implementations")]
         private static Guid GetKernelId(ICompiledKernel kernel)
         {
             try

@@ -31,7 +31,9 @@ internal sealed partial class KernelDebugValidator(
 {
     private readonly ILogger<KernelDebugValidator> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, IAccelerator> _accelerators = accelerators ?? throw new ArgumentNullException(nameof(accelerators));
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
     private readonly KernelDebugProfiler _profiler = profiler ?? throw new ArgumentNullException(nameof(profiler));
+#pragma warning restore CA2213
     private DebugServiceOptions _options = new();
     private bool _disposed;
 

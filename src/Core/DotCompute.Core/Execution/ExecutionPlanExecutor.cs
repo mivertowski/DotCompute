@@ -227,7 +227,9 @@ namespace DotCompute.Core.Execution
 
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ExecutionCoordinator _coordinator = new(logger);
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly PerformanceMonitor _performanceMonitor = performanceMonitor ?? throw new ArgumentNullException(nameof(performanceMonitor));
+#pragma warning restore CA2213
         private readonly ResourceTracker _resourceTracker = new(logger);
         private readonly ExecutionProfiler _profiler = new(logger);
         private bool _disposed;

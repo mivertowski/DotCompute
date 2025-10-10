@@ -41,7 +41,7 @@ public sealed class ConsolidatedPluginServiceProviderHealth
     /// <summary>
     /// Gets or sets the list of registered assemblies.
     /// </summary>
-    public IList<string> RegisteredAssemblies { get; } = [];
+    public IList<string> RegisteredAssemblies { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the error message if unhealthy.

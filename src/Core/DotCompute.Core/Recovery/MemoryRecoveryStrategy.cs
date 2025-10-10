@@ -69,13 +69,13 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
     /// <summary>
     /// Determines whether handle.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The exception.</param>
     /// <param name="context">The context.</param>
     /// <returns>true if the condition is met; otherwise, false.</returns>
 
-    public override bool CanHandle(Exception error, Models.MemoryRecoveryContext context)
+    public override bool CanHandle(Exception exception, Models.MemoryRecoveryContext context)
     {
-        return error switch
+        return exception switch
         {
             OutOfMemoryException => true,
             MemoryException => true,
@@ -86,21 +86,21 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
     /// <summary>
     /// Gets recover asynchronously.
     /// </summary>
-    /// <param name="error">The error.</param>
+    /// <param name="exception">The exception.</param>
     /// <param name="context">The context.</param>
     /// <param name="options">The options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
     public override async Task<RecoveryResult> RecoverAsync(
-        Exception error,
+        Exception exception,
         Models.MemoryRecoveryContext context,
         RecoveryOptions options,
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        LogMemoryErrorDetected(Logger, error.Message, GC.GetTotalMemory(false) / 1024 / 1024);
+        LogMemoryErrorDetected(Logger, exception.Message, GC.GetTotalMemory(false) / 1024 / 1024);
 
         await _recoveryLock.WaitAsync(cancellationToken);
 
@@ -108,7 +108,7 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
         try
         {
             // Determine recovery strategy based on error type and system state
-            var strategy = DetermineMemoryRecoveryStrategy(error, context);
+            var strategy = DetermineMemoryRecoveryStrategy(exception, context);
             LogUsingMemoryRecoveryStrategy(Logger, strategy.ToString());
 
             var result = await ExecuteMemoryRecoveryAsync(strategy, context, options, cancellationToken);
@@ -156,8 +156,9 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
                 await PerformEmergencyMemoryRecoveryAsync(cancellationToken);
 
                 // Exponential backoff with jitter
-
+#pragma warning disable CA5394 // Random is used for exponential backoff jitter, not security
                 var actualDelay = TimeSpan.FromTicks((long)(delay.Ticks * Math.Pow(2, attempt - 1) * (0.8 + Random.Shared.NextDouble() * 0.4)));
+#pragma warning restore CA5394
                 await Task.Delay(actualDelay, cancellationToken);
             }
         }
@@ -253,7 +254,7 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
     /// <summary>
     /// Gets current memory pressure information
     /// </summary>
-    public Memory.MemoryPressureInfo GetMemoryPressureInfo() => _pressureMonitor.GetCurrentPressure();
+    public Memory.MemoryPressureInfo MemoryPressureInfo => _pressureMonitor.CurrentPressure;
 
     /// <summary>
     /// Registers a memory pool for monitoring and recovery
@@ -282,7 +283,7 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
     private Models.MemoryRecoveryStrategyType DetermineMemoryRecoveryStrategy(Exception error, Models.MemoryRecoveryContext context)
     {
-        var pressure = _pressureMonitor.GetCurrentPressure();
+        var pressure = _pressureMonitor.CurrentPressure;
 
 
         return pressure.Level switch
@@ -536,7 +537,7 @@ public sealed partial class MemoryRecoveryStrategy : BaseRecoveryStrategy<Models
 
         try
         {
-            var pressure = _pressureMonitor.GetCurrentPressure();
+            var pressure = _pressureMonitor.CurrentPressure;
 
             // Only defragment if memory pressure is elevated
 

@@ -656,9 +656,13 @@ public sealed partial class KernelDebugAnalyzer(
     /// Calculates variability score for determinism analysis.
     /// </summary>
     private static double CalculateVariabilityScore(string kernelName, int runCount)
+    {
         // Simplified variability calculation
         // In a real implementation, this would analyze actual execution results
-        => Random.Shared.NextDouble() * 0.1; // 0-10% variability
+#pragma warning disable CA5394 // Random is used for performance simulation/testing, not security
+        return Random.Shared.NextDouble() * 0.1; // 0-10% variability
+#pragma warning restore CA5394
+    }
 
     /// <summary>
     /// Identifies non-deterministic components.
@@ -727,7 +731,9 @@ public sealed partial class KernelDebugAnalyzer(
         foreach (var backend in validationResult.BackendsTested)
         {
             // Simplified performance score calculation
+#pragma warning disable CA5394 // Random is used for performance testing distribution, not security
             distribution[backend] = Random.Shared.NextDouble();
+#pragma warning restore CA5394
         }
 
         return distribution;

@@ -467,10 +467,10 @@ public sealed class BufferValidationResult
     /// Gets or sets a value indicating whether sues.
     /// </summary>
     /// <value>The issues.</value>
-    public IReadOnlyList<string> Issues { get; init; } = [];
+    public List<string> Issues { get; init; } = [];
     /// <summary>
     /// Gets or sets the warnings.
     /// </summary>
     /// <value>The warnings.</value>
-    public IReadOnlyList<string> Warnings { get; init; } = [];
+    public List<string> Warnings { get; init; } = [];
 }

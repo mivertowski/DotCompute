@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Core.Security.Enums;
 
 namespace DotCompute.Core.Security.Models;
@@ -10,50 +11,52 @@ namespace DotCompute.Core.Security.Models;
 /// Memory sanitizer statistics and metrics.
 /// Tracks allocation patterns, violations, and performance metrics.
 /// </summary>
+[SuppressMessage("Design", "CA1051:Do not declare visible instance fields",
+    Justification = "Public fields are required for thread-safe Interlocked operations (Interlocked.Increment/Add require ref parameters to fields, not properties).")]
 public sealed class SanitizerStatistics
 {
     /// <summary>
-    /// Gets or sets the total number of allocations performed.
+    /// Total number of allocations performed.
     /// </summary>
     public long TotalAllocations;
 
     /// <summary>
-    /// Gets or sets the total number of deallocations performed.
+    /// Total number of deallocations performed.
     /// </summary>
     public long TotalDeallocations;
 
     /// <summary>
-    /// Gets or sets the total bytes allocated.
+    /// Total bytes allocated.
     /// </summary>
     public long TotalBytesAllocated;
 
     /// <summary>
-    /// Gets or sets the total bytes freed.
+    /// Total bytes freed.
     /// </summary>
     public long TotalBytesFreed;
 
     /// <summary>
-    /// Gets or sets the current number of active allocations.
+    /// Current number of active allocations.
     /// </summary>
     public int ActiveAllocations;
 
     /// <summary>
-    /// Gets or sets the total number of security violations detected.
+    /// Total number of security violations detected.
     /// </summary>
     public long TotalViolations;
 
     /// <summary>
-    /// Gets or sets the number of memory corruption incidents detected.
+    /// Number of memory corruption incidents detected.
     /// </summary>
     public long CorruptionDetections;
 
     /// <summary>
-    /// Gets or sets the number of double-free attempts blocked.
+    /// Number of double-free attempts blocked.
     /// </summary>
     public long DoubleFreeAttempts;
 
     /// <summary>
-    /// Gets or sets the number of use-after-free attempts blocked.
+    /// Number of use-after-free attempts blocked.
     /// </summary>
     public long UseAfterFreeAttempts;
 

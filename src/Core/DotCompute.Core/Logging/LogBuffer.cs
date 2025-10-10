@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DotCompute.Core.Aot;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace DotCompute.Core.Logging;
@@ -256,7 +257,7 @@ public sealed partial class LogBuffer : IDisposable
     private async Task ProcessLogEntriesAsync()
     {
         var batch = new List<StructuredLogEntry>(_options.BatchSize);
-        var batchTimer = new Timer(async _ => await ProcessCurrentBatchAsync(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        var batchTimer = new Timer(_ => _ = Task.Run(ProcessCurrentBatchAsync), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
 
 
         try
@@ -585,15 +586,17 @@ public sealed partial class LogBuffer : IDisposable
             _cancellationTokenSource.Cancel();
 
             // Wait for processing to complete (with timeout)
-
+            // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+            // Using a timeout to prevent indefinite blocking during disposal.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             if (!_processingTask.Wait(TimeSpan.FromSeconds(30)))
             {
                 _logger.LogWarningMessage("Log processing task did not complete within timeout");
             }
 
             // Final flush
-
             FlushAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
 
             // Dispose sinks
 
@@ -939,7 +942,7 @@ public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
         await _writeSemaphore.WaitAsync(cancellationToken);
         try
         {
-            var lines = entries.Select(entry => JsonSerializer.Serialize(entry));
+            var lines = entries.Select(entry => JsonSerializer.Serialize(entry, DotComputeCompactJsonContext.Default.StructuredLogEntry));
             await File.AppendAllLinesAsync(_filePath, lines, cancellationToken);
             IsHealthy = true;
         }

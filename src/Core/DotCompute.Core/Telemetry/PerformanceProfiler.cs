@@ -137,12 +137,9 @@ public sealed class PerformanceProfiler : IDisposable
             {
                 CorrelationId = correlationId,
                 StartTime = startTime,
-                Options = options,
-                KernelExecutions = [],
-                MemoryOperations = [],
-                SystemSnapshots = new ConcurrentQueue<SystemSnapshot>()
+                Options = options
             };
-            // Note: DeviceMetrics is auto-initialized by the property's default value
+            // Note: All collections are auto-initialized by their property default values
 
 
             _ = _activeProfiles.TryAdd(correlationId, activeProfile);

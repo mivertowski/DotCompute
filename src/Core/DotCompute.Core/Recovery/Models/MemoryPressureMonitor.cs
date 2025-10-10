@@ -41,8 +41,7 @@ public sealed class MemoryPressureMonitor : IDisposable
     /// <summary>
     /// Gets the current memory pressure information.
     /// </summary>
-    /// <returns>The current memory pressure information.</returns>
-    public MemoryPressureInfo GetCurrentPressure() => _currentPressure;
+    public MemoryPressureInfo CurrentPressure => _currentPressure;
 
     /// <summary>
     /// Forces an immediate update of memory pressure information.

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotCompute.Core.Common;
 
 /// <summary>
@@ -160,6 +162,7 @@ public class Result
 /// This is a generic result type for operations that return a value on success.
 /// </summary>
 /// <typeparam name="T">The type of value returned on success.</typeparam>
+[SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "Static factory methods are the standard Result pattern for type-safe error handling")]
 public class Result<T> : Result
 {
     /// <summary>
@@ -346,7 +349,9 @@ public class Result<T> : Result
     /// </summary>
     /// <returns>The result value.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the result is a failure.</exception>
+#pragma warning disable CA1024 // Use properties where appropriate - Method throws exceptions
     public T GetValueOrThrow()
+#pragma warning restore CA1024
     {
         if (IsFailure)
         {

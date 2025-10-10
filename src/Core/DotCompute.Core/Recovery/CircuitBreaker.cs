@@ -308,7 +308,9 @@ public sealed partial class CircuitBreaker : IDisposable
         var exponentialDelay = TimeSpan.FromTicks((long)(baseDelay.Ticks * Math.Pow(policy.BackoffMultiplier, attempt - 1)));
 
         // Apply jitter to prevent thundering herd
+#pragma warning disable CA5394 // Random is used for retry jitter to prevent thundering herd, not security
         var jitter = Random.Shared.NextDouble() * policy.JitterFactor;
+#pragma warning restore CA5394
         var finalDelay = TimeSpan.FromTicks((long)(exponentialDelay.Ticks * (1.0 + jitter)));
 
         return finalDelay > policy.MaxDelay ? policy.MaxDelay : finalDelay;

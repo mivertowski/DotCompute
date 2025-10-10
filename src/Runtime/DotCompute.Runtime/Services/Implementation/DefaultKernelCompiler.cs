@@ -74,7 +74,7 @@ public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUni
 
         var compilationOptions = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };
@@ -116,7 +116,7 @@ public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUni
         // Return default options
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };

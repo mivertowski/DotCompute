@@ -138,7 +138,7 @@ namespace DotCompute.Core.Memory.P2P
             LoggerMessage.Define<Exception>(
                 MsLogLevel.Warning,
                 new EventId(14309, nameof(LogAdaptiveOptimizationError)),
-                "Error during adaptive optimization");
+                "Error during adaptive optimization: {Exception}");
 
         private static void LogAdaptiveOptimizationError(ILogger logger, Exception error)
             => _logAdaptiveOptimizationError(logger, error, null);

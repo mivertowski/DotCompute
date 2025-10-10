@@ -248,10 +248,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
+            // VSTHRD002: This is a legacy synchronous interface method that must call async implementation.
+            // Callers should prefer CopyToDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             typedBuffer.CopyFromAsync(data.ToArray().AsMemory(), CancellationToken.None)
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();
+#pragma warning restore VSTHRD002
         }
         else
         {
@@ -270,11 +274,15 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
         if (buffer is IUnifiedMemoryBuffer<T> typedBuffer)
         {
             // Use async method synchronously for compatibility
+            // VSTHRD002: This is a legacy synchronous interface method that must call async implementation.
+            // Callers should prefer CopyFromDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             var temp = new T[data.Length];
             typedBuffer.CopyToAsync(temp.AsMemory(), CancellationToken.None)
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();
+#pragma warning restore VSTHRD002
             temp.AsSpan().CopyTo(data);
         }
         else
@@ -327,10 +335,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     {
         ThrowIfDisposed();
         // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer MemsetDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         MemsetDeviceAsync(deviceMemory, value, sizeInBytes, CancellationToken.None)
             .AsTask()
             .GetAwaiter()
             .GetResult();
+#pragma warning restore VSTHRD002
     }
 
     /// <inheritdoc/>
@@ -349,10 +361,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     {
         ThrowIfDisposed();
         // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer CopyHostToDeviceAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         CopyHostToDeviceAsync(hostPointer, deviceMemory, sizeInBytes, CancellationToken.None)
             .AsTask()
             .GetAwaiter()
             .GetResult();
+#pragma warning restore VSTHRD002
     }
 
     /// <inheritdoc/>
@@ -360,10 +376,14 @@ public abstract partial class BaseMemoryManager(ILogger logger) : IUnifiedMemory
     {
         ThrowIfDisposed();
         // Use async version synchronously
+        // VSTHRD002: This is a legacy synchronous API for backward compatibility.
+        // Callers should prefer CopyDeviceToHostAsync for new code.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
         CopyDeviceToHostAsync(deviceMemory, hostPointer, sizeInBytes, CancellationToken.None)
             .AsTask()
             .GetAwaiter()
             .GetResult();
+#pragma warning restore VSTHRD002
     }
 
     /// <inheritdoc/>

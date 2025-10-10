@@ -323,6 +323,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
 
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 
     private class CacheEntry

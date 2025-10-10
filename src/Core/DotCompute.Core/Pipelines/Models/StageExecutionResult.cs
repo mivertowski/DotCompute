@@ -62,7 +62,7 @@ public sealed class StageExecutionResult
     /// <summary>
     /// Gets or sets the input data processed by the stage.
     /// </summary>
-    public Dictionary<string, object>? InputData { get; set; }
+    public Dictionary<string, object>? InputData { get; init; }
 
     /// <summary>
     /// Gets or sets stage-specific metrics.

@@ -29,14 +29,16 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length) =>
+    public static Span<T> UnsafeSlice<T>(this Span<T> source, int offset, int length)
+    {
 #if DEBUG
-        source.Slice(offset, length);
+        return source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif
+    }
 
 
     /// <summary>
@@ -48,14 +50,16 @@ public static class ZeroCopyOperations
     /// <param name="length">Length in elements.</param>
     /// <returns>Sliced read-only span.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length) =>
+    public static ReadOnlySpan<T> UnsafeSlice<T>(this ReadOnlySpan<T> source, int offset, int length)
+    {
 #if DEBUG
-        source.Slice(offset, length);
+        return source.Slice(offset, length);
 #else
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(source), offset),
             length);
 #endif
+    }
 
 
     /// <summary>

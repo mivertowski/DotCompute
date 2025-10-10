@@ -216,7 +216,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// </summary>
     /// <returns>The statistics.</returns>
 
-    public new Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
+    public Statistics.MemoryStatistics GetStatistics() => _statistics.CreateSnapshot();
     /// <summary>
     /// Gets copy asynchronously.
     /// </summary>
@@ -540,12 +540,13 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
+#pragma warning disable CA1816 // Dispose methods should call GC.SuppressFinalize - This is the correct pattern for public Dispose()
     public new void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
+#pragma warning restore CA1816
     /// <summary>
     /// Gets dispose asynchronously.
     /// </summary>
@@ -584,6 +585,8 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
             _allocationSemaphore?.Dispose();
 
             _logger.LogInfoMessage("Production memory manager disposed successfully");
+
+            await base.DisposeAsync();
         }
     }
 

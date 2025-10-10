@@ -119,7 +119,9 @@ namespace DotCompute.Core.Memory.P2P
                                 _logger.LogErrorMessage(t.Exception, $"Pipeline chunk transfer failed: chunk {chunkIndex}");
                             }
 
+#pragma warning disable VSTHRD003 // Intentional pattern: returning task from ContinueWith for proper exception propagation after cleanup
                             return t;
+#pragma warning restore VSTHRD003
                         }, TaskScheduler.Default).Unwrap();
 
                     transferTasks.Add(transferTask);

@@ -11,7 +11,7 @@ public sealed class PluginMetricsData
     /// <summary>
     /// Gets or sets the plugin metrics by type name.
     /// </summary>
-    public Dictionary<string, PluginMetric> PluginMetrics { get; } = [];
+    public Dictionary<string, PluginMetric> PluginMetrics { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the metrics collection time.

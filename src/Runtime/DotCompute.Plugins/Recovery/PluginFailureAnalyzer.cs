@@ -725,22 +725,22 @@ public sealed class FailureAnalysisResult
     /// Gets or sets the exception type distribution.
     /// </summary>
     /// <value>The exception type distribution.</value>
-    public Dictionary<string, int> ExceptionTypeDistribution { get; } = [];
+    public Dictionary<string, int> ExceptionTypeDistribution { get; init; } = [];
     /// <summary>
     /// Gets or sets the failure frequency.
     /// </summary>
     /// <value>The failure frequency.</value>
-    public Dictionary<string, double> FailureFrequency { get; } = [];
+    public Dictionary<string, double> FailureFrequency { get; init; } = [];
     /// <summary>
     /// Gets or sets the memory patterns.
     /// </summary>
     /// <value>The memory patterns.</value>
-    public Dictionary<string, long> MemoryPatterns { get; } = [];
+    public Dictionary<string, long> MemoryPatterns { get; init; } = [];
     /// <summary>
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; init; } = [];
     /// <summary>
     /// Gets or sets the confidence.
     /// </summary>
@@ -876,7 +876,7 @@ public sealed class FailurePrediction
     /// Gets or sets the primary risk factors.
     /// </summary>
     /// <value>The primary risk factors.</value>
-    public IList<string> PrimaryRiskFactors { get; } = [];
+    public IList<string> PrimaryRiskFactors { get; init; } = [];
 }
 /// <summary>
 /// An failure severity enumeration.

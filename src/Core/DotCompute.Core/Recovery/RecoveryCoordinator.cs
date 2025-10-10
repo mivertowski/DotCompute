@@ -252,7 +252,7 @@ public sealed partial class RecoveryCoordinator : IDisposable
     public Statistics.RecoveryStatistics GetRecoveryStatistics()
     {
         var gpuReport = _gpuRecovery.GetDeviceHealthReport();
-        var memoryPressure = _memoryRecovery.GetMemoryPressureInfo();
+        var memoryPressure = _memoryRecovery.MemoryPressureInfo;
         var compilationStats = _compilationFallback.GetCompilationStatistics();
         var circuitStats = _circuitBreaker.GetStatistics();
         var pluginHealthResult = _pluginRecovery.GetHealthReport();
@@ -304,7 +304,7 @@ public sealed partial class RecoveryCoordinator : IDisposable
 
             // Check memory health
 
-            var memoryHealth = _memoryRecovery.GetMemoryPressureInfo();
+            var memoryHealth = _memoryRecovery.MemoryPressureInfo;
             healthResults.Add(new ComponentHealthResult
             {
                 Component = "Memory",

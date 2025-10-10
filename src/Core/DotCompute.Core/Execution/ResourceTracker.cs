@@ -80,11 +80,10 @@ public partial class ResourceTracker : IAsyncDisposable
         await ValueTask.CompletedTask;
     }
     /// <summary>
-    /// Gets the resource usage.
+    /// Gets the resource usage as a defensive copy.
     /// </summary>
-    /// <returns>The resource usage.</returns>
 #pragma warning disable CA1822 // Mark members as static - uses instance fields not shown in snippet
-    public Dictionary<string, DeviceResourceUsage> GetResourceUsage() => new(_deviceUsage);
+    public Dictionary<string, DeviceResourceUsage> ResourceUsage => new(_deviceUsage);
 #pragma warning restore CA1822
     /// <summary>
     /// Gets dispose asynchronously.
@@ -101,6 +100,7 @@ public partial class ResourceTracker : IAsyncDisposable
         }
 
         _deviceUsage.Clear();
+        GC.SuppressFinalize(this);
         _disposed = true;
         await ValueTask.CompletedTask;
     }

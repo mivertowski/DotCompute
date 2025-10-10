@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
@@ -241,7 +242,9 @@ public sealed class AsyncWorkStealingCoordinator<T> : IDisposable
 
         if (preferredWorker < 0 || preferredWorker >= _workerCount)
         {
+#pragma warning disable CA5394 // Random is used for load balancing distribution, not security
             preferredWorker = _random.Next(_workerCount);
+#pragma warning restore CA5394
         }
 
 
@@ -484,7 +487,7 @@ public sealed class AsyncResourcePool<TResource> : IDisposable where TResource :
 /// RAII wrapper for pooled resources with automatic return.
 /// </summary>
 /// <typeparam name="TResource">Resource type.</typeparam>
-public readonly struct PooledResource<TResource> : IDisposable where TResource : class
+public readonly struct PooledResource<TResource> : IDisposable, IEquatable<PooledResource<TResource>> where TResource : class
 {
     private readonly TResource _resource;
     private readonly AsyncResourcePool<TResource> _pool;
@@ -505,6 +508,7 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// </summary>
     /// <param name="pooled">The pooled resource.</param>
     /// <returns>The underlying resource.</returns>
+    [SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "Explicit conversion method complements the implicit operator for API completeness")]
     public static TResource ToTResource(PooledResource<TResource> pooled) => pooled._resource;
 
     /// <summary>
@@ -529,8 +533,7 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// </summary>
     /// <param name="other">The PooledResource to compare with the current instance.</param>
     /// <returns>true if the specified PooledResource is equal to the current instance; otherwise, false.</returns>
-    public bool Equals(PooledResource<TResource> other) =>
-        ReferenceEquals(_resource, other._resource) && ReferenceEquals(_pool, other._pool);
+    public bool Equals(PooledResource<TResource> other) => ReferenceEquals(_resource, other._resource) && ReferenceEquals(_pool, other._pool);
 
     /// <summary>
     /// Returns the hash code for this instance.
@@ -544,8 +547,7 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// <param name="left">The first PooledResource to compare.</param>
     /// <param name="right">The second PooledResource to compare.</param>
     /// <returns>true if left and right are equal; otherwise, false.</returns>
-    public static bool operator ==(PooledResource<TResource> left, PooledResource<TResource> right) =>
-        left.Equals(right);
+    public static bool operator ==(PooledResource<TResource> left, PooledResource<TResource> right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether two specified PooledResource instances are not equal.
@@ -553,8 +555,7 @@ public readonly struct PooledResource<TResource> : IDisposable where TResource :
     /// <param name="left">The first PooledResource to compare.</param>
     /// <param name="right">The second PooledResource to compare.</param>
     /// <returns>true if left and right are not equal; otherwise, false.</returns>
-    public static bool operator !=(PooledResource<TResource> left, PooledResource<TResource> right) =>
-        !left.Equals(right);
+    public static bool operator !=(PooledResource<TResource> left, PooledResource<TResource> right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -572,12 +573,7 @@ public sealed class AsyncBarrier : IDisposable
 
     internal AsyncBarrier(int participantCount, Action? postPhaseAction = null)
     {
-        if (participantCount <= 0)
-        {
-
-            throw new ArgumentOutOfRangeException(nameof(participantCount));
-        }
-
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(participantCount);
 
         _participantCount = participantCount;
         _postPhaseAction = postPhaseAction;

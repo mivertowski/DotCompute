@@ -228,7 +228,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
 
 
     /// <inheritdoc/>
-    public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes)
+    public void RegisterProvider([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type providerType, params AcceleratorType[] supportedTypes)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(providerType);
@@ -257,10 +257,11 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
                 }
 
                 // Try to find a Create method on the provider
-
+#pragma warning disable IL2075 // Dynamic method lookup for provider-specific Create method is intentional
                 var createMethod = provider.GetType().GetMethod("CreateAccelerator")
 
                     ?? provider.GetType().GetMethod("Create");
+#pragma warning restore IL2075
 
 
                 if (createMethod != null)

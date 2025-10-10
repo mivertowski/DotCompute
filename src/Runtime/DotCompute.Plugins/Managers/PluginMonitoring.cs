@@ -503,10 +503,13 @@ internal class PluginMetricsCollector : IDisposable
                     metricsState.LastCollection = DateTimeOffset.UtcNow;
 
                     // Keep only the last 1000 entries
-
                     if (metricsState.MetricsHistory.Count > 1000)
                     {
-                        metricsState.MetricsHistory.RemoveRange(0, metricsState.MetricsHistory.Count - 1000);
+                        var itemsToRemove = metricsState.MetricsHistory.Count - 1000;
+                        for (int i = 0; i < itemsToRemove; i++)
+                        {
+                            metricsState.MetricsHistory.RemoveAt(0);
+                        }
                     }
                 }
 
@@ -616,7 +619,7 @@ internal class PluginMetricsState
     /// Gets or sets the metrics history.
     /// </summary>
     /// <value>The metrics history.</value>
-    public IList<PluginMetrics> MetricsHistory { get; } = [];
+    public IList<PluginMetrics> MetricsHistory { get; init; } = [];
 }
 
 /// <summary>

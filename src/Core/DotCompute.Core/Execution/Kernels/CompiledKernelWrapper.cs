@@ -17,7 +17,9 @@ namespace DotCompute.Core.Execution.Kernels;
 /// <param name="kernel">The compiled kernel to wrap.</param>
 internal sealed class CompiledKernelWrapper(CompiledKernel kernel) : ICompiledKernel
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - CompiledKernel is a struct wrapper, not owned by this class
     private readonly CompiledKernel _kernel = kernel;
+#pragma warning restore CA2213
     private bool _disposed;
 
     /// <summary>

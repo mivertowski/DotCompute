@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -33,7 +34,7 @@ public sealed partial class MemoryProtection : IDisposable
         LoggerMessage.Define<long, nuint, object?, string?>(
             MsLogLevel.Trace,
             new EventId(18000, nameof(MemoryReadSuccessful)),
-            "Memory read successful: Address={Address:X}, Size={Size}, Value={Value}");
+            "Memory read successful: Address={Address:X}, Size={Size}, Value={Value}, Type={TypeName}");
 
     private static void MemoryReadSuccessful(ILogger logger, long address, nuint size, object? value, string? typeName)
         => _logMemoryReadSuccessful(logger, address, size, value, typeName, null);
@@ -168,6 +169,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <param name="canExecute">Whether the memory should be executable</param>
     /// <param name="identifier">Optional identifier for debugging</param>
     /// <returns>Protected memory allocation result</returns>
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "OutOfMemoryException is appropriate when actual native memory allocation fails")]
     public async Task<ProtectedMemoryAllocation> AllocateProtectedMemoryAsync(nuint size,
 
         nuint alignment = 8, bool canExecute = false, string? identifier = null)
@@ -258,6 +260,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <param name="address">Memory address to read from</param>
     /// <param name="offset">Offset in bytes from the base address</param>
     /// <returns>The value read from memory</returns>
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "AccessViolationException is semantically correct for memory access violations in low-level memory protection")]
     public unsafe T ReadMemory<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -334,6 +337,7 @@ public sealed partial class MemoryProtection : IDisposable
     /// <param name="address">Memory address to write to</param>
     /// <param name="value">Value to write</param>
     /// <param name="offset">Offset in bytes from the base address</param>
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "AccessViolationException is semantically correct for memory access violations in low-level memory protection")]
     public unsafe void WriteMemory<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -540,6 +544,7 @@ public sealed partial class MemoryProtection : IDisposable
         }
     }
 
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "OutOfMemoryException is appropriate when VirtualAlloc native allocation fails")]
     private static IntPtr AllocateWindowsMemory(nuint size, bool canExecute)
     {
         // Windows VirtualAlloc implementation
@@ -556,6 +561,7 @@ public sealed partial class MemoryProtection : IDisposable
         return result;
     }
 
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "OutOfMemoryException is appropriate when mmap native allocation fails")]
     private static IntPtr AllocateUnixMemory(nuint size, bool canExecute)
     {
         // Unix mmap implementation
@@ -850,7 +856,11 @@ public sealed partial class MemoryProtection : IDisposable
             {
                 if (_configuration.EnableSecureWiping)
                 {
+                    // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+                    // Secure wiping is critical for security during cleanup.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
                     SecureWipeMemoryAsync(region).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
                 FreeRawMemory(region.BaseAddress, region.TotalSize);
             }

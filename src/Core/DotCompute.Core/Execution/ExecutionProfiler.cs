@@ -99,6 +99,7 @@ public partial class ExecutionProfiler : IAsyncDisposable
         }
 
         _profilingData.Clear();
+        GC.SuppressFinalize(this);
         _disposed = true;
         await ValueTask.CompletedTask;
     }

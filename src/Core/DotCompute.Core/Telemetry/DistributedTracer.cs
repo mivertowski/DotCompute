@@ -320,13 +320,17 @@ public sealed partial class DistributedTracer : IDisposable
         // Track device-specific operations
 
         _ = traceContext.DeviceOperations.AddOrUpdate(deviceId,
-            new DeviceOperationTrace
+            key =>
             {
-                DeviceId = deviceId,
-                OperationCount = 1,
-                FirstOperationTime = startTime,
-                LastOperationTime = startTime,
-                ActiveSpans = [spanContext]
+                var trace = new DeviceOperationTrace
+                {
+                    DeviceId = deviceId,
+                    OperationCount = 1,
+                    FirstOperationTime = startTime,
+                    LastOperationTime = startTime
+                };
+                trace.ActiveSpans.Add(spanContext);
+                return trace;
             },
             (key, existing) =>
             {

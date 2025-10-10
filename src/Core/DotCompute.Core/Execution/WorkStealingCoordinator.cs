@@ -48,7 +48,6 @@ namespace DotCompute.Core.Execution
         private readonly ConcurrentDictionary<int, WorkItemStatus<T>> _workItemStatuses;
         private readonly StealingCoordinator _stealingCoordinator;
         private readonly LoadBalancer _loadBalancer;
-        private readonly Random _random;
         private volatile bool _executionActive;
         private bool _disposed;
 
@@ -90,7 +89,6 @@ namespace DotCompute.Core.Execution
             _workItemStatuses = new ConcurrentDictionary<int, WorkItemStatus<T>>();
             _stealingCoordinator = new StealingCoordinator(_devices.Length, logger);
             _loadBalancer = new LoadBalancer(_devices, logger);
-            _random = new Random();
 
             InitializeWorkItems();
         }
@@ -336,7 +334,9 @@ namespace DotCompute.Core.Execution
                 .Where(i => i != thiefIndex && _deviceQueues[i].HasWork)
                 .ToArray();
 
-            return availableVictims.Length > 0 ? availableVictims[_random.Next(availableVictims.Length)] : -1;
+#pragma warning disable CA5394 // Random is used for work-stealing load balancing, not security
+            return availableVictims.Length > 0 ? availableVictims[Random.Shared.Next(availableVictims.Length)] : -1;
+#pragma warning restore CA5394
         }
 
         private int SelectRichestVictim(int thiefIndex)

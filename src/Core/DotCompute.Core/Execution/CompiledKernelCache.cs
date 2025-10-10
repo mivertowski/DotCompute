@@ -464,7 +464,7 @@ namespace DotCompute.Core.Execution
             _cachesByKernel = new ConcurrentDictionary<string, CompiledKernelCache>();
             _statistics = new GlobalCacheStatistics();
 
-            _cleanupTimer = new Timer(async _ => await PerformCleanupAsync(), null,
+            _cleanupTimer = new Timer(_ => _ = Task.Run(PerformCleanupAsync), null,
                 CleanupIntervalMs, CleanupIntervalMs);
         }
 

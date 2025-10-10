@@ -481,7 +481,7 @@ namespace DotCompute.Plugins.Infrastructure
         /// <summary>
         /// Gets or sets the list of registered assemblies.
         /// </summary>
-        public IList<string> RegisteredAssemblies { get; } = [];
+        public IList<string> RegisteredAssemblies { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the error message if unhealthy.
@@ -772,7 +772,7 @@ namespace DotCompute.Plugins.Infrastructure
         /// <summary>
         /// Gets or sets the plugin metrics by type name.
         /// </summary>
-        public Dictionary<string, PluginMetric> PluginMetrics { get; } = [];
+        public Dictionary<string, PluginMetric> PluginMetrics { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the metrics collection time.

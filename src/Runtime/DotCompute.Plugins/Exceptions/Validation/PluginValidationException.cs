@@ -57,7 +57,7 @@ public class PluginValidationException : PluginException
     /// <param name="message">The message that describes the error.</param>
     /// <param name="pluginId">The unique identifier of the plugin.</param>
     /// <param name="validationErrors">The list of validation errors encountered.</param>
-    public PluginValidationException(string message, string pluginId, IReadOnlyIReadOnlyList<string> validationErrors)
+    public PluginValidationException(string message, string pluginId, IReadOnlyList<string> validationErrors)
         : base(message, pluginId)
     {
         ValidationErrors = validationErrors;

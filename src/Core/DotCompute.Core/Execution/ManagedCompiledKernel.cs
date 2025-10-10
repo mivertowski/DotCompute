@@ -112,7 +112,9 @@ public sealed class ManagedCompiledKernel(string name, IAccelerator device, Comp
     /// Gets comprehensive performance statistics for this kernel.
     /// </summary>
     /// <returns>Performance statistics including execution metrics and device information.</returns>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object
     public KernelPerformanceStatistics GetPerformanceStatistics()
+#pragma warning restore CA1024
     {
         return new KernelPerformanceStatistics
         {

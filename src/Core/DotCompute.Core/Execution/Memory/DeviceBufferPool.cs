@@ -97,7 +97,9 @@ namespace DotCompute.Core.Execution.Memory
         /// Gets statistics for this device pool.
         /// </summary>
         /// <returns>Statistics including allocated bytes, available bytes, and allocation patterns.</returns>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with copied dictionary
         public DeviceMemoryStatistics GetStatistics()
+#pragma warning restore CA1024
         {
             return new DeviceMemoryStatistics
             {

@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
@@ -105,6 +106,7 @@ namespace DotCompute.Core.Compute
             }
         }
 
+        [SupportedOSPlatform("windows")]
         private static string GetWindowsCpuName()
         {
             try
@@ -218,7 +220,9 @@ namespace DotCompute.Core.Compute
                         {
                             var output = process.StandardOutput.ReadToEnd();
                             var lines = output.Split('\n');
+#pragma warning disable XFIX002 // Char overload doesn't support StringComparison, but char comparison is always ordinal
                             var modelLine = lines.FirstOrDefault(l => !l.StartsWith('#') && !string.IsNullOrWhiteSpace(l));
+#pragma warning restore XFIX002
                             if (!string.IsNullOrWhiteSpace(modelLine))
                             {
                                 return modelLine.Trim();
@@ -373,6 +377,7 @@ namespace DotCompute.Core.Compute
             }
         }
 
+        [SupportedOSPlatform("windows")]
         private static long GetWindowsAvailableMemory()
         {
             try
@@ -551,7 +556,7 @@ namespace DotCompute.Core.Compute
             _logger.LogDebugMessage("Compiling CPU kernel: {definition.Name}");
 
             // Create a compiled kernel that does basic execution
-            var compiledKernel = new CpuCompiledKernel(definition.Name, definition);
+            var compiledKernel = new CpuCompiledKernel(definition.Name);
 
             _logger.LogInfoMessage("Successfully compiled CPU kernel: {definition.Name}");
             return await ValueTask.FromResult<ICompiledKernel>(compiledKernel);
@@ -586,9 +591,8 @@ namespace DotCompute.Core.Compute
     /// <summary>
     /// CPU compiled kernel implementation.
     /// </summary>
-    internal class CpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
+    internal class CpuCompiledKernel(string name) : ICompiledKernel
     {
-        private readonly KernelDefinition _definition = definition;
         private bool _disposed;
 
 

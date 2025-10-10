@@ -173,7 +173,7 @@ namespace DotCompute.Core.Execution
         /// </summary>
         public async ValueTask<ExecutionEvent> WaitForAnyEventAsync(ExecutionEvent[] events, CancellationToken cancellationToken = default)
         {
-            var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken)).ToArray();
+            var waitTasks = events.Select((e, index) => e.WaitAsync(cancellationToken).AsTask().ContinueWith(_ => index, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default)).ToArray();
             var completedTask = await Task.WhenAny(waitTasks).ConfigureAwait(false);
             var completedIndex = await completedTask.ConfigureAwait(false);
             var completedEvent = events[completedIndex];
@@ -351,7 +351,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    _ = _semaphore.Wait(0);
+                    await _semaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {
@@ -360,7 +360,6 @@ namespace DotCompute.Core.Execution
             }
 
             LogExecutionEventReset(_logger, Name);
-            await ValueTask.CompletedTask;
         }
         /// <summary>
         /// Gets dispose asynchronously.
@@ -476,7 +475,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    _ = _entrySemaphore.Wait(0);
+                    await _entrySemaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {
@@ -485,7 +484,6 @@ namespace DotCompute.Core.Execution
             }
 
             LogExecutionBarrierReset(_logger, Name);
-            await ValueTask.CompletedTask;
         }
         /// <summary>
         /// Gets dispose asynchronously.

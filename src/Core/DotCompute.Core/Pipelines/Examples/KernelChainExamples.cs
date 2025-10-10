@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Core.Pipelines.Examples.Models;
 using DotCompute.Core.Pipelines.Examples.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -352,6 +353,7 @@ namespace DotCompute.Core.Pipelines.Examples
         /// <summary>
         /// Converts Interface KernelStepMetrics to Results KernelStepMetrics
         /// </summary>
+        [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "Exception is constructed to store error information, not thrown")]
         private static KernelStepMetrics ConvertToResultsKernelStepMetrics(AbstractionsMemory.Interfaces.Pipelines.KernelStepMetrics interfaceMetrics)
         {
             return new KernelStepMetrics

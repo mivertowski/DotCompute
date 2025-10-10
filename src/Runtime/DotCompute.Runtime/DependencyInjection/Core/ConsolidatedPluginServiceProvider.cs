@@ -483,12 +483,14 @@ public sealed class ConsolidatedPluginServiceProvider : IPluginServiceProvider, 
                 {
                     var serviceType = attribute.ServiceType ?? type;
 
-                    var serviceDescriptor = attribute.Lifetime switch
+                        var serviceDescriptor = attribute.Lifetime switch
                     {
+#pragma warning disable IL2072 // Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Plugin system requires runtime type registration
                         ServiceLifetime.Singleton => ServiceDescriptor.Singleton(serviceType, type),
                         ServiceLifetime.Scoped => ServiceDescriptor.Scoped(serviceType, type),
                         ServiceLifetime.Transient => ServiceDescriptor.Transient(serviceType, type),
                         _ => ServiceDescriptor.Scoped(serviceType, type)
+#pragma warning restore IL2072
                     };
 
                     _pluginServices.Add(serviceDescriptor);

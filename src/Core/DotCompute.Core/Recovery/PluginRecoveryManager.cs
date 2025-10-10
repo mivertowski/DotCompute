@@ -15,7 +15,9 @@ public sealed class PluginRecoveryManager(
     PluginRecoveryConfiguration? config = null) : IDisposable
 {
     private readonly ILogger<PluginRecoveryManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+#pragma warning disable CA1823 // Avoid unused private fields - Configuration reserved for future recovery strategy implementation
     private readonly PluginRecoveryConfiguration? _config = config;
+#pragma warning restore CA1823
     private bool _disposed;
 
     /// <summary>

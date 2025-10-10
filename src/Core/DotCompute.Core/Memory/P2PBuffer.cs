@@ -31,7 +31,9 @@ namespace DotCompute.Core.Memory
         ILogger logger) : IUnifiedMemoryBuffer<T>, IAsyncDisposable where T : unmanaged
     {
         private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer ?? throw new ArgumentNullException(nameof(underlyingBuffer));
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+#pragma warning restore CA2213
         private readonly bool _supportsDirectP2P = supportsDirectP2P;
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly object _syncLock = new();
@@ -377,20 +379,20 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Creates a slice of this buffer.
         /// </summary>
-        public IUnifiedMemoryBuffer<T> Slice(int offset, int count)
+        public IUnifiedMemoryBuffer<T> Slice(int offset, int length)
         {
             ThrowIfDisposed();
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
-            if (offset + count > Length)
+            if (offset + length > Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(count), "Slice range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(length), "Slice range exceeds buffer bounds");
             }
 
             // Create a view of the underlying buffer
             var sliceBuffer = _underlyingBuffer; // In real implementation, create actual slice
-            return new P2PBuffer<T>(sliceBuffer, _accelerator, count, _supportsDirectP2P, _logger);
+            return new P2PBuffer<T>(sliceBuffer, _accelerator, length, _supportsDirectP2P, _logger);
         }
 
         /// <summary>
@@ -433,15 +435,15 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Maps a range of the buffer for direct CPU access.
         /// </summary>
-        public MappedMemory<T> MapRange(int offset, int count, MapMode mode)
+        public MappedMemory<T> MapRange(int offset, int length, MapMode mode)
         {
             ThrowIfDisposed();
             ArgumentOutOfRangeException.ThrowIfNegative(offset);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
 
-            if (offset + count > Length)
+            if (offset + length > Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(count), "Map range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(length), "Map range exceeds buffer bounds");
             }
 
             // P2P buffers don't support direct mapping
@@ -944,10 +946,10 @@ namespace DotCompute.Core.Memory
         /// </summary>
         /// <typeparam name="TSource">Type of elements to copy.</typeparam>
         /// <param name="source">Source data to copy from.</param>
-        /// <param name="destinationOffset">Offset into this buffer in bytes.</param>
+        /// <param name="offset">Offset into this buffer in bytes.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>Completed task when copy finishes.</returns>
-        public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+        public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
         {
             ThrowIfDisposed();
             if (typeof(TSource) != typeof(T))
@@ -957,7 +959,7 @@ namespace DotCompute.Core.Memory
             }
 
 
-            return CopyFromHostAsync(source, destinationOffset, cancellationToken);
+            return CopyFromHostAsync(source, offset, cancellationToken);
         }
 
         /// <summary>
@@ -965,10 +967,10 @@ namespace DotCompute.Core.Memory
         /// </summary>
         /// <typeparam name="TDest">Type of elements to copy.</typeparam>
         /// <param name="destination">Destination memory to copy to.</param>
-        /// <param name="sourceOffset">Offset into this buffer in bytes.</param>
+        /// <param name="offset">Offset into this buffer in bytes.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>Completed task when copy finishes.</returns>
-        public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+        public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
         {
             ThrowIfDisposed();
             if (typeof(TDest) != typeof(T))
@@ -978,7 +980,7 @@ namespace DotCompute.Core.Memory
             }
 
 
-            return CopyToHostAsync(destination, sourceOffset, cancellationToken);
+            return CopyToHostAsync(destination, offset, cancellationToken);
         }
         /// <summary>
         /// Gets dispose asynchronously.

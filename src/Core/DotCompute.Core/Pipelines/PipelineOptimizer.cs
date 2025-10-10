@@ -395,26 +395,9 @@ namespace DotCompute.Core.Pipelines
             IEnumerable<object[]> testInputs,
             CancellationToken cancellationToken = default)
         {
-            if (originalPipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(originalPipeline));
-            }
-
-
-            if (optimizedPipeline == null)
-            {
-
-                throw new ArgumentNullException(nameof(optimizedPipeline));
-            }
-
-
-            if (testInputs == null)
-            {
-
-                throw new ArgumentNullException(nameof(testInputs));
-            }
-
+            ArgumentNullException.ThrowIfNull(originalPipeline);
+            ArgumentNullException.ThrowIfNull(optimizedPipeline);
+            ArgumentNullException.ThrowIfNull(testInputs);
 
             var result = new OptimizationValidationResult
             {
@@ -477,14 +460,7 @@ namespace DotCompute.Core.Pipelines
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(pipeline);
-
-
-            if (proposedOptimizations == null)
-            {
-
-                throw new ArgumentNullException(nameof(proposedOptimizations));
-            }
-
+            ArgumentNullException.ThrowIfNull(proposedOptimizations);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -519,19 +495,8 @@ namespace DotCompute.Core.Pipelines
             string optimizationName,
             Func<IKernelPipeline, Task<IKernelPipeline>> optimizationLogic)
         {
-            if (string.IsNullOrEmpty(optimizationName))
-            {
-
-                throw new ArgumentNullException(nameof(optimizationName));
-            }
-
-
-            if (optimizationLogic == null)
-            {
-
-                throw new ArgumentNullException(nameof(optimizationLogic));
-            }
-
+            ArgumentException.ThrowIfNullOrEmpty(optimizationName);
+            ArgumentNullException.ThrowIfNull(optimizationLogic);
 
             return new CustomOptimizationPass(optimizationName, optimizationLogic);
         }

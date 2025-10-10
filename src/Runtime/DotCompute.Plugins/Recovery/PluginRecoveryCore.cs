@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
-using DotCompute.Core.Recovery;
+using DotCompute.Abstractions.Interfaces.Recovery;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -27,7 +27,7 @@ namespace DotCompute.Plugins.Recovery
         /// </summary>
         /// <value>The capability.</value>
 
-        public override RecoveryCapability Capability => RecoveryCapability.DeviceErrors; // Plugin errors are a subset of device errors
+        public override RecoveryCapability Capability => RecoveryCapability.PluginErrors;
         /// <summary>
         /// Gets or sets the priority.
         /// </summary>
@@ -476,7 +476,7 @@ namespace DotCompute.Plugins.Recovery
 
         #endregion
 
-        public override void Dispose()
+        public void Dispose()
         {
             if (_disposed)
             {

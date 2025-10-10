@@ -573,7 +573,9 @@ public sealed partial class InputSanitizer : IDisposable
     /// Gets current input validation statistics.
     /// </summary>
     /// <returns>Current validation statistics</returns>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with copied dictionaries
     public ValidationStatistics GetStatistics()
+#pragma warning restore CA1024
     {
         var result = new ValidationStatistics
         {

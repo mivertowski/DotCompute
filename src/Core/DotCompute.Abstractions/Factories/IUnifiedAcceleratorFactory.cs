@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotCompute.Abstractions.Factories;
 
 /// <summary>
@@ -91,7 +93,7 @@ public interface IUnifiedAcceleratorFactory
     /// </summary>
     /// <param name="providerType">The provider type.</param>
     /// <param name="supportedTypes">The accelerator types supported by this provider.</param>
-    public void RegisterProvider(Type providerType, params AcceleratorType[] supportedTypes);
+    public void RegisterProvider([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type providerType, params AcceleratorType[] supportedTypes);
 
     /// <summary>
     /// Unregisters a custom accelerator provider type.

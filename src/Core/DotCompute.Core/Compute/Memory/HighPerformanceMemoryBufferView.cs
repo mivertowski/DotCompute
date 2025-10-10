@@ -12,7 +12,9 @@ namespace DotCompute.Core.Compute.Memory
     /// </summary>
     internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
     {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own parent buffer, should not dispose it
         private readonly HighPerformanceMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+#pragma warning restore CA2213
         private readonly long _offset = offset;
 
         /// <summary>

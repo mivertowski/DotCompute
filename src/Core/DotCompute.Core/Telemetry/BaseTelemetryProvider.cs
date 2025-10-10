@@ -31,7 +31,7 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
         LoggerMessage.Define<Exception, string, string>(
             MsLogLevel.Warning,
             new EventId(9201, nameof(LogTelemetryError)),
-            "Telemetry error in {Operation} for {Context}");
+            "Telemetry error {Exception} in {Operation} for {Context}");
 
     private static readonly Action<ILogger, long, long, double, Exception?> _logProviderDisposed =
         LoggerMessage.Define<long, long, double>(
@@ -49,10 +49,12 @@ public abstract partial class BaseTelemetryProvider : ITelemetryProvider, IDispo
     private static void LogProviderDisposed(ILogger logger, long operations, long errors, double overhead)
         => _logProviderDisposed(logger, operations, errors, overhead, null);
 
+#pragma warning disable CA1051 // Do not declare visible instance fields - Protected fields intended for use by derived classes
     protected readonly ILogger Logger;
     protected readonly TelemetryConfiguration Configuration;
     protected readonly Meter Meter;
     protected readonly ActivitySource ActivitySource;
+#pragma warning restore CA1051
 
     // Core metrics collections
     private readonly ConcurrentDictionary<string, Counter<long>> _counters = new();

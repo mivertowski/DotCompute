@@ -90,7 +90,7 @@ public class DotComputeRuntimeOptions
     /// <summary>
     /// Gets or sets custom provider configuration
     /// </summary>
-    public Dictionary<string, object> ProviderSettings { get; } = [];
+    public Dictionary<string, object> ProviderSettings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable graceful degradation when accelerators fail
@@ -124,7 +124,7 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the plugin directories to scan
     /// </summary>
-    public IList<string> PluginDirectories { get; } = ["plugins"];
+    public IList<string> PluginDirectories { get; init; } = ["plugins"];
 
     /// <summary>
     /// Gets or sets whether to enable plugin isolation
@@ -158,12 +158,12 @@ public class DotComputePluginOptions
     /// <summary>
     /// Gets or sets the trusted plugin publishers
     /// </summary>
-    public IList<string> TrustedPublishers { get; } = [];
+    public IList<string> TrustedPublishers { get; init; } = [];
 
     /// <summary>
     /// Gets or sets plugin-specific configuration
     /// </summary>
-    public Dictionary<string, object> PluginSettings { get; } = [];
+    public Dictionary<string, object> PluginSettings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets whether to enable dependency injection for plugins
@@ -268,7 +268,7 @@ public class PerformanceMonitoringOptions
     /// <summary>
     /// Gets or sets custom performance thresholds
     /// </summary>
-    public Dictionary<string, double> PerformanceThresholds { get; } = [];
+    public Dictionary<string, double> PerformanceThresholds { get; init; } = [];
 }
 
 /// <summary>

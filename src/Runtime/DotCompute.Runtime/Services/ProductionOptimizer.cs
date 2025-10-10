@@ -169,7 +169,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes execution time patterns and suggests optimizations.
         /// </summary>
-        private static void AnalyzeExecutionTimePatterns(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
+        private static void AnalyzeExecutionTimePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             if (profile.ExecutionCount < 5)
             {
@@ -215,7 +215,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes memory usage patterns and suggests optimizations.
         /// </summary>
-        private static void AnalyzeMemoryUsagePatterns(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
+        private static void AnalyzeMemoryUsagePatterns(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             if (profile.ExecutionCount < 3)
             {
@@ -260,7 +260,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes work group size optimization opportunities.
         /// </summary>
-        private static void AnalyzeWorkGroupSizeOptimization(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
+        private static void AnalyzeWorkGroupSizeOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             var workGroupSizes = profile.GetWorkGroupSizes();
             if (workGroupSizes.Count < 2)
@@ -299,7 +299,7 @@ namespace DotCompute.Runtime.Services
         /// <summary>
         /// Analyzes compilation optimization opportunities.
         /// </summary>
-        private static void AnalyzeCompilationOptimization(KernelPerformanceProfile profile, IReadOnlyList<OptimizationRecommendation> recommendations)
+        private static void AnalyzeCompilationOptimization(KernelPerformanceProfile profile, List<OptimizationRecommendation> recommendations)
         {
             var compilationTimes = profile.GetCompilationTimes();
             if (compilationTimes.Count == 0)

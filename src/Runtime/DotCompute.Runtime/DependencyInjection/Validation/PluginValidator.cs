@@ -8,6 +8,7 @@ namespace DotCompute.Runtime.DependencyInjection.Validation;
 /// <summary>
 /// Default plugin validator implementation.
 /// </summary>
+#pragma warning disable CS9113 // Parameter 'logger' is unread - reserved for future logging
 internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPluginValidator
 {
     /// <summary>
@@ -28,3 +29,4 @@ internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPlugin
         return new PluginValidationResult { IsValid = true };
     }
 }
+#pragma warning restore CS9113

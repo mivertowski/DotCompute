@@ -361,7 +361,9 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets comprehensive pool statistics.
         /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with complex calculations
         public DeviceBufferPoolStatistics GetStatistics()
+#pragma warning restore CA1024
         {
             lock (_statisticsLock)
             {
@@ -706,7 +708,9 @@ namespace DotCompute.Core.Memory
     internal sealed class PooledMemoryBuffer(IUnifiedMemoryBuffer underlyingBuffer, DeviceBufferPool pool, long originalSize) : IUnifiedMemoryBuffer
     {
         private readonly IUnifiedMemoryBuffer _underlyingBuffer = underlyingBuffer;
+#pragma warning disable CA2213 // Disposable fields should be disposed - Wrapper doesn't own the pool, returns buffers to it
         private readonly DeviceBufferPool _pool = pool;
+#pragma warning restore CA2213
         private readonly long _originalSize = originalSize;
         private bool _disposed;
         /// <summary>

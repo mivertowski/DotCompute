@@ -206,7 +206,7 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Required dependencies
         /// </summary>
-        public IList<string> RequiredDependencies { get; } = [];
+        public IList<string> RequiredDependencies { get; init; } = [];
 
         /// <summary>
         /// Missing dependencies
@@ -677,7 +677,7 @@ namespace DotCompute.Plugins.Recovery
         /// Gets or sets the plugin healths.
         /// </summary>
         /// <value>The plugin healths.</value>
-        public IList<PluginHealthInfo> PluginHealths { get; } = [];
+        public IList<PluginHealthInfo> PluginHealths { get; init; } = [];
         /// <summary>
         /// Gets or sets the total plugins.
         /// </summary>
@@ -749,7 +749,7 @@ namespace DotCompute.Plugins.Recovery
         /// Gets or sets the metrics.
         /// </summary>
         /// <value>The metrics.</value>
-        public Dictionary<string, object> Metrics { get; } = [];
+        public Dictionary<string, object> Metrics { get; init; } = [];
 
         /// <summary>
         /// Gets critical plugins that need immediate attention

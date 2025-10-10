@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -74,7 +75,7 @@ public sealed partial class MemorySanitizer : IDisposable
         LoggerMessage.Define<Exception, long>(
             MsLogLevel.Error,
             new EventId(18603, nameof(LogReadError)),
-            "Error during sanitized memory read: Address={Address}");
+            "Error {Exception} during sanitized memory read: Address={Address}");
 
     private static void LogReadError(ILogger logger, Exception error, long address)
         => _logReadError(logger, error, address, null);
@@ -83,7 +84,7 @@ public sealed partial class MemorySanitizer : IDisposable
         LoggerMessage.Define<Exception, long>(
             MsLogLevel.Error,
             new EventId(18604, nameof(LogWriteError)),
-            "Error during sanitized memory write: Address={Address}");
+            "Error {Exception} during sanitized memory write: Address={Address}");
 
     private static void LogWriteError(ILogger logger, Exception error, long address)
         => _logWriteError(logger, error, address, null);
@@ -128,7 +129,7 @@ public sealed partial class MemorySanitizer : IDisposable
         LoggerMessage.Define<Exception>(
             MsLogLevel.Error,
             new EventId(18609, nameof(LogFreeMemoryError)),
-            "Error freeing raw memory");
+            "Error freeing raw memory: {Exception}");
 
     private static void LogFreeMemoryError(ILogger logger, Exception error)
         => _logFreeMemoryError(logger, error, null);
@@ -146,7 +147,7 @@ public sealed partial class MemorySanitizer : IDisposable
         LoggerMessage.Define<Exception>(
             MsLogLevel.Error,
             new EventId(18611, nameof(LogLeakDetectionError)),
-            "Error during memory leak detection");
+            "Error during memory leak detection: {Exception}");
 
     private static void LogLeakDetectionError(ILogger logger, Exception error)
         => _logLeakDetectionError(logger, error, null);
@@ -164,7 +165,7 @@ public sealed partial class MemorySanitizer : IDisposable
         LoggerMessage.Define<Exception>(
             MsLogLevel.Error,
             new EventId(18613, nameof(LogIntegrityCheckError)),
-            "Error during integrity check");
+            "Error during integrity check: {Exception}");
 
     private static void LogIntegrityCheckError(ILogger logger, Exception error)
         => _logIntegrityCheckError(logger, error, null);
@@ -355,6 +356,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <param name="address">Memory address to read from</param>
     /// <param name="offset">Offset from base address</param>
     /// <returns>Read value or throws security exception</returns>
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "AccessViolationException is semantically correct for memory bounds violations in low-level sanitization")]
     public unsafe T ReadSanitized<T>(IntPtr address, nuint offset = 0) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -433,6 +435,7 @@ public sealed partial class MemorySanitizer : IDisposable
     /// <param name="address">Memory address to write to</param>
     /// <param name="value">Value to write</param>
     /// <param name="offset">Offset from base address</param>
+    [SuppressMessage("Design", "CA2201:Do not raise reserved exception types", Justification = "AccessViolationException is semantically correct for memory bounds violations in low-level sanitization")]
     public unsafe void WriteSanitized<T>(IntPtr address, T value, nuint offset = 0) where T : unmanaged
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -1055,7 +1058,11 @@ public sealed partial class MemorySanitizer : IDisposable
             {
                 if (_configuration.EnableSecureWiping)
                 {
+                    // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+                    // Secure wiping is critical for security during cleanup.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
                     PerformSecureWipeAsync(allocation).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 }
                 FreeRawMemory(allocation.BaseAddress, allocation.TotalSize);
             }

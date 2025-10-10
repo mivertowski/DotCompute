@@ -105,7 +105,9 @@ namespace DotCompute.Core.Execution
         /// <summary>
         /// Gets current performance metrics.
         /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with dictionary copies
         public ParallelExecutionMetrics GetCurrentMetrics()
+#pragma warning restore CA1024
         {
             lock (_metricsLock)
             {

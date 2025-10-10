@@ -111,23 +111,9 @@ public static partial class BufferAllocationUtilities
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
 
-
-        if (sourceOffset < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(sourceOffset));
-        }
-
-
-        if (destinationOffset < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(destinationOffset));
-        }
-
-
-        if (count <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(count));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(sourceOffset);
+        ArgumentOutOfRangeException.ThrowIfNegative(destinationOffset);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
 
         if (sourceOffset + count > source.Length)
@@ -168,16 +154,8 @@ public static partial class BufferAllocationUtilities
     {
         ArgumentNullException.ThrowIfNull(buffer);
 
-        if (offset < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(offset));
-        }
-
-
-        if (count <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(count));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
 
         if (offset + count > buffer.Length)
@@ -222,7 +200,9 @@ public static partial class BufferAllocationUtilities
                 GC.Collect(2, GCCollectionMode.Forced, true);
 
                 // Exponential backoff with jitter
+#pragma warning disable CA5394 // Random is used for exponential backoff jitter, not security
                 var actualDelay = TimeSpan.FromTicks((long)(delay.Ticks * Math.Pow(2, attempt - 1) * (0.8 + Random.Shared.NextDouble() * 0.4)));
+#pragma warning restore CA5394
                 await Task.Delay(actualDelay, cancellationToken);
             }
         }

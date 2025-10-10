@@ -392,6 +392,7 @@ public class PluginLifecycleManager(
         _pluginScopes.Clear();
 
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -496,7 +497,9 @@ public class DefaultPluginFactory(
             {
                 foreach (var parameter in bestConstructor.GetParameters())
                 {
+#pragma warning disable IL2072 // Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Plugin DI requires runtime dependency resolution
                     descriptors.Add(ServiceDescriptor.Transient(parameter.ParameterType, parameter.ParameterType));
+#pragma warning restore IL2072
                 }
             }
 
@@ -506,7 +509,9 @@ public class DefaultPluginFactory(
 
             foreach (var property in properties)
             {
+#pragma warning disable IL2072 // Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' - Plugin DI requires runtime dependency resolution
                 descriptors.Add(ServiceDescriptor.Transient(property.PropertyType, property.PropertyType));
+#pragma warning restore IL2072
             }
         }
         catch (Exception ex)

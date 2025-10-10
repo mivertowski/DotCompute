@@ -38,7 +38,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
     public IReadOnlyDictionary<string, object> Capabilities => new Dictionary<string, object>
     {
-        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.O1, OptimizationLevel.Aggressive } },
+        { "SupportedOptimizationLevels", new[] { OptimizationLevel.None, OptimizationLevel.O1, OptimizationLevel.O3 } },
         { "MaxKernelSize", 1024 * 1024 }, // 1MB
         { "SupportsAsync", true },
         { "SupportsDebugging", false },
@@ -247,7 +247,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         var compilationTime = definition.Language switch
         {
             KernelLanguage.CSharp => await CompileCSharpKernelAsync(definition, options, cancellationToken),
-            KernelLanguage.CUDA => await CompileCudaKernelAsync(definition, options, cancellationToken),
+            KernelLanguage.Cuda => await CompileCudaKernelAsync(definition, options, cancellationToken),
             KernelLanguage.OpenCL => await CompileOpenCLKernelAsync(definition, options, cancellationToken),
             KernelLanguage.HLSL => await CompileHLSLKernelAsync(definition, options, cancellationToken),
             KernelLanguage.Metal => await CompileMetalKernelAsync(definition, options, cancellationToken),
@@ -340,11 +340,11 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         await Task.Delay(Random.Shared.Next(5, 20), cancellationToken);
 
         // Generate realistic bytecode based on language and optimization level
-        var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.Balanced;
+        var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O2;
         var baseSize = definition.Language switch
         {
             KernelLanguage.CSharp => 2048,
-            KernelLanguage.CUDA => 1536,
+            KernelLanguage.Cuda => 1536,
             KernelLanguage.OpenCL => 1792,
             KernelLanguage.HLSL => 1280,
             KernelLanguage.Metal => 1400,
@@ -356,8 +356,8 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         {
             OptimizationLevel.None => 1.5,
             OptimizationLevel.O1 => 1.2,
-            OptimizationLevel.Balanced => 1.0,
-            OptimizationLevel.Aggressive => 0.8,
+            OptimizationLevel.O2 => 1.0,
+            OptimizationLevel.O3 => 0.8,
             _ => 1.0
         };
 
@@ -372,7 +372,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
         var header = definition.Language switch
         {
             KernelLanguage.CSharp => new byte[] { 0x43, 0x53, 0x48, 0x52 }, // "CSHR"
-            KernelLanguage.CUDA => [0x43, 0x55, 0x44, 0x41],   // "CUDA"
+            KernelLanguage.Cuda => [0x43, 0x55, 0x44, 0x41],   // "CUDA"
             KernelLanguage.OpenCL => [0x4F, 0x43, 0x4C, 0x00], // "OCL\0"
             KernelLanguage.HLSL => [0x48, 0x4C, 0x53, 0x4C],   // "HLSL"
             KernelLanguage.Metal => [0x4D, 0x54, 0x4C, 0x00],  // "MTL\0"
@@ -417,7 +417,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };
@@ -449,7 +449,7 @@ public sealed class ProductionKernelCompiler : IUnifiedKernelCompiler, IDisposab
 
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType,
             AllowUnsafeCode = true,

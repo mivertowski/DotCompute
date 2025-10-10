@@ -14,13 +14,9 @@ namespace DotCompute.Core.Pipelines.Services.Implementation
     /// <remarks>
     /// Initializes a new instance of the DefaultKernelResolver class.
     /// </remarks>
-    /// <param name="serviceProvider">The service provider for kernel discovery</param>
     /// <param name="logger">Optional logger for diagnostics</param>
-    public sealed partial class DefaultKernelResolver(
-        IServiceProvider serviceProvider,
-        ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
+    public sealed partial class DefaultKernelResolver(ILogger<DefaultKernelResolver>? logger = null) : IKernelResolver
     {
-        private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         private readonly ILogger<DefaultKernelResolver>? _logger = logger;
         private readonly ConcurrentDictionary<string, ICompiledKernel?> _kernelCache = new();
         private volatile bool _initialized;

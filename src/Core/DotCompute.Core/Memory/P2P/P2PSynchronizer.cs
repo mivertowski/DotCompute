@@ -179,7 +179,7 @@ namespace DotCompute.Core.Memory.P2P
                     {
                         await TimeoutBarrierAsync(barrierId);
                     }
-                });
+                }, TaskScheduler.Default);
 
                 _logger.LogDebugMessage($"Transfer barrier established: {barrierId} between {sourceDevice.Info.Name} and {targetDevice.Info.Name}");
 
@@ -296,7 +296,7 @@ namespace DotCompute.Core.Memory.P2P
                     {
                         await TimeoutBarrierAsync(barrierId);
                     }
-                });
+                }, TaskScheduler.Default);
 
                 var multiBarrier = new P2PMultiDeviceBarrier
                 {
@@ -667,7 +667,9 @@ namespace DotCompute.Core.Memory.P2P
         /// <summary>
         /// Gets comprehensive synchronization statistics.
         /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with calculations
         public P2PSyncStatistics GetSynchronizationStatistics()
+#pragma warning restore CA1024
         {
             lock (_statistics)
             {

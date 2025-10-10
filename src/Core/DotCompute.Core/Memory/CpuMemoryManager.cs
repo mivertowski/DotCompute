@@ -14,7 +14,9 @@ namespace DotCompute.Core.Memory;
 /// </summary>
 public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager> logger) : BaseMemoryManager(logger)
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
     private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+#pragma warning restore CA2213
     private long _totalAllocations;
     private long _totalDeallocations;
     private long _currentAllocatedBytes;
@@ -140,16 +142,16 @@ public class CpuMemoryManager(IAccelerator accelerator, ILogger<CpuMemoryManager
         int sourceOffset,
         IUnifiedMemoryBuffer<T> destination,
         int destinationOffset,
-        int length,
+        int count,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(destination);
 
 
-        var temp = new T[length];
-        var sourceView = CreateView(source, sourceOffset, length);
-        var destView = CreateView(destination, destinationOffset, length);
+        var temp = new T[count];
+        var sourceView = CreateView(source, sourceOffset, count);
+        var destView = CreateView(destination, destinationOffset, count);
 
 
         await sourceView.CopyToAsync(temp, cancellationToken);
@@ -1118,10 +1120,10 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
     /// </summary>
     /// <typeparam name="TSource">Type of elements to copy.</typeparam>
     /// <param name="source">Source data to copy from.</param>
-    /// <param name="destinationOffset">Offset into this view in bytes.</param>
+    /// <param name="offset">Offset into this view in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long destinationOffset, CancellationToken cancellationToken = default) where TSource : unmanaged
+    public ValueTask CopyFromAsync<TSource>(ReadOnlyMemory<TSource> source, long offset, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
         {
@@ -1131,7 +1133,7 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
 
 
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
-        var targetOffset = _offset + (int)(destinationOffset / Unsafe.SizeOf<T>());
+        var targetOffset = _offset + (int)(offset / Unsafe.SizeOf<T>());
         typedSource.CopyTo(_parent.AsSpan().Slice(targetOffset));
         return ValueTask.CompletedTask;
     }
@@ -1141,10 +1143,10 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
     /// </summary>
     /// <typeparam name="TDest">Type of elements to copy.</typeparam>
     /// <param name="destination">Destination memory to copy to.</param>
-    /// <param name="sourceOffset">Offset into this view in bytes.</param>
+    /// <param name="offset">Offset into this view in bytes.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Completed task when copy finishes.</returns>
-    public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long sourceOffset, CancellationToken cancellationToken = default) where TDest : unmanaged
+    public ValueTask CopyToAsync<TDest>(Memory<TDest> destination, long offset, CancellationToken cancellationToken = default) where TDest : unmanaged
     {
         if (typeof(TDest) != typeof(T))
         {
@@ -1154,7 +1156,7 @@ public sealed class CpuMemoryBufferView<T> : IUnifiedMemoryBuffer<T> where T : u
 
 
         var typedDest = MemoryMarshal.Cast<TDest, T>(destination.Span);
-        var sourceOffsetElements = _offset + (int)(sourceOffset / Unsafe.SizeOf<T>());
+        var sourceOffsetElements = _offset + (int)(offset / Unsafe.SizeOf<T>());
         _parent.AsSpan().Slice(sourceOffsetElements, typedDest.Length).CopyTo(typedDest);
         return ValueTask.CompletedTask;
     }

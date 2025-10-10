@@ -59,8 +59,14 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
             result.CompatibilityCheckPassed = compatibilityResult.IsCompatible;
 
             // Add errors and warnings to the validation result
-            result.Errors.AddRange(compatibilityResult.CompatibilityErrors);
-            result.Warnings.AddRange(compatibilityResult.CompatibilityWarnings);
+            foreach (var error in compatibilityResult.CompatibilityErrors)
+            {
+                result.Errors.Add(error);
+            }
+            foreach (var warning in compatibilityResult.CompatibilityWarnings)
+            {
+                result.Warnings.Add(warning);
+            }
 
             _logger.LogInfoMessage($"Compatibility validation completed for plugin: {manifest.Id}. Compatible: {compatibilityResult.IsCompatible}");
         }

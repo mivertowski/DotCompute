@@ -20,7 +20,9 @@ namespace DotCompute.Core.Memory
         P2PCapabilityDetector capabilityDetector) : IAsyncDisposable
     {
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly P2PCapabilityDetector _capabilityDetector = capabilityDetector ?? throw new ArgumentNullException(nameof(capabilityDetector));
+#pragma warning restore CA2213
         private readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools = new();
         private readonly ConcurrentDictionary<string, P2PConnectionState> _activeP2PConnections = new();
         private readonly SemaphoreSlim _factorySemaphore = new(1, 1);

@@ -422,7 +422,9 @@ namespace DotCompute.Core.Memory.P2P
         /// <summary>
         /// Gets comprehensive P2P transfer statistics.
         /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Method creates new object with comprehensive statistics
         public P2PTransferStatistics GetTransferStatistics()
+#pragma warning restore CA1024
         {
             lock (_statistics)
             {
@@ -445,7 +447,7 @@ namespace DotCompute.Core.Memory.P2P
         /// <summary>
         /// Gets capability matrix for topology analysis.
         /// </summary>
-        public P2PCapabilityMatrix GetCapabilityMatrix() => _capabilityMatrix;
+        public P2PCapabilityMatrix CapabilityMatrix => _capabilityMatrix;
 
         /// <summary>
         /// Gets active transfer sessions.

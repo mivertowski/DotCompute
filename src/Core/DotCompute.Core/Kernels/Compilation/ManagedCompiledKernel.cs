@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions.Kernels;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -221,6 +222,7 @@ public sealed class ManagedCompiledKernel : AbstractionsMemory.ICompiledKernel
     /// <param name="arguments">The kernel arguments.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous execution.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Dynamic assembly loading and reflection are required for managed kernel execution. This method is intentionally not AOT-compatible.")]
     private async ValueTask ExecuteWithReflectionAsync(KernelArguments arguments, CancellationToken cancellationToken)
     {
         await Task.Run(() =>

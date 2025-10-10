@@ -34,7 +34,9 @@ public sealed class ProductionTelemetryProvider : AbstractionsMemory.Telemetry.P
     private readonly MetricsCollector _metricsCollector;
     private readonly PerformanceProfiler _performanceProfiler;
     private readonly ConcurrentDictionary<string, object> _correlationContext;
+#pragma warning disable CA2213 // Disposable fields should be disposed - Timer is properly disposed in Dispose method at line 436
     private readonly Timer _samplingTimer = null!;
+#pragma warning restore CA2213
     private volatile bool _disposed;
     /// <summary>
     /// Initializes a new instance of the ProductionTelemetryProvider class.

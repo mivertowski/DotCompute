@@ -18,10 +18,11 @@ namespace DotCompute.Core.Pipelines
     /// <summary>
     /// Default implementation of IPipelineMemoryManager.
     /// </summary>
-    internal sealed class PipelineMemoryManager(IUnifiedMemoryManager memoryManager, IComputeDevice device) : IPipelineMemoryManager
+    internal sealed class PipelineMemoryManager(IComputeDevice device) : IPipelineMemoryManager
     {
-        private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly IComputeDevice _device = device ?? throw new ArgumentNullException(nameof(device));
+#pragma warning restore CA2213
         private readonly ConcurrentDictionary<string, object> _sharedMemories = new();
         private readonly ConcurrentDictionary<Type, MemoryPool> _pools = new();
         private readonly Lock _statsLock = new();
@@ -390,7 +391,9 @@ namespace DotCompute.Core.Pipelines
     {
         private readonly IDeviceMemory _deviceMemory = deviceMemory;
         private readonly long _elementCount = elementCount;
+#pragma warning disable CA2213 // Disposable fields should be disposed - Injected dependency, not owned by this class
         private readonly IComputeDevice _device = device;
+#pragma warning restore CA2213
         private readonly bool _isFromPool = isFromPool;
         private readonly SemaphoreSlim _lockSemaphore = new(1, 1);
         private readonly object _disposeLock = new();

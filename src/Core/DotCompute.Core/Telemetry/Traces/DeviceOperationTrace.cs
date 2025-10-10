@@ -41,9 +41,9 @@ public sealed class DeviceOperationTrace
     public DateTimeOffset LastOperationTime { get; set; }
 
     /// <summary>
-    /// Gets or sets the collection of currently active spans on this device.
+    /// Gets the collection of currently active spans on this device.
     /// Spans are added when operations start and removed when they complete.
     /// </summary>
     /// <value>A thread-safe collection of active span contexts.</value>
-    public ConcurrentBag<SpanContext> ActiveSpans { get; set; } = [];
+    public ConcurrentBag<SpanContext> ActiveSpans { get; } = [];
 }

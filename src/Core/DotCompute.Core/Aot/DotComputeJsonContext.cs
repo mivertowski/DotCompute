@@ -2,6 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text.Json.Serialization;
+using DotCompute.Core.Logging;
+using DotCompute.Core.Security;
+using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Debugging.Types;
 
 namespace DotCompute.Core.Aot
 {
@@ -10,6 +14,7 @@ namespace DotCompute.Core.Aot
     /// AOT-compatible JSON serialization context for DotCompute.
     /// This replaces runtime JsonSerializer calls with source-generated serialization.
     /// </summary>
+    // Pipeline and telemetry types
     [JsonSerializable(typeof(PipelineMetricsData))]
     [JsonSerializable(typeof(StageMetricsData))]
     [JsonSerializable(typeof(TimeSeriesData))]
@@ -21,14 +26,56 @@ namespace DotCompute.Core.Aot
     [JsonSerializable(typeof(OpenTelemetryDataPoint))]
     [JsonSerializable(typeof(PipelineTelemetryData))]
     [JsonSerializable(typeof(OpenTelemetryData))]
+    // Logging types
+    [JsonSerializable(typeof(StructuredLogEntry))]
+    [JsonSerializable(typeof(List<StructuredLogEntry>))]
+    [JsonSerializable(typeof(IReadOnlyList<StructuredLogEntry>))]
+    // Debugging types
+    [JsonSerializable(typeof(DebugReport))]
+    [JsonSerializable(typeof(KernelValidationResult))]
+    [JsonSerializable(typeof(ResultComparisonReport))]
+    [JsonSerializable(typeof(CrossValidationResult))]
+    [JsonSerializable(typeof(PerformanceAnalysis))]
+    [JsonSerializable(typeof(DeterminismTestResult))]
+    [JsonSerializable(typeof(MemoryPatternAnalysis))]
+    // Security types
+    [JsonSerializable(typeof(SecurityEvent))]
+    [JsonSerializable(typeof(List<SecurityEvent>))]
+    [JsonSerializable(typeof(IReadOnlyList<SecurityEvent>))]
+    [JsonSerializable(typeof(SecurityAuditReport))]
+    [JsonSerializable(typeof(SecurityMetrics))]
+    [JsonSerializable(typeof(SecurityLogEntry))]
+    [JsonSerializable(typeof(List<SecurityLogEntry>))]
+    [JsonSerializable(typeof(IReadOnlyList<SecurityLogEntry>))]
+    // Dictionary and collection types
     [JsonSerializable(typeof(Dictionary<string, object>))]
     [JsonSerializable(typeof(Dictionary<string, string>))]
     [JsonSerializable(typeof(Dictionary<string, double>))]
+    [JsonSerializable(typeof(Dictionary<string, int>))]
+    [JsonSerializable(typeof(object))]
     [JsonSourceGenerationOptions(
         WriteIndented = true,
         PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata)]
     public partial class DotComputeJsonContext : JsonSerializerContext
+    {
+    }
+
+    /// <summary>
+    /// Compact JSON source generation context for log files and audit trails.
+    /// Uses minimal formatting for efficient storage.
+    /// </summary>
+    [JsonSerializable(typeof(StructuredLogEntry))]
+    [JsonSerializable(typeof(SecurityEvent))]
+    [JsonSerializable(typeof(SecurityLogEntry))]
+    [JsonSerializable(typeof(object))]
+    [JsonSourceGenerationOptions(
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata)]
+    public partial class DotComputeCompactJsonContext : JsonSerializerContext
     {
     }
 

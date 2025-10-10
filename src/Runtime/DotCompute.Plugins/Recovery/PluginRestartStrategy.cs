@@ -3,7 +3,7 @@
 
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
-using RecoveryResult = DotCompute.Core.Recovery.RecoveryResult;
+using DotCompute.Abstractions.Interfaces.Recovery;
 
 namespace DotCompute.Plugins.Recovery;
 
@@ -36,8 +36,8 @@ public sealed class PluginRestartStrategy : IDisposable
     {
         var success = await RestartPluginAsync(context.PluginId, cancellationToken);
         return success
-            ? new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} restarted successfully", Strategy = "Restart", Duration = TimeSpan.FromMilliseconds(500) }
-            : new RecoveryResult { Success = false, Message = $"Failed to restart plugin {context.PluginId}", Strategy = "Restart" };
+            ? RecoveryResult.CreateSuccess($"Plugin {context.PluginId} restarted successfully", "Restart")
+            : RecoveryResult.CreateFailure($"Failed to restart plugin {context.PluginId}", "Restart");
     }
 
     /// <summary>
@@ -56,12 +56,12 @@ public sealed class PluginRestartStrategy : IDisposable
             var success = await LoadPluginAsync(context.PluginId, context.PluginPath, cancellationToken);
 
             return success
-                ? new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} reloaded successfully", Strategy = "Reload", Duration = TimeSpan.FromMilliseconds(800) }
-                : new RecoveryResult { Success = false, Message = $"Failed to reload plugin {context.PluginId}", Strategy = "Reload" };
+                ? RecoveryResult.CreateSuccess($"Plugin {context.PluginId} reloaded successfully", "Reload")
+                : RecoveryResult.CreateFailure($"Failed to reload plugin {context.PluginId}", "Reload");
         }
         catch (Exception ex)
         {
-            return new RecoveryResult { Success = false, Message = $"Plugin reload failed: {ex.Message}", Strategy = "Reload", Exception = ex };
+            return RecoveryResult.CreateFailure($"Plugin reload failed: {ex.Message}", "Reload", ex);
         }
     }
 
@@ -75,7 +75,7 @@ public sealed class PluginRestartStrategy : IDisposable
         // This would integrate with version management system
         await Task.Delay(100, cancellationToken);
 
-        return new RecoveryResult { Success = true, Message = $"Plugin {context.PluginId} rolled back to stable version", Strategy = "Rollback", Duration = TimeSpan.FromMilliseconds(600) };
+        return RecoveryResult.CreateSuccess($"Plugin {context.PluginId} rolled back to stable version", "Rollback");
     }
 
     /// <summary>

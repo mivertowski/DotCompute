@@ -712,7 +712,7 @@ public class KernelExecutionService(
         /// Gets or sets the arguments.
         /// </summary>
         /// <value>The arguments.</value>
-        public object[] Arguments { get; set; } = Array.Empty<object>();
+        public IReadOnlyList<object> Arguments { get; set; } = Array.Empty<object>();
         /// <summary>
         /// Gets or sets the preferred backend.
         /// </summary>

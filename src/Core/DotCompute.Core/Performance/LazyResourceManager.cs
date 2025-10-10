@@ -584,7 +584,12 @@ public sealed partial class LazyResourceManager<T> : IDisposable where T : class
 
             try
             {
+                // VSTHRD002: Synchronous wait is necessary here because IDisposable.Dispose() cannot be async.
+                // The alternative IAsyncDisposable pattern is not applicable for this scenario.
+                // ConfigureAwait(false) is used in the async methods to prevent deadlocks.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
                 Task.WhenAll(disposalTasks).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception ex)
             {

@@ -130,7 +130,9 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
                 if (_compilationTasks.TryGetValue(cacheKey, out var existingTcs))
                 {
                     _logger.LogDebugMessage($"{CompilerName}: Waiting for concurrent compilation of kernel '{definition.Name}'");
+#pragma warning disable VSTHRD003 // Intentional pattern: awaiting TCS from another thread for compilation deduplication
                     return await existingTcs.Task.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
                 }
             }
         }
@@ -379,7 +381,8 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         var code = source.ToString() ?? string.Empty;
         var entryPoint = "main"; // Default entry point
 
-        // Use reflection to get properties if available
+        // Use reflection to get properties if available - Dynamic property lookup for flexible IKernelSource implementations
+#pragma warning disable IL2075 // Unrecognized reflection patterns
         var sourceType = source.GetType();
         var nameProperty = sourceType.GetProperty("Name");
         if (nameProperty?.GetValue(source) is string sourceName)
@@ -398,6 +401,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         {
             entryPoint = sourceEntry;
         }
+#pragma warning restore IL2075
 
 
         return new KernelDefinition(name, code, entryPoint);
@@ -554,7 +558,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
     }
 
     /// <inheritdoc />
-    public virtual Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
+    public virtual async Task<bool> CanCompileAsync(KernelDefinition kernelDefinition, IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(kernelDefinition);
         ArgumentNullException.ThrowIfNull(accelerator);
@@ -566,7 +570,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         }
         catch
         {
-            return Task.FromResult(false);
+            return false;
         }
     }
 

@@ -647,9 +647,8 @@ public sealed partial class SignatureVerifier : IDisposable
         string hashAlgorithm)
     {
         // Generate a cache key based on data hash, signature, key, and algorithm
-        using var sha256 = SHA256.Create();
-        var dataHash = sha256.ComputeHash(data.ToArray());
-        var signatureHash = sha256.ComputeHash(signature.ToArray());
+        var dataHash = SHA256.HashData(data.Span);
+        var signatureHash = SHA256.HashData(signature.Span);
 
 
         return $"{Convert.ToHexString(dataHash)[..16]}_{Convert.ToHexString(signatureHash)[..16]}_{keyIdentifier}_{hashAlgorithm}";

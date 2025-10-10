@@ -203,7 +203,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
                 TransferCount = dataSets.Length,
                 SuccessfulTransfers = allResults.Count(r => r.Success),
                 FailedTransfers = allResults.Count(r => !r.Success),
-                Results = allResults,
+                IndividualResults = allResults,
                 TotalBytes = allResults.Sum(r => r.TotalBytes),
                 AverageThroughputMBps = allResults.Where(r => r.Success).Average(r => r.ThroughputMBps),
                 Success = allResults.All(r => r.Success),

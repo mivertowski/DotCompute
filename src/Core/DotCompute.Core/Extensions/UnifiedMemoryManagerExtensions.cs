@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 
@@ -273,6 +274,8 @@ namespace DotCompute.Core.Extensions
         /// <param name="count">The number of elements to allocate.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A unified memory buffer.</returns>
+        [RequiresUnreferencedCode("This method uses reflection to dynamically invoke generic methods and may not work in AOT scenarios.")]
+        [RequiresDynamicCode("This method uses reflection to dynamically invoke generic methods and may not work in AOT scenarios.")]
         public static ValueTask<IUnifiedMemoryBuffer<T>> AllocateUnifiedAsync<T>(
             this IUnifiedMemoryManager memoryManager,
             int count,
@@ -308,6 +311,8 @@ namespace DotCompute.Core.Extensions
         /// <param name="count">The number of elements to allocate.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A pinned memory buffer.</returns>
+        [RequiresUnreferencedCode("This method uses reflection to dynamically invoke generic methods and may not work in AOT scenarios.")]
+        [RequiresDynamicCode("This method uses reflection to dynamically invoke generic methods and may not work in AOT scenarios.")]
         public static ValueTask<IUnifiedMemoryBuffer<T>> AllocatePinnedAsync<T>(
             this IUnifiedMemoryManager memoryManager,
             int count,
