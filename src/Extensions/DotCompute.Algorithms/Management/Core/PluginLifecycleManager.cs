@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
 using DotCompute.Abstractions;
@@ -167,6 +168,10 @@ public sealed partial class PluginLifecycleManager(
     {
         ArgumentNullException.ThrowIfNull(plugin);
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin lifecycle management requires assembly location for plugin isolation. Not used in single-file deployment scenarios.")]
+        static string GetAssemblyLocationForPlugin(Type type) => type.Assembly.Location;
+
         var metadata = new PluginMetadata
         {
             Id = plugin.Id,
@@ -174,7 +179,7 @@ public sealed partial class PluginLifecycleManager(
             Version = plugin.Version.ToString(),
             Description = plugin.Description,
             Author = "External",
-            AssemblyPath = plugin.GetType().Assembly.Location,
+            AssemblyPath = GetAssemblyLocationForPlugin(plugin.GetType()),
             LoadTime = DateTime.UtcNow,
             AssemblyName = plugin.GetType().Assembly.GetName().Name ?? "Unknown",
             TypeName = plugin.GetType().FullName ?? plugin.GetType().Name,
@@ -186,7 +191,7 @@ public sealed partial class PluginLifecycleManager(
 
         // Use default load context for external plugins
         var loadContext = AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as PluginAssemblyLoadContext
-                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", plugin.GetType().Assembly.Location, false);
+                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", GetAssemblyLocationForPlugin(plugin.GetType()), false);
 
         await RegisterPluginAsync(plugin, loadContext, plugin.GetType().Assembly, metadata, cancellationToken).ConfigureAwait(false);
     }
@@ -269,13 +274,17 @@ public sealed partial class PluginLifecycleManager(
             return null;
         }
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin info requires assembly location for diagnostics. Not used in single-file deployment scenarios.")]
+        static string GetLoadedPluginLocation(Assembly assembly) => assembly.Location;
+
         return new LoadedPluginInfo
         {
             Plugin = loadedPlugin.Plugin,
             Metadata = loadedPlugin.Metadata,
             LoadContext = loadedPlugin.LoadContext,
             Assembly = loadedPlugin.Assembly,
-            AssemblyLocation = loadedPlugin.Assembly.Location,
+            AssemblyLocation = GetLoadedPluginLocation(loadedPlugin.Assembly),
             LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown",
             State = loadedPlugin.State,
             Health = loadedPlugin.Health,

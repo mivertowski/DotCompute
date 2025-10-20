@@ -439,7 +439,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing authenticode validator");
+                LogAuthenticodeValidatorDisposeFailed(ex);
             }
 
             try
@@ -448,7 +448,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing malware scanner");
+                LogMalwareScannerDisposeFailed(ex);
             }
 
             LogSecurityValidatorDisposed();
@@ -474,6 +474,12 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Unified security validator disposed")]
     private partial void LogSecurityValidatorDisposed();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error disposing authenticode validator")]
+    private partial void LogAuthenticodeValidatorDisposeFailed(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error disposing malware scanner")]
+    private partial void LogMalwareScannerDisposeFailed(Exception ex);
 
     #endregion
 }

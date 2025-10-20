@@ -10,6 +10,7 @@ using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Algorithms.Management;
 
@@ -193,9 +194,15 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(plugin);
 
         // Create metadata for external plugin
-        var metadata = _metadataManager.CreateDefaultMetadata(plugin.GetType().Assembly.Location, plugin.GetType());
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin registration requires assembly location for metadata tracking. Not used in single-file deployment scenarios.")]
+        static string GetAssemblyLocation(Type type) => type.Assembly.Location;
+        var metadata = _metadataManager.CreateDefaultMetadata(GetAssemblyLocation(plugin.GetType()), plugin.GetType());
 
         // Create loaded plugin info
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin registration requires assembly location for diagnostic tracking. Not used in single-file deployment scenarios.")]
+        static string GetPluginAssemblyLocation(Type type) => type.Assembly.Location;
         var loadedPlugin = new LoadedPluginInfo
         {
             Plugin = plugin,
@@ -203,7 +210,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
             LoadContext = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as Loading.PluginAssemblyLoadContext
                 ?? throw new InvalidOperationException("Unable to get load context for plugin assembly"),
             Assembly = plugin.GetType().Assembly,
-            AssemblyLocation = plugin.GetType().Assembly.Location,
+            AssemblyLocation = GetPluginAssemblyLocation(plugin.GetType()),
             LoadContextName = $"External_{plugin.Id}",
             State = PluginState.Loaded,
             Health = PluginHealth.Unknown,

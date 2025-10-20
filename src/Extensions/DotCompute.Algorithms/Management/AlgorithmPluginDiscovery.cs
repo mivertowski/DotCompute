@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Management.Configuration;
@@ -54,6 +55,8 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         /// <param name="assembly">The assembly to scan.</param>
         /// <returns>The list of discovered plugin types.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+            Justification = "Plugin loading requires dynamic assembly inspection by design")]
         public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
         {
             ArgumentNullException.ThrowIfNull(assembly);
@@ -240,12 +243,12 @@ namespace DotCompute.Algorithms.Management
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error disposing file watcher");
+                        LogFileWatcherDisposeFailed(ex);
                     }
                 }
                 _watchers.Clear();
 
-                _logger.LogInformation("AlgorithmPluginDiscovery disposed");
+                LogDiscoveryDisposed();
             }
         }
 
@@ -276,5 +279,11 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Error, Message = "File watcher error occurred")]
         private partial void LogFileWatcherError(Exception exception);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Error disposing file watcher")]
+        private partial void LogFileWatcherDisposeFailed(Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "AlgorithmPluginDiscovery disposed")]
+        private partial void LogDiscoveryDisposed();
     }
 }

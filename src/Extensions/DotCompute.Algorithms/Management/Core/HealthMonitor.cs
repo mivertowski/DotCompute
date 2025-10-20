@@ -113,15 +113,15 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <summary>
     /// Checks the health of a single plugin.
     /// </summary>
-    private async Task CheckPluginHealthInternalAsync(dynamic loadedPlugin)
+    private async Task CheckPluginHealthInternalAsync(AlgorithmPluginRegistry.LoadedPlugin loadedPlugin)
     {
         try
         {
-            var oldHealth = (PluginHealth)loadedPlugin.Health;
+            var oldHealth = loadedPlugin.Health;
 
             // Check if plugin has been executing successfully
             if (loadedPlugin.LastError != null &&
-                DateTime.UtcNow - (DateTime)loadedPlugin.LastExecution < TimeSpan.FromMinutes(5))
+                DateTime.UtcNow - loadedPlugin.LastExecution < TimeSpan.FromMinutes(5))
             {
                 loadedPlugin.Health = PluginHealth.Degraded;
             }
@@ -154,7 +154,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
     /// <summary>
     /// Monitors memory usage for a loaded plugin.
     /// </summary>
-    private async Task PerformMemoryUsageMonitoringAsync(dynamic loadedPlugin)
+    private async Task PerformMemoryUsageMonitoringAsync(AlgorithmPluginRegistry.LoadedPlugin loadedPlugin)
     {
         try
         {
@@ -191,14 +191,14 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to monitor memory usage for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
+            LogFailedToMonitorMemoryUsage(ex, loadedPlugin.Plugin.Id);
         }
     }
 
     /// <summary>
     /// Analyzes response time patterns for a loaded plugin.
     /// </summary>
-    private async Task PerformResponseTimeAnalysisAsync(dynamic loadedPlugin)
+    private async Task PerformResponseTimeAnalysisAsync(AlgorithmPluginRegistry.LoadedPlugin loadedPlugin)
     {
         try
         {
@@ -207,7 +207,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
                 return; // No executions to analyze
             }
 
-            var averageResponseTime = ((TimeSpan)loadedPlugin.TotalExecutionTime).TotalMilliseconds / loadedPlugin.ExecutionCount;
+            var averageResponseTime = loadedPlugin.TotalExecutionTime.TotalMilliseconds / loadedPlugin.ExecutionCount;
             const double maxAcceptableResponseTime = 30000; // 30 seconds
             const double warningResponseTime = 10000; // 10 seconds
 
@@ -246,14 +246,14 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to analyze response times for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
+            LogFailedToAnalyzeResponseTimes(ex, loadedPlugin.Plugin.Id);
         }
     }
 
     /// <summary>
     /// Tracks error rates for a loaded plugin.
     /// </summary>
-    private async Task PerformErrorRateTrackingAsync(dynamic loadedPlugin)
+    private async Task PerformErrorRateTrackingAsync(AlgorithmPluginRegistry.LoadedPlugin loadedPlugin)
     {
         try
         {
@@ -302,14 +302,14 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to track error rates for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
+            LogFailedToTrackErrorRates(ex, loadedPlugin.Plugin.Id);
         }
     }
 
     /// <summary>
     /// Detects potential resource leaks for a loaded plugin.
     /// </summary>
-    private async Task PerformResourceLeakDetectionAsync(dynamic loadedPlugin)
+    private async Task PerformResourceLeakDetectionAsync(AlgorithmPluginRegistry.LoadedPlugin loadedPlugin)
     {
         try
         {
@@ -331,7 +331,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
                             loadedPlugin.Health = PluginHealth.Degraded;
                         }
 
-                        _logger.LogWarningMessage($"Potential handle leak detected for plugin {(string)loadedPlugin.Plugin.Id}: {handleIncrease} new handles");
+                        _logger.LogWarningMessage($"Potential handle leak detected for plugin {loadedPlugin.Plugin.Id}: {handleIncrease} new handles");
                     }
                 }
             }
@@ -345,7 +345,7 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", (string)loadedPlugin.Plugin.Id);
+            LogFailedToDetectResourceLeaks(ex, loadedPlugin.Plugin.Id);
         }
     }
 
@@ -368,6 +368,18 @@ public sealed partial class HealthMonitor : IHealthMonitor, IDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Plugin health changed for {PluginId}: {OldHealth} -> {NewHealth}")]
     private partial void LogPluginHealthChanged(string pluginId, PluginHealth oldHealth, PluginHealth newHealth);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to monitor memory usage for plugin: {PluginId}")]
+    private partial void LogFailedToMonitorMemoryUsage(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to analyze response times for plugin: {PluginId}")]
+    private partial void LogFailedToAnalyzeResponseTimes(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to track error rates for plugin: {PluginId}")]
+    private partial void LogFailedToTrackErrorRates(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to detect resource leaks for plugin: {PluginId}")]
+    private partial void LogFailedToDetectResourceLeaks(Exception ex, string pluginId);
 
     #endregion
 }

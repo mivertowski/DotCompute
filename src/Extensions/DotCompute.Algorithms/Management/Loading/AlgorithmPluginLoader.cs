@@ -175,7 +175,11 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
     /// Creates a plugin instance from a type with proper error handling.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin instantiation requires dynamic type handling")]
-    private static IAlgorithmPlugin? CreatePluginInstance(Type pluginType)
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Plugin system requires dynamic constructor access for ILogger<T> pattern")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Plugin system requires generic type instantiation for ILogger<T> and NullLogger<T> by design")]
+    private static IAlgorithmPlugin? CreatePluginInstance(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type pluginType)
     {
         try
         {
@@ -208,6 +212,10 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
     /// <summary>
     /// Loads plugin types from an assembly.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin discovery. This is a core design requirement.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
+        Justification = "Plugin types from assembly scanning are IAlgorithmPlugin implementations")]
     private async Task<IReadOnlyList<LoadedPluginResult>> LoadPluginTypesFromAssemblyAsync(
         Assembly assembly,
         PluginAssemblyLoadContext loadContext,
@@ -226,7 +234,11 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
             {
                 if (CreatePluginInstance(pluginType) is IAlgorithmPlugin plugin)
                 {
-                    var pluginMetadata = metadata ?? CreateDefaultMetadata(plugin, assembly.Location);
+                    [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+                        Justification = "Plugin loading requires assembly location for metadata creation. Not used in single-file deployment scenarios.")]
+                    static string GetPluginAssemblyLocation(Assembly asm) => asm.Location;
+
+                    var pluginMetadata = metadata ?? CreateDefaultMetadata(plugin, GetPluginAssemblyLocation(assembly));
 
                     var result = new LoadedPluginResult
                     {
@@ -296,7 +308,7 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error unloading assembly context {ContextName}", kvp.Key);
+                    LogContextUnloadError(ex, kvp.Key);
                 }
             }
 
@@ -330,6 +342,9 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to unload assembly {AssemblyName}: {Reason}")]
     private partial void LogAssemblyUnloadFailed(string assemblyName, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error unloading assembly context {ContextName}")]
+    private partial void LogContextUnloadError(Exception ex, string contextName);
 
     #endregion
 }

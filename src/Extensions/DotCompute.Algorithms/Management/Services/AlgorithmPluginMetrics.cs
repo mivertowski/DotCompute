@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
@@ -629,6 +630,10 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
     /// <summary>
     /// Exports metrics as JSON.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for diagnostics and metrics export only.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for diagnostics and metrics export only.")]
     private string ExportAsJson()
     {
         var allMetrics = GetAllPluginMetrics();

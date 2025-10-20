@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -637,7 +638,9 @@ public sealed class AutoTuner : IDisposable
 
 
         Console.WriteLine($"Auto-tuning completed after {iteration} iterations.");
+#pragma warning disable IL2026, IL3050 // JSON serialization for diagnostics only
         Console.WriteLine($"Best parameters: {JsonSerializer.Serialize(finalProfile.OptimalParameters)}");
+#pragma warning restore IL2026, IL3050
         Console.WriteLine($"Best performance: {finalProfile.BestPerformance:F2} MFLOPS");
 
 
@@ -849,6 +852,10 @@ public sealed class AutoTuner : IDisposable
     }
 
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     private void LoadConfiguration()
     {
         try
@@ -875,6 +882,10 @@ public sealed class AutoTuner : IDisposable
     }
 
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     private void SaveConfiguration()
     {
         try

@@ -256,7 +256,11 @@ public sealed partial class AlgorithmPluginLoader(
     /// <param name="pluginType">The plugin type to instantiate.</param>
     /// <returns>The created plugin instance, or null if creation failed.</returns>
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin instantiation requires dynamic type handling")]
-    public IAlgorithmPlugin? CreatePluginInstance(Type pluginType)
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Plugin system requires dynamic constructor access for ILogger<T> pattern")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Plugin system requires generic type instantiation for ILogger<T> and NullLogger<T> by design")]
+    public IAlgorithmPlugin? CreatePluginInstance(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type pluginType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(pluginType);
@@ -331,6 +335,10 @@ public sealed partial class AlgorithmPluginLoader(
     /// <summary>
     /// Loads plugin metadata from a manifest file.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON deserialization for plugin metadata only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON deserialization for plugin metadata only")]
     private async Task<PluginMetadata?> LoadPluginMetadataAsync(string assemblyPath)
     {
         var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
@@ -396,7 +404,7 @@ public sealed partial class AlgorithmPluginLoader(
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to unload context {ContextName}", context.Name);
+                    LogContextUnloadError(ex, context.Name);
                 }
             }
 
@@ -422,7 +430,7 @@ public sealed partial class AlgorithmPluginLoader(
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to unload context {ContextName}", context.Name);
+                    LogContextUnloadError(ex, context.Name);
                 }
             }
 
@@ -471,6 +479,9 @@ public sealed partial class AlgorithmPluginLoader(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to unload context {AssemblyName}: {Reason}")]
     private partial void LogLoadContextUnloadFailed(string assemblyName, string reason);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to unload context {ContextName}")]
+    private partial void LogContextUnloadError(Exception ex, string contextName);
 
     #endregion
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.Json;
@@ -220,6 +221,10 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
     /// <summary>
     /// Loads metadata from a JSON manifest file.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for plugin metadata only. Types are well-defined and preserved.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for plugin metadata only.")]
     private async Task<PluginMetadata?> LoadFromManifestAsync(string assemblyPath)
     {
         var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
@@ -256,6 +261,8 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
     /// <summary>
     /// Loads metadata from assembly attributes.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for metadata extraction.")]
     private async Task<PluginMetadata?> LoadFromAssemblyAttributesAsync(string assemblyPath)
     {
         try

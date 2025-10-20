@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Abstractions.Security;
@@ -198,6 +199,10 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     /// </summary>
     /// <param name="filePath">The file path to save to.</param>
     /// <returns>A task representing the async operation.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task SavePolicyToFileAsync(string filePath)
     {
         var policyData = new

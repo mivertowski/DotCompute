@@ -17,7 +17,7 @@ namespace DotCompute.Algorithms.Management
     /// Integration tests for NuGet plugin loader functionality.
     /// This class demonstrates the capabilities and validates the implementation.
     /// </summary>
-    public sealed class NuGetPluginLoaderTests : IDisposable
+    public sealed partial class NuGetPluginLoaderTests : IDisposable
     {
         private readonly ILogger<NuGetPluginLoader> _logger;
         private readonly string _testCacheDirectory;
@@ -234,7 +234,7 @@ namespace DotCompute.Algorithms.Management
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Framework {Framework} not supported: {ErrorMessage}", framework, ex.Message);
+                    LogFrameworkNotSupported(ex, framework, ex.Message);
                 }
             }
 
@@ -327,7 +327,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Security validation failed (expected for test packages): {ErrorMessage}", ex.Message);
+                LogSecurityValidationFailed(ex, ex.Message);
             }
 
             // Test with size limit exceeded
@@ -358,7 +358,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogInformation(ex, "Large package rejected as expected: {ErrorMessage}", ex.Message);
+                LogLargePackageRejected(ex, ex.Message);
             }
 
             _logger.LogInfoMessage("Security validation test completed successfully");
@@ -414,7 +414,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Update failed (expected for local packages): {ErrorMessage}", ex.Message);
+                LogUpdateFailed(ex, ex.Message);
             }
 
             _logger.LogInfoMessage("Package updates test completed successfully");
@@ -440,7 +440,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 _ = await loader.LoadPackageAsync("NonExistentPackage.nupkg", "net9.0");
-                _logger.LogError("ERROR: Should have thrown FileNotFoundException");
+                LogShouldHaveThrown("FileNotFoundException");
             }
             catch (FileNotFoundException ex)
             {
@@ -458,7 +458,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 _ = await loader.LoadPackageAsync(invalidPackagePath, "net9.0");
-                _logger.LogError("ERROR: Should have thrown format exception");
+                LogShouldHaveThrown("format exception");
             }
             catch (Exception ex)
             {
@@ -476,7 +476,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 _ = await loader.LoadPackageAsync(emptyPackagePath, "net9.0");
-                _logger.LogError("ERROR: Should have thrown exception for missing nuspec");
+                LogShouldHaveThrown("exception for missing nuspec");
             }
             catch (Exception ex)
             {
@@ -602,15 +602,37 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to clean up test directory: {TestDirectory}", _testCacheDirectory);
+                LogCleanupFailed(ex, _testCacheDirectory);
             }
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Framework {Framework} not supported: {ErrorMessage}")]
+        private partial void LogFrameworkNotSupported(Exception ex, string framework, string errorMessage);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Security validation failed (expected for test packages): {ErrorMessage}")]
+        private partial void LogSecurityValidationFailed(Exception ex, string errorMessage);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Large package rejected as expected: {ErrorMessage}")]
+        private partial void LogLargePackageRejected(Exception ex, string errorMessage);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Update failed (expected for local packages): {ErrorMessage}")]
+        private partial void LogUpdateFailed(Exception ex, string errorMessage);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "ERROR: Should have thrown {ExpectedException}")]
+        private partial void LogShouldHaveThrown(string expectedException);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to clean up test directory: {TestDirectory}")]
+        private partial void LogCleanupFailed(Exception ex, string testDirectory);
+
+        #endregion
     }
 
     /// <summary>
     /// Program entry point for running the NuGet plugin loader tests.
     /// </summary>
-    public static class Program
+    public static partial class Program
     {
         /// <summary>
         /// Main entry point.
@@ -623,7 +645,7 @@ namespace DotCompute.Algorithms.Management
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var logger = loggerFactory.CreateLogger<NuGetPluginLoader>();
 
-            logger.LogInformation("DotCompute NuGet Plugin Loader Tests - Starting test suite");
+            LogTestSuiteStarting(logger);
 
             using var tests = new NuGetPluginLoaderTests(logger);
 
@@ -640,9 +662,15 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Test suite failed: {ErrorMessage}", ex.Message);
+                LogTestSuiteFailed(logger, ex, ex.Message);
                 Environment.ExitCode = 1;
             }
         }
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "DotCompute NuGet Plugin Loader Tests - Starting test suite")]
+        private static partial void LogTestSuiteStarting(ILogger logger);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "Test suite failed: {ErrorMessage}")]
+        private static partial void LogTestSuiteFailed(ILogger logger, Exception ex, string errorMessage);
     }
 }

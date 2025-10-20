@@ -374,7 +374,7 @@ namespace DotCompute.Algorithms.Management
                 _healthCheckTimer?.Dispose();
                 _lifecycleSemaphore.Dispose();
                 _pluginStates.Clear();
-                _logger.LogInformation("AlgorithmPluginLifecycle disposed");
+                LogLifecycleDisposed();
             }
         }
 
@@ -447,6 +447,9 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Information, Message = "Plugin lifecycle manager stopped")]
         private partial void LogLifecycleManagerStopped();
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "AlgorithmPluginLifecycle disposed")]
+        private partial void LogLifecycleDisposed();
     }
 
     /// <summary>

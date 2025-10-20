@@ -484,7 +484,7 @@ public sealed partial class AlgorithmPluginDiscovery(
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to dispose file watcher");
+                    LogWatcherDisposeFailed(ex);
                 }
             }
 
@@ -544,6 +544,9 @@ public sealed partial class AlgorithmPluginDiscovery(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "File rejected by security policy: {FilePath}")]
     private partial void LogFileRejectedBySecurityPolicy(string filePath);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to dispose file watcher")]
+    private partial void LogWatcherDisposeFailed(Exception ex);
 
     #endregion
 }

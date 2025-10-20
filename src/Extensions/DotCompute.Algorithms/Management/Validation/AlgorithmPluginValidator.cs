@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
@@ -267,6 +268,8 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates assembly structure and metadata.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin discovery and validation. This is a core design requirement.")]
     private static async Task<bool> ValidateAssemblyStructureAsync(
         string assemblyPath,
         PluginValidationResult result,
@@ -310,6 +313,12 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates plugin interface implementations.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin discovery and validation. This is a core design requirement.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2070:DynamicallyAccessedMembers",
+        Justification = "Plugin validation requires interface inspection on enumerated types")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
+        Justification = "Plugin validation requires enumeration of types from assembly")]
     private async Task<bool> ValidatePluginInterfacesAsync(
         string assemblyPath,
         PluginValidationResult result,
@@ -353,7 +362,13 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates individual plugin type.
     /// </summary>
-    private static bool ValidatePluginType(Type pluginType, PluginValidationResult result)
+    private static bool ValidatePluginType(
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.PublicConstructors |
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.Interfaces)]
+        Type pluginType,
+        PluginValidationResult result)
     {
         // Check for parameterless constructor
         var constructors = pluginType.GetConstructors();
@@ -379,6 +394,8 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates performance characteristics.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for performance validation.")]
     private static async Task ValidatePerformanceCharacteristicsAsync(
         string assemblyPath,
         PluginValidationResult result,
@@ -462,6 +479,8 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// <summary>
     /// Validates plugin dependencies.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for dependency validation.")]
     private static async Task ValidatePluginDependenciesAsync(
         IAlgorithmPlugin plugin,
         PluginInstanceValidationResult result,

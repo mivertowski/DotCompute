@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Configuration;
@@ -163,6 +164,8 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     /// <param name="pluginId">The plugin ID to analyze.</param>
     /// <returns>Dependency analysis result.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for dependency analysis.")]
     public DependencyAnalysisResult AnalyzeDependencies(string pluginId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -440,6 +443,8 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// <summary>
     /// Analyzes plugin interface dependencies.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2075:DynamicallyAccessedMembers",
+        Justification = "Dependency resolution requires runtime type inspection of plugin instances")]
     private static void AnalyzePluginInterfaces(IAlgorithmPlugin plugin, DependencyAnalysisResult result)
     {
         var interfaces = plugin.GetType().GetInterfaces();
@@ -568,7 +573,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during cache cleanup");
+            LogCacheCleanupError(ex);
         }
     }
     /// <summary>
@@ -608,6 +613,9 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Cache cleanup removed {ExpiredCount} expired entries")]
     private partial void LogCacheCleanup(int expiredCount);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error during cache cleanup")]
+    private partial void LogCacheCleanupError(Exception ex);
 
     #endregion
 }

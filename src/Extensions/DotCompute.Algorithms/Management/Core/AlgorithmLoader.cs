@@ -167,7 +167,11 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
     /// Creates a plugin instance with proper error handling.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin instantiation requires dynamic type handling")]
-    private static IAlgorithmPlugin? CreatePluginInstance(Type pluginType)
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Plugin system requires dynamic constructor access for ILogger<T> pattern")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Plugin system requires generic type instantiation for ILogger<T> and NullLogger<T> by design")]
+    private static IAlgorithmPlugin? CreatePluginInstance(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+        Type pluginType)
     {
         try
         {
@@ -200,6 +204,10 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
     /// <summary>
     /// Loads plugin metadata from a manifest file.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for plugin configuration only. Types are well-defined and preserved.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for plugin configuration only.")]
     private async Task<PluginMetadata?> LoadPluginMetadataAsync(string assemblyPath)
     {
         var manifestPath = Path.ChangeExtension(assemblyPath, ".json");

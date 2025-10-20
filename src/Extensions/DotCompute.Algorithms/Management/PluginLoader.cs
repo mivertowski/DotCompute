@@ -504,6 +504,8 @@ namespace DotCompute.Algorithms.Management
         /// Discovers and creates plugin instances from an assembly.
         /// </summary>
         [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Plugin discovery requires type enumeration")]
+        [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
+            Justification = "Plugin types are discovered from assemblies and guaranteed to implement IAlgorithmPlugin")]
         private async Task<List<IAlgorithmPlugin>> DiscoverAndCreatePluginsAsync(Assembly assembly, CancellationToken cancellationToken)
         {
             var plugins = new List<IAlgorithmPlugin>();

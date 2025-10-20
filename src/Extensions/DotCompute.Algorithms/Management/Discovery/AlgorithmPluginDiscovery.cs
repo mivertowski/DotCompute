@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json;
 using DotCompute.Algorithms.Management.Configuration;
@@ -88,6 +89,10 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
     /// <param name="assemblyPath">The assembly path to find metadata for.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Plugin metadata if found; otherwise, null.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for plugin discovery metadata only. Types are well-defined and preserved.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for plugin discovery metadata only.")]
     public async Task<PluginMetadata?> DiscoverPluginMetadataAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)
@@ -127,6 +132,10 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
     /// <param name="assemblyPath">The assembly path to scan.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Collection of discovered plugin type information.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+        Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin type discovery.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
+        Justification = "Plugin types are enumerated from assembly for discovery")]
     public async Task<IReadOnlyList<PluginTypeInfo>> DiscoverPluginTypesAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)
@@ -278,7 +287,9 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
     /// <summary>
     /// Determines if a type is a plugin type.
     /// </summary>
-    private static bool IsPluginType(Type type)
+    private static bool IsPluginType(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+        Type type)
     {
         if (type.IsAbstract || type.IsInterface)
         {
@@ -292,7 +303,9 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
     /// <summary>
     /// Gets type dependencies for dependency analysis.
     /// </summary>
-    private static IEnumerable<string> GetTypeDependencies(Type type)
+    private static IEnumerable<string> GetTypeDependencies(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type type)
     {
         var dependencies = new HashSet<string>();
 

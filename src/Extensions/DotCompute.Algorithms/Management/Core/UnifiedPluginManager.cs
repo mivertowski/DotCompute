@@ -310,7 +310,7 @@ public sealed partial class UnifiedPluginManager : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error unloading plugin {PluginId} during disposal", plugin.Id);
+                        LogPluginUnloadDuringDisposalFailed(ex, plugin.Id);
                     }
                 }
                 _loadedPlugins.Clear();
@@ -373,6 +373,9 @@ public sealed partial class UnifiedPluginManager : IDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Unified plugin manager disposed")]
     private partial void LogUnifiedPluginManagerDisposed();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error unloading plugin {PluginId} during disposal")]
+    private partial void LogPluginUnloadDuringDisposalFailed(Exception ex, string pluginId);
 
     #endregion
 }

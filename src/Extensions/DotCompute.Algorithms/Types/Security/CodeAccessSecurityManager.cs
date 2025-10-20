@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 // using global::System.Security.Permissions; // Commented out for .NET compatibility
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ namespace DotCompute.Algorithms.Types.Security
     /// </remarks>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <param name="options">CAS options.</param>
-    public class CodeAccessSecurityManager(
+    public sealed partial class CodeAccessSecurityManager(
     ILogger<CodeAccessSecurityManager>? logger = null,
     CodeAccessSecurityOptions? options = null) : IDisposable
     {
@@ -38,8 +39,7 @@ namespace DotCompute.Algorithms.Types.Security
             ObjectDisposedException.ThrowIf(_disposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
 
-            _logger?.LogDebug("Creating permission set for {AssemblyPath} in zone {SecurityZone}",
-                assemblyPath, securityZone);
+            LogCreatingPermissionSet(assemblyPath, securityZone);
 
             // Create a mock permission set based on security zone
             var permissionSet = new { Zone = securityZone, Permissions = new List<string>() };
@@ -70,8 +70,7 @@ namespace DotCompute.Algorithms.Types.Security
             // Store the permission set
             _permissionSets[assemblyPath] = permissionSet;
 
-            _logger?.LogDebug("Created permission set with {PermissionCount} permissions for {AssemblyPath}",
-                permissionSet.Count, assemblyPath);
+            LogCreatedPermissionSet(permissionSet.Permissions.Count, assemblyPath);
 
             return permissionSet;
         }
@@ -90,7 +89,7 @@ namespace DotCompute.Algorithms.Types.Security
 
             if (!_permissionSets.TryGetValue(assemblyPath, out var permissionSet))
             {
-                _logger?.LogWarning("No permission set found for {AssemblyPath}", assemblyPath);
+                LogNoPermissionSetFound(assemblyPath);
                 return false;
             }
 
@@ -114,6 +113,10 @@ namespace DotCompute.Algorithms.Types.Security
         /// </summary>
         /// <param name="filePath">Path to save the configuration.</param>
         /// <returns>A task representing the async operation.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+            Justification = "JSON serialization used for configuration only, types are preserved")]
+        [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+            Justification = "JSON serialization used for configuration only")]
         public async Task SaveConfigurationAsync(string filePath)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -135,7 +138,7 @@ namespace DotCompute.Algorithms.Types.Security
             var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
 
-            _logger?.LogInformation("CAS configuration saved to {FilePath}", filePath);
+            LogConfigurationSaved(filePath);
         }
 
         /// <summary>
@@ -198,7 +201,7 @@ namespace DotCompute.Algorithms.Types.Security
                 }
             }
 
-            _logger?.LogInformation("CAS configuration loaded from {FilePath}", filePath);
+            LogConfigurationLoaded(filePath);
         }
 
         #region Permission Set Creation Methods
@@ -346,6 +349,25 @@ namespace DotCompute.Algorithms.Types.Security
                 _disposed = true;
             }
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Creating permission set for {AssemblyPath} in zone {SecurityZone}")]
+        private partial void LogCreatingPermissionSet(string assemblyPath, SecurityZone securityZone);
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Created permission set with {PermissionCount} permissions for {AssemblyPath}")]
+        private partial void LogCreatedPermissionSet(int permissionCount, string assemblyPath);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "No permission set found for {AssemblyPath}")]
+        private partial void LogNoPermissionSetFound(string assemblyPath);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "CAS configuration saved to {FilePath}")]
+        private partial void LogConfigurationSaved(string filePath);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "CAS configuration loaded from {FilePath}")]
+        private partial void LogConfigurationLoaded(string filePath);
+
+        #endregion
     }
 
     /// <summary>

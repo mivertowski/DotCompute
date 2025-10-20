@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Info;
@@ -180,6 +181,10 @@ public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegis
             return null;
         }
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Plugin tracking requires assembly location for diagnostics. Not used in single-file deployment scenarios.")]
+        static string GetAssemblyLocationForDiagnostics(System.Reflection.Assembly assembly) => assembly.Location;
+
         return new LoadedPluginInfo
         {
             Plugin = loadedPlugin.Plugin,
@@ -193,7 +198,7 @@ public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegis
             LastExecution = loadedPlugin.LastExecution,
             TotalExecutionTime = loadedPlugin.TotalExecutionTime,
             LastError = loadedPlugin.LastError,
-            AssemblyLocation = loadedPlugin.Assembly.Location,
+            AssemblyLocation = GetAssemblyLocationForDiagnostics(loadedPlugin.Assembly),
             LoadContextName = loadedPlugin.LoadContext.Name ?? "Unknown"
         };
     }
@@ -374,6 +379,10 @@ public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegis
         await Task.CompletedTask;
 
         // For direct registration without load context, create minimal metadata
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Direct plugin registration requires assembly location for metadata and load context. Not used in single-file deployment scenarios.")]
+        static string GetDirectPluginLocation(Type type) => type.Assembly.Location;
+
         var metadata = new PluginMetadata
         {
             Id = plugin.Id,
@@ -381,12 +390,12 @@ public sealed partial class AlgorithmPluginRegistry(ILogger<AlgorithmPluginRegis
             Version = plugin.Version?.ToString() ?? "1.0.0",
             Description = plugin.Description,
             Author = "Unknown",
-            AssemblyPath = plugin.GetType().Assembly.Location,
+            AssemblyPath = GetDirectPluginLocation(plugin.GetType()),
             LoadTime = DateTime.UtcNow
         };
 
         // Use default load context for direct registration
-        var loadContext = new PluginAssemblyLoadContext($"DirectPlugin_{plugin.Id}", plugin.GetType().Assembly.Location, false);
+        var loadContext = new PluginAssemblyLoadContext($"DirectPlugin_{plugin.Id}", GetDirectPluginLocation(plugin.GetType()), false);
 
         return RegisterPlugin(plugin, loadContext, plugin.GetType().Assembly, metadata);
     }

@@ -357,7 +357,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during health checks");
+                LogHealthCheckError(ex);
             }
         });
     }
@@ -407,7 +407,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Health check failed for plugin {PluginId}", pluginState.PluginId);
+            LogHealthCheckFailed(ex, pluginState.PluginId);
             pluginState.Health = PluginHealth.Critical;
         }
     }
@@ -496,6 +496,12 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Plugin {PluginId} health changed: {OldHealth} -> {NewHealth}")]
     private partial void LogPluginHealthChanged(string pluginId, PluginHealth oldHealth, PluginHealth newHealth);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error during health checks")]
+    private partial void LogHealthCheckError(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Health check failed for plugin {PluginId}")]
+    private partial void LogHealthCheckFailed(Exception ex, string pluginId);
 
     #endregion
 }

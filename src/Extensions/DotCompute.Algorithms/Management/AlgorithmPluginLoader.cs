@@ -247,7 +247,11 @@ namespace DotCompute.Algorithms.Management
         /// Creates a plugin instance with proper error handling.
         /// </summary>
         [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin instantiation requires dynamic type handling")]
-        private static IAlgorithmPlugin? CreatePluginInstance(Type pluginType)
+        [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Plugin system requires dynamic constructor access for ILogger<T> pattern")]
+        [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Plugin system requires generic type instantiation for ILogger<T> and NullLogger<T> by design")]
+        private static IAlgorithmPlugin? CreatePluginInstance(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+            Type pluginType)
         {
             try
             {
@@ -280,6 +284,10 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Loads plugin metadata from a manifest file.
         /// </summary>
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+            Justification = "JSON deserialization for plugin metadata only, types are preserved")]
+        [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+            Justification = "JSON deserialization for plugin metadata only")]
         private async Task<PluginMetadata?> LoadPluginMetadataAsync(string assemblyPath)
         {
             var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
@@ -384,7 +392,7 @@ namespace DotCompute.Algorithms.Management
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to unload context {ContextName}", context.Name);
+                        LogContextUnloadFailed(ex, context.Name ?? "Unknown");
                     }
                 }
 
@@ -410,17 +418,17 @@ namespace DotCompute.Algorithms.Management
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error unloading assembly context {AssemblyName}", kvp.Key);
+                        LogAssemblyContextUnloadError(ex, kvp.Key);
                     }
                 }
                 _loadContexts.Clear();
 
                 _loadingSemaphore.Dispose();
-                _logger.LogInformation("AlgorithmPluginLoader disposed");
+                LogPluginLoaderDisposed();
             }
         }
 
-        // Logger messages
+        #region LoggerMessage Delegates
         [LoggerMessage(Level = LogLevel.Information, Message = "Loading algorithm plugin from assembly {AssemblyPath}")]
         private partial void LogLoadingAssembly(string assemblyPath);
 
@@ -468,6 +476,17 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package load failed for {PackageSource}: {Reason}")]
         private partial void LogNuGetPackageLoadFailed(string packageSource, string reason);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "Failed to unload context {ContextName}")]
+        private partial void LogContextUnloadFailed(Exception ex, string contextName);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Error unloading assembly context {AssemblyName}")]
+        private partial void LogAssemblyContextUnloadError(Exception ex, string assemblyName);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "AlgorithmPluginLoader disposed")]
+        private partial void LogPluginLoaderDisposed();
+
+        #endregion
     }
     /// <summary>
     /// A class that represents loaded plugin result.

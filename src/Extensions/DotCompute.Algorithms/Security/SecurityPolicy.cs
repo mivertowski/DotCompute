@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -181,7 +182,9 @@ public sealed class SecurityPolicy
         try
         {
             var json = await File.ReadAllTextAsync(configPath, cancellationToken);
+#pragma warning disable IL2026, IL3050 // JSON deserialization for configuration only
             var config = JsonSerializer.Deserialize<SecurityPolicyConfiguration>(json);
+#pragma warning restore IL2026, IL3050
 
             if (config != null)
             {
@@ -202,6 +205,10 @@ public sealed class SecurityPolicy
     /// <param name="configPath">The path to save the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task SavePolicyToFileAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);

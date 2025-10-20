@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Loader;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -191,6 +192,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
     /// </summary>
     /// <param name="configPath">Path to the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task SaveConfigurationAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
@@ -227,6 +232,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
     /// </summary>
     /// <param name="configPath">Path to the configuration file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with RequiresUnreferencedCodeAttribute",
+        Justification = "JSON serialization used for configuration only, types are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCodeAttribute",
+        Justification = "JSON serialization used for configuration only")]
     public async Task LoadConfigurationAsync(string configPath, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);

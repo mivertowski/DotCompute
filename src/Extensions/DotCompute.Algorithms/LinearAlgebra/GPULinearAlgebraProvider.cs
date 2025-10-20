@@ -14,7 +14,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
     /// Provides GPU-accelerated linear algebra operations with automatic kernel selection and optimization.
     /// This class orchestrates specialized components for matrix operations, vector operations, solvers, and optimization strategies.
     /// </summary>
-    public sealed class GPULinearAlgebraProvider : IDisposable
+    public sealed partial class GPULinearAlgebraProvider : IDisposable
     {
         private readonly ILogger<GPULinearAlgebraProvider> _logger;
         private readonly GpuMatrixOperations _matrixOps;
@@ -60,7 +60,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "GPU matrix multiplication failed, falling back to CPU");
+                LogGpuMatrixMultiplicationFailed(ex);
                 return await GpuOptimizationStrategies.FallbackMatrixMultiplyAsync(a, b, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -91,7 +91,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "GPU QR decomposition failed, falling back to CPU");
+                LogGpuQrDecompositionFailed(ex);
                 return await GpuOptimizationStrategies.FallbackQRDecompositionAsync(matrix, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -121,7 +121,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "GPU SVD failed, falling back to CPU");
+                LogGpuSvdFailed(ex);
                 return await GpuOptimizationStrategies.FallbackSVDAsync(matrix, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -155,7 +155,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "GPU linear system solver failed, falling back to CPU");
+                LogGpuLinearSystemSolverFailed(ex);
                 return await GpuOptimizationStrategies.FallbackSolveAsync(a, b, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -173,6 +173,22 @@ namespace DotCompute.Algorithms.LinearAlgebra
                 _disposed = true;
             }
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "GPU matrix multiplication failed, falling back to CPU")]
+        private partial void LogGpuMatrixMultiplicationFailed(Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "GPU QR decomposition failed, falling back to CPU")]
+        private partial void LogGpuQrDecompositionFailed(Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "GPU SVD failed, falling back to CPU")]
+        private partial void LogGpuSvdFailed(Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "GPU linear system solver failed, falling back to CPU")]
+        private partial void LogGpuLinearSystemSolverFailed(Exception ex);
+
+        #endregion
     }
     /// <summary>
     /// An linear system solver enumeration.

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Net.Sockets;
@@ -257,6 +258,10 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(plugin);
 
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Assembly.Location",
+            Justification = "Orchestrator requires assembly location for plugin context management. Not used in single-file deployment scenarios.")]
+        static string GetOrchestratorPluginLocation(Type type) => type.Assembly.Location;
+
         var metadata = new PluginMetadata
         {
             Id = plugin.Id,
@@ -264,13 +269,13 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             Version = plugin.Version.ToString(),
             Description = plugin.Description,
             Author = "External",
-            AssemblyPath = plugin.GetType().Assembly.Location,
+            AssemblyPath = GetOrchestratorPluginLocation(plugin.GetType()),
             LoadTime = DateTime.UtcNow
         };
 
         // Use default load context for external plugins
         var loadContext = AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly) as PluginAssemblyLoadContext
-                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", plugin.GetType().Assembly.Location, false);
+                          ?? new PluginAssemblyLoadContext($"External_{plugin.Id}", GetOrchestratorPluginLocation(plugin.GetType()), false);
 
         await RegisterPluginAsync(plugin, loadContext, plugin.GetType().Assembly, metadata, cancellationToken).ConfigureAwait(false);
     }

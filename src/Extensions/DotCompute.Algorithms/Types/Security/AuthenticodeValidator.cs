@@ -16,7 +16,7 @@ namespace DotCompute.Algorithms.Types.Security;
 /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
 /// </remarks>
 /// <param name="logger">Optional logger for diagnostics.</param>
-public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null) : IDisposable
+public sealed partial class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null) : IDisposable
 {
     private readonly ILogger<AuthenticodeValidator>? _logger = logger;
     private bool _disposed;
@@ -42,18 +42,18 @@ public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null
 
         try
         {
-            _logger?.LogDebug("Validating Authenticode signature for {AssemblyPath}", assemblyPath);
+            LogValidatingSignature(assemblyPath);
 
             // For now, return a mock result since full Authenticode validation
             // requires platform-specific implementation
             var result = await ValidateAssemblySignatureAsync(assemblyPath);
 
-            _logger?.LogDebug("Signature validation result: {IsValid}", result.IsValid);
+            LogSignatureValidationResult(result.IsValid);
             return result;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error validating assembly signature for {AssemblyPath}", assemblyPath);
+            LogValidationError(ex, assemblyPath);
             return new AuthenticodeValidationResult
             {
                 IsValid = false,
@@ -113,12 +113,12 @@ public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null
         {
             // Simplified implementation - in practice would use WinVerifyTrust or similar
             // For cross-platform compatibility, we'll return null for now
-            _logger?.LogDebug("Extracting certificate info for {AssemblyPath}", assemblyPath);
+            LogExtractingCertificateInfo(assemblyPath);
             return null;
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to extract certificate info from {AssemblyPath}", assemblyPath);
+            LogCertificateExtractionFailed(ex, assemblyPath);
             return null;
         }
     }
@@ -165,6 +165,25 @@ public class AuthenticodeValidator(ILogger<AuthenticodeValidator>? logger = null
             _disposed = true;
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Validating Authenticode signature for {AssemblyPath}")]
+    private partial void LogValidatingSignature(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Signature validation result: {IsValid}")]
+    private partial void LogSignatureValidationResult(bool isValid);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error validating assembly signature for {AssemblyPath}")]
+    private partial void LogValidationError(Exception ex, string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Extracting certificate info for {AssemblyPath}")]
+    private partial void LogExtractingCertificateInfo(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to extract certificate info from {AssemblyPath}")]
+    private partial void LogCertificateExtractionFailed(Exception ex, string assemblyPath);
+
+    #endregion
 }
 
 /// <summary>

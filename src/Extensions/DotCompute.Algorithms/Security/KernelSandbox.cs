@@ -15,7 +15,7 @@ namespace DotCompute.Algorithms.Security;
 /// Provides sandboxed execution environment for untrusted kernels with comprehensive security controls.
 /// Implements process isolation, resource limits, and execution monitoring.
 /// </summary>
-public sealed class KernelSandbox : IDisposable
+public sealed partial class KernelSandbox : IDisposable
 {
     private readonly ILogger _logger;
     private readonly SandboxConfiguration _configuration;
@@ -400,7 +400,7 @@ public sealed class KernelSandbox : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to set directory permissions for: {TempPath}", tempPath);
+                LogFailedToSetDirectoryPermissions(ex, tempPath);
             }
         }
 
@@ -442,7 +442,7 @@ public sealed class KernelSandbox : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to kill sandbox process: {ProcessId}", sandbox.ProcessId);
+                    LogFailedToKillSandboxProcess(ex, sandbox.ProcessId);
                 }
             }
 
@@ -456,9 +456,7 @@ public sealed class KernelSandbox : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to delete sandbox directory: {WorkingDirectory}",
-
-                        sandbox.WorkingDirectory);
+                    LogFailedToDeleteSandboxDirectory(ex, sandbox.WorkingDirectory);
                 }
             }
 
@@ -549,6 +547,22 @@ public sealed class KernelSandbox : IDisposable
 
         _logger.LogInfoMessage("KernelSandbox disposed");
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to set directory permissions for: {TempPath}")]
+    private partial void LogFailedToSetDirectoryPermissions(Exception ex, string tempPath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to kill sandbox process: {ProcessId}")]
+    private partial void LogFailedToKillSandboxProcess(Exception ex, int? processId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete sandbox directory: {WorkingDirectory}")]
+    private partial void LogFailedToDeleteSandboxDirectory(Exception ex, string workingDirectory);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error updating resource usage")]
+    private partial void LogErrorUpdatingResourceUsage(Exception ex);
+
+    #endregion
 }
 
 /// <summary>
@@ -897,7 +911,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error updating resource usage");
+            LogErrorUpdatingResourceUsage(ex);
         }
     }
 

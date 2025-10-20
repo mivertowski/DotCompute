@@ -347,7 +347,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to monitor memory usage for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            LogMemoryMonitoringFailed(ex, loadedPlugin.Plugin.Id);
         }
     }
 
@@ -385,7 +385,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to analyze response times for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            LogResponseTimeAnalysisFailed(ex, loadedPlugin.Plugin.Id);
         }
     }
 
@@ -441,7 +441,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to track error rates for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            LogErrorRateTrackingFailed(ex, loadedPlugin.Plugin.Id);
         }
     }
 
@@ -469,8 +469,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
                         _registry.UpdatePluginHealth(loadedPlugin.Plugin.Id, PluginHealth.Degraded);
                     }
 
-                    _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
-                        loadedPlugin.Plugin.Id, handleIncrease);
+                    LogPotentialHandleLeak(loadedPlugin.Plugin.Id, handleIncrease);
                 }
             }
 
@@ -483,7 +482,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+            LogResourceLeakDetectionFailed(ex, loadedPlugin.Plugin.Id);
         }
     }
     /// <summary>
@@ -536,6 +535,21 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Health check failed: {Reason}")]
     private partial void LogHealthCheckFailed(string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to monitor memory usage for plugin: {PluginId}")]
+    private partial void LogMemoryMonitoringFailed(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to analyze response times for plugin: {PluginId}")]
+    private partial void LogResponseTimeAnalysisFailed(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to track error rates for plugin: {PluginId}")]
+    private partial void LogErrorRateTrackingFailed(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles")]
+    private partial void LogPotentialHandleLeak(string pluginId, int handleIncrease);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to detect resource leaks for plugin: {PluginId}")]
+    private partial void LogResourceLeakDetectionFailed(Exception ex, string pluginId);
 
     #endregion
 }

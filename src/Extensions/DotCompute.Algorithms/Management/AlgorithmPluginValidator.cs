@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
@@ -180,6 +181,8 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Validates digital signature of an assembly.
         /// </summary>
+        [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+            Justification = "Plugin validation requires assembly loading for signature verification")]
         private async Task<ValidationResult> ValidateDigitalSignatureAsync(string assemblyPath, CancellationToken cancellationToken)
         {
             try
@@ -230,6 +233,8 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Validates assembly metadata and compatibility.
         /// </summary>
+        [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
+            Justification = "Plugin validation requires assembly loading for metadata verification")]
         private async Task<ValidationResult> ValidateAssemblyMetadataAsync(string assemblyPath, CancellationToken cancellationToken)
         {
             try
@@ -324,7 +329,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during malware scanning of {AssemblyPath}", assemblyPath);
+                LogMalwareScanningError(ex, assemblyPath);
                 return ValidationResult.Failure(
                     $"Malware scanning failed with exception: {ex.Message}",
                     ValidationSeverity.High);
@@ -597,6 +602,9 @@ namespace DotCompute.Algorithms.Management
 
         [LoggerMessage(Level = LogLevel.Error, Message = "Assembly metadata validation failed for {AssemblyPath}: {Reason}")]
         private partial void LogAssemblyMetadataValidationFailed(string assemblyPath, string reason);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "Error during malware scanning of {AssemblyPath}")]
+        private partial void LogMalwareScanningError(Exception ex, string assemblyPath);
 
         /// <summary>
         /// Disposes resources used by the validator.
