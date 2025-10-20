@@ -6,6 +6,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -372,63 +374,6 @@ public sealed class SecurityPolicyConfiguration
 }
 
 /// <summary>
-/// Security levels for plugin validation.
-/// </summary>
-public enum SecurityLevel
-{
-    /// <summary>
-    /// Low security level - minimal validation.
-    /// </summary>
-    Low = 1,
-
-    /// <summary>
-    /// Medium security level - standard validation.
-    /// </summary>
-    Medium = 2,
-
-    /// <summary>
-    /// High security level - strict validation.
-    /// </summary>
-    High = 3,
-
-    /// <summary>
-    /// Critical security level - maximum validation.
-    /// </summary>
-    Critical = 4
-}
-
-/// <summary>
-/// Context for security evaluation.
-/// </summary>
-public sealed class SecurityEvaluationContext
-{
-    /// <summary>
-    /// Gets or sets the assembly path.
-    /// </summary>
-    public required string AssemblyPath { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly bytes.
-    /// </summary>
-    public byte[]? AssemblyBytes { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly certificate.
-    /// </summary>
-    public X509Certificate2? Certificate { get; set; }
-
-    /// <summary>
-    /// Gets or sets the assembly strong name public key.
-    /// </summary>
-    public byte[]? StrongNameKey { get; set; }
-
-    /// <summary>
-    /// Gets additional metadata for evaluation.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
-}
-
-/// <summary>
 /// Result of security evaluation.
 /// </summary>
 public sealed class SecurityEvaluationResult
@@ -446,17 +391,17 @@ public sealed class SecurityEvaluationResult
     /// <summary>
     /// Gets the security violations found.
     /// </summary>
-    public IList<string> Violations { get; } = [];
+    public IList<string> Violations { get; init; } = [];
 
     /// <summary>
     /// Gets the security warnings.
     /// </summary>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets additional evaluation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>

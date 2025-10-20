@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Algorithms.Kernels;
+
 namespace DotCompute.Algorithms
 {
 
@@ -8,7 +10,7 @@ namespace DotCompute.Algorithms
     /// Comprehensive GPU kernel library for linear algebra operations.
     /// Provides optimized kernels for matrix operations, decompositions, and eigenvalue computations.
     /// </summary>
-    public static class LinearAlgebraKernels
+    public static class LinearAlgebraKernelLibrary
     {
         /// <summary>
         /// The open c l matrix multiply tiled kernel.

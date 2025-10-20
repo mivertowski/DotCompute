@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.SignalProcessing;
 using DotCompute.Algorithms.Types.Abstractions;
 using Microsoft.Extensions.Logging;
 

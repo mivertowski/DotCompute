@@ -20,13 +20,9 @@ namespace DotCompute.Algorithms.SignalProcessing
     /// </remarks>
     /// <param name="kernelManager">The kernel manager for GPU operations.</param>
     /// <param name="accelerator">The GPU accelerator to use.</param>
-    /// <param name="logger">Optional logger for diagnostics.</param>
-    /// <param name="defaultStrategy">Default optimization strategy.</param>
     public sealed class ConvolutionOperations(
     KernelManager kernelManager,
-    IAccelerator accelerator,
-    ILogger<ConvolutionOperations>? logger = null,
-    ConvolutionStrategy defaultStrategy = ConvolutionStrategy.Auto) : IDisposable
+    IAccelerator accelerator) : IDisposable
     {
         private readonly KernelManager _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
         private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));

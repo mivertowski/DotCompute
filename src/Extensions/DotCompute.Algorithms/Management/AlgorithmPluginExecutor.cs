@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Management;
 /// <summary>
 /// Handles plugin execution with retry policies, circuit breakers, and performance tracking.
 /// </summary>
-public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
+public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, AlgorithmPluginManagerOptions options)
 {
     private readonly ILogger<AlgorithmPluginExecutor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -40,8 +40,7 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
         }
 
 
-        _logger.LogDebug("Executing plugin: {PluginId} with input type: {InputType}",
-            plugin.Id, input.GetType().Name);
+        LogExecutingPlugin(plugin.Id, input.GetType().Name);
 
         var executionId = Guid.NewGuid();
         var stopwatch = Stopwatch.StartNew();
@@ -63,9 +62,7 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
 
             stopwatch.Stop();
 
-            _logger.LogInformation(
-                "Plugin {PluginId} executed successfully in {ElapsedMs}ms",
-                plugin.Id, stopwatch.ElapsedMilliseconds);
+            LogPluginExecutedSuccessfully(plugin.Id, stopwatch.ElapsedMilliseconds);
 
             return new PluginExecutionResult
             {
@@ -81,9 +78,7 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
             stopwatch.Stop();
             lastException = ex;
 
-            _logger.LogError(ex,
-                "Plugin {PluginId} execution failed after {ElapsedMs}ms",
-                plugin.Id, stopwatch.ElapsedMilliseconds);
+            LogPluginExecutionFailed(ex, plugin.Id, stopwatch.ElapsedMilliseconds);
 
             return new PluginExecutionResult
             {
@@ -116,14 +111,11 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
                 if (attempt > 0)
                 {
                     var delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt) * _options.RetryDelayMilliseconds);
-                    _logger.LogWarning(
-                        "Retrying plugin {PluginId} execution (attempt {RetryCount}) after error: {Error}",
-                        plugin.Id, attempt, lastException?.Message);
+                    LogRetryingPluginExecution(plugin.Id, attempt, lastException?.Message ?? string.Empty);
                     await Task.Delay(delay, cancellationToken);
                 }
 
-                _logger.LogDebug("Executing plugin {PluginId} with execution ID: {ExecutionId}",
-                    plugin.Id, executionId);
+                LogExecutingPluginWithExecutionId(plugin.Id, executionId);
 
                 return await plugin.ExecuteAsync([input], null, cancellationToken);
             }
@@ -136,8 +128,7 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
                 lastException = ex;
                 if (attempt == _options.MaxRetryAttempts || !IsRetryableException(ex))
                 {
-                    _logger.LogError(ex, "Plugin {PluginId} execution failed after {Attempts} attempts",
-                        plugin.Id, attempt + 1);
+                    LogPluginExecutionFailedAfterAttempts(ex, plugin.Id, attempt + 1);
                     throw;
                 }
             }
@@ -209,16 +200,42 @@ public class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> logger, Al
         {
             if (expectedType.IsAssignableFrom(inputType))
             {
-                _logger.LogDebug("Input type {InputType} is compatible with plugin {PluginId}",
-                    inputType.Name, plugin.Id);
+                LogInputTypeCompatible(inputType.Name, plugin.Id);
                 return true;
             }
         }
 
-        _logger.LogWarning("Input type {InputType} is not compatible with plugin {PluginId}",
-            inputType.Name, plugin.Id);
+        LogInputTypeNotCompatible(inputType.Name, plugin.Id);
         return false;
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Executing plugin: {PluginId} with input type: {InputType}")]
+    private partial void LogExecutingPlugin(string pluginId, string inputType);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Plugin {PluginId} executed successfully in {ElapsedMs}ms")]
+    private partial void LogPluginExecutedSuccessfully(string pluginId, long elapsedMs);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Plugin {PluginId} execution failed after {ElapsedMs}ms")]
+    private partial void LogPluginExecutionFailed(Exception exception, string pluginId, long elapsedMs);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Retrying plugin {PluginId} execution (attempt {RetryCount}) after error: {Error}")]
+    private partial void LogRetryingPluginExecution(string pluginId, int retryCount, string error);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Executing plugin {PluginId} with execution ID: {ExecutionId}")]
+    private partial void LogExecutingPluginWithExecutionId(string pluginId, Guid executionId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Plugin {PluginId} execution failed after {Attempts} attempts")]
+    private partial void LogPluginExecutionFailedAfterAttempts(Exception exception, string pluginId, int attempts);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Input type {InputType} is compatible with plugin {PluginId}")]
+    private partial void LogInputTypeCompatible(string inputType, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Input type {InputType} is not compatible with plugin {PluginId}")]
+    private partial void LogInputTypeNotCompatible(string inputType, string pluginId);
+
+    #endregion
 }
 
 /// <summary>

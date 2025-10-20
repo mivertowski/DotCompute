@@ -5,7 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 using KernelArgument = DotCompute.Abstractions.Interfaces.Kernels.KernelArgument;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Operations
@@ -807,7 +807,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                             new KernelArgument { Name = "start_idx", Value = k, Type = typeof(int), IsDeviceMemory = false }
                         };
 
-                        var parameters = LinearAlgebraKernels.GetOptimizedParameters(
+                        var parameters = LinearAlgebraKernelLibrary.GetOptimizedParameters(
                             LinearAlgebraOp.HouseholderVector,
                             (m - k, 1),
                             accelerator.Info.Name);
@@ -1016,7 +1016,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                                     new KernelArgument { Name = "convergence_flag", Value = convergenceBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = convergenceBuffer }
                                 };
 
-                                var parameters = LinearAlgebraKernels.GetOptimizedParameters(
+                                var parameters = LinearAlgebraKernelLibrary.GetOptimizedParameters(
                                     LinearAlgebraOp.JacobiSVD,
                                     (Math.Min(m, n), Math.Min(m, n)),
                                     accelerator.Info.Name);

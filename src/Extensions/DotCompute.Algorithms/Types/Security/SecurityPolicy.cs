@@ -3,6 +3,8 @@
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Security;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Types.Security;
 
@@ -14,7 +16,7 @@ namespace DotCompute.Algorithms.Types.Security;
 /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
 /// </remarks>
 /// <param name="logger">Optional logger for diagnostics.</param>
-public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
+public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
 {
     private readonly ILogger<SecurityPolicy>? _logger = logger;
     private readonly Dictionary<string, ISecurityRule> _securityRules = [];
@@ -68,7 +70,7 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(thumbprint);
         _ = _trustedPublishers.Add(thumbprint.ToUpperInvariant());
-        _logger?.LogDebug("Added trusted publisher: {Thumbprint}", thumbprint);
+        if (_logger is not null) LogAddedTrustedPublisher(thumbprint);
     }
 
     /// <summary>
@@ -79,9 +81,9 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     public bool RemoveTrustedPublisher(string thumbprint)
     {
         var removed = _trustedPublishers.Remove(thumbprint.ToUpperInvariant());
-        if (removed)
+        if (removed && _logger is not null)
         {
-            _logger?.LogDebug("Removed trusted publisher: {Thumbprint}", thumbprint);
+            LogRemovedTrustedPublisher(thumbprint);
         }
         return removed;
     }
@@ -97,7 +99,7 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         ArgumentNullException.ThrowIfNull(rule);
 
         _securityRules[name] = rule;
-        _logger?.LogDebug("Added security rule: {RuleName}", name);
+        if (_logger is not null) LogAddedSecurityRule(name);
     }
 
     /// <summary>
@@ -108,9 +110,9 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     public bool RemoveSecurityRule(string name)
     {
         var removed = _securityRules.Remove(name);
-        if (removed)
+        if (removed && _logger is not null)
         {
-            _logger?.LogDebug("Removed security rule: {RuleName}", name);
+            LogRemovedSecurityRule(name);
         }
         return removed;
     }
@@ -151,7 +153,7 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         }
 
         // Check assembly size
-        if (context.AssemblyBytes != null && context.AssemblyBytes.Length > MaxAssemblySize)
+        if (!context.AssemblyBytes.IsDefault && context.AssemblyBytes.Length > MaxAssemblySize)
         {
             result.IsAllowed = false;
             result.Violations.Add($"Assembly size {context.AssemblyBytes.Length} exceeds maximum {MaxAssemblySize}");
@@ -166,7 +168,10 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
                 if (!ruleResult.IsAllowed)
                 {
                     result.IsAllowed = false;
-                    result.Violations.AddRange(ruleResult.Violations.Select(v => $"{name}: {v}"));
+                    foreach (var violation in ruleResult.Violations.Select(v => $"{name}: {v}"))
+                    {
+                        result.Violations.Add(violation);
+                    }
                 }
 
                 // Take the most restrictive security level
@@ -177,14 +182,13 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error evaluating security rule {RuleName}", name);
+                if (_logger is not null) LogErrorEvaluatingSecurityRule(ex, name);
                 result.IsAllowed = false;
                 result.Violations.Add($"Rule evaluation error: {name}");
             }
         }
 
-        _logger?.LogDebug("Security evaluation result: Allowed={IsAllowed}, Level={SecurityLevel}, Violations={ViolationCount}",
-            result.IsAllowed, result.SecurityLevel, result.Violations.Count);
+        if (_logger is not null) LogSecurityEvaluationResult(result.IsAllowed, result.SecurityLevel, result.Violations.Count);
 
         return result;
     }
@@ -211,7 +215,7 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         var json = JsonSerializer.Serialize(policyData, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(filePath, json);
 
-        _logger?.LogInformation("Security policy saved to {FilePath}", filePath);
+        if (_logger is not null) LogSecurityPolicySaved(filePath);
     }
 
     /// <summary>
@@ -278,39 +282,36 @@ public class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             }
         }
 
-        _logger?.LogInformation("Security policy loaded from {FilePath}", filePath);
+        if (_logger is not null) LogSecurityPolicyLoaded(filePath);
     }
-}
 
-/// <summary>
-/// Security evaluation context for policy decisions.
-/// </summary>
-public class SecurityEvaluationContext
-{
-    /// <summary>
-    /// Gets or sets the assembly file path.
-    /// </summary>
-    public string? AssemblyPath { get; set; }
+    #region LoggerMessage Delegates
 
-    /// <summary>
-    /// Gets or sets the assembly bytes.
-    /// </summary>
-    public byte[]? AssemblyBytes { get; set; }
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Added trusted publisher: {Thumbprint}")]
+    private partial void LogAddedTrustedPublisher(string thumbprint);
 
-    /// <summary>
-    /// Gets or sets the certificate information extracted from the assembly.
-    /// </summary>
-    public System.Security.Cryptography.X509Certificates.X509Certificate2? Certificate { get; set; }
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Removed trusted publisher: {Thumbprint}")]
+    private partial void LogRemovedTrustedPublisher(string thumbprint);
 
-    /// <summary>
-    /// Gets or sets the strong name key extracted from the assembly.
-    /// </summary>
-    public byte[]? StrongNameKey { get; set; }
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Added security rule: {RuleName}")]
+    private partial void LogAddedSecurityRule(string ruleName);
 
-    /// <summary>
-    /// Gets or sets additional context metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; } = [];
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Removed security rule: {RuleName}")]
+    private partial void LogRemovedSecurityRule(string ruleName);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error evaluating security rule {RuleName}")]
+    private partial void LogErrorEvaluatingSecurityRule(Exception ex, string ruleName);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Security evaluation result: Allowed={IsAllowed}, Level={SecurityLevel}, Violations={ViolationCount}")]
+    private partial void LogSecurityEvaluationResult(bool isAllowed, SecurityLevel securityLevel, int violationCount);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Security policy saved to {FilePath}")]
+    private partial void LogSecurityPolicySaved(string filePath);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Security policy loaded from {FilePath}")]
+    private partial void LogSecurityPolicyLoaded(string filePath);
+
+    #endregion
 }
 
 /// <summary>
@@ -331,12 +332,12 @@ public class SecurityEvaluationResult
     /// <summary>
     /// Gets or sets the list of security violations.
     /// </summary>
-    public IList<string> Violations { get; } = [];
+    public IList<string> Violations { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the list of security warnings.
     /// </summary>
-    public IList<string> Warnings { get; } = [];
+    public IList<string> Warnings { get; init; } = [];
 }
 
 /// <summary>
@@ -374,7 +375,7 @@ public class FileSizeSecurityRule(long maxSizeBytes) : ISecurityRule
             Warnings = []
         };
 
-        if (context.AssemblyBytes != null && context.AssemblyBytes.Length > _maxSizeBytes)
+        if (!context.AssemblyBytes.IsDefault && context.AssemblyBytes.Length > _maxSizeBytes)
         {
             result.IsAllowed = false;
             result.Violations.Add($"File size {context.AssemblyBytes.Length} exceeds limit {_maxSizeBytes}");

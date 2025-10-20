@@ -352,6 +352,7 @@ public class SecurityManager(ILogger logger) : IDisposable
 
         _disposed = true;
         _hashAlgorithm?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

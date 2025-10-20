@@ -12,7 +12,7 @@ namespace DotCompute.Algorithms.Management.Infrastructure;
 /// Provides caching and performance optimization for algorithm plugin operations.
 /// Manages assembly loading cache, metadata cache, and compilation result cache.
 /// </summary>
-public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
+public sealed partial class AlgorithmPluginCache : IAsyncDisposable, IDisposable
 {
     private readonly ILogger<AlgorithmPluginCache> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -158,14 +158,14 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var added = _assemblyCache.TryAdd(assemblyPath, cachedAssembly);
             if (added)
             {
-                _logger.LogDebug("Cached assembly {AssemblyPath} with hash {Hash}", assemblyPath, hash);
+                LogCachedAssembly(assemblyPath, hash);
             }
 
             return added;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cache assembly {AssemblyPath}", assemblyPath);
+            LogFailedToCacheAssembly(ex, assemblyPath);
             return false;
         }
     }
@@ -186,11 +186,11 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             cachedAssembly.LastAccessed = DateTime.UtcNow;
             cachedAssembly.AccessCount++;
 
-            _logger.LogDebug("Cache hit for assembly {AssemblyPath}", assemblyPath);
+            LogCacheHitForAssembly(assemblyPath);
             return cachedAssembly.AssemblyBytes;
         }
 
-        _logger.LogDebug("Cache miss for assembly {AssemblyPath}", assemblyPath);
+        LogCacheMissForAssembly(assemblyPath);
         return null;
     }
 
@@ -225,7 +225,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             {
                 // File has been modified, remove from cache
                 _ = _assemblyCache.TryRemove(assemblyPath, out _);
-                _logger.LogDebug("Assembly {AssemblyPath} has been modified, removing from cache", assemblyPath);
+                LogAssemblyModified(assemblyPath);
                 return false;
             }
 
@@ -233,7 +233,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error checking assembly cache validity for {AssemblyPath}", assemblyPath);
+            LogErrorCheckingAssemblyCacheValidity(ex, assemblyPath);
             return false;
         }
     }
@@ -255,14 +255,14 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var added = _metadataCache.TryAdd(pluginId, metadata);
             if (added)
             {
-                _logger.LogDebug("Cached metadata for plugin {PluginId}", pluginId);
+                LogCachedMetadata(pluginId);
             }
 
             return added;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cache metadata for plugin {PluginId}", pluginId);
+            LogFailedToCacheMetadata(ex, pluginId);
             return false;
         }
     }
@@ -279,11 +279,11 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
 
         if (_metadataCache.TryGetValue(pluginId, out var metadata))
         {
-            _logger.LogDebug("Cache hit for metadata {PluginId}", pluginId);
+            LogCacheHitForMetadata(pluginId);
             return metadata;
         }
 
-        _logger.LogDebug("Cache miss for metadata {PluginId}", pluginId);
+        LogCacheMissForMetadata(pluginId);
         return null;
     }
 
@@ -323,15 +323,14 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             var added = _executionCache.TryAdd(cacheKey, cachedResult);
             if (added)
             {
-                _logger.LogDebug("Cached execution result for {PluginId} with input hash {InputHash}",
-                    pluginId, inputHash);
+                LogCachedExecutionResult(pluginId, inputHash);
             }
 
             return added;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cache execution result for plugin {PluginId}", pluginId);
+            LogFailedToCacheExecutionResult(ex, pluginId);
             return false;
         }
     }
@@ -361,18 +360,18 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             if (DateTime.UtcNow - cachedResult.ExecutionTime > maxAge)
             {
                 _ = _executionCache.TryRemove(cacheKey, out _);
-                _logger.LogDebug("Execution cache entry expired for {PluginId}", pluginId);
+                LogExecutionCacheEntryExpired(pluginId);
                 return null;
             }
 
             // Update access time
             cachedResult.LastAccessed = DateTime.UtcNow;
 
-            _logger.LogDebug("Cache hit for execution result {PluginId}:{InputHash}", pluginId, inputHash);
+            LogCacheHitForExecutionResult(pluginId, inputHash);
             return cachedResult.Result;
         }
 
-        _logger.LogDebug("Cache miss for execution result {PluginId}:{InputHash}", pluginId, inputHash);
+        LogCacheMissForExecutionResult(pluginId, inputHash);
         return null;
     }
 
@@ -398,7 +397,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
             _ = _executionCache.TryRemove(key, out _);
         }
 
-        _logger.LogDebug("Invalidated cache for plugin {PluginId}", pluginId);
+        LogInvalidatedCache(pluginId);
     }
 
     /// <summary>
@@ -416,8 +415,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
         _metadataCache.Clear();
         _executionCache.Clear();
 
-        _logger.LogInformation("Cleared all caches: {AssemblyCount} assemblies, {MetadataCount} metadata, {ExecutionCount} execution results",
-            assemblyCount, metadataCount, executionCount);
+        LogClearedAllCaches(assemblyCount, metadataCount, executionCount);
     }
 
     /// <summary>
@@ -537,12 +535,12 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
 
             if (cleanupCount > 0)
             {
-                _logger.LogDebug("Cache cleanup removed {CleanupCount} expired entries", cleanupCount);
+                LogCacheCleanupRemoved(cleanupCount);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during cache cleanup");
+            LogErrorDuringCacheCleanup(ex);
         }
     }
 
@@ -560,6 +558,67 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
         await Task.CompletedTask;
         return [];
     }
+
+    #region Logger Messages
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cached assembly {AssemblyPath} with hash {Hash}")]
+    private partial void LogCachedAssembly(string assemblyPath, string hash);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to cache assembly {AssemblyPath}")]
+    private partial void LogFailedToCacheAssembly(Exception ex, string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache hit for assembly {AssemblyPath}")]
+    private partial void LogCacheHitForAssembly(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache miss for assembly {AssemblyPath}")]
+    private partial void LogCacheMissForAssembly(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Assembly {AssemblyPath} has been modified, removing from cache")]
+    private partial void LogAssemblyModified(string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error checking assembly cache validity for {AssemblyPath}")]
+    private partial void LogErrorCheckingAssemblyCacheValidity(Exception ex, string assemblyPath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cached metadata for plugin {PluginId}")]
+    private partial void LogCachedMetadata(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to cache metadata for plugin {PluginId}")]
+    private partial void LogFailedToCacheMetadata(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache hit for metadata {PluginId}")]
+    private partial void LogCacheHitForMetadata(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache miss for metadata {PluginId}")]
+    private partial void LogCacheMissForMetadata(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cached execution result for {PluginId} with input hash {InputHash}")]
+    private partial void LogCachedExecutionResult(string pluginId, string inputHash);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to cache execution result for plugin {PluginId}")]
+    private partial void LogFailedToCacheExecutionResult(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Execution cache entry expired for {PluginId}")]
+    private partial void LogExecutionCacheEntryExpired(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache hit for execution result {PluginId}:{InputHash}")]
+    private partial void LogCacheHitForExecutionResult(string pluginId, string inputHash);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache miss for execution result {PluginId}:{InputHash}")]
+    private partial void LogCacheMissForExecutionResult(string pluginId, string inputHash);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Invalidated cache for plugin {PluginId}")]
+    private partial void LogInvalidatedCache(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Cleared all caches: {AssemblyCount} assemblies, {MetadataCount} metadata, {ExecutionCount} execution results")]
+    private partial void LogClearedAllCaches(int assemblyCount, int metadataCount, int executionCount);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Cache cleanup removed {CleanupCount} expired entries")]
+    private partial void LogCacheCleanupRemoved(int cleanupCount);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error during cache cleanup")]
+    private partial void LogErrorDuringCacheCleanup(Exception ex);
+
+    #endregion
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()

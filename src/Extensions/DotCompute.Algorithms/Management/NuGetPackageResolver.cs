@@ -16,7 +16,7 @@ namespace DotCompute.Algorithms.Management
     /// Handles NuGet package resolution including version resolution and dependency analysis.
     /// Provides comprehensive package resolution with caching and security validation.
     /// </summary>
-    internal sealed class NuGetPackageResolver : IDisposable
+    internal sealed partial class NuGetPackageResolver : IDisposable
     {
         private readonly MSLogger _logger;
         private readonly NuGetPluginLoaderOptions _options;
@@ -46,7 +46,7 @@ namespace DotCompute.Algorithms.Management
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
-            _logger.LogDebug("Resolving latest version for package: {PackageId}", packageId);
+            LogResolvingLatestVersion(packageId);
 
             foreach (var sourceRepository in _sourceRepositoryProvider.GetRepositories())
             {
@@ -76,15 +76,13 @@ namespace DotCompute.Algorithms.Management
 
                     if (latestPackage != null)
                     {
-                        _logger.LogDebug("Resolved latest version for {PackageId}: {Version}",
-                            packageId, latestPackage.Identity.Version);
+                        LogResolvedLatestVersion(packageId, latestPackage.Identity.Version!);
                         return latestPackage.Identity.Version;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to resolve version from source: {Source}",
-                        sourceRepository.PackageSource.Source);
+                    LogFailedToResolveVersionFromSource(ex, sourceRepository.PackageSource.Source);
                     // Continue to next source
                 }
             }
@@ -100,8 +98,7 @@ namespace DotCompute.Algorithms.Management
             ArgumentNullException.ThrowIfNull(identity);
             ArgumentException.ThrowIfNullOrWhiteSpace(extractedPath);
 
-            _logger.LogDebug("Resolving dependencies for package: {PackageId} {Version}",
-                identity.Id, identity.Version);
+            LogResolvingDependencies(identity.Id, identity.Version!);
 
             var dependencies = new List<PackageDependency>();
 
@@ -156,13 +153,11 @@ namespace DotCompute.Algorithms.Management
                         }
                     }
 
-                    _logger.LogDebug("Resolved {Count} dependencies for {PackageId}",
-                        dependencies.Count, identity.Id);
+                    LogResolvedDependencies(dependencies.Count, identity.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to parse nuspec file for dependency resolution: {NuspecFile}",
-                        nuspecFile);
+                    LogFailedToParseNuspecFile(ex, nuspecFile);
                 }
             }
 
@@ -236,8 +231,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Security validation failed for package: {PackageId} {Version}",
-                    identity.Id, identity.Version);
+                LogSecurityValidationFailed(ex, identity.Id, identity.Version!);
                 return (false, $"Security validation error: {ex.Message}");
             }
         }
@@ -264,5 +258,44 @@ namespace DotCompute.Algorithms.Management
                 _disposed = true;
             }
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            Level = LogLevel.Debug,
+            Message = "Resolving latest version for package: {PackageId}")]
+        private partial void LogResolvingLatestVersion(string packageId);
+
+        [LoggerMessage(
+            Level = LogLevel.Debug,
+            Message = "Resolved latest version for {PackageId}: {Version}")]
+        private partial void LogResolvedLatestVersion(string packageId, NuGetVersion? version);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
+            Message = "Failed to resolve version from source: {Source}")]
+        private partial void LogFailedToResolveVersionFromSource(Exception exception, string source);
+
+        [LoggerMessage(
+            Level = LogLevel.Debug,
+            Message = "Resolving dependencies for package: {PackageId} {Version}")]
+        private partial void LogResolvingDependencies(string packageId, NuGetVersion? version);
+
+        [LoggerMessage(
+            Level = LogLevel.Debug,
+            Message = "Resolved {Count} dependencies for {PackageId}")]
+        private partial void LogResolvedDependencies(int count, string packageId);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
+            Message = "Failed to parse nuspec file for dependency resolution: {NuspecFile}")]
+        private partial void LogFailedToParseNuspecFile(Exception exception, string nuspecFile);
+
+        [LoggerMessage(
+            Level = LogLevel.Error,
+            Message = "Security validation failed for package: {PackageId} {Version}")]
+        private partial void LogSecurityValidationFailed(Exception exception, string packageId, NuGetVersion? version);
+
+        #endregion
     }
 }

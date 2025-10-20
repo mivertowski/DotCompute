@@ -14,9 +14,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <remarks>
     /// Initializes a new instance of the GpuVectorOperations.
     /// </remarks>
-    /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
-    /// <param name="logger">Logger instance.</param>
-    public sealed class GpuVectorOperations(KernelManager kernelManager, ILogger<GpuVectorOperations> logger) : IDisposable
+    public sealed class GpuVectorOperations : IDisposable
     {
         private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;

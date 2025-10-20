@@ -4,6 +4,9 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using DotCompute.Abstractions.Security;
+using SecurityEvaluationContext = DotCompute.Abstractions.Security.SecurityEvaluationContext;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security.Core;
 
@@ -461,7 +464,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
     private partial void LogSecurityValidationStarting(string assemblyPath);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Security validation passed for: {AssemblyPath}, Level: {SecurityLevel}, Duration: {DurationMs:F2}ms")]
-    private partial void LogSecurityValidationPassed(string assemblyPath, SecurityLevel securityLevel, double durationMs);
+    partial void LogSecurityValidationPassed(string assemblyPath, SecurityLevel securityLevel, double durationMs);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Security validation failed for: {AssemblyPath}, Violations: {Violations}")]
     private partial void LogSecurityValidationFailed(string assemblyPath, string violations);

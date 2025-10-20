@@ -173,6 +173,7 @@ public class SandboxedPlugin : IDisposable
 
         _disposed = true;
         TerminateAsync().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
     }
 }
 

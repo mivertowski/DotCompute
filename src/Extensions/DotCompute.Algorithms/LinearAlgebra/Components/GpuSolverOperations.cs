@@ -7,8 +7,8 @@ using DotCompute.Algorithms.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.Compilation.ManagedCompiledKernel;
-using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
-using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
+using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
+using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -18,13 +18,9 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <remarks>
     /// Initializes a new instance of the GpuSolverOperations.
     /// </remarks>
-    /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
-    /// <param name="logger">Logger instance.</param>
     /// <param name="matrixOps">Matrix operations component.</param>
     /// <param name="vectorOps">Vector operations component.</param>
     public sealed class GpuSolverOperations(
-        KernelManager kernelManager,
-        ILogger<GpuSolverOperations> logger,
         GpuMatrixOperations matrixOps,
         GpuVectorOperations vectorOps) : IDisposable
     {
@@ -417,8 +413,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
         private static LAKernelParams GetOptimalKernelConfig(MatrixProperties properties)
         {
-            return LinearAlgebraKernels.GetOptimizedParameters(
-                LinearAlgebraKernels.LinearAlgebraOperation.MatrixMultiply,
+            return LinearAlgebraKernelLibrary.GetOptimizedParameters(
+                LinearAlgebraKernelLibrary.LinearAlgebraOperation.MatrixMultiply,
                 ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)),
                 "GPU");
         }

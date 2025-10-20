@@ -62,7 +62,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 
         try
         {
-            _logger.LogInformation("Initializing plugin {PluginId} ({PluginName})", plugin.Id, plugin.Name);
+            LogInitializingPlugin(plugin.Id, plugin.Name);
 
             // Validate plugin before initialization
             ValidatePlugin(plugin);
@@ -70,11 +70,11 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             // Initialize the plugin
             await plugin.InitializeAsync(accelerator, cancellationToken).ConfigureAwait(false);
 
-            _logger.LogInformation("Successfully initialized plugin {PluginId}", plugin.Id);
+            LogSuccessfullyInitializedPlugin(plugin.Id);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize plugin {PluginId}: {ErrorMessage}", plugin.Id, ex.Message);
+            LogFailedToInitializePlugin(ex, plugin.Id, ex.Message);
             throw;
         }
     }
@@ -97,7 +97,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         ArgumentNullException.ThrowIfNull(plugin);
         ArgumentNullException.ThrowIfNull(inputs);
 
-        _logger.LogDebug("Executing plugin {PluginId}", plugin.Id);
+        LogExecutingPlugin(plugin.Id);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
@@ -106,16 +106,14 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             var result = await ExecuteWithRetryAsync(plugin, inputs, parameters, cancellationToken).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Plugin {PluginId} executed successfully in {ElapsedMs} ms",
-                plugin.Id, stopwatch.ElapsedMilliseconds);
+            LogPluginExecutedSuccessfully(plugin.Id, stopwatch.ElapsedMilliseconds);
 
             return result;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Plugin {PluginId} execution failed after {ElapsedMs} ms: {ErrorMessage}",
-                plugin.Id, stopwatch.ElapsedMilliseconds, ex.Message);
+            LogPluginExecutionFailed(ex, plugin.Id, stopwatch.ElapsedMilliseconds, ex.Message);
             throw;
         }
     }
@@ -132,7 +130,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
         ArgumentNullException.ThrowIfNull(plugin);
 
         var shutdownTimeout = timeout ?? TimeSpan.FromSeconds(30);
-        _logger.LogInformation("Shutting down plugin {PluginId} with timeout {Timeout}", plugin.Id, shutdownTimeout);
+        LogShuttingDownPlugin(plugin.Id, shutdownTimeout);
 
         try
         {
@@ -141,16 +139,16 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             // Attempt graceful shutdown
             await plugin.DisposeAsync().ConfigureAwait(false);
 
-            _logger.LogInformation("Successfully shut down plugin {PluginId}", plugin.Id);
+            LogSuccessfullyShutDownPlugin(plugin.Id);
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Plugin {PluginId} shutdown timed out after {Timeout}", plugin.Id, shutdownTimeout);
+            LogPluginShutdownTimedOut(plugin.Id, shutdownTimeout);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during plugin {PluginId} shutdown: {ErrorMessage}", plugin.Id, ex.Message);
+            LogErrorDuringPluginShutdown(ex, plugin.Id, ex.Message);
             throw;
         }
     }
@@ -193,15 +191,14 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             if (healthResult.CurrentHealth != healthResult.PreviousHealth)
             {
                 loadedPlugin.Health = healthResult.CurrentHealth;
-                _logger.LogInformation("Plugin {PluginId} health changed: {PreviousHealth} -> {CurrentHealth}",
-                    loadedPlugin.Plugin.Id, healthResult.PreviousHealth, healthResult.CurrentHealth);
+                LogPluginHealthChanged(loadedPlugin.Plugin.Id, healthResult.PreviousHealth, healthResult.CurrentHealth);
             }
 
             return healthResult;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during health check for plugin {PluginId}", loadedPlugin.Plugin.Id);
+            LogErrorDuringHealthCheck(ex, loadedPlugin.Plugin.Id);
             healthResult.CurrentHealth = PluginHealth.Critical;
             healthResult.HealthIssues.Add($"Health check failed: {ex.Message}");
             return healthResult;
@@ -260,8 +257,7 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
             }
             catch (Exception ex) when (attempt < maxRetries && IsTransientError(ex))
             {
-                _logger.LogWarning("Plugin {PluginId} execution attempt {Attempt} failed with transient error: {ErrorMessage}",
-                    plugin.Id, attempt, ex.Message);
+                LogPluginExecutionAttemptFailedWithTransientError(plugin.Id, attempt, ex.Message);
                 await Task.Delay(retryDelay * attempt, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -483,16 +479,65 @@ public sealed partial class AlgorithmPluginLifecycle : IDisposable
 
         try
         {
-            _logger.LogDebug("Performing scheduled health checks");
+            LogPerformingScheduledHealthChecks();
             // Note: This would need access to the plugin registry to iterate over plugins
             // In the actual implementation, this would be coordinated with the main manager
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during scheduled health checks");
+            LogErrorDuringScheduledHealthChecks(ex);
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Initializing plugin {PluginId} ({PluginName})")]
+    private partial void LogInitializingPlugin(string pluginId, string pluginName);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Successfully initialized plugin {PluginId}")]
+    private partial void LogSuccessfullyInitializedPlugin(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to initialize plugin {PluginId}: {ErrorMessage}")]
+    private partial void LogFailedToInitializePlugin(Exception ex, string pluginId, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Executing plugin {PluginId}")]
+    private partial void LogExecutingPlugin(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Plugin {PluginId} executed successfully in {ElapsedMs} ms")]
+    private partial void LogPluginExecutedSuccessfully(string pluginId, long elapsedMs);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Plugin {PluginId} execution failed after {ElapsedMs} ms: {ErrorMessage}")]
+    private partial void LogPluginExecutionFailed(Exception ex, string pluginId, long elapsedMs, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Shutting down plugin {PluginId} with timeout {Timeout}")]
+    private partial void LogShuttingDownPlugin(string pluginId, TimeSpan timeout);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Successfully shut down plugin {PluginId}")]
+    private partial void LogSuccessfullyShutDownPlugin(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Plugin {PluginId} shutdown timed out after {Timeout}")]
+    private partial void LogPluginShutdownTimedOut(string pluginId, TimeSpan timeout);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error during plugin {PluginId} shutdown: {ErrorMessage}")]
+    private partial void LogErrorDuringPluginShutdown(Exception ex, string pluginId, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Plugin {PluginId} health changed: {PreviousHealth} -> {CurrentHealth}")]
+    private partial void LogPluginHealthChanged(string pluginId, PluginHealth previousHealth, PluginHealth currentHealth);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error during health check for plugin {PluginId}")]
+    private partial void LogErrorDuringHealthCheck(Exception ex, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Plugin {PluginId} execution attempt {Attempt} failed with transient error: {ErrorMessage}")]
+    private partial void LogPluginExecutionAttemptFailedWithTransientError(string pluginId, int attempt, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Performing scheduled health checks")]
+    private partial void LogPerformingScheduledHealthChecks();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error during scheduled health checks")]
+    private partial void LogErrorDuringScheduledHealthChecks(Exception ex);
+
+    #endregion
 
     /// <inheritdoc/>
     public void Dispose()

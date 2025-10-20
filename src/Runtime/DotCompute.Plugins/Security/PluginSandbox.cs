@@ -449,6 +449,7 @@ public class PluginSandbox : IDisposable
 
 
         _disposed = true;
+        GC.SuppressFinalize(this);
 
         // Terminate all active plugins
         foreach (var plugin in _sandboxedPlugins.Values)

@@ -18,7 +18,7 @@ namespace DotCompute.Algorithms.Management
     /// Handles NuGet package downloading, extraction, and caching with comprehensive security validation.
     /// Provides download management with integrity verification and proper cleanup.
     /// </summary>
-    internal sealed class NuGetDownloader : IDisposable
+    internal sealed partial class NuGetDownloader : IDisposable
     {
         private readonly MSLogger _logger;
         private readonly NuGetPluginLoaderOptions _options;
@@ -59,15 +59,14 @@ namespace DotCompute.Algorithms.Management
             // Check if already downloaded and cached
             if (_downloadCache.TryGetValue(cacheKey, out var cachedPath) && File.Exists(cachedPath))
             {
-                _logger.LogDebug("Using cached download for package: {PackageId} {Version}",
-                    identity.Id, identity.Version);
+                LogUsingCachedDownload(identity.Id, identity.Version.ToString());
                 return cachedPath;
             }
 
             await _downloadSemaphore.WaitAsync(cancellationToken);
             try
             {
-                _logger.LogInformation("Downloading package: {PackageId} {Version}", identity.Id, identity.Version);
+                LogDownloadingPackage(identity.Id, identity.Version.ToString());
 
                 var downloadPath = Path.Combine(_options.CacheDirectory, $"{identity.Id}.{identity.Version}.nupkg");
 
@@ -118,8 +117,7 @@ namespace DotCompute.Algorithms.Management
                                     File.Move(tempPath, downloadPath);
 
                                     var fileInfo = new FileInfo(downloadPath);
-                                    _logger.LogInformation("Successfully downloaded package: {PackageId} {Version} ({Size} bytes)",
-                                        identity.Id, identity.Version, fileInfo.Length);
+                                    LogSuccessfullyDownloadedPackage(identity.Id, identity.Version.ToString(), fileInfo.Length);
 
                                     // Cache the download path
                                     _ = _downloadCache.TryAdd(cacheKey, downloadPath);
@@ -127,8 +125,7 @@ namespace DotCompute.Algorithms.Management
                                 }
                                 else
                                 {
-                                    _logger.LogWarning("Package integrity validation failed: {PackageId} {Version}",
-                                        identity.Id, identity.Version);
+                                    LogPackageIntegrityValidationFailed(identity.Id, identity.Version.ToString());
                                     // Continue to next source
                                 }
                             }
@@ -144,8 +141,7 @@ namespace DotCompute.Algorithms.Management
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to download package {PackageId} {Version} from source: {Source}",
-                            identity.Id, identity.Version, sourceRepository.PackageSource.Source);
+                        LogFailedToDownloadPackageFromSource(ex, identity.Id, identity.Version.ToString(), sourceRepository.PackageSource.Source);
                         // Continue to next source
                     }
                 }
@@ -182,8 +178,7 @@ namespace DotCompute.Algorithms.Management
 
                 if (extractTime >= packageTime)
                 {
-                    _logger.LogDebug("Package already extracted: {PackageId} {Version}",
-                        identity.Id, identity.Version);
+                    LogPackageAlreadyExtracted(identity.Id, identity.Version.ToString());
                     return extractPath;
                 }
 
@@ -193,8 +188,7 @@ namespace DotCompute.Algorithms.Management
 
             _ = Directory.CreateDirectory(extractPath);
 
-            _logger.LogDebug("Extracting package: {PackageId} {Version} to {ExtractPath}",
-                identity.Id, identity.Version, extractPath);
+            LogExtractingPackage(identity.Id, identity.Version.ToString(), extractPath);
 
             try
             {
@@ -218,8 +212,7 @@ namespace DotCompute.Algorithms.Management
                         var entryPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
                         if (!entryPath.StartsWith(extractPath, StringComparison.OrdinalIgnoreCase))
                         {
-                            _logger.LogWarning("Security violation: Directory traversal detected in entry {EntryName} for package {PackageId}",
-                                entry.FullName, identity.Id);
+                            LogSecurityViolationDirectoryTraversal(entry.FullName, identity.Id);
                             continue;
                         }
 
@@ -234,8 +227,7 @@ namespace DotCompute.Algorithms.Management
                         entry.ExtractToFile(entryPath, true);
                     }
 
-                    _logger.LogDebug("Successfully extracted package: {PackageId} {Version} ({EntryCount} entries)",
-                        identity.Id, identity.Version, archive.Entries.Count);
+                    LogSuccessfullyExtractedPackage(identity.Id, identity.Version.ToString(), archive.Entries.Count);
 
                 }, cancellationToken);
 
@@ -243,8 +235,7 @@ namespace DotCompute.Algorithms.Management
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to extract package: {PackageId} {Version}",
-                    identity.Id, identity.Version);
+                LogFailedToExtractPackage(ex, identity.Id, identity.Version.ToString());
 
                 // Clean up on failure
                 if (Directory.Exists(extractPath))
@@ -301,7 +292,7 @@ namespace DotCompute.Algorithms.Management
                     var hasNuspec = archive.Entries.Any(e => e.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
                     if (!hasNuspec)
                     {
-                        _logger.LogWarning("Package missing required .nuspec file: {PackagePath}", packagePath);
+                        LogPackageMissingNuspec(packagePath);
                         isValid = false;
                         return;
                     }
@@ -316,7 +307,7 @@ namespace DotCompute.Algorithms.Management
                             entry.FullName.StartsWith("/", StringComparison.OrdinalIgnoreCase) ||
                             entry.FullName.Contains(":"))
                         {
-                            _logger.LogWarning("Suspicious entry found in package: {EntryName}", entry.FullName);
+                            LogSuspiciousEntryFound(entry.FullName);
                             isValid = false;
                             return;
                         }
@@ -326,12 +317,10 @@ namespace DotCompute.Algorithms.Management
                 }, cancellationToken);
 
                 return isValid;
-
-                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Package integrity validation failed: {PackagePath}", packagePath);
+                LogPackageIntegrityValidationFailedException(ex, packagePath);
                 return false;
             }
         }
@@ -358,7 +347,7 @@ namespace DotCompute.Algorithms.Management
                             {
                                 File.Delete(kvp.Value);
                                 cachesToRemove.Add(kvp.Key);
-                                _logger.LogDebug("Removed cached package: {CacheKey}", kvp.Key);
+                                LogRemovedCachedPackage(kvp.Key);
                             }
                         }
                         else
@@ -369,7 +358,7 @@ namespace DotCompute.Algorithms.Management
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to clean cache entry: {CacheKey}", kvp.Key);
+                        LogFailedToCleanCacheEntry(ex, kvp.Key);
                     }
                 }
 
@@ -379,7 +368,7 @@ namespace DotCompute.Algorithms.Management
                     _ = _downloadCache.TryRemove(key, out _);
                 }
 
-                _logger.LogInformation("Cache cleanup completed. Removed {Count} entries.", cachesToRemove.Count);
+                LogCacheCleanupCompleted(cachesToRemove.Count);
             });
         }
         /// <summary>
@@ -396,12 +385,64 @@ namespace DotCompute.Algorithms.Management
                 _disposed = true;
             }
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Using cached download for package: {packageId} {version}")]
+        private partial void LogUsingCachedDownload(string packageId, string version);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Downloading package: {packageId} {version}")]
+        private partial void LogDownloadingPackage(string packageId, string version);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Successfully downloaded package: {packageId} {version} ({size} bytes)")]
+        private partial void LogSuccessfullyDownloadedPackage(string packageId, string version, long size);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Package integrity validation failed: {packageId} {version}")]
+        private partial void LogPackageIntegrityValidationFailed(string packageId, string version);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to download package {packageId} {version} from source: {source}")]
+        private partial void LogFailedToDownloadPackageFromSource(Exception ex, string packageId, string version, string source);
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Package already extracted: {packageId} {version}")]
+        private partial void LogPackageAlreadyExtracted(string packageId, string version);
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Extracting package: {packageId} {version} to {extractPath}")]
+        private partial void LogExtractingPackage(string packageId, string version, string extractPath);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Security violation: Directory traversal detected in entry {entryName} for package {packageId}")]
+        private partial void LogSecurityViolationDirectoryTraversal(string entryName, string packageId);
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Successfully extracted package: {packageId} {version} ({entryCount} entries)")]
+        private partial void LogSuccessfullyExtractedPackage(string packageId, string version, int entryCount);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "Failed to extract package: {packageId} {version}")]
+        private partial void LogFailedToExtractPackage(Exception ex, string packageId, string version);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Package missing required .nuspec file: {packagePath}")]
+        private partial void LogPackageMissingNuspec(string packagePath);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Suspicious entry found in package: {entryName}")]
+        private partial void LogSuspiciousEntryFound(string entryName);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Package integrity validation failed: {packagePath}")]
+        private partial void LogPackageIntegrityValidationFailedException(Exception ex, string packagePath);
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "Removed cached package: {cacheKey}")]
+        private partial void LogRemovedCachedPackage(string cacheKey);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to clean cache entry: {cacheKey}")]
+        private partial void LogFailedToCleanCacheEntry(Exception ex, string cacheKey);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "Cache cleanup completed. Removed {count} entries.")]
+        private partial void LogCacheCleanupCompleted(int count);
+
+        #endregion
     }
 
     /// <summary>
     /// Adapter to bridge Microsoft.Extensions.Logging.ILogger to NuGet.Common.ILogger.
     /// </summary>
-    internal sealed class NuGetLoggerAdapter(MSLogger logger) : NuGet.Common.ILogger
+    internal sealed partial class NuGetLoggerAdapter(MSLogger logger) : NuGet.Common.ILogger
     {
         private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         /// <summary>
@@ -409,49 +450,49 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
+        public void LogDebug(string data) => LogDebugData(data);
         /// <summary>
         /// Performs log verbose.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
+        public void LogVerbose(string data) => LogVerboseData(data);
         /// <summary>
         /// Performs log information.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
+        public void LogInformation(string data) => LogInformationData(data);
         /// <summary>
         /// Performs log minimal.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
+        public void LogMinimal(string data) => LogMinimalData(data);
         /// <summary>
         /// Performs log warning.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
+        public void LogWarning(string data) => LogWarningData(data);
         /// <summary>
         /// Performs log error.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogError(string data) => _logger.LogError("{Data}", data);
+        public void LogError(string data) => LogErrorData(data);
         /// <summary>
         /// Performs log information summary.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
+        public void LogInformationSummary(string data) => LogInformationSummaryData(data);
         /// <summary>
         /// Performs log error summary.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
+        public void LogErrorSummary(string data) => LogErrorSummaryData(data);
         /// <summary>
         /// Performs log.
         /// </summary>
@@ -471,7 +512,7 @@ namespace DotCompute.Algorithms.Management
                 _ => Microsoft.Extensions.Logging.LogLevel.Information
             };
 
-            _logger.Log(msLogLevel, "{Data}", data);
+            LogGenericData(msLogLevel, data);
         }
         /// <summary>
         /// Gets log asynchronously.
@@ -502,5 +543,36 @@ namespace DotCompute.Algorithms.Management
             Log(message);
             await Task.CompletedTask;
         }
+
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "{data}")]
+        private partial void LogDebugData(string data);
+
+        [LoggerMessage(Level = LogLevel.Trace, Message = "{data}")]
+        private partial void LogVerboseData(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{data}")]
+        private partial void LogInformationData(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{data}")]
+        private partial void LogMinimalData(string data);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "{data}")]
+        private partial void LogWarningData(string data);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "{data}")]
+        private partial void LogErrorData(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{data}")]
+        private partial void LogInformationSummaryData(string data);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "{data}")]
+        private partial void LogErrorSummaryData(string data);
+
+        [LoggerMessage(Message = "{data}")]
+        private partial void LogGenericData(LogLevel level, string data);
+
+        #endregion
     }
 }

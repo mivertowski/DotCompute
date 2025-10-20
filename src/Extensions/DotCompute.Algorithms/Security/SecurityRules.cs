@@ -1,9 +1,14 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using DotCompute.Abstractions.Security;
+using SecurityEvaluationContext = DotCompute.Abstractions.Security.SecurityEvaluationContext;
+using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -74,7 +79,7 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
             }
 
             // Validate certificate chain
-            var chain = new X509Chain
+            using var chain = new X509Chain
             {
                 ChainPolicy =
 
@@ -133,8 +138,7 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
                 trustedStore.Close();
             }
 
-            // Store certificate in context for other rules
-            context.Certificate = certificate;
+            // Store certificate metadata in result
             result.Metadata["CertificateThumbprint"] = certificate.Thumbprint;
             result.Metadata["CertificateSubject"] = certificate.Subject;
             result.Metadata["CertificateIssuer"] = certificate.Issuer;
@@ -199,8 +203,7 @@ public sealed class StrongNameSecurityRule : SecurityRule
                 return result;
             }
 
-            // Store public key for other rules
-            context.StrongNameKey = publicKey;
+            // Store public key metadata in result
             result.Metadata["StrongNameKeySize"] = publicKey.Length;
             result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? []);
             result.SecurityLevel = SecurityLevel.High;
@@ -269,6 +272,7 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
 };
 
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Assembly loading for security analysis requires reflection and is not compatible with trimming")]
     public override SecurityEvaluationResult Evaluate(SecurityEvaluationContext context)
     {
         var result = new SecurityEvaluationResult();
@@ -334,7 +338,11 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
             else if (suspiciousCount > 0)
             {
                 result.SecurityLevel = SecurityLevel.High;
-                result.Warnings.AddRange(warnings.Take(5)); // Limit warnings
+                // Limit warnings to 5 entries
+                foreach (var warning in warnings.Take(5))
+                {
+                    result.Warnings.Add(warning);
+                }
             }
 
             result.Metadata["SuspiciousPatternCount"] = suspiciousCount;
@@ -463,10 +471,9 @@ public sealed class BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet
             }
 
             // Check assembly hash if we have the bytes
-            if (context.AssemblyBytes != null)
+            if (!context.AssemblyBytes.IsDefaultOrEmpty)
             {
-                using var sha256 = SHA256.Create();
-                var hash = Convert.ToHexString(sha256.ComputeHash(context.AssemblyBytes));
+                var hash = Convert.ToHexString(SHA256.HashData(context.AssemblyBytes.AsSpan()));
 
                 if (_blockedHashes.Contains(hash))
                 {
@@ -481,9 +488,8 @@ public sealed class BlocklistSecurityRule(HashSet<string> blockedHashes, HashSet
             else if (File.Exists(context.AssemblyPath))
             {
                 // Compute hash from file
-                using var sha256 = SHA256.Create();
                 using var fileStream = File.OpenRead(context.AssemblyPath);
-                var hash = Convert.ToHexString(sha256.ComputeHash(fileStream));
+                var hash = Convert.ToHexString(SHA256.HashData(fileStream));
 
                 if (_blockedHashes.Contains(hash))
                 {

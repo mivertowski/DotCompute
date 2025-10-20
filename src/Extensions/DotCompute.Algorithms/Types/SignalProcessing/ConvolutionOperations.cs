@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Types.SignalProcessing;
 /// <remarks>
 /// Initializes a new instance of the ConvolutionOperations class.
 /// </remarks>
-public class ConvolutionOperations(object kernelManager, object accelerator, object? logger = null) : IDisposable
+public class ConvolutionOperations : IDisposable
 {
     private bool _disposed;
 

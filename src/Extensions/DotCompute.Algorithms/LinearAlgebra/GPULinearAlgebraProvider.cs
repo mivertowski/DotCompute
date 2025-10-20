@@ -4,7 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
 using DotCompute.Algorithms.LinearAlgebra.Components;
 
 namespace DotCompute.Algorithms.LinearAlgebra
@@ -20,7 +20,6 @@ namespace DotCompute.Algorithms.LinearAlgebra
         private readonly GpuMatrixOperations _matrixOps;
         private readonly GpuVectorOperations _vectorOps;
         private readonly GpuSolverOperations _solverOps;
-        private readonly GpuOptimizationStrategies _optimizationStrategies;
         private bool _disposed;
 
         /// <summary>
@@ -34,10 +33,9 @@ namespace DotCompute.Algorithms.LinearAlgebra
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize specialized components
-            _matrixOps = new GpuMatrixOperations(kernelManagerArg, logger.CreateLogger<GpuMatrixOperations>());
-            _vectorOps = new GpuVectorOperations(kernelManagerArg, logger.CreateLogger<GpuVectorOperations>());
-            _solverOps = new GpuSolverOperations(kernelManagerArg, logger.CreateLogger<GpuSolverOperations>(), _matrixOps, _vectorOps);
-            _optimizationStrategies = new GpuOptimizationStrategies(logger.CreateLogger<GpuOptimizationStrategies>());
+            _matrixOps = new GpuMatrixOperations();
+            _vectorOps = new GpuVectorOperations();
+            _solverOps = new GpuSolverOperations(_matrixOps, _vectorOps);
         }
 
         /// <summary>
@@ -82,7 +80,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             var hardwareInfo = GpuOptimizationStrategies.GetHardwareInfo(accelerator);
 
             // For small matrices, CPU might be faster due to GPU overhead
-            if (matrix.Size < _optimizationStrategies.GetGPUThreshold(accelerator))
+            if (matrix.Size < GpuOptimizationStrategies.GetGPUThreshold(accelerator))
             {
                 return await GpuOptimizationStrategies.FallbackQRDecompositionAsync(matrix, cancellationToken).ConfigureAwait(false);
             }
@@ -112,7 +110,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(matrix);
             var hardwareInfo = GpuOptimizationStrategies.GetHardwareInfo(accelerator);
 
-            if (matrix.Size < _optimizationStrategies.GetGPUThreshold(accelerator))
+            if (matrix.Size < GpuOptimizationStrategies.GetGPUThreshold(accelerator))
             {
                 return await GpuOptimizationStrategies.FallbackSVDAsync(matrix, cancellationToken).ConfigureAwait(false);
             }
@@ -142,7 +140,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             GpuOptimizationStrategies.ValidateLinearSystem(a, b);
 
             var matrixProperties = GpuOptimizationStrategies.AnalyzeMatrixProperties(a);
-            var selectedMethod = method == LinearSystemSolver.Auto ? _optimizationStrategies.SelectOptimalSolver(matrixProperties) : method;
+            var selectedMethod = method == LinearSystemSolver.Auto ? GpuOptimizationStrategies.SelectOptimalSolver(matrixProperties) : method;
 
             try
             {

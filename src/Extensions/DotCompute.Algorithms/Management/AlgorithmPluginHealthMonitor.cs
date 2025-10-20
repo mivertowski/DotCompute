@@ -12,7 +12,7 @@ namespace DotCompute.Algorithms.Management;
 /// Handles health monitoring for algorithm plugins including memory usage,
 /// response time analysis, error rate tracking, and resource leak detection.
 /// </summary>
-public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options)
+public partial class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> logger, AlgorithmPluginManagerOptions options)
 {
     private readonly ILogger<AlgorithmPluginHealthMonitor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -36,7 +36,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
             _options.HealthCheckInterval,
             _options.HealthCheckInterval);
 
-        _logger.LogInformation("Started plugin health monitoring with interval: {Interval}", _options.HealthCheckInterval);
+        LogStartedHealthMonitoring(_options.HealthCheckInterval);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     {
         _healthCheckTimer?.Dispose();
         _healthCheckTimer = null;
-        _logger.LogInformation("Stopped plugin health monitoring");
+        LogStoppedHealthMonitoring();
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     {
         try
         {
-            _logger.LogDebug("Performing health check for plugin: {PluginId}", plugin.Id);
+            LogPerformingHealthCheck(plugin.Id);
 
             // TODO: Implement IHealthCheckable interface when available
             // For now, perform basic validation as health check
@@ -66,16 +66,16 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
             var testInput = new object[] { new() };
             if (plugin.ValidateInputs(testInput))
             {
-                _logger.LogDebug("Plugin {PluginId} passed basic health check", plugin.Id);
+                LogPluginPassedHealthCheck(plugin.Id);
                 return PluginHealth.Healthy;
             }
 
-            _logger.LogDebug("Plugin {PluginId} failed basic health check", plugin.Id);
+            LogPluginFailedHealthCheck(plugin.Id);
             return PluginHealth.Degraded;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error performing health check for plugin: {PluginId}", plugin.Id);
+            LogHealthCheckError(ex, plugin.Id);
             return PluginHealth.Critical;
         }
     }
@@ -85,7 +85,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     /// </summary>
     public async Task<MemoryUsageInfo> PerformMemoryUsageMonitoringAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Monitoring memory usage for plugin: {PluginId}", plugin.Id);
+        LogMonitoringMemoryUsage(plugin.Id);
 
         var initialMemory = GC.GetTotalMemory(false);
 
@@ -109,7 +109,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     /// </summary>
     public async Task<ResponseTimeInfo> PerformResponseTimeAnalysisAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Analyzing response time for plugin: {PluginId}", plugin.Id);
+        LogAnalyzingResponseTime(plugin.Id);
 
         // TODO: Implement IPerformanceMonitorable interface when available
         // For now, return default values
@@ -129,7 +129,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     /// </summary>
     public async Task<ErrorRateInfo> PerformErrorRateTrackingAsync(IAlgorithmPlugin plugin, long executionCount, Exception? lastError, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Tracking error rate for plugin: {PluginId}", plugin.Id);
+        LogTrackingErrorRate(plugin.Id);
 
         // TODO: Implement IErrorMonitorable interface when available
         // For now, calculate based on provided parameters
@@ -150,7 +150,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
     /// </summary>
     public async Task<ResourceLeakInfo> PerformResourceLeakDetectionAsync(IAlgorithmPlugin plugin, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Detecting resource leaks for plugin: {PluginId}", plugin.Id);
+        LogDetectingResourceLeaks(plugin.Id);
 
         // TODO: Implement IResourceMonitorable interface when available
         // For now, return no leaks detected
@@ -172,7 +172,7 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during periodic health check");
+            LogPeriodicHealthCheckError(ex);
         }
     }
     /// <summary>
@@ -190,6 +190,43 @@ public class AlgorithmPluginHealthMonitor(ILogger<AlgorithmPluginHealthMonitor> 
         StopHealthMonitoring();
         _disposed = true;
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Started plugin health monitoring with interval: {Interval}")]
+    private partial void LogStartedHealthMonitoring(TimeSpan interval);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Stopped plugin health monitoring")]
+    private partial void LogStoppedHealthMonitoring();
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Performing health check for plugin: {PluginId}")]
+    private partial void LogPerformingHealthCheck(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Plugin {PluginId} passed basic health check")]
+    private partial void LogPluginPassedHealthCheck(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Plugin {PluginId} failed basic health check")]
+    private partial void LogPluginFailedHealthCheck(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error performing health check for plugin: {PluginId}")]
+    private partial void LogHealthCheckError(Exception exception, string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Monitoring memory usage for plugin: {PluginId}")]
+    private partial void LogMonitoringMemoryUsage(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Analyzing response time for plugin: {PluginId}")]
+    private partial void LogAnalyzingResponseTime(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Tracking error rate for plugin: {PluginId}")]
+    private partial void LogTrackingErrorRate(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Detecting resource leaks for plugin: {PluginId}")]
+    private partial void LogDetectingResourceLeaks(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error during periodic health check")]
+    private partial void LogPeriodicHealthCheckError(Exception exception);
+
+    #endregion
 }
 /// <summary>
 /// A class that represents memory usage info.

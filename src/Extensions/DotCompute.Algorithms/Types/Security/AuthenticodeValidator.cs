@@ -4,6 +4,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using System;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Types.Security;
 
@@ -210,40 +211,4 @@ public class AuthenticodeValidationResult
     /// Gets or sets additional validation details.
     /// </summary>
     public Dictionary<string, object> AdditionalDetails { get; } = [];
-}
-
-/// <summary>
-/// Trust levels for digital signatures.
-/// </summary>
-public enum TrustLevel
-{
-    /// <summary>
-    /// Unknown trust level.
-    /// </summary>
-    Unknown,
-
-    /// <summary>
-    /// Untrusted signature.
-    /// </summary>
-    Untrusted,
-
-    /// <summary>
-    /// Partially trusted signature.
-    /// </summary>
-    PartiallyTrusted,
-
-    /// <summary>
-    /// Trusted signature.
-    /// </summary>
-    Trusted,
-
-    /// <summary>
-    /// High trust level signature.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Highly trusted signature.
-    /// </summary>
-    HighlyTrusted
 }

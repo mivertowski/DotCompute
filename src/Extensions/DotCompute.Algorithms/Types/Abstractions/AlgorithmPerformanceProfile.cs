@@ -42,6 +42,36 @@ public class AlgorithmPerformanceProfile
     public int OptimalBatchSize { get; set; } = 1;
 
     /// <summary>
+    /// Gets or sets the algorithmic complexity notation (e.g., "O(n)", "O(n^2)").
+    /// </summary>
+    public string? Complexity { get; init; }
+
+    /// <summary>
+    /// Gets or sets the optimal number of parallel threads for this algorithm.
+    /// </summary>
+    public int OptimalParallelism { get; init; }
+
+    /// <summary>
+    /// Gets or sets whether the algorithm is memory-bound.
+    /// </summary>
+    public bool IsMemoryBound { get; init; }
+
+    /// <summary>
+    /// Gets or sets whether the algorithm is compute-bound.
+    /// </summary>
+    public bool IsComputeBound { get; init; }
+
+    /// <summary>
+    /// Gets or sets the estimated number of floating-point operations.
+    /// </summary>
+    public long EstimatedFlops { get; init; }
+
+    /// <summary>
+    /// Gets or sets additional metadata for the performance profile.
+    /// </summary>
+    public Dictionary<string, object>? Metadata { get; init; }
+
+    /// <summary>
     /// Gets or sets additional performance metrics.
     /// </summary>
     public Dictionary<string, object> AdditionalMetrics { get; } = [];

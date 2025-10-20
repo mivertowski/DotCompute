@@ -10,7 +10,7 @@ namespace DotCompute.Algorithms.Management.Types
     /// Adapter to bridge Microsoft.Extensions.Logging.ILogger to NuGet.Common.ILogger.
     /// Provides compatibility between .NET logging and NuGet package operations.
     /// </summary>
-    internal sealed class NuGetLogger(MSLogger logger) : NuGet.Common.ILogger
+    internal sealed partial class NuGetLogger(MSLogger logger) : NuGet.Common.ILogger
     {
         private readonly MSLogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         /// <summary>
@@ -18,49 +18,49 @@ namespace DotCompute.Algorithms.Management.Types
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogDebug(string data) => _logger.LogDebug("{Data}", data);
+        public void LogDebug(string data) => LogDebugMessage(data);
         /// <summary>
         /// Performs log verbose.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogVerbose(string data) => _logger.LogTrace("{Data}", data);
+        public void LogVerbose(string data) => LogVerboseMessage(data);
         /// <summary>
         /// Performs log information.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogInformation(string data) => _logger.LogInformation("{Data}", data);
+        public void LogInformation(string data) => LogInformationMessage(data);
         /// <summary>
         /// Performs log minimal.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogMinimal(string data) => _logger.LogInformation("{Data}", data);
+        public void LogMinimal(string data) => LogMinimalMessage(data);
         /// <summary>
         /// Performs log warning.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogWarning(string data) => _logger.LogWarning("{Data}", data);
+        public void LogWarning(string data) => LogWarningMessage(data);
         /// <summary>
         /// Performs log error.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogError(string data) => _logger.LogError("{Data}", data);
+        public void LogError(string data) => LogErrorMessage(data);
         /// <summary>
         /// Performs log information summary.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogInformationSummary(string data) => _logger.LogInformation("{Data}", data);
+        public void LogInformationSummary(string data) => LogInformationSummaryMessage(data);
         /// <summary>
         /// Performs log error summary.
         /// </summary>
         /// <param name="data">The data.</param>
 
-        public void LogErrorSummary(string data) => _logger.LogError("{Data}", data);
+        public void LogErrorSummary(string data) => LogErrorSummaryMessage(data);
         /// <summary>
         /// Performs log.
         /// </summary>
@@ -80,7 +80,7 @@ namespace DotCompute.Algorithms.Management.Types
                 _ => Microsoft.Extensions.Logging.LogLevel.Information
             };
 
-            _logger.Log(msLogLevel, "{Data}", data);
+            LogDynamicLevelMessage(msLogLevel, data);
         }
         /// <summary>
         /// Gets log asynchronously.
@@ -111,5 +111,36 @@ namespace DotCompute.Algorithms.Management.Types
             Log(message);
             await Task.CompletedTask;
         }
+
+        #region Logger Messages
+
+        [LoggerMessage(Level = LogLevel.Debug, Message = "{Data}")]
+        private partial void LogDebugMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Trace, Message = "{Data}")]
+        private partial void LogVerboseMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{Data}")]
+        private partial void LogInformationMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{Data}")]
+        private partial void LogMinimalMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Warning, Message = "{Data}")]
+        private partial void LogWarningMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "{Data}")]
+        private partial void LogErrorMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Information, Message = "{Data}")]
+        private partial void LogInformationSummaryMessage(string data);
+
+        [LoggerMessage(Level = LogLevel.Error, Message = "{Data}")]
+        private partial void LogErrorSummaryMessage(string data);
+
+        [LoggerMessage(Message = "{Data}")]
+        private partial void LogDynamicLevelMessage(LogLevel level, string data);
+
+        #endregion
     }
 }

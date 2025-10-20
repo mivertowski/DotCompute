@@ -255,6 +255,7 @@ public class ResourceMonitor : IDisposable
         _monitoringTimer?.Dispose();
         _cpuCounter?.Dispose();
         _memoryCounter?.Dispose();
+        GC.SuppressFinalize(this);
 
         foreach (var tracker in _trackers.Values)
         {

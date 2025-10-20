@@ -6,6 +6,7 @@ using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Loaders.NuGet.Types;
 using DotCompute.Plugins.Loaders.NuGet.Results;
 using DotCompute.Plugins.Security;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Plugins.Loaders.NuGet;
 
@@ -54,8 +55,7 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
                 var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
 
                 // Find and instantiate plugin type
-                var pluginType = assembly.GetTypes()
-                    .FirstOrDefault(t => typeof(IBackendPlugin).IsAssignableFrom(t) && !t.IsAbstract);
+                var pluginType = FindPluginType(assembly);
 
                 if (pluginType == null)
                 {
@@ -345,5 +345,25 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
             _loadContexts.Clear();
             _disposed = true;
         }
+    }
+
+    /// <summary>
+    /// Finds the plugin type from the assembly with proper trim-safe annotations.
+    /// </summary>
+    /// <param name="assembly">The assembly to search.</param>
+    /// <returns>The plugin type with preserved constructor, or null if not found.</returns>
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+    [UnconditionalSuppressMessage("Trimming", "IL2073", Justification = "Plugin types are expected to have parameterless constructors by design.")]
+    private static Type? FindPluginType(System.Reflection.Assembly assembly)
+    {
+        var types = assembly.GetTypes();
+        foreach (var type in types)
+        {
+            if (typeof(IBackendPlugin).IsAssignableFrom(type) && !type.IsAbstract)
+            {
+                return type;
+            }
+        }
+        return null;
     }
 }

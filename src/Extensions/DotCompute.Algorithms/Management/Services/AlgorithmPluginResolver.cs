@@ -21,7 +21,7 @@ namespace DotCompute.Algorithms.Management.Services;
 /// <param name="logger">The logger instance.</param>
 /// <param name="options">Configuration options.</param>
 /// <param name="registry">The plugin registry.</param>
-public sealed class AlgorithmPluginResolver(
+public sealed partial class AlgorithmPluginResolver(
     ILogger<AlgorithmPluginResolver> logger,
     AlgorithmPluginManagerOptions options,
     AlgorithmPluginRegistry registry) : IDisposable
@@ -40,13 +40,13 @@ public sealed class AlgorithmPluginResolver(
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
 
-        _logger.LogDebug("Resolving plugin for requirements: {Requirements}", requirements);
+        LogResolvingPluginForRequirements(requirements.ToString());
 
         // Get all healthy plugins
         var candidates = _registry.GetHealthyPlugins().ToList();
         if (!candidates.Any())
         {
-            _logger.LogWarning("No healthy plugins available for resolution");
+            LogNoHealthyPluginsAvailable();
             return null;
         }
 
@@ -54,7 +54,7 @@ public sealed class AlgorithmPluginResolver(
         candidates = ApplyRequirementFilters(candidates, requirements);
         if (!candidates.Any())
         {
-            _logger.LogInformation("No plugins match the specified requirements");
+            LogNoPluginsMatchRequirements();
             return null;
         }
 
@@ -64,8 +64,7 @@ public sealed class AlgorithmPluginResolver(
             .ToList();
 
         var bestPlugin = scoredCandidates.First().Plugin;
-        _logger.LogInformation("Resolved plugin {PluginId} (score: {Score}) for requirements",
-            bestPlugin.Id, scoredCandidates.First().Score);
+        LogResolvedPluginWithScore(bestPlugin.Id, scoredCandidates.First().Score);
 
         return bestPlugin;
     }
@@ -81,7 +80,7 @@ public sealed class AlgorithmPluginResolver(
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
 
-        _logger.LogDebug("Resolving up to {MaxResults} plugins for requirements", maxResults);
+        LogResolvingMultiplePlugins(maxResults);
 
         var candidates = _registry.GetHealthyPlugins().ToList();
         if (!candidates.Any())
@@ -99,7 +98,7 @@ public sealed class AlgorithmPluginResolver(
             .Select(sc => sc.Plugin)
             .ToList();
 
-        _logger.LogInformation("Resolved {ResultCount} plugins for requirements", results.Count);
+        LogResolvedPluginCount(results.Count);
         return results;
     }
 
@@ -422,6 +421,28 @@ public sealed class AlgorithmPluginResolver(
 
     /// <inheritdoc/>
     public void Dispose() => _disposed = true;
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Resolving plugin for requirements: {Requirements}")]
+    private partial void LogResolvingPluginForRequirements(string requirements);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "No healthy plugins available for resolution")]
+    private partial void LogNoHealthyPluginsAvailable();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "No plugins match the specified requirements")]
+    private partial void LogNoPluginsMatchRequirements();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Resolved plugin {PluginId} (score: {Score}) for requirements")]
+    private partial void LogResolvedPluginWithScore(string pluginId, int score);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Resolving up to {MaxResults} plugins for requirements")]
+    private partial void LogResolvingMultiplePlugins(int maxResults);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Resolved {ResultCount} plugins for requirements")]
+    private partial void LogResolvedPluginCount(int resultCount);
+
+    #endregion
 
     /// <summary>
     /// Represents a plugin with its compatibility score.

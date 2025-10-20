@@ -16,7 +16,7 @@ namespace DotCompute.Algorithms.Management;
 /// Manages NuGet package operations for algorithm plugins including
 /// downloading, caching, validation, and updating.
 /// </summary>
-public class AlgorithmPluginNuGetManager
+public partial class AlgorithmPluginNuGetManager
 {
     private readonly ILogger<AlgorithmPluginNuGetManager> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -52,8 +52,7 @@ public class AlgorithmPluginNuGetManager
         string? source = null,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Downloading NuGet package: {PackageId} {Version} from {Source}",
-            packageId, version ?? "latest", source ?? "nuget.org");
+        LogDownloadingPackage(packageId, version ?? "latest", source ?? "nuget.org");
 
         source ??= "https://api.nuget.org/v3/index.json";
 
@@ -106,7 +105,7 @@ public class AlgorithmPluginNuGetManager
                 cancellationToken);
         }
 
-        _logger.LogInformation("Successfully downloaded and extracted package to: {Path}", extractPath);
+        LogPackageExtracted(extractPath);
         return extractPath;
     }
 
@@ -119,8 +118,7 @@ public class AlgorithmPluginNuGetManager
         string? source = null,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Checking for updates to package: {PackageId} (current: {CurrentVersion})",
-            packageId, currentVersion);
+        LogCheckingForUpdates(packageId, currentVersion);
 
         source ??= "https://api.nuget.org/v3/index.json";
 
@@ -133,19 +131,18 @@ public class AlgorithmPluginNuGetManager
 
         if (latestVersion == null)
         {
-            _logger.LogWarning("No versions found for package: {PackageId}", packageId);
+            LogNoVersionsFound(packageId);
             return false;
         }
 
         var currentNuGetVersion = NuGetVersion.Parse(currentVersion);
         if (latestVersion <= currentNuGetVersion)
         {
-            _logger.LogInformation("Package {PackageId} is already up to date", packageId);
+            LogPackageUpToDate(packageId);
             return false;
         }
 
-        _logger.LogInformation("Updating package {PackageId} from {CurrentVersion} to {NewVersion}",
-            packageId, currentVersion, latestVersion);
+        LogUpdatingPackage(packageId, currentVersion, latestVersion.ToString());
 
         _ = await DownloadPackageAsync(packageId, latestVersion.ToString(), source, cancellationToken);
         return true;
@@ -156,8 +153,7 @@ public class AlgorithmPluginNuGetManager
     /// </summary>
     public async Task ClearCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Clearing NuGet package cache (older than: {OlderThan})",
-            olderThan?.ToString() ?? "all");
+        LogClearingCache(olderThan?.ToString() ?? "all");
 
         await Task.Run(() =>
         {
@@ -179,16 +175,16 @@ public class AlgorithmPluginNuGetManager
                     {
                         File.Delete(file);
                         deletedCount++;
-                        _logger.LogDebug("Deleted cached package: {File}", file);
+                        LogDeletedCachedPackage(file);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to delete cached package: {File}", file);
+                        LogFailedToDeletePackage(ex, file);
                     }
                 }
             }
 
-            _logger.LogInformation("Deleted {Count} cached packages", deletedCount);
+            LogDeletedPackagesCount(deletedCount);
         }, cancellationToken);
     }
 
@@ -224,7 +220,7 @@ public class AlgorithmPluginNuGetManager
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to read package info from: {File}", file);
+                    LogFailedToReadPackageInfo(ex, file);
                 }
             }
         }, cancellationToken);
@@ -239,7 +235,7 @@ public class AlgorithmPluginNuGetManager
         string packagePath,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Validating NuGet package: {PackagePath}", packagePath);
+        LogValidatingPackage(packagePath);
 
         var result = new InternalNuGetValidationResult
         {
@@ -274,11 +270,11 @@ public class AlgorithmPluginNuGetManager
                 result.ValidationErrors.Add($"Package exceeds maximum size of {_options.MaxAssemblySize} bytes");
             }
 
-            _logger.LogInformation("Package validation completed. Valid: {IsValid}", result.IsValid);
+            LogValidationCompleted(result.IsValid);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to validate package: {PackagePath}", packagePath);
+            LogValidationFailed(ex, packagePath);
             result.IsValid = false;
             result.ValidationErrors.Add($"Validation failed: {ex.Message}");
         }
@@ -309,6 +305,49 @@ public class AlgorithmPluginNuGetManager
     /// </summary>
 
     public void Dispose() => _httpClient?.Dispose();
+
+    // LoggerMessage delegates
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Downloading NuGet package: {PackageId} {Version} from {Source}")]
+    partial void LogDownloadingPackage(string packageId, string version, string source);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Successfully downloaded and extracted package to: {Path}")]
+    partial void LogPackageExtracted(string path);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Checking for updates to package: {PackageId} (current: {CurrentVersion})")]
+    partial void LogCheckingForUpdates(string packageId, string currentVersion);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Warning, Message = "No versions found for package: {PackageId}")]
+    partial void LogNoVersionsFound(string packageId);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Package {PackageId} is already up to date")]
+    partial void LogPackageUpToDate(string packageId);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Updating package {PackageId} from {CurrentVersion} to {NewVersion}")]
+    partial void LogUpdatingPackage(string packageId, string currentVersion, string newVersion);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Clearing NuGet package cache (older than: {OlderThan})")]
+    partial void LogClearingCache(string olderThan);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Deleted cached package: {File}")]
+    partial void LogDeletedCachedPackage(string file);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Warning, Message = "Failed to delete cached package: {File}")]
+    partial void LogFailedToDeletePackage(Exception ex, string file);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Deleted {Count} cached packages")]
+    partial void LogDeletedPackagesCount(int count);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Warning, Message = "Failed to read package info from: {File}")]
+    partial void LogFailedToReadPackageInfo(Exception ex, string file);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Validating NuGet package: {PackagePath}")]
+    partial void LogValidatingPackage(string packagePath);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Package validation completed. Valid: {IsValid}")]
+    partial void LogValidationCompleted(bool isValid);
+
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Failed to validate package: {PackagePath}")]
+    partial void LogValidationFailed(Exception ex, string packagePath);
 }
 
 /// <summary>

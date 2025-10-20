@@ -4,9 +4,9 @@
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
-using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
-using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
-using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebraKernelLibrary.LinearAlgebraOperation;
+using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebraKernelLibrary.HardwareInfo;
+using LAKernelParams = DotCompute.Algorithms.LinearAlgebraKernelLibrary.KernelExecutionParameters;
 
 namespace DotCompute.Algorithms.LinearAlgebra.Components
 {
@@ -16,8 +16,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <remarks>
     /// Initializes a new instance of the GpuOptimizationStrategies.
     /// </remarks>
-    /// <param name="logger">Logger instance.</param>
-    public sealed class GpuOptimizationStrategies(ILogger<GpuOptimizationStrategies> logger)
+    public sealed class GpuOptimizationStrategies
     {
         private readonly Dictionary<string, LinearAlgebraPerformanceMetrics> _performanceCache = [];
         private readonly object _cacheLock = new();
@@ -632,12 +631,4 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// <summary>
     /// Available linear system solvers.
     /// </summary>
-    public enum LinearSystemSolver
-    {
-        Auto,
-        LU,
-        Cholesky,
-        QR,
-        ConjugateGradient
-    }
 }

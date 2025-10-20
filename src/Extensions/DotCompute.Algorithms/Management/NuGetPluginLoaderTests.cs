@@ -261,10 +261,10 @@ namespace DotCompute.Algorithms.Management
             // Create multiple test packages
             var packages = new[]
             {
-            CreateTestPackage("CacheTest1", "1.0.0"),
-            CreateTestPackage("CacheTest2", "1.0.0"),
-            CreateTestPackage("CacheTest3", "1.0.0")
-        };
+                CreateTestPackage("CacheTest1", "1.0.0"),
+                CreateTestPackage("CacheTest2", "1.0.0"),
+                CreateTestPackage("CacheTest3", "1.0.0")
+            };
 
             _logger.LogInfoMessage("Loading {packages.Length} packages into cache");
             foreach (var package in packages)

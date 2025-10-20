@@ -553,7 +553,11 @@ namespace DotCompute.Algorithms.Management
         /// Creates a plugin instance with dependency resolution.
         /// </summary>
         [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin instantiation requires dynamic type handling")]
-        private Task<IAlgorithmPlugin?> CreatePluginInstanceWithDependenciesAsync(Type pluginType, CancellationToken cancellationToken)
+        [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Generic plugin instantiation required by design")]
+        private Task<IAlgorithmPlugin?> CreatePluginInstanceWithDependenciesAsync(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+            Type pluginType,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -707,7 +711,10 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Attempts to create a plugin instance using a service provider pattern.
         /// </summary>
-        private bool TryCreateInstanceWithServiceProvider(Type pluginType, out IAlgorithmPlugin? instance)
+        private bool TryCreateInstanceWithServiceProvider(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+            Type pluginType,
+            out IAlgorithmPlugin? instance)
         {
             instance = null;
 
@@ -733,7 +740,10 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Attempts to create a plugin instance with configuration parameter.
         /// </summary>
-        private bool TryCreateInstanceWithConfiguration(Type pluginType, out IAlgorithmPlugin? instance)
+        private bool TryCreateInstanceWithConfiguration(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+            Type pluginType,
+            out IAlgorithmPlugin? instance)
         {
             instance = null;
 
@@ -759,7 +769,11 @@ namespace DotCompute.Algorithms.Management
         /// <summary>
         /// Attempts to create a plugin instance with common dependencies.
         /// </summary>
-        private bool TryCreateInstanceWithCommonDependencies(Type pluginType, out IAlgorithmPlugin? instance)
+        [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Generic logger instantiation required by design")]
+        private bool TryCreateInstanceWithCommonDependencies(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+            Type pluginType,
+            out IAlgorithmPlugin? instance)
         {
             instance = null;
 

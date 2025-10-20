@@ -4,6 +4,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -343,36 +344,7 @@ public sealed class AuthenticodeValidationResult
     public Dictionary<string, object> Metadata { get; } = [];
 }
 
-/// <summary>
-/// Trust levels for signed assemblies.
-/// </summary>
-public enum TrustLevel
-{
-    /// <summary>
-    /// No trust - unsigned or invalid signature.
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Unknown trust level.
-    /// </summary>
-    Unknown = 1,
-
-    /// <summary>
-    /// Low trust - signed but with issues.
-    /// </summary>
-    Low = 2,
-
-    /// <summary>
-    /// Medium trust - signed with valid certificate.
-    /// </summary>
-    Medium = 3,
-
-    /// <summary>
-    /// High trust - signed by trusted publisher.
-    /// </summary>
-    High = 4
-}
+// TrustLevel moved to DotCompute.Abstractions.Security
 
 /// <summary>
 /// Basic certificate information.

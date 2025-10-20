@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ namespace DotCompute.Algorithms.Management.Services;
 /// Provides comprehensive performance monitoring and metrics collection for algorithm plugins.
 /// Tracks execution statistics, performance trends, and resource usage patterns.
 /// </summary>
-public sealed class AlgorithmPluginMetrics : IDisposable
+public sealed partial class AlgorithmPluginMetrics : IDisposable
 {
     private readonly ILogger<AlgorithmPluginMetrics> _logger;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -203,7 +204,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to initialize performance counters");
+            LogFailedToInitializePerformanceCounters(ex);
         }
 
         // Setup metrics collection timer - collect every minute
@@ -285,8 +286,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             }
         }
 
-        _logger.LogDebug("Recorded execution for plugin {PluginId}: Duration={Duration}ms, Success={Success}",
-            pluginId, duration.TotalMilliseconds, success);
+        LogRecordedExecution(pluginId, duration.TotalMilliseconds, success);
     }
 
     /// <summary>
@@ -468,7 +468,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         if (_metricsData.TryRemove(pluginId, out _))
         {
-            _logger.LogInformation("Cleared metrics for plugin {PluginId}", pluginId);
+            LogClearedMetricsForPlugin(pluginId);
             return true;
         }
 
@@ -485,7 +485,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         var count = _metricsData.Count;
         _metricsData.Clear();
 
-        _logger.LogInformation("Cleared metrics for {Count} plugins", count);
+        LogClearedMetricsForAllPlugins(count);
     }
 
     /// <summary>
@@ -622,7 +622,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during metrics collection");
+            LogErrorDuringMetricsCollection(ex);
         }
     }
 
@@ -652,7 +652,7 @@ public sealed class AlgorithmPluginMetrics : IDisposable
         // Data
         foreach (var metrics in allMetrics)
         {
-            _ = csv.AppendLine($"{metrics.PluginId},{metrics.TotalExecutions},{metrics.SuccessfulExecutions},{metrics.FailedExecutions},{metrics.SuccessRate:F4},{metrics.AverageExecutionTime.TotalMilliseconds},{metrics.MinExecutionTime.TotalMilliseconds},{metrics.MaxExecutionTime.TotalMilliseconds}");
+            _ = csv.AppendLine(CultureInfo.InvariantCulture, $"{metrics.PluginId},{metrics.TotalExecutions},{metrics.SuccessfulExecutions},{metrics.FailedExecutions},{metrics.SuccessRate:F4},{metrics.AverageExecutionTime.TotalMilliseconds},{metrics.MinExecutionTime.TotalMilliseconds},{metrics.MaxExecutionTime.TotalMilliseconds}");
         }
 
         return csv.ToString();
@@ -671,12 +671,12 @@ public sealed class AlgorithmPluginMetrics : IDisposable
 
         foreach (var metrics in allMetrics)
         {
-            _ = xml.AppendLine($"  <Plugin Id=\"{metrics.PluginId}\">");
-            _ = xml.AppendLine($"    <TotalExecutions>{metrics.TotalExecutions}</TotalExecutions>");
-            _ = xml.AppendLine($"    <SuccessfulExecutions>{metrics.SuccessfulExecutions}</SuccessfulExecutions>");
-            _ = xml.AppendLine($"    <FailedExecutions>{metrics.FailedExecutions}</FailedExecutions>");
-            _ = xml.AppendLine($"    <SuccessRate>{metrics.SuccessRate:F4}</SuccessRate>");
-            _ = xml.AppendLine($"    <AverageExecutionTime>{metrics.AverageExecutionTime.TotalMilliseconds}</AverageExecutionTime>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"  <Plugin Id=\"{metrics.PluginId}\">");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <TotalExecutions>{metrics.TotalExecutions}</TotalExecutions>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <SuccessfulExecutions>{metrics.SuccessfulExecutions}</SuccessfulExecutions>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <FailedExecutions>{metrics.FailedExecutions}</FailedExecutions>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <SuccessRate>{metrics.SuccessRate:F4}</SuccessRate>");
+            _ = xml.AppendLine(CultureInfo.InvariantCulture, $"    <AverageExecutionTime>{metrics.AverageExecutionTime.TotalMilliseconds}</AverageExecutionTime>");
             _ = xml.AppendLine("  </Plugin>");
         }
 
@@ -694,9 +694,28 @@ public sealed class AlgorithmPluginMetrics : IDisposable
             // _cpuCounter?.Dispose();
             // _memoryCounter?.Dispose();
 
-            _logger.LogInformation("Plugin metrics service disposed");
+            LogPluginMetricsServiceDisposed();
         }
     }
+
+    // LoggerMessage delegates
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to initialize performance counters")]
+    private partial void LogFailedToInitializePerformanceCounters(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Recorded execution for plugin {PluginId}: Duration={Duration}ms, Success={Success}")]
+    private partial void LogRecordedExecution(string pluginId, double duration, bool success);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Cleared metrics for plugin {PluginId}")]
+    private partial void LogClearedMetricsForPlugin(string pluginId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Cleared metrics for {Count} plugins")]
+    private partial void LogClearedMetricsForAllPlugins(int count);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error during metrics collection")]
+    private partial void LogErrorDuringMetricsCollection(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Plugin metrics service disposed")]
+    private partial void LogPluginMetricsServiceDisposed();
 }
 
 /// <summary>

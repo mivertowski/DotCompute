@@ -7,9 +7,11 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Types.Security;
 using SecurityLevel = DotCompute.Abstractions.Security.SecurityLevel;
 using ThreatLevel = DotCompute.Abstractions.Security.ThreatLevel;
+using DotCompute.Abstractions.Security;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Immutable;
 
 namespace DotCompute.Algorithms.Management.Validation;
 
@@ -241,10 +243,11 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         }
 
         // Security policy evaluation
+        var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath, cancellationToken);
         var context = new SecurityEvaluationContext
         {
             AssemblyPath = assemblyPath,
-            AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath, cancellationToken)
+            AssemblyBytes = ImmutableArray.Create(assemblyBytes)
         };
 
         var policyResult = SecurityPolicyEngine.EvaluateRules(context);
@@ -850,30 +853,6 @@ internal sealed class MalwareScanner(ILogger logger) : IDisposable
     /// Performs dispose.
     /// </summary>
     public void Dispose() { }
-}
-
-internal sealed class SecurityEvaluationContext
-{
-    /// <summary>
-    /// Gets or sets the assembly path.
-    /// </summary>
-    /// <value>The assembly path.</value>
-    public required string AssemblyPath { get; init; }
-    /// <summary>
-    /// Gets or sets the assembly bytes.
-    /// </summary>
-    /// <value>The assembly bytes.</value>
-    public required byte[] AssemblyBytes { get; init; }
-    /// <summary>
-    /// Gets or sets the certificate.
-    /// </summary>
-    /// <value>The certificate.</value>
-    public X509Certificate2? Certificate { get; set; }
-    /// <summary>
-    /// Gets or sets the strong name key.
-    /// </summary>
-    /// <value>The strong name key.</value>
-    public byte[]? StrongNameKey { get; set; }
 }
 
 internal sealed class SecurityPolicyResult

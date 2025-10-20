@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
 using AuthenticodeValidator = DotCompute.Algorithms.Security.AuthenticodeValidator;
 using MalwareScanningService = DotCompute.Algorithms.Security.MalwareScanningService;
+using System.Collections.Immutable;
 
 namespace DotCompute.Algorithms.Management.Validation;
 
@@ -17,6 +18,8 @@ namespace DotCompute.Algorithms.Management.Validation;
 /// </summary>
 public sealed partial class SecurityValidator : ISecurityValidator
 {
+    private readonly ILogger<SecurityValidator> _logger;
+    private readonly AlgorithmPluginManagerOptions _options;
     private readonly SecurityPolicy _securityPolicy;
     private readonly AuthenticodeValidator _authenticodeValidator;
     private readonly MalwareScanningService _malwareScanner;
@@ -97,16 +100,19 @@ public sealed partial class SecurityValidator : ISecurityValidator
             }
 
             // Step 4: Security policy evaluation
+            // SecurityPolicy expects the canonical SecurityEvaluationContext type
+            var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath);
             var context = new SecurityEvaluationContext
             {
                 AssemblyPath = assemblyPath,
-                AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath)
+                AssemblyBytes = ImmutableArray.Create(assemblyBytes)
             };
 
             // Add certificate information if available
             if (_options.RequireDigitalSignature)
             {
-                if (_authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null)
+                var certInfo = _authenticodeValidator.ExtractCertificateInfo(assemblyPath);
+                if (certInfo?.Subject != null)
                 {
                     // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
                     var cert = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
@@ -240,37 +246,37 @@ public sealed partial class SecurityValidator : ISecurityValidator
     #region Logger Messages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Starting security validation for: {AssemblyPath}")]
-    private static partial void LogSecurityValidationStarting(ILogger logger, string assemblyPath);
+    private partial void LogSecurityValidationStarting(string assemblyPath);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Security validation passed for: {AssemblyPath}, Security Level: {SecurityLevel}")]
-    private static partial void LogSecurityValidationPassed(ILogger logger, string assemblyPath, SecurityLevel securityLevel);
+    private partial void LogSecurityValidationPassed(string assemblyPath, SecurityLevel securityLevel);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Digital signature validation failed for: {AssemblyPath}, Reason: {Reason}")]
-    private static partial void LogDigitalSignatureValidationFailed(ILogger logger, string assemblyPath, string reason);
+    private partial void LogDigitalSignatureValidationFailed(string assemblyPath, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Digital signature validation passed for: {AssemblyPath}, Signer: {Signer}")]
-    private static partial void LogDigitalSignatureValidationPassed(ILogger logger, string assemblyPath, string signer);
+    private partial void LogDigitalSignatureValidationPassed(string assemblyPath, string signer);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Strong name validation failed for: {AssemblyPath}")]
-    private static partial void LogStrongNameValidationFailed(ILogger logger, string assemblyPath);
+    private partial void LogStrongNameValidationFailed(string assemblyPath);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Strong name validation passed for: {AssemblyPath}")]
-    private static partial void LogStrongNameValidationPassed(ILogger logger, string assemblyPath);
+    private partial void LogStrongNameValidationPassed(string assemblyPath);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Malware scanning failed for: {AssemblyPath}, Threat: {ThreatDescription}, Level: {ThreatLevel}")]
-    private static partial void LogMalwareScanningFailed(ILogger logger, string assemblyPath, string threatDescription, ThreatLevel threatLevel);
+    private partial void LogMalwareScanningFailed(string assemblyPath, string threatDescription, ThreatLevel threatLevel);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Malware scanning passed for: {AssemblyPath}")]
-    private static partial void LogMalwareScanningPassed(ILogger logger, string assemblyPath);
+    private partial void LogMalwareScanningPassed(string assemblyPath);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Security policy violation for: {AssemblyPath}, Violations: {Violations}")]
-    private static partial void LogSecurityPolicyViolation(ILogger logger, string assemblyPath, string violations);
+    private partial void LogSecurityPolicyViolation(string assemblyPath, string violations);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Security policy warnings for: {AssemblyPath}, Warnings: {Warnings}")]
-    private static partial void LogSecurityPolicyWarnings(ILogger logger, string assemblyPath, string warnings);
+    private partial void LogSecurityPolicyWarnings(string assemblyPath, string warnings);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Security validation error for {AssemblyPath}: {Reason}")]
-    private static partial void LogSecurityValidationError(ILogger logger, string assemblyPath, string reason);
+    private partial void LogSecurityValidationError(string assemblyPath, string reason);
 
     #endregion
 }

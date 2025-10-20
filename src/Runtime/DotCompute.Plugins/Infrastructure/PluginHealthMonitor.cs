@@ -165,6 +165,7 @@ namespace DotCompute.Plugins.Infrastructure
             _pluginRegistrations.Clear();
             _pluginErrors.Clear();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

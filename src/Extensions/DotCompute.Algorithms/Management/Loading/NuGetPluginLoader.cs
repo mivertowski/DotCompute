@@ -11,7 +11,7 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// </summary>
 /// <param name="logger">Logger instance for diagnostics.</param>
 /// <param name="cacheDirectory">Directory for caching extracted packages.</param>
-public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string? cacheDirectory = null) : IDisposable
+public sealed partial class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string? cacheDirectory = null) : IDisposable
 {
     private readonly ILogger<NuGetPluginLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly string _cacheDirectory = cacheDirectory ?? Path.Combine(Path.GetTempPath(), "DotCompute", "NuGetPluginCache");
@@ -33,7 +33,7 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
         ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetFramework);
 
-        _logger.LogInformation("Loading NuGet package from {PackagePath} for {Framework}", packagePath, targetFramework);
+        LogLoadingPackage(packagePath, targetFramework);
 
         try
         {
@@ -57,8 +57,7 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
             var nuspecPath = Directory.GetFiles(extractPath, "*.nuspec", SearchOption.TopDirectoryOnly).FirstOrDefault();
             var packageId = nuspecPath != null ? Path.GetFileNameWithoutExtension(nuspecPath) : Path.GetFileNameWithoutExtension(packagePath);
 
-            _logger.LogInformation("Loaded NuGet package {PackageId} with {AssemblyCount} assemblies",
-                packageId, assemblies.Length);
+            LogLoadedPackage(packageId, assemblies.Length);
 
             return new NuGetPackageLoadResult
             {
@@ -70,7 +69,7 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load NuGet package from {PackagePath}", packagePath);
+            LogFailedToLoadPackage(ex, packagePath);
             return new NuGetPackageLoadResult
             {
                 PackageId = Path.GetFileNameWithoutExtension(packagePath),
@@ -93,12 +92,12 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
             if (Directory.Exists(_cacheDirectory))
             {
                 Directory.Delete(_cacheDirectory, recursive: true);
-                _logger.LogInformation("Cleared NuGet cache at {CacheDirectory}", _cacheDirectory);
+                LogClearedCache(_cacheDirectory);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to clear NuGet cache at {CacheDirectory}", _cacheDirectory);
+            LogFailedToClearCache(ex, _cacheDirectory);
         }
     }
 
@@ -117,12 +116,12 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
                 if (Directory.Exists(_cacheDirectory))
                 {
                     Directory.Delete(_cacheDirectory, recursive: true);
-                    _logger.LogInformation("Cleared NuGet cache at {CacheDirectory}", _cacheDirectory);
+                    LogClearedCache(_cacheDirectory);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to clear NuGet cache at {CacheDirectory}", _cacheDirectory);
+                LogFailedToClearCache(ex, _cacheDirectory);
             }
         }, cancellationToken);
     }
@@ -147,11 +146,33 @@ public sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger, string?
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to enumerate cached packages at {CacheDirectory}", _cacheDirectory);
+            LogFailedToEnumeratePackages(ex, _cacheDirectory);
         }
 
         return [];
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Loading NuGet package from {PackagePath} for {Framework}")]
+    private partial void LogLoadingPackage(string packagePath, string framework);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Loaded NuGet package {PackageId} with {AssemblyCount} assemblies")]
+    private partial void LogLoadedPackage(string packageId, int assemblyCount);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to load NuGet package from {PackagePath}")]
+    private partial void LogFailedToLoadPackage(Exception ex, string packagePath);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Cleared NuGet cache at {CacheDirectory}")]
+    private partial void LogClearedCache(string cacheDirectory);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to clear NuGet cache at {CacheDirectory}")]
+    private partial void LogFailedToClearCache(Exception ex, string cacheDirectory);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to enumerate cached packages at {CacheDirectory}")]
+    private partial void LogFailedToEnumeratePackages(Exception ex, string cacheDirectory);
+
+    #endregion
 
     /// <inheritdoc/>
     public void Dispose()

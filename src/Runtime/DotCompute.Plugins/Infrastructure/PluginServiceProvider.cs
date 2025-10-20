@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DotCompute.Plugins.Logging;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DotCompute.Plugins.Infrastructure
@@ -317,16 +318,17 @@ namespace DotCompute.Plugins.Infrastructure
             }, cancellationToken);
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Plugin service types are expected to have public constructors for DI.")]
         private void RegisterServicesWithAttributes(Assembly assembly)
         {
-            var typesToRegister = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract)
-                .Where(t => t.GetCustomAttributes<PluginServiceAttribute>().Any())
-                .ToList();
+            var types = assembly.GetTypes();
 
-            foreach (var type in typesToRegister)
+            foreach (var type in types)
             {
-                var attributes = type.GetCustomAttributes<PluginServiceAttribute>().ToList();
+                if (!type.IsClass || type.IsAbstract)
+                    continue;
+
+                var attributes = type.GetCustomAttributes<PluginServiceAttribute>();
 
                 foreach (var attribute in attributes)
                 {
@@ -334,13 +336,7 @@ namespace DotCompute.Plugins.Infrastructure
                     {
                         var serviceType = attribute.ServiceType ?? type;
 
-                        var serviceDescriptor = attribute.Lifetime switch
-                        {
-                            ServiceLifetime.Singleton => ServiceDescriptor.Singleton(serviceType, type),
-                            ServiceLifetime.Scoped => ServiceDescriptor.Scoped(serviceType, type),
-                            ServiceLifetime.Transient => ServiceDescriptor.Transient(serviceType, type),
-                            _ => ServiceDescriptor.Scoped(serviceType, type)
-                        };
+                        var serviceDescriptor = CreateServiceDescriptor(serviceType, type, attribute.Lifetime);
 
                         _pluginServices.Add(serviceDescriptor);
 
@@ -352,6 +348,27 @@ namespace DotCompute.Plugins.Infrastructure
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Creates a service descriptor with proper trim-safe annotations.
+        /// </summary>
+        /// <param name="serviceType">The service interface type.</param>
+        /// <param name="implementationType">The implementation type with preserved constructors.</param>
+        /// <param name="lifetime">The service lifetime.</param>
+        /// <returns>A service descriptor for the specified types.</returns>
+        private static ServiceDescriptor CreateServiceDescriptor(
+            Type serviceType,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type implementationType,
+            ServiceLifetime lifetime)
+        {
+            return lifetime switch
+            {
+                ServiceLifetime.Singleton => ServiceDescriptor.Singleton(serviceType, implementationType),
+                ServiceLifetime.Scoped => ServiceDescriptor.Scoped(serviceType, implementationType),
+                ServiceLifetime.Transient => ServiceDescriptor.Transient(serviceType, implementationType),
+                _ => ServiceDescriptor.Scoped(serviceType, implementationType)
+            };
         }
 
         private void InjectDependencies(object instance)
