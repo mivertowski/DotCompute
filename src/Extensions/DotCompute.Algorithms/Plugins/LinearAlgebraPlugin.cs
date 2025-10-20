@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types.LinearAlgebra;
+using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Abstractions;
 using Microsoft.Extensions.Logging;
 

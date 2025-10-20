@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;

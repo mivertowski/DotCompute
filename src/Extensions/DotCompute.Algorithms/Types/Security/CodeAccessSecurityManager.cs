@@ -4,6 +4,7 @@
 // using global::System.Security.Permissions; // Commented out for .NET compatibility
 using System.Text.Json;
 using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Security;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Types.Security

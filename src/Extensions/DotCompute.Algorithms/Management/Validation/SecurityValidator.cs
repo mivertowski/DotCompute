@@ -4,6 +4,7 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using DotCompute.Algorithms.Management.Configuration;
+using DotCompute.Algorithms.Security;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
 

@@ -168,7 +168,7 @@ internal sealed class NuGetPluginLoader(ILogger<NuGetPluginLoader> logger) : IDi
                     .Where(file => Path.GetExtension(file).ToLowerInvariant() is ".exe" or ".bat" or ".cmd" or ".ps1")
                     .ToList();
 
-                if (suspiciousFiles.Any())
+                if (suspiciousFiles.Count != 0)
                 {
                     vulnerabilities.Add($"Suspicious executable files detected: {string.Join(", ", suspiciousFiles.Select(Path.GetFileName))}");
                 }
