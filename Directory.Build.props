@@ -95,7 +95,7 @@
     <!-- Source Link -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     <!-- Fix ILLink.Tasks version globally -->
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.9" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.10" />
   </ItemGroup>
 
   <!-- Source Link and ILLink for test projects (centralized version management) -->
