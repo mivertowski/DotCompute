@@ -54,6 +54,7 @@ public enum ExecutionStrategyType
     /// </summary>
     Batch = 8,
 
+
     /// <summary>
     /// Single device execution strategy.
     /// Executes the entire workload on a single computing device without parallelization.

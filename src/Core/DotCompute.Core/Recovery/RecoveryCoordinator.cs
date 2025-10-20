@@ -403,6 +403,7 @@ public sealed partial class RecoveryCoordinator : IDisposable
 
 
 
+
         => _logger.LogDebugMessage("Default recovery strategies registered");
 
     private IRecoveryStrategy<object>? FindRecoveryStrategy<TContext>(Exception error, TContext context)

@@ -431,6 +431,7 @@ public partial class DebugIntegratedOrchestrator(
 
     private static long EstimateMemoryRequirements(object[] args)
         // Simplified memory estimation
+
         => args.Length * 1024; // 1KB per argument as baseline
 
     /// <inheritdoc />

@@ -612,6 +612,7 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
 
 
 
+
         => 0.75; // 75% hit rate placeholder
 
     private void CleanupCache(object? state)
@@ -814,6 +815,7 @@ public sealed partial class CompilationFallback : BaseRecoveryStrategy<Compilati
 
     #endregion
 }
+
 
 
 

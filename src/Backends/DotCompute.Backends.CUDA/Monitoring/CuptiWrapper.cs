@@ -233,6 +233,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
         private void EnableMetric(CuptiMetric metric)
             // In real implementation, enable specific metric collection
+
             => _logger.LogDebugMessage("Enabling metric: {metric.Name}");
 
         private static double ReadMetricValue(CuptiMetric metric)
@@ -271,10 +272,12 @@ namespace DotCompute.Backends.CUDA.Monitoring
         private static void ProcessKernelActivity(IntPtr record, KernelMetrics metrics)
             // Parse kernel execution record
             // This would extract timing, grid/block dimensions, etc. TODO
+
             => metrics.KernelExecutions++;
 
         private static void ProcessMemcpyActivity(IntPtr record, KernelMetrics metrics)
             // Parse memory copy record
+
             => metrics.MemoryTransfers++;
         /// <summary>
         /// Performs dispose.

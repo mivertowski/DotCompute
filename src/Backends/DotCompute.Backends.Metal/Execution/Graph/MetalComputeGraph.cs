@@ -619,6 +619,7 @@ public sealed class MetalComputeGraph : IDisposable
 
     private static bool CanCoalesceMemoryOperations(MetalGraphNode mem1, MetalGraphNode mem2)
         // Memory operations can be coalesced if they're adjacent and have no dependencies between them
+
         => !mem1.Dependencies.Contains(mem2) && !mem2.Dependencies.Contains(mem1);
 
     private int AnalyzeCommandBufferBatching()
@@ -663,6 +664,7 @@ public sealed class MetalComputeGraph : IDisposable
 
     private static bool CanBatchInSameCommandBuffer(MetalGraphNode node1, MetalGraphNode node2)
         // Nodes can be batched if they don't depend on each other
+
         => !node1.Dependencies.Contains(node2) && !node2.Dependencies.Contains(node1);
 
     #endregion

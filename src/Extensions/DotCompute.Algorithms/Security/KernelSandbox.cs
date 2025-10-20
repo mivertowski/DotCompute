@@ -356,6 +356,7 @@ public sealed class KernelSandbox : IDisposable
         await Task.Run(() =>
             // Setup job object for resource limits (Windows-specific)
             // This would use P/Invoke to Windows APIs
+
             _logger.LogDebugMessage("Windows isolation configured for sandbox: {sandbox.Id}"), cancellationToken);
     }
 
@@ -372,6 +373,7 @@ public sealed class KernelSandbox : IDisposable
 
         await Task.Run(() =>
             // Setup Linux namespaces for isolation
+
             _logger.LogDebugMessage("Linux isolation configured for sandbox: {sandbox.Id}"), cancellationToken);
     }
 

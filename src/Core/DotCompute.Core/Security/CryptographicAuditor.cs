@@ -570,6 +570,7 @@ internal sealed partial class CryptographicAuditor : IDisposable
 
     private static string? GetSourceAddress()
         // In a real implementation, this would extract the source IP address
+
         => "localhost";
     /// <summary>
     /// Performs dispose.

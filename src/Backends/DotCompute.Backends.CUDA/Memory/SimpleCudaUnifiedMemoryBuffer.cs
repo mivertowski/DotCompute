@@ -261,6 +261,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public void EnsureOnDevice()
             // For unified memory, data is always accessible on device
+
             => Synchronize();
 
         /// <inheritdoc/>

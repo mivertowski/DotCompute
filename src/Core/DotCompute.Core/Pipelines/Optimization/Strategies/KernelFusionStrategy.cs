@@ -140,10 +140,12 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         // Create a new fused kernel that combines both stages into a single execution unit
         // This optimization reduces kernel launch overhead and intermediate memory transfers
 
+
         => new FusedKernelStage(stage1, stage2);
 
     private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
         // Intelligent buffer size calculation that considers multiple optimization factors
+
         => IntelligentBufferSizeCalculator.CalculateOptimalBufferSize(stage1, stage2);
 
     private static IKernelPipeline CreateOptimizedPipeline(

@@ -120,10 +120,12 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
     private static HashSet<string> FindUsedOutputs(IReadOnlyList<IPipelineStage> stages)
         // Simplified - in practice would analyze data flow
 
+
         => [.. stages.SelectMany(s => s.Dependencies)];
 
     private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
         // Check if stage produces useful output or has side effects
+
 
         => usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Computation;
 

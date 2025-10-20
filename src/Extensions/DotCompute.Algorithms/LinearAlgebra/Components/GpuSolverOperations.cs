@@ -390,6 +390,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         private async Task<Matrix> BiCGSTABSolveAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
             // Simplified BiCGSTAB implementation - would use advanced GPU kernels in full version
+
             => await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
 
         private static MatrixProperties AnalyzeMatrixProperties(Matrix matrix)

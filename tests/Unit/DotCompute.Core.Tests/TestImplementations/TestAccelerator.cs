@@ -253,6 +253,7 @@ public class TestCompiledKernel(string kernelName, string entryFunction, byte[] 
 
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
         // Test implementation - return completed task
+
         => ValueTask.CompletedTask;
     /// <summary>
     /// Gets dispose asynchronously.
@@ -261,6 +262,7 @@ public class TestCompiledKernel(string kernelName, string entryFunction, byte[] 
 
     public ValueTask DisposeAsync()
         // Test implementation - no resources to dispose
+
         => ValueTask.CompletedTask;
     /// <summary>
     /// Performs dispose.

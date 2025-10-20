@@ -352,6 +352,7 @@ namespace DotCompute.Hardware.Cuda.Tests
         private static async Task<DeviceInfo?> GetDeviceInfoWithoutValidation()
             // Simplified version - just return null for now
             // Full implementation would require additional P/Invoke setup
+
             => await Task.FromResult<DeviceInfo?>(null);
 
 

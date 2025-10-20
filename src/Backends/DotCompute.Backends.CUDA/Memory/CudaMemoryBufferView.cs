@@ -50,6 +50,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Dispose()
             // Views don't own memory, so we just mark as disposed
             // The parent buffer is responsible for the actual memory cleanup
+
             => _disposed = true;
 
         /// <inheritdoc/>
@@ -290,6 +291,7 @@ namespace DotCompute.Backends.CUDA.Memory
         public void Dispose()
             // Views don't own memory, so we just mark as disposed
             // The parent buffer is responsible for the actual memory cleanup
+
             => _disposed = true;
 
         /// <inheritdoc/>

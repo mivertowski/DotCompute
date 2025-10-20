@@ -15,7 +15,7 @@ namespace DotCompute.Algorithms.Management.Services
         /// Gets or sets the this[].
         /// </summary>
         /// <param name="key">The key.</param>
-/// <returns>The value at the specified index.</returns>
+        /// <returns>The value at the specified index.</returns>
         public string? this[string key]
         {
             get => null;

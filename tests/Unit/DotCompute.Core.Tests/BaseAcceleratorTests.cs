@@ -559,6 +559,7 @@ public sealed class BaseAcceleratorTests : IDisposable
 
 
 
+
         => _accelerator.Memory.Should().Be(_mockMemory.Object);
     /// <summary>
     /// Performs memory_ integration_ enforces memory limits.

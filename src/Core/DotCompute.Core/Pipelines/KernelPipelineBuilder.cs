@@ -257,6 +257,7 @@ namespace DotCompute.Core.Pipelines
         /// <returns>The stage builder for fluent configuration</returns>
         public IKernelStageBuilder WithName(string name)
             // Name is set in constructor and cannot be changed
+
             => this;
 
         /// <inheritdoc/>
@@ -514,6 +515,7 @@ namespace DotCompute.Core.Pipelines
         public IParallelStageBuilder AddKernel(string kernelName, Action<IKernelStageBuilder>? stageBuilder = null)
             // Create a kernel stage builder for the named kernel
             // Note: This method requires a kernel instance - placeholder implementation
+
             => throw new NotImplementedException("AddKernel without ICompiledKernel parameter is not implemented");
 
         /// <inheritdoc/>

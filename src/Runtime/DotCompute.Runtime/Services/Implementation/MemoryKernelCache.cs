@@ -277,6 +277,7 @@ public class MemoryKernelCache : IKernelCache, IDisposable
 
     private long EstimateCacheSize()
         // Rough estimation: assume each compiled kernel is ~10KB on average TODO
+
         => _cache.Count * 10 * 1024;
 
     private void IncrementHitCount(TimeSpan compilationTimeSaved)

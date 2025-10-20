@@ -80,10 +80,12 @@ public static class HardwareProfile
     private static bool DetectHighMemoryBandwidth()
         // Simplified heuristic based on core count and architecture
 
+
         => _coreCount >= 8 && (_hasAvx2 || _hasFma);
 
     private static int CalculateOptimalThreadCount()
         // Conservative approach: use 75% of available cores for compute-intensive tasks
+
 
         => Math.Max(1, (int)(_coreCount * 0.75));
 

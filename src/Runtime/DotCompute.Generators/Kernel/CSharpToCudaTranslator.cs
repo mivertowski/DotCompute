@@ -89,6 +89,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
     private static bool IsConstantMemoryCandidate(ISymbol variable)
         // Heuristics for constant memory usage
+
         => variable.IsStatic || variable.Name.IndexOf("const", StringComparison.Ordinal) >= 0;
 
     private void TranslateBlockStatement(BlockSyntax block)

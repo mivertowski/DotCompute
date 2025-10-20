@@ -744,6 +744,7 @@ public sealed partial class KernelDebugAnalyzer(
     /// </summary>
     private static string IdentifyOptimalBackendForInputs(KernelValidationResult validationResult, object[] inputs)
         // Simplified backend selection
+
         => validationResult.RecommendedBackend ?? (validationResult.BackendsTested.Count > 0 ? validationResult.BackendsTested[0] : null) ?? "Unknown";
 
     /// <summary>

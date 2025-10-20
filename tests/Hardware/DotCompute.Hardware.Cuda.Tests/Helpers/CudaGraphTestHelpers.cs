@@ -15,6 +15,7 @@ public static class CudaGraphTestWrapper
     /// </summary>
     public static object AddMemoryCopy(IUnifiedMemoryBuffer<float> source, IUnifiedMemoryBuffer<float> destination, int sizeInBytes)
         // This is a test helper - actual implementation would use CUDA graph API
+
         => new { Type = "MemoryCopy", Source = source, Destination = destination, Size = sizeInBytes };
 
     /// <summary>
@@ -22,6 +23,7 @@ public static class CudaGraphTestWrapper
     /// </summary>
     public static object AddKernel(ICompiledKernel kernel, LaunchConfiguration config, params object[] args)
         // This is a test helper - actual implementation would use CUDA graph API
+
         => new { Type = "Kernel", Kernel = kernel, Config = config, Arguments = args };
 }
 
@@ -35,6 +37,7 @@ public static class CudaGraphExecutable
     /// </summary>
     public static Task LaunchAsync(object executableGraph)
         // This is a test helper - actual implementation would execute the graph
+
         => Task.CompletedTask;
 }
 
@@ -67,6 +70,7 @@ public class TestGraph
     /// </summary>
     public static object Instantiate()
         // Test implementation
+
         => new { Type = "ExecutableGraph" };
 }
 

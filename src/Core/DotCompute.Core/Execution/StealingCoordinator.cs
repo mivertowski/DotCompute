@@ -52,6 +52,7 @@ namespace DotCompute.Core.Execution
             }
         }
 
+
         /// <summary>
         /// Records the failed steal.
         /// </summary>
@@ -66,6 +67,7 @@ namespace DotCompute.Core.Execution
                 _failedSteals[thiefIndex][victimIndex]++;
             }
         }
+
 
         /// <summary>
         /// Gets the statistics.

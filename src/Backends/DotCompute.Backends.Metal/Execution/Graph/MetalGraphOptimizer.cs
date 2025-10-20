@@ -377,6 +377,7 @@ public sealed class MetalGraphOptimizer(
     private static object CreateFusedKernel(IReadOnlyList<MetalGraphNode> kernelGroup)
         // This would involve actual Metal shader language compilation
         // For now, return a placeholder that represents the fused kernel
+
         => new { Type = "FusedKernel", SourceKernels = kernelGroup.Select(n => n.Kernel).ToList() };
 
     #endregion
@@ -774,6 +775,7 @@ public sealed class MetalGraphOptimizer(
     private static IEnumerable<MetalGraphNode> GetNodesThatDependOn(MetalGraphNode targetNode)
         // This would be implemented to find all nodes that depend on the target node
         // For now, return empty collection
+
         => Enumerable.Empty<MetalGraphNode>();
 
     private static void UpdateDependenciesAfterFusion(MetalGraphNode removedNode, MetalGraphNode replacementNode)
@@ -790,29 +792,35 @@ public sealed class MetalGraphOptimizer(
 
     private static bool AreKernelResourcesCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
         // Check if kernels can share resources
+
         => kernel1.RequiredEncoderType == kernel2.RequiredEncoderType;
 
     private static bool AreKernelDataFlowsCompatible(MetalGraphNode kernel1, MetalGraphNode kernel2)
         // Check if kernel data flows are compatible for fusion
+
         => true; // Simplified implementation
 
     private static long GetMaxThreadgroupMemory()
         // Metal threadgroup memory limit (typically 32KB)
+
         => 32 * 1024;
 
     private static MemoryAccessPattern AnalyzeMemoryAccessPattern(MetalGraphNode kernel)
         // Analyze kernel memory access patterns for optimization
+
         => new()
         { IsOptimizable = true };
 
     private static uint CalculateOptimalThreadgroupSize(MetalGraphNode kernel)
         // Calculate optimal threadgroup size for Apple Silicon
         // Apple Silicon GPUs typically perform well with 512 threads per threadgroup
+
         => 512;
 
     private static bool IsNeuralEngineCandidate(MetalGraphNode kernel)
         // Determine if kernel operations could benefit from Neural Engine
         // Look for matrix operations, convolutions, etc.
+
         => false; // Simplified implementation
 
     private static bool IsRunningOnAppleSilicon()
@@ -904,6 +912,7 @@ internal class MemoryAccessPattern
 {
     public bool IsOptimizable { get; set; }
 }
+
 
 
 #endregion

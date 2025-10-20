@@ -210,6 +210,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
 
 
+
         => new(_nativeHandle, _sizeInBytes);
     /// <summary>
     /// Gets map.
@@ -273,6 +274,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
 
 
+
         => _state = BufferState.HostOnly;
     /// <summary>
     /// Performs ensure on device.
@@ -280,6 +282,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
     public void EnsureOnDevice()
         // CPU buffer is always on host (CPU is the device)
+
 
 
 

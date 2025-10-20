@@ -265,6 +265,7 @@ public sealed class KernelParameterAnalyzer
     /// <returns>True if compatible with CPU backend; otherwise, false.</returns>
     private static bool ValidateCpuCompatibility(ParameterInfo parameter)
         // CPU backend supports all managed types
+
         => true;
 
     /// <summary>

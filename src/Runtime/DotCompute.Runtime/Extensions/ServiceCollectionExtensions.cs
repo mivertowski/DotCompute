@@ -259,4 +259,5 @@ public static class ServiceCollectionExtensions
 // Note: Service implementations should be provided by backend-specific projects
 
 
+
 // The integration layer provides the orchestration, while backends provide the actual services

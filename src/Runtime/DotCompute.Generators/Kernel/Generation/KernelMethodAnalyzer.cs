@@ -32,6 +32,7 @@ public sealed class KernelMethodAnalyzer
         _attributeAnalyzer = new KernelAttributeAnalyzer();
     }
 
+
     /// <summary>
     /// Analyzes a kernel method and extracts comprehensive metadata.
     /// </summary>
@@ -221,6 +222,7 @@ public sealed class KernelMethodAnalyzer
     /// <returns>True if the return type is compatible; otherwise, false.</returns>
     private static bool IsCompatibleReturnType(ITypeSymbol returnType)
         // Currently only void is supported for kernels
+
         => returnType.SpecialType == SpecialType.System_Void;
 
     /// <summary>

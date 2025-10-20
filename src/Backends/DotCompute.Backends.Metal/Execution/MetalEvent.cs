@@ -194,6 +194,7 @@ public sealed class MetalEventManager : IDisposable
     public void RecordEventFast(IntPtr eventHandle, IntPtr commandQueue)
         // Direct Metal event recording for performance-critical paths
         // This would use native Metal APIs directly
+
         => _logger.LogTrace("Recorded event (fast path) on command queue {CommandQueue}", commandQueue);
 
     /// <summary>
@@ -222,6 +223,7 @@ public sealed class MetalEventManager : IDisposable
                 await Task.Run(() =>
                     // Wait for Metal event completion
                     // This would use MTLSharedEvent waiting mechanisms
+
                     Thread.SpinWait(1000), combinedCts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
@@ -233,6 +235,7 @@ public sealed class MetalEventManager : IDisposable
         {
             await Task.Run(() =>
                 // Wait for Metal event completion without timeout
+
                 Thread.SpinWait(1000), cancellationToken).ConfigureAwait(false);
         }
 

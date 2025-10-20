@@ -959,6 +959,7 @@ namespace DotCompute.Core.Execution
         private static AbstractionsMemory.Kernels.Compilation.ManagedCompiledKernel CreateKernelsCompatibleKernel(ManagedCompiledKernel executionKernel)
             // Temporary stub to allow compilation - TODO: Implement proper conversion
             // when concrete ManagedCompiledKernel implementation is available
+
             => throw new NotImplementedException("Kernel conversion not yet implemented - requires concrete ManagedCompiledKernel");
 
         #endregion

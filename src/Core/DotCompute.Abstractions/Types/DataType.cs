@@ -12,6 +12,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Types
         FP8_E4M3,
 #pragma warning restore CA1707
 
+
         /// <summary>
         /// 8-bit floating point with E5M2 format.
         /// </summary>
@@ -43,6 +44,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Types
         /// 64-bit floating point (double precision).
         /// </summary>
         FP64,
+
 
         /// <summary>
         /// 8-bit signed integer.

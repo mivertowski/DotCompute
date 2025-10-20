@@ -165,4 +165,5 @@ public sealed class PluginRecoveryConfiguration
 }
 
 
+
 // CircuitBreakerState enum moved to PluginRecoveryTypes.cs to avoid duplication

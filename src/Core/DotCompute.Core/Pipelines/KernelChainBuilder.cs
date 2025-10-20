@@ -895,6 +895,7 @@ namespace DotCompute.Core.Pipelines
         /// </summary>
         private static object? GetFallbackValue(KernelChainStep step)
             // This could be enhanced to support configurable fallback values
+
             => null;
 
         /// <summary>
@@ -956,7 +957,7 @@ namespace DotCompute.Core.Pipelines
         /// </summary>
         private void ThrowIfDisposed()
         {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
 
         /// <inheritdoc/>

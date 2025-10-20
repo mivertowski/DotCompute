@@ -298,58 +298,58 @@ public sealed partial class NuGetPluginService : INuGetPluginService
     #region Logger Messages
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Loading plugins from NuGet package: {PackagePath}")]
-    private static partial void LogLoadingFromNuGetPackage(string packagePath);
+    private static partial void LogLoadingFromNuGetPackage(ILogger logger, string packagePath);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet package loaded: {PackageId} v{Version}, {AssemblyCount} assemblies, {DependencyCount} dependencies")]
-    private static partial void LogNuGetPackageLoaded(string packageId, string version, int assemblyCount, int dependencyCount);
+    private static partial void LogNuGetPackageLoaded(ILogger logger, string packageId, string version, int assemblyCount, int dependencyCount);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet assembly load failed for {AssemblyPath}: {Reason}")]
-    private static partial void LogNuGetAssemblyLoadFailed(string assemblyPath, string reason);
+    private static partial void LogNuGetAssemblyLoadFailed(ILogger logger, string assemblyPath, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet dependencies resolved for {PackageId}: {Dependencies}")]
-    private static partial void LogNuGetDependenciesResolved(string packageId, string dependencies);
+    private static partial void LogNuGetDependenciesResolved(ILogger logger, string packageId, string dependencies);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet security validation for {PackageId}: {ValidationResult}")]
-    private static partial void LogNuGetSecurityValidation(string packageId, string validationResult);
+    private static partial void LogNuGetSecurityValidation(ILogger logger, string packageId, string validationResult);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "NuGet package warning for {PackageId}: {Warning}")]
-    private static partial void LogNuGetPackageWarning(string packageId, string warning);
+    private static partial void LogNuGetPackageWarning(ILogger logger, string packageId, string warning);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet package load completed: {PackageId} v{Version}, {PluginCount} plugins loaded in {ElapsedMs} ms")]
-    private static partial void LogNuGetPackageLoadCompleted(string packageId, string version, int pluginCount, double elapsedMs);
+    private static partial void LogNuGetPackageLoadCompleted(ILogger logger, string packageId, string version, int pluginCount, double elapsedMs);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package load failed for {PackageSource}: {Reason}")]
-    private static partial void LogNuGetPackageLoadFailed(string packageSource, string reason);
+    private static partial void LogNuGetPackageLoadFailed(ILogger logger, string packageSource, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Updating NuGet package: {PackageId}")]
-    private static partial void LogUpdatingNuGetPackage(string packageId);
+    private static partial void LogUpdatingNuGetPackage(ILogger logger, string packageId);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Unregistered NuGet plugin {PluginId} from package {PackageId}")]
-    private static partial void LogUnregisteredNuGetPlugin(string pluginId, string packageId);
+    private static partial void LogUnregisteredNuGetPlugin(ILogger logger, string pluginId, string packageId);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package update failed for {PackageId}: {Reason}")]
-    private static partial void LogNuGetPackageUpdateFailed(string packageId, string reason);
+    private static partial void LogNuGetPackageUpdateFailed(ILogger logger, string packageId, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Clearing NuGet cache: {Filter}")]
-    private static partial void LogClearingNuGetCache(string filter);
+    private static partial void LogClearingNuGetCache(ILogger logger, string filter);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet cache cleared")]
-    private static partial void LogNuGetCacheCleared();
+    private static partial void LogNuGetCacheCleared(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet cache clear failed: {Reason}")]
-    private static partial void LogNuGetCacheClearFailed(string reason);
+    private static partial void LogNuGetCacheClearFailed(ILogger logger, string reason);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to get cached packages: {Reason}")]
-    private static partial void LogGetCachedPackagesFailed(string reason);
+    private static partial void LogGetCachedPackagesFailed(ILogger logger, string reason);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Validating NuGet package: {PackageSource}")]
-    private static partial void LogValidatingNuGetPackage(string packageSource);
+    private static partial void LogValidatingNuGetPackage(ILogger logger, string packageSource);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "NuGet package validated: {PackageSource}, Valid: {IsValid}, Warnings: {WarningCount}")]
-    private static partial void LogNuGetPackageValidated(string packageSource, bool isValid, int warningCount);
+    private static partial void LogNuGetPackageValidated(ILogger logger, string packageSource, bool isValid, int warningCount);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package validation failed for {PackageSource}: {Reason}")]
-    private static partial void LogNuGetPackageValidationFailed(string packageSource, string reason);
+    private static partial void LogNuGetPackageValidationFailed(ILogger logger, string packageSource, string reason);
 
     #endregion
 }

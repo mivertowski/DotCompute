@@ -364,7 +364,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             }
 
             // Numerator coefficients for (6,6) Padé approximation
-            float[] c = [1.0f, 1.0f, 0.5f, 1.0f/6.0f, 1.0f/24.0f, 1.0f/120.0f, 1.0f/720.0f];
+            float[] c = [1.0f, 1.0f, 0.5f, 1.0f / 6.0f, 1.0f / 24.0f, 1.0f / 120.0f, 1.0f / 720.0f];
 
             // Compute numerator
             var numerator = new Matrix(n, n);

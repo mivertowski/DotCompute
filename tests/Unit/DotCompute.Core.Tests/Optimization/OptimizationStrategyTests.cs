@@ -780,6 +780,7 @@ public class OptimizationStrategyTests : IDisposable
 
     public void Dispose()
         // Cleanup any test resources if needed
+
         => GC.SuppressFinalize(this);
 
     #endregion

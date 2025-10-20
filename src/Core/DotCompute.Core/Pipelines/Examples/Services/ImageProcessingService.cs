@@ -9,6 +9,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// </summary>
 public class ImageProcessingService
 {
+
     /// <summary>
     /// Processes an image using the kernel chain pipeline.
     /// </summary>

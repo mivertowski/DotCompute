@@ -77,6 +77,7 @@ public static class IntelligentBufferSizeCalculator
     private static long CalculateComputeOptimalSize(long totalDataSize, long availableMemory)
         // For compute workloads, prioritize fitting working set in cache
         // Use 25% of available memory to leave room for intermediate results
+
         => Math.Min(totalDataSize, availableMemory / 4);
 
     /// <summary>
@@ -85,6 +86,7 @@ public static class IntelligentBufferSizeCalculator
     private static long CalculateMemoryOptimalSize(long totalDataSize, long availableMemory)
         // For memory workloads, use larger buffers to improve throughput
         // Use 60% of available memory
+
         => Math.Min(totalDataSize, (availableMemory * 6) / 10);
 
     /// <summary>
@@ -93,6 +95,7 @@ public static class IntelligentBufferSizeCalculator
     private static long CalculateIOOptimalSize(long totalDataSize, long availableMemory)
         // For I/O workloads, use smaller buffers for better responsiveness
         // Use 20% of available memory
+
         => Math.Min(totalDataSize, availableMemory / 5);
 
     /// <summary>
@@ -101,6 +104,7 @@ public static class IntelligentBufferSizeCalculator
     private static long CalculateDefaultOptimalSize(long totalDataSize, long availableMemory)
         // Default strategy - balanced approach
         // Use 33% of available memory
+
         => Math.Min(totalDataSize, availableMemory / 3);
 
     /// <summary>

@@ -351,6 +351,7 @@ internal sealed class CpuKernelValidator : IDisposable
         // NOTE: KernelDefinition.Parameters property doesn't exist in current API
         // Parameter validation is handled by the kernel compiler and metadata
         // This validation would require extracting parameter info from metadata if needed
+
         => Task.CompletedTask;
 
     private static Task ValidateVectorizationCompatibilityAsync(KernelDefinition definition, CpuValidationResult result)

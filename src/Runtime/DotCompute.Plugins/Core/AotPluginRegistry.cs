@@ -428,6 +428,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.CPU";
         /// <summary>
         /// Gets or sets the name.
@@ -469,6 +470,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+
         /// <summary>
         /// Occurs when error occurred.
         /// </summary>
@@ -484,6 +486,7 @@ namespace DotCompute.Plugins.Core
         /// <param name="services">The services.</param>
         /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
+
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
@@ -634,6 +637,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.CUDA";
         /// <summary>
         /// Gets or sets the name.
@@ -675,6 +679,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+
         /// <summary>
         /// Occurs when error occurred.
         /// </summary>
@@ -690,6 +695,7 @@ namespace DotCompute.Plugins.Core
         /// <param name="services">The services.</param>
         /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
+
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
@@ -887,6 +893,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.Metal";
         /// <summary>
         /// Gets or sets the name.
@@ -1081,6 +1088,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.OpenCL";
         /// <summary>
         /// Gets or sets the name.
@@ -1122,6 +1130,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+
         /// <summary>
         /// Occurs when error occurred.
         /// </summary>
@@ -1137,6 +1146,7 @@ namespace DotCompute.Plugins.Core
         /// <param name="services">The services.</param>
         /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
+
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
         /// <summary>
@@ -1264,6 +1274,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.DirectCompute";
         /// <summary>
         /// Gets or sets the name.
@@ -1305,6 +1316,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+
         /// <summary>
         /// Occurs when error occurred.
         /// </summary>
@@ -1320,6 +1332,7 @@ namespace DotCompute.Plugins.Core
         /// <param name="services">The services.</param>
         /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
+
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
         /// <summary>
@@ -1447,6 +1460,7 @@ namespace DotCompute.Plugins.Core
         /// <value>The id.</value>
 #pragma warning restore IDE0044
 
+
         public string Id => "DotCompute.Backends.Vulkan";
         /// <summary>
         /// Gets or sets the name.
@@ -1488,6 +1502,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+
         /// <summary>
         /// Occurs when error occurred.
         /// </summary>
@@ -1503,6 +1518,7 @@ namespace DotCompute.Plugins.Core
         /// <param name="services">The services.</param>
         /// <param name="configuration">The configuration.</param>
 #pragma warning restore CS0067
+
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
         /// <summary>

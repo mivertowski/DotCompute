@@ -449,6 +449,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
     private static double EstimateComputeIntensity(KernelDefinition definition)
         // Simplified estimation - in practice, this would analyze operations per memory access
+
         => 1.0; // Default moderate compute intensity
 
     private static double EstimateThreadingOverhead(WorkDimensions workDimensions)
@@ -613,14 +614,17 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
     private static Task<bool> DetectPerformanceDegradationAsync(string kernelName, ExecutionStatistics currentStats)
         // Simplified degradation detection - compare against historical performance
+
         => Task.FromResult(currentStats.AverageExecutionTimeMs > 100); // Placeholder threshold
 
     private static Task<bool> OptimizeThreadPoolConfigurationAsync(KernelExecutionPlan plan)
         // Adjust thread pool settings based on current workload
+
         => Task.FromResult(false); // Placeholder
 
     private static Task<bool> OptimizeVectorizationSettingsAsync(KernelExecutionPlan plan, ExecutionStatistics stats)
         // Adjust vectorization parameters based on performance feedback
+
         => Task.FromResult(false); // Placeholder
 
     // Utility methods for analysis
@@ -697,16 +701,19 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
     private static double EstimateVectorizationSpeedup(KernelDefinition definition)
         // Simplified estimation based on kernel characteristics
+
         => Vector<float>.Count * 0.8; // Assume 80% of theoretical speedup
 
     private static double EstimateParallelizationSpeedup(int optimalThreads, int currentThreads) => Math.Min(optimalThreads / (double)currentThreads, Environment.ProcessorCount);
 
     private static double CalculateVectorizationEfficiency(ExecutionStatistics statistics)
         // Simplified efficiency calculation
+
         => statistics.UseVectorization ? 0.8 : 0.0;
 
     private static double EstimateCacheUtilization(KernelDefinition definition, ExecutionStatistics statistics)
         // Simplified cache utilization estimation
+
         => 0.7; // Default moderate cache utilization
 
     private static void GenerateOptimizationSuggestions(OptimizationRecommendations recommendations)

@@ -286,6 +286,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     protected virtual bool ShouldAttemptRecoveryForError(Exception exception, RecoveryAttemptHistory history, RecoveryOptions options)
         // Base implementation allows recovery for all errors
         // Override in derived classes for specific error handling
+
         => true;
 
     #endregion
@@ -302,6 +303,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         CancellationToken cancellationToken)
         // Base implementation does nothing
         // Override in derived classes for preparation logic
+
         => Task.CompletedTask;
 
     /// <summary>
@@ -313,6 +315,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
         CancellationToken cancellationToken)
         // Base implementation does nothing
         // Override in derived classes for validation logic
+
         => Task.CompletedTask;
 
     #endregion
@@ -431,6 +434,7 @@ public abstract partial class BaseRecoveryStrategy<TContext> : IRecoveryStrategy
     /// </summary>
     protected virtual bool IsManualInterventionRequired(Exception originalError, Exception? recoveryException)
         // Override in derived classes for specific logic
+
         => recoveryException != null || originalError is SystemException;
 
     /// <summary>
@@ -1078,5 +1082,6 @@ public interface IRecoveryStrategy<in TContext> where TContext : class
     /// <returns>The statistics.</returns>
     public RecoveryStatistics GetStatistics();
 }
+
 
 #endregion

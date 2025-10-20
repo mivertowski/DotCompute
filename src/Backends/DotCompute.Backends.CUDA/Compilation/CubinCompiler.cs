@@ -172,6 +172,7 @@ internal static class CubinCompiler
     private static (int major, int minor) GetTargetComputeCapability()
         // For CUBIN, we target the actual device capability
         // Cap at compute_86 for CUDA 12.8 compatibility
+
         => (8, 6);
 
     /// <summary>

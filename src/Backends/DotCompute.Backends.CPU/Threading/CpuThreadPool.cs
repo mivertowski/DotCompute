@@ -619,6 +619,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         /// </summary>
 #pragma warning restore IDE1006 // Naming Styles
 
+
         public cpu_set_t()
         {
             __bits = new ulong[CPU_SETSIZE / NCPUBITS];

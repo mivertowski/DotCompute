@@ -430,6 +430,7 @@ public sealed class CudaBackendIntegration : IDisposable
         CudaExecutionOptions options,
         CancellationToken cancellationToken)
         // Advanced optimizations are simplified in this implementation
+
         => Task.CompletedTask;
 
     private async Task<KernelExecutionConfig> GetOptimalExecutionConfigAsync(
@@ -462,6 +463,7 @@ public sealed class CudaBackendIntegration : IDisposable
 
     private static ICompiledKernel ConvertToCompiledKernel(CudaCompiledKernel cudaKernel)
         // Convert CUDA-specific kernel to ICompiledKernel interface
+
         => cudaKernel; // CudaCompiledKernel implements ICompiledKernel
 
     private static InterfacesKernelArgument[] ConvertKernelArguments(AbstractionsKernelArgument[] arguments)
@@ -1048,6 +1050,7 @@ public sealed class CudaPerformanceMonitor : IDisposable
         }
     }
 }
+
 
 
 #endregion

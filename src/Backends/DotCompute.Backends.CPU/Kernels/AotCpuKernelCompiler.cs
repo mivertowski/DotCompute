@@ -469,6 +469,7 @@ ILogger logger) : ICompiledKernel
     public void Dispose()
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
+
         => _logger.LogDebug("Disposed AOT kernel: {Name}", Name);
 }
 

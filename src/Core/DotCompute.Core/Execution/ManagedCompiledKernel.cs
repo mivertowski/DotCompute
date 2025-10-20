@@ -108,6 +108,7 @@ public sealed class ManagedCompiledKernel(string name, IAccelerator device, Comp
         }
     }
 
+
     /// <summary>
     /// Gets comprehensive performance statistics for this kernel.
     /// </summary>

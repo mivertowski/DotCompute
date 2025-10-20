@@ -102,6 +102,7 @@ namespace DotCompute.Core.Execution
             LogKernelExecutionRecorded(_logger, kernelName, deviceId, executionTimeMs, throughputGFLOPS);
         }
 
+
         /// <summary>
         /// Gets current performance metrics.
         /// </summary>

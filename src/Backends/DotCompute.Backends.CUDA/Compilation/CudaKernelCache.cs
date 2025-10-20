@@ -111,6 +111,7 @@ public sealed class CudaKernelCache : IDisposable
     /// <param name="profile">Workload profile for optimization.</param>
     public void OptimizeForWorkload(object profile)
         // Basic implementation - could be enhanced with workload-specific optimization
+
         => _logger?.LogDebug("Optimizing cache for workload profile");// In a full implementation, this would:// - Analyze workload patterns// - Evict less-used kernels// - Pre-compile frequently used kernels// - Adjust cache size based on workload
 
     /// <summary>
@@ -119,6 +120,7 @@ public sealed class CudaKernelCache : IDisposable
     public void Cleanup()
         // Basic cleanup - remove old or unused entries
         // In a full implementation, this would use LRU or other eviction strategies
+
         => _logger?.LogDebug("Performing cache cleanup. Current size: {Count}", Count);// For now, we'll keep all entries as we don't have access tracking// A full implementation would track access times and remove stale entries
 
     /// <summary>

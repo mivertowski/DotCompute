@@ -1076,6 +1076,7 @@ namespace DotCompute.Core.Execution
             // Simplified memory bandwidth estimation for pipeline stages
 
 
+
             => 10.0; // GB/s - placeholder value
 
         private static List<int> GetLayerExecutionOrder<T>(ModelLayer<T>[] layers) where T : unmanaged

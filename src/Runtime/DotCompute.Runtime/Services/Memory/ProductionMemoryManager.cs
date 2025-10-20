@@ -121,6 +121,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
     public override async ValueTask<IUnifiedMemoryBuffer> AllocateRawAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
         // Delegate to the internal implementation
+
         => await AllocateInternalAsync(sizeInBytes, options, cancellationToken);
     /// <summary>
     /// Gets allocate and copy asynchronously.
@@ -537,6 +538,7 @@ public sealed class ProductionMemoryManager : BaseMemoryManager
 
         base.Dispose(disposing);
     }
+
     /// <summary>
     /// Performs dispose.
     /// </summary>

@@ -217,6 +217,7 @@ public class UnifiedMemoryManager : BaseMemoryManager
     protected override IUnifiedMemoryBuffer CreateViewCore(IUnifiedMemoryBuffer buffer, long offset, long length)
         // For non-generic buffer views, we need type information which isn't available here
         // This is a design limitation - non-generic views should be discouraged
+
         => throw new NotSupportedException("Non-generic buffer views are not supported. Use the generic CreateView<T> method instead.");
 
     /// <inheritdoc />

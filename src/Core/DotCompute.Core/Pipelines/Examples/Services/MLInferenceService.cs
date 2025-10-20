@@ -11,6 +11,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// </summary>
 public class MLInferenceService
 {
+
     /// <summary>
     /// Performs ML inference using optimized kernel chains.
     /// </summary>

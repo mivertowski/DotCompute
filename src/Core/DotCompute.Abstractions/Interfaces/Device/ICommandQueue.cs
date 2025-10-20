@@ -6,6 +6,7 @@ using DotCompute.Abstractions.Kernels;
 
 namespace DotCompute.Abstractions.Interfaces.Device
 {
+
     /// <summary>
     /// Represents a command queue for scheduling and executing operations on a compute device.
     /// Command queues provide ordered execution of kernels, memory operations, and synchronization primitives.

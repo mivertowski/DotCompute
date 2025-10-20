@@ -608,4 +608,5 @@ public sealed record StrategyEffectiveness
 }
 
 
+
 // PluginRecoveryStrategy enum already defined in PluginRecoveryTypes.cs

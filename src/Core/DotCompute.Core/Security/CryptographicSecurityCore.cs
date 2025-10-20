@@ -65,7 +65,7 @@ namespace DotCompute.Core.Security
         public async Task<KeyGenerationResult> GenerateKeyAsync(KeyType keyType, int keySize,
             string identifier, string purpose)
         {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
@@ -109,7 +109,7 @@ namespace DotCompute.Core.Security
         public async Task<EncryptionResult> EncryptAsync(ReadOnlyMemory<byte> data, string keyIdentifier,
             string algorithm, ReadOnlyMemory<byte> associatedData = default)
         {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var result = new EncryptionResult
@@ -135,7 +135,7 @@ namespace DotCompute.Core.Security
             string algorithm, ReadOnlyMemory<byte> nonce = default, ReadOnlyMemory<byte> tag = default,
             ReadOnlyMemory<byte> associatedData = default)
         {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var result = new DecryptionResult
             {

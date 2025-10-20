@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace DotCompute.Abstractions
 {
 
+
     /// <summary>
     /// Represents an execution stream on an accelerator for asynchronous command submission.
     /// Streams allow overlapping of computation and data transfers.

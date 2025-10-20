@@ -418,6 +418,7 @@ public static class MetalGraphExample
 
     private static IntPtr CreateMockBuffer(long size)
         // In a real implementation, this would create an actual Metal buffer
+
         => new(Random.Shared.Next(0x1000, 0x10000));
 
     #endregion
@@ -437,6 +438,7 @@ internal class MockCompiledKernel : ICompiledKernel
 
     public Task ExecuteAsync(object[] parameters, CancellationToken cancellationToken = default)
         // Mock implementation - just return completed task
+
         => Task.CompletedTask;
 
     public object GetMetadata()

@@ -168,6 +168,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
 
 
+
             => arguments.Any(arg => arg.Value is int size && size > 100000);
         /// <summary>
         /// Performs dispose.

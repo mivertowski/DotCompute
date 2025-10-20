@@ -29,4 +29,5 @@ internal sealed class PluginValidator(ILogger<PluginValidator> logger) : IPlugin
         return new PluginValidationResult { IsValid = true };
     }
 }
+
 #pragma warning restore CS9113

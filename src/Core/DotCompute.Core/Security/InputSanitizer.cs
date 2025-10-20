@@ -569,6 +569,7 @@ public sealed partial class InputSanitizer : IDisposable
         LogCustomRuleAdded(_logger, context, rule.Name);
     }
 
+
     /// <summary>
     /// Gets current input validation statistics.
     /// </summary>
@@ -763,6 +764,7 @@ public sealed partial class InputSanitizer : IDisposable
 
     private static string SanitizeEmail(string input)
         // Basic email sanitization - remove dangerous characters
+
         => EmailSanitizeRegex().Replace(input, "");
 
     private static string SanitizeAlphaNumeric(string input) => AlphaNumericSanitizeRegex().Replace(input, "");

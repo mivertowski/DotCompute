@@ -492,6 +492,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
 
 
 
+
             => 0.85; // 85% success rate
 
         private void AnalyzeErrorPatterns(object? state)

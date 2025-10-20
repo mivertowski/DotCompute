@@ -830,6 +830,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
 
 
+
             => 0.2; // 20% estimated improvement
 
         private static async Task FuseKernelNodesAsync(CudaGraph graph, IReadOnlyList<Optimization.KernelFusionCandidate> candidates, CancellationToken cancellationToken)

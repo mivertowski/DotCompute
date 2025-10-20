@@ -93,6 +93,7 @@ namespace DotCompute.Core.Execution.Memory
             _ = Interlocked.Add(ref _totalAvailable, buffer.SizeInBytes);
         }
 
+
         /// <summary>
         /// Gets statistics for this device pool.
         /// </summary>

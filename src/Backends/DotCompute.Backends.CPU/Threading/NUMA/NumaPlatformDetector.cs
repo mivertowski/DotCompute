@@ -424,6 +424,7 @@ internal static partial class NumaPlatformDetector
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static int GetMacOSNodeCount()
         // macOS doesn't have traditional NUMA, simulate based on core types
+
         => 2; // Assume efficiency + performance cores
 
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
@@ -485,6 +486,7 @@ internal static partial class NumaPlatformDetector
     [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static long GetMacOSNodeMemorySize(int nodeId)
         // macOS doesn't expose per-node memory information
+
         => 0;
 
     #endregion

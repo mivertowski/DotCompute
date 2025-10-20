@@ -381,6 +381,7 @@ namespace DotCompute.Backends.CUDA
         public bool IsCuda13Compatible()
             // CUDA 13.0 drops support for Maxwell (sm_5x), Pascal (sm_6x), and Volta (sm_70, sm_72)
             // Minimum supported: Turing (sm_75) and newer
+
             => SupportsComputeCapability(MinimumComputeCapabilityMajor, MinimumComputeCapabilityMinor);
 
         /// <summary>

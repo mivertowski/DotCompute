@@ -9,6 +9,7 @@ namespace DotCompute.Core.Pipelines.Examples.Services;
 /// </summary>
 public class DataAnalysisService
 {
+
     /// <summary>
     /// Analyzes data using parallel processing kernel chains.
     /// </summary>

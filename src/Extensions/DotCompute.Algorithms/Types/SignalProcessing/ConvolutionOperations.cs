@@ -26,6 +26,7 @@ public class ConvolutionOperations(object kernelManager, object accelerator, obj
 
 
 
+
         => new float[signal.Length];
 
     /// <summary>
@@ -33,6 +34,7 @@ public class ConvolutionOperations(object kernelManager, object accelerator, obj
     /// </summary>
     public static float[,] Convolve2D(float[,] image, float[,] kernel)
         // Placeholder implementation
+
 
 
 
@@ -65,6 +67,7 @@ public static class StaticConvolutionOperations
 
 
 
+
         => new float[signal.Length];
 
     /// <summary>
@@ -72,6 +75,7 @@ public static class StaticConvolutionOperations
     /// </summary>
     public static float[,] Convolve2D(float[,] image, float[,] kernel)
         // Placeholder implementation
+
 
 
 

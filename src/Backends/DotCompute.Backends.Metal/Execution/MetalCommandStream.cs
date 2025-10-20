@@ -555,6 +555,7 @@ public sealed class MetalCommandStream : IDisposable
     private IntPtr CreateCommandQueueWithPriority(MetalStreamPriority priority)
         // For now, create a standard command queue
         // In a full implementation, this would set queue priority if supported
+
         => MetalNative.CreateCommandQueue(_device);
 
     private static async Task<bool> CommitAndWaitAsync(IntPtr commandBuffer, CancellationToken cancellationToken)

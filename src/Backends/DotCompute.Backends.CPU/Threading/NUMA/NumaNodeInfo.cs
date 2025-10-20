@@ -80,6 +80,7 @@ public sealed class NumaNode
     /// <returns>Estimated utilization between 0.0 and 1.0.</returns>
     public static double GetEstimatedUtilization()
         // This would be implemented with actual performance counters in production
+
         => 0.0;
 
     /// <summary>
@@ -88,6 +89,7 @@ public sealed class NumaNode
     /// <returns>Estimated memory bandwidth in GB/s.</returns>
     public double GetEstimatedMemoryBandwidth()
         // This would be implemented with actual memory benchmarks in production
+
         => ProcessorCount * 25.0; // Rough estimate: 25 GB/s per core
 }
 

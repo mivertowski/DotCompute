@@ -592,6 +592,7 @@ public sealed class MetalGraphExecutor : IDisposable
     private static long GetAvailableMetalMemory()
         // This would query the actual Metal device memory
         // For now, return a reasonable default (8GB for Apple Silicon)
+
         => 8L * 1024 * 1024 * 1024;
 
     #endregion
@@ -603,14 +604,17 @@ public sealed class MetalGraphExecutor : IDisposable
 
     private static IntPtr CreateMetalCommandBuffer(IntPtr commandQueue)
         // Create Metal command buffer from command queue
+
         => new(0x1000); // Stub
 
     private static IntPtr CreateMetalComputeCommandEncoder(IntPtr commandBuffer)
         // Create compute command encoder
+
         => new(0x2000); // Stub
 
     private static IntPtr CreateMetalBlitCommandEncoder(IntPtr commandBuffer)
         // Create blit command encoder
+
         => new(0x3000); // Stub
 
     private static void SetMetalComputePipelineState(IntPtr encoder, object kernel)
@@ -645,6 +649,7 @@ public sealed class MetalGraphExecutor : IDisposable
 
     private static async Task CommitAndWaitMetalCommandBufferAsync(IntPtr commandBuffer)
         // Commit command buffer and wait for completion
+
         => await Task.Delay(1); // Simulate GPU execution time
 
     private static void ReleaseMetalCommandBuffer(IntPtr commandBuffer)

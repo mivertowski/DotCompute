@@ -537,6 +537,7 @@ internal sealed class KernelOptimizationAnalyzer
 
     private static int EstimateBranchComplexity(StatementSyntax statement)
         // Simple complexity metric based on node count
+
         => statement.DescendantNodes().Count();
 
     private static int EstimateArraySize(ISymbol variable)

@@ -341,6 +341,7 @@ public sealed class NumaScheduler : IDisposable
 
     private int GetCurrentThreadNode()
         // In a full implementation, this would check current thread affinity
+
         => Environment.CurrentManagedThreadId % _topology.NodeCount;
 
     private static double CalculateLoadImbalance(int[] queueLengths)

@@ -416,6 +416,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
     private double CalculateFragmentation()
         // Simplified fragmentation calculation
         // In a real implementation, this would analyze actual memory layout
+
         => Math.Min(0.1 * _allocations.Count / 100.0, 1.0);
 
     private void ThrowIfDisposed()

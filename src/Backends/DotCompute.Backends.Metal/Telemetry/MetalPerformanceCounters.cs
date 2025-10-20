@@ -495,11 +495,13 @@ public sealed class MetalPerformanceCounters : IDisposable
     private void RecordThermalMetrics()
         // Placeholder for thermal monitoring
         // Would integrate with IOKit on macOS for real thermal data
+
         => _logger.LogTrace("Thermal metrics recording not implemented");
 
     private void RecordPowerMetrics()
         // Placeholder for power monitoring
         // Would integrate with IOKit on macOS for real power data
+
         => _logger.LogTrace("Power metrics recording not implemented");
 
     private static string GetAllocationSizeCategory(long sizeBytes)

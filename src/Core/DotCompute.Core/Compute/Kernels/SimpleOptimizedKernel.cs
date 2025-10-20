@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using DotCompute.Core.Logging;
 namespace DotCompute.Core.Compute.Kernels
 {
+
     /// <summary>
     /// Simple optimized kernel for the high-performance provider.
     /// Provides basic kernel execution capabilities with logging and resource management.

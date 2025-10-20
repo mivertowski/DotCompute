@@ -638,6 +638,7 @@ public sealed partial class LogEnricher : IDisposable
 
 
 
+
         => input.GetHashCode(StringComparison.Ordinal).ToString("X8", CultureInfo.InvariantCulture);
 
     private static int EstimateLogEntrySize(StructuredLogEntry logEntry)

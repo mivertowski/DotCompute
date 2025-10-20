@@ -35,6 +35,7 @@ public partial class ExecutionProfiler : IAsyncDisposable
         _logger = logger;
         _profilingData = [];
     }
+
     /// <summary>
     /// Gets start profiling asynchronously.
     /// </summary>

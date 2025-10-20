@@ -968,6 +968,7 @@ public sealed class FileSink(string filePath) : ILogSink, IHealthCheckable
 
 
 
+
         => Task.CompletedTask;
     /// <summary>
     /// Performs mark unhealthy.

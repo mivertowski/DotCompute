@@ -8,6 +8,7 @@ namespace DotCompute.Core.Optimization.Selection;
 /// </summary>
 public class SelectionConstraints
 {
+
     /// <summary>Backends that are explicitly allowed</summary>
     /// <remarks>CA2227: Acceptable for constraint configuration objects that support fluent initialization.</remarks>
 #pragma warning disable CA2227 // Collection properties should be read only

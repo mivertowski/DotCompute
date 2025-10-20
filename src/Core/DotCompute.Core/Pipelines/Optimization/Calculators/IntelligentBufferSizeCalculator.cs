@@ -347,17 +347,20 @@ internal sealed class IntelligentBufferSizeCalculator
         // Use performance counters or WMI to get available memory
         // Simplified implementation - in practice would use Windows APIs
 
+
         => Environment.WorkingSet * 4; // Rough estimate
 
     private static long GetLinuxAvailableMemory()
         // Parse /proc/meminfo for available memory
         // Simplified implementation
 
+
         => Environment.WorkingSet * 4; // Rough estimate
 
     private static long GetMacOSAvailableMemory()
         // Use system calls to get memory information
         // Simplified implementation
+
 
         => Environment.WorkingSet * 4; // Rough estimate
 

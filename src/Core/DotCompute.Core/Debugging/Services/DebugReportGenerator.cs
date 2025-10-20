@@ -452,6 +452,7 @@ public sealed partial class DebugReportGenerator(ILogger<DebugReportGenerator> l
 
     private static string GenerateHtmlReport(DebugData debugData)
         // HTML generation implementation
+
         => string.Format(CultureInfo.InvariantCulture, "<html><body><h1>Debug Report: {0}</h1></body></html>", debugData.KernelName);
 
     private static string GenerateJsonReport(DebugData debugData) => JsonSerializer.Serialize(debugData, DebugReportJsonContext.Default.DebugData);

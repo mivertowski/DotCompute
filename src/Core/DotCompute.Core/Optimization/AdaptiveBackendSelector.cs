@@ -660,6 +660,7 @@ public class AdaptiveBackendSelector : IDisposable
 
     private string GetBackendId(IAccelerator accelerator)
         // This would need to be implemented based on the actual IAccelerator interface
+
         => accelerator.GetType().Name.Replace("Accelerator", "", StringComparison.Ordinal);
 
     private List<(WorkloadSignature Workload, string Backend, double PerformanceScore)> GetTopPerformingWorkloadBackendPairs(int count)

@@ -227,6 +227,7 @@ internal static class PTXCompiler
     private static (int major, int minor) GetTargetComputeCapability()
         // Get compute capability from CUDA capability manager
         // Cap at compute_86 for CUDA 12.8 compatibility
+
         => (8, 6);
 
     /// <summary>

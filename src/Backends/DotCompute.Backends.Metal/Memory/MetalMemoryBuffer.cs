@@ -255,6 +255,7 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
     private static MetalStorageMode GetStorageMode(MemoryOptions options)
         // Use default shared storage mode for compatibility
+
         => MetalStorageMode.Shared;
 
     private static IntPtr GetDefaultDevice()

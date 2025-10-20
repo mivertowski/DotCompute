@@ -77,6 +77,7 @@ public class BackendPerformanceState
             CurrentUtilization = CalculateCurrentUtilization(systemSnapshot);
         }
     }
+
     /// <summary>
     /// Gets the summary.
     /// </summary>

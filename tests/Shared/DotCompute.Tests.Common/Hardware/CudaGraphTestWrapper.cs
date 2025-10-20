@@ -95,6 +95,7 @@ namespace DotCompute.Hardware.Cuda.Tests.Helpers
             // Store kernel information for later execution
             // In a real implementation, this would add a kernel node to the CUDA graph
             // For testing purposes, we'll return a mock node object
+
             => new GraphNode { NodeType = "Kernel", Kernel = kernel };
 
         /// <summary>

@@ -344,6 +344,7 @@ public class Result<T> : Result
     /// <returns>The result value if successful, otherwise the default value.</returns>
     public T GetValueOrDefault(T defaultValue = default!) => IsSuccess ? Value : defaultValue;
 
+
     /// <summary>
     /// Gets the value if successful, otherwise throws an exception.
     /// </summary>

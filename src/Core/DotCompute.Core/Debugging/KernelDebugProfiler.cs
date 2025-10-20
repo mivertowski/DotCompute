@@ -577,6 +577,7 @@ public sealed partial class KernelDebugProfiler(
     private static long GetMemoryUsage(KernelExecutionResult result)
         // Since KernelExecutionResult doesn't have memory usage property,
         // we'll return 0 for now. In a real implementation, this could be tracked separately.
+
         => 0;
     /// <summary>
     /// Performs dispose.

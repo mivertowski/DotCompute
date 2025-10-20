@@ -110,6 +110,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public async Task<T> ExecuteAsync<T>(string kernelName, string preferredBackend, params object[] args)
         // Mock implementation ignores preferred backend for simplicity
+
         => await ExecuteAsync<T>(kernelName, args);
     /// <summary>
     /// Gets execute asynchronously.
@@ -122,6 +123,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public async Task<T> ExecuteAsync<T>(string kernelName, IAccelerator accelerator, params object[] args)
         // Mock implementation ignores specific accelerator for simplicity
+
         => await ExecuteAsync<T>(kernelName, args);
     /// <summary>
     /// Gets execute with buffers asynchronously.
@@ -146,6 +148,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public Task<IAccelerator?> GetOptimalAcceleratorAsync(string kernelName)
         // Mock returns null (no specific accelerator preference)
+
         => Task.FromResult<IAccelerator?>(null);
     /// <summary>
     /// Gets precompile kernel asynchronously.
@@ -156,6 +159,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public Task PrecompileKernelAsync(string kernelName, IAccelerator? accelerator = null)
         // Mock pre-compilation does nothing
+
         => Task.CompletedTask;
     /// <summary>
     /// Gets the supported accelerators async.
@@ -165,6 +169,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public Task<IReadOnlyList<IAccelerator>> GetSupportedAcceleratorsAsync(string kernelName)
         // Mock returns empty list
+
         => Task.FromResult<IReadOnlyList<IAccelerator>>(Array.Empty<IAccelerator>());
     /// <summary>
     /// Validates the kernel args async.
@@ -175,6 +180,7 @@ public class MockComputeOrchestrator : IComputeOrchestrator
 
     public Task<bool> ValidateKernelArgsAsync(string kernelName, params object[] args)
         // Mock validation always returns true if kernel is registered
+
         => Task.FromResult(_kernelMocks.ContainsKey(kernelName));
     /// <summary>
     /// Gets execute kernel asynchronously.

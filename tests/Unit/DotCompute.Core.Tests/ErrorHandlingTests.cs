@@ -1485,6 +1485,7 @@ public sealed class ErrorHandlingTests : IDisposable
 #pragma warning restore CS0649
 
         // Error Propagation
+
         public bool SimulateNestedErrors { get; set; }
         /// <summary>
         /// Gets or sets the enable context preservation.

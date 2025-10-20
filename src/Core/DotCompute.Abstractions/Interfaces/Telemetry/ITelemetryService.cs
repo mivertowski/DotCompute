@@ -151,6 +151,7 @@ public static class TelemetryServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddFileLogging(this IServiceCollection services, string logFilePath)
         // TODO: Replace with actual FileSink implementation from DotCompute.Core
+
         => throw new NotImplementedException("FileSink implementation moved to DotCompute.Core. Use implementation project's extension method instead.");
 
 

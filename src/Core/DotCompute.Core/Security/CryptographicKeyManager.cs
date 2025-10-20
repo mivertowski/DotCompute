@@ -589,10 +589,12 @@ internal sealed partial class CryptographicKeyManager : IDisposable
 
     private KeyExportResult ExportAsPkcs12(SecureKeyContainer key, string? passphrase, KeyExportResult result)
         // PKCS#12 export implementation would go here
+
         => throw new NotImplementedException("PKCS#12 export not yet implemented");
 
     private KeyExportResult ExportAsJwk(SecureKeyContainer key, KeyExportResult result)
         // JWK export implementation would go here
+
         => throw new NotImplementedException("JWK export not yet implemented");
 
     private void PerformKeyRotation(object? state)

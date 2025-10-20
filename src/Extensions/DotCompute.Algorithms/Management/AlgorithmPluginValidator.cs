@@ -540,6 +540,7 @@ namespace DotCompute.Algorithms.Management
         /// </summary>
         private static bool IsCompatibleRuntimeVersion(string runtimeVersion)
             // Simplified compatibility check
+
             => runtimeVersion.StartsWith("v4.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v5.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v6.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v7.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v8.", StringComparison.CurrentCulture) || runtimeVersion.StartsWith("v9.", StringComparison.CurrentCulture);
 
         /// <summary>

@@ -503,6 +503,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         // Derived classes can override for async validation
 
 
+
         => await ValueTask.FromResult(Validate(source));
 
 
@@ -532,6 +533,7 @@ public abstract partial class BaseKernelCompiler : IUnifiedKernelCompiler
         OptimizationLevel level,
         CancellationToken cancellationToken)
         // Default: no optimization
+
 
 
         => ValueTask.FromResult(kernel);

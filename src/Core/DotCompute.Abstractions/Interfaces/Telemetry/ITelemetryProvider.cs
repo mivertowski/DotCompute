@@ -301,6 +301,7 @@ public static class Telemetry
     /// </summary>
     public static void Initialize(TelemetryOptions configuration)
         // TODO: Replace with actual implementation from DotCompute.Core
+
         => Provider = new NullTelemetryProvider();
 }
 

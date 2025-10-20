@@ -516,6 +516,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     private double CalculateCacheHitRate()
         // This would be tracked by actual cache hit/miss statistics in a real implementation
+
         => !_resolutionCache.IsEmpty ? 0.75 : 0.0; // Placeholder
 
     /// <summary>
@@ -523,6 +524,7 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     /// </summary>
     private static TimeSpan CalculateAverageResolutionTime()
         // This would be tracked by actual timing statistics in a real implementation
+
         => TimeSpan.FromMilliseconds(50); // Placeholder
 
     /// <summary>

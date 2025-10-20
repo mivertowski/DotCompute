@@ -35,6 +35,7 @@ public partial class ResourceTracker : IAsyncDisposable
         _logger = logger;
         _deviceUsage = [];
     }
+
     /// <summary>
     /// Gets track execution start asynchronously.
     /// </summary>
@@ -58,6 +59,7 @@ public partial class ResourceTracker : IAsyncDisposable
         LogResourceTrackingStarted(_logger, devices.Length);
         await ValueTask.CompletedTask;
     }
+
     /// <summary>
     /// Gets track execution end asynchronously.
     /// </summary>
@@ -79,6 +81,7 @@ public partial class ResourceTracker : IAsyncDisposable
 
         await ValueTask.CompletedTask;
     }
+
     /// <summary>
     /// Gets the resource usage as a defensive copy.
     /// </summary>

@@ -414,6 +414,7 @@ public sealed class OptimizedUnifiedBuffer<T> : IUnifiedMemoryBuffer<T> where T 
 
     private static ObjectPool<T[]> CreateDefaultArrayPool()
         // For now, return a simple wrapper around ArrayPool
+
         => new ArrayPoolWrapper<T>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

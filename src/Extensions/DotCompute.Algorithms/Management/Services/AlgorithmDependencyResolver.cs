@@ -354,6 +354,7 @@ public sealed partial class AlgorithmDependencyResolver(
     private static bool IsOutputTypeCompatible(IAlgorithmPlugin plugin, Type expectedOutputType)
         // This would require additional metadata about plugin output types
         // For now, we'll assume compatibility
+
         => true;
 
     /// <summary>

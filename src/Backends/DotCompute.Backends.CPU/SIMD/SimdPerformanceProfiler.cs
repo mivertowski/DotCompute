@@ -463,6 +463,7 @@ internal sealed class StrategyMetrics
 
     public double CalculateEfficiencyTrend()
         // Simplified efficiency calculation
+
         => CalculateThroughputTrend() * CalculateVectorizationTrend();
     /// <summary>
     /// Calculates the consistency score.
@@ -707,6 +708,7 @@ public sealed class StrategyRecommendation
     /// <value>The alternative strategies.</value>
     public IReadOnlyList<SimdExecutionStrategy> AlternativeStrategies { get; init; } = [];
 }
+
 
 
 #endregion

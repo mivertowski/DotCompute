@@ -161,6 +161,7 @@ public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUni
         CancellationToken cancellationToken = default)
         // Use a dummy accelerator for the legacy method call
         // This is a design issue that should be addressed in the future
+
         => throw new NotSupportedException("This method requires an accelerator. Use CompileAsync(KernelDefinition, IAccelerator, CancellationToken) instead.");
 
     /// <inheritdoc />
@@ -203,6 +204,7 @@ public class DefaultKernelCompiler(ILogger<DefaultKernelCompiler> logger) : IUni
         CancellationToken cancellationToken = default)
         // For now, delegate to synchronous validation
         // In the future, this could perform more expensive async validation
+
         => await Task.FromResult(Validate(source));
 
     /// <inheritdoc />

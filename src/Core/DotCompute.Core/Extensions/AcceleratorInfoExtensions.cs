@@ -326,6 +326,7 @@ namespace DotCompute.Core.Extensions
         /// </summary>
         public static bool SupportsTensorOperations(this AcceleratorInfo info)
             // Tensor Core support started with Volta (7.0)
+
             => info.ComputeCapability?.Major >= 7;
 
         /// <summary>

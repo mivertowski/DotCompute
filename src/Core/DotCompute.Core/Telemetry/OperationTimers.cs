@@ -307,11 +307,13 @@ internal sealed class NullOperationTimer : IOperationTimer
     /// </summary>
     /// <value>The minimum duration threshold.</value>
     public TimeSpan MinimumDurationThreshold => TimeSpan.Zero;
+
     /// <summary>
     /// Occurs when operation completed.
     /// </summary>
 #pragma warning disable CS0067 // Event is never used
     public event EventHandler<OperationTimingEventArgs>? OperationCompleted;
+
     /// <summary>
     /// Performs stop.
     /// </summary>
@@ -443,6 +445,7 @@ internal sealed class NullOperationTimer : IOperationTimer
         /// </summary>
         /// <value>The elapsed.</value>
         public TimeSpan Elapsed => TimeSpan.Zero;
+
         /// <summary>
         /// Gets stop.
         /// </summary>

@@ -1004,14 +1004,17 @@ public sealed class PipelineOptimizerTests(ITestOutputHelper output) : IDisposab
 
     private void SetupBottleneckMetrics()
         // Mock setups removed - IPipelineMetrics.GetStageExecutionTime doesn't exist
+
         => SetupMetricsForOptimization();
 
     private void SetupResourceConstrainedMetrics()
         // Mock setups removed - IPipelineMetrics methods don't exist
+
         => SetupMetricsForOptimization();
 
     private void SetupGPUMetrics()
         // Mock setups removed - IPipelineMetrics methods don't exist
+
         => SetupMetricsForOptimization();
 
     private void SetupFailingOptimization()

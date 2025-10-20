@@ -401,4 +401,5 @@ public sealed partial class LoadedAssemblyInfo
     public bool IsCollectible { get; init; }
 }
 
+
 // PluginAssemblyLoadContext class moved to dedicated file: Management/Loading/PluginAssemblyLoadContext.cs

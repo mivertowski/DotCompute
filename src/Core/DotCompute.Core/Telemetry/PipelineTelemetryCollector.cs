@@ -533,6 +533,7 @@ public sealed class PipelineTelemetryCollector : IDisposable
     private static async Task ProcessTelemetryEventAsync(TelemetryEvent telemetryEvent, CancellationToken cancellationToken)
         // Custom telemetry event processing logic
         // This could include forwarding to external systems, alerting, etc.
+
         => await Task.CompletedTask;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -945,6 +946,7 @@ public sealed class StageMetricsSnapshot(
         return this;
     }
 }
+
 
 
 // TelemetryEvent and TelemetryEventType are defined in BaseTelemetryProvider.cs to avoid duplication

@@ -59,6 +59,7 @@ public static partial class NumaTopologyDetector
     /// <returns>Newly discovered topology.</returns>
     public static NumaTopology RediscoverTopology()
         // Clear the cached topology and discover again
+
         => DiscoverTopology();
 
     #region Windows Discovery
@@ -190,12 +191,14 @@ public static partial class NumaTopologyDetector
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static HugePagesInfo GetWindowsHugePagesInfo(int nodeId)
         // Windows huge pages detection would go here
+
         => new()
         { SupportedSizes = new List<HugePageSize>() };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static CacheHierarchy GetWindowsCacheInfo(int nodeId)
         // Windows cache hierarchy detection would go here
+
         => new()
         { Levels = new List<CacheLevel>() };
 

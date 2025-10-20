@@ -526,6 +526,7 @@ public sealed partial class KernelValidator(
     /// </summary>
     private static long GetMemoryUsage(IAccelerator accelerator)
         // Placeholder - would get actual memory usage from accelerator
+
         => 1024 * 1024; // 1MB placeholder
 
     /// <summary>
@@ -612,6 +613,7 @@ public sealed partial class KernelValidator(
     /// </summary>
     private bool CompareStatistical(List<KernelExecutionResult> results, IList<ResultDifference> differences)
         // Simplified statistical comparison
+
         => CompareWithTolerance(results, differences);
 
     /// <summary>

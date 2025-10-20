@@ -16,6 +16,7 @@ namespace DotCompute.Abstractions.Models.Device
     [Flags]
     public enum DataTypeSupport
     {
+
         /// <summary>
         /// 8-bit signed integer support (-128 to 127).
         /// </summary>
@@ -27,6 +28,7 @@ namespace DotCompute.Abstractions.Models.Device
 #pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int8 = 1 << 0,
 #pragma warning restore CA1720
+
 
         /// <summary>
         /// 16-bit signed integer support (-32,768 to 32,767).
@@ -40,6 +42,7 @@ namespace DotCompute.Abstractions.Models.Device
         Int16 = 1 << 1,
 #pragma warning restore CA1720
 
+
         /// <summary>
         /// 32-bit signed integer support (-2,147,483,648 to 2,147,483,647).
         /// </summary>
@@ -51,6 +54,7 @@ namespace DotCompute.Abstractions.Models.Device
 #pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Int32 = 1 << 2,
 #pragma warning restore CA1720
+
 
         /// <summary>
         /// 64-bit signed integer support (-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807).
@@ -74,6 +78,7 @@ namespace DotCompute.Abstractions.Models.Device
         /// </remarks>
         Float16 = 1 << 4,
 
+
         /// <summary>
         /// 32-bit IEEE 754 single-precision floating-point support.
         /// </summary>
@@ -85,6 +90,7 @@ namespace DotCompute.Abstractions.Models.Device
 #pragma warning disable CA1720 // Identifier contains type name - Required for hardware data type naming convention
         Float32 = 1 << 5,
 #pragma warning restore CA1720
+
 
         /// <summary>
         /// 64-bit IEEE 754 double-precision floating-point support.

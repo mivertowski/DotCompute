@@ -301,6 +301,7 @@ public class ExampleGpuTests(ITestOutputHelper output) : ConsolidatedTestBase(ou
         var kernelTime = MeasureGpuKernelTime(() =>
             // Simulate GPU kernel execution
             // In real tests, this would launch actual GPU kernels
+
             Thread.Sleep(10), iterations: 5);
 
         // Assert - Validate performance

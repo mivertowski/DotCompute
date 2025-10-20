@@ -30,6 +30,7 @@ internal sealed class TimerHandle : ITimerHandle
     /// </summary>
     /// <value>The elapsed.</value>
     public TimeSpan Elapsed => TimeSpan.Zero;
+
     /// <summary>
     /// Gets stop.
     /// </summary>

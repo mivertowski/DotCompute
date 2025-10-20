@@ -569,6 +569,7 @@ public sealed class MetalErrorHandler : IDisposable
     public void Dispose()
         // MetalErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
+
         => ClearStatistics();
 
     /// <summary>

@@ -68,6 +68,7 @@ internal class OptimizedVectorAddKernel(string name, CompilationOptions options,
     private static async Task ExecuteVectorAddOptimizedAsync(IUnifiedMemoryBuffer bufferA, IUnifiedMemoryBuffer bufferB, IUnifiedMemoryBuffer bufferResult, int elementCount)
         // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
         // This could be optimized further by exposing unsafe pointers through IUnifiedMemoryBuffer
+
         => await ExecuteVectorAddGenericAsync(bufferA, bufferB, bufferResult, elementCount);
 
     /// <summary>

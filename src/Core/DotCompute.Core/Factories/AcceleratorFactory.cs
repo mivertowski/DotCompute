@@ -401,11 +401,13 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         // Missing: Pool size management, eviction policies, fragmentation handling
 
 
+
         => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
 
     private IUnifiedMemoryManager CreateUnifiedMemoryManager(AcceleratorConfiguration config, ILoggerFactory loggerFactory)
         // TODO: Production - Implement unified memory manager for CUDA
         // Missing: cudaMallocManaged, prefetching, migration hints
+
 
 
         => CreateDirectMemoryManager(config, loggerFactory); // Placeholder
@@ -552,6 +554,7 @@ public sealed class AcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     private static long GetSystemMemory()
         // TODO: Production - Implement proper system memory detection
         // Missing: Platform-specific memory queries (Windows WMI, Linux /proc/meminfo)
+
 
 
         => GC.GetTotalMemory(false) * 10; // Rough estimate

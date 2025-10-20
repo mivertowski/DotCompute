@@ -304,6 +304,7 @@ public sealed class CudaErrorHandler : IDisposable
 
 
 
+
     /// <summary>
     /// Falls back to CPU execution when GPU fails.
     /// </summary>
@@ -511,6 +512,7 @@ public sealed class CudaErrorHandler : IDisposable
     public void Dispose()
         // CudaErrorHandler doesn't hold disposable resources directly,
         // but we clear statistics as cleanup
+
 
 
 

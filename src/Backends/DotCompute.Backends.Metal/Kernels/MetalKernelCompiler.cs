@@ -77,6 +77,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
 
 
+
     /// <inheritdoc/>
 #pragma warning disable CA1819 // Properties should not return arrays - Required by IUnifiedKernelCompiler interface
     public IReadOnlyList<KernelLanguage> SupportedSourceTypes { get; } = new List<KernelLanguage>
@@ -484,6 +485,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
     public ValueTask<ICompiledKernel> OptimizeAsync(ICompiledKernel kernel, OptimizationLevel level, CancellationToken cancellationToken = default)
         // TODO: Implement Metal-specific optimizations
         // For now, return the kernel as-is since Metal optimization happens at compile time
+
         => ValueTask.FromResult(kernel);
 
     // Backward compatibility methods for legacy IKernelCompiler interface

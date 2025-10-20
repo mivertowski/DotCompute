@@ -42,6 +42,7 @@ internal sealed class OperationTimer(string operationName, IDictionary<string, o
     /// <returns>The result of the operation.</returns>
 #pragma warning restore CS0067
 
+
     public ITimerHandle StartOperation(string operationName, string? operationId = null) => new TimerHandle();
     /// <summary>
     /// Gets start operation scope.

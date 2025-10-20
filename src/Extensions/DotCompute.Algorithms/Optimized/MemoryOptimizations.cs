@@ -112,6 +112,7 @@ public static class MemoryOptimizations
 
 
 
+
             => AllocateAligned(size, alignment);
 
 
@@ -119,6 +120,7 @@ public static class MemoryOptimizations
 
         private static bool IsNumaAvailable()
             // Platform-specific NUMA detection would go here
+
 
 
 

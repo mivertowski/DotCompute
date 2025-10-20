@@ -610,5 +610,6 @@ public class SecurityValidator
 
 
 
+
         => await VulnerabilityDatabase.CheckPluginAsync(manifest, scanResult, cancellationToken);
 }

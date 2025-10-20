@@ -387,6 +387,7 @@ namespace DotCompute.Core.Execution
 
 
 
+
             => SelectRichestVictim(thiefIndex);
 
         private async Task<double> ExecuteWorkItemAsync(

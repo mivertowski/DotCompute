@@ -105,6 +105,7 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         // - Prefetching for improved cache performance
         // - Alignment optimizations for SIMD operations
 
+
         => new MemoryOptimizedStageWrapper(stage);
 
     private static IKernelPipeline CreateOptimizedPipeline(

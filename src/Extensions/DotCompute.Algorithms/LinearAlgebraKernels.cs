@@ -4,21 +4,21 @@
 namespace DotCompute.Algorithms
 {
 
-/// <summary>
-/// Comprehensive GPU kernel library for linear algebra operations.
-/// Provides optimized kernels for matrix operations, decompositions, and eigenvalue computations.
-/// </summary>
-public static class LinearAlgebraKernels
-{
     /// <summary>
-    /// The open c l matrix multiply tiled kernel.
+    /// Comprehensive GPU kernel library for linear algebra operations.
+    /// Provides optimized kernels for matrix operations, decompositions, and eigenvalue computations.
     /// </summary>
-    #region Matrix Multiplication Kernels
+    public static class LinearAlgebraKernels
+    {
+        /// <summary>
+        /// The open c l matrix multiply tiled kernel.
+        /// </summary>
+        #region Matrix Multiplication Kernels
 
-    /// <summary>
-    /// OpenCL kernel for tiled matrix multiplication with shared memory optimization.
-    /// </summary>
-    public const string OpenCLMatrixMultiplyTiledKernel = @"
+        /// <summary>
+        /// OpenCL kernel for tiled matrix multiplication with shared memory optimization.
+        /// </summary>
+        public const string OpenCLMatrixMultiplyTiledKernel = @"
 // Optimized tiled matrix multiplication using shared memory
 __kernel void matrix_multiply_tiled(
     __global const float* A,    // Matrix A (M x K)
@@ -83,14 +83,14 @@ __kernel void matrix_multiply_tiled(
         C[row * N + col] = sum;
     }
 }";
-    /// <summary>
-    /// The c u d a matrix multiply tiled kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a matrix multiply tiled kernel.
+        /// </summary>
 
-    /// <summary>
-    /// CUDA kernel for tiled matrix multiplication with shared memory.
-    /// </summary>
-    public const string CUDAMatrixMultiplyTiledKernel = @"
+        /// <summary>
+        /// CUDA kernel for tiled matrix multiplication with shared memory.
+        /// </summary>
+        public const string CUDAMatrixMultiplyTiledKernel = @"
 extern ""C"" __global__ void matrix_multiply_tiled_cuda(
     const float* A,     // Matrix A (M x K)
     const float* B,     // Matrix B (K x N)
@@ -154,18 +154,18 @@ extern ""C"" __global__ void matrix_multiply_tiled_cuda(
         C[row * N + col] = sum;
     }
 }";
-    /// <summary>
-    /// The open c l householder vector kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l householder vector kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region Householder Transformation Kernels
+        #region Householder Transformation Kernels
 
-    /// <summary>
-    /// OpenCL kernel for computing Householder vector with parallel reduction.
-    /// </summary>
-    public const string OpenCLHouseholderVectorKernel = @"
+        /// <summary>
+        /// OpenCL kernel for computing Householder vector with parallel reduction.
+        /// </summary>
+        public const string OpenCLHouseholderVectorKernel = @"
 __kernel void compute_householder_vector_parallel(
     __global const float* column,     // Input column vector
     __global float* householder,      // Output Householder vector
@@ -240,14 +240,14 @@ __kernel void compute_householder_vector_parallel(
         }
     }
 }";
-    /// <summary>
-    /// The open c l householder transform kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l householder transform kernel.
+        /// </summary>
 
-    /// <summary>
-    /// OpenCL kernel for applying Householder transformation with optimized memory access.
-    /// </summary>
-    public const string OpenCLHouseholderTransformKernel = @"
+        /// <summary>
+        /// OpenCL kernel for applying Householder transformation with optimized memory access.
+        /// </summary>
+        public const string OpenCLHouseholderTransformKernel = @"
 __kernel void apply_householder_transform_optimized(
     __global float* matrix,           // Input/output matrix
     __global const float* v,          // Householder vector
@@ -293,18 +293,18 @@ __kernel void apply_householder_transform_optimized(
         }
     }
 }";
-    /// <summary>
-    /// The c u d a jacobi s v d kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a jacobi s v d kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region SVD and Jacobi Rotation Kernels
+        #region SVD and Jacobi Rotation Kernels
 
-    /// <summary>
-    /// CUDA kernel for Jacobi SVD rotation with double precision support.
-    /// </summary>
-    public const string CUDAJacobiSVDKernel = @"
+        /// <summary>
+        /// CUDA kernel for Jacobi SVD rotation with double precision support.
+        /// </summary>
+        public const string CUDAJacobiSVDKernel = @"
 extern ""C"" __global__ void jacobi_svd_rotation_cuda(
     float* A,                 // Matrix A (modified in-place)
     float* U,                 // Left singular vectors
@@ -373,14 +373,14 @@ extern ""C"" __global__ void jacobi_svd_rotation_cuda(
         V[j * n + tid] = s * v_it + c * v_jt;
     }
 }";
-    /// <summary>
-    /// The open c l singular values kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l singular values kernel.
+        /// </summary>
 
-    /// <summary>
-    /// OpenCL kernel for computing singular values extraction.
-    /// </summary>
-    public const string OpenCLSingularValuesKernel = @"
+        /// <summary>
+        /// OpenCL kernel for computing singular values extraction.
+        /// </summary>
+        public const string OpenCLSingularValuesKernel = @"
 __kernel void extract_singular_values(
     __global const float* A,     // Diagonalized matrix
     __global float* S,           // Output singular values
@@ -404,18 +404,18 @@ __kernel void extract_singular_values(
         }
     }
 }";
-    /// <summary>
-    /// The open c l matrix vector kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l matrix vector kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region Matrix-Vector Operations
+        #region Matrix-Vector Operations
 
-    /// <summary>
-    /// OpenCL kernel for optimized matrix-vector multiplication.
-    /// </summary>
-    public const string OpenCLMatrixVectorKernel = @"
+        /// <summary>
+        /// OpenCL kernel for optimized matrix-vector multiplication.
+        /// </summary>
+        public const string OpenCLMatrixVectorKernel = @"
 __kernel void matrix_vector_multiply_optimized(
     __global const float* A,     // Matrix A (m x n)
     __global const float* x,     // Vector x (n x 1)
@@ -455,14 +455,14 @@ __kernel void matrix_vector_multiply_optimized(
 
     y[row] = sum;
 }";
-    /// <summary>
-    /// The c u d a vector operations kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a vector operations kernel.
+        /// </summary>
 
-    /// <summary>
-    /// CUDA kernel for parallel vector operations with coalesced memory access.
-    /// </summary>
-    public const string CUDAVectorOperationsKernel = @"
+        /// <summary>
+        /// CUDA kernel for parallel vector operations with coalesced memory access.
+        /// </summary>
+        public const string CUDAVectorOperationsKernel = @"
 extern ""C"" __global__ void vector_operations_cuda(
     const float* a,          // Input vector a
     const float* b,          // Input vector b
@@ -494,18 +494,18 @@ extern ""C"" __global__ void vector_operations_cuda(
         }
     }
 }";
-    /// <summary>
-    /// The open c l parallel reduction kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l parallel reduction kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region Parallel Reduction Kernels
+        #region Parallel Reduction Kernels
 
-    /// <summary>
-    /// OpenCL kernel for parallel reduction with multiple operations.
-    /// </summary>
-    public const string OpenCLParallelReductionKernel = @"
+        /// <summary>
+        /// OpenCL kernel for parallel reduction with multiple operations.
+        /// </summary>
+        public const string OpenCLParallelReductionKernel = @"
 __kernel void parallel_reduction_optimized(
     __global const float* input,    // Input array
     __global float* output,         // Output (one per work group)
@@ -568,14 +568,14 @@ __kernel void parallel_reduction_optimized(
         }
     }
 }";
-    /// <summary>
-    /// The c u d a warp reduction kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a warp reduction kernel.
+        /// </summary>
 
-    /// <summary>
-    /// CUDA kernel for warp-optimized reduction.
-    /// </summary>
-    public const string CUDAWarpReductionKernel = @"
+        /// <summary>
+        /// CUDA kernel for warp-optimized reduction.
+        /// </summary>
+        public const string CUDAWarpReductionKernel = @"
 __device__ __forceinline__ float warp_reduce_sum(float val) {
     for (int offset = warpSize/2; offset > 0; offset /= 2) {
         val += __shfl_down_sync(0xFFFFFFFF, val, offset);
@@ -621,18 +621,18 @@ extern ""C"" __global__ void warp_reduction_cuda(
         }
     }
 }";
-    /// <summary>
-    /// The open c l q r shift kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l q r shift kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region Eigenvalue Computation Kernels
+        #region Eigenvalue Computation Kernels
 
-    /// <summary>
-    /// OpenCL kernel for QR algorithm with Wilkinson shift.
-    /// </summary>
-    public const string OpenCLQRShiftKernel = @"
+        /// <summary>
+        /// OpenCL kernel for QR algorithm with Wilkinson shift.
+        /// </summary>
+        public const string OpenCLQRShiftKernel = @"
 __kernel void qr_algorithm_shift(
     __global float* A,            // Hessenberg matrix (modified in-place)
     __global float* Q,            // Accumulated transformations
@@ -698,14 +698,14 @@ __kernel void qr_algorithm_shift(
         eigenvalues[tid] = A[tid * n + tid];
     }
 }";
-    /// <summary>
-    /// The c u d a givens rotation kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a givens rotation kernel.
+        /// </summary>
 
-    /// <summary>
-    /// CUDA kernel for Givens rotation application in QR algorithm.
-    /// </summary>
-    public const string CUDAGivensRotationKernel = @"
+        /// <summary>
+        /// CUDA kernel for Givens rotation application in QR algorithm.
+        /// </summary>
+        public const string CUDAGivensRotationKernel = @"
 extern ""C"" __global__ void apply_givens_rotation_cuda(
     float* A,               // Matrix to transform
     float* Q,               // Accumulate rotations
@@ -744,18 +744,18 @@ extern ""C"" __global__ void apply_givens_rotation_cuda(
         Q[tid * n + j] = s * q_i + c * q_j;
     }
 }";
-    /// <summary>
-    /// The c u d a cholesky kernel.
-    /// </summary>
+        /// <summary>
+        /// The c u d a cholesky kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region Cholesky Decomposition Kernels
+        #region Cholesky Decomposition Kernels
 
-    /// <summary>
-    /// CUDA kernel for blocked Cholesky decomposition.
-    /// </summary>
-    public const string CUDACholeskyKernel = @"
+        /// <summary>
+        /// CUDA kernel for blocked Cholesky decomposition.
+        /// </summary>
+        public const string CUDACholeskyKernel = @"
 extern ""C"" __global__ void cholesky_decomposition_cuda(
     float* A,               // Input matrix (modified to L)
     const int n,            // Matrix dimension
@@ -811,18 +811,18 @@ extern ""C"" __global__ void cholesky_decomposition_cuda(
         }
     }
 }";
-    /// <summary>
-    /// The open c l l u decomposition kernel.
-    /// </summary>
+        /// <summary>
+        /// The open c l l u decomposition kernel.
+        /// </summary>
 
-    #endregion
+        #endregion
 
-    #region LU Decomposition Kernels
+        #region LU Decomposition Kernels
 
-    /// <summary>
-    /// OpenCL kernel for LU decomposition with partial pivoting.
-    /// </summary>
-    public const string OpenCLLUDecompositionKernel = @"
+        /// <summary>
+        /// OpenCL kernel for LU decomposition with partial pivoting.
+        /// </summary>
+        public const string OpenCLLUDecompositionKernel = @"
 __kernel void lu_decomposition_step(
     __global float* A,          // Matrix being decomposed
     __global int* P,            // Permutation array
@@ -884,202 +884,202 @@ __kernel void lu_decomposition_step(
     }
 }";
 
-    #endregion
+        #endregion
 
-    #region Kernel Selection and Compilation Helpers
+        #region Kernel Selection and Compilation Helpers
 
-    /// <summary>
-    /// Gets the appropriate kernel source for a given operation and accelerator type.
-    /// </summary>
-    /// <param name="operation">The linear algebra operation.</param>
-    /// <param name="acceleratorType">The target accelerator type.</param>
-    /// <param name="precision">Precision mode (single/double).</param>
-    /// <returns>Kernel source code.</returns>
-    public static string GetKernelSource(LinearAlgebraOperation operation, string acceleratorType, string precision = "single")
-    {
-        var type = acceleratorType.ToUpperInvariant();
-
-        return operation switch
+        /// <summary>
+        /// Gets the appropriate kernel source for a given operation and accelerator type.
+        /// </summary>
+        /// <param name="operation">The linear algebra operation.</param>
+        /// <param name="acceleratorType">The target accelerator type.</param>
+        /// <param name="precision">Precision mode (single/double).</param>
+        /// <returns>Kernel source code.</returns>
+        public static string GetKernelSource(LinearAlgebraOperation operation, string acceleratorType, string precision = "single")
         {
-            LinearAlgebraOperation.MatrixMultiply => type switch
+            var type = acceleratorType.ToUpperInvariant();
+
+            return operation switch
             {
-                "OPENCL" => OpenCLMatrixMultiplyTiledKernel,
-                "CUDA" => CUDAMatrixMultiplyTiledKernel,
-                _ => throw new NotSupportedException($"Matrix multiplication not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.MatrixMultiply => type switch
+                {
+                    "OPENCL" => OpenCLMatrixMultiplyTiledKernel,
+                    "CUDA" => CUDAMatrixMultiplyTiledKernel,
+                    _ => throw new NotSupportedException($"Matrix multiplication not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.HouseholderVector => type switch
-            {
-                "OPENCL" => OpenCLHouseholderVectorKernel,
-                "CUDA" => HouseholderKernels.CudaComputeHouseholderVectorKernel,
-                _ => throw new NotSupportedException($"Householder vector not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.HouseholderVector => type switch
+                {
+                    "OPENCL" => OpenCLHouseholderVectorKernel,
+                    "CUDA" => HouseholderKernels.CudaComputeHouseholderVectorKernel,
+                    _ => throw new NotSupportedException($"Householder vector not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.HouseholderTransform => type switch
-            {
-                "OPENCL" => OpenCLHouseholderTransformKernel,
-                "CUDA" => HouseholderKernels.CudaApplyHouseholderTransformationKernel,
-                _ => throw new NotSupportedException($"Householder transform not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.HouseholderTransform => type switch
+                {
+                    "OPENCL" => OpenCLHouseholderTransformKernel,
+                    "CUDA" => HouseholderKernels.CudaApplyHouseholderTransformationKernel,
+                    _ => throw new NotSupportedException($"Householder transform not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.JacobiSVD => type switch
-            {
-                "CUDA" => CUDAJacobiSVDKernel,
-                "OPENCL" => OpenCLSingularValuesKernel,
-                _ => throw new NotSupportedException($"Jacobi SVD not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.JacobiSVD => type switch
+                {
+                    "CUDA" => CUDAJacobiSVDKernel,
+                    "OPENCL" => OpenCLSingularValuesKernel,
+                    _ => throw new NotSupportedException($"Jacobi SVD not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.MatrixVector => type switch
-            {
-                "OPENCL" => OpenCLMatrixVectorKernel,
-                "CUDA" => CUDAVectorOperationsKernel,
-                _ => throw new NotSupportedException($"Matrix-vector ops not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.MatrixVector => type switch
+                {
+                    "OPENCL" => OpenCLMatrixVectorKernel,
+                    "CUDA" => CUDAVectorOperationsKernel,
+                    _ => throw new NotSupportedException($"Matrix-vector ops not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.ParallelReduction => type switch
-            {
-                "OPENCL" => OpenCLParallelReductionKernel,
-                "CUDA" => CUDAWarpReductionKernel,
-                _ => throw new NotSupportedException($"Parallel reduction not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.ParallelReduction => type switch
+                {
+                    "OPENCL" => OpenCLParallelReductionKernel,
+                    "CUDA" => CUDAWarpReductionKernel,
+                    _ => throw new NotSupportedException($"Parallel reduction not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.QRAlgorithm => type switch
-            {
-                "OPENCL" => OpenCLQRShiftKernel,
-                "CUDA" => CUDAGivensRotationKernel,
-                _ => throw new NotSupportedException($"QR algorithm not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.QRAlgorithm => type switch
+                {
+                    "OPENCL" => OpenCLQRShiftKernel,
+                    "CUDA" => CUDAGivensRotationKernel,
+                    _ => throw new NotSupportedException($"QR algorithm not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.CholeskyDecomposition => type switch
-            {
-                "CUDA" => CUDACholeskyKernel,
-                _ => throw new NotSupportedException($"Cholesky decomposition not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.CholeskyDecomposition => type switch
+                {
+                    "CUDA" => CUDACholeskyKernel,
+                    _ => throw new NotSupportedException($"Cholesky decomposition not supported for {acceleratorType}")
+                },
 
-            LinearAlgebraOperation.LUDecomposition => type switch
-            {
-                "OPENCL" => OpenCLLUDecompositionKernel,
-                _ => throw new NotSupportedException($"LU decomposition not supported for {acceleratorType}")
-            },
+                LinearAlgebraOperation.LUDecomposition => type switch
+                {
+                    "OPENCL" => OpenCLLUDecompositionKernel,
+                    _ => throw new NotSupportedException($"LU decomposition not supported for {acceleratorType}")
+                },
 
-            _ => throw new ArgumentException($"Unknown operation: {operation}")
-        };
-    }
+                _ => throw new ArgumentException($"Unknown operation: {operation}")
+            };
+        }
 
-    /// <summary>
-    /// Generates optimized kernel parameters for different matrix sizes and GPU architectures.
-    /// </summary>
-    /// <param name="operation">The operation type.</param>
-    /// <param name="matrixSize">Matrix dimensions.</param>
-    /// <param name="deviceInfo">GPU device information.</param>
-    /// <returns>Optimized kernel execution parameters.</returns>
-    public static KernelExecutionParameters GetOptimizedParameters(
-        LinearAlgebraOperation operation,
-        (int rows, int cols) matrixSize,
-        string deviceInfo)
-    {
-        var (rows, cols) = matrixSize;
-
-        return operation switch
+        /// <summary>
+        /// Generates optimized kernel parameters for different matrix sizes and GPU architectures.
+        /// </summary>
+        /// <param name="operation">The operation type.</param>
+        /// <param name="matrixSize">Matrix dimensions.</param>
+        /// <param name="deviceInfo">GPU device information.</param>
+        /// <returns>Optimized kernel execution parameters.</returns>
+        public static KernelExecutionParameters GetOptimizedParameters(
+            LinearAlgebraOperation operation,
+            (int rows, int cols) matrixSize,
+            string deviceInfo)
         {
-            LinearAlgebraOperation.MatrixMultiply => new KernelExecutionParameters
-            {
-                GlobalWorkSize = [((cols + 15) / 16) * 16, ((rows + 15) / 16) * 16],
-                LocalWorkSize = [16, 16],
-                SharedMemorySize = 2 * 16 * 16 * sizeof(float), // Two tiles
-                UseSharedMemory = true,
-                TileSize = 16
-            },
+            var (rows, cols) = matrixSize;
 
-            LinearAlgebraOperation.HouseholderVector => new KernelExecutionParameters
+            return operation switch
             {
-                GlobalWorkSize = [((Math.Max(rows, cols) + 255) / 256) * 256],
-                LocalWorkSize = [256],
-                SharedMemorySize = 256 * sizeof(float),
-                UseSharedMemory = true
-            },
+                LinearAlgebraOperation.MatrixMultiply => new KernelExecutionParameters
+                {
+                    GlobalWorkSize = [((cols + 15) / 16) * 16, ((rows + 15) / 16) * 16],
+                    LocalWorkSize = [16, 16],
+                    SharedMemorySize = 2 * 16 * 16 * sizeof(float), // Two tiles
+                    UseSharedMemory = true,
+                    TileSize = 16
+                },
 
-            LinearAlgebraOperation.ParallelReduction => new KernelExecutionParameters
-            {
-                GlobalWorkSize = [((rows * cols + 255) / 256) * 256],
-                LocalWorkSize = [256],
-                SharedMemorySize = 256 * sizeof(float),
-                UseSharedMemory = true
-            },
+                LinearAlgebraOperation.HouseholderVector => new KernelExecutionParameters
+                {
+                    GlobalWorkSize = [((Math.Max(rows, cols) + 255) / 256) * 256],
+                    LocalWorkSize = [256],
+                    SharedMemorySize = 256 * sizeof(float),
+                    UseSharedMemory = true
+                },
 
-            _ => new KernelExecutionParameters
+                LinearAlgebraOperation.ParallelReduction => new KernelExecutionParameters
+                {
+                    GlobalWorkSize = [((rows * cols + 255) / 256) * 256],
+                    LocalWorkSize = [256],
+                    SharedMemorySize = 256 * sizeof(float),
+                    UseSharedMemory = true
+                },
+
+                _ => new KernelExecutionParameters
+                {
+                    GlobalWorkSize = [((Math.Max(rows, cols) + 127) / 128) * 128],
+                    LocalWorkSize = [128],
+                    UseSharedMemory = false
+                }
+            };
+        }
+
+        /// <summary>
+        /// Adaptive kernel configuration based on matrix properties and hardware capabilities.
+        /// </summary>
+        /// <param name="operation">Operation type.</param>
+        /// <param name="matrixProperties">Matrix characteristics.</param>
+        /// <param name="hardwareInfo">Hardware specifications.</param>
+        /// <returns>Optimized configuration.</returns>
+        public static AdaptiveKernelConfig GetAdaptiveConfiguration(
+            LinearAlgebraOperation operation,
+            MatrixProperties matrixProperties,
+            HardwareInfo hardwareInfo)
+        {
+            var config = new AdaptiveKernelConfig();
+
+            // Configure based on matrix sparsity
+            if (matrixProperties.SparsityRatio > 0.9f)
             {
-                GlobalWorkSize = [((Math.Max(rows, cols) + 127) / 128) * 128],
-                LocalWorkSize = [128],
-                UseSharedMemory = false
+                config.UseSparseOptimizations = true;
+                config.SparsityThreshold = matrixProperties.SparsityRatio;
             }
-        };
-    }
 
-    /// <summary>
-    /// Adaptive kernel configuration based on matrix properties and hardware capabilities.
-    /// </summary>
-    /// <param name="operation">Operation type.</param>
-    /// <param name="matrixProperties">Matrix characteristics.</param>
-    /// <param name="hardwareInfo">Hardware specifications.</param>
-    /// <returns>Optimized configuration.</returns>
-    public static AdaptiveKernelConfig GetAdaptiveConfiguration(
-        LinearAlgebraOperation operation,
-        MatrixProperties matrixProperties,
-        HardwareInfo hardwareInfo)
-    {
-        var config = new AdaptiveKernelConfig();
+            // Configure based on matrix size
+            if (matrixProperties.Size > hardwareInfo.GlobalMemorySize / 4)
+            {
+                config.UseOutOfCoreAlgorithm = true;
+                config.BlockSize = CalculateOptimalBlockSize(matrixProperties.Size, hardwareInfo);
+            }
 
-        // Configure based on matrix sparsity
-        if (matrixProperties.SparsityRatio > 0.9f)
-        {
-            config.UseSparseOptimizations = true;
-            config.SparsityThreshold = matrixProperties.SparsityRatio;
+            // Configure precision based on condition number
+            if (matrixProperties.ConditionNumber > 1e12f)
+            {
+                config.RequiresHighPrecision = true;
+                config.UseMixedPrecision = true;
+            }
+
+            // Configure work group size based on hardware
+            config.OptimalWorkGroupSize = Math.Min(
+                hardwareInfo.MaxWorkGroupSize,
+                GetNextPowerOfTwo(hardwareInfo.PreferredWorkGroupSizeMultiple)
+            );
+
+            return config;
         }
 
-        // Configure based on matrix size
-        if (matrixProperties.Size > hardwareInfo.GlobalMemorySize / 4)
+        private static int CalculateOptimalBlockSize(long matrixSize, HardwareInfo hardware)
         {
-            config.UseOutOfCoreAlgorithm = true;
-            config.BlockSize = CalculateOptimalBlockSize(matrixProperties.Size, hardwareInfo);
+            // Calculate block size to fit in shared memory
+            long availableSharedMem = hardware.SharedMemorySize - 1024; // Reserve some space
+            var maxBlockSize = (int)Math.Sqrt(availableSharedMem / sizeof(float));
+
+            // Round down to nearest power of 2
+            return GetPreviousPowerOfTwo(Math.Min(maxBlockSize, 64));
         }
 
-        // Configure precision based on condition number
-        if (matrixProperties.ConditionNumber > 1e12f)
+        private static int GetNextPowerOfTwo(int value)
         {
-            config.RequiresHighPrecision = true;
-            config.UseMixedPrecision = true;
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            return value + 1;
         }
-
-        // Configure work group size based on hardware
-        config.OptimalWorkGroupSize = Math.Min(
-            hardwareInfo.MaxWorkGroupSize,
-            GetNextPowerOfTwo(hardwareInfo.PreferredWorkGroupSizeMultiple)
-        );
-
-        return config;
-    }
-
-    private static int CalculateOptimalBlockSize(long matrixSize, HardwareInfo hardware)
-    {
-        // Calculate block size to fit in shared memory
-        long availableSharedMem = hardware.SharedMemorySize - 1024; // Reserve some space
-        var maxBlockSize = (int)Math.Sqrt(availableSharedMem / sizeof(float));
-
-        // Round down to nearest power of 2
-        return GetPreviousPowerOfTwo(Math.Min(maxBlockSize, 64));
-    }
-
-    private static int GetNextPowerOfTwo(int value)
-    {
-        value--;
-        value |= value >> 1;
-        value |= value >> 2;
-        value |= value >> 4;
-        value |= value >> 8;
-        value |= value >> 16;
-        return value + 1;
-    }
 
         private static int GetPreviousPowerOfTwo(int value) => GetNextPowerOfTwo(value + 1) / 2;
         /// <summary>
@@ -1094,159 +1094,159 @@ __kernel void lu_decomposition_step(
         /// Enumeration of supported linear algebra operations.
         /// </summary>
         public enum LinearAlgebraOperation
-{
-    MatrixMultiply,
-    HouseholderVector,
-    HouseholderTransform,
-    JacobiSVD,
-    MatrixVector,
-    ParallelReduction,
-    QRAlgorithm,
-    CholeskyDecomposition,
-    LUDecomposition,
-    EigenDecomposition
-}
+        {
+            MatrixMultiply,
+            HouseholderVector,
+            HouseholderTransform,
+            JacobiSVD,
+            MatrixVector,
+            ParallelReduction,
+            QRAlgorithm,
+            CholeskyDecomposition,
+            LUDecomposition,
+            EigenDecomposition
+        }
 
-/// <summary>
-/// Kernel execution parameters optimized for specific operations.
-/// </summary>
-public class KernelExecutionParameters
-{
-    /// <summary>
-    /// Gets or sets the global work size.
-    /// </summary>
-    /// <value>The global work size.</value>
-    public int[] GlobalWorkSize { get; set; } = [];
-    /// <summary>
-    /// Gets or sets the local work size.
-    /// </summary>
-    /// <value>The local work size.</value>
-    public int[] LocalWorkSize { get; set; } = [];
-    /// <summary>
-    /// Gets or sets the shared memory size.
-    /// </summary>
-    /// <value>The shared memory size.</value>
-    public int SharedMemorySize { get; set; }
-    /// <summary>
-    /// Gets or sets the use shared memory.
-    /// </summary>
-    /// <value>The use shared memory.</value>
-    public bool UseSharedMemory { get; set; }
-    /// <summary>
-    /// Gets or sets the tile size.
-    /// </summary>
-    /// <value>The tile size.</value>
-    public int TileSize { get; set; } = 16;
-}
+        /// <summary>
+        /// Kernel execution parameters optimized for specific operations.
+        /// </summary>
+        public class KernelExecutionParameters
+        {
+            /// <summary>
+            /// Gets or sets the global work size.
+            /// </summary>
+            /// <value>The global work size.</value>
+            public int[] GlobalWorkSize { get; set; } = [];
+            /// <summary>
+            /// Gets or sets the local work size.
+            /// </summary>
+            /// <value>The local work size.</value>
+            public int[] LocalWorkSize { get; set; } = [];
+            /// <summary>
+            /// Gets or sets the shared memory size.
+            /// </summary>
+            /// <value>The shared memory size.</value>
+            public int SharedMemorySize { get; set; }
+            /// <summary>
+            /// Gets or sets the use shared memory.
+            /// </summary>
+            /// <value>The use shared memory.</value>
+            public bool UseSharedMemory { get; set; }
+            /// <summary>
+            /// Gets or sets the tile size.
+            /// </summary>
+            /// <value>The tile size.</value>
+            public int TileSize { get; set; } = 16;
+        }
 
-/// <summary>
-/// Matrix properties for adaptive optimization.
-/// </summary>
-public class MatrixProperties
-{
-    /// <summary>
-    /// Gets or sets the size.
-    /// </summary>
-    /// <value>The size.</value>
-    public long Size { get; set; }
-    /// <summary>
-    /// Gets or sets the sparsity ratio.
-    /// </summary>
-    /// <value>The sparsity ratio.</value>
-    public float SparsityRatio { get; set; }
-    /// <summary>
-    /// Gets or sets the condition number.
-    /// </summary>
-    /// <value>The condition number.</value>
-    public float ConditionNumber { get; set; }
-    /// <summary>
-    /// Gets or sets a value indicating whether symmetric.
-    /// </summary>
-    /// <value>The is symmetric.</value>
-    public bool IsSymmetric { get; set; }
-    /// <summary>
-    /// Gets or sets a value indicating whether positive definite.
-    /// </summary>
-    /// <value>The is positive definite.</value>
-    public bool IsPositiveDefinite { get; set; }
-}
+        /// <summary>
+        /// Matrix properties for adaptive optimization.
+        /// </summary>
+        public class MatrixProperties
+        {
+            /// <summary>
+            /// Gets or sets the size.
+            /// </summary>
+            /// <value>The size.</value>
+            public long Size { get; set; }
+            /// <summary>
+            /// Gets or sets the sparsity ratio.
+            /// </summary>
+            /// <value>The sparsity ratio.</value>
+            public float SparsityRatio { get; set; }
+            /// <summary>
+            /// Gets or sets the condition number.
+            /// </summary>
+            /// <value>The condition number.</value>
+            public float ConditionNumber { get; set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether symmetric.
+            /// </summary>
+            /// <value>The is symmetric.</value>
+            public bool IsSymmetric { get; set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether positive definite.
+            /// </summary>
+            /// <value>The is positive definite.</value>
+            public bool IsPositiveDefinite { get; set; }
+        }
 
-/// <summary>
-/// Hardware information for optimization decisions.
-/// </summary>
-public class HardwareInfo
-{
-    /// <summary>
-    /// Gets or sets the global memory size.
-    /// </summary>
-    /// <value>The global memory size.</value>
-    public long GlobalMemorySize { get; set; }
-    /// <summary>
-    /// Gets or sets the shared memory size.
-    /// </summary>
-    /// <value>The shared memory size.</value>
-    public int SharedMemorySize { get; set; }
-    /// <summary>
-    /// Gets or sets the max work group size.
-    /// </summary>
-    /// <value>The max work group size.</value>
-    public int MaxWorkGroupSize { get; set; }
-    /// <summary>
-    /// Gets or sets the preferred work group size multiple.
-    /// </summary>
-    /// <value>The preferred work group size multiple.</value>
-    public int PreferredWorkGroupSizeMultiple { get; set; }
-    /// <summary>
-    /// Gets or sets the compute units.
-    /// </summary>
-    /// <value>The compute units.</value>
-    public int ComputeUnits { get; set; }
-}
+        /// <summary>
+        /// Hardware information for optimization decisions.
+        /// </summary>
+        public class HardwareInfo
+        {
+            /// <summary>
+            /// Gets or sets the global memory size.
+            /// </summary>
+            /// <value>The global memory size.</value>
+            public long GlobalMemorySize { get; set; }
+            /// <summary>
+            /// Gets or sets the shared memory size.
+            /// </summary>
+            /// <value>The shared memory size.</value>
+            public int SharedMemorySize { get; set; }
+            /// <summary>
+            /// Gets or sets the max work group size.
+            /// </summary>
+            /// <value>The max work group size.</value>
+            public int MaxWorkGroupSize { get; set; }
+            /// <summary>
+            /// Gets or sets the preferred work group size multiple.
+            /// </summary>
+            /// <value>The preferred work group size multiple.</value>
+            public int PreferredWorkGroupSizeMultiple { get; set; }
+            /// <summary>
+            /// Gets or sets the compute units.
+            /// </summary>
+            /// <value>The compute units.</value>
+            public int ComputeUnits { get; set; }
+        }
 
-/// <summary>
-/// Adaptive kernel configuration based on runtime analysis.
-/// </summary>
-public class AdaptiveKernelConfig
-{
-    /// <summary>
-    /// Gets or sets the use sparse optimizations.
-    /// </summary>
-    /// <value>The use sparse optimizations.</value>
-    public bool UseSparseOptimizations { get; set; }
-    /// <summary>
-    /// Gets or sets the sparsity threshold.
-    /// </summary>
-    /// <value>The sparsity threshold.</value>
-    public float SparsityThreshold { get; set; }
-    /// <summary>
-    /// Gets or sets the use out of core algorithm.
-    /// </summary>
-    /// <value>The use out of core algorithm.</value>
-    public bool UseOutOfCoreAlgorithm { get; set; }
-    /// <summary>
-    /// Gets or sets the block size.
-    /// </summary>
-    /// <value>The block size.</value>
-    public int BlockSize { get; set; } = 64;
-    /// <summary>
-    /// Gets or sets the requires high precision.
-    /// </summary>
-    /// <value>The requires high precision.</value>
-    public bool RequiresHighPrecision { get; set; }
-    /// <summary>
-    /// Gets or sets the use mixed precision.
-    /// </summary>
-    /// <value>The use mixed precision.</value>
-    public bool UseMixedPrecision { get; set; }
-    /// <summary>
-    /// Gets or sets the optimal work group size.
-    /// </summary>
-    /// <value>The optimal work group size.</value>
-    public int OptimalWorkGroupSize { get; set; } = 256;
-}
+        /// <summary>
+        /// Adaptive kernel configuration based on runtime analysis.
+        /// </summary>
+        public class AdaptiveKernelConfig
+        {
+            /// <summary>
+            /// Gets or sets the use sparse optimizations.
+            /// </summary>
+            /// <value>The use sparse optimizations.</value>
+            public bool UseSparseOptimizations { get; set; }
+            /// <summary>
+            /// Gets or sets the sparsity threshold.
+            /// </summary>
+            /// <value>The sparsity threshold.</value>
+            public float SparsityThreshold { get; set; }
+            /// <summary>
+            /// Gets or sets the use out of core algorithm.
+            /// </summary>
+            /// <value>The use out of core algorithm.</value>
+            public bool UseOutOfCoreAlgorithm { get; set; }
+            /// <summary>
+            /// Gets or sets the block size.
+            /// </summary>
+            /// <value>The block size.</value>
+            public int BlockSize { get; set; } = 64;
+            /// <summary>
+            /// Gets or sets the requires high precision.
+            /// </summary>
+            /// <value>The requires high precision.</value>
+            public bool RequiresHighPrecision { get; set; }
+            /// <summary>
+            /// Gets or sets the use mixed precision.
+            /// </summary>
+            /// <value>The use mixed precision.</value>
+            public bool UseMixedPrecision { get; set; }
+            /// <summary>
+            /// Gets or sets the optimal work group size.
+            /// </summary>
+            /// <value>The optimal work group size.</value>
+            public int OptimalWorkGroupSize { get; set; } = 256;
+        }
 
-#endregion
+        #endregion
 
-} // class LinearAlgebraKernels
+    } // class LinearAlgebraKernels
 
 } // namespace DotCompute.Algorithms

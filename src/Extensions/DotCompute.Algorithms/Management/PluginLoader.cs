@@ -10,10 +10,13 @@ using DotCompute.Algorithms.Management.Loading;
 using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Management.Services;
 using DotCompute.Algorithms.Abstractions;
-using DotCompute.Algorithms.Security;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
+using AuthenticodeValidator = DotCompute.Algorithms.Security.AuthenticodeValidator;
+using MalwareScanningService = DotCompute.Algorithms.Security.MalwareScanningService;
+using LoadedAssemblyInfo = DotCompute.Algorithms.Management.Models.LoadedAssemblyInfo;
 
 namespace DotCompute.Algorithms.Management
 {

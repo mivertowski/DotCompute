@@ -454,6 +454,7 @@ namespace DotCompute.Plugins.Platform
 
 
 
+
             => 2L * 1024 * 1024 * 1024; // 2GB default
 
         private static long EstimateOpenClMemory()

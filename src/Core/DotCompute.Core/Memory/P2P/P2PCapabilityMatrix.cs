@@ -584,10 +584,12 @@ namespace DotCompute.Core.Memory.P2P
 
 
 
+
             => true;
 
         private static DateTimeOffset GetCapabilityTimestamp(P2PConnectionCapability capability)
             // Placeholder - would return actual timestamp in real implementation - TODO
+
 
 
 
@@ -818,10 +820,12 @@ namespace DotCompute.Core.Memory.P2P
 
 
 
+
             => 0;
 
         private static double CalculateCacheHitRatio()
             // Placeholder - would track cache hits/misses in real implementation - TODO
+
 
 
 

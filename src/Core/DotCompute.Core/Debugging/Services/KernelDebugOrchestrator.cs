@@ -1070,6 +1070,7 @@ public sealed partial class KernelDebugOrchestrator : IKernelDebugService, IDisp
     /// </summary>
     private static long GetBackendMaxMemory(IAccelerator accelerator)
         // Default implementation - could be enhanced with accelerator-specific queries
+
         => Environment.WorkingSet; // Fallback to current working set
 
     /// <summary>

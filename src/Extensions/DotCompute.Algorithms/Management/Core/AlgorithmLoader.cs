@@ -286,4 +286,5 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
 }
 
 // LoadedPluginInfo moved to dedicated file: Management/Info/LoadedPluginInfo.cs
+
 // PluginAssemblyLoadContext class moved to dedicated file: Management/Loading/PluginAssemblyLoadContext.cs

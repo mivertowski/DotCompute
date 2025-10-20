@@ -97,6 +97,7 @@ internal static class NeonOperationHelpers
 
 
 
+
         => AdvSimd.FusedMultiplyAdd(c, a, b);
 
     /// <summary>

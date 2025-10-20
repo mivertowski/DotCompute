@@ -565,6 +565,7 @@ public class KernelExecutionService(
     private double GetAcceleratorLoad(IAccelerator accelerator)
         // Placeholder - would integrate with performance monitoring
         // to get actual load metrics
+
         => 0.0;
     /// <summary>
     /// Performs dispose.
@@ -846,6 +847,7 @@ internal class MockUnifiedBuffer<T>(T[] data) : IUnifiedMemoryBuffer where T : u
     /// <returns>The result of the operation.</returns>
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
+
 
 
 

@@ -270,6 +270,7 @@ extern ""C"" __global__ void matmul_with_spilling(float* output, int size)
 
     public void Dispose()
         // Factory will dispose of created accelerators
+
         => _factory?.Dispose();
     /// <summary>
     /// A class that represents x unit logger.

@@ -627,6 +627,7 @@ namespace DotCompute.Core.Pipelines
         private static bool CompareResults(object result1, object result2)
             // In a real implementation, this would perform deep comparison of results
             // For now, just compare hash codes
+
             => result1?.GetHashCode() == result2?.GetHashCode();
 
         private static async Task<(double SpeedupFactor, double MemoryReduction, TimeSpan OptimizationTime)> EstimateOptimizationTypeImpactAsync(

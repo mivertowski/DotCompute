@@ -209,7 +209,8 @@ public class PipelineErrorTests : PipelineTestBase
         // Act
         Exception? caughtException = null;
         KernelChainExecutionResult? result = null;
-        
+
+
         try
         {
             result = await builder
@@ -498,6 +499,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         _mockOrchestrator.RegisterMockKernel("BackendSpecificFailure", args =>
             // Simulate CUDA-specific failure
+
             throw new InvalidOperationException("CUDA kernel compilation failed"));
 
         // Long running kernel
@@ -516,6 +518,7 @@ public class PipelineErrorTests : PipelineTestBase
 
         _mockOrchestrator.RegisterMockKernel("PartialFailingKernel", args =>
             // Simulate partial processing failure
+
             throw new InvalidOperationException("Partial processing error"));
 
         // Multiple error kernels

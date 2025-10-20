@@ -219,6 +219,7 @@ public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfi
         LastStateChange = DateTimeOffset.UtcNow;
     }
 
+
     /// <summary>
     /// Gets a summary of the circuit state
     /// </summary>
@@ -325,6 +326,7 @@ public partial class ServiceCircuitState(string serviceName, CircuitBreakerConfi
 
     public void Dispose()
         // Clean up any resources if needed
+
 
 
 

@@ -1172,6 +1172,7 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
 
     public bool CanReturnToPool(IUnifiedMemoryBuffer buffer)
         // Simplified check - in production would validate buffer size, age, etc.
+
         => buffer != null && !_disposed;
     /// <summary>
     /// Performs return to pool.

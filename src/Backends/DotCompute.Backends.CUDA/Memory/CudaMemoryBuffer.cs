@@ -742,6 +742,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
 
+
             => throw new NotSupportedException("CUDA buffers are device-only. Use CopyToHost for host access.");
 
         /// <inheritdoc/>
@@ -756,6 +757,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <inheritdoc/>
         public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
             // Already on device
+
 
 
 

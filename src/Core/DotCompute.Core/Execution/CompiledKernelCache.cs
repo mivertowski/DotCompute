@@ -337,6 +337,7 @@ namespace DotCompute.Core.Execution
 
 
 
+
             => $"{device.Info.DeviceType}_{device.Info.Id}";
 
         private static string GetDeviceKeyFromMetadata(KernelMetadata metadata) => $"{metadata.DeviceType}_{metadata.DeviceId}";

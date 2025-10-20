@@ -81,6 +81,7 @@ public sealed class PerformanceProfiler : IDisposable
 #endif
 
 
+
     public PerformanceProfiler(ILogger<PerformanceProfiler> logger, IOptions<PerformanceProfilerOptions> options)
     {
         ArgumentNullException.ThrowIfNull(logger);

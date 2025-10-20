@@ -541,4 +541,5 @@ public sealed class PluginSecurityException : Exception
 // - PluginHealthMonitor
 // Each with their own focused responsibilities and clean interfaces.
 
+
 #endregion

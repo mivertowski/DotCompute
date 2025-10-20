@@ -218,26 +218,31 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Simple CPU memory copy - both buffers are in CPU memory
+
         => CopyBufferToBufferAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyAsync<T>(IUnifiedMemoryBuffer<T> source, int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken)
         // Simple CPU memory copy with offsets
+
         => CopyBufferWithOffsetsAsync(source, sourceOffset, destination, destinationOffset, count, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyFromDeviceAsync<T>(IUnifiedMemoryBuffer<T> source, Memory<T> destination, CancellationToken cancellationToken)
         // Copy from CPU buffer to host memory - essentially a no-op since both are host memory
+
         => CopyFromCpuBufferToHostAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override ValueTask CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, IUnifiedMemoryBuffer<T> destination, CancellationToken cancellationToken)
         // Copy from host memory to CPU buffer - essentially a no-op since both are host memory
+
         => CopyFromHostToCpuBufferAsync(source, destination, cancellationToken);
 
     /// <inheritdoc/>
     public override IUnifiedMemoryBuffer<T> CreateView<T>(IUnifiedMemoryBuffer<T> buffer, int offset, int length)
         // Create typed view of the buffer
+
         => CreateTypedBufferView(buffer, offset, length);
 
     /// <inheritdoc/>
@@ -744,6 +749,7 @@ internal sealed class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, l
 
 
 
+
         => ValueTask.CompletedTask;
 
 }
@@ -872,6 +878,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     // Device Memory Access (CPU backend doesn't have separate device memory)
     public DeviceMemory GetDeviceMemory()
         // For CPU backend, device memory is the same as host memory
+
         => DeviceMemory.Invalid;
     /// <summary>
     /// Gets map.
