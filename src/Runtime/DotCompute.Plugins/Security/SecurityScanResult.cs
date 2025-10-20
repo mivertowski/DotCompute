@@ -79,5 +79,5 @@ public class SecurityScanResult
     /// <summary>
     /// Gets or sets the error messages from the scan.
     /// </summary>
-    public IList<string> ErrorMessages { get; } = [];
+    public IList<string> ErrorMessages { get; set; } = [];
 }

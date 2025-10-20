@@ -68,9 +68,6 @@ internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
     /// Event raised when the plugin's state changes.
     /// </summary>
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
-    /// <summary>
-    /// Occurs when error occurred.
-    /// </summary>
 
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     /// <summary>

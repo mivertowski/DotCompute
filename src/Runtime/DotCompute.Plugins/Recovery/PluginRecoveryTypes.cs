@@ -206,7 +206,7 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Required dependencies
         /// </summary>
-        public IList<string> RequiredDependencies { get; init; } = [];
+        public IList<string> RequiredDependencies { get; set; } = [];
 
         /// <summary>
         /// Missing dependencies
@@ -246,12 +246,12 @@ namespace DotCompute.Plugins.Recovery
         /// <summary>
         /// Gets or sets dependency conflicts
         /// </summary>
-        public IList<string> DependencyConflicts { get; } = [];
+        public IList<string> DependencyConflicts { get; set; } = [];
 
         /// <summary>
         /// Gets security issues
         /// </summary>
-        public IList<string> SecurityIssues { get; } = [];
+        public IList<string> SecurityIssues { get; set; } = [];
         /// <summary>
         /// Gets to string.
         /// </summary>
@@ -501,7 +501,12 @@ namespace DotCompute.Plugins.Recovery
             lock (_lock)
             {
                 var totalTime = DateTimeOffset.UtcNow - LastRestart;
-                if (totalTime.TotalMinutes < 1) return 100.0; // Not enough data
+                if (totalTime.TotalMinutes < 1)
+                {
+
+                    return 100.0; // Not enough data
+                }
+
 
                 var errorTime = TimeSpan.FromMinutes(ConsecutiveFailures);
                 var uptime = totalTime - errorTime;
@@ -769,6 +774,4 @@ namespace DotCompute.Plugins.Recovery
 
         public override string ToString() => GetSummary();
     }
-
-
 }

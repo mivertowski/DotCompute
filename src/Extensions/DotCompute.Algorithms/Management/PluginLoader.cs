@@ -859,7 +859,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
 
             // Unload all assemblies
             var unloadTasks = _loadedAssemblies.Keys.Select(UnloadAssemblyAsync);
-                _ = await Task.WhenAll(unloadTasks).ConfigureAwait(false);
+            _ = await Task.WhenAll(unloadTasks).ConfigureAwait(false);
 
             _loadedAssemblies.Clear();
             _loadContexts.Clear();

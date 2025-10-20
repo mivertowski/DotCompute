@@ -92,7 +92,7 @@ public class IsolatedPluginLoadContext(
         _logger.LogDebugMessage("Loading unmanaged DLL: {unmanagedDllName}");
 
         // Check if unmanaged DLL loading is allowed
-        if (!_permissions.AllowedPermissions.Contains("LoadNativeDll", StringComparison.Ordinal))
+        if (!_permissions.AllowedPermissions.Any(p => p.Equals("LoadNativeDll", StringComparison.Ordinal)))
         {
             _logger.LogWarningMessage("Unmanaged DLL load denied: {unmanagedDllName}");
             throw new SecurityException($"Unmanaged DLL load denied: {unmanagedDllName}");
@@ -145,14 +145,14 @@ public class IsolatedPluginLoadContext(
         {
             // Only allow if explicitly permitted
             return _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-                   _permissions.AllowedPermissions.Contains("LoadDangerousAssemblies", StringComparison.Ordinal);
+                   _permissions.AllowedPermissions.Any(p => p.Equals("LoadDangerousAssemblies", StringComparison.Ordinal));
         }
 
         // Allow system assemblies and explicitly allowed assemblies
         return IsSystemAssembly(assemblyName) ||
 
                _permissions.AllowedPermissions.Contains($"Assembly:{name}") ||
-               _permissions.AllowedPermissions.Contains("LoadAllAssemblies", StringComparison.Ordinal);
+               _permissions.AllowedPermissions.Any(p => p.Equals("LoadAllAssemblies", StringComparison.Ordinal));
     }
 
     /// <summary>

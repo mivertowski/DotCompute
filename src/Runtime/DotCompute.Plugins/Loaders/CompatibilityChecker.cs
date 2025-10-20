@@ -165,7 +165,7 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
                 result.CompatibilityWarnings.Add($"Plugin may not support current architecture: {currentArch}");
             }
 
-            result.PlatformCompatibility.SupportedPlatforms = manifest.SupportedPlatforms;
+            result.PlatformCompatibility.SupportedPlatforms = manifest.SupportedPlatforms?.ToList();
         }
 
         // Check for platform-specific features
@@ -576,7 +576,10 @@ public class CompatibilityChecker(ILogger logger, CompatibilitySettings settings
 
         // Check if dependency has known compatibility issues
         var knownIssues = GetKnownCompatibilityIssues(dependency.Id, dependency.VersionRange);
-        info.Issues.AddRange(knownIssues);
+        foreach (var issue in knownIssues)
+        {
+            info.Issues.Add(issue);
+        }
         info.IsCompatible = knownIssues.Count == 0;
 
         return info;

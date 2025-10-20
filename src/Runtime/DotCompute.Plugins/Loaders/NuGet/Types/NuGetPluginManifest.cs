@@ -69,7 +69,7 @@ public class NuGetPluginManifest
     /// Gets or sets the list of dependencies.
     /// Other packages required by this plugin.
     /// </summary>
-    public IList<NuGetPackageDependency> Dependencies { get; } = [];
+    public IList<NuGetPackageDependency> Dependencies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the supported platforms.
