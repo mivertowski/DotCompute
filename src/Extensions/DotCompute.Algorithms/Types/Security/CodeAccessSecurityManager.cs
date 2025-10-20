@@ -206,7 +206,7 @@ namespace DotCompute.Algorithms.Types.Security
 
         #region Permission Set Creation Methods
 
-        private void AddLocalMachinePermissions(PermissionSet permissionSet)
+        private static void AddLocalMachinePermissions(PermissionSet permissionSet)
         {
             // Full trust for local machine zone
             permissionSet.SetPermission(new FileIOPermission(PermissionState.Unrestricted));
@@ -232,17 +232,17 @@ namespace DotCompute.Algorithms.Types.Security
             permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
         }
 
-        private void AddInternetPermissions(PermissionSet permissionSet)
+        private static void AddInternetPermissions(PermissionSet permissionSet)
             // Low trust for internet zone
 
             => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
 
-        private void AddRestrictedSitesPermissions(PermissionSet permissionSet)
+        private static void AddRestrictedSitesPermissions(PermissionSet permissionSet)
             // Minimal trust for restricted sites
 
             => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
 
-        private void AddMinimalPermissions(PermissionSet permissionSet)
+        private static void AddMinimalPermissions(PermissionSet permissionSet)
             // Bare minimum permissions
 
             => permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));

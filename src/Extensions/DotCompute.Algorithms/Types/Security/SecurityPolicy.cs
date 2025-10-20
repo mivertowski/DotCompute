@@ -239,37 +239,37 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
-        if (root.TryGetProperty("RequireDigitalSignature", out var reqDigSig))
+        if (root.TryGetProperty(nameof(RequireDigitalSignature), out var reqDigSig))
         {
             RequireDigitalSignature = reqDigSig.GetBoolean();
         }
 
-        if (root.TryGetProperty("RequireStrongName", out var reqStrongName))
+        if (root.TryGetProperty(nameof(RequireStrongName), out var reqStrongName))
         {
             RequireStrongName = reqStrongName.GetBoolean();
         }
 
-        if (root.TryGetProperty("MinimumSecurityLevel", out var minLevel))
+        if (root.TryGetProperty(nameof(MinimumSecurityLevel), out var minLevel))
         {
             MinimumSecurityLevel = Enum.Parse<SecurityLevel>(minLevel.GetString()!);
         }
 
-        if (root.TryGetProperty("EnableMetadataAnalysis", out var enableMeta))
+        if (root.TryGetProperty(nameof(EnableMetadataAnalysis), out var enableMeta))
         {
             EnableMetadataAnalysis = enableMeta.GetBoolean();
         }
 
-        if (root.TryGetProperty("EnableMalwareScanning", out var enableMalware))
+        if (root.TryGetProperty(nameof(EnableMalwareScanning), out var enableMalware))
         {
             EnableMalwareScanning = enableMalware.GetBoolean();
         }
 
-        if (root.TryGetProperty("MaxAssemblySize", out var maxSize))
+        if (root.TryGetProperty(nameof(MaxAssemblySize), out var maxSize))
         {
             MaxAssemblySize = maxSize.GetInt64();
         }
 
-        if (root.TryGetProperty("DirectoryPolicies", out var dirPolicies))
+        if (root.TryGetProperty(nameof(DirectoryPolicies), out var dirPolicies))
         {
             DirectoryPolicies.Clear();
             foreach (var prop in dirPolicies.EnumerateObject())
@@ -278,7 +278,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             }
         }
 
-        if (root.TryGetProperty("TrustedPublishers", out var publishers))
+        if (root.TryGetProperty(nameof(TrustedPublishers), out var publishers))
         {
             _trustedPublishers.Clear();
             foreach (var publisher in publishers.EnumerateArray())

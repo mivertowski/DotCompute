@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Abstractions;
@@ -85,7 +86,7 @@ namespace DotCompute.Algorithms.Plugins
         public override string Description => "Performs element-wise addition of two vectors of equal length with GPU acceleration.";
 
         /// <inheritdoc/>
-        public override AcceleratorType[] SupportedAcceleratorTypes => [
+        public override ImmutableArray<AcceleratorType> SupportedAcceleratorTypes => [
             AcceleratorType.CPU,
         AcceleratorType.CUDA,
         AcceleratorType.ROCm,
@@ -101,7 +102,7 @@ namespace DotCompute.Algorithms.Plugins
         ];
 
         /// <inheritdoc/>
-        public override Type[] InputTypes => [typeof(float[]), typeof(float[])];
+        public override ImmutableArray<Type> InputTypes => [typeof(float[]), typeof(float[])];
 
         /// <inheritdoc/>
         public override Type OutputType => typeof(float[]);

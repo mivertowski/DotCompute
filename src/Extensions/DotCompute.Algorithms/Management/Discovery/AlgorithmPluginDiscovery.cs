@@ -329,7 +329,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
     /// </summary>
     private static bool IsSystemAssembly(string assemblyPath)
     {
-        var fileName = Path.GetFileName(assemblyPath).ToLowerInvariant();
+        var fileName = Path.GetFileName(assemblyPath).ToUpperInvariant();
         return fileName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
                fileName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
                fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||

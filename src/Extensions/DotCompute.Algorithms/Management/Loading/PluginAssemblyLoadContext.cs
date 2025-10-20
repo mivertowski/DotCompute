@@ -86,7 +86,7 @@ public sealed class PluginAssemblyLoadContext(string name, string pluginPath, bo
     /// <returns>True if the assembly is a system assembly, false otherwise.</returns>
     private static bool IsSystemAssembly(AssemblyName assemblyName)
     {
-        var name = assemblyName.Name?.ToLowerInvariant();
+        var name = assemblyName.Name?.ToUpperInvariant();
         return name != null && (
             name.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
             name.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||

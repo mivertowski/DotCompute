@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -28,49 +29,49 @@ public static class PerformanceBenchmarks
     public readonly struct BenchmarkResult
     {
         /// <summary>
-        /// The name.
+        /// Gets the benchmark name.
         /// </summary>
-        public readonly string Name;
+        public string Name { get; }
         /// <summary>
-        /// The min time.
+        /// Gets the minimum time.
         /// </summary>
-        public readonly TimeSpan MinTime;
+        public TimeSpan MinTime { get; }
         /// <summary>
-        /// The max time.
+        /// Gets the maximum time.
         /// </summary>
-        public readonly TimeSpan MaxTime;
+        public TimeSpan MaxTime { get; }
         /// <summary>
-        /// The mean time.
+        /// Gets the mean time.
         /// </summary>
-        public readonly TimeSpan MeanTime;
+        public TimeSpan MeanTime { get; }
         /// <summary>
-        /// The median time.
+        /// Gets the median time.
         /// </summary>
-        public readonly TimeSpan MedianTime;
+        public TimeSpan MedianTime { get; }
         /// <summary>
-        /// The standard deviation.
+        /// Gets the standard deviation.
         /// </summary>
-        public readonly double StandardDeviation;
+        public double StandardDeviation { get; }
         /// <summary>
-        /// The throughput m f l o p s.
+        /// Gets the throughput in MFLOPS.
         /// </summary>
-        public readonly double ThroughputMFLOPS;
+        public double ThroughputMFLOPS { get; }
         /// <summary>
-        /// The throughput g bps.
+        /// Gets the throughput in GBps.
         /// </summary>
-        public readonly double ThroughputGBps;
+        public double ThroughputGBps { get; }
         /// <summary>
-        /// The speedup factor.
+        /// Gets the speedup factor.
         /// </summary>
-        public readonly double SpeedupFactor;
+        public double SpeedupFactor { get; }
         /// <summary>
-        /// The memory allocated.
+        /// Gets the memory allocated.
         /// </summary>
-        public readonly long MemoryAllocated;
+        public long MemoryAllocated { get; }
         /// <summary>
-        /// The is valid.
+        /// Gets a value indicating whether this result is valid.
         /// </summary>
-        public readonly bool IsValid;
+        public bool IsValid { get; }
         /// <summary>
         /// Initializes a new instance of the BenchmarkResult class.
         /// </summary>
@@ -176,14 +177,14 @@ public static class PerformanceBenchmarks
             var sb = new StringBuilder();
             _ = sb.AppendLine("DotCompute Algorithm Optimization Benchmark Report");
             _ = sb.AppendLine("=" + new string('=', 50));
-            _ = sb.AppendLine($"Timestamp: {Timestamp:yyyy-MM-dd HH:mm:ss UTC}");
-            _ = sb.AppendLine($"System: {SystemInfo}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Timestamp: {Timestamp:yyyy-MM-dd HH:mm:ss UTC}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"System: {SystemInfo}");
             _ = sb.AppendLine();
 
 
             _ = sb.AppendLine("Performance Results:");
             _ = sb.AppendLine("-" + new string('-', 50));
-            _ = sb.AppendFormat("{0,-30} {1,12} {2,12} {3,10} {4,12} {5,10}\n",
+            _ = sb.AppendFormat(CultureInfo.InvariantCulture, "{0,-30} {1,12} {2,12} {3,10} {4,12} {5,10}\n",
 
                 "Algorithm", "Time (ms)", "MFLOPS", "Speedup", "Memory (KB)", "Stable");
             _ = sb.AppendLine("-" + new string('-', 50));
@@ -191,7 +192,7 @@ public static class PerformanceBenchmarks
 
             foreach (var result in Results.OrderByDescending(r => r.SpeedupFactor))
             {
-                _ = sb.AppendFormat("{0,-30} {1,12:F3} {2,12:F1} {3,10:F2}x {4,12:F1} {5,10}\n",
+                _ = sb.AppendFormat(CultureInfo.InvariantCulture, "{0,-30} {1,12:F3} {2,12:F1} {3,10:F2}x {4,12:F1} {5,10}\n",
                     result.Name,
                     result.MeanTime.TotalMilliseconds,
                     result.ThroughputMFLOPS,
@@ -203,10 +204,10 @@ public static class PerformanceBenchmarks
 
             _ = sb.AppendLine();
             _ = sb.AppendLine("Summary:");
-            _ = sb.AppendLine($"Total benchmarks: {Results.Count}");
-            _ = sb.AppendLine($"Stable benchmarks: {Results.Count(r => r.IsStable)}");
-            _ = sb.AppendLine($"Maximum speedup: {Results.Max(r => r.SpeedupFactor):F2}x");
-            _ = sb.AppendLine($"Average speedup: {Results.Average(r => r.SpeedupFactor):F2}x");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Total benchmarks: {Results.Count}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Stable benchmarks: {Results.Count(r => r.IsStable)}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Maximum speedup: {Results.Max(r => r.SpeedupFactor):F2}x");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Average speedup: {Results.Average(r => r.SpeedupFactor):F2}x");
 
 
             return sb.ToString();

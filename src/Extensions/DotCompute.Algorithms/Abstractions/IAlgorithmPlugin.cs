@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types.Abstractions;
 
@@ -35,7 +36,7 @@ public interface IAlgorithmPlugin
     /// <summary>
     /// Gets the supported accelerator types for this algorithm.
     /// </summary>
-    public AcceleratorType[] SupportedAcceleratorTypes { get; }
+    public ImmutableArray<AcceleratorType> SupportedAcceleratorTypes { get; }
 
     /// <summary>
     /// Gets the list of operations supported by this plugin.
@@ -46,7 +47,7 @@ public interface IAlgorithmPlugin
     /// <summary>
     /// Gets the input data types supported by this algorithm.
     /// </summary>
-    public Type[] InputTypes { get; }
+    public ImmutableArray<Type> InputTypes { get; }
 
     /// <summary>
     /// Gets the output data type produced by this algorithm.

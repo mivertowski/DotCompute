@@ -189,7 +189,7 @@ namespace DotCompute.Algorithms.Management
         private static string GetAssemblyPathFromFile(string filePath)
         {
             // If this is a .pdb or .json file, find the corresponding assembly
-            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            var extension = Path.GetExtension(filePath).ToUpperInvariant();
             if (extension is ".pdb" or ".json")
             {
                 var assemblyPath = Path.ChangeExtension(filePath, ".dll");
@@ -218,7 +218,7 @@ namespace DotCompute.Algorithms.Management
         /// <returns>True if the assembly is a system assembly; otherwise, false.</returns>
         public static bool IsSystemAssembly(string assemblyPath)
         {
-            var fileName = Path.GetFileName(assemblyPath).ToLowerInvariant();
+            var fileName = Path.GetFileName(assemblyPath).ToUpperInvariant();
             return fileName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
                    fileName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
                    fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||

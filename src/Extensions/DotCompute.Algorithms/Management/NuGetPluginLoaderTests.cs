@@ -620,7 +620,7 @@ namespace DotCompute.Algorithms.Management
         [LoggerMessage(Level = LogLevel.Warning, Message = "Update failed (expected for local packages): {ErrorMessage}")]
         private partial void LogUpdateFailed(Exception ex, string errorMessage);
 
-        [LoggerMessage(Level = LogLevel.Error, Message = "ERROR: Should have thrown {ExpectedException}")]
+        [LoggerMessage(Level = LogLevel.Error, Message = "Should have thrown {ExpectedException}")]
         private partial void LogShouldHaveThrown(string expectedException);
 
         [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to clean up test directory: {TestDirectory}")]

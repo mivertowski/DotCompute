@@ -171,7 +171,7 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
 
         // Check for specific error messages or types that indicate transient errors
 
-        var message = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        var message = ex.Message?.ToUpperInvariant() ?? string.Empty;
         if (message.Contains("timeout", StringComparison.CurrentCulture) || message.Contains("temporary", StringComparison.CurrentCulture) || message.Contains("transient"))
         {
             return true;

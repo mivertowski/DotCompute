@@ -370,7 +370,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
             OverallSuccessRate = allMetrics.Sum(m => m.TotalExecutions) > 0
                 ? allMetrics.Sum(m => m.SuccessfulExecutions) / (double)allMetrics.Sum(m => m.TotalExecutions)
                 : 0,
-            AverageExecutionTime = allMetrics.Any()
+            AverageExecutionTime = allMetrics.Count > 0
                 ? TimeSpan.FromTicks((long)allMetrics.Average(m => m.AverageExecutionTime.Ticks))
                 : TimeSpan.Zero,
             TotalMemoryAllocated = allMetrics.Sum(m => m.TotalMemoryAllocated),
@@ -403,7 +403,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
                 .Where(e => e.Timestamp >= cutoffTime)
                 .ToList();
 
-            if (!recentExecutions.Any())
+            if (recentExecutions.Count == 0)
             {
                 return new PluginPerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Unknown };
             }
@@ -412,7 +412,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
             var firstHalf = recentExecutions.Take(recentExecutions.Count / 2).ToList();
             var secondHalf = recentExecutions.Skip(recentExecutions.Count / 2).ToList();
 
-            if (!firstHalf.Any() || !secondHalf.Any())
+            if (firstHalf.Count == 0 || secondHalf.Count == 0)
             {
                 return new PluginPerformanceTrend { PluginId = pluginId, TrendDirection = TrendDirection.Stable };
             }
@@ -514,7 +514,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
     private static double CalculateRecentErrorRate(PluginMetricsData metricsData)
     {
         var recentExecutions = metricsData.RecentExecutions.TakeLast(50).ToList();
-        if (!recentExecutions.Any())
+        if (recentExecutions.Count == 0)
         {
             return 0;
         }

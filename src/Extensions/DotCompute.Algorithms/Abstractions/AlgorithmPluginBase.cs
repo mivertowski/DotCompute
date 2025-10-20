@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Types.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -34,13 +35,13 @@ public abstract partial class AlgorithmPluginBase(ILogger logger) : IAlgorithmPl
     public abstract string Description { get; }
 
     /// <inheritdoc/>
-    public abstract AcceleratorType[] SupportedAcceleratorTypes { get; }
+    public abstract ImmutableArray<AcceleratorType> SupportedAcceleratorTypes { get; }
 
     /// <inheritdoc/>
     public abstract IReadOnlyList<string> SupportedOperations { get; }
 
     /// <inheritdoc/>
-    public abstract Type[] InputTypes { get; }
+    public abstract ImmutableArray<Type> InputTypes { get; }
 
     /// <inheritdoc/>
     public abstract Type OutputType { get; }

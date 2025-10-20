@@ -244,7 +244,7 @@ namespace DotCompute.Algorithms.Management
             ArgumentNullException.ThrowIfNull(identity);
             ArgumentException.ThrowIfNullOrWhiteSpace(targetFramework);
 
-            return $"{identity.Id}_{identity.Version}_{targetFramework}".ToLowerInvariant();
+            return $"{identity.Id}_{identity.Version}_{targetFramework}".ToUpperInvariant();
         }
         /// <summary>
         /// Performs dispose.

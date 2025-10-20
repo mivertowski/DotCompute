@@ -22,24 +22,23 @@ public class ConvolutionOperations : IDisposable
     /// </summary>
     public static float[] Convolve1D(float[] signal, float[] kernel)
         // Placeholder implementation
-
-
-
-
-
         => new float[signal.Length];
 
     /// <summary>
     /// Perform 2D convolution.
     /// </summary>
-    public static float[,] Convolve2D(float[,] image, float[,] kernel)
+    public static float[][] Convolve2D(float[][] image, float[][] kernel)
+    {
         // Placeholder implementation
-
-
-
-
-
-        => new float[image.GetLength(0), image.GetLength(1)];
+        var rows = image.Length;
+        var cols = image[0].Length;
+        var result = new float[rows][];
+        for (var i = 0; i < rows; i++)
+        {
+            result[i] = new float[cols];
+        }
+        return result;
+    }
 
     /// <summary>
     /// Disposes the convolution operations.
@@ -63,22 +62,21 @@ public static class StaticConvolutionOperations
     /// </summary>
     public static float[] Convolve1D(float[] signal, float[] kernel)
         // Placeholder implementation
-
-
-
-
-
         => new float[signal.Length];
 
     /// <summary>
     /// Perform 2D convolution.
     /// </summary>
-    public static float[,] Convolve2D(float[,] image, float[,] kernel)
+    public static float[][] Convolve2D(float[][] image, float[][] kernel)
+    {
         // Placeholder implementation
-
-
-
-
-
-        => new float[image.GetLength(0), image.GetLength(1)];
+        var rows = image.Length;
+        var cols = image[0].Length;
+        var result = new float[rows][];
+        for (var i = 0; i < rows; i++)
+        {
+            result[i] = new float[cols];
+        }
+        return result;
+    }
 }

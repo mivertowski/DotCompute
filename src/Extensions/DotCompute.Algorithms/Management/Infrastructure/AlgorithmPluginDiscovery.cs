@@ -223,7 +223,7 @@ public sealed partial class AlgorithmPluginDiscovery(
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
-        var extension = Path.GetExtension(filePath).ToLowerInvariant();
+        var extension = Path.GetExtension(filePath).ToUpperInvariant();
         return (extension == ".dll" || extension == ".exe") && !IsSystemAssembly(filePath);
     }
 
@@ -458,7 +458,7 @@ public sealed partial class AlgorithmPluginDiscovery(
     /// </summary>
     private static bool IsSystemAssembly(string assemblyPath)
     {
-        var fileName = Path.GetFileName(assemblyPath).ToLowerInvariant();
+        var fileName = Path.GetFileName(assemblyPath).ToUpperInvariant();
         return fileName.StartsWith("system.", StringComparison.OrdinalIgnoreCase) ||
                fileName.StartsWith("microsoft.", StringComparison.OrdinalIgnoreCase) ||
                fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||

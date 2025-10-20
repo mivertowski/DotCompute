@@ -87,18 +87,22 @@ public static class AdvancedIntegration
             return TrapezoidalRule(functionValues, a, b);
         }
 
-        // Create Romberg table
-        var R = new float[maxLevels, maxLevels];
+        // Create Romberg table (jagged array for better performance)
+        var R = new float[maxLevels][];
+        for (var i = 0; i < maxLevels; i++)
+        {
+            R[i] = new float[maxLevels];
+        }
 
         // First column: trapezoidal rule with increasing refinement
-        R[0, 0] = TrapezoidalRule(functionValues, a, b);
+        R[0][0] = TrapezoidalRule(functionValues, a, b);
 
         for (var i = 1; i < maxLevels && (1 << i) < n; i++)
         {
             // Use subset of points for coarser approximations
             var step = 1 << i;
             var subset = functionValues.Where((_, idx) => idx % step == 0).ToArray();
-            R[i, 0] = TrapezoidalRule(subset, a, b);
+            R[i][0] = TrapezoidalRule(subset, a, b);
         }
 
         // Fill Romberg table with Richardson extrapolation
@@ -107,12 +111,12 @@ public static class AdvancedIntegration
             for (var i = j; i < maxLevels; i++)
             {
                 var powerOf4 = 1 << (2 * j); // 4^j
-                R[i, j] = (powerOf4 * R[i, j - 1] - R[i - 1, j - 1]) / (powerOf4 - 1);
+                R[i][j] = (powerOf4 * R[i][j - 1] - R[i - 1][j - 1]) / (powerOf4 - 1);
             }
         }
 
         // Return the most accurate estimate
-        return R[maxLevels - 1, maxLevels - 1];
+        return R[maxLevels - 1][maxLevels - 1];
     }
 
     /// <summary>

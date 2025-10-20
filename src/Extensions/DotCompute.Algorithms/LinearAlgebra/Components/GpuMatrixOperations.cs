@@ -126,7 +126,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="hardware">Hardware information.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Q and R matrices.</returns>
-        public async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public static async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
         {
             var m = matrix.Rows;
             var n = matrix.Columns;
@@ -240,7 +240,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="hardware">Hardware information.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>U, S, and VT matrices.</returns>
-        public async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public static async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
         {
             var m = matrix.Rows;
             var n = matrix.Columns;

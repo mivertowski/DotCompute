@@ -134,9 +134,9 @@ public sealed class AutoTuner : IDisposable
         {
             if (ParameterType == typeof(int))
             {
-                var min = Convert.ToInt32(MinValue);
-                var max = Convert.ToInt32(MaxValue);
-                var step = Convert.ToInt32(StepSize);
+                var min = Convert.ToInt32(MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToInt32(MaxValue, CultureInfo.InvariantCulture);
+                var step = Convert.ToInt32(StepSize, CultureInfo.InvariantCulture);
 
 
                 for (var value = min; value <= max; value += step)
@@ -146,9 +146,9 @@ public sealed class AutoTuner : IDisposable
             }
             else if (ParameterType == typeof(double))
             {
-                var min = Convert.ToDouble(MinValue);
-                var max = Convert.ToDouble(MaxValue);
-                var step = Convert.ToDouble(StepSize);
+                var min = Convert.ToDouble(MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToDouble(MaxValue, CultureInfo.InvariantCulture);
+                var step = Convert.ToDouble(StepSize, CultureInfo.InvariantCulture);
 
 
                 for (var value = min; value <= max; value += step)
@@ -173,25 +173,25 @@ public sealed class AutoTuner : IDisposable
         double performance, TimeSpan executionTime, double standardDeviation)
     {
         /// <summary>
-        /// The parameters.
+        /// Gets the parameters.
         /// </summary>
-        public readonly Dictionary<string, object> Parameters = parameters;
+        public Dictionary<string, object> Parameters { get; } = parameters;
         /// <summary>
-        /// The performance.
+        /// Gets the performance.
         /// </summary>
-        public readonly double Performance = performance;
+        public double Performance { get; } = performance;
         /// <summary>
-        /// The execution time.
+        /// Gets the execution time.
         /// </summary>
-        public readonly TimeSpan ExecutionTime = executionTime;
+        public TimeSpan ExecutionTime { get; } = executionTime;
         /// <summary>
-        /// The standard deviation.
+        /// Gets the standard deviation.
         /// </summary>
-        public readonly double StandardDeviation = standardDeviation;
+        public double StandardDeviation { get; } = standardDeviation;
         /// <summary>
-        /// The is valid.
+        /// Gets a value indicating whether this measurement is valid.
         /// </summary>
-        public readonly bool IsValid = performance > 0 && !double.IsNaN(performance);
+        public bool IsValid { get; } = performance > 0 && !double.IsNaN(performance);
     }
 
 
@@ -367,14 +367,14 @@ public sealed class AutoTuner : IDisposable
         {
             if (range.ParameterType == typeof(int))
             {
-                var min = Convert.ToInt32(range.MinValue);
-                var max = Convert.ToInt32(range.MaxValue);
+                var min = Convert.ToInt32(range.MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToInt32(range.MaxValue, CultureInfo.InvariantCulture);
                 return _random.Next(min, max + 1);
             }
             else if (range.ParameterType == typeof(double))
             {
-                var min = Convert.ToDouble(range.MinValue);
-                var max = Convert.ToDouble(range.MaxValue);
+                var min = Convert.ToDouble(range.MinValue, CultureInfo.InvariantCulture);
+                var max = Convert.ToDouble(range.MaxValue, CultureInfo.InvariantCulture);
                 return min + _random.NextDouble() * (max - min);
             }
             else if (range.ParameterType == typeof(bool))
@@ -469,22 +469,22 @@ public sealed class AutoTuner : IDisposable
         {
             if (range.ParameterType == typeof(int))
             {
-                var value = Convert.ToInt32(current);
-                var step = Convert.ToInt32(range.StepSize);
+                var value = Convert.ToInt32(current, CultureInfo.InvariantCulture);
+                var step = Convert.ToInt32(range.StepSize, CultureInfo.InvariantCulture);
                 var perturbation = _random.Next(-2 * step, 2 * step + 1);
                 var newValue = Math.Clamp(value + perturbation,
 
-                    Convert.ToInt32(range.MinValue), Convert.ToInt32(range.MaxValue));
+                    Convert.ToInt32(range.MinValue, CultureInfo.InvariantCulture), Convert.ToInt32(range.MaxValue, CultureInfo.InvariantCulture));
                 return newValue;
             }
             else if (range.ParameterType == typeof(double))
             {
-                var value = Convert.ToDouble(current);
-                var step = Convert.ToDouble(range.StepSize);
+                var value = Convert.ToDouble(current, CultureInfo.InvariantCulture);
+                var step = Convert.ToDouble(range.StepSize, CultureInfo.InvariantCulture);
                 var perturbation = (_random.NextDouble() - 0.5) * 4 * step;
                 var newValue = Math.Clamp(value + perturbation,
 
-                    Convert.ToDouble(range.MinValue), Convert.ToDouble(range.MaxValue));
+                    Convert.ToDouble(range.MinValue, CultureInfo.InvariantCulture), Convert.ToDouble(range.MaxValue, CultureInfo.InvariantCulture));
                 return newValue;
             }
 
@@ -549,11 +549,11 @@ public sealed class AutoTuner : IDisposable
         _profiles[algorithmName] = profile;
 
 
-        _optimizers[algorithmName] = optimizer.ToLowerInvariant() switch
+        _optimizers[algorithmName] = optimizer.ToUpperInvariant() switch
         {
-            "grid" => new GridSearchOptimizer(),
-            "random" => new RandomSearchOptimizer(),
-            "bayesian" => new BayesianOptimizer(),
+            "GRID" => new GridSearchOptimizer(),
+            "RANDOM" => new RandomSearchOptimizer(),
+            "BAYESIAN" => new BayesianOptimizer(),
             _ => new BayesianOptimizer()
         };
 
@@ -631,7 +631,7 @@ public sealed class AutoTuner : IDisposable
         finalProfile.TuningIterations = iteration;
         finalProfile.PerformanceHistory = measurements
             .Select((m, i) => new { Index = i, Performance = m.Performance })
-            .ToDictionary(x => x.Index.ToString(), x => x.Performance);
+            .ToDictionary(x => x.Index.ToString(CultureInfo.InvariantCulture), x => x.Performance);
 
 
         SaveConfiguration();
@@ -923,7 +923,7 @@ public sealed class AutoTuner : IDisposable
         // Create a fingerprint based on hardware characteristics
         var features = new[]
         {
-            Environment.ProcessorCount.ToString(),
+            Environment.ProcessorCount.ToString(CultureInfo.InvariantCulture),
             SimdIntrinsics.HasAvx2.ToString(),
             SimdIntrinsics.HasFma.ToString(),
             SimdIntrinsics.HasNeon.ToString(),

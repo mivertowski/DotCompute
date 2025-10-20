@@ -37,7 +37,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="accelerator">GPU accelerator.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Solution vector.</returns>
-        public async Task<Matrix> SolveLUAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken = default)
+        public static async Task<Matrix> SolveLUAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken = default)
         {
             try
             {

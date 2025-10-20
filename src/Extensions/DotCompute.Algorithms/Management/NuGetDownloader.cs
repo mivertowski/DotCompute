@@ -265,7 +265,7 @@ namespace DotCompute.Algorithms.Management
             using var sha256 = SHA256.Create();
 
             var hashBytes = await sha256.ComputeHashAsync(stream);
-            return Convert.ToHexString(hashBytes).ToLowerInvariant();
+            return Convert.ToHexString(hashBytes).ToUpperInvariant();
         }
 
         /// <summary>

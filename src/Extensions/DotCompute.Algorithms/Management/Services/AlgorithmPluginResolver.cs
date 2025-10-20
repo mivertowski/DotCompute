@@ -44,7 +44,7 @@ public sealed partial class AlgorithmPluginResolver(
 
         // Get all healthy plugins
         var candidates = _registry.GetHealthyPlugins().ToList();
-        if (!candidates.Any())
+        if (candidates.Count == 0)
         {
             LogNoHealthyPluginsAvailable();
             return null;
@@ -52,7 +52,7 @@ public sealed partial class AlgorithmPluginResolver(
 
         // Apply filtering based on requirements
         candidates = ApplyRequirementFilters(candidates, requirements);
-        if (!candidates.Any())
+        if (candidates.Count == 0)
         {
             LogNoPluginsMatchRequirements();
             return null;
@@ -83,7 +83,7 @@ public sealed partial class AlgorithmPluginResolver(
         LogResolvingMultiplePlugins(maxResults);
 
         var candidates = _registry.GetHealthyPlugins().ToList();
-        if (!candidates.Any())
+        if (candidates.Count == 0)
         {
             return [];
         }

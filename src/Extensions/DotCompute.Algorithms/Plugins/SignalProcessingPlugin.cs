@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.SignalProcessing;
@@ -33,7 +34,7 @@ namespace DotCompute.Algorithms.Plugins
         public override string Description => "Provides digital signal processing operations including filtering, convolution, and spectral analysis.";
 
         /// <inheritdoc/>
-        public override AcceleratorType[] SupportedAcceleratorTypes => [
+        public override ImmutableArray<AcceleratorType> SupportedAcceleratorTypes => [
             AcceleratorType.CPU,
         AcceleratorType.CUDA,
         AcceleratorType.ROCm
@@ -54,7 +55,7 @@ namespace DotCompute.Algorithms.Plugins
         ];
 
         /// <inheritdoc/>
-        public override Type[] InputTypes => [typeof(string), typeof(object)];
+        public override ImmutableArray<Type> InputTypes => [typeof(string), typeof(object)];
 
         /// <inheritdoc/>
         public override Type OutputType => typeof(object);
