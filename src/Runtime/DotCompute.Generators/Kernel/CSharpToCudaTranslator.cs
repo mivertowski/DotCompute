@@ -342,9 +342,9 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
                 TranslateAssignment(assignment);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _output.Append('(');
+                _ = _output.Append('(');
                 TranslateExpression(parenthesized.Expression);
-                _output.Append(')');
+                _ = _output.Append(')');
                 break;
             case PostfixUnaryExpressionSyntax postfix:
                 TranslateExpression(postfix.Operand);

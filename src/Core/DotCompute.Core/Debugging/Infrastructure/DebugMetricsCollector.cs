@@ -61,7 +61,7 @@ public sealed partial class DebugMetricsCollector : IDisposable
             Tags = tags ?? []
         };
 
-        _metricsData.AddOrUpdate(name,
+        _ = _metricsData.AddOrUpdate(name,
             _ =>
             {
                 var points = new Collection<MetricPoint> { metricPoint };

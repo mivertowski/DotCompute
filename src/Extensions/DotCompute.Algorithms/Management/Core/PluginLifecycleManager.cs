@@ -178,8 +178,8 @@ public sealed partial class PluginLifecycleManager(
             LoadTime = DateTime.UtcNow,
             AssemblyName = plugin.GetType().Assembly.GetName().Name ?? "Unknown",
             TypeName = plugin.GetType().FullName ?? plugin.GetType().Name,
-            Capabilities = Array.Empty<string>(),
-            SupportedAccelerators = Array.Empty<string>(),
+            Capabilities = [],
+            SupportedAccelerators = [],
             LoadContextName = $"External_{plugin.Id}",
             AdditionalMetadata = []
         };

@@ -53,7 +53,7 @@ namespace DotCompute.Algorithms.Management
                 if (metadata != null && !IsVersionCompatible(metadata.RequiredFrameworkVersion))
                 {
                     LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion?.ToString() ?? "Unknown");
-                    return Array.Empty<LoadedPluginResult>();
+                    return [];
                 }
 
                 // Create isolated load context
@@ -71,7 +71,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         LogAssemblyAlreadyLoaded(assemblyName);
                         loadContext.Unload();
-                        return Array.Empty<LoadedPluginResult>();
+                        return [];
                     }
 
                     // Add to load contexts

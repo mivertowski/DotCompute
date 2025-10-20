@@ -39,7 +39,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
         if (!Directory.Exists(pluginDirectory))
         {
             LogDirectoryNotFound(pluginDirectory);
-            return Array.Empty<string>();
+            return [];
         }
 
         LogDiscoveringPlugins(pluginDirectory);
@@ -136,7 +136,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
 
         if (!File.Exists(assemblyPath))
         {
-            return Array.Empty<PluginTypeInfo>();
+            return [];
         }
 
         try
@@ -170,7 +170,7 @@ public sealed partial class AlgorithmPluginScanner(ILogger<AlgorithmPluginScanne
         catch (Exception ex)
         {
             LogPluginTypeDiscoveryFailed(assemblyPath, ex.Message);
-            return Array.Empty<PluginTypeInfo>();
+            return [];
         }
     }
 

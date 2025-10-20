@@ -166,8 +166,8 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
             RequiredFrameworkVersion = Environment.Version,
             AssemblyName = assemblyName,
             TypeName = pluginType.FullName ?? pluginType.Name,
-            Capabilities = Array.Empty<string>(),
-            SupportedAccelerators = Array.Empty<string>(),
+            Capabilities = [],
+            SupportedAccelerators = [],
             LoadContextName = "Default",
             AdditionalMetadata = []
         };
@@ -287,8 +287,8 @@ public sealed partial class AlgorithmMetadata(ILogger<AlgorithmMetadata> logger)
                 RequiredFrameworkVersion = ParseFrameworkVersion(assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName),
                 AssemblyName = assemblyName,
                 TypeName = "Unknown",
-                Capabilities = Array.Empty<string>(),
-                SupportedAccelerators = Array.Empty<string>(),
+                Capabilities = [],
+                SupportedAccelerators = [],
                 LoadContextName = "Default",
                 AdditionalMetadata = []
             };

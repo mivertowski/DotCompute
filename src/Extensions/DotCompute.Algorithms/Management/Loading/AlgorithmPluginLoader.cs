@@ -64,7 +64,7 @@ public sealed partial class AlgorithmAssemblyLoader(ILogger<AlgorithmAssemblyLoa
                 {
                     LogAssemblyAlreadyLoaded(assemblyName);
                     loadContext.Unload();
-                    return Array.Empty<LoadedPluginResult>();
+                    return [];
                 }
 
                 // Add to load contexts

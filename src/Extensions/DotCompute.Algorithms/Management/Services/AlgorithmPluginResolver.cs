@@ -86,7 +86,7 @@ public sealed class AlgorithmPluginResolver(
         var candidates = _registry.GetHealthyPlugins().ToList();
         if (!candidates.Any())
         {
-            return Enumerable.Empty<IAlgorithmPlugin>();
+            return [];
         }
 
         // Apply filtering

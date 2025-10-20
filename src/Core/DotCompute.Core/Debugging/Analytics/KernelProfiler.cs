@@ -131,7 +131,7 @@ public sealed partial class KernelProfiler : IDisposable
 
         // Store historical data
         var kernelKey = $"{session.KernelName}_{session.AcceleratorType}";
-        _historicalData.AddOrUpdate(kernelKey,
+        _ = _historicalData.AddOrUpdate(kernelKey,
             [profilingData],
             (key, existing) =>
             {

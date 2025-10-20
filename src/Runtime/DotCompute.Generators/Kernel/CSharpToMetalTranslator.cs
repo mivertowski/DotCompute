@@ -358,14 +358,14 @@ internal sealed class CSharpToMetalTranslator(SemanticModel semanticModel, Kerne
                 _ = _output.Append(postfixUnary.OperatorToken.Text);
                 break;
             case ParenthesizedExpressionSyntax parenthesized:
-                _output.Append('(');
+                _ = _output.Append('(');
                 TranslateExpression(parenthesized.Expression);
-                _output.Append(')');
+                _ = _output.Append(')');
                 break;
             case CastExpressionSyntax cast:
-                _output.Append('(');
-                _output.Append(ConvertToMetalType(cast.Type.ToString()));
-                _output.Append(')');
+                _ = _output.Append('(');
+                _ = _output.Append(ConvertToMetalType(cast.Type.ToString()));
+                _ = _output.Append(')');
                 TranslateExpression(cast.Expression);
                 break;
             default:

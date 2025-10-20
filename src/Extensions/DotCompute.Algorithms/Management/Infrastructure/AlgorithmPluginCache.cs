@@ -558,7 +558,7 @@ public sealed class AlgorithmPluginCache : IAsyncDisposable, IDisposable
         // TODO: Implement actual NuGet package caching
         // For now, return empty array as placeholder
         await Task.CompletedTask;
-        return Array.Empty<CachedPackageInfo>();
+        return [];
     }
 
     /// <inheritdoc/>

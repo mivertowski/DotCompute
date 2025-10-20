@@ -32,7 +32,7 @@ namespace DotCompute.Algorithms.Management
             if (!Directory.Exists(pluginDirectory))
             {
                 LogDirectoryNotFound(pluginDirectory);
-                return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+                return Task.FromResult<IReadOnlyList<string>>([]);
             }
 
             LogDiscoveringPlugins(pluginDirectory);

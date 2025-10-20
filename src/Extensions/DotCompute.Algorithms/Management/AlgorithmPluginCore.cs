@@ -201,7 +201,7 @@ namespace DotCompute.Algorithms.Management
             // Implementation placeholder - return empty array until cache supports NuGet package tracking
             await Task.CompletedTask;
             LogInfo("GetCachedNuGetPackagesAsync called - returning empty array (not yet implemented)");
-            return Array.Empty<CachedPackageInfo>();
+            return [];
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace DotCompute.Algorithms.Management
                 IsValid = true,
                 SecurityValidationPassed = true,
                 SecurityDetails = "Placeholder validation - not yet implemented",
-                Warnings = Array.Empty<string>(),
+                Warnings = [],
                 ValidationTime = TimeSpan.Zero,
                 AssemblyCount = 0,
                 DependencyCount = 0,

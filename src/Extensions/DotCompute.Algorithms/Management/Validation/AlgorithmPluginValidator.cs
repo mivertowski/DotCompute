@@ -588,7 +588,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             IsValid = true,
             SecurityValidationPassed = true,
             SecurityDetails = "Basic validation passed",
-            Warnings = Array.Empty<string>(),
+            Warnings = [],
             ValidationTime = TimeSpan.FromMilliseconds(50),
             AssemblyCount = 0,
             DependencyCount = 0,

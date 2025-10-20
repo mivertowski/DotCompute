@@ -351,7 +351,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    await _semaphore.WaitAsync(0).ConfigureAwait(false);
+                    _ = await _semaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {
@@ -475,7 +475,7 @@ namespace DotCompute.Core.Execution
             {
                 try
                 {
-                    await _entrySemaphore.WaitAsync(0).ConfigureAwait(false);
+                    _ = await _entrySemaphore.WaitAsync(0).ConfigureAwait(false);
                 }
                 catch (TimeoutException)
                 {

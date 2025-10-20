@@ -101,12 +101,12 @@ public sealed class UnifiedSecurityResult
     /// <summary>
     /// Gets any security violations found.
     /// </summary>
-    public IReadOnlyList<string> Violations { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Violations { get; init; } = [];
 
     /// <summary>
     /// Gets any security warnings.
     /// </summary>
-    public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets the validation duration.
@@ -189,12 +189,12 @@ public sealed class SecurityPolicyResult
     /// <summary>
     /// Gets any policy violations.
     /// </summary>
-    public IReadOnlyList<string> Violations { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Violations { get; init; } = [];
 
     /// <summary>
     /// Gets any policy warnings.
     /// </summary>
-    public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 }
 
 /// <summary>

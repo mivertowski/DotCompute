@@ -115,11 +115,11 @@ public static class CodeFormatter
             _ = sb.Append(" static");
         }
 
-        sb.Append(' ');
+        _ = sb.Append(' ');
         _ = sb.Append(returnType);
-        sb.Append(' ');
+        _ = sb.Append(' ');
         _ = sb.Append(methodName);
-        sb.Append('(');
+        _ = sb.Append('(');
 
         // Handle long parameter lists
 

@@ -55,7 +55,7 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
             if (metadata != null && !IsVersionCompatible(metadata.RequiredFrameworkVersion))
             {
                 LogVersionIncompatible(assemblyPath, metadata.RequiredFrameworkVersion?.ToString() ?? "Unknown");
-                return Enumerable.Empty<LoadedPluginInfo>();
+                return [];
             }
 
             // Create isolated load context
@@ -73,7 +73,7 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
                 {
                     LogAssemblyAlreadyLoaded(assemblyName);
                     loadContext.Unload();
-                    return Enumerable.Empty<LoadedPluginInfo>();
+                    return [];
                 }
 
                 // Add to load contexts
@@ -101,8 +101,8 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
                                 LoadTime = DateTime.UtcNow,
                                 AssemblyName = assembly.GetName().Name ?? "Unknown",
                                 TypeName = pluginType.FullName ?? pluginType.Name,
-                                Capabilities = Array.Empty<string>(),
-                                SupportedAccelerators = Array.Empty<string>(),
+                                Capabilities = [],
+                                SupportedAccelerators = [],
                                 LoadContextName = loadContextName,
                                 AdditionalMetadata = []
                             };

@@ -31,8 +31,8 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         _testCacheDirectory = Path.Combine(Path.GetTempPath(), "NuGetPluginLoaderTests", Guid.NewGuid().ToString("N"));
         _testPackagesDirectory = Path.Combine(_testCacheDirectory, "packages");
 
-        Directory.CreateDirectory(_testCacheDirectory);
-        Directory.CreateDirectory(_testPackagesDirectory);
+            _ = Directory.CreateDirectory(_testCacheDirectory);
+            _ = Directory.CreateDirectory(_testPackagesDirectory);
     }
 
     /// <summary>
@@ -442,11 +442,11 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (FileNotFoundException ex)
         {
-            _logger.LogInfoMessage($"✓ Correctly handled non-existent package file: {).Name}");
+            _logger.LogInfoMessage($"✓ Correctly handled non-existent package file: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogInfoMessage($"✓ Handled non-existent package: {).Name}");
+            _logger.LogInfoMessage($"✓ Handled non-existent package: {ex.Message}");
         }
 
         // Test invalid package format
@@ -460,7 +460,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogInfoMessage($"✓ Correctly handled invalid package format: {).Name}");
+            _logger.LogInfoMessage($"✓ Correctly handled invalid package format: {ex.Message}");
         }
 
         // Test empty package
@@ -478,7 +478,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogInfoMessage($"✓ Correctly handled empty package: {).Name}");
+            _logger.LogInfoMessage($"✓ Correctly handled empty package: {ex.Message}");
         }
 
         // Test invalid target framework
@@ -491,7 +491,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogInfoMessage($"✓ Correctly handled invalid framework: {).Name}");
+            _logger.LogInfoMessage($"✓ Correctly handled invalid framework: {ex.Message}");
         }
 
         _logger.LogInfoMessage("Error handling test completed successfully");
