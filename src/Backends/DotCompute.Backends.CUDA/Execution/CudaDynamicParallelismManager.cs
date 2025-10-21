@@ -14,8 +14,17 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Manager for CUDA Dynamic Parallelism functionality
     /// </summary>
-    public sealed class CudaDynamicParallelismManager : IDisposable
+    public sealed partial class CudaDynamicParallelismManager : IDisposable
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 22100,
+            Level = LogLevel.Warning,
+            Message = "Error during dynamic parallelism maintenance")]
+        private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+        #endregion
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
         private readonly ILogger _logger;
@@ -154,7 +163,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during dynamic parallelism maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 

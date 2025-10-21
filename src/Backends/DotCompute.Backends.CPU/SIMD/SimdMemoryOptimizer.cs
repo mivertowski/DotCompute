@@ -279,5 +279,5 @@ public sealed class MemoryAnalysisResult
     /// Gets or sets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public IReadOnlyList<string> Recommendations { get; init; } = [];
+    public List<string> Recommendations { get; init; } = [];
 }

@@ -10,8 +10,23 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// Validates CUDA source code and compiled binaries for correctness and best practices.
 /// Provides comprehensive validation including syntax checking, performance analysis, and security validation.
 /// </summary>
-internal static class CudaCompilerValidator
+internal static partial class CudaCompilerValidator
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 21101,
+        Level = LogLevel.Warning,
+        Message = "CUDA source validation warning for {KernelName}: {Warning}")]
+    private static partial void LogSourceValidationWarning(ILogger logger, string kernelName, string warning);
+
+    [LoggerMessage(
+        EventId = 21102,
+        Level = LogLevel.Warning,
+        Message = "Code verification inconclusive for kernel {KernelName}")]
+    private static partial void LogVerificationInconclusive(ILogger logger, string kernelName);
+
+    #endregion
     /// <summary>
     /// Validates CUDA source code for common issues before compilation.
     /// Checks for CUDA kernel structure, deprecated functions, and potential performance issues.
@@ -64,7 +79,7 @@ internal static class CudaCompilerValidator
             // Log warnings
             foreach (var warning in warnings)
             {
-                logger.LogWarning("CUDA source validation warning for {KernelName}: {Warning}", kernelName, warning);
+                LogSourceValidationWarning(logger, kernelName, warning);
             }
 
             return warnings.Count > 0
@@ -118,7 +133,7 @@ internal static class CudaCompilerValidator
                 return true;
             }
 
-            logger.LogWarning("Code verification inconclusive for kernel {KernelName}", kernelName);
+            LogVerificationInconclusive(logger, kernelName);
             return true; // Allow inconclusive results to proceed
         }
         catch (Exception ex)

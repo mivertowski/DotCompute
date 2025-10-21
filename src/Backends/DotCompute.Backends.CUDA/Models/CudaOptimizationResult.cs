@@ -16,7 +16,7 @@ namespace DotCompute.Backends.CUDA.Advanced.Features.Models
         /// <summary>
         /// Gets or sets the list of optimizations that were applied.
         /// </summary>
-        public IList<string> OptimizationsApplied { get; } = [];
+        public IList<string> OptimizationsApplied { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the time taken to perform optimizations.

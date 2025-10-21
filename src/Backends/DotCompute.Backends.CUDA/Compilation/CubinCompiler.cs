@@ -14,8 +14,17 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// Handles CUBIN (CUDA Binary) compilation for optimized kernel execution.
 /// Provides direct binary compilation for improved performance on compatible hardware.
 /// </summary>
-internal static class CubinCompiler
+internal static partial class CubinCompiler
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 21100,
+        Level = LogLevel.Warning,
+        Message = "Failed to cleanup NVRTC program for CUBIN compilation of kernel {KernelName}")]
+    private static partial void LogCleanupFailure(ILogger logger, Exception ex, string kernelName);
+
+    #endregion
     /// <summary>
     /// Compiles CUDA source code to CUBIN format using NVRTC.
     /// </summary>
@@ -93,7 +102,7 @@ internal static class CubinCompiler
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Failed to cleanup NVRTC program for CUBIN compilation of kernel {KernelName}", kernelName);
+                    LogCleanupFailure(logger, ex, kernelName);
                 }
             }
         }
@@ -130,10 +139,11 @@ internal static class CubinCompiler
         var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O3;
         var optFlag = optimizationLevel switch
         {
-            OptimizationLevel.O0 => "-O0",
+            OptimizationLevel.None => "-O0",
             OptimizationLevel.O1 => "-O1",
             OptimizationLevel.O2 => "-O2",
             OptimizationLevel.O3 => "-O3",
+            OptimizationLevel.Size => "-Os",
             _ => "-O3" // Default to highest optimization for CUBIN
         };
         compilationOptions.Add(optFlag);

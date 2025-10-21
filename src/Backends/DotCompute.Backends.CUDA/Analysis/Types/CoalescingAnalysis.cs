@@ -60,17 +60,17 @@ public sealed class CoalescingAnalysis
     /// <summary>
     /// Gets or sets identified coalescing issues.
     /// </summary>
-    public IList<CoalescingIssue> Issues { get; } = [];
+    public IList<CoalescingIssue> Issues { get; set; } = [];
 
     /// <summary>
     /// Gets or sets optimization recommendations.
     /// </summary>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets performance optimization suggestions specific to this analysis.
     /// </summary>
-    public IList<string> Optimizations { get; } = [];
+    public IList<string> Optimizations { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the actual bytes transferred during memory operations.

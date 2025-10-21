@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Execution;
 using DotCompute.Abstractions.Kernels;
+using DotCompute.Abstractions.Types;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -24,7 +25,7 @@ internal sealed class ExtendedKernelExecutionContext
         _innerContext = new KernelExecutionContext
         {
             Name = "CPU Kernel",
-            WorkDimensions = new WorkDimensions(1)
+            WorkDimensions = (Dim3)new WorkDimensions(1)
         };
     }
     /// <summary>

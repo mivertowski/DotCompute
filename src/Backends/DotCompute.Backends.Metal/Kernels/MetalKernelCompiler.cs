@@ -501,7 +501,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType
         };
@@ -533,7 +533,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
 
         return new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Full,
+            OptimizationLevel = OptimizationLevel.O3,
             EnableDebugInfo = false,
             TargetArchitecture = accelerator.Info.DeviceType,
             AllowUnsafeCode = false, // Metal doesn't support unsafe code

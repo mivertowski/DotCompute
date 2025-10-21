@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Execution;
@@ -11,7 +12,7 @@ namespace DotCompute.Backends.Metal.Telemetry;
 /// <summary>
 /// Production-grade structured logging with correlation IDs and enterprise integration
 /// </summary>
-public sealed class MetalProductionLogger : IDisposable
+public sealed partial class MetalProductionLogger : IDisposable
 {
     private readonly ILogger<MetalProductionLogger> _logger;
     private readonly MetalLoggingOptions _options;
@@ -34,9 +35,78 @@ public sealed class MetalProductionLogger : IDisposable
             _bufferFlushTimer = new Timer(FlushLogBuffer, null, _options.BufferFlushInterval, _options.BufferFlushInterval);
         }
 
-        _logger.LogInformation("Metal production logger initialized with buffering: {Buffering}, correlation tracking: {CorrelationTracking}",
-            _options.EnableBuffering, _options.EnableCorrelationTracking);
+        LogProductionLoggerInitialized(_logger, _options.EnableBuffering, _options.EnableCorrelationTracking);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6700,
+        Level = LogLevel.Information,
+        Message = "Metal production logger initialized with buffering: {Buffering}, correlation tracking: {CorrelationTracking}")]
+    private static partial void LogProductionLoggerInitialized(ILogger logger, bool buffering, bool correlationTracking);
+
+    [LoggerMessage(
+        EventId = 6701,
+        Level = LogLevel.Trace,
+        Message = "Flushed {Count} buffered log entries")]
+    private static partial void LogBufferFlushed(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6702,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {Count} expired log contexts")]
+    private static partial void LogContextsCleanedUp(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6703,
+        Level = LogLevel.Information,
+        Message = "Metal telemetry report: {TotalEvents} events, {MetricCount} metrics tracked")]
+    private static partial void LogTelemetryReport(ILogger logger, int totalEvents, int metricCount);
+
+    [LoggerMessage(
+        EventId = 6704,
+        Level = LogLevel.Debug,
+        Message = "Top events: {Events}")]
+    private static partial void LogTopEvents(ILogger logger, string events);
+
+    [LoggerMessage(
+        EventId = 6705,
+        Level = LogLevel.Warning,
+        Message = "Error generating periodic telemetry report")]
+    private static partial void LogTelemetryReportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6706,
+        Level = LogLevel.Error,
+        Message = "Failed to write structured log entry: {EventType}")]
+    private static partial void LogWriteEntryFailed(ILogger logger, Exception ex, string eventType);
+
+    [LoggerMessage(
+        EventId = 6707,
+        Level = LogLevel.Warning,
+        Message = "Failed to write log entry to external endpoint: {Endpoint}")]
+    private static partial void LogExternalEndpointFailed(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6708,
+        Level = LogLevel.Information,
+        Message = "Metal production logger disposed - Active contexts: {ActiveContexts}, Buffer size: {BufferSize}")]
+    private static partial void LogProductionLoggerDisposed(ILogger logger, int activeContexts, int bufferSize);
+
+    [LoggerMessage(
+        EventId = 6709,
+        Level = LogLevel.Information,
+        Message = "Metal execution telemetry initialized with reporting interval: {Interval}")]
+    private static partial void LogTelemetryInitialized(ILogger logger, string interval);
+
+    [LoggerMessage(
+        EventId = 6710,
+        Level = LogLevel.Information,
+        Message = "Metal execution telemetry disposed: {TotalEvents} total events, {MetricCount} metrics")]
+    private static partial void LogTelemetryDisposed(ILogger logger, int totalEvents, int metricCount);
+
+    #endregion
 
     /// <summary>
     /// Generates a new correlation ID for tracking related operations
@@ -351,7 +421,7 @@ public sealed class MetalProductionLogger : IDisposable
     /// <summary>
     /// Logs performance metrics
     /// </summary>
-    private static void LogPerformanceMetrics(string correlationId, string kernelName, TimeSpan duration, double throughputMBps)
+    private void LogPerformanceMetrics(string correlationId, string kernelName, TimeSpan duration, double throughputMBps)
     {
         var properties = new Dictionary<string, object>
         {
@@ -413,9 +483,14 @@ public sealed class MetalProductionLogger : IDisposable
             LogLevel = logLevel,
             EventType = eventType,
             CorrelationId = correlationId,
-            Properties = properties,
             Message = FormatLogMessage(eventType, properties)
         };
+
+        // Add properties to the collection
+        foreach (var kvp in properties)
+        {
+            logEntry.Properties[kvp.Key] = kvp.Value;
+        }
 
         if (_options.EnableBuffering)
         {
@@ -468,7 +543,7 @@ public sealed class MetalProductionLogger : IDisposable
             // Fallback logging to prevent recursive issues
             try
             {
-                _logger.LogError(ex, "Failed to write structured log entry: {EventType}", entry.EventType);
+                LogWriteEntryFailed(_logger, ex, entry.EventType);
             }
             catch
             {
@@ -500,7 +575,7 @@ public sealed class MetalProductionLogger : IDisposable
 
         if (entriesToFlush.Count > 0)
         {
-            _logger.LogTrace("Flushed {Count} buffered log entries", entriesToFlush.Count);
+            LogBufferFlushed(_logger, entriesToFlush.Count);
         }
     }
 
@@ -520,7 +595,7 @@ public sealed class MetalProductionLogger : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to write log entry to external endpoint: {Endpoint}", endpoint);
+                LogExternalEndpointFailed(_logger, ex, endpoint);
             }
         }
     }
@@ -561,7 +636,7 @@ public sealed class MetalProductionLogger : IDisposable
 
         if (expiredContexts.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} expired log contexts", expiredContexts.Count);
+            LogContextsCleanedUp(_logger, expiredContexts.Count);
         }
     }
 
@@ -772,8 +847,7 @@ public sealed class MetalProductionLogger : IDisposable
 
             _bufferFlushTimer?.Dispose();
 
-            _logger.LogInformation("Metal production logger disposed - Active contexts: {ActiveContexts}, Buffer size: {BufferSize}",
-                _activeContexts.Count, _logBuffer.Count);
+            LogProductionLoggerDisposed(_logger, _activeContexts.Count, _logBuffer.Count);
         }
     }
 }

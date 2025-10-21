@@ -11,17 +11,59 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemPoolAttribute : uint
     {
+        /// <summary>
+        /// Reuse memory following event dependencies for synchronization.
+        /// </summary>
         ReuseFollowEventDependencies = 1,
+
+        /// <summary>
+        /// Allow opportunistic memory reuse when dependencies are not strict.
+        /// </summary>
         ReuseAllowOpportunistic = 2,
+
+        /// <summary>
+        /// Allow reuse of memory based on internal dependency tracking.
+        /// </summary>
         ReuseAllowInternalDependencies = 3,
+
+        /// <summary>
+        /// Threshold for releasing memory back to the system.
+        /// </summary>
         ReleaseThreshold = 4,
+
+        /// <summary>
+        /// Attribute for configuring the release threshold.
+        /// </summary>
         AttrReleaseThreshold = 4,
+
+        /// <summary>
+        /// Current amount of reserved memory in the pool.
+        /// </summary>
         AttrReservedMemCurrent = 5,
+
+        /// <summary>
+        /// High watermark of reserved memory in the pool.
+        /// </summary>
         AttrReservedMemHigh = 6,
+
+        /// <summary>
+        /// Current amount of used memory in the pool.
+        /// </summary>
         AttrUsedMemCurrent = 7,
+
+        /// <summary>
+        /// High watermark of used memory in the pool.
+        /// </summary>
         AttrUsedMemHigh = 8,
-        // Additional commonly used attributes
+
+        /// <summary>
+        /// Alias for current used memory attribute.
+        /// </summary>
         Used = AttrUsedMemCurrent,
+
+        /// <summary>
+        /// Alias for current reserved memory attribute.
+        /// </summary>
         Reserved = AttrReservedMemCurrent
     }
     /// <summary>
@@ -33,8 +75,19 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemAccessFlags : uint
     {
+        /// <summary>
+        /// No memory access permissions.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Read-only memory access permission.
+        /// </summary>
         Read = 1,
+
+        /// <summary>
+        /// Read and write memory access permissions.
+        /// </summary>
         ReadWrite = 3
     }
     /// <summary>
@@ -46,10 +99,29 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemLocationType : uint
     {
+        /// <summary>
+        /// Invalid or unspecified memory location.
+        /// </summary>
         Invalid = 0,
+
+        /// <summary>
+        /// Memory located on a CUDA device (GPU).
+        /// </summary>
         Device = 1,
+
+        /// <summary>
+        /// Memory located on the host (CPU).
+        /// </summary>
         Host = 2,
+
+        /// <summary>
+        /// Memory located on a specific NUMA node on the host.
+        /// </summary>
         HostNuma = 3,
+
+        /// <summary>
+        /// Memory located on the current NUMA node of the calling thread.
+        /// </summary>
         HostNumaCurrent = 4
     }
     /// <summary>
@@ -61,8 +133,19 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemAllocationType : uint
     {
+        /// <summary>
+        /// Invalid or unspecified allocation type.
+        /// </summary>
         Invalid = 0,
+
+        /// <summary>
+        /// Pinned (page-locked) memory allocation for faster host-device transfers.
+        /// </summary>
         Pinned = 1,
+
+        /// <summary>
+        /// Maximum value for allocation type enumeration.
+        /// </summary>
         Max = 0xFFFFFFFF
     }
     /// <summary>
@@ -74,10 +157,29 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemAllocationHandleType : uint
     {
+        /// <summary>
+        /// No handle type specified.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// POSIX file descriptor handle for inter-process memory sharing on Linux.
+        /// </summary>
         PosixFileDescriptor = 1,
+
+        /// <summary>
+        /// Windows handle for inter-process memory sharing.
+        /// </summary>
         Win32 = 2,
+
+        /// <summary>
+        /// Windows Kernel Mode handle for inter-process memory sharing.
+        /// </summary>
         Win32Kmt = 4,
+
+        /// <summary>
+        /// Maximum value for handle type enumeration.
+        /// </summary>
         Max = 0xFFFFFFFF
     }
     /// <summary>
@@ -89,7 +191,14 @@ namespace DotCompute.Backends.CUDA.Types.Native.Enums
     /// </summary>
     public enum CudaMemAllocationCompType : byte
     {
+        /// <summary>
+        /// No compression applied to memory allocation.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Generic compression algorithm applied to memory allocation.
+        /// </summary>
         Generic = 1
     }
 }

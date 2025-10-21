@@ -134,4 +134,30 @@ public struct WorkDimensions(long x, long y = 1, long z = 1) : IEquatable<WorkDi
     /// <param name="right">The second instance.</param>
     /// <returns>True if not equal; otherwise, false.</returns>
     public static bool operator !=(WorkDimensions left, WorkDimensions right) => !left.Equals(right);
+
+    /// <summary>
+    /// Creates a <see cref="WorkDimensions"/> from a <see cref="DotCompute.Abstractions.Types.Dim3"/>.
+    /// </summary>
+    /// <param name="dim3">The Dim3 instance to convert.</param>
+    /// <returns>A WorkDimensions instance with the same dimensions.</returns>
+    public static WorkDimensions FromDim3(DotCompute.Abstractions.Types.Dim3 dim3) => new(dim3.X, dim3.Y, dim3.Z);
+
+    /// <summary>
+    /// Converts this <see cref="WorkDimensions"/> to a <see cref="DotCompute.Abstractions.Types.Dim3"/>.
+    /// </summary>
+    /// <returns>A Dim3 instance with the same dimensions, clamped to int range.</returns>
+    /// <remarks>
+    /// This conversion may result in data loss if any dimension exceeds <see cref="int.MaxValue"/>.
+    /// Dimensions are clamped to the range [1, <see cref="int.MaxValue"/>].
+    /// </remarks>
+    public readonly DotCompute.Abstractions.Types.Dim3 ToDim3()
+    {
+        // Clamp to int range with proper overflow handling
+        static int ClampToInt(long value) => value > int.MaxValue ? int.MaxValue : (int)Math.Max(1, value);
+
+        return new DotCompute.Abstractions.Types.Dim3(
+            ClampToInt(X),
+            ClampToInt(Y),
+            ClampToInt(Z));
+    }
 }

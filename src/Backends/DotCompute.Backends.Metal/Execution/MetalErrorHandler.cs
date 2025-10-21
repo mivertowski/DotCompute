@@ -12,7 +12,7 @@ namespace DotCompute.Backends.Metal.Execution;
 /// Production-grade Metal error handler with retry logic, graceful degradation,
 /// and comprehensive error recovery strategies following CUDA error handling patterns.
 /// </summary>
-public sealed class MetalErrorHandler : IDisposable
+public sealed partial class MetalErrorHandler : IDisposable
 {
     private readonly ILogger<MetalErrorHandler> _logger;
     private readonly ConcurrentDictionary<MetalError, ErrorStatistics> _errorStats;
@@ -37,9 +37,138 @@ public sealed class MetalErrorHandler : IDisposable
         _memoryRetryPolicy = CreateMemoryRetryPolicy();
         _circuitBreakerPolicy = CreateCircuitBreakerPolicy();
 
-        _logger.LogInformation("Metal Error Handler initialized for {Architecture}",
-            _isAppleSilicon ? "Apple Silicon" : "Intel Mac");
+        LogErrorHandlerInitialized(_logger, _isAppleSilicon ? "Apple Silicon" : "Intel Mac");
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6300,
+        Level = LogLevel.Information,
+        Message = "Metal Error Handler initialized for {Architecture}")]
+    private static partial void LogErrorHandlerInitialized(ILogger logger, string architecture);
+
+    [LoggerMessage(
+        EventId = 6301,
+        Level = LogLevel.Error,
+        Message = "Unexpected error in Metal operation {OperationName}")]
+    private static partial void LogUnexpectedError(ILogger logger, Exception ex, string operationName);
+
+    [LoggerMessage(
+        EventId = 6302,
+        Level = LogLevel.Error,
+        Message = "Metal error in {OperationName}: {ErrorCode}")]
+    private static partial void LogMetalError(ILogger logger, Exception ex, string operationName, MetalError errorCode);
+
+    [LoggerMessage(
+        EventId = 6303,
+        Level = LogLevel.Warning,
+        Message = "Attempting memory error recovery for Metal operation {OperationName}")]
+    private static partial void LogMemoryErrorRecoveryAttempt(ILogger logger, string operationName);
+
+    [LoggerMessage(
+        EventId = 6304,
+        Level = LogLevel.Error,
+        Message = "Memory error recovery failed for Metal operation {OperationName}")]
+    private static partial void LogMemoryErrorRecoveryFailed(ILogger logger, Exception ex, string operationName);
+
+    [LoggerMessage(
+        EventId = 6305,
+        Level = LogLevel.Warning,
+        Message = "Attempting device error recovery for Metal operation {OperationName}")]
+    private static partial void LogDeviceErrorRecoveryAttempt(ILogger logger, string operationName);
+
+    [LoggerMessage(
+        EventId = 6306,
+        Level = LogLevel.Error,
+        Message = "Device error recovery failed for Metal operation {OperationName}")]
+    private static partial void LogDeviceErrorRecoveryFailed(ILogger logger, Exception ex, string operationName);
+
+    [LoggerMessage(
+        EventId = 6307,
+        Level = LogLevel.Warning,
+        Message = "Attempting command buffer error recovery for Metal operation {OperationName}")]
+    private static partial void LogCommandBufferErrorRecoveryAttempt(ILogger logger, string operationName);
+
+    [LoggerMessage(
+        EventId = 6308,
+        Level = LogLevel.Error,
+        Message = "Command buffer error recovery failed for Metal operation {OperationName}")]
+    private static partial void LogCommandBufferErrorRecoveryFailed(ILogger logger, Exception ex, string operationName);
+
+    [LoggerMessage(
+        EventId = 6309,
+        Level = LogLevel.Information,
+        Message = "Falling back to CPU for Metal operation {OperationName}")]
+    private static partial void LogFallingBackToCpu(ILogger logger, string operationName);
+
+    [LoggerMessage(
+        EventId = 6310,
+        Level = LogLevel.Information,
+        Message = "Performing unified memory cleanup on Apple Silicon")]
+    private static partial void LogUnifiedMemoryCleanup(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6311,
+        Level = LogLevel.Information,
+        Message = "Performing discrete GPU memory cleanup on Intel Mac")]
+    private static partial void LogDiscreteGpuMemoryCleanup(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6312,
+        Level = LogLevel.Warning,
+        Message = "Metal memory cleanup failed")]
+    private static partial void LogMemoryCleanupFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6313,
+        Level = LogLevel.Information,
+        Message = "Handling unified memory pressure on Apple Silicon")]
+    private static partial void LogHandlingUnifiedMemoryPressure(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6314,
+        Level = LogLevel.Warning,
+        Message = "Unified memory pressure handling failed")]
+    private static partial void LogUnifiedMemoryPressureFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6315,
+        Level = LogLevel.Information,
+        Message = "Handling discrete GPU memory pressure on Intel Mac")]
+    private static partial void LogHandlingDiscreteMemoryPressure(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6316,
+        Level = LogLevel.Warning,
+        Message = "Discrete memory pressure handling failed")]
+    private static partial void LogDiscreteMemoryPressureFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6317,
+        Level = LogLevel.Warning,
+        Message = "Resetting Metal device state...")]
+    private static partial void LogResettingDeviceState(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6318,
+        Level = LogLevel.Information,
+        Message = "Metal device state reset successful")]
+    private static partial void LogDeviceResetSuccessful(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6319,
+        Level = LogLevel.Error,
+        Message = "Metal device reset failed")]
+    private static partial void LogDeviceResetFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6320,
+        Level = LogLevel.Debug,
+        Message = "Metal operation {OperationName} completed in {ElapsedMs}ms")]
+    private static partial void LogOperationCompleted(ILogger logger, string operationName, long elapsedMs);
+
+    #endregion
 
     /// <summary>
     /// Gets whether GPU is currently available
@@ -123,7 +252,7 @@ public sealed class MetalErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error in Metal operation {OperationName}", operationName);
+            LogUnexpectedError(_logger, ex, operationName);
             throw new MetalOperationException(operationName, "Unexpected error occurred", ex);
         }
     }
@@ -137,7 +266,7 @@ public sealed class MetalErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(metalEx, "Metal error in {OperationName}: {ErrorCode}", operationName, metalEx.ErrorCode);
+        LogMetalError(_logger, metalEx, operationName, metalEx.ErrorCode);
 
         // Try recovery strategies based on error type
         if (IsMemoryError(metalEx.ErrorCode))
@@ -172,7 +301,7 @@ public sealed class MetalErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Attempting memory error recovery for Metal operation {OperationName}", operationName);
+        LogMemoryErrorRecoveryAttempt(_logger, operationName);
 
         try
         {
@@ -203,7 +332,7 @@ public sealed class MetalErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Memory error recovery failed for Metal operation {OperationName}", operationName);
+            LogMemoryErrorRecoveryFailed(_logger, ex, operationName);
 
             if (_options.EnableCpuFallback)
             {
@@ -222,7 +351,7 @@ public sealed class MetalErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Attempting device error recovery for Metal operation {OperationName}", operationName);
+        LogDeviceErrorRecoveryAttempt(_logger, operationName);
 
         try
         {
@@ -237,7 +366,7 @@ public sealed class MetalErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Device error recovery failed for Metal operation {OperationName}", operationName);
+            LogDeviceErrorRecoveryFailed(_logger, ex, operationName);
         }
 
         if (_options.EnableCpuFallback)
@@ -256,7 +385,7 @@ public sealed class MetalErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarning("Attempting command buffer error recovery for Metal operation {OperationName}", operationName);
+        LogCommandBufferErrorRecoveryAttempt(_logger, operationName);
 
         try
         {
@@ -268,7 +397,7 @@ public sealed class MetalErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Command buffer error recovery failed for Metal operation {OperationName}", operationName);
+            LogCommandBufferErrorRecoveryFailed(_logger, ex, operationName);
 
             if (_options.EnableCpuFallback)
             {
@@ -284,7 +413,7 @@ public sealed class MetalErrorHandler : IDisposable
     /// </summary>
     private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
-        _logger.LogInformation("Falling back to CPU for Metal operation {OperationName}", operationName);
+        LogFallingBackToCpu(_logger, operationName);
 
         // This would invoke CPU-based implementation
         // For now, throw to indicate fallback is needed
@@ -306,7 +435,7 @@ public sealed class MetalErrorHandler : IDisposable
                 if (_isAppleSilicon)
                 {
                     // Apple Silicon unified memory cleanup
-                    _logger.LogInformation("Performing unified memory cleanup on Apple Silicon");
+                    LogUnifiedMemoryCleanup(_logger);
 
                     // Force system memory pressure handling
 
@@ -316,7 +445,7 @@ public sealed class MetalErrorHandler : IDisposable
                 else
                 {
                     // Intel Mac discrete GPU memory cleanup
-                    _logger.LogInformation("Performing discrete GPU memory cleanup on Intel Mac");
+                    LogDiscreteGpuMemoryCleanup(_logger);
 
                     // More conservative cleanup for discrete GPUs
 
@@ -325,7 +454,7 @@ public sealed class MetalErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Metal memory cleanup failed");
+                LogMemoryCleanupFailed(_logger, ex);
             }
         }).ConfigureAwait(false);
     }
@@ -339,7 +468,7 @@ public sealed class MetalErrorHandler : IDisposable
         {
             try
             {
-                _logger.LogInformation("Handling unified memory pressure on Apple Silicon");
+                LogHandlingUnifiedMemoryPressure(_logger);
 
                 // On Apple Silicon, CPU and GPU share the same memory pool
                 // We can be more aggressive with cleanup
@@ -352,7 +481,7 @@ public sealed class MetalErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Unified memory pressure handling failed");
+                LogUnifiedMemoryPressureFailed(_logger, ex);
             }
         }).ConfigureAwait(false);
     }
@@ -366,7 +495,7 @@ public sealed class MetalErrorHandler : IDisposable
         {
             try
             {
-                _logger.LogInformation("Handling discrete GPU memory pressure on Intel Mac");
+                LogHandlingDiscreteMemoryPressure(_logger);
 
                 // On Intel Macs with discrete GPUs, be more conservative
                 GC.Collect(1, GCCollectionMode.Default, blocking: false);
@@ -374,7 +503,7 @@ public sealed class MetalErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Discrete memory pressure handling failed");
+                LogDiscreteMemoryPressureFailed(_logger, ex);
             }
         }).ConfigureAwait(false);
     }
@@ -388,7 +517,7 @@ public sealed class MetalErrorHandler : IDisposable
         {
             try
             {
-                _logger.LogWarning("Resetting Metal device state...");
+                LogResettingDeviceState(_logger);
 
                 // For Metal, device reset is more limited than CUDA
                 // We mainly clear command queues and buffers
@@ -396,12 +525,12 @@ public sealed class MetalErrorHandler : IDisposable
 
                 Thread.Sleep(100); // Brief pause to let operations complete
 
-                _logger.LogInformation("Metal device state reset successful");
+                LogDeviceResetSuccessful(_logger);
                 _gpuAvailable = true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Metal device reset failed");
+                LogDeviceResetFailed(_logger, ex);
                 _gpuAvailable = false;
             }
         }).ConfigureAwait(false);
@@ -523,7 +652,7 @@ public sealed class MetalErrorHandler : IDisposable
     /// <summary>
     /// Records successful operation
     /// </summary>
-    private void RecordSuccess(string operationName, long elapsedMs) => _logger.LogDebug("Metal operation {OperationName} completed in {ElapsedMs}ms", operationName, elapsedMs);
+    private void RecordSuccess(string operationName, long elapsedMs) => LogOperationCompleted(_logger, operationName, elapsedMs);
 
     /// <summary>
     /// Gets error statistics

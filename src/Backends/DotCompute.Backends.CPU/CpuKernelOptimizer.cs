@@ -192,7 +192,11 @@ internal sealed class CpuKernelOptimizer : IDisposable
             }
 
             // Benchmark different thread counts
-            results.ParallelizationResults = await BenchmarkParallelizationAsync(definition, workDimensions, iterations);
+            var parallelizationResults = await BenchmarkParallelizationAsync(definition, workDimensions, iterations);
+            foreach (var kvp in parallelizationResults)
+            {
+                results.ParallelizationResults[kvp.Key] = kvp.Value;
+            }
 
             // Determine optimal configuration
             results.OptimalConfiguration = DetermineOptimalConfiguration(results);
@@ -718,13 +722,30 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
     private static void GenerateOptimizationSuggestions(OptimizationRecommendations recommendations)
     {
+        // Convert to a list for sorting (IList doesn't guarantee mutability for Sort)
+        var suggestionsList = recommendations.Suggestions.ToList();
+
         // Sort suggestions by expected speedup
-        recommendations.Suggestions.Sort((a, b) => b.ExpectedSpeedup.CompareTo(a.ExpectedSpeedup));
+        suggestionsList.Sort((a, b) => b.ExpectedSpeedup.CompareTo(a.ExpectedSpeedup));
 
         // Limit to top 5 suggestions
-        if (recommendations.Suggestions.Count > 5)
+        if (suggestionsList.Count > 5)
         {
-            recommendations.Suggestions = [.. recommendations.Suggestions.Take(5)];
+            // Clear the collection and add back only the top 5
+            recommendations.Suggestions.Clear();
+            foreach (var suggestion in suggestionsList.Take(5))
+            {
+                recommendations.Suggestions.Add(suggestion);
+            }
+        }
+        else if (suggestionsList.Count != recommendations.Suggestions.Count)
+        {
+            // If the collection was already sorted, replace it
+            recommendations.Suggestions.Clear();
+            foreach (var suggestion in suggestionsList)
+            {
+                recommendations.Suggestions.Add(suggestion);
+            }
         }
     }
 
@@ -1002,7 +1023,7 @@ public class OptimalConfiguration
 /// A class that represents performance counter.
 /// </summary>
 
-public class PerformanceCounter : IDisposable
+public sealed class PerformanceCounter : IDisposable
 {
     /// <summary>
     /// Performs dispose.

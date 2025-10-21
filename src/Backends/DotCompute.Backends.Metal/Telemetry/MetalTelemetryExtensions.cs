@@ -173,7 +173,10 @@ public static class MetalTelemetryExtensions
         params string[] notificationEndpoints)
     {
         options.AlertsOptions.EnableNotifications = true;
-        options.AlertsOptions.NotificationEndpoints.AddRange(notificationEndpoints);
+        foreach (var endpoint in notificationEndpoints)
+        {
+            options.AlertsOptions.NotificationEndpoints.Add(endpoint);
+        }
 
         return options;
     }

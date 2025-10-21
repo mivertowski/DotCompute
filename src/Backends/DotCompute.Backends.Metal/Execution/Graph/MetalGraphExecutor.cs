@@ -13,7 +13,7 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 /// Provides optimized execution of Metal compute graphs with parallel processing,
 /// resource scheduling, and performance monitoring capabilities.
 /// </summary>
-public sealed class MetalGraphExecutor : IDisposable
+public sealed partial class MetalGraphExecutor : IDisposable
 {
     private readonly ILogger<MetalGraphExecutor> _logger;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _nodeCompletions;
@@ -33,8 +33,72 @@ public sealed class MetalGraphExecutor : IDisposable
         _executionSemaphore = new SemaphoreSlim(Math.Max(1, maxConcurrentOperations), Math.Max(1, maxConcurrentOperations));
         _cancellationTokenSource = new CancellationTokenSource();
 
-        _logger.LogDebug("Created MetalGraphExecutor with max concurrent operations: {MaxOperations}", maxConcurrentOperations);
+        LogGraphExecutorCreated(_logger, maxConcurrentOperations);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(EventId = 6600, Level = LogLevel.Debug, Message = "Created MetalGraphExecutor with max concurrent operations: {MaxOperations}")]
+    private static partial void LogGraphExecutorCreated(ILogger logger, int maxOperations);
+
+    [LoggerMessage(EventId = 6601, Level = LogLevel.Information, Message = "Starting execution of graph '{GraphName}' with ID {ExecutionId}")]
+    private static partial void LogGraphExecutionStarting(ILogger logger, string graphName, string executionId);
+
+    [LoggerMessage(EventId = 6602, Level = LogLevel.Information, Message = "Graph '{GraphName}' executed successfully in {ExecutionTimeMs:F2}ms - {NodesExecuted} nodes, {CommandBuffers} buffers")]
+    private static partial void LogGraphExecutionCompleted(ILogger logger, string graphName, double executionTimeMs, int nodesExecuted, int commandBuffers);
+
+    [LoggerMessage(EventId = 6603, Level = LogLevel.Warning, Message = "Execution of graph '{GraphName}' was cancelled")]
+    private static partial void LogGraphExecutionCancelled(ILogger logger, string graphName);
+
+    [LoggerMessage(EventId = 6604, Level = LogLevel.Error, Message = "Failed to execute graph '{GraphName}'")]
+    private static partial void LogGraphExecutionFailed(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(EventId = 6605, Level = LogLevel.Debug, Message = "Executing node '{NodeId}' of type {NodeType}")]
+    private static partial void LogNodeExecutionStarting(ILogger logger, string nodeId, MetalNodeType nodeType);
+
+    [LoggerMessage(EventId = 6606, Level = LogLevel.Trace, Message = "Completed node '{NodeId}' in {ExecutionTimeMs:F2}ms")]
+    private static partial void LogNodeExecutionCompleted(ILogger logger, string nodeId, double executionTimeMs);
+
+    [LoggerMessage(EventId = 6607, Level = LogLevel.Error, Message = "Failed to execute node '{NodeId}' of type {NodeType}")]
+    private static partial void LogNodeExecutionFailed(ILogger logger, Exception ex, string nodeId, MetalNodeType nodeType);
+
+    [LoggerMessage(EventId = 6608, Level = LogLevel.Trace, Message = "All dependencies completed for node '{NodeId}'")]
+    private static partial void LogNodeDependenciesCompleted(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6609, Level = LogLevel.Debug, Message = "Dependency wait cancelled for node '{NodeId}'")]
+    private static partial void LogNodeDependencyWaitCancelled(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6610, Level = LogLevel.Debug, Message = "Executing graph with {LevelCount} execution levels")]
+    private static partial void LogGraphLevelsExecutionStarting(ILogger logger, int levelCount);
+
+    [LoggerMessage(EventId = 6611, Level = LogLevel.Trace, Message = "Starting execution level {LevelIndex} with {NodeCount} nodes")]
+    private static partial void LogExecutionLevelStarting(ILogger logger, int levelIndex, int nodeCount);
+
+    [LoggerMessage(EventId = 6612, Level = LogLevel.Trace, Message = "Completed execution level {LevelIndex}")]
+    private static partial void LogExecutionLevelCompleted(ILogger logger, int levelIndex);
+
+    [LoggerMessage(EventId = 6613, Level = LogLevel.Error, Message = "Failed to execute level {LevelIndex}")]
+    private static partial void LogExecutionLevelFailed(ILogger logger, Exception ex, int levelIndex);
+
+    [LoggerMessage(EventId = 6614, Level = LogLevel.Trace, Message = "Executed kernel node '{NodeId}' with {ThreadgroupCount} threadgroups")]
+    private static partial void LogKernelNodeExecuted(ILogger logger, string nodeId, int threadgroupCount);
+
+    [LoggerMessage(EventId = 6615, Level = LogLevel.Trace, Message = "Executed memory copy node '{NodeId}' - {ByteCount:N0} bytes")]
+    private static partial void LogMemoryCopyNodeExecuted(ILogger logger, string nodeId, long byteCount);
+
+    [LoggerMessage(EventId = 6616, Level = LogLevel.Trace, Message = "Executed memory set node '{NodeId}' - {ByteCount:N0} bytes with value {FillValue}")]
+    private static partial void LogMemorySetNodeExecuted(ILogger logger, string nodeId, long byteCount, byte fillValue);
+
+    [LoggerMessage(EventId = 6617, Level = LogLevel.Trace, Message = "Executed barrier node '{NodeId}'")]
+    private static partial void LogBarrierNodeExecuted(ILogger logger, string nodeId);
+
+    [LoggerMessage(EventId = 6618, Level = LogLevel.Debug, Message = "Disposed MetalGraphExecutor")]
+    private static partial void LogGraphExecutorDisposed(ILogger logger);
+
+    [LoggerMessage(EventId = 6619, Level = LogLevel.Warning, Message = "Error during MetalGraphExecutor disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception ex);
+
+    #endregion
 
     /// <summary>
     /// Executes a Metal compute graph with optimal performance and resource utilization.

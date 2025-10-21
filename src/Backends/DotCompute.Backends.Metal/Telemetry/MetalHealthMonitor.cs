@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Execution;
@@ -586,15 +587,13 @@ public sealed class MetalHealthMonitor : IDisposable
                         EventType = HealthEventType.ResourcePressure,
                         Component = "Storage",
                         Severity = HealthSeverity.High,
-                        Message = $"Low disk space on {drive.Name}: {freePercentage:F1}% free",
-                        Data = new Dictionary<string, object>
-                        {
-                            ["drive_name"] = drive.Name,
-                            ["free_percentage"] = freePercentage,
-                            ["available_bytes"] = drive.AvailableFreeSpace,
-                            ["total_bytes"] = drive.TotalSize
-                        }
+                        Message = $"Low disk space on {drive.Name}: {freePercentage:F1}% free"
                     };
+
+                    healthEvent.Data["drive_name"] = drive.Name;
+                    healthEvent.Data["free_percentage"] = freePercentage;
+                    healthEvent.Data["available_bytes"] = drive.AvailableFreeSpace;
+                    healthEvent.Data["total_bytes"] = drive.TotalSize;
 
 
                     RecordHealthEvent(healthEvent);
@@ -631,17 +630,15 @@ public sealed class MetalHealthMonitor : IDisposable
                         EventType = HealthEventType.Anomaly,
                         Component = "System",
                         Severity = HealthSeverity.High,
-                        Message = $"Error rate anomaly detected: {errorRate:P2} in {window.Duration.TotalMinutes:F1} minute window",
-                        Data = new Dictionary<string, object>
-                        {
-                            ["anomaly_type"] = "error_rate",
-                            ["error_rate"] = errorRate,
-                            ["window_start"] = window.Start,
-                            ["window_end"] = window.End,
-                            ["error_count"] = windowErrors,
-                            ["total_count"] = windowTotal
-                        }
+                        Message = $"Error rate anomaly detected: {errorRate:P2} in {window.Duration.TotalMinutes:F1} minute window"
                     };
+
+                    anomalyEvent.Data["anomaly_type"] = "error_rate";
+                    anomalyEvent.Data["error_rate"] = errorRate;
+                    anomalyEvent.Data["window_start"] = window.Start;
+                    anomalyEvent.Data["window_end"] = window.End;
+                    anomalyEvent.Data["error_count"] = windowErrors;
+                    anomalyEvent.Data["total_count"] = windowTotal;
 
 
                     RecordHealthEvent(anomalyEvent);
@@ -689,16 +686,14 @@ public sealed class MetalHealthMonitor : IDisposable
                 EventType = HealthEventType.Anomaly,
                 Component = "Performance",
                 Severity = HealthSeverity.Medium,
-                Message = $"Performance anomaly detected: {recentAnomalies}/10 recent operations exceed normal duration",
-                Data = new Dictionary<string, object>
-                {
-                    ["anomaly_type"] = "performance_degradation",
-                    ["mean_duration_ms"] = mean,
-                    ["std_dev_ms"] = stdDev,
-                    ["threshold_ms"] = threshold,
-                    ["anomalous_operations"] = recentAnomalies
-                }
+                Message = $"Performance anomaly detected: {recentAnomalies}/10 recent operations exceed normal duration"
             };
+
+            anomalyEvent.Data["anomaly_type"] = "performance_degradation";
+            anomalyEvent.Data["mean_duration_ms"] = mean;
+            anomalyEvent.Data["std_dev_ms"] = stdDev;
+            anomalyEvent.Data["threshold_ms"] = threshold;
+            anomalyEvent.Data["anomalous_operations"] = recentAnomalies;
 
 
             RecordHealthEvent(anomalyEvent);
@@ -727,14 +722,12 @@ public sealed class MetalHealthMonitor : IDisposable
                 EventType = HealthEventType.Anomaly,
                 Component = "Memory",
                 Severity = HealthSeverity.High,
-                Message = $"Sustained high memory pressure detected: {highPressureEvents}/10 recent checks show high pressure",
-                Data = new Dictionary<string, object>
-                {
-                    ["anomaly_type"] = "sustained_memory_pressure",
-                    ["high_pressure_events"] = highPressureEvents,
-                    ["total_recent_events"] = recentMemoryEvents.Count
-                }
+                Message = $"Sustained high memory pressure detected: {highPressureEvents}/10 recent checks show high pressure"
             };
+
+            anomalyEvent.Data["anomaly_type"] = "sustained_memory_pressure";
+            anomalyEvent.Data["high_pressure_events"] = highPressureEvents;
+            anomalyEvent.Data["total_recent_events"] = recentMemoryEvents.Count;
 
 
             RecordHealthEvent(anomalyEvent);

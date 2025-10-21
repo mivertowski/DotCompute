@@ -61,8 +61,17 @@ internal sealed class KernelCacheMetadata
 /// Manages persistent caching of compiled CUDA kernels to improve compilation performance.
 /// Provides thread-safe cache operations with automatic cleanup and persistence.
 /// </summary>
-internal sealed class CudaCompilationCache : IDisposable
+internal sealed partial class CudaCompilationCache : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 21108,
+        Level = LogLevel.Warning,
+        Message = "Failed to cache kernel {KernelName}")]
+    private static partial void LogCacheFailure(ILogger logger, Exception ex, string kernelName);
+
+    #endregion
     private readonly ConcurrentDictionary<string, CudaCompiledKernel> _kernelCache;
     private readonly ConcurrentDictionary<string, KernelCacheMetadata> _cacheMetadata;
     private readonly string _cacheDirectory;
@@ -176,7 +185,7 @@ internal sealed class CudaCompilationCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cache kernel {KernelName}", definition.Name);
+            LogCacheFailure(_logger, ex, definition.Name);
         }
     }
 

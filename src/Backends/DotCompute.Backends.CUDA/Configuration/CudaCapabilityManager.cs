@@ -12,8 +12,23 @@ namespace DotCompute.Backends.CUDA.Configuration
     /// Centralized manager for CUDA compute capability detection and normalization.
     /// Handles driver/hardware compatibility issues and architecture capping.
     /// </summary>
-    public static class CudaCapabilityManager
+    public static partial class CudaCapabilityManager
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 21103,
+            Level = LogLevel.Warning,
+            Message = "Failed to detect device compute capability, using fallback")]
+        private static partial void LogCapabilityDetectionFailure(ILogger logger, Exception ex);
+
+        [LoggerMessage(
+            EventId = 21104,
+            Level = LogLevel.Warning,
+            Message = "CUDA compatibility mode enabled: Forcing sm_89 (Ada Lovelace RTX 2000) to use sm_86 target for maximum driver compatibility. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=false to use native capability. Device capability: {DeviceMajor}.{DeviceMinor}, using compilation target: 8.6")]
+        private static partial void LogCompatibilityModeForced(ILogger logger, int deviceMajor, int deviceMinor);
+
+        #endregion
         private static readonly ILogger _logger;
         private static (int major, int minor)? _cachedCapability;
         private static readonly object _lock = new();
@@ -71,7 +86,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to detect device compute capability, using fallback");
+                    LogCapabilityDetectionFailure(_logger, ex);
                 }
 
                 // Fallback to a safe default
@@ -98,11 +113,7 @@ namespace DotCompute.Backends.CUDA.Configuration
                 // Force fallback mode for maximum compatibility when explicitly requested
                 if (major == 8 && minor == 9)
                 {
-                    _logger.LogWarning(
-                        "CUDA compatibility mode enabled: Forcing sm_89 (Ada Lovelace RTX 2000) to use sm_86 target " +
-                        "for maximum driver compatibility. Set DOTCOMPUTE_FORCE_COMPATIBILITY_MODE=false to use native capability. " +
-                        "Device capability: {DeviceMajor}.{DeviceMinor}, using compilation target: 8.6",
-                        major, minor);
+                    LogCompatibilityModeForced(_logger, major, minor);
                     return (8, 6);
                 }
 

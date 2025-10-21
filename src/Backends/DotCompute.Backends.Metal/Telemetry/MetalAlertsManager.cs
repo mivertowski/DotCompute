@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Execution;
 
@@ -77,7 +78,7 @@ public sealed class MetalAlertsManager : IDisposable
         {
             TriggerAlert(new Alert
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture),
                 RuleId = alertKey,
                 Severity = AlertSeverity.High,
                 Title = "High Memory Allocation Failure Rate",
@@ -130,7 +131,7 @@ public sealed class MetalAlertsManager : IDisposable
         {
             TriggerAlert(new Alert
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture),
                 RuleId = alertKey,
                 Severity = AlertSeverity.High,
                 Title = $"High Kernel Execution Failure Rate: {kernelName}",
@@ -192,7 +193,7 @@ public sealed class MetalAlertsManager : IDisposable
 
             TriggerAlert(new Alert
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture),
                 RuleId = alertKey,
                 Severity = AlertSeverity.Medium,
                 Title = $"Performance Degradation: {operationName}",
@@ -256,7 +257,7 @@ public sealed class MetalAlertsManager : IDisposable
 
             TriggerAlert(new Alert
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture),
                 RuleId = alertKey,
                 Severity = severity,
                 Title = "Sustained High GPU Utilization",
@@ -454,7 +455,7 @@ public sealed class MetalAlertsManager : IDisposable
 
             TriggerAlert(new Alert
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture),
                 RuleId = alertKey,
                 Severity = severity,
                 Title = $"High Error Rate: {error}",

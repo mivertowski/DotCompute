@@ -289,7 +289,6 @@ public sealed class SimdInstructionDispatcher : IDisposable
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
     public void Dispose()
     {
         if (!_disposed)
@@ -300,11 +299,12 @@ public sealed class SimdInstructionDispatcher : IDisposable
         }
     }
 }
+
+#region Supporting Types
+
 /// <summary>
 /// An reduction operation enumeration.
 /// </summary>
-
-#region Supporting Types
 
 /// <summary>
 /// Reduction operations supported by the dispatcher.

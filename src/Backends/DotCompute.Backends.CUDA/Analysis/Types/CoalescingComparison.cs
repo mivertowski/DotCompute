@@ -63,5 +63,5 @@ public sealed class CoalescingComparison
     /// <summary>
     /// Gets or sets the list of recommendations based on the comparison.
     /// </summary>
-    public IList<string> Recommendations { get; } = [];
+    public IList<string> Recommendations { get; set; } = [];
 }

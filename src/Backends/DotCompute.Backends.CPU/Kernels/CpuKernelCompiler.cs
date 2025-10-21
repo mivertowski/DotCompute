@@ -121,7 +121,7 @@ internal static partial class CpuKernelCompiler
         // Validate parameters if available in metadata
         if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
         {
-            if (paramsObj is IIReadOnlyList<object> parameters)
+            if (paramsObj is IReadOnlyList<object> parameters)
             {
                 if (parameters.Count == 0)
                 {

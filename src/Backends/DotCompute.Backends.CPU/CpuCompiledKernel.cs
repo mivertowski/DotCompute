@@ -5,6 +5,7 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Debugging;
+using DotCompute.Abstractions.Types;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Abstractions.Execution;
@@ -134,7 +135,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
         var context = new KernelExecutionContext
         {
             KernelName = _definition.Name,
-            WorkDimensions = new WorkDimensions(1024, 1, 1) // Default work size - should be configurable
+            WorkDimensions = (Dim3)new WorkDimensions(1024, 1, 1) // Default work size - should be configurable
         };
 
         // Map arguments to context parameters

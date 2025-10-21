@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotCompute.Backends.Metal.Native;
@@ -43,13 +44,13 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
 
     private volatile bool _disposed;
-    private readonly long _totalOperations;
-    private readonly long _totalErrors;
+    private long _totalOperations;
+    private long _totalErrors;
 
     public MetalTelemetryManager(
         IOptions<MetalTelemetryOptions> options,
         ILogger<MetalTelemetryManager> logger,
-        ILoggerFactory loggerFactory) : base(logger, new TelemetryConfiguration(), "Metal", "1.0.0")
+        ILoggerFactory loggerFactory) : base(logger, new Abstractions.Telemetry.TelemetryConfiguration(), "Metal", "1.0.0")
     {
         _options = options.Value;
         _logger = logger;

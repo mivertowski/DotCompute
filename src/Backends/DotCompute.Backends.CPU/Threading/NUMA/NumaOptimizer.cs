@@ -262,7 +262,13 @@ public sealed class NumaOptimizer : IDisposable
         };
     }
 
-    private void ApplyBasicOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
+    /// <summary>
+    /// Applies basic NUMA optimizations for the specified workload type.
+    /// </summary>
+    /// <param name="workloadType">The type of workload being optimized.</param>
+    /// <param name="optimizations">List to collect applied optimizations.</param>
+    /// <param name="warnings">List to collect warnings encountered during optimization.</param>
+    private void ApplyBasicOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
     {
         // Basic NUMA awareness
         if (_topology.IsNumaSystem)
@@ -282,7 +288,13 @@ public sealed class NumaOptimizer : IDisposable
         }
     }
 
-    private void ApplyAggressiveOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
+    /// <summary>
+    /// Applies aggressive NUMA optimizations for maximum performance.
+    /// </summary>
+    /// <param name="workloadType">The type of workload being optimized.</param>
+    /// <param name="optimizations">List to collect applied optimizations.</param>
+    /// <param name="warnings">List to collect warnings encountered during optimization.</param>
+    private void ApplyAggressiveOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
     {
         ApplyBasicOptimizations(workloadType, optimizations, warnings);
 
@@ -309,7 +321,13 @@ public sealed class NumaOptimizer : IDisposable
         }
     }
 
-    private void ApplyAdaptiveOptimizations(WorkloadType workloadType, List<string> optimizations, IReadOnlyList<string> warnings)
+    /// <summary>
+    /// Applies adaptive NUMA optimizations based on current system state.
+    /// </summary>
+    /// <param name="workloadType">The type of workload being optimized.</param>
+    /// <param name="optimizations">List to collect applied optimizations.</param>
+    /// <param name="warnings">List to collect warnings encountered during optimization.</param>
+    private void ApplyAdaptiveOptimizations(WorkloadType workloadType, List<string> optimizations, List<string> warnings)
     {
         // Start with basic optimizations
         ApplyBasicOptimizations(workloadType, optimizations, warnings);

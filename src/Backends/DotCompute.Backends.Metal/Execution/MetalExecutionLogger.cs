@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
@@ -410,9 +411,16 @@ public sealed class MetalExecutionTelemetry : IDisposable
         {
             Category = category,
             EventName = eventName,
-            Properties = properties ?? [],
             Timestamp = DateTimeOffset.UtcNow
         };
+
+        if (properties != null)
+        {
+            foreach (var kvp in properties)
+            {
+                telemetryEvent.Properties[kvp.Key] = kvp.Value;
+            }
+        }
 
         _events.Enqueue(telemetryEvent);
 
@@ -521,17 +529,41 @@ public sealed class MetalExecutionTelemetry : IDisposable
         var events = _events.ToArray();
         var metrics = GetMetrics();
 
-        return new MetalTelemetryReport
+        var report = new MetalTelemetryReport
         {
             Timestamp = DateTimeOffset.UtcNow,
-            TotalEvents = events.Length,
-            Metrics = metrics,
-            RecentEvents = [.. events.TakeLast(50)],
-            EventSummary = events
-                .GroupBy(e => $"{e.Category}.{e.EventName}")
-                .ToDictionary(g => g.Key, g => g.Count()),
-            MetricSummary = GenerateMetricSummary(metrics)
+            TotalEvents = events.Length
         };
+
+        // Add metrics
+        foreach (var kvp in metrics)
+        {
+            report.Metrics[kvp.Key] = kvp.Value;
+        }
+
+        // Add recent events
+        foreach (var evt in events.TakeLast(50))
+        {
+            report.RecentEvents.Add(evt);
+        }
+
+        // Add event summary
+        var eventSummary = events
+            .GroupBy(e => $"{e.Category}.{e.EventName}")
+            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (var kvp in eventSummary)
+        {
+            report.EventSummary[kvp.Key] = kvp.Value;
+        }
+
+        // Add metric summary
+        var metricSummary = GenerateMetricSummary(metrics);
+        foreach (var kvp in metricSummary)
+        {
+            report.MetricSummary[kvp.Key] = kvp.Value;
+        }
+
+        return report;
     }
 
     private void GeneratePeriodicReport(object? state)

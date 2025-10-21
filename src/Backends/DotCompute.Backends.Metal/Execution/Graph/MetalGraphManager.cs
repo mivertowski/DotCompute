@@ -13,7 +13,7 @@ namespace DotCompute.Backends.Metal.Execution.Graph;
 /// Provides centralized management of Metal compute graphs including creation, optimization,
 /// execution, and lifecycle management with comprehensive performance monitoring.
 /// </summary>
-public sealed class MetalGraphManager : IDisposable
+public sealed partial class MetalGraphManager : IDisposable
 {
     private readonly ILogger<MetalGraphManager> _logger;
     private readonly MetalGraphExecutor _executor;
@@ -48,7 +48,7 @@ public sealed class MetalGraphManager : IDisposable
         _graphs = new ConcurrentDictionary<string, MetalComputeGraph>();
         _graphStatistics = new ConcurrentDictionary<string, MetalGraphStatistics>();
 
-        _logger.LogInformation("Initialized MetalGraphManager with default configuration");
+        LogManagerInitialized(_logger);
     }
 
     /// <summary>
@@ -65,6 +65,184 @@ public sealed class MetalGraphManager : IDisposable
     /// Gets the number of graphs currently managed.
     /// </summary>
     public int GraphCount => _graphs.Count;
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6001,
+        Level = LogLevel.Information,
+        Message = "Initialized MetalGraphManager with default configuration")]
+    private static partial void LogManagerInitialized(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6002,
+        Level = LogLevel.Information,
+        Message = "Created Metal compute graph '{GraphName}'")]
+    private static partial void LogGraphCreated(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6003,
+        Level = LogLevel.Information,
+        Message = "Removed and disposed Metal compute graph '{GraphName}'")]
+    private static partial void LogGraphRemoved(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6004,
+        Level = LogLevel.Debug,
+        Message = "Cloning node '{SourceNodeId}' to '{ClonedNodeId}'")]
+    private static partial void LogNodeCloning(ILogger logger, string sourceNodeId, string clonedNodeId);
+
+    [LoggerMessage(
+        EventId = 6005,
+        Level = LogLevel.Information,
+        Message = "Cloned graph '{SourceName}' to '{TargetName}'")]
+    private static partial void LogGraphCloned(ILogger logger, string sourceName, string targetName);
+
+    [LoggerMessage(
+        EventId = 6006,
+        Level = LogLevel.Warning,
+        Message = "Attempted to optimize non-existent graph '{GraphName}'")]
+    private static partial void LogOptimizeNonExistentGraph(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6007,
+        Level = LogLevel.Information,
+        Message = "Starting optimization of graph '{GraphName}'")]
+    private static partial void LogOptimizationStarting(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6008,
+        Level = LogLevel.Information,
+        Message = "Successfully optimized graph '{GraphName}' - Performance improvement: {Improvement:F2}x")]
+    private static partial void LogOptimizationCompleted(ILogger logger, string graphName, double improvement);
+
+    [LoggerMessage(
+        EventId = 6009,
+        Level = LogLevel.Warning,
+        Message = "Failed to optimize graph '{GraphName}': {Error}")]
+    private static partial void LogOptimizationFailed(ILogger logger, string graphName, string error);
+
+    [LoggerMessage(
+        EventId = 6010,
+        Level = LogLevel.Error,
+        Message = "Error optimizing graph '{GraphName}'")]
+    private static partial void LogOptimizationError(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(
+        EventId = 6011,
+        Level = LogLevel.Warning,
+        Message = "Attempted to analyze non-existent graph '{GraphName}'")]
+    private static partial void LogAnalyzeNonExistentGraph(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6012,
+        Level = LogLevel.Warning,
+        Message = "Attempted to execute non-existent graph '{GraphName}'")]
+    private static partial void LogExecuteNonExistentGraph(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6013,
+        Level = LogLevel.Information,
+        Message = "Building graph '{GraphName}' before execution")]
+    private static partial void LogBuildingGraphForExecution(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6014,
+        Level = LogLevel.Error,
+        Message = "Failed to build graph '{GraphName}' for execution")]
+    private static partial void LogBuildGraphFailed(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(
+        EventId = 6015,
+        Level = LogLevel.Information,
+        Message = "Executing graph '{GraphName}' with {NodeCount} nodes")]
+    private static partial void LogGraphExecutionStarted(ILogger logger, string graphName, int nodeCount);
+
+    [LoggerMessage(
+        EventId = 6016,
+        Level = LogLevel.Information,
+        Message = "Successfully executed graph '{GraphName}' in {ExecutionTime:F2}ms (GPU: {GpuTime:F2}ms)")]
+    private static partial void LogGraphExecutionCompleted(ILogger logger, string graphName, double executionTime, double gpuTime);
+
+    [LoggerMessage(
+        EventId = 6017,
+        Level = LogLevel.Warning,
+        Message = "Failed to execute graph '{GraphName}': {Error}")]
+    private static partial void LogGraphExecutionFailed(ILogger logger, string graphName, string error);
+
+    [LoggerMessage(
+        EventId = 6018,
+        Level = LogLevel.Error,
+        Message = "Error executing graph '{GraphName}'")]
+    private static partial void LogGraphExecutionError(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(
+        EventId = 6019,
+        Level = LogLevel.Debug,
+        Message = "All graphs are already built")]
+    private static partial void LogAllGraphsAlreadyBuilt(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6020,
+        Level = LogLevel.Information,
+        Message = "Building {UnbuiltCount} graphs")]
+    private static partial void LogBuildingUnbuiltGraphs(ILogger logger, int unbuiltCount);
+
+    [LoggerMessage(
+        EventId = 6021,
+        Level = LogLevel.Debug,
+        Message = "Built graph '{GraphName}'")]
+    private static partial void LogGraphBuilt(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6022,
+        Level = LogLevel.Error,
+        Message = "Failed to build graph '{GraphName}'")]
+    private static partial void LogGraphBuildFailed(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(
+        EventId = 6023,
+        Level = LogLevel.Information,
+        Message = "Reset statistics for graph '{GraphName}'")]
+    private static partial void LogStatisticsReset(ILogger logger, string graphName);
+
+    [LoggerMessage(
+        EventId = 6024,
+        Level = LogLevel.Information,
+        Message = "Reset statistics for all {GraphCount} graphs")]
+    private static partial void LogAllStatisticsReset(ILogger logger, int graphCount);
+
+    [LoggerMessage(
+        EventId = 6025,
+        Level = LogLevel.Debug,
+        Message = "Applied configuration to graph '{GraphName}' - Parallel execution: {ParallelExecution}, Apple Silicon optimizations: {AppleSiliconOpt}")]
+    private static partial void LogConfigurationApplied(ILogger logger, string graphName, bool parallelExecution, bool appleSiliconOpt);
+
+    [LoggerMessage(
+        EventId = 6026,
+        Level = LogLevel.Information,
+        Message = "Disposing MetalGraphManager with {GraphCount} graphs")]
+    private static partial void LogDisposingManager(ILogger logger, int graphCount);
+
+    [LoggerMessage(
+        EventId = 6027,
+        Level = LogLevel.Warning,
+        Message = "Error disposing graph '{GraphName}'")]
+    private static partial void LogGraphDisposalError(ILogger logger, Exception ex, string graphName);
+
+    [LoggerMessage(
+        EventId = 6028,
+        Level = LogLevel.Information,
+        Message = "MetalGraphManager disposed successfully")]
+    private static partial void LogManagerDisposed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6029,
+        Level = LogLevel.Error,
+        Message = "Error during MetalGraphManager disposal")]
+    private static partial void LogManagerDisposalError(ILogger logger, Exception ex);
+
+    #endregion
 
     #region Graph Creation and Management
 
@@ -104,7 +282,7 @@ public sealed class MetalGraphManager : IDisposable
         if (_graphs.TryAdd(name, graph))
         {
             _graphStatistics[name] = graph.Statistics;
-            _logger.LogInformation("Created Metal compute graph '{GraphName}'", name);
+            LogGraphCreated(_logger, name);
             return graph;
         }
         else
@@ -149,7 +327,7 @@ public sealed class MetalGraphManager : IDisposable
             graph.Dispose();
 
 
-            _logger.LogInformation("Removed and disposed Metal compute graph '{GraphName}'", name);
+            LogGraphRemoved(_logger, name);
             return true;
         }
 
@@ -199,10 +377,10 @@ public sealed class MetalGraphManager : IDisposable
             // Add the cloned node to the new graph (this would need proper implementation)
             // For now, we'll just log the cloning operation
 
-            _logger.LogDebug("Cloning node '{SourceNodeId}' to '{ClonedNodeId}'", sourceNode.Id, clonedNode.Id);
+            LogNodeCloning(_logger, sourceNode.Id, clonedNode.Id);
         }
 
-        _logger.LogInformation("Cloned graph '{SourceName}' to '{TargetName}'", sourceName, targetName);
+        LogGraphCloned(_logger, sourceName, targetName);
         return clonedGraph;
     }
 
@@ -227,11 +405,11 @@ public sealed class MetalGraphManager : IDisposable
         var graph = GetGraph(graphName);
         if (graph == null)
         {
-            _logger.LogWarning("Attempted to optimize non-existent graph '{GraphName}'", graphName);
+            LogOptimizeNonExistentGraph(_logger, graphName);
             return null;
         }
 
-        _logger.LogInformation("Starting optimization of graph '{GraphName}'", graphName);
+        LogOptimizationStarting(_logger, graphName);
 
 
         try
@@ -248,22 +426,18 @@ public sealed class MetalGraphManager : IDisposable
                     result.CommandBufferOptimizationsApplied,
                     result.EstimatedPerformanceImprovement);
 
-                _logger.LogInformation(
-                    "Successfully optimized graph '{GraphName}' - Performance improvement: {Improvement:F2}x",
-                    graphName, result.EstimatedPerformanceImprovement);
+                LogOptimizationCompleted(_logger, graphName, result.EstimatedPerformanceImprovement);
             }
             else
             {
-                _logger.LogWarning("Failed to optimize graph '{GraphName}': {Error}",
-
-                    graphName, result.ErrorMessage);
+                LogOptimizationFailed(_logger, graphName, result.ErrorMessage ?? "Unknown error");
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error optimizing graph '{GraphName}'", graphName);
+            LogOptimizationError(_logger, ex, graphName);
             throw;
         }
     }
@@ -281,7 +455,7 @@ public sealed class MetalGraphManager : IDisposable
         var graph = GetGraph(graphName);
         if (graph == null)
         {
-            _logger.LogWarning("Attempted to analyze non-existent graph '{GraphName}'", graphName);
+            LogAnalyzeNonExistentGraph(_logger, graphName);
             return null;
         }
 
@@ -310,27 +484,25 @@ public sealed class MetalGraphManager : IDisposable
         var graph = GetGraph(graphName);
         if (graph == null)
         {
-            _logger.LogWarning("Attempted to execute non-existent graph '{GraphName}'", graphName);
+            LogExecuteNonExistentGraph(_logger, graphName);
             return null;
         }
 
         if (!graph.IsBuilt)
         {
-            _logger.LogInformation("Building graph '{GraphName}' before execution", graphName);
+            LogBuildingGraphForExecution(_logger, graphName);
             try
             {
                 graph.Build();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to build graph '{GraphName}' for execution", graphName);
+                LogBuildGraphFailed(_logger, ex, graphName);
                 throw;
             }
         }
 
-        _logger.LogInformation("Executing graph '{GraphName}' with {NodeCount} nodes",
-
-            graphName, graph.NodeCount);
+        LogGraphExecutionStarted(_logger, graphName, graph.NodeCount);
 
         try
         {
@@ -351,15 +523,12 @@ public sealed class MetalGraphManager : IDisposable
 
             if (result.Success)
             {
-                _logger.LogInformation(
-                    "Successfully executed graph '{GraphName}' in {ExecutionTime:F2}ms (GPU: {GpuTime:F2}ms)",
-                    graphName, result.ExecutionDuration.TotalMilliseconds, result.GpuExecutionTimeMs);
+                LogGraphExecutionCompleted(_logger, graphName,
+                    result.ExecutionDuration.TotalMilliseconds, result.GpuExecutionTimeMs);
             }
             else
             {
-                _logger.LogWarning("Failed to execute graph '{GraphName}': {Error}",
-
-                    graphName, result.ErrorMessage);
+                LogGraphExecutionFailed(_logger, graphName, result.ErrorMessage ?? "Unknown error");
             }
 
             return result;
@@ -370,7 +539,7 @@ public sealed class MetalGraphManager : IDisposable
             var statistics = _graphStatistics.GetValueOrDefault(graphName);
             statistics?.RecordError("execution", ex.Message);
 
-            _logger.LogError(ex, "Error executing graph '{GraphName}'", graphName);
+            LogGraphExecutionError(_logger, ex, graphName);
             throw;
         }
     }
@@ -388,22 +557,22 @@ public sealed class MetalGraphManager : IDisposable
 
         if (unbuiltGraphs.Count == 0)
         {
-            _logger.LogDebug("All graphs are already built");
+            LogAllGraphsAlreadyBuilt(_logger);
             return;
         }
 
-        _logger.LogInformation("Building {UnbuiltCount} graphs", unbuiltGraphs.Count);
+        LogBuildingUnbuiltGraphs(_logger, unbuiltGraphs.Count);
 
         var buildTasks = unbuiltGraphs.Select(async graph =>
         {
             try
             {
                 await Task.Run(() => graph.Build());
-                _logger.LogDebug("Built graph '{GraphName}'", graph.Name);
+                LogGraphBuilt(_logger, graph.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to build graph '{GraphName}'", graph.Name);
+                LogGraphBuildFailed(_logger, ex, graph.Name);
             }
         });
 
@@ -518,7 +687,7 @@ public sealed class MetalGraphManager : IDisposable
         if (statistics != null)
         {
             statistics.Reset();
-            _logger.LogInformation("Reset statistics for graph '{GraphName}'", graphName);
+            LogStatisticsReset(_logger, graphName);
             return true;
         }
 
@@ -537,7 +706,7 @@ public sealed class MetalGraphManager : IDisposable
             stats.Reset();
         }
 
-        _logger.LogInformation("Reset statistics for all {GraphCount} graphs", _graphs.Count);
+        LogAllStatisticsReset(_logger, _graphs.Count);
     }
 
     #endregion
@@ -550,10 +719,7 @@ public sealed class MetalGraphManager : IDisposable
         // This would involve setting up the graph based on the configuration
 
 
-        _logger.LogDebug("Applied configuration to graph '{GraphName}' - " +
-                        "Parallel execution: {ParallelExecution}, " +
-                        "Apple Silicon optimizations: {AppleSiliconOpt}",
-            graph.Name, config.EnableParallelExecution, config.EnableAppleSiliconOptimizations);
+        LogConfigurationApplied(_logger, graph.Name, config.EnableParallelExecution, config.EnableAppleSiliconOptimizations);
     }
 
     #endregion
@@ -573,7 +739,7 @@ public sealed class MetalGraphManager : IDisposable
 
         try
         {
-            _logger.LogInformation("Disposing MetalGraphManager with {GraphCount} graphs", _graphs.Count);
+            LogDisposingManager(_logger, _graphs.Count);
 
             // Dispose all graphs
             foreach (var graph in _graphs.Values)
@@ -584,7 +750,7 @@ public sealed class MetalGraphManager : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error disposing graph '{GraphName}'", graph.Name);
+                    LogGraphDisposalError(_logger, ex, graph.Name);
                 }
             }
 
@@ -594,11 +760,11 @@ public sealed class MetalGraphManager : IDisposable
             // Dispose executor and optimizer
             _executor.Dispose();
 
-            _logger.LogInformation("MetalGraphManager disposed successfully");
+            LogManagerDisposed(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during MetalGraphManager disposal");
+            LogManagerDisposalError(_logger, ex);
         }
         finally
         {

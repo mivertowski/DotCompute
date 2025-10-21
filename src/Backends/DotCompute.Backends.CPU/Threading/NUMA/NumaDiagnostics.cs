@@ -293,7 +293,7 @@ public static class NumaDiagnostics
         return sb.ToString();
     }
 
-    private static void AnalyzeTopology(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
+    private static void AnalyzeTopology(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
     {
         // Check for balanced topology
         if (topology.IsNumaSystem)
@@ -325,7 +325,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzePlatformCapabilities(NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
+    private static void AnalyzePlatformCapabilities(NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
     {
         if (!capabilities.HasNativeNumaSupport)
         {
@@ -359,7 +359,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzePerformanceCharacteristics(NumaTopology topology, List<DiagnosticIssue> issues, IReadOnlyList<string> recommendations)
+    private static void AnalyzePerformanceCharacteristics(NumaTopology topology, List<DiagnosticIssue> issues, List<string> recommendations)
     {
         if (topology.IsNumaSystem && topology.DistanceMatrix != null)
         {
@@ -396,7 +396,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void AnalyzeConfiguration(NumaTopology topology, NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, IReadOnlyList<string> warnings)
+    private static void AnalyzeConfiguration(NumaTopology topology, NumaPlatformCapabilities capabilities, List<DiagnosticIssue> issues, List<string> recommendations, List<string> warnings)
     {
         // Check for optimal configuration
         if (topology.IsNumaSystem && capabilities.IsNumaCapable)
@@ -457,7 +457,7 @@ public static class NumaDiagnostics
         };
     }
 
-    private static void ValidateTopologyConsistency(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
+    private static void ValidateTopologyConsistency(NumaTopology topology, List<ValidationIssue> issues)
     {
         // Validate node count consistency
         if (topology.Nodes.Count != topology.NodeCount)
@@ -485,7 +485,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidatePlatformSupport(NumaPlatformCapabilities capabilities, IReadOnlyList<ValidationIssue> issues)
+    private static void ValidatePlatformSupport(NumaPlatformCapabilities capabilities, List<ValidationIssue> issues)
     {
         if (capabilities.MaxNodes <= 0)
         {
@@ -499,7 +499,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidateMemoryConfiguration(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
+    private static void ValidateMemoryConfiguration(NumaTopology topology, List<ValidationIssue> issues)
     {
         foreach (var node in topology.Nodes)
         {
@@ -516,7 +516,7 @@ public static class NumaDiagnostics
         }
     }
 
-    private static void ValidateCpuConfiguration(NumaTopology topology, IReadOnlyList<ValidationIssue> issues)
+    private static void ValidateCpuConfiguration(NumaTopology topology, List<ValidationIssue> issues)
     {
         foreach (var node in topology.Nodes)
         {

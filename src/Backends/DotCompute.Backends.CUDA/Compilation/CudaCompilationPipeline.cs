@@ -126,7 +126,7 @@ internal sealed class CudaCompilationPipeline
             {
                 foreach (var warning in validationResult.Warnings)
                 {
-                    _logger.LogWarning("CUDA source warning for {KernelName}: {Warning}", source.Name, warning);
+                    LogSourceWarning(_logger, source.Name, warning);
                 }
             }
 
@@ -156,7 +156,7 @@ internal sealed class CudaCompilationPipeline
             // Phase 6: Verify compiled code
             if (!CudaCompilerValidator.VerifyCompiledCode(compiledCode, source.Name, _logger))
             {
-                _logger.LogWarning("Compiled code verification failed for kernel {KernelName}, proceeding anyway", source.Name);
+                LogVerificationFailed(_logger, source.Name);
             }
 
             // Phase 7: Create compiled kernel object

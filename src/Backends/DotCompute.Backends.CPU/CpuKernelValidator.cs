@@ -679,20 +679,22 @@ internal sealed class CpuKernelValidator : IDisposable
 
     private static CpuCapabilities DetectCpuCapabilities()
     {
+        var instructionSets = new HashSet<string>();
+
+        // Detect available instruction sets (simplified)
+        if (Vector.IsHardwareAccelerated)
+        {
+            _ = instructionSets.Add("SSE");
+            _ = instructionSets.Add("AVX");
+        }
+
         var capabilities = new CpuCapabilities
         {
             CoreCount = Environment.ProcessorCount,
             IsHardwareAccelerated = Vector.IsHardwareAccelerated,
             VectorWidth = Vector<float>.Count,
-            SupportedInstructionSets = []
+            SupportedInstructionSets = instructionSets
         };
-
-        // Detect available instruction sets (simplified)
-        if (Vector.IsHardwareAccelerated)
-        {
-            _ = capabilities.SupportedInstructionSets.Add("SSE");
-            _ = capabilities.SupportedInstructionSets.Add("AVX");
-        }
 
         return capabilities;
     }
@@ -777,7 +779,7 @@ public class CpuCapabilities
     /// Gets or sets the supported instruction sets.
     /// </summary>
     /// <value>The supported instruction sets.</value>
-    public HashSet<string> SupportedInstructionSets { get; } = [];
+    public HashSet<string> SupportedInstructionSets { get; set; } = [];
 }
 /// <summary>
 /// A class that represents cpu validation result.

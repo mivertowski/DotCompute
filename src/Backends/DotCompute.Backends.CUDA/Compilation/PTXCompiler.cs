@@ -16,8 +16,17 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// Handles PTX (Parallel Thread Execution) compilation for CUDA kernels using NVRTC.
 /// Provides optimized compilation pipeline with name mangling support and error handling.
 /// </summary>
-internal static class PTXCompiler
+internal static partial class PTXCompiler
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 21105,
+        Level = LogLevel.Warning,
+        Message = "Failed to cleanup NVRTC program for kernel {KernelName}")]
+    private static partial void LogCleanupFailure(ILogger logger, Exception ex, string kernelName);
+
+    #endregion
     // Static storage for mangled function names - shared across all compiler instances
     private static readonly ConcurrentDictionary<string, Dictionary<string, string>> _mangledNamesCache = new();
 
@@ -172,7 +181,7 @@ internal static class PTXCompiler
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Failed to cleanup NVRTC program for kernel {KernelName}", kernelName);
+                    LogCleanupFailure(logger, ex, kernelName);
                 }
             }
         }

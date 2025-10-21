@@ -13,7 +13,7 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Production-grade cache for compiled Metal kernels with LRU eviction and memory pressure handling.
 /// </summary>
-public sealed class MetalKernelCache : IDisposable
+public sealed partial class MetalKernelCache : IDisposable
 {
     private readonly ILogger<MetalKernelCache> _logger;
     private readonly ConcurrentDictionary<string, CacheEntry> _cache;
@@ -75,7 +75,7 @@ public sealed class MetalKernelCache : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to initialize persistent cache at {Path}", _persistentCachePath);
+                LogPersistentCacheInitFailed(_logger, ex, _persistentCachePath);
             }
         }
 
@@ -88,10 +88,132 @@ public sealed class MetalKernelCache : IDisposable
             TimeSpan.FromMinutes(5));
 
 
-        _logger.LogInformation(
-            "Metal kernel cache initialized with max size {MaxSize}, TTL {TTL}, persistent path: {Path}",
-            maxCacheSize, _defaultTtl, _persistentCachePath ?? "none");
+        LogKernelCacheInitialized(_logger, maxCacheSize, _defaultTtl, _persistentCachePath ?? "none");
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6500,
+        Level = LogLevel.Information,
+        Message = "Metal kernel cache initialized with max size {MaxSize}, TTL {TTL}, persistent path: {Path}")]
+    private static partial void LogKernelCacheInitialized(ILogger logger, int maxSize, TimeSpan ttl, string path);
+
+    [LoggerMessage(
+        EventId = 6501,
+        Level = LogLevel.Warning,
+        Message = "Failed to initialize persistent cache at {Path}")]
+    private static partial void LogPersistentCacheInitFailed(ILogger logger, Exception ex, string? path);
+
+    [LoggerMessage(
+        EventId = 6502,
+        Level = LogLevel.Debug,
+        Message = "Cache hit for kernel '{Name}' (key: {Key}, access count: {Count})")]
+    private static partial void LogCacheHit(ILogger logger, string name, string key, int count);
+
+    [LoggerMessage(
+        EventId = 6503,
+        Level = LogLevel.Debug,
+        Message = "Cache hit from persistent storage for kernel '{Name}'")]
+    private static partial void LogPersistentCacheHit(ILogger logger, string name);
+
+    [LoggerMessage(
+        EventId = 6504,
+        Level = LogLevel.Debug,
+        Message = "Cache miss for kernel '{Name}' (key: {Key})")]
+    private static partial void LogCacheMiss(ILogger logger, string name, string key);
+
+    [LoggerMessage(
+        EventId = 6505,
+        Level = LogLevel.Debug,
+        Message = "Cached kernel '{Name}' (key: {Key}, size: {Size} bytes, compilation: {Time}ms)")]
+    private static partial void LogKernelCached(ILogger logger, string name, string key, int size, long time);
+
+    [LoggerMessage(
+        EventId = 6506,
+        Level = LogLevel.Information,
+        Message = "Invalidated cached kernel '{Name}' (key: {Key})")]
+    private static partial void LogKernelInvalidated(ILogger logger, string name, string key);
+
+    [LoggerMessage(
+        EventId = 6507,
+        Level = LogLevel.Warning,
+        Message = "Failed to clear persistent cache")]
+    private static partial void LogClearPersistentCacheFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6508,
+        Level = LogLevel.Information,
+        Message = "Cleared {Count} kernels from cache")]
+    private static partial void LogCacheCleared(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6509,
+        Level = LogLevel.Debug,
+        Message = "Evicted kernel '{Name}' (key: {Key}, last access: {LastAccess})")]
+    private static partial void LogKernelEvicted(ILogger logger, string name, string key, DateTimeOffset lastAccess);
+
+    [LoggerMessage(
+        EventId = 6510,
+        Level = LogLevel.Warning,
+        Message = "Failed to load kernel from persistent cache: {Key}")]
+    private static partial void LogPersistentCacheLoadFailed(ILogger logger, Exception ex, string key);
+
+    [LoggerMessage(
+        EventId = 6511,
+        Level = LogLevel.Debug,
+        Message = "Saved kernel to persistent cache: {Key}")]
+    private static partial void LogSavedToPersistentCache(ILogger logger, string key);
+
+    [LoggerMessage(
+        EventId = 6512,
+        Level = LogLevel.Warning,
+        Message = "Failed to save kernel to persistent cache: {Key}")]
+    private static partial void LogSaveToPersistentCacheFailed(ILogger logger, Exception ex, string key);
+
+    [LoggerMessage(
+        EventId = 6513,
+        Level = LogLevel.Warning,
+        Message = "Failed to remove kernel from persistent cache: {Key}")]
+    private static partial void LogRemoveFromPersistentCacheFailed(ILogger logger, Exception ex, string key);
+
+    [LoggerMessage(
+        EventId = 6514,
+        Level = LogLevel.Information,
+        Message = "Found {Count} cached kernels in persistent storage")]
+    private static partial void LogPersistentCacheLoaded(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6515,
+        Level = LogLevel.Warning,
+        Message = "Failed to load persistent cache")]
+    private static partial void LogLoadPersistentCacheFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6516,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up expired kernel '{Name}' (key: {Key})")]
+    private static partial void LogExpiredKernelCleanedUp(ILogger logger, string name, string key);
+
+    [LoggerMessage(
+        EventId = 6517,
+        Level = LogLevel.Information,
+        Message = "Cleaned up {Count} expired kernel cache entries")]
+    private static partial void LogExpiredEntriesCleanedUp(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6518,
+        Level = LogLevel.Error,
+        Message = "Error during cache cleanup")]
+    private static partial void LogCleanupError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6519,
+        Level = LogLevel.Information,
+        Message = "Metal kernel cache disposed - Hit rate: {HitRate:P2}, Total hits: {Hits}, Total misses: {Misses}, Evictions: {Evictions}")]
+    private static partial void LogKernelCacheDisposed(ILogger logger, double hitRate, long hits, long misses, long evictions);
+
+    #endregion
 
     /// <summary>
     /// Attempts to retrieve a cached kernel.
@@ -140,9 +262,7 @@ public sealed class MetalKernelCache : IDisposable
                     _ = Interlocked.Add(ref _totalCacheTimeMs, elapsed);
 
 
-                    _logger.LogDebug(
-                        "Cache hit for kernel '{Name}' (key: {Key}, access count: {Count})",
-                        definition.Name, cacheKey[..8], entry.AccessCount);
+                    LogCacheHit(_logger, definition.Name, cacheKey[..8], (int)entry.AccessCount);
 
 
                     return true;
@@ -173,13 +293,13 @@ public sealed class MetalKernelCache : IDisposable
 
 
             _ = Interlocked.Increment(ref _hitCount);
-            _logger.LogDebug("Cache hit from persistent storage for kernel '{Name}'", definition.Name);
+            LogPersistentCacheHit(_logger, definition.Name);
             return true;
         }
 
 
         _ = Interlocked.Increment(ref _missCount);
-        _logger.LogDebug("Cache miss for kernel '{Name}' (key: {Key})", definition.Name, cacheKey[..8]);
+        LogCacheMiss(_logger, definition.Name, cacheKey[..8]);
         return false;
     }
 
@@ -240,9 +360,7 @@ public sealed class MetalKernelCache : IDisposable
             }
 
 
-            _logger.LogDebug(
-                "Cached kernel '{Name}' (key: {Key}, size: {Size} bytes, compilation: {Time}ms)",
-                definition.Name, cacheKey[..8], entry.SizeInBytes, compilationTimeMs);
+            LogKernelCached(_logger, definition.Name, cacheKey[..8], (int)entry.SizeInBytes, compilationTimeMs);
 
             // Save to persistent cache if enabled
 
@@ -277,9 +395,7 @@ public sealed class MetalKernelCache : IDisposable
                 RemoveFromPersistentCache(cacheKey);
 
 
-                _logger.LogInformation("Invalidated cached kernel '{Name}' (key: {Key})",
-
-                    definition.Name, cacheKey[..8]);
+                LogKernelInvalidated(_logger, definition.Name, cacheKey[..8]);
                 return true;
             }
         }
@@ -319,12 +435,12 @@ public sealed class MetalKernelCache : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to clear persistent cache");
+                    LogClearPersistentCacheFailed(_logger, ex);
                 }
             }
 
 
-            _logger.LogInformation("Cleared {Count} kernels from cache", count);
+            LogCacheCleared(_logger, count);
         }
         finally
         {
@@ -453,12 +569,7 @@ public sealed class MetalKernelCache : IDisposable
                 _ = Interlocked.Increment(ref _evictionCount);
 
 
-                _logger.LogDebug(
-                    "Evicted kernel '{Name}' (key: {Key}, last access: {LastAccess})",
-                    entry.Definition.Name,
-
-                    entry.CacheKey[..8],
-                    entry.LastAccessTime);
+                LogKernelEvicted(_logger, entry.Definition.Name, entry.CacheKey[..8], entry.LastAccessTime);
             }
         }
     }
@@ -533,7 +644,7 @@ public sealed class MetalKernelCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load kernel from persistent cache: {Key}", cacheKey);
+            LogPersistentCacheLoadFailed(_logger, ex, cacheKey);
             return false;
         }
     }
@@ -573,11 +684,11 @@ public sealed class MetalKernelCache : IDisposable
             File.WriteAllText(metaPath, metaJson);
 
 
-            _logger.LogDebug("Saved kernel to persistent cache: {Key}", cacheKey[..8]);
+            LogSavedToPersistentCache(_logger, cacheKey[..8]);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save kernel to persistent cache: {Key}", cacheKey[..8]);
+            LogSaveToPersistentCacheFailed(_logger, ex, cacheKey[..8]);
         }
     }
 
@@ -610,7 +721,7 @@ public sealed class MetalKernelCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to remove kernel from persistent cache: {Key}", cacheKey[..8]);
+            LogRemoveFromPersistentCacheFailed(_logger, ex, cacheKey[..8]);
         }
     }
 
@@ -628,7 +739,7 @@ public sealed class MetalKernelCache : IDisposable
         try
         {
             var metaFiles = Directory.GetFiles(_persistentCachePath, "*.meta");
-            _logger.LogInformation("Found {Count} cached kernels in persistent storage", metaFiles.Length);
+            LogPersistentCacheLoaded(_logger, metaFiles.Length);
 
             // Note: We can't fully reconstruct Metal objects from binary data at startup
             // This would require deferred loading when the kernel is first requested
@@ -636,7 +747,7 @@ public sealed class MetalKernelCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load persistent cache");
+            LogLoadPersistentCacheFailed(_logger, ex);
         }
     }
 
@@ -665,21 +776,19 @@ public sealed class MetalKernelCache : IDisposable
                 if (_cache.TryRemove(entry.CacheKey, out _))
                 {
                     RemoveFromPersistentCache(entry.CacheKey);
-                    _logger.LogDebug(
-                        "Cleaned up expired kernel '{Name}' (key: {Key})",
-                        entry.Definition.Name, entry.CacheKey[..8]);
+                    LogExpiredKernelCleanedUp(_logger, entry.Definition.Name, entry.CacheKey[..8]);
                 }
             }
 
 
             if (expiredEntries.Count > 0)
             {
-                _logger.LogInformation("Cleaned up {Count} expired kernel cache entries", expiredEntries.Count);
+                LogExpiredEntriesCleanedUp(_logger, expiredEntries.Count);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during cache cleanup");
+            LogCleanupError(_logger, ex);
         }
         finally
         {
@@ -716,9 +825,7 @@ public sealed class MetalKernelCache : IDisposable
 
 
         var stats = GetStatistics();
-        _logger.LogInformation(
-            "Metal kernel cache disposed - Hit rate: {HitRate:P2}, Total hits: {Hits}, Total misses: {Misses}, Evictions: {Evictions}",
-            stats.HitRate, stats.HitCount, stats.MissCount, stats.EvictionCount);
+        LogKernelCacheDisposed(_logger, stats.HitRate, stats.HitCount, stats.MissCount, stats.EvictionCount);
 
 
         _disposed = true;

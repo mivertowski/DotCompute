@@ -32,8 +32,8 @@ namespace DotCompute.Backends.CUDA.Configuration
         public List<string> IncludeDirectories
         {
 
-            get => IncludePaths;
-            set => IncludePaths = value;
+            get => [.. IncludePaths];
+            set => IncludePaths = [.. value];
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions Performance => new()
         {
             CudaArchitecture = "sm_80",
-            OptimizationLevel = Abstractions.Types.OptimizationLevel.Aggressive,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.O3,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,
@@ -124,7 +124,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public new static CudaCompilationOptions Debug => new()
         {
             CudaArchitecture = "sm_60",
-            OptimizationLevel = Abstractions.Types.OptimizationLevel.Minimal,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.None,
             UseFastMath = false,
             EnableDebugInfo = true,
             GeneratePositionIndependentCode = false
@@ -136,7 +136,7 @@ namespace DotCompute.Backends.CUDA.Configuration
         public static CudaCompilationOptions ForAda => new()
         {
             CudaArchitecture = "sm_89",
-            OptimizationLevel = Abstractions.Types.OptimizationLevel.Aggressive,
+            OptimizationLevel = Abstractions.Types.OptimizationLevel.O3,
             UseFastMath = true,
             EnableDebugInfo = false,
             EnableLoopUnrolling = true,

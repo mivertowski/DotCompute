@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -345,23 +346,39 @@ public sealed class MetalExecutionManager : IDisposable
         var contextStats = _executionContext.GetStatistics();
         var errorStats = _errorHandler.GetErrorStatistics();
 
-        return new MetalExecutionManagerStats
+        var stats = new MetalExecutionManagerStats
         {
             // Component statistics
             StreamStatistics = streamStats,
             EventStatistics = eventStats,
             ExecutionStatistics = contextStats,
-            ErrorStatistics = errorStats.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value),
 
             // Overall health
             IsGpuAvailable = _errorHandler.IsGpuAvailable,
             IsExecutionPaused = _executionContext.IsExecutionPaused,
-            IsAppleSilicon = _executionContext.IsAppleSilicon,
-
-            // Telemetry
-            TelemetryMetrics = _telemetry.GetMetrics(),
-            RecentTelemetryEvents = _telemetry.GetRecentEvents(20)
+            IsAppleSilicon = _executionContext.IsAppleSilicon
         };
+
+        // Add items to collection properties
+        var errorStatistics = errorStats.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value);
+        foreach (var kvp in errorStatistics)
+        {
+            stats.ErrorStatistics[kvp.Key] = kvp.Value;
+        }
+
+        var telemetryMetrics = _telemetry.GetMetrics();
+        foreach (var kvp in telemetryMetrics)
+        {
+            stats.TelemetryMetrics[kvp.Key] = kvp.Value;
+        }
+
+        var recentEvents = _telemetry.GetRecentEvents(20);
+        foreach (var evt in recentEvents)
+        {
+            stats.RecentTelemetryEvents.Add(evt);
+        }
+
+        return stats;
     }
 
     /// <summary>
@@ -374,8 +391,7 @@ public sealed class MetalExecutionManager : IDisposable
         var healthCheck = new MetalExecutionManagerHealthCheck
         {
             CheckTime = DateTimeOffset.UtcNow,
-            IsHealthy = true,
-            Issues = []
+            IsHealthy = true
         };
 
         try
@@ -385,7 +401,10 @@ public sealed class MetalExecutionManager : IDisposable
             if (!contextHealth.IsHealthy)
             {
                 healthCheck.IsHealthy = false;
-                healthCheck.Issues.AddRange(contextHealth.Issues);
+                foreach (var issue in contextHealth.Issues)
+                {
+                    healthCheck.Issues.Add(issue);
+                }
             }
 
             // Get component statistics
@@ -393,13 +412,10 @@ public sealed class MetalExecutionManager : IDisposable
             var eventStats = _eventManager.GetStatistics();
 
             // Check component health
-            healthCheck.ComponentHealth = new Dictionary<string, bool>
-            {
-                ["GPU"] = _errorHandler.IsGpuAvailable,
-                ["ExecutionContext"] = contextHealth.IsHealthy,
-                ["CommandStream"] = streamStats.ActiveStreams >= 0,
-                ["EventManager"] = eventStats.ActiveEvents >= 0
-            };
+            healthCheck.ComponentHealth["GPU"] = _errorHandler.IsGpuAvailable;
+            healthCheck.ComponentHealth["ExecutionContext"] = contextHealth.IsHealthy;
+            healthCheck.ComponentHealth["CommandStream"] = streamStats.ActiveStreams >= 0;
+            healthCheck.ComponentHealth["EventManager"] = eventStats.ActiveEvents >= 0;
 
             // Check for performance issues
             var stats = GetStatistics();
@@ -434,32 +450,35 @@ public sealed class MetalExecutionManager : IDisposable
         var stats = GetStatistics();
         var telemetryReport = _telemetry.GenerateReport();
 
-        return new MetalDiagnosticInfo
+        var diagnosticInfo = new MetalDiagnosticInfo
         {
             Health = stats.IsGpuAvailable ? MetalExecutionHealth.Healthy : MetalExecutionHealth.Critical,
             Architecture = stats.IsAppleSilicon ? MetalGpuArchitecture.AppleM1 : MetalGpuArchitecture.IntelIntegrated,
             PlatformOptimization = stats.IsAppleSilicon ? MetalPlatformOptimization.MacOS : MetalPlatformOptimization.Generic,
-            Configuration = _options.ExecutionConfiguration,
-
-
-            ResourceUsage = stats.ExecutionStatistics.ResourceBreakdown
-                .ToDictionary(kvp => kvp.Key, kvp => (long)kvp.Value),
-
-
-            PerformanceMetrics = stats.TelemetryMetrics,
-
-
-            Messages = [], // Would be populated with recent diagnostic messages
-
-
-            SystemInfo = new Dictionary<string, string>
-            {
-                ["Device"] = _device.ToString(),
-                ["IsAppleSilicon"] = stats.IsAppleSilicon.ToString(),
-                ["GpuAvailable"] = stats.IsGpuAvailable.ToString(),
-                ["ExecutionPaused"] = stats.IsExecutionPaused.ToString()
-            }
+            Configuration = _options.ExecutionConfiguration
         };
+
+        // Add items to collection properties
+        var resourceUsage = stats.ExecutionStatistics.ResourceBreakdown
+            .ToDictionary(kvp => kvp.Key, kvp => (long)kvp.Value);
+        foreach (var kvp in resourceUsage)
+        {
+            diagnosticInfo.ResourceUsage[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var kvp in stats.TelemetryMetrics)
+        {
+            diagnosticInfo.PerformanceMetrics[kvp.Key] = kvp.Value;
+        }
+
+        // Messages would be populated with recent diagnostic messages - currently empty
+
+        diagnosticInfo.SystemInfo["Device"] = _device.ToString();
+        diagnosticInfo.SystemInfo["IsAppleSilicon"] = stats.IsAppleSilicon.ToString();
+        diagnosticInfo.SystemInfo["GpuAvailable"] = stats.IsGpuAvailable.ToString();
+        diagnosticInfo.SystemInfo["ExecutionPaused"] = stats.IsExecutionPaused.ToString();
+
+        return diagnosticInfo;
     }
 
     #endregion

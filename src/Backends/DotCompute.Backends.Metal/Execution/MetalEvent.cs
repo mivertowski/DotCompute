@@ -447,15 +447,6 @@ public sealed class MetalEventManager : IDisposable
                 AverageCpuTimeMs = cpuTimes.Average(),
                 AverageOverheadMs = timings.Average(t => t.OverheadMs),
 
-                // Percentiles
-                Percentiles = new Dictionary<int, double>
-                {
-                    [50] = CalculatePercentile(gpuTimes, 0.5),
-                    [90] = CalculatePercentile(gpuTimes, 0.9),
-                    [95] = CalculatePercentile(gpuTimes, 0.95),
-                    [99] = CalculatePercentile(gpuTimes, 0.99)
-                },
-
                 // Quality metrics
                 CoefficientOfVariation = CalculateStandardDeviation(gpuTimes) / gpuTimes.Average(),
                 OutlierCount = CountOutliers(gpuTimes),

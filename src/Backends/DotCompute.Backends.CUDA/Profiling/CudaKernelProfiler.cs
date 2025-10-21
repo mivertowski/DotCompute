@@ -147,11 +147,15 @@ namespace DotCompute.Backends.CUDA.Advanced
                 {
                     KernelName = kernelName,
                     LaunchConfig = launchConfig,
-                    Timings = timings,
                     Statistics = stats,
                     Occupancy = occupancy,
                     LastProfiled = DateTime.UtcNow
                 };
+                // Copy timings to the profile data
+                foreach (var timing in timings)
+                {
+                    profileData.Timings.Add(timing);
+                }
                 _ = _profileData.AddOrUpdate(kernelName, profileData, (k, v) => profileData);
 
                 return new KernelProfilingResult
@@ -252,34 +256,33 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// </summary>
         private static ProfilingStatistics CalculateStatistics(IReadOnlyList<double> timings)
         {
-            timings.Sort();
+            var sortedTimings = timings.ToList();
+            sortedTimings.Sort();
 
-            var count = timings.Count;
-            var sum = timings.Sum();
+            var count = sortedTimings.Count;
+            var sum = sortedTimings.Sum();
             var average = sum / count;
             var median = count % 2 == 0
-                ? (timings[count / 2 - 1] + timings[count / 2]) / 2
-                : timings[count / 2];
+                ? (sortedTimings[count / 2 - 1] + sortedTimings[count / 2]) / 2
+                : sortedTimings[count / 2];
 
-            var variance = timings.Select(t => Math.Pow(t - average, 2)).Average();
+            var variance = sortedTimings.Select(t => Math.Pow(t - average, 2)).Average();
             var stdDev = Math.Sqrt(variance);
-
-            var percentiles = new Dictionary<int, double>
-            {
-                [50] = median,
-                [90] = timings[(int)(count * 0.9)],
-                [95] = timings[(int)(count * 0.95)],
-                [99] = timings[(int)(count * 0.99)]
-            };
 
             return new ProfilingStatistics
             {
                 AverageTime = average,
-                MinTime = timings.Min(),
-                MaxTime = timings.Max(),
+                MinTime = sortedTimings.Min(),
+                MaxTime = sortedTimings.Max(),
                 MedianTime = median,
                 StandardDeviation = stdDev,
-                Percentiles = percentiles
+                Percentiles = new Dictionary<int, double>
+                {
+                    [50] = median,
+                    [90] = sortedTimings[(int)(count * 0.9)],
+                    [95] = sortedTimings[(int)(count * 0.95)],
+                    [99] = sortedTimings[(int)(count * 0.99)]
+                }
             };
         }
 
@@ -528,7 +531,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Gets or sets the percentiles.
         /// </summary>
         /// <value>The percentiles.</value>
-        public Dictionary<int, double> Percentiles { get; } = [];
+        public Dictionary<int, double> Percentiles { get; set; } = [];
     }
 
     /// <summary>
@@ -627,7 +630,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Gets or sets the timings.
         /// </summary>
         /// <value>The timings.</value>
-        public IList<double> Timings { get; } = [];
+        public IList<double> Timings { get; set; } = [];
         /// <summary>
         /// Gets or sets the statistics.
         /// </summary>

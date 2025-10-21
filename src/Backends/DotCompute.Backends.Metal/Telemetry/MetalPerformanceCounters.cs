@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.Metal.Native;
@@ -294,11 +295,11 @@ public sealed class MetalPerformanceCounters : IDisposable
             analysis.ErrorRateAnalysis = AnalyzeErrorRates(counters);
 
             // Analyze resource utilization
-
             analysis.ResourceUtilizationAnalysis = AnalyzeResourceUtilization(counters);
 
             // Analyze performance trends
-            analysis.PerformanceTrends = [AnalyzePerformanceTrends(counters)];
+            var performanceTrend = AnalyzePerformanceTrends(counters);
+            analysis.PerformanceTrends.Add(performanceTrend);
 
             // Generate performance score
             analysis.OverallPerformanceScore = CalculatePerformanceScore(analysis);

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -10,7 +11,7 @@ namespace DotCompute.Backends.Metal.Telemetry;
 /// <summary>
 /// Exports Metal metrics to various monitoring and observability systems
 /// </summary>
-public sealed class MetalMetricsExporter : IDisposable
+public sealed partial class MetalMetricsExporter : IDisposable
 {
     private readonly ILogger<MetalMetricsExporter> _logger;
     private readonly MetalExportOptions _options;
@@ -34,9 +35,174 @@ public sealed class MetalMetricsExporter : IDisposable
             _exportTimer = new Timer(AutoExportMetrics, null, _options.AutoExportInterval, _options.AutoExportInterval);
         }
 
-        _logger.LogInformation("Metal metrics exporter initialized with {ExporterCount} configured exporters, auto-export: {AutoExport}",
-            _options.Exporters.Count, _options.AutoExportInterval > TimeSpan.Zero);
+        LogExporterInitialized(_logger, _options.Exporters.Count, _options.AutoExportInterval > TimeSpan.Zero);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6100,
+        Level = LogLevel.Information,
+        Message = "Metal metrics exporter initialized with {ExporterCount} configured exporters, auto-export: {AutoExport}")]
+    private static partial void LogExporterInitialized(ILogger logger, int exporterCount, bool autoExport);
+
+    [LoggerMessage(
+        EventId = 6101,
+        Level = LogLevel.Error,
+        Message = "Failed to initiate export to {ExporterType}: {ExporterName}")]
+    private static partial void LogExportInitiationFailed(ILogger logger, Exception ex, ExporterType exporterType, string exporterName);
+
+    [LoggerMessage(
+        EventId = 6102,
+        Level = LogLevel.Debug,
+        Message = "Successfully exported metrics to {Count} monitoring systems")]
+    private static partial void LogMetricsExportedSuccessfully(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 6103,
+        Level = LogLevel.Warning,
+        Message = "Metrics export timed out after {Timeout}ms")]
+    private static partial void LogExportTimeout(ILogger logger, double timeout);
+
+    [LoggerMessage(
+        EventId = 6104,
+        Level = LogLevel.Error,
+        Message = "Error during metrics export")]
+    private static partial void LogMetricsExportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6105,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Prometheus: {Endpoint}")]
+    private static partial void LogPrometheusExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6106,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Prometheus: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogPrometheusExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6107,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Prometheus: {Endpoint}")]
+    private static partial void LogPrometheusExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6108,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to OpenTelemetry: {Endpoint}")]
+    private static partial void LogOpenTelemetryExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6109,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogOpenTelemetryExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6110,
+        Level = LogLevel.Error,
+        Message = "Error exporting to OpenTelemetry: {Endpoint}")]
+    private static partial void LogOpenTelemetryExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6111,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Application Insights: {Endpoint}")]
+    private static partial void LogApplicationInsightsExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6112,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Application Insights: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogApplicationInsightsExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6113,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Application Insights: {Endpoint}")]
+    private static partial void LogApplicationInsightsExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6114,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to DataDog: {Endpoint}")]
+    private static partial void LogDataDogExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6115,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to DataDog: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogDataDogExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6116,
+        Level = LogLevel.Error,
+        Message = "Error exporting to DataDog: {Endpoint}")]
+    private static partial void LogDataDogExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6117,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to Grafana: {Endpoint}")]
+    private static partial void LogGrafanaExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6118,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to Grafana: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogGrafanaExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6119,
+        Level = LogLevel.Error,
+        Message = "Error exporting to Grafana: {Endpoint}")]
+    private static partial void LogGrafanaExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6120,
+        Level = LogLevel.Trace,
+        Message = "Successfully exported metrics to custom endpoint: {Endpoint}")]
+    private static partial void LogCustomEndpointExportSuccess(ILogger logger, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6121,
+        Level = LogLevel.Warning,
+        Message = "Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}")]
+    private static partial void LogCustomEndpointExportFailed(ILogger logger, System.Net.HttpStatusCode statusCode, string? reasonPhrase);
+
+    [LoggerMessage(
+        EventId = 6122,
+        Level = LogLevel.Error,
+        Message = "Error exporting to custom endpoint: {Endpoint}")]
+    private static partial void LogCustomEndpointExportError(ILogger logger, Exception ex, string endpoint);
+
+    [LoggerMessage(
+        EventId = 6123,
+        Level = LogLevel.Warning,
+        Message = "Failed to add header {HeaderKey} for exporter {ExporterName}")]
+    private static partial void LogHeaderAddFailed(ILogger logger, Exception ex, string headerKey, string exporterName);
+
+    [LoggerMessage(
+        EventId = 6124,
+        Level = LogLevel.Trace,
+        Message = "Auto-export timer triggered")]
+    private static partial void LogAutoExportTriggered(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6125,
+        Level = LogLevel.Error,
+        Message = "Error during auto-export")]
+    private static partial void LogAutoExportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6126,
+        Level = LogLevel.Debug,
+        Message = "Metal metrics exporter disposed")]
+    private static partial void LogExporterDisposed(ILogger logger);
+
+    #endregion
 
     /// <summary>
     /// Exports telemetry snapshot to configured monitoring systems
@@ -70,9 +236,7 @@ public sealed class MetalMetricsExporter : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initiate export to {ExporterType}: {ExporterName}",
-
-                    exporter.Type, exporter.Name);
+                LogExportInitiationFailed(_logger, ex, exporter.Type, exporter.Name);
             }
         }
 
@@ -82,15 +246,15 @@ public sealed class MetalMetricsExporter : IDisposable
             try
             {
                 await Task.WhenAll(exportTasks).WaitAsync(_options.ExportTimeout, cancellationToken);
-                _logger.LogDebug("Successfully exported metrics to {Count} monitoring systems", exportTasks.Count);
+                LogMetricsExportedSuccessfully(_logger, exportTasks.Count);
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning("Metrics export timed out after {Timeout}ms", _options.ExportTimeout.TotalMilliseconds);
+                LogExportTimeout(_logger, _options.ExportTimeout.TotalMilliseconds);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during metrics export");
+                LogMetricsExportError(_logger, ex);
             }
         }
     }
@@ -138,18 +302,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Prometheus: {Endpoint}", exporter.Endpoint);
+                LogPrometheusExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Prometheus: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogPrometheusExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Prometheus: {Endpoint}", exporter.Endpoint);
+            LogPrometheusExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -170,18 +332,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to OpenTelemetry: {Endpoint}", exporter.Endpoint);
+                LogOpenTelemetryExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to OpenTelemetry: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogOpenTelemetryExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to OpenTelemetry: {Endpoint}", exporter.Endpoint);
+            LogOpenTelemetryExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -209,18 +369,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Application Insights: {Endpoint}", exporter.Endpoint);
+                LogApplicationInsightsExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Application Insights: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogApplicationInsightsExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Application Insights: {Endpoint}", exporter.Endpoint);
+            LogApplicationInsightsExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -248,18 +406,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to DataDog: {Endpoint}", exporter.Endpoint);
+                LogDataDogExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to DataDog: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogDataDogExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to DataDog: {Endpoint}", exporter.Endpoint);
+            LogDataDogExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -280,18 +436,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to Grafana: {Endpoint}", exporter.Endpoint);
+                LogGrafanaExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to Grafana: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogGrafanaExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to Grafana: {Endpoint}", exporter.Endpoint);
+            LogGrafanaExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -312,18 +466,16 @@ public sealed class MetalMetricsExporter : IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogTrace("Successfully exported metrics to custom endpoint: {Endpoint}", exporter.Endpoint);
+                LogCustomEndpointExportSuccess(_logger, exporter.Endpoint);
             }
             else
             {
-                _logger.LogWarning("Failed to export to custom endpoint: {StatusCode} {ReasonPhrase}",
-
-                    response.StatusCode, response.ReasonPhrase);
+                LogCustomEndpointExportFailed(_logger, response.StatusCode, response.ReasonPhrase);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting to custom endpoint: {Endpoint}", exporter.Endpoint);
+            LogCustomEndpointExportError(_logger, ex, exporter.Endpoint);
             throw;
         }
     }
@@ -616,9 +768,7 @@ public sealed class MetalMetricsExporter : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to add header {HeaderKey} for exporter {ExporterName}",
-
-                            header.Key, exporter.Name);
+                        LogHeaderAddFailed(_logger, ex, header.Key, exporter.Name);
                     }
                 }
             }
@@ -637,11 +787,11 @@ public sealed class MetalMetricsExporter : IDisposable
         {
             // Auto-export would need access to current telemetry snapshot
             // This is a placeholder for the auto-export functionality
-            _logger.LogTrace("Auto-export timer triggered");
+            LogAutoExportTriggered(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during auto-export");
+            LogAutoExportError(_logger, ex);
         }
     }
 
@@ -672,7 +822,7 @@ public sealed class MetalMetricsExporter : IDisposable
             _exportTimer?.Dispose();
             _httpClient?.Dispose();
 
-            _logger.LogDebug("Metal metrics exporter disposed");
+            LogExporterDisposed(_logger);
         }
     }
 }

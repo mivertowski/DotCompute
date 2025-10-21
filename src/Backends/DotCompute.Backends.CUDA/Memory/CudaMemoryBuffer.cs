@@ -21,6 +21,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="options">Memory allocation options.</param>
     public sealed class CudaMemoryBuffer(CudaDevice device, nint devicePointer, long sizeInBytes, MemoryOptions options = MemoryOptions.None) : IUnifiedMemoryBuffer, IDisposable
     {
+        private readonly CudaDevice _device = device ?? throw new ArgumentNullException(nameof(device));
         private readonly nint _devicePointer = devicePointer;
         private readonly long _sizeInBytes = sizeInBytes;
         private bool _disposed;
