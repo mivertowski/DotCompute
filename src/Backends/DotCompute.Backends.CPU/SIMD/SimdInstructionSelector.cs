@@ -166,7 +166,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         var score = 80.0; // Base score for AVX2
 
         // Good balance for medium to large datasets
-        if (profile.ElementCount >= 1000 && profile.ElementCount <= 100_000)
+        if (profile.ElementCount is >= 1000 and <= 100_000)
         {
             score += 25.0;
         }
@@ -188,7 +188,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         }
 
         // Better for moderate computational intensity
-        if (profile.ComputationalIntensity >= 0.3 && profile.ComputationalIntensity <= 0.8)
+        if (profile.ComputationalIntensity is >= 0.3 and <= 0.8)
         {
             score += 15.0;
         }
@@ -204,7 +204,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         var score = 60.0; // Base score for SSE
 
         // Good for smaller datasets
-        if (profile.ElementCount >= 100 && profile.ElementCount <= 10_000)
+        if (profile.ElementCount is >= 100 and <= 10_000)
         {
             score += 20.0;
         }
@@ -242,7 +242,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         }
 
         // Good for mobile/embedded scenarios with moderate datasets
-        if (profile.ElementCount >= 500 && profile.ElementCount <= 50_000)
+        if (profile.ElementCount is >= 500 and <= 50_000)
         {
             score += 15.0;
         }

@@ -88,7 +88,7 @@ public sealed class MetalCommandEncoder : IDisposable
             throw new ArgumentException("Buffer cannot be null", nameof(buffer));
         }
 
-        if (index < 0 || index > 31) // Metal supports up to 32 buffer bindings
+        if (index is < 0 or > 31) // Metal supports up to 32 buffer bindings
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }
@@ -119,7 +119,7 @@ public sealed class MetalCommandEncoder : IDisposable
         ThrowIfDisposed();
         ThrowIfEncodingEnded();
 
-        if (index < 0 || index > 31)
+        if (index is < 0 or > 31)
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }
@@ -148,7 +148,7 @@ public sealed class MetalCommandEncoder : IDisposable
         ThrowIfDisposed();
         ThrowIfEncodingEnded();
 
-        if (index < 0 || index > 31)
+        if (index is < 0 or > 31)
         {
             throw new ArgumentOutOfRangeException(nameof(index), "Buffer index must be between 0 and 31");
         }

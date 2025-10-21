@@ -340,7 +340,7 @@ public sealed partial class MetalProductionLogger : IDisposable
         LogStructuredEvent("ErrorEvent", logLevel, correlationId, properties);
 
         // Log stack trace for critical errors if available
-        if (error == MetalError.DeviceLost || error == MetalError.InternalError)
+        if (error is MetalError.DeviceLost or MetalError.InternalError)
         {
             LogStackTrace(correlationId, Environment.StackTrace);
         }

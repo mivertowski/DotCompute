@@ -126,7 +126,7 @@ internal sealed class CudaCompilationPipeline
             {
                 foreach (var warning in validationResult.Warnings)
                 {
-                    LogSourceWarning(_logger, source.Name, warning);
+                    _logger.LogWarning("Source warning in kernel '{KernelName}': {Warning}", source.Name, warning);
                 }
             }
 
@@ -156,7 +156,7 @@ internal sealed class CudaCompilationPipeline
             // Phase 6: Verify compiled code
             if (!CudaCompilerValidator.VerifyCompiledCode(compiledCode, source.Name, _logger))
             {
-                LogVerificationFailed(_logger, source.Name);
+                _logger.LogWarning("Compiled code verification failed for kernel '{KernelName}'", source.Name);
             }
 
             // Phase 7: Create compiled kernel object
@@ -291,7 +291,7 @@ internal sealed class CudaCompilationPipeline
 
         // Add performance macros
         _ = builder.AppendLine("// Performance optimization macros");
-        if (options?.OptimizationLevel == OptimizationLevel.Maximum)
+        if (options?.OptimizationLevel == OptimizationLevel.O3)
         {
             _ = builder.AppendLine("#define FORCE_INLINE __forceinline__");
             _ = builder.AppendLine("#define RESTRICT __restrict__");

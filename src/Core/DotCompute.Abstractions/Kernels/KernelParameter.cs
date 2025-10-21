@@ -21,8 +21,8 @@ public class KernelParameter
         Type = type ?? throw new ArgumentNullException(nameof(type));
         Direction = direction;
         Index = -1; // Default value when not specified
-        IsInput = direction == ParameterDirection.In || direction == ParameterDirection.InOut;
-        IsOutput = direction == ParameterDirection.Out || direction == ParameterDirection.InOut;
+        IsInput = direction is ParameterDirection.In or ParameterDirection.InOut;
+        IsOutput = direction is ParameterDirection.Out or ParameterDirection.InOut;
         IsConstant = false;
         MemorySpace = MemorySpace.Global;
     }

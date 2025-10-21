@@ -123,6 +123,6 @@ namespace DotCompute.Plugins.Interfaces
         /// <summary>
         /// List of supported features specific to this backend.
         /// </summary>
-        public IReadOnlyList<string> SupportedFeatures { get; } = Array.Empty<string>();
+        public IReadOnlyList<string> SupportedFeatures { get; init; } = Array.Empty<string>();
     }
 }

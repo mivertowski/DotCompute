@@ -336,10 +336,16 @@ namespace DotCompute.Backends.CUDA.Resilience
 
             if (errors.Count > 0)
             {
-                result.Success = false;
-                result.Message = $"Restoration completed with {errors.Count} errors";
-                result.Errors = errors;
-
+                // Recreate result with init-only Errors property
+                result = new RestoreResult
+                {
+                    Success = false,
+                    Message = $"Restoration completed with {errors.Count} errors",
+                    RestoredStreams = result.RestoredStreams,
+                    RestoredKernels = result.RestoredKernels,
+                    MemoryAllocationsLost = result.MemoryAllocationsLost,
+                    Errors = errors
+                };
 
                 _logger.LogWarningMessage($"Context restoration completed with errors: {string.Join("; ", errors)}");
             }
@@ -939,10 +945,10 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// <value>The memory allocations lost.</value>
         public int MemoryAllocationsLost { get; set; }
         /// <summary>
-        /// Gets or sets the errors.
+        /// Gets or initializes the errors.
         /// </summary>
         /// <value>The errors.</value>
-        public IList<string> Errors { get; } = [];
+        public IList<string> Errors { get; init; } = [];
     }
     /// <summary>
     /// A class that represents recovery result.

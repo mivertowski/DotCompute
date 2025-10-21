@@ -326,15 +326,15 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <value>The is valid.</value>
         public bool IsValid { get; set; }
         /// <summary>
-        /// Gets or sets the errors.
+        /// Gets or initializes the errors.
         /// </summary>
         /// <value>The errors.</value>
-        public IList<string> Errors { get; } = [];
+        public IList<string> Errors { get; init; } = [];
         /// <summary>
-        /// Gets or sets the warnings.
+        /// Gets or initializes the warnings.
         /// </summary>
         /// <value>The warnings.</value>
-        public IList<string> Warnings { get; } = [];
+        public IList<string> Warnings { get; init; } = [];
         /// <summary>
         /// Gets or sets the occupancy.
         /// </summary>

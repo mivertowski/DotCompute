@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Manages memory pools for efficient allocation and reuse of CUDA memory.
     /// Reduces allocation overhead and memory fragmentation.
     /// </summary>
-    public sealed class CudaMemoryPoolManager : IDisposable
+    public sealed partial class CudaMemoryPoolManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
@@ -60,7 +60,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS),
                 TimeSpan.FromSeconds(MAINTENANCE_INTERVAL_SECONDS));
 
-            _logger.LogInfoMessage("Memory pool manager initialized with {_pools.Count} size classes");
+            LogPoolManagerInitialized(_pools.Count);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (!_pools.TryGetValue(poolSize, out var pool))
             {
                 // Should not happen with proper initialization
-                _logger.LogWarningMessage("Pool for size {poolSize} not found, allocating directly");
+                LogPoolNotFound(poolSize);
                 _ = Interlocked.Increment(ref _poolMisses);
                 return await AllocateDirectAsync(sizeInBytes, zeroMemory, cancellationToken);
             }
@@ -136,9 +136,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
 
 
-                _logger.LogTrace("Allocated {Size} bytes from pool (hit rate: {HitRate:P2})",
-
-                    poolSize, PoolHitRate);
+                LogPoolHit(poolSize, PoolHitRate);
 
 
                 return new PooledMemoryBuffer(this, buffer, sizeInBytes, poolSize);
@@ -169,7 +167,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogTrace("Returned {Size} bytes to pool", poolSize);
+                    LogReturnedToPool(poolSize);
                 }
             }
             else
@@ -240,7 +238,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var block = new MemoryBlock(devicePtr, poolSize);
 
 
-                _logger.LogDebugMessage($"Allocated new {poolSize} byte block for pool");
+                LogNewBlockAllocated(poolSize);
 
 
                 return new PooledMemoryBuffer(this, block, requestedSize, poolSize);
@@ -258,7 +256,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaMemset(ptr, 0, (nuint)size);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("Failed to zero memory: {result}");
+                    LogZeroMemoryFailed(result);
                 }
             }, cancellationToken);
         }
@@ -275,11 +273,11 @@ namespace DotCompute.Backends.CUDA.Memory
             if (result == CudaError.Success)
             {
                 _ = Interlocked.Add(ref _totalBytesInPools, -block.Size);
-                _logger.LogTrace("Freed {Size} byte memory block", block.Size);
+                LogMemoryBlockFreed(block.Size);
             }
             else
             {
-                _logger.LogWarningMessage("Failed to free memory block: {result}");
+                LogFreeMemoryBlockFailed(result);
             }
         }
 
@@ -326,12 +324,12 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (freedBlocks > 0)
                 {
                     _ = Interlocked.Add(ref _totalBytesInPools, -freedBytes);
-                    _logger.LogDebugMessage($"Pool maintenance freed {freedBlocks} blocks ({freedBytes} bytes)");
+                    LogMaintenanceCompleted(freedBlocks, freedBytes);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error during pool maintenance");
+                LogMaintenanceError(ex);
             }
         }
 
@@ -379,7 +377,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
 
             _totalBytesInPools = 0;
-            _logger.LogInfoMessage("Cleared all memory pools");
+            LogPoolsCleared();
         }
         /// <summary>
         /// Performs dispose.
@@ -407,10 +405,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocationSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInformation(
-                "Disposed memory pool manager. Stats: {Allocations} allocations, " +
-                "{HitRate:P2} hit rate, {BytesAllocated:N0} bytes allocated",
-                _totalAllocations, PoolHitRate, _totalBytesAllocated);
+            LogPoolManagerDisposed(_totalAllocations, PoolHitRate, _totalBytesAllocated);
         }
 
         /// <summary>

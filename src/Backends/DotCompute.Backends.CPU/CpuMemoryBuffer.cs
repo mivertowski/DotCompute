@@ -132,17 +132,17 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => _state == BufferState.HostOnly || _state == BufferState.Synchronized;
+    public bool IsOnHost => _state is BufferState.HostOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => _state == BufferState.DeviceOnly || _state == BufferState.Synchronized;
+    public bool IsOnDevice => _state is BufferState.DeviceOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether dirty.
     /// </summary>
     /// <value>The is dirty.</value>
-    public bool IsDirty => _state == BufferState.HostDirty || _state == BufferState.DeviceDirty;
+    public bool IsDirty => _state is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets as span.
     /// </summary>

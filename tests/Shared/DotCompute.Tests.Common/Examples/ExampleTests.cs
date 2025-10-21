@@ -152,7 +152,7 @@ public class ExampleTests(ITestOutputHelper output) : ConsolidatedTestBase(outpu
 
         sineData.ShouldContainOnlyFiniteValues();
         // Sine values should be in [-1,1] range
-        _ = sineData.All(v => v >= -1.1f && v <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
+        _ = sineData.All(v => v is >= (-1.1f) and <= 1.1f).Should().BeTrue("Sine values should be in [-1,1] range");
 
         // Count non-zero elements in sparse data
 

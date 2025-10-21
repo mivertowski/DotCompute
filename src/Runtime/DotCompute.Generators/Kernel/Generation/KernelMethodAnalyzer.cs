@@ -156,8 +156,8 @@ public sealed class KernelMethodAnalyzer
     /// <returns>True if the attribute is a kernel attribute; otherwise, false.</returns>
     private static bool IsKernelAttribute(INamedTypeSymbol? attributeClass)
     {
-        return attributeClass?.Name == "KernelAttribute" ||
-               attributeClass?.Name == "Kernel";
+        return attributeClass?.Name is "KernelAttribute" or
+               "Kernel";
     }
 
     /// <summary>

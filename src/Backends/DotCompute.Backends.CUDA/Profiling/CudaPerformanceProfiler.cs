@@ -406,14 +406,14 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             // Calculate totals
 
-            analysis.TotalTransfers = profiles.Count;
-            analysis.TotalBytesTransferred = profiles.Sum(p => p.BytesTransferred);
-            analysis.TotalTransferTime = TimeSpan.FromMilliseconds(
+            // Calculate values
+            var totalTransfers = profiles.Count;
+            var totalBytesTransferred = profiles.Sum(p => p.BytesTransferred);
+            var totalTransferTime = TimeSpan.FromMilliseconds(
                 profiles.Sum(p => p.TransferTime.TotalMilliseconds));
 
             // Group by transfer type
-
-            analysis.TransfersByType = profiles
+            var transfersByType = profiles
                 .GroupBy(p => p.TransferType)
                 .ToDictionary(
                     g => g.Key,
@@ -427,15 +427,23 @@ namespace DotCompute.Backends.CUDA.Profiling
                     });
 
             // Find bottlenecks
-
-            analysis.Bottlenecks = IdentifyMemoryBottlenecks(profiles);
+            var bottlenecks = IdentifyMemoryBottlenecks(profiles);
 
             // Calculate overall bandwidth
+            var overallBandwidth = totalTransferTime.TotalSeconds > 0
+                ? totalBytesTransferred / totalTransferTime.TotalSeconds
+                : 0.0;
 
-            if (analysis.TotalTransferTime.TotalSeconds > 0)
+            // Create analysis with all init-only properties
+            analysis = new MemoryTransferAnalysis
             {
-                analysis.OverallBandwidth = analysis.TotalBytesTransferred / analysis.TotalTransferTime.TotalSeconds;
-            }
+                TotalTransfers = totalTransfers,
+                TotalBytesTransferred = totalBytesTransferred,
+                TotalTransferTime = totalTransferTime,
+                OverallBandwidth = overallBandwidth,
+                TransfersByType = transfersByType,
+                Bottlenecks = bottlenecks
+            };
 
             return analysis;
         }
@@ -598,13 +606,29 @@ namespace DotCompute.Backends.CUDA.Profiling
             }
 
             // Identify top time consumers
-            report.TopKernelsByTime = [.. report.KernelProfiles
+            var topKernelsByTime = report.KernelProfiles
                 .OrderByDescending(k => k.TotalTime)
-                .Take(10)];
+                .Take(10)
+                .ToList();
 
-            report.TopMemoryTransfers = [.. report.MemoryProfiles
+            var topMemoryTransfers = report.MemoryProfiles
                 .OrderByDescending(m => m.BytesTransferred)
-                .Take(10)];
+                .Take(10)
+                .ToList();
+
+            // Recreate report with init-only properties
+            report = new ProfilingReport
+            {
+                GeneratedAt = report.GeneratedAt,
+                KernelProfiles = report.KernelProfiles,
+                MemoryProfiles = report.MemoryProfiles,
+                TotalKernelTime = report.TotalKernelTime,
+                AverageKernelTime = report.AverageKernelTime,
+                TotalMemoryTransferred = report.TotalMemoryTransferred,
+                TotalMemoryTime = report.TotalMemoryTime,
+                TopKernelsByTime = topKernelsByTime,
+                TopMemoryTransfers = topMemoryTransfers
+            };
 
             return report;
         }
@@ -978,15 +1002,15 @@ namespace DotCompute.Backends.CUDA.Profiling
             /// <value>The total memory time.</value>
             public TimeSpan TotalMemoryTime { get; set; }
             /// <summary>
-            /// Gets or sets the top kernels by time.
+            /// Gets or initializes the top kernels by time.
             /// </summary>
             /// <value>The top kernels by time.</value>
-            public IList<KernelProfile> TopKernelsByTime { get; } = [];
+            public IList<KernelProfile> TopKernelsByTime { get; init; } = [];
             /// <summary>
-            /// Gets or sets the top memory transfers.
+            /// Gets or initializes the top memory transfers.
             /// </summary>
             /// <value>The top memory transfers.</value>
-            public IList<MemoryProfile> TopMemoryTransfers { get; } = [];
+            public IList<MemoryProfile> TopMemoryTransfers { get; init; } = [];
         }
         /// <summary>
         /// A class that represents memory transfer analysis.
@@ -1015,15 +1039,15 @@ namespace DotCompute.Backends.CUDA.Profiling
             /// <value>The overall bandwidth.</value>
             public double OverallBandwidth { get; set; }
             /// <summary>
-            /// Gets or sets the transfers by type.
+            /// Gets or initializes the transfers by type.
             /// </summary>
             /// <value>The transfers by type.</value>
-            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; } = [];
+            public Dictionary<MemoryTransferType, TransferTypeStats> TransfersByType { get; init; } = [];
             /// <summary>
-            /// Gets or sets the bottlenecks.
+            /// Gets or initializes the bottlenecks.
             /// </summary>
             /// <value>The bottlenecks.</value>
-            public IList<string> Bottlenecks { get; } = [];
+            public IList<string> Bottlenecks { get; init; } = [];
         }
         /// <summary>
         /// A class that represents transfer type stats.

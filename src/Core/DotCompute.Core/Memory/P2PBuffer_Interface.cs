@@ -20,19 +20,19 @@ namespace DotCompute.Core.Memory
         /// <summary>
         /// Gets whether the buffer is currently on host.
         /// </summary>
-        public bool IsOnHost => State == BufferState.HostReady || State == BufferState.HostDirty;
+        public bool IsOnHost => State is BufferState.HostReady or BufferState.HostDirty;
 
 
         /// <summary>
         /// Gets whether the buffer is currently on device.
         /// </summary>
-        public bool IsOnDevice => State == BufferState.DeviceReady || State == BufferState.DeviceDirty;
+        public bool IsOnDevice => State is BufferState.DeviceReady or BufferState.DeviceDirty;
 
 
         /// <summary>
         /// Gets whether the buffer is dirty.
         /// </summary>
-        public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
+        public bool IsDirty => State is BufferState.HostDirty or BufferState.DeviceDirty;
         /// <summary>
         /// Gets as span.
         /// </summary>

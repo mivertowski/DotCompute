@@ -877,7 +877,11 @@ public readonly struct StreamId : IEquatable<StreamId>
 {
     private readonly Guid _id;
 
-    private StreamId(Guid id) => _id = id;
+    private StreamId(Guid id)
+    {
+        _id = id;
+    }
+
 
     public static StreamId New() => new(Guid.NewGuid());
 

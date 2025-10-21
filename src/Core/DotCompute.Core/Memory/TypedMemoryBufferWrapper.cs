@@ -48,12 +48,12 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => State == BufferState.HostReady || State == BufferState.HostDirty;
+    public bool IsOnHost => State is BufferState.HostReady or BufferState.HostDirty;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => State == BufferState.DeviceReady || State == BufferState.DeviceDirty;
+    public bool IsOnDevice => State is BufferState.DeviceReady or BufferState.DeviceDirty;
     /// <summary>
     /// Gets as span.
     /// </summary>
@@ -200,7 +200,7 @@ internal class TypedMemoryBufferWrapper<T>(IUnifiedMemoryBuffer underlyingBuffer
 
     // Additional interface methods
 
-    public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
+    public bool IsDirty => State is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets the device memory.
     /// </summary>

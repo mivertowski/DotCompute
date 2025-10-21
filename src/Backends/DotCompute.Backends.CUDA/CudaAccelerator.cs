@@ -18,9 +18,46 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace DotCompute.Backends.CUDA
 {
     /// <summary>
-    /// CUDA accelerator implementation for GPU compute operations.
-    /// Migrated to use BaseAccelerator, reducing code by 60% while maintaining full functionality.
+    /// CUDA accelerator implementation providing high-performance GPU compute operations.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The CUDA accelerator is the primary interface for executing compute kernels on NVIDIA GPUs.
+    /// It provides automatic kernel compilation, memory management, and execution optimization.
+    /// </para>
+    /// <para>
+    /// <strong>Supported GPU Architectures:</strong>
+    /// <list type="bullet">
+    /// <item>Compute Capability 5.0+ (Maxwell through Ada Lovelace/Hopper)</item>
+    /// <item>RTX 2000 Ada Generation (Compute Capability 8.9) with optimizations</item>
+    /// <item>Automatic detection and optimization for specific GPU models</item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Key Features:</strong>
+    /// <list type="bullet">
+    /// <item>Zero-copy unified memory support</item>
+    /// <item>CUDA graph execution for optimized kernel launches (CC 10.0+)</item>
+    /// <item>Automatic kernel compilation with NVRTC</item>
+    /// <item>Device memory pooling for reduced allocation overhead</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Create accelerator for default GPU device
+    /// using var accelerator = new CudaAccelerator();
+    ///
+    /// // Get detailed device information
+    /// var deviceInfo = accelerator.GetDeviceInfo();
+    /// Console.WriteLine($"GPU: {deviceInfo.Name}, CC: {deviceInfo.ComputeCapability}");
+    ///
+    /// // Compile and execute kernel
+    /// var kernel = await accelerator.CompileKernelAsync(kernelDef, options);
+    /// await accelerator.ExecuteKernelAsync(kernel, args);
+    /// await accelerator.SynchronizeAsync();
+    /// </code>
+    /// </example>
     public sealed class CudaAccelerator : BaseAccelerator
     {
         private readonly CudaDevice _device;
@@ -30,31 +67,77 @@ namespace DotCompute.Backends.CUDA
         private readonly CudaGraphManager? _graphManager;
 
         /// <summary>
-        /// Gets the underlying CUDA device.
+        /// Gets the underlying CUDA device providing hardware information and capabilities.
         /// </summary>
+        /// <value>The CUDA device instance for this accelerator.</value>
         public CudaDevice Device => _device;
 
         /// <summary>
-        /// Gets the device ID.
+        /// Gets the CUDA device identifier used for multi-GPU scenarios.
         /// </summary>
+        /// <value>Zero-based device index (0 = first GPU, 1 = second GPU, etc.).</value>
         public int DeviceId => _device.DeviceId;
 
 
         /// <summary>
-        /// Gets the CUDA-specific context.
+        /// Gets the CUDA execution context managing device state and streams.
         /// </summary>
+        /// <value>Internal CUDA context for device operations.</value>
         internal CudaContext CudaContext => _context;
 
 
         /// <summary>
-        /// Gets the graph manager for optimized kernel execution.
+        /// Gets the CUDA graph manager for optimized repeated kernel execution patterns.
         /// </summary>
+        /// <value>
+        /// Graph manager instance if supported (Compute Capability 10.0+), otherwise <c>null</c>.
+        /// CUDA graphs capture kernel launch sequences for faster replay with reduced CPU overhead.
+        /// </value>
+        /// <remarks>
+        /// Available only on GPUs with compute capability 10.0 or higher (Hopper architecture and newer).
+        /// Use graphs for repetitive execution patterns to reduce launch overhead by up to 50%.
+        /// </remarks>
         public CudaGraphManager? GraphManager => _graphManager;
+
         /// <summary>
-        /// Initializes a new instance of the CudaAccelerator class.
+        /// Initializes a new CUDA accelerator instance for GPU compute operations.
         /// </summary>
-        /// <param name="deviceId">The device identifier.</param>
-        /// <param name="logger">The logger.</param>
+        /// <param name="deviceId">
+        /// Zero-based index of the CUDA device to use (default: 0 for first GPU).
+        /// Use <see cref="CudaRuntime.cudaGetDeviceCount"/> to enumerate available devices.
+        /// </param>
+        /// <param name="logger">
+        /// Optional logger for diagnostics and performance monitoring.
+        /// If <c>null</c>, a null logger is used (no logging output).
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when CUDA initialization fails, device doesn't exist, or driver is incompatible.
+        /// </exception>
+        /// <remarks>
+        /// <para>
+        /// The accelerator automatically:
+        /// <list type="bullet">
+        /// <item>Detects GPU compute capability and optimizes accordingly</item>
+        /// <item>Initializes memory pools for efficient allocation</item>
+        /// <item>Creates CUDA graph manager if CC 10.0+ is detected</item>
+        /// <item>Sets up NVRTC compiler for runtime kernel compilation</item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <strong>Multi-GPU Systems:</strong><br/>
+        /// Create separate accelerator instances for each GPU device to enable parallel execution.
+        /// </para>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// // Use default GPU (device 0)
+        /// using var gpu0 = new CudaAccelerator();
+        ///
+        /// // Use second GPU with logging
+        /// var logger = loggerFactory.CreateLogger&lt;CudaAccelerator&gt;();
+        /// using var gpu1 = new CudaAccelerator(deviceId: 1, logger: logger);
+        /// </code>
+        /// </example>
 
         public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
             : base(
@@ -136,8 +219,46 @@ namespace DotCompute.Backends.CUDA
         }
 
         /// <summary>
-        /// Resets the CUDA device.
+        /// Resets the CUDA device to a clean state, clearing all memory allocations and reinitializing the context.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This operation:
+        /// <list type="bullet">
+        /// <item>Frees all device memory allocations managed by this accelerator</item>
+        /// <item>Destroys all CUDA contexts on this device</item>
+        /// <item>Resets the device to its initial state</item>
+        /// <item>Reinitializes the accelerator context</item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <strong>Warning:</strong> This is a heavyweight operation that affects all CUDA contexts
+        /// on the device, not just this accelerator instance. Use sparingly, primarily for:
+        /// <list type="bullet">
+        /// <item>Recovering from device errors</item>
+        /// <item>Cleaning up after memory leaks during development</item>
+        /// <item>Benchmarking scenarios requiring pristine device state</item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">Thrown if the accelerator has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if device reset fails due to driver error or pending operations.
+        /// </exception>
+        /// <example>
+        /// <code>
+        /// // Reset device after encountering errors
+        /// try
+        /// {
+        ///     await accelerator.ExecuteKernelAsync(kernel, args);
+        /// }
+        /// catch (CudaException ex) when (ex.Error == CudaError.IllegalAddress)
+        /// {
+        ///     accelerator.Reset(); // Clean slate
+        ///     // Retry operation...
+        /// }
+        /// </code>
+        /// </example>
         public void Reset()
         {
             ThrowIfDisposed();
@@ -157,9 +278,45 @@ namespace DotCompute.Backends.CUDA
         }
 
         /// <summary>
-        /// Gets detailed device information including RTX 2000 Ada detection.
+        /// Retrieves comprehensive device information including hardware specifications and capabilities.
         /// </summary>
-        /// <returns>Device information and capabilities.</returns>
+        /// <returns>
+        /// Detailed device information including compute capability, memory configuration,
+        /// multiprocessor count, and architecture-specific features like RTX Ada detection.
+        /// </returns>
+        /// <exception cref="ObjectDisposedException">Thrown if the accelerator has been disposed.</exception>
+        /// <remarks>
+        /// <para>
+        /// The returned <see cref="DeviceInfo"/> includes:
+        /// <list type="bullet">
+        /// <item><strong>Hardware:</strong> GPU name, compute capability, SM count, CUDA core estimate</item>
+        /// <item><strong>Memory:</strong> Total/available memory, bandwidth, L2 cache size</item>
+        /// <item><strong>Capabilities:</strong> Unified memory, concurrent kernels, ECC support</item>
+        /// <item><strong>Limits:</strong> Max threads per block, shared memory, warp size</item>
+        /// <item><strong>Architecture:</strong> Generation detection (Ampere, Ada, Hopper, etc.)</item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// <strong>RTX 2000 Ada Detection:</strong><br/>
+        /// The <c>IsRTX2000Ada</c> property specifically identifies the RTX 2000 Ada Generation
+        /// (Compute Capability 8.9) for architecture-specific optimizations.
+        /// </para>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var info = accelerator.GetDeviceInfo();
+        /// Console.WriteLine($"GPU: {info.Name}");
+        /// Console.WriteLine($"Compute Capability: {info.ComputeCapability}");
+        /// Console.WriteLine($"Memory: {info.GlobalMemoryBytes / (1024 * 1024 * 1024)} GB");
+        /// Console.WriteLine($"CUDA Cores: ~{info.EstimatedCudaCores}");
+        /// Console.WriteLine($"Memory Bandwidth: {info.MemoryBandwidthGBps:F1} GB/s");
+        ///
+        /// if (info.IsRTX2000Ada)
+        /// {
+        ///     Console.WriteLine("Detected RTX 2000 Ada - enabling Ada optimizations");
+        /// }
+        /// </code>
+        /// </example>
         public DeviceInfo GetDeviceInfo()
         {
             ThrowIfDisposed();

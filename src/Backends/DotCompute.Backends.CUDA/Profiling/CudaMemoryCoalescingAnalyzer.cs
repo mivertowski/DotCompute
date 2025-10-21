@@ -95,18 +95,34 @@ namespace DotCompute.Backends.CUDA.Analysis
                 analysis = await AnalyzeLegacyArchitectureAsync(accessInfo, analysis);
             }
 
-            // Calculate efficiency metrics
+            // Identify specific issues
+            var issues = IdentifyCoalescingIssues(accessInfo, computeCapability);
+
+            // Generate optimization suggestions
+            var optimizations = GenerateOptimizations(accessInfo, issues);
+
+            // Calculate efficiency metrics and recreate with all properties
             analysis.CoalescingEfficiency = CalculateCoalescingEfficiency(accessInfo, computeCapability);
             analysis.WastedBandwidth = (long)CalculateWastedBandwidth(accessInfo);
             analysis.OptimalAccessSize = GetOptimalAccessSize(computeCapability);
 
-            // Identify specific issues
-
-            analysis.Issues = IdentifyCoalescingIssues(accessInfo, computeCapability);
-
-            // Generate optimization suggestions
-
-            analysis.Optimizations = GenerateOptimizations(accessInfo, analysis.Issues);
+            // Recreate analysis with init-only properties
+            analysis = new CoalescingAnalysis
+            {
+                KernelName = analysis.KernelName,
+                Timestamp = analysis.Timestamp,
+                EfficiencyPercent = analysis.EfficiencyPercent,
+                CoalescingEfficiency = analysis.CoalescingEfficiency,
+                WastedBandwidth = analysis.WastedBandwidth,
+                OptimalAccessSize = analysis.OptimalAccessSize,
+                TransactionCount = analysis.TransactionCount,
+                IdealTransactionCount = analysis.IdealTransactionCount,
+                AccessPattern = analysis.AccessPattern,
+                ActualBytesTransferred = analysis.ActualBytesTransferred,
+                UsefulBytesTransferred = analysis.UsefulBytesTransferred,
+                Issues = issues,
+                Optimizations = optimizations
+            };
 
             // Cache metrics for trend analysis
             _metricsCache[accessInfo.KernelName] = new CoalescingMetrics
@@ -398,9 +414,33 @@ namespace DotCompute.Backends.CUDA.Analysis
             }
 
             // Generate recommendations
-            comparison.Recommendations = GenerateComparisonRecommendations(comparison);
+            var recommendations = GenerateComparisonRecommendations(comparison);
 
-            return comparison;
+            // Save the Analyses dictionary before recreating
+            var analyses = new Dictionary<string, CoalescingAnalysis>(comparison.Analyses);
+
+            // Recreate comparison with init-only property
+            var finalComparison = new CoalescingComparison
+            {
+                Baseline = comparison.Baseline,
+                Optimized = comparison.Optimized,
+                ImprovementPercent = comparison.ImprovementPercent,
+                Summary = comparison.Summary,
+                BestPattern = comparison.BestPattern,
+                WorstPattern = comparison.WorstPattern,
+                BestEfficiency = comparison.BestEfficiency,
+                WorstEfficiency = comparison.WorstEfficiency,
+                ImprovementPotential = comparison.ImprovementPotential,
+                Recommendations = recommendations
+            };
+
+            // Copy the Analyses dictionary to the new object
+            foreach (var kvp in analyses)
+            {
+                finalComparison.Analyses[kvp.Key] = kvp.Value;
+            }
+
+            return finalComparison;
         }
 
         // Private helper methods remain the same but reference the new types

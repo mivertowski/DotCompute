@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Manages memory prefetching for unified memory to optimize data movement.
     /// Uses cudaMemPrefetchAsync to proactively move data between host and device.
     /// </summary>
-    public sealed class CudaMemoryPrefetcher : IDisposable
+    public sealed partial class CudaMemoryPrefetcher : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDevice _device;

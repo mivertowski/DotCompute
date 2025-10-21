@@ -122,7 +122,7 @@ public sealed class KernelParameterAnalyzer
         }
 
         var typeName = namedType.Name;
-        return typeName == "Span" || typeName == "ReadOnlySpan";
+        return typeName is "Span" or "ReadOnlySpan";
     }
 
     /// <summary>
@@ -152,9 +152,9 @@ public sealed class KernelParameterAnalyzer
     private static bool ImplementsBufferInterface(ITypeSymbol type)
     {
         return type.AllInterfaces.Any(i =>
-            i.Name == "IBuffer" ||
-            i.Name == "IUnifiedMemoryBuffer" ||
-            i.Name == "IDeviceBuffer");
+            i.Name is "IBuffer" or
+            "IUnifiedMemoryBuffer" or
+            "IDeviceBuffer");
     }
 
     /// <summary>

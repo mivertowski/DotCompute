@@ -771,11 +771,16 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         private readonly Guid _id;
 
-        private EventId(Guid id) => _id = id;
+        private EventId(Guid id)
+        {
+            _id = id;
+        }
+
         /// <summary>
         /// Gets new.
         /// </summary>
         /// <returns>The result of the operation.</returns>
+
 
         public static EventId New() => new(Guid.NewGuid());
         /// <summary>
@@ -1042,12 +1047,12 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <value>The average overhead ms.</value>
         public double AverageOverheadMs { get; set; }
         /// <summary>
-        /// Gets or sets the percentiles.
+        /// Gets or initializes the percentiles.
         /// </summary>
         /// <value>The percentiles.</value>
 
         // Statistical analysis
-        public Dictionary<int, double> Percentiles { get; } = [];
+        public Dictionary<int, double> Percentiles { get; init; } = [];
         /// <summary>
         /// Gets or sets the coefficient of variation.
         /// </summary>

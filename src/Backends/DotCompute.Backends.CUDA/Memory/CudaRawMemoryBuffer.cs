@@ -168,7 +168,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
             // Prefetch is optional, so we don't throw on error
 
-            if (result != CudaError.Success && result != CudaError.NotSupported)
+            if (result is not CudaError.Success and not CudaError.NotSupported)
             {
                 // Log warning but don't fail
             }

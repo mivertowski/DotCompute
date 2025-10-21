@@ -199,7 +199,7 @@ namespace DotCompute.Core.Extensions
         public static bool IsUnderMemoryPressure(this IUnifiedMemoryManager manager, double pressureThreshold = 85.0)
         {
             ArgumentNullException.ThrowIfNull(manager);
-            if (pressureThreshold < 0.0 || pressureThreshold > 100.0)
+            if (pressureThreshold is < 0.0 or > 100.0)
             {
 
                 throw new ArgumentOutOfRangeException(nameof(pressureThreshold), "Pressure threshold must be between 0 and 100.");

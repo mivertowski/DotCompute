@@ -335,7 +335,7 @@ public sealed class CudaDeviceManager : IDisposable
             // Enable peer access
 
             var result = CudaRuntime.cudaDeviceEnablePeerAccess(toDevice, 0);
-            if (result != CudaError.Success && result != CudaError.PeerAccessAlreadyEnabled)
+            if (result is not CudaError.Success and not CudaError.PeerAccessAlreadyEnabled)
             {
                 CudaRuntime.CheckError(result, $"enabling peer access from device {fromDevice} to {toDevice}");
             }
@@ -376,7 +376,7 @@ public sealed class CudaDeviceManager : IDisposable
 
 
             var result = CudaRuntime.cudaDeviceDisablePeerAccess(toDevice);
-            if (result != CudaError.Success && result != CudaError.PeerAccessNotEnabled)
+            if (result is not CudaError.Success and not CudaError.PeerAccessNotEnabled)
             {
                 _logger.LogWarningMessage($"Failed to disable peer access from device {fromDevice} to {toDevice}: {result}");
             }

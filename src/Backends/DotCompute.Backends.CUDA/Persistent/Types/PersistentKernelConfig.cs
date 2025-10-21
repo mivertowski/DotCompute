@@ -71,7 +71,7 @@ namespace DotCompute.Backends.CUDA.Persistent.Types
                 throw new ArgumentException("Max iterations must be positive", nameof(MaxIterations));
             }
 
-            if (BlockSize <= 0 || BlockSize > 1024)
+            if (BlockSize is <= 0 or > 1024)
             {
                 throw new ArgumentException("Block size must be between 1 and 1024", nameof(BlockSize));
             }

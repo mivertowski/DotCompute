@@ -111,7 +111,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             _streamGroups[groupName] = group;
 
-            _logger.LogDebugMessage($"Created RTX-optimized stream group '{groupName}' with {OPTIMAL_CONCURRENT_STREAMS} streams");
+            LogCreatedStreamGroup(_logger, groupName, OPTIMAL_CONCURRENT_STREAMS);
 
             return group;
         }
@@ -161,7 +161,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _activeStreams[streamId] = streamInfo;
 
-                _logger.LogDebugMessage($"Created CUDA stream {streamId} (handle={stream}) with priority={priority}, flags={flags}");
+                LogCreatedStream(_logger, streamId.ToString(), stream.ToInt64(), priority, flags);
 
                 return new CudaStreamHandle(streamId, stream, this);
             }
@@ -207,7 +207,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var results = await Task.WhenAll(tasks).ConfigureAwait(false);
             Array.Copy(results, streams, count);
 
-            _logger.LogDebugMessage("");
+            LogCreatedStreamBatch(_logger, count);
             return streams;
         }
 
@@ -355,7 +355,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 await Task.WhenAll(levelTasks).ConfigureAwait(false);
             }
 
-            _logger.LogDebugMessage($"Completed execution graph with {executionPlan.TotalNodes} nodes in {executionPlan.Levels.Count} levels");
+            LogCompletedExecutionGraph(_logger, executionPlan.TotalNodes, executionPlan.Levels.Count);
         }
 
         /// <summary>
@@ -433,7 +433,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception)
             {
-                _logger.LogErrorMessage("Error in stream callback execution");
+                LogStreamCallbackError(_logger);
             }
         });
         }
@@ -462,7 +462,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     .Take(optimalCount)
                     .ToList();
 
-                _logger.LogDebugMessage($"RTX 2000 optimization: {activeStreamCount} active streams, {highPriorityStreams.Count} high-priority active");
+                LogRtxOptimization(_logger, activeStreamCount, highPriorityStreams.Count);
 
                 // Additional optimization: cleanup old idle streams
                 CleanupIdleStreams(TimeSpan.FromMinutes(5));
@@ -486,7 +486,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var priorityResult = Native.CudaRuntime.cudaDeviceGetStreamPriorityRange(out _leastPriority, out _greatestPriority);
             if (priorityResult != CudaError.Success)
             {
-                _logger.LogWarningMessage($"Failed to get stream priority range, using defaults: {Native.CudaRuntime.GetErrorString(priorityResult)}");
+                LogFailedToGetPriorityRange(_logger, Native.CudaRuntime.GetErrorString(priorityResult));
                 _leastPriority = 0;
                 _greatestPriority = -1;
             }
@@ -509,12 +509,12 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 else
                 {
-                    _logger.LogWarningMessage($"Failed to create RTX-optimized stream {i}: {Native.CudaRuntime.GetErrorString(result)}");
+                    LogFailedToCreateOptimizedStream(_logger, i, Native.CudaRuntime.GetErrorString(result));
                     break;
                 }
             }
 
-            _logger.LogDebugMessage($"Initialized {_rtxOptimizedStreams.Count(s => s != IntPtr.Zero)} RTX-optimized streams with priority range [{_leastPriority}, {_greatestPriority}]");
+            LogInitializedOptimizedStreams(_logger, _rtxOptimizedStreams.Count(s => s != IntPtr.Zero), _leastPriority, _greatestPriority);
         }
 
         private void CleanupIdleStreams(TimeSpan maxIdleTime)
@@ -532,14 +532,13 @@ namespace DotCompute.Backends.CUDA.Execution
                     DestroyStream(streamInfo.Handle);
                     _ = _streamCreationSemaphore.Release();
 
-                    _logger.LogTrace("Cleaned up idle stream {StreamId} (idle for {IdleTime})",
-                        streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
+                    LogCleanedUpIdleStream(_logger, streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
                 }
             }
 
             if (idleStreams.Count > 0)
             {
-                _logger.LogDebugMessage(" idle streams");
+                LogCleanedUpIdleStreams(_logger, idleStreams.Count);
             }
         }
 
@@ -556,12 +555,12 @@ namespace DotCompute.Backends.CUDA.Execution
                 var result = Native.CudaRuntime.cudaStreamDestroy(stream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage($"Failed to destroy CUDA stream {stream}: {Native.CudaRuntime.GetErrorString(result)}");
+                    LogFailedToDestroyStream(_logger, stream.ToInt64(), Native.CudaRuntime.GetErrorString(result));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Exception while destroying stream {Stream}", stream);
+                _logger.LogWarning(ex, "Exception while destroying stream {Stream}", stream); // Structured logging with exception
             }
         }
 
@@ -596,7 +595,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during stream manager maintenance");
+                _logger.LogWarning(ex, "Error during stream manager maintenance"); // Structured logging with exception
             }
         }
 
@@ -630,7 +629,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error synchronizing streams during disposal");
+                    LogDisposalTimeoutWarning(_logger, ex);
                 }
 
                 // Destroy all active streams
@@ -652,7 +651,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 _streamCreationSemaphore?.Dispose();
                 _dependencyTracker?.Dispose();
 
-                _logger.LogInfoMessage("CUDA Stream Manager disposed");
+                LogStreamManagerDisposed(_logger);
             }
         }
     }
@@ -666,11 +665,16 @@ namespace DotCompute.Backends.CUDA.Execution
     {
         private readonly Guid _id;
 
-        private StreamId(Guid id) => _id = id;
+        private StreamId(Guid id)
+        {
+            _id = id;
+        }
+
         /// <summary>
         /// Gets new.
         /// </summary>
         /// <returns>The result of the operation.</returns>
+
 
         public static StreamId New() => new(Guid.NewGuid());
         /// <summary>
@@ -1097,10 +1101,10 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <value>The priority.</value>
         public CudaStreamPriority Priority { get; set; }
         /// <summary>
-        /// Gets or sets the dependencies.
+        /// Gets or initializes the dependencies.
         /// </summary>
         /// <value>The dependencies.</value>
-        public IList<string> Dependencies { get; } = [];
+        public IList<string> Dependencies { get; init; } = [];
     }
 
     /// <summary>
@@ -1109,10 +1113,10 @@ namespace DotCompute.Backends.CUDA.Execution
     public sealed class CudaExecutionLevel
     {
         /// <summary>
-        /// Gets or sets the nodes.
+        /// Gets or initializes the nodes.
         /// </summary>
         /// <value>The nodes.</value>
-        public IList<CudaExecutionNode> Nodes { get; } = [];
+        public IList<CudaExecutionNode> Nodes { get; init; } = [];
     }
 
     /// <summary>
@@ -1121,10 +1125,10 @@ namespace DotCompute.Backends.CUDA.Execution
     public sealed class CudaExecutionPlan
     {
         /// <summary>
-        /// Gets or sets the levels.
+        /// Gets or initializes the levels.
         /// </summary>
         /// <value>The levels.</value>
-        public IList<CudaExecutionLevel> Levels { get; } = [];
+        public IList<CudaExecutionLevel> Levels { get; init; } = [];
         /// <summary>
         /// Gets or sets the total nodes.
         /// </summary>

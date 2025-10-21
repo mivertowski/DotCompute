@@ -473,7 +473,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
                 EndTime = endTime,
                 MemoryFreed = beforeMemory - afterMemory,
                 PoolItemsFreed = poolItemsFreed,
-                OptimizationsPerformed = ["Pool cleanup", "Memory defragmentation", "Device synchronization"]
+                OptimizationsPerformed = new List<string> { "Pool cleanup", "Memory defragmentation", "Device synchronization" }
             };
 
             _logger.LogInformation("Memory cleanup completed: {MemoryFreed} bytes freed in {Duration:F2}ms",

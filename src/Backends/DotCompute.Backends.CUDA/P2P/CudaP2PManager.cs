@@ -99,8 +99,29 @@ namespace DotCompute.Backends.CUDA.P2P
                     }
                 }
 
-                topology.IsFullyConnected = IsTopologyFullyConnected(topology);
-                topology.OptimalTransferPaths = CalculateOptimalPaths(topology);
+                var isFullyConnected = IsTopologyFullyConnected(topology);
+                var optimalPaths = CalculateOptimalPaths(topology);
+
+                // Recreate topology with init-only property
+                var devices = topology.Devices.ToList();
+                var connections = topology.Connections.ToList();
+
+                topology = new CudaP2PTopology
+                {
+                    DeviceCount = topology.DeviceCount,
+                    IsFullyConnected = isFullyConnected,
+                    OptimalTransferPaths = optimalPaths
+                };
+
+                // Copy the device and connection lists
+                foreach (var device in devices)
+                {
+                    topology.Devices.Add(device);
+                }
+                foreach (var connection in connections)
+                {
+                    topology.Connections.Add(connection);
+                }
 
                 _logger.LogInfoMessage($"Discovered P2P topology: {deviceCount} devices, {topology.Connections.Count} connections, fully connected: {topology.IsFullyConnected}");
 
@@ -339,8 +360,8 @@ namespace DotCompute.Backends.CUDA.P2P
 
             ThrowIfDisposed();
 
-            var strategy = new CudaP2PPlacementStrategy();
             var chunks = dataChunks.ToList();
+            var placements = new List<CudaDataPlacement>();
 
             // Simple load balancing strategy
             var deviceLoads = new Dictionary<int, ulong>();
@@ -354,7 +375,7 @@ namespace DotCompute.Backends.CUDA.P2P
                 // Find device with minimum load
                 var targetDevice = deviceLoads.OrderBy(kvp => kvp.Value).First().Key;
 
-                strategy.Placements.Add(new CudaDataPlacement
+                placements.Add(new CudaDataPlacement
                 {
                     ChunkId = chunk.Id,
                     DeviceId = targetDevice,
@@ -366,7 +387,19 @@ namespace DotCompute.Backends.CUDA.P2P
             }
 
             // Calculate optimal transfer order
-            strategy.TransferOrder = CalculateOptimalTransferOrder(strategy.Placements, topology);
+            var transferOrder = CalculateOptimalTransferOrder(placements, topology);
+
+            // Create strategy with init-only property
+            var strategy = new CudaP2PPlacementStrategy
+            {
+                TransferOrder = transferOrder
+            };
+
+            // Copy placements
+            foreach (var placement in placements)
+            {
+                strategy.Placements.Add(placement);
+            }
 
             _logger.LogInfoMessage($"Optimized data placement for {chunks.Count} chunks across {topology.DeviceCount} devices");
 
@@ -716,10 +749,10 @@ namespace DotCompute.Backends.CUDA.P2P
         /// <value>The is fully connected.</value>
         public bool IsFullyConnected { get; set; }
         /// <summary>
-        /// Gets or sets the optimal transfer paths.
+        /// Gets or initializes the optimal transfer paths.
         /// </summary>
         /// <value>The optimal transfer paths.</value>
-        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; } = [];
+        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; init; } = [];
     }
     /// <summary>
     /// A class that represents cuda p2 p transfer result.
@@ -844,20 +877,20 @@ namespace DotCompute.Backends.CUDA.P2P
         /// <value>The placements.</value>
         public IList<CudaDataPlacement> Placements { get; } = [];
         /// <summary>
-        /// Gets or sets the transfer order.
+        /// Gets or initializes the transfer order.
         /// </summary>
         /// <value>The transfer order.</value>
-        public IList<Guid> TransferOrder { get; } = [];
+        public IList<Guid> TransferOrder { get; init; } = [];
         /// <summary>
         /// Gets or sets the estimated total time.
         /// </summary>
         /// <value>The estimated total time.</value>
         public double EstimatedTotalTime { get; set; }
         /// <summary>
-        /// Gets or sets the device utilization.
+        /// Gets or initializes the device utilization.
         /// </summary>
         /// <value>The device utilization.</value>
-        public Dictionary<int, double> DeviceUtilization { get; } = [];
+        public Dictionary<int, double> DeviceUtilization { get; init; } = [];
     }
     /// <summary>
     /// A class that represents cuda p2 p statistics.
@@ -896,10 +929,10 @@ namespace DotCompute.Backends.CUDA.P2P
         /// <value>The average bandwidth g bps.</value>
         public double AverageBandwidthGBps { get; set; }
         /// <summary>
-        /// Gets or sets the connection utilization.
+        /// Gets or initializes the connection utilization.
         /// </summary>
         /// <value>The connection utilization.</value>
-        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; } = [];
+        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; init; } = [];
     }
     /// <summary>
     /// A class that represents cuda p2 p connection stats.

@@ -68,7 +68,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 case OptimizationLevel.None:
                     optionsList.Add("-O0");
                     break;
-                case OptimizationLevel.Maximum or OptimizationLevel.Aggressive:
+                case OptimizationLevel.O3:
                     optionsList.Add("-O3");
                     optionsList.Add("--use_fast_math");
                     optionsList.Add("--fmad=true");
@@ -167,7 +167,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             // Add performance macros based on architecture
             _ = builder.AppendLine("// Architecture-specific performance macros");
-            if (options?.OptimizationLevel == OptimizationLevel.Maximum)
+            if (options?.OptimizationLevel == OptimizationLevel.O3)
             {
                 _ = builder.AppendLine("#define FORCE_INLINE __forceinline__");
                 _ = builder.AppendLine("#define RESTRICT __restrict__");
@@ -466,7 +466,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         private static bool ShouldUseCubinForArchitecture(int major, int minor, CompilationOptions? options)
         {
             // Use CUBIN for maximum optimization and modern architectures
-            if (options?.OptimizationLevel is OptimizationLevel.Maximum or OptimizationLevel.Aggressive)
+            if (options?.OptimizationLevel is OptimizationLevel.O3)
             {
                 // CUBIN is supported on compute capability 3.5 and above
                 // Prefer it for modern architectures for better performance

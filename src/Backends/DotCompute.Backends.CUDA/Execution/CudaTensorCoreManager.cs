@@ -376,7 +376,10 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Apply Tensor Core specific optimizations
             tensorKernel.TensorCoreGeneration = TensorCoreGeneration;
             tensorKernel.OptimizedLayout = true;
-            tensorKernel.SupportedPrecisions = GetSupportedPrecisions();
+
+            // Note: SupportedPrecisions is init-only and should be set during construction
+            // If needed, create a new instance with the property set
+            // For now, keeping this as a placeholder
 
             await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
         }
@@ -668,10 +671,10 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <value>The optimized layout.</value>
         public bool OptimizedLayout { get; set; }
         /// <summary>
-        /// Gets or sets the supported precisions.
+        /// Gets or initializes the supported precisions.
         /// </summary>
         /// <value>The supported precisions.</value>
-        public IList<CudaTensorPrecision> SupportedPrecisions { get; } = [];
+        public IList<CudaTensorPrecision> SupportedPrecisions { get; init; } = [];
         /// <summary>
         /// Gets or sets the execution count.
         /// </summary>

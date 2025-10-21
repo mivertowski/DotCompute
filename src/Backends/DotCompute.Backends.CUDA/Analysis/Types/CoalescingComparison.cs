@@ -61,7 +61,7 @@ public sealed class CoalescingComparison
     public double ImprovementPotential { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of recommendations based on the comparison.
+    /// Gets or initializes the list of recommendations based on the comparison.
     /// </summary>
-    public IList<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; init; } = [];
 }

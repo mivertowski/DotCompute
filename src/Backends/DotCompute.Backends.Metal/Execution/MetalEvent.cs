@@ -768,7 +768,11 @@ public readonly struct EventId : IEquatable<EventId>
 {
     private readonly Guid _id;
 
-    private EventId(Guid id) => _id = id;
+    private EventId(Guid id)
+    {
+        _id = id;
+    }
+
 
     public static EventId New() => new(Guid.NewGuid());
 

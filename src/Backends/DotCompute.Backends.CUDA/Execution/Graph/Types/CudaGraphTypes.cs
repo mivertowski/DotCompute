@@ -91,10 +91,10 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         /// <value>The id.</value>
         public string Id { get; set; } = string.Empty;
         /// <summary>
-        /// Gets or sets the dependencies.
+        /// Gets or initializes the dependencies.
         /// </summary>
         /// <value>The dependencies.</value>
-        public IList<CudaGraphNode> Dependencies { get; } = [];
+        public IList<CudaGraphNode> Dependencies { get; init; } = [];
         /// <summary>
         /// Gets or sets the user data.
         /// </summary>

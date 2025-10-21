@@ -805,20 +805,20 @@ namespace DotCompute.Backends.CUDA.ErrorHandling
         public double ErrorRate { get; set; }
 
         /// <summary>
-        /// Gets or sets the most common errors.
+        /// Gets or initializes the most common errors.
         /// </summary>
         /// <value>
         /// The most common errors.
         /// </value>
-        public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; } = [];
+        public List<KeyValuePair<CudaError, int>> MostCommonErrors { get; init; } = [];
 
         /// <summary>
-        /// Gets or sets the problematic operations.
+        /// Gets or initializes the problematic operations.
         /// </summary>
         /// <value>
         /// The problematic operations.
         /// </value>
-        public List<KeyValuePair<string, int>> ProblematicOperations { get; } = [];
+        public List<KeyValuePair<string, int>> ProblematicOperations { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the last error.

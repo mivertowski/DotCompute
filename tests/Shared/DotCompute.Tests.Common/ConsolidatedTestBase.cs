@@ -268,8 +268,8 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
     {
         try
         {
-            return RuntimeInformation.OSArchitecture == Architecture.X64 ||
-                   RuntimeInformation.OSArchitecture == Architecture.X86;
+            return RuntimeInformation.OSArchitecture is Architecture.X64 or
+                   Architecture.X86;
         }
         catch
         {
@@ -909,7 +909,7 @@ public abstract class ConsolidatedTestBase : IDisposable, IAsyncDisposable
                     $"GPU memory usage ({currentUsageMB:F2} MB) exceeds limit ({maxAllowedMemoryMB} MB)");
             }
         }
-        catch (Exception ex) when (!(ex is InvalidOperationException))
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
             Log($"GPU memory validation failed: {ex.Message}");
         }

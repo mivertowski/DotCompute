@@ -368,7 +368,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                 suggestions.Add("Memory bandwidth saturated. Consider data compression or reducing memory accesses");
             }
             // Check for low SM efficiency
-            else if (kernelMetrics.SmEfficiency > 0 && kernelMetrics.SmEfficiency < 0.6)
+            else if (kernelMetrics.SmEfficiency is > 0 and < 0.6)
             {
                 primaryBottleneck = BottleneckType.ThreadDivergence;
                 severity = 1.0 - kernelMetrics.SmEfficiency;
@@ -376,7 +376,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                 suggestions.Add("Low SM efficiency detected. Check for thread divergence and uncoalesced memory access");
             }
             // Check occupancy with real metrics
-            else if (kernelMetrics.AchievedOccupancy > 0 && kernelMetrics.AchievedOccupancy < 0.5)
+            else if (kernelMetrics.AchievedOccupancy is > 0 and < 0.5)
             {
                 primaryBottleneck = BottleneckType.Occupancy;
                 severity = 1.0 - kernelMetrics.AchievedOccupancy;
@@ -528,10 +528,10 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <value>The standard deviation.</value>
         public double StandardDeviation { get; set; }
         /// <summary>
-        /// Gets or sets the percentiles.
+        /// Gets or initializes the percentiles.
         /// </summary>
         /// <value>The percentiles.</value>
-        public Dictionary<int, double> Percentiles { get; set; } = [];
+        public Dictionary<int, double> Percentiles { get; init; } = [];
     }
 
     /// <summary>

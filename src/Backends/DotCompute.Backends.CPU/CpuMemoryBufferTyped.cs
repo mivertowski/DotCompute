@@ -58,17 +58,17 @@ public sealed class CpuMemoryBufferTyped<T>(
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => _parentBuffer.State == BufferState.HostOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsOnHost => _parentBuffer.State is BufferState.HostOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => _parentBuffer.State == BufferState.DeviceOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsOnDevice => _parentBuffer.State is BufferState.DeviceOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether dirty.
     /// </summary>
     /// <value>The is dirty.</value>
-    public bool IsDirty => _parentBuffer.State == BufferState.HostDirty || _parentBuffer.State == BufferState.DeviceDirty;
+    public bool IsDirty => _parentBuffer.State is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets or sets the options.
     /// </summary>
@@ -577,17 +577,17 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => _parentBuffer.State == BufferState.HostOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsOnHost => _parentBuffer.State is BufferState.HostOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => _parentBuffer.State == BufferState.DeviceOnly || _parentBuffer.State == BufferState.Synchronized;
+    public bool IsOnDevice => _parentBuffer.State is BufferState.DeviceOnly or BufferState.Synchronized;
     /// <summary>
     /// Gets or sets a value indicating whether dirty.
     /// </summary>
     /// <value>The is dirty.</value>
-    public bool IsDirty => _parentBuffer.State == BufferState.HostDirty || _parentBuffer.State == BufferState.DeviceDirty;
+    public bool IsDirty => _parentBuffer.State is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets or sets the options.
     /// </summary>

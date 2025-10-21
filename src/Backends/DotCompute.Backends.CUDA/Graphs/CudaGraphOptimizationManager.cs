@@ -434,7 +434,7 @@ namespace DotCompute.Backends.CUDA.Graphs
 
             // Get node count
             var error = cudaGraphGetNodes(graph, IntPtr.Zero, out var nodeCount);
-            if (error != CudaError.Success && error != CudaError.InvalidValue)
+            if (error is not CudaError.Success and not CudaError.InvalidValue)
             {
                 _logger.LogWarningMessage("Failed to get graph node count: {error}");
                 return analysis;
@@ -443,7 +443,7 @@ namespace DotCompute.Backends.CUDA.Graphs
 
             // Get edge count
             error = cudaGraphGetEdges(graph, IntPtr.Zero, IntPtr.Zero, out var edgeCount);
-            if (error != CudaError.Success && error != CudaError.InvalidValue)
+            if (error is not CudaError.Success and not CudaError.InvalidValue)
             {
                 _logger.LogWarningMessage("Failed to get graph edge count: {error}");
                 return analysis;

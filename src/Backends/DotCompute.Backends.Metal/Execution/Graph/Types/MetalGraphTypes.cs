@@ -249,13 +249,13 @@ public class MetalOptimizationParameters
         var errors = new List<string>();
 
 
-        if (MaxFusionDepth < 1 || MaxFusionDepth > 10)
+        if (MaxFusionDepth is < 1 or > 10)
         {
             errors.Add("MaxFusionDepth must be between 1 and 10");
         }
 
 
-        if (MaxCommandBufferSize < 1 || MaxCommandBufferSize > 1024)
+        if (MaxCommandBufferSize is < 1 or > 1024)
         {
 
             errors.Add("MaxCommandBufferSize must be between 1 and 1024");

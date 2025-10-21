@@ -372,7 +372,7 @@ internal sealed class CpuKernelValidator : IDisposable
         if (definition.Metadata?.TryGetValue("VectorWidth", out var vectorWidthObj) == true &&
             vectorWidthObj is int vectorWidth)
         {
-            if (vectorWidth < MinVectorWidth || vectorWidth > MaxVectorWidth)
+            if (vectorWidth is < MinVectorWidth or > MaxVectorWidth)
             {
                 result.Issues.Add(new ValidationIssue(
                     "CPU_VECTOR_001",

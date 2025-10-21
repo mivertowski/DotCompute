@@ -1194,7 +1194,7 @@ public class MemoryManagementTests(ITestOutputHelper output)
         public void EnsureOnHost()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_state == BufferState.DeviceOnly || _state == BufferState.DeviceDirty)
+            if (_state is BufferState.DeviceOnly or BufferState.DeviceDirty)
             {
                 // Simulate device-to-host transfer
                 _state = BufferState.Synchronized;
@@ -1207,7 +1207,7 @@ public class MemoryManagementTests(ITestOutputHelper output)
         public void EnsureOnDevice()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_state == BufferState.HostOnly || _state == BufferState.HostDirty)
+            if (_state is BufferState.HostOnly or BufferState.HostDirty)
             {
                 // Simulate host-to-device transfer
                 _state = BufferState.Synchronized;

@@ -123,7 +123,7 @@ public sealed class StageValidationResult
             message,
             ValidationSeverity.Warning));
 
-        if (Severity < ErrorSeverity.Warning && Severity != ErrorSeverity.Error)
+        if (Severity is < ErrorSeverity.Warning and not ErrorSeverity.Error)
         {
             Severity = ErrorSeverity.Warning;
         }

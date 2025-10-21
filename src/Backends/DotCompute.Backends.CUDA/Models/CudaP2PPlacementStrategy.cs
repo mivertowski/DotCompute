@@ -9,14 +9,14 @@ namespace DotCompute.Backends.CUDA.P2P.Models
     public sealed class CudaP2PPlacementStrategy
     {
         /// <summary>
-        /// Gets or sets the list of data placements.
+        /// Gets or initializes the list of data placements.
         /// </summary>
-        public IList<CudaDataPlacement> Placements { get; } = [];
+        public IList<CudaDataPlacement> Placements { get; init; } = [];
 
         /// <summary>
-        /// Gets or sets the order in which transfers should occur.
+        /// Gets or initializes the order in which transfers should occur.
         /// </summary>
-        public IList<Guid> TransferOrder { get; } = [];
+        public IList<Guid> TransferOrder { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the estimated total time for all transfers in seconds.
@@ -24,9 +24,9 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         public double EstimatedTotalTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the device utilization percentages.
+        /// Gets or initializes the device utilization percentages.
         /// Key is device ID, value is utilization (0.0 to 1.0).
         /// </summary>
-        public Dictionary<int, double> DeviceUtilization { get; } = [];
+        public Dictionary<int, double> DeviceUtilization { get; init; } = [];
     }
 }

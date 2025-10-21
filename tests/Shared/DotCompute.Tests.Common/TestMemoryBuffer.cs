@@ -108,17 +108,17 @@ public sealed class TestMemoryBuffer<T> : IUnifiedMemoryBuffer<T>, IDisposable
     /// Gets or sets a value indicating whether on host.
     /// </summary>
     /// <value>The is on host.</value>
-    public bool IsOnHost => _state == BufferState.HostReady || _state == BufferState.Synchronized || _state == BufferState.HostDirty;
+    public bool IsOnHost => _state is BufferState.HostReady or BufferState.Synchronized or BufferState.HostDirty;
     /// <summary>
     /// Gets or sets a value indicating whether on device.
     /// </summary>
     /// <value>The is on device.</value>
-    public bool IsOnDevice => _state == BufferState.DeviceReady || _state == BufferState.Synchronized || _state == BufferState.DeviceDirty;
+    public bool IsOnDevice => _state is BufferState.DeviceReady or BufferState.Synchronized or BufferState.DeviceDirty;
     /// <summary>
     /// Gets or sets a value indicating whether dirty.
     /// </summary>
     /// <value>The is dirty.</value>
-    public bool IsDirty => _state == BufferState.HostDirty || _state == BufferState.DeviceDirty;
+    public bool IsDirty => _state is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets or sets the options.
     /// </summary>

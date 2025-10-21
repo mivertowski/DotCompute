@@ -481,7 +481,7 @@ public sealed class CpuMemoryBuffer<T>(IUnifiedMemoryBuffer underlyingBuffer, in
     /// <value>The is dirty.</value>
 
 
-    public bool IsDirty => State == BufferState.HostDirty || State == BufferState.DeviceDirty;
+    public bool IsDirty => State is BufferState.HostDirty or BufferState.DeviceDirty;
     /// <summary>
     /// Gets map.
     /// </summary>

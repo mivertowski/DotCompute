@@ -167,7 +167,7 @@ public static class CompilationOptionsExtensions
         }
 
         // Validate warning level
-        if (options.WarningLevel < 0 || options.WarningLevel > 4)
+        if (options.WarningLevel is < 0 or > 4)
         {
             return false;
         }

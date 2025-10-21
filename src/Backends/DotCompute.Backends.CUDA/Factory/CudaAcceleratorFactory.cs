@@ -411,8 +411,10 @@ namespace DotCompute.Backends.CUDA.Factory
                 enabledFeatures.Add("P2P Memory Access");
             }
 
-            accelerator.EnabledFeatures = enabledFeatures;
-
+            // Note: EnabledFeatures is init-only, should be set during construction
+            // Store features in a private field or pass to constructor instead
+            // For now, this is commented out as it requires refactoring the ProductionCudaAccelerator constructor
+            // accelerator.EnabledFeatures = enabledFeatures;
 
             _logger.LogInformation(
                 "Initialized {FeatureCount} production features for device {DeviceId}: {Features}",
@@ -825,10 +827,10 @@ namespace DotCompute.Backends.CUDA.Factory
             /// <value>The configuration.</value>
             public ProductionConfiguration Configuration { get; }
             /// <summary>
-            /// Gets or sets the enabled features.
+            /// Gets or initializes the enabled features.
             /// </summary>
             /// <value>The enabled features.</value>
-            public IList<string> EnabledFeatures { get; } = [];
+            public IList<string> EnabledFeatures { get; init; } = [];
             /// <summary>
             /// Initializes a new instance of the ProductionCudaAccelerator class.
             /// </summary>

@@ -202,7 +202,7 @@ internal static partial class PTXCompiler
         var optimizationLevel = options?.OptimizationLevel ?? OptimizationLevel.O2;
         var optFlag = optimizationLevel switch
         {
-            OptimizationLevel.O0 => "-O0",
+            OptimizationLevel.None => "-O0",
             OptimizationLevel.O1 => "-O1",
             OptimizationLevel.O2 => "-O2",
             OptimizationLevel.O3 => "-O3",

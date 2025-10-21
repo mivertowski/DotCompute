@@ -69,9 +69,9 @@ namespace DotCompute.Backends.CUDA.Execution.Models
         public double AverageOverheadMs { get; set; }
 
         /// <summary>
-        /// Gets or sets the percentile values for GPU execution times.
+        /// Gets or initializes the percentile values for GPU execution times.
         /// </summary>
-        public Dictionary<int, double> Percentiles { get; } = [];
+        public Dictionary<int, double> Percentiles { get; init; } = [];
 
         /// <summary>
         /// Gets or sets the coefficient of variation (relative standard deviation).

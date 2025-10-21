@@ -39,9 +39,9 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         public double AverageBandwidthGBps { get; set; }
 
         /// <summary>
-        /// Gets or sets per-connection utilization statistics.
+        /// Gets or initializes per-connection utilization statistics.
         /// Key is "source-destination" string.
         /// </summary>
-        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; } = [];
+        public Dictionary<string, CudaP2PConnectionStats> ConnectionUtilization { get; init; } = [];
     }
 }

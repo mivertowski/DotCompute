@@ -189,7 +189,7 @@ internal sealed class KernelExecutionModeHandler(
 
             // Adjust for register pressure
 
-            if (maxRegisters > 0 && maxRegisters < 64)
+            if (maxRegisters is > 0 and < 64)
             {
                 // Lower occupancy for kernels with high register pressure
                 minBlocksPerSM = Math.Min(minBlocksPerSM, 65536 / (maxRegisters * maxThreadsPerBlock));

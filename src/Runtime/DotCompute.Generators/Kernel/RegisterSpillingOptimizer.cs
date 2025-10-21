@@ -125,9 +125,9 @@ internal sealed class RegisterSpillingOptimizer
 
         // Add overhead for control flow
         var controlFlowStatements = body.DescendantNodes()
-            .Count(n => n is IfStatementSyntax || n is WhileStatementSyntax ||
+            .Count(n => n is IfStatementSyntax or WhileStatementSyntax or
 
-                       n is ForStatementSyntax || n is DoStatementSyntax);
+                       ForStatementSyntax or DoStatementSyntax);
 
 
         _estimatedRegisterCount += controlFlowStatements * 3; // Control flow typically needs extra registers
@@ -736,11 +736,11 @@ internal sealed class RegisterSpillingOptimizer
         {
             var loops = body.DescendantNodes().Where(n =>
 
-                n is ForStatementSyntax ||
+                n is ForStatementSyntax or
 
-                n is WhileStatementSyntax ||
+                WhileStatementSyntax or
 
-                n is DoStatementSyntax);
+                DoStatementSyntax);
 
 
             foreach (var loop in loops)

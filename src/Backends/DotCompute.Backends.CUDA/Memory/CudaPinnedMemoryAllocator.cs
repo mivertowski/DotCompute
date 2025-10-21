@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA.Memory
     /// Manages pinned (page-locked) host memory for high-bandwidth transfers.
     /// Pinned memory provides up to 10x bandwidth improvement (20GB/s vs 2GB/s).
     /// </summary>
-    public sealed class CudaPinnedMemoryAllocator : IDisposable
+    public sealed partial class CudaPinnedMemoryAllocator : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;

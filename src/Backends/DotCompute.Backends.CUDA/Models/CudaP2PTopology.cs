@@ -31,9 +31,9 @@ namespace DotCompute.Backends.CUDA.P2P.Models
         public bool IsFullyConnected { get; set; }
 
         /// <summary>
-        /// Gets or sets the optimal transfer paths between device pairs.
+        /// Gets or initializes the optimal transfer paths between device pairs.
         /// Key is (source, destination) tuple, value is list of intermediate device IDs.
         /// </summary>
-        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; } = [];
+        public Dictionary<(int, int), List<int>> OptimalTransferPaths { get; init; } = [];
     }
 }

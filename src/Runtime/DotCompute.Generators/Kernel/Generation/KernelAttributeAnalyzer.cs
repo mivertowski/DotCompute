@@ -224,7 +224,7 @@ public sealed class KernelAttributeAnalyzer
         var errors = new List<string>();
 
         // Validate vector size
-        if (configuration.VectorSize < 0 || configuration.VectorSize > 64)
+        if (configuration.VectorSize is < 0 or > 64)
         {
             errors.Add($"Invalid vector size: {configuration.VectorSize}. Must be between 0 and 64.");
         }

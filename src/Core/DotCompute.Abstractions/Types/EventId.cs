@@ -12,7 +12,11 @@ namespace DotCompute.Backends.CUDA.Execution.Types
     {
         private readonly Guid _id;
 
-        private EventId(Guid id) => _id = id;
+        private EventId(Guid id)
+        {
+            _id = id;
+        }
+
 
         /// <summary>
         /// Creates a new unique event identifier.

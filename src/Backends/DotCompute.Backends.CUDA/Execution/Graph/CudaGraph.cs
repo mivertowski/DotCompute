@@ -110,7 +110,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// This property maintains backward compatibility with existing code that expects kernel operations.
         /// New code should prefer using the <see cref="Nodes"/> property for graph structure manipulation.
         /// </remarks>
-        public IList<CudaKernelOperation> Operations { get; } = [];
+        public IList<CudaKernelOperation> Operations { get; init; } = [];
 
 
         /// <summary>

@@ -390,7 +390,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
         {
             _ = _output.Append(literal.Token.Text);
         }
-        else if (literal.Token.Value is float || literal.Token.Value is double)
+        else if (literal.Token.Value is float or double)
         {
             _ = _output.Append($"{value}f");
         }
@@ -502,7 +502,7 @@ internal sealed class CSharpToCudaTranslator(SemanticModel semanticModel, Kernel
 
         // Handle special properties
 
-        if (memberName == "Length" || memberName == "Count")
+        if (memberName is "Length" or "Count")
         {
             // For arrays and spans, this maps to our length parameter
             _ = _output.Append("length");

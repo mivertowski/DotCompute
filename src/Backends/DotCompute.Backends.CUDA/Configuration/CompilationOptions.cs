@@ -33,7 +33,14 @@ namespace DotCompute.Backends.CUDA.Configuration
         {
 
             get => [.. IncludePaths];
-            set => IncludePaths = [.. value];
+            set
+            {
+                IncludePaths.Clear();
+                foreach (var path in value)
+                {
+                    IncludePaths.Add(path);
+                }
+            }
         }
 
         /// <summary>

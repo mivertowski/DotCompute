@@ -58,19 +58,19 @@ public sealed class CoalescingAnalysis
     public MemoryAccessPattern AccessPattern { get; set; }
 
     /// <summary>
-    /// Gets or sets identified coalescing issues.
+    /// Gets or initializes identified coalescing issues.
     /// </summary>
-    public IList<CoalescingIssue> Issues { get; set; } = [];
+    public IList<CoalescingIssue> Issues { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets optimization recommendations.
+    /// Gets or initializes optimization recommendations.
     /// </summary>
-    public IList<string> Recommendations { get; set; } = [];
+    public IList<string> Recommendations { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets performance optimization suggestions specific to this analysis.
+    /// Gets or initializes performance optimization suggestions specific to this analysis.
     /// </summary>
-    public IList<string> Optimizations { get; set; } = [];
+    public IList<string> Optimizations { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the actual bytes transferred during memory operations.

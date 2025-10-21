@@ -184,7 +184,7 @@ export CUDA_VISIBLE_DEVICES=0
 ```csharp
 var options = new CompilationOptions
 {
-    OptimizationLevel = OptimizationLevel.Aggressive,
+    OptimizationLevel = OptimizationLevel.O3, // Maximum optimization
     EnableDebugInfo = false, // Disable for production
     TargetArchitecture = "compute_75", // Target specific CC
     CustomOptions = new[] { "--use_fast_math" }

@@ -20,7 +20,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// High-performance CUDA kernel executor with advanced features for RTX 2000 Ada GPU
     /// </summary>
-    public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
+    public sealed partial class CudaKernelExecutor : IKernelExecutor, IDisposable
     {
         private readonly IAccelerator _accelerator;
         private readonly CudaContext _context;
@@ -62,7 +62,7 @@ namespace DotCompute.Backends.CUDA.Execution
             var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProperties, context.DeviceId);
             CudaRuntime.CheckError(result, "getting device properties");
 
-            _logger.LogInfoMessage($"CUDA Kernel Executor initialized for device {context.DeviceId} ({_deviceProperties.DeviceName})");
+            LogExecutorInitialized(_logger, context.DeviceId, _deviceProperties.DeviceName);
         }
         /// <summary>
         /// Gets or sets the accelerator.
@@ -154,7 +154,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage($"");
+                    LogKernelExecutionFailed(_logger);
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
                     return new KernelExecutionResult
@@ -227,7 +227,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage($" asynchronously");
+                    LogAsyncExecutionFailed(_logger);
                     execution.Error = ex;
                     execution.IsCompleted = true;
                     execution.CompletedAt = DateTimeOffset.UtcNow;
@@ -467,7 +467,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 // Ensure it's a multiple of warp size
                 optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
 
-                _logger.LogDebugMessage("");
+                LogOptimalBlockSizeCalculated(_logger);
                 return optimalBlockSize;
             }
 
@@ -539,7 +539,7 @@ namespace DotCompute.Backends.CUDA.Execution
             return peak_gflops * 0.3; // Assume 30% efficiency for typical workloads
         }
 
-        private BottleneckAnalysis AnalyzeBottlenecks(List<double> timings, IReadOnlyList<double> throughputs)
+        private BottleneckAnalysis AnalyzeBottlenecks(List<double> timings, List<double> throughputs)
         {
             var avgThroughput = throughputs.Count > 0 ? throughputs.Average() : 0;
             var peakThroughput = CalculateComputeThroughput(1.0); // Peak for 1ms
@@ -692,7 +692,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Some executions did not complete within timeout during disposal");
+                    _logger.LogWarning(ex, "Some executions did not complete within timeout during disposal"); // Structured logging with exception
                 }
 
                 // Clean up remaining executions
@@ -705,7 +705,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to clean up execution events");
+                        _logger.LogWarning(ex, "Failed to clean up execution events"); // Structured logging with exception
                     }
                 }
 

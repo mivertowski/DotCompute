@@ -4,24 +4,32 @@
 namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Structs
 {
     /// <summary>
-    /// Block dimensions for kernel launch
+    /// Represents the dimensions of a CUDA thread block in 3D space.
+    /// Thread blocks are the fundamental unit of parallel execution in CUDA,
+    /// containing threads that can cooperate through shared memory and synchronization.
     /// </summary>
+    /// <remarks>
+    /// Each dimension must be at least 1. The total number of threads (X * Y * Z)
+    /// is limited by the device's maxThreadsPerBlock attribute, typically 1024.
+    /// </remarks>
     public struct BlockDimensions(uint x, uint y = 1, uint z = 1)
     {
         /// <summary>
-        /// Gets or sets the x.
+        /// Gets or sets the number of threads in the X dimension of the block.
         /// </summary>
-        /// <value>The x.</value>
+        /// <value>The thread count in the X dimension. Must be at least 1.</value>
         public uint X { get; set; } = x;
+
         /// <summary>
-        /// Gets or sets the y.
+        /// Gets or sets the number of threads in the Y dimension of the block.
         /// </summary>
-        /// <value>The y.</value>
+        /// <value>The thread count in the Y dimension. Defaults to 1 for 1D/2D workloads.</value>
         public uint Y { get; set; } = y;
+
         /// <summary>
-        /// Gets or sets the z.
+        /// Gets or sets the number of threads in the Z dimension of the block.
         /// </summary>
-        /// <value>The z.</value>
+        /// <value>The thread count in the Z dimension. Defaults to 1 for 1D/2D workloads.</value>
         public uint Z { get; set; } = z;
     }
 }

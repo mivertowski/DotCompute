@@ -149,7 +149,7 @@ internal static partial class CudaCompilerValidator
     /// </summary>
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="warnings">List to add performance warnings to.</param>
-    private static void ValidatePerformancePatterns(string cudaSource, IReadOnlyList<string> warnings)
+    private static void ValidatePerformancePatterns(string cudaSource, List<string> warnings)
     {
         // Check for excessive register usage indicators
         if (cudaSource.Contains("register", StringComparison.Ordinal) &&
@@ -199,7 +199,7 @@ internal static partial class CudaCompilerValidator
     /// </summary>
     /// <param name="cudaSource">CUDA source code to analyze.</param>
     /// <param name="warnings">List to add security warnings to.</param>
-    private static void ValidateSecurityPatterns(string cudaSource, IReadOnlyList<string> warnings)
+    private static void ValidateSecurityPatterns(string cudaSource, List<string> warnings)
     {
         // Check for buffer overflow risks
         if (cudaSource.Contains("char[", StringComparison.Ordinal) &&

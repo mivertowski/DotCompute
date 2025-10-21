@@ -162,7 +162,7 @@ internal sealed class KernelOptimizationAnalyzer
                 if (variable != null)
                 {
                     var size = EstimateArraySize(variable);
-                    if (size > 0 && size <= 48 * 1024) // 48KB shared memory limit
+                    if (size is > 0 and <= (48 * 1024)) // 48KB shared memory limit
                     {
                         SharedMemory.Variables.Add(new SharedMemoryVariable
                         {
@@ -212,7 +212,7 @@ internal sealed class KernelOptimizationAnalyzer
             {
                 // Small read-only buffers can use constant memory (64KB limit)
                 var estimatedSize = EstimateParameterSize(param);
-                if (estimatedSize > 0 && estimatedSize <= 64 * 1024)
+                if (estimatedSize is > 0 and <= (64 * 1024))
                 {
                     ConstantMemory.Variables.Add(new ConstantMemoryVariable
                     {
