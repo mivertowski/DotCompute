@@ -315,8 +315,7 @@ internal sealed class OpenCLCompiledKernel : ICompiledKernel
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLCompiledKernel));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

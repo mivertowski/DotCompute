@@ -477,10 +477,7 @@ public sealed class NumaOptimizer : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NumaOptimizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

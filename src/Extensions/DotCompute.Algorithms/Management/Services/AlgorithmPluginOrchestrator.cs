@@ -632,6 +632,29 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
     /// </summary>
     /// <returns>The result of the operation.</returns>
 
+    /// <summary>
+    /// Disposes the orchestrator synchronously.
+    /// </summary>
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+
+            // Stop health check timer
+            _healthCheckTimer.Dispose();
+
+            // Unsubscribe from events
+            _discovery.PluginFileChanged -= OnPluginFileChanged;
+
+            // Dispose components (plugins will be disposed via DisposeAsync)
+            _registry.Dispose();
+            _validator.Dispose();
+            _loader.Dispose();
+            _discovery.Dispose();
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)

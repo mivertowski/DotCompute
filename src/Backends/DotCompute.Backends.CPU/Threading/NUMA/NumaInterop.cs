@@ -257,7 +257,7 @@ internal static class NumaInterop
                 return (int)sysInfo.PageSize;
             }
         }
-        return NumaConstants.Sizes.PageSize; // Default
+        return NumaSizes.PageSize; // Default
     }
 
     /// <summary>

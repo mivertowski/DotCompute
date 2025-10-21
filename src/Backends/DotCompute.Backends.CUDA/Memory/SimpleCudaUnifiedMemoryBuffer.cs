@@ -190,7 +190,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range");
             }
 
 
@@ -229,7 +229,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid slice range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid slice range");
             }
 
 
@@ -333,14 +333,14 @@ namespace DotCompute.Backends.CUDA.Memory
             if (sourceOffset < 0 || destinationOffset < 0 || length < 0)
             {
 
-                throw new ArgumentOutOfRangeException("Offsets and length must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and length must be non-negative");
             }
 
 
             if (sourceOffset + length > _length || destinationOffset + length > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(length), "Copy range exceeds buffer bounds");
             }
 
 
@@ -376,7 +376,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > _length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid fill range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid fill range");
             }
 
 

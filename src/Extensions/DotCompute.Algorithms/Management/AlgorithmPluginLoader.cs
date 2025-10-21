@@ -182,7 +182,7 @@ namespace DotCompute.Algorithms.Management
                     loadResult.PackageIdentity.Id,
                     loadResult.PackageIdentity.Version.ToString(),
                     loadResult.LoadedAssemblyPaths.Length,
-                    loadResult.ResolvedDependencies.Length);
+                    loadResult.ResolvedDependencies.Count);
 
                 // Load plugins from each assembly in the package
                 var allResults = new List<LoadedPluginResult>();
@@ -208,7 +208,7 @@ namespace DotCompute.Algorithms.Management
                 }
 
                 // Log dependency information
-                if (loadResult.ResolvedDependencies.Length > 0)
+                if (loadResult.ResolvedDependencies.Count > 0)
                 {
                     LogNuGetDependenciesResolved(
                         loadResult.PackageIdentity.Id,

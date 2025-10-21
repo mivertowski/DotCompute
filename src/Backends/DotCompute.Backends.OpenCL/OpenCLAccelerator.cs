@@ -161,8 +161,7 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLAccelerator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_context != null)
         {
@@ -379,8 +378,7 @@ public sealed class OpenCLAccelerator : IAccelerator
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLAccelerator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

@@ -724,10 +724,7 @@ public sealed partial class MetalExecutionContext : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalExecutionContext));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()

@@ -796,10 +796,7 @@ public sealed partial class MetalCommandStream : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalCommandStream));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()

@@ -426,20 +426,20 @@ namespace DotCompute.Backends.CUDA.Execution
             var globalSize = executionConfig.GlobalWorkSize;
             var localSize = executionConfig.LocalWorkSize;
 
-            if (localSize == null || localSize.Length == 0)
+            if (localSize == null || localSize.Count == 0)
             {
                 // Auto-calculate optimal local size
                 var blockSize = CalculateOptimalBlockSize(kernel);
                 localSize = [blockSize];
             }
 
-            return globalSize.Length switch
+            return globalSize.Count switch
             {
                 1 => CudaLaunchConfig.Create1D(globalSize[0], localSize[0]),
                 2 => CudaLaunchConfig.Create2D(globalSize[0], globalSize[1], localSize[0], localSize[1]),
                 3 => CudaLaunchConfig.Create3D(globalSize[0], globalSize[1], globalSize[2],
                                         localSize[0], localSize[1], localSize[2]),
-                _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Length}"),
+                _ => throw new NotSupportedException($"Dimensions > 3 not supported: {globalSize.Count}"),
             };
 
         }
@@ -661,10 +661,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaKernelExecutor));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.
@@ -692,7 +689,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Some executions did not complete within timeout during disposal"); // Structured logging with exception
+                    LogDisposalTimeoutWarning(_logger, ex);
                 }
 
                 // Clean up remaining executions
@@ -705,7 +702,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to clean up execution events"); // Structured logging with exception
+                        LogEventCleanupError(_logger, ex);
                     }
                 }
 

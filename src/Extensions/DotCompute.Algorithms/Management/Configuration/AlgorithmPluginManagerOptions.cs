@@ -162,4 +162,28 @@ public sealed class AlgorithmPluginManagerOptions
     /// Determines how long plugin metadata and compiled assemblies are cached.
     /// </summary>
     public TimeSpan CacheExpiration { get; set; } = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// Gets or sets the timeout for plugin initialization.
+    /// Maximum time allowed for a plugin to complete initialization.
+    /// </summary>
+    public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Gets or sets the timeout for plugin shutdown.
+    /// Maximum time allowed for a plugin to complete graceful shutdown.
+    /// </summary>
+    public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Gets or sets the scan interval for plugin discovery.
+    /// Determines how frequently the system scans for new or updated plugins.
+    /// </summary>
+    public TimeSpan ScanInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Gets or sets the delay before restarting a failed plugin.
+    /// Time to wait before attempting to restart a plugin that has crashed.
+    /// </summary>
+    public TimeSpan RestartDelay { get; set; } = TimeSpan.FromSeconds(5);
 }

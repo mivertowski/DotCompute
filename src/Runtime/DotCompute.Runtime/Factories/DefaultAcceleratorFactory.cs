@@ -61,10 +61,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
         ArgumentNullException.ThrowIfNull(acceleratorInfo);
         serviceProvider ??= _serviceProvider;
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(DefaultAcceleratorFactory));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var stopwatch = Stopwatch.StartNew();
         var warnings = new List<string>();
@@ -134,10 +131,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(DefaultAcceleratorFactory));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         _logger.LogDebugMessage($"Creating accelerator provider {typeof(TProvider).Name}");
 
@@ -346,10 +340,7 @@ public class DefaultAcceleratorFactory : IUnifiedAcceleratorFactory, IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(acceleratorId);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(DefaultAcceleratorFactory));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return _acceleratorScopes.GetOrAdd(acceleratorId, id =>
         {

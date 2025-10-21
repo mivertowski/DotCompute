@@ -38,10 +38,7 @@ public class PluginLifecycleManager(
         ArgumentNullException.ThrowIfNull(pluginType);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginLifecycleManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var pluginId = GetPluginId(pluginType);
 
@@ -106,10 +103,7 @@ public class PluginLifecycleManager(
         ArgumentNullException.ThrowIfNull(plugin);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginLifecycleManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var pluginId = GetPluginId(plugin.GetType());
 
@@ -230,10 +224,7 @@ public class PluginLifecycleManager(
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(eventHandlers);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginLifecycleManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         _lifecycleHandlers[pluginId] = eventHandlers;
         _logger.LogDebugMessage("Registered lifecycle handlers for plugin {pluginId}");

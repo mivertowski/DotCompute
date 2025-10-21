@@ -486,17 +486,17 @@ public sealed partial class MetalMetricsExporter : IDisposable
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         // System metrics
-        _ = sb.AppendLine($"# HELP metal_operations_total Total number of Metal operations");
-        _ = sb.AppendLine($"# TYPE metal_operations_total counter");
-        _ = sb.AppendLine($"metal_operations_total {snapshot.TotalOperations} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operations_total Total number of Metal operations");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operations_total counter");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operations_total {snapshot.TotalOperations} {timestamp}");
 
-        _ = sb.AppendLine($"# HELP metal_errors_total Total number of Metal errors");
-        _ = sb.AppendLine($"# TYPE metal_errors_total counter");
-        _ = sb.AppendLine($"metal_errors_total {snapshot.TotalErrors} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_errors_total Total number of Metal errors");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_errors_total counter");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_errors_total {snapshot.TotalErrors} {timestamp}");
 
-        _ = sb.AppendLine($"# HELP metal_error_rate Current error rate");
-        _ = sb.AppendLine($"# TYPE metal_error_rate gauge");
-        _ = sb.AppendLine($"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_error_rate Current error rate");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_error_rate gauge");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_error_rate {snapshot.ErrorRate:F6} {timestamp}");
 
         // Operation metrics
         foreach (var operation in snapshot.OperationMetrics)
@@ -504,14 +504,14 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var safeName = SanitizePrometheusName(operation.Key);
 
 
-            _ = sb.AppendLine($"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
-            _ = sb.AppendLine($"# TYPE metal_operation_duration_ms_{safeName} gauge");
-            _ = sb.AppendLine($"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operation_duration_ms_{safeName} Average duration of {operation.Key} operations");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operation_duration_ms_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operation_duration_ms_{safeName} {operation.Value.AverageExecutionTime.TotalMilliseconds:F2} {timestamp}");
 
 
-            _ = sb.AppendLine($"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
-            _ = sb.AppendLine($"# TYPE metal_operation_count_{safeName} counter");
-            _ = sb.AppendLine($"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_operation_count_{safeName} Number of {operation.Key} operations");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_operation_count_{safeName} counter");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_operation_count_{safeName} {operation.Value.TotalExecutions} {timestamp}");
         }
 
         // Resource metrics
@@ -520,14 +520,14 @@ public sealed partial class MetalMetricsExporter : IDisposable
             var safeName = SanitizePrometheusName(resource.Key);
 
 
-            _ = sb.AppendLine($"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
-            _ = sb.AppendLine($"# TYPE metal_resource_utilization_{safeName} gauge");
-            _ = sb.AppendLine($"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_resource_utilization_{safeName} Utilization percentage for {resource.Key}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_resource_utilization_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_resource_utilization_{safeName} {resource.Value.UtilizationPercentage:F2} {timestamp}");
 
 
-            _ = sb.AppendLine($"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
-            _ = sb.AppendLine($"# TYPE metal_resource_usage_{safeName} gauge");
-            _ = sb.AppendLine($"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# HELP metal_resource_usage_{safeName} Current usage for {resource.Key}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"# TYPE metal_resource_usage_{safeName} gauge");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"metal_resource_usage_{safeName} {resource.Value.CurrentUsage} {timestamp}");
         }
 
         return sb.ToString();

@@ -135,7 +135,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || count < 0 || offset + count > buffer.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Invalid view range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
             }
 
             // Create a view without allocating new memory
@@ -345,14 +345,14 @@ namespace DotCompute.Backends.CUDA.Memory
             if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
             {
 
-                throw new ArgumentOutOfRangeException("Offsets and count must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Offsets and count must be non-negative");
             }
 
 
             if (sourceOffset + count > source.Length || destinationOffset + count > destination.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Copy range exceeds buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(count), "Copy range exceeds buffer bounds");
             }
 
 

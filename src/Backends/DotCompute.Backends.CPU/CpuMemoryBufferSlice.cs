@@ -179,6 +179,7 @@ internal sealed class CpuMemoryBufferSlice(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller who is responsible for disposal")]
     public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
     /// <summary>
     /// Performs ensure on host.
@@ -439,11 +440,7 @@ internal sealed class CpuMemoryBufferSlice(
 
     private void EnsureNotDisposed()
     {
-        if (_isDisposed)
-        {
-
-            throw new ObjectDisposedException(nameof(CpuMemoryBufferSlice));
-        }
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
 
         if (_parentBuffer.IsDisposed)

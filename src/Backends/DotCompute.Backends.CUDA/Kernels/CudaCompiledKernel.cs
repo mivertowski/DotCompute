@@ -433,7 +433,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                             config.Description, config.OptimizationLevel,
 
-                            config.MaxRegisters > 0 ? config.MaxRegisters.ToString() : "auto", Name);
+                            config.MaxRegisters > 0 ? config.MaxRegisters.ToString(System.Globalization.CultureInfo.InvariantCulture) : "auto", Name);
                         return true;
                     }
 

@@ -65,10 +65,7 @@ namespace DotCompute.Backends.CUDA.Types
         /// </summary>
         public void Reset()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaMemoryTracker));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             try
             {

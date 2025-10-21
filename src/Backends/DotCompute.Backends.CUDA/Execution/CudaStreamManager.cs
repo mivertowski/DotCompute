@@ -601,10 +601,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaStreamManager));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.

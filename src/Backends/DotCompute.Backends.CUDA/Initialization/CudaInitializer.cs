@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -177,14 +178,14 @@ namespace DotCompute.Backends.CUDA.Initialization
             {
                 var info = new System.Text.StringBuilder();
                 _ = info.AppendLine("=== CUDA Initialization Diagnostics ===");
-                _ = info.AppendLine($"Initialized: {_initialized}");
-                _ = info.AppendLine($"Device Count: {_deviceCount ?? -1}");
+                _ = info.AppendLine(CultureInfo.InvariantCulture, $"Initialized: {_initialized}");
+                _ = info.AppendLine(CultureInfo.InvariantCulture, $"Device Count: {_deviceCount ?? -1}");
 
 
                 if (_initializationError.HasValue)
                 {
-                    _ = info.AppendLine($"Error Code: {_initializationError.Value}");
-                    _ = info.AppendLine($"Error Message: {_initializationErrorMessage}");
+                    _ = info.AppendLine(CultureInfo.InvariantCulture, $"Error Code: {_initializationError.Value}");
+                    _ = info.AppendLine(CultureInfo.InvariantCulture, $"Error Message: {_initializationErrorMessage}");
                 }
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))

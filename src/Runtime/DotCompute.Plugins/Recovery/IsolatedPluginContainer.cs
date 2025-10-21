@@ -103,10 +103,7 @@ namespace DotCompute.Plugins.Recovery
         /// </summary>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(IsolatedPluginContainer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (_initialized)
             {
@@ -141,10 +138,7 @@ namespace DotCompute.Plugins.Recovery
         /// </summary>
         public async Task<T> ExecuteAsync<T>(Func<IBackendPlugin, CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(IsolatedPluginContainer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (!_initialized)
             {

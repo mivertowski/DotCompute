@@ -351,10 +351,7 @@ public sealed class MemoryMappedSpan<T> : IDisposable where T : unmanaged
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MemoryMappedSpan<T>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

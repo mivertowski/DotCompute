@@ -396,13 +396,10 @@ namespace DotCompute.Algorithms.Management
                 }
 
                 // Step 7: Security policy evaluation
-                var context = new SecurityEvaluationContext
-                {
-                    AssemblyPath = assemblyPath,
-                    AssemblyBytes = assemblyBytes
-                };
+                // Extract certificate and strong name for context initialization
+                X509Certificate2? certificate = null;
+                byte[]? strongNameKey = null;
 
-                // Add certificate if available
                 if (_options.RequireSignedAssemblies)
                 {
                     var certInfo = _authenticodeValidator.ExtractCertificateInfo(assemblyPath);
@@ -410,9 +407,7 @@ namespace DotCompute.Algorithms.Management
                     {
                         try
                         {
-                            // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
-                            var cert = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
-                            context.Certificate = cert;
+                            certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
                         }
                         catch
                         {
@@ -421,19 +416,29 @@ namespace DotCompute.Algorithms.Management
                     }
                 }
 
-                // Add strong name key if available
                 if (_options.RequireStrongName)
                 {
                     try
                     {
                         var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
-                        context.StrongNameKey = assemblyName.GetPublicKey();
+                        strongNameKey = assemblyName.GetPublicKey();
                     }
                     catch
                     {
                         // Strong name validation already handled this
                     }
                 }
+
+                var context = new SecurityEvaluationContext
+                {
+                    AssemblyPath = assemblyPath,
+                    AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes),
+                    Certificate = certificate,
+                    StrongNameKey = strongNameKey
+                };
+
+                // Certificate and strong name are set during context initialization
+                // No need to modify init-only properties after construction
 
                 var policyResult = _securityPolicy.EvaluateRules(context);
                 if (!policyResult.IsAllowed)

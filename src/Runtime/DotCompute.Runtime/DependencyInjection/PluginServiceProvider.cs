@@ -31,10 +31,7 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginServiceProvider));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return _pluginScopes.GetOrAdd(pluginId, id =>
         {
@@ -62,10 +59,7 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(configureServices);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginServiceProvider));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var services = new ServiceCollection();
         configureServices(services);
@@ -101,10 +95,7 @@ public class PluginServiceProvider(IServiceProvider rootServiceProvider, ILogger
         ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         ArgumentNullException.ThrowIfNull(serviceType);
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PluginServiceProvider));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         // First try custom plugin provider
         if (_pluginProviders.TryGetValue(pluginId, out var pluginProvider))

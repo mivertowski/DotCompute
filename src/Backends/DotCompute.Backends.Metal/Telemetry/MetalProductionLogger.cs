@@ -118,10 +118,7 @@ public sealed partial class MetalProductionLogger : IDisposable
     /// </summary>
     public LogContext StartContext(string operationType, string? correlationId = null)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalProductionLogger));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         correlationId ??= GenerateCorrelationId();

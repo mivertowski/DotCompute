@@ -69,10 +69,7 @@ public static class ParallelOptimizations
 
         public void Execute(Action task)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(WorkStealingPool));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var workerId = Environment.CurrentManagedThreadId % _queues.Length;
@@ -88,10 +85,7 @@ public static class ParallelOptimizations
 
         public void ExecuteParallel<T>(IEnumerable<T> items, Action<T> action)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(WorkStealingPool));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var tasks = items.Select(item => new Action(() => action(item))).ToArray();

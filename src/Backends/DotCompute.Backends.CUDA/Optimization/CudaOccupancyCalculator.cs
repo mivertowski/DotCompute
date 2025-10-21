@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Optimization
     /// Production-grade CUDA occupancy calculator for optimal kernel launch configuration.
     /// Maximizes GPU utilization by calculating ideal block and grid dimensions.
     /// </summary>
-    public sealed class CudaOccupancyCalculator
+    public sealed partial class CudaOccupancyCalculator
     {
         private readonly ILogger<CudaOccupancyCalculator> _logger;
         private readonly Dictionary<int, DeviceProperties> _devicePropertiesCache;
@@ -65,7 +65,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             _devicePropertiesCache = [];
 
 
-            _logger.LogInfoMessage("CUDA Occupancy Calculator initialized");
+            LogInitialized(_logger);
         }
 
         /// <summary>
@@ -80,9 +80,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             constraints ??= LaunchConstraints.Default;
 
 
-            _logger.LogDebug(
-                "Calculating optimal launch config for kernel on device {DeviceId}",
-                deviceId);
+            LogCalculatingConfig(_logger, deviceId);
 
             // Get device properties
             var deviceProps = await GetDevicePropertiesAsync(deviceId);
@@ -143,11 +141,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 config = await OptimizeForPatternAsync(config, constraints.OptimizationHint, deviceProps);
             }
 
-            _logger.LogInformation(
-                "Optimal launch config: Grid={GridSize}, Block={BlockSize}, Occupancy={Occupancy:P}",
-                config.GridSize,
-                config.BlockSize,
-                config.TheoreticalOccupancy);
+            LogOptimalConfig(_logger, config.GridSize, config.BlockSize, config.TheoreticalOccupancy);
 
             return config;
         }
@@ -201,9 +195,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex,
-
-                        "Failed to calculate occupancy for block size {BlockSize}", blockSize);
+                    LogOccupancyCalculationFailed(_logger, ex, blockSize);
                 }
             }
 
@@ -364,9 +356,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex,
-
-                        "Failed to test 2D configuration {BlockDim}", blockDim);
+                    Log2DConfigTestFailed(_logger, ex, blockDim);
                 }
             }
 
@@ -375,11 +365,7 @@ namespace DotCompute.Backends.CUDA.Optimization
                 throw new OccupancyException("Failed to find valid 2D launch configuration");
             }
 
-            _logger.LogInformation(
-                "Optimal 2D config: Grid=({GridX},{GridY}), Block=({BlockX},{BlockY}), Occupancy={Occupancy:P}",
-                bestConfig.GridSize.X, bestConfig.GridSize.Y,
-                bestConfig.BlockSize.X, bestConfig.BlockSize.Y,
-                bestConfig.TheoreticalOccupancy);
+            LogOptimal2DConfig(_logger, bestConfig.GridSize.X, bestConfig.GridSize.Y, bestConfig.BlockSize.X, bestConfig.BlockSize.Y, bestConfig.TheoreticalOccupancy);
 
             return bestConfig;
         }
@@ -436,10 +422,7 @@ namespace DotCompute.Backends.CUDA.Optimization
 
                                           config.ChildWarpsPerParent;
 
-            _logger.LogInformation(
-                "Dynamic parallelism config: Max depth={Depth}, Max children/parent={MaxChildren}",
-                config.MaxNestingDepth,
-                config.MaxChildrenPerParent);
+            LogDynamicParallelismConfig(_logger, config.MaxNestingDepth, config.MaxChildrenPerParent);
 
             return config;
         }

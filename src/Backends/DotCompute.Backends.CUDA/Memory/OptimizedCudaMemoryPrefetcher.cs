@@ -592,10 +592,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(OptimizedCudaMemoryPrefetcher));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

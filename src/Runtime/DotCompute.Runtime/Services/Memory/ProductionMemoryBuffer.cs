@@ -102,10 +102,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
 
     public async ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
         if (offset + sizeInBytes > SizeInBytes)
@@ -151,10 +148,7 @@ public sealed class ProductionMemoryBuffer : IUnifiedMemoryBuffer, IDisposable
 
     public async ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         var sizeInBytes = destination.Length * Unsafe.SizeOf<T>();
         if (offset + sizeInBytes > SizeInBytes)

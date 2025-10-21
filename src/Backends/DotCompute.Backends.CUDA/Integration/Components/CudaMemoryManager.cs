@@ -554,10 +554,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

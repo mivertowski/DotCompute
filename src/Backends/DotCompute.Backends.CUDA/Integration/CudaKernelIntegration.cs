@@ -80,10 +80,7 @@ public sealed class CudaKernelIntegration : IDisposable
         CudaCompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -127,10 +124,7 @@ public sealed class CudaKernelIntegration : IDisposable
         KernelExecutionConfig config,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var startTime = DateTimeOffset.UtcNow;
 
@@ -175,10 +169,7 @@ public sealed class CudaKernelIntegration : IDisposable
         CudaCompiledKernel kernel,
         int[] problemSize)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -208,10 +199,7 @@ public sealed class CudaKernelIntegration : IDisposable
     /// </summary>
     public IReadOnlyDictionary<string, KernelExecutionStats> GetExecutionStatistics()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_statsLock)
         {
@@ -266,10 +254,7 @@ public sealed class CudaKernelIntegration : IDisposable
     /// </summary>
     public async Task OptimizeKernelsAsync(CudaWorkloadProfile profile, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Run(() =>
         {

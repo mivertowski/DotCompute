@@ -137,16 +137,12 @@ namespace DotCompute.Algorithms.Management
 
                                     if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(version))
                                     {
-                                        dependencies.Add(new PackageDependency
-                                        {
-                                            Id = id,
-                                            VersionRange = version,
-                                            TargetFrameworks = string.IsNullOrEmpty(targetFramework)
-                                                ? null
-                                                : new[] { targetFramework },
-                                            Exclude = exclude,
-                                            Include = include
-                                        });
+                                        dependencies.Add(new PackageDependency(
+                                            id,
+                                            VersionRange.Parse(version),
+                                            exclude,
+                                            include
+                                        ));
                                     }
                                 }
                             }

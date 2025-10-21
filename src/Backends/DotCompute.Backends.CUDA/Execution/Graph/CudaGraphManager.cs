@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
 using DotCompute.Backends.CUDA.Execution.Graph.Enums;
@@ -26,7 +27,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Manages CUDA graph creation, execution, and optimization
     /// </summary>
-    public sealed class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
+    public sealed partial class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
     {
         private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
@@ -63,7 +64,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             _graphs[name] = graph;
             _statistics[name] = new Types.GraphStatistics { Name = name, CreatedAt = DateTime.UtcNow };
 
-            _logger.LogInfoMessage("'");
+            LogGraphCreated(name);
             return graph;
         }
 
@@ -80,8 +81,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 var result = CudaRuntime.cudaStreamBeginCapture(stream, (uint)mode);
                 CudaRuntime.CheckError(result, "beginning stream capture");
 
-                _logger.LogDebugMessage("");
-
+                LogBeginCapture(graphName, mode.ToString());
 
                 return new GraphCaptureContext(stream, graphName, mode, EndCapture);
             }
@@ -116,7 +116,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     CaptureMode = CudaGraphCaptureMode.Global
                 };
 
-                _logger.LogInfoMessage("'");
+                LogGraphCaptured(graphName);
                 return graph;
             }
         }
@@ -170,7 +170,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogKernelNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -222,7 +222,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogMemcpyNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -271,7 +271,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogMemsetNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -324,7 +324,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogHostNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -362,7 +362,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogEventRecordNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -400,7 +400,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             graph.Nodes.Add(node);
             UpdateStatistics(graph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogEventWaitNodeAdded(graph.Name, graph.Nodes.Count);
             return node;
         }
 
@@ -440,7 +440,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             parentGraph.Nodes.Add(node);
             UpdateStatistics(parentGraph.Name, s => s.NodeCount++);
 
-            _logger.LogDebugMessage("'");
+            LogChildGraphNodeAdded(parentGraph.Name, parentGraph.Nodes.Count);
             return node;
         }
 
@@ -486,7 +486,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 _executables[graph.Name] = executable;
                 UpdateStatistics(graph.Name, s => s.InstantiationCount++);
 
-                _logger.LogInfoMessage("' for execution");
+                LogGraphInstantiated(graph.Name);
                 return executable;
             }
             finally
@@ -558,7 +558,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                     s.LastExecutedAt = DateTime.UtcNow;
                 });
 
-                _logger.LogDebugMessage($"Graph '{executable.Graph.Name}' executed in {elapsedMs}ms");
+                LogGraphExecuted(executable.Graph.Name, elapsedMs);
 
                 return executionResult;
             }
@@ -576,7 +576,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
                 UpdateStatistics(executable.Graph.Name, s => s.ErrorCount++);
 
-                _logger.LogErrorMessage("'");
+                LogGraphExecutionFailed(executable.Graph.Name, ex);
                 return executionResult;
             }
         }
@@ -602,12 +602,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 executable.UpdatedAt = DateTime.UtcNow;
                 UpdateStatistics(newGraph.Name, s => s.UpdateCount++);
 
-
-                _logger.LogInfoMessage("'");
+                LogGraphUpdated(newGraph.Name);
                 return true;
             }
 
-            _logger.LogWarningMessage($"Failed to update graph executable for '{newGraph.Name}': {result}");
+            LogGraphUpdateFailed(newGraph.Name, result.ToString());
             return false;
         }
 
@@ -679,7 +678,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             }
 
             UpdateStatistics(graph.Name, s => s.OptimizationCount++);
-            _logger.LogInfoMessage($"Optimized graph '{graph.Name}' with {analysis.OptimizationsApplied} optimizations applied");
+            LogGraphOptimized(graph.Name, analysis.OptimizationsApplied);
         }
 
         /// <summary>
@@ -701,18 +700,18 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
             ArgumentNullException.ThrowIfNull(graph);
 
             var dot = new System.Text.StringBuilder();
-            _ = dot.AppendLine($"digraph {graph.Name} {{");
+            _ = dot.AppendLine(CultureInfo.InvariantCulture, $"digraph {graph.Name} {{");
             _ = dot.AppendLine("  rankdir=TB;");
             _ = dot.AppendLine("  node [shape=box];");
 
             foreach (var node in graph.Nodes)
             {
                 var label = $"{node.Type}\\n{node.Id.Substring(0, 8)}";
-                _ = dot.AppendLine($"  \"{node.Id}\" [label=\"{label}\"];");
+                _ = dot.AppendLine(CultureInfo.InvariantCulture, $"  \"{node.Id}\" [label=\"{label}\"];");
 
                 foreach (var dep in node.Dependencies)
                 {
-                    _ = dot.AppendLine($"  \"{dep.Id}\" -> \"{node.Id}\";");
+                    _ = dot.AppendLine(CultureInfo.InvariantCulture, $"  \"{dep.Id}\" -> \"{node.Id}\";");
                 }
             }
 
@@ -737,13 +736,13 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
                 }
 
                 _ = CudaRuntime.cudaGraphDestroy(graph.Handle);
-                _logger.LogInfoMessage("'");
+                LogGraphDestroyed(graphName);
             }
 
             if (_executables.TryRemove(graphName, out var executable))
             {
                 _ = CudaRuntime.cuGraphExecDestroy(executable.Handle);
-                _logger.LogDebugMessage("'");
+                LogGraphExecutableDestroyed(graphName);
             }
         }
 
@@ -878,21 +877,21 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         private void ApplyKernelFusion(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement kernel fusion optimization
-            _logger.LogDebugMessage("'");
+            LogKernelFusionOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 
         private void OptimizeMemoryAccess(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement memory access pattern optimization
-            _logger.LogDebugMessage("'");
+            LogMemoryOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 
         private void MaximizeParallelism(CudaGraph graph, GraphAnalysis analysis)
         {
             // Implement parallelism maximization
-            _logger.LogDebugMessage("'");
+            LogParallelismOptimization(graph.Name);
             analysis.OptimizationsApplied++;
         }
 

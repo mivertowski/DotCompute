@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Manager for CUDA Tensor Core operations (RTX 2000 Ada specific)
     /// </summary>
-    public sealed class CudaTensorCoreManager : IDisposable
+    public sealed partial class CudaTensorCoreManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
@@ -45,7 +45,8 @@ namespace DotCompute.Backends.CUDA.Advanced
             _performanceTimer = new Timer(UpdatePerformanceMetrics, null,
                 TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
-            _logger.LogDebugMessage($"");
+            var supportedPrecisions = string.Join(", ", GetSupportedPrecisions());
+            LogManagerInitialized(_logger, GetArchitectureName(), TensorCoreGeneration, supportedPrecisions);
         }
 
         /// <summary>
@@ -122,7 +123,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error optimizing kernel for Tensor Cores");
+                LogOptimizationError(_logger, ex);
                 return new CudaOptimizationResult
                 {
                     Success = false,
@@ -171,7 +172,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage("");
+                LogExecutionError(_logger, ex);
                 return new CudaTensorCoreExecutionResult
                 {
                     Success = false,
@@ -196,7 +197,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             // Validate matrix dimensions for Tensor Core compatibility
             if (!ValidateGEMMDimensions(gemmOp))
             {
-                throw new ArgumentException("Matrix dimensions not compatible with Tensor Cores");
+                throw new ArgumentException("Matrix dimensions not compatible with Tensor Cores", nameof(gemmOp));
             }
 
             var operation = new CudaTensorOperation
@@ -287,12 +288,12 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (oldKernels.Count > 0)
                 {
-                    _logger.LogDebugMessage(" unused Tensor Core kernels");
+                    LogMaintenanceCleanup(_logger, oldKernels.Count);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during Tensor Core maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 
@@ -594,7 +595,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error updating Tensor Core performance metrics");
+                LogMetricsUpdateError(_logger, ex);
             }
         }
 
@@ -614,10 +615,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaTensorCoreManager));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.

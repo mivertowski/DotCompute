@@ -9,11 +9,11 @@ namespace DotCompute.Abstractions.Configuration;
 /// Configuration settings for kernel execution.
 /// </summary>
 /// <remarks>
-/// This class encapsulates all configuration parameters that control how kernels
+/// This record encapsulates all configuration parameters that control how kernels
 /// are executed across different compute backends (CPU, CUDA, Metal, etc.).
 /// Settings include precision mode, thread/block dimensions, and debugging options.
 /// </remarks>
-public sealed class KernelExecutionConfig
+public sealed record KernelExecutionConfig
 {
     /// <summary>
     /// Gets or initializes the precision mode for kernel computations.
@@ -75,7 +75,23 @@ public sealed class KernelExecutionConfig
     public bool EnableProfiling { get; init; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="KernelExecutionConfig"/> class with default values.
+    /// Gets or initializes the CUDA stream to use for execution (CUDA-specific).
+    /// </summary>
+    /// <value>
+    /// The CUDA stream handle. Default is null (uses default stream).
+    /// </value>
+    public IntPtr? Stream { get; init; }
+
+    /// <summary>
+    /// Gets or initializes a value indicating whether timing information should be captured (CUDA-specific).
+    /// </summary>
+    /// <value>
+    /// <c>true</c> to capture timing information; otherwise, <c>false</c>. Default is <c>false</c>.
+    /// </value>
+    public bool CaptureTimings { get; init; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KernelExecutionConfig"/> record with default values.
     /// </summary>
     public KernelExecutionConfig()
     {

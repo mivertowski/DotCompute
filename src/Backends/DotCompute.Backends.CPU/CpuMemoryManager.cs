@@ -399,7 +399,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             // Validate parameters
             if (offset < 0 || length < 0 || offset + length > parent.SizeInBytes)
             {
-                throw new ArgumentOutOfRangeException("Invalid view parameters");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view parameters");
             }
 
             // Create a shared view that references the parent buffer
@@ -473,21 +473,21 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
                 if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
                 {
 
-                    throw new ArgumentOutOfRangeException("Negative offsets or count not allowed");
+                    throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
                 }
 
 
                 if (sourceOffset + count > sourceSpan.Length)
                 {
 
-                    throw new ArgumentOutOfRangeException("Source range exceeds buffer size");
+                    throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer size");
                 }
 
 
                 if (destinationOffset + count > destSpan.Length)
                 {
 
-                    throw new ArgumentOutOfRangeException("Destination range exceeds buffer size");
+                    throw new ArgumentOutOfRangeException(nameof(destinationOffset), "Destination range exceeds buffer size");
                 }
 
                 // Perform offset-based copy
@@ -901,7 +901,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         var memory = AsMemory();
         if (offset < 0 || length < 0 || offset + length > memory.Length)
         {
-            throw new ArgumentOutOfRangeException("Invalid range for mapping");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
         return new MappedMemory<T>(memory.Slice(offset, length));
     }
@@ -912,6 +912,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller who is responsible for disposal")]
     public ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
     /// <summary>
     /// Performs ensure on host.
@@ -1051,14 +1052,14 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
 
-            throw new ArgumentOutOfRangeException("Negative offsets or count not allowed");
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
 
 
         if (sourceOffset + count > Length)
         {
 
-            throw new ArgumentOutOfRangeException("Source range exceeds buffer size");
+            throw new ArgumentOutOfRangeException(nameof(count), "Source range exceeds buffer size");
         }
 
 
@@ -1069,7 +1070,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
             if (destinationOffset + count > cpuDest.Length)
             {
 
-                throw new ArgumentOutOfRangeException("Destination range exceeds buffer size");
+                throw new ArgumentOutOfRangeException(nameof(destinationOffset), "Destination range exceeds buffer size");
             }
 
 
@@ -1110,7 +1111,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         if (offset < 0 || count < 0 || offset + count > Length)
         {
 
-            throw new ArgumentOutOfRangeException("Invalid range for fill operation");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for fill operation");
         }
 
 
@@ -1130,7 +1131,7 @@ internal sealed class CpuMemoryBufferTypedWrapper<T> : IUnifiedMemoryBuffer<T> w
         if (offset < 0 || length < 0 || offset + length > Length)
         {
 
-            throw new ArgumentOutOfRangeException("Invalid slice parameters");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid slice parameters");
         }
 
         // Create a new view with the specified offset and length

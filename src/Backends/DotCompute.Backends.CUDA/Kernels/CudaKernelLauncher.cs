@@ -410,7 +410,7 @@ namespace DotCompute.Backends.CUDA.Compilation
         /// <summary>
         /// Prepares a single kernel argument for launch following ILGPU/NVIDIA best practices
         /// </summary>
-        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, IReadOnlyList<IntPtr> unmanagedAllocations, ILogger logger)
+        private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles, IList<IntPtr> unmanagedAllocations, ILogger logger)
         {
             // Validate input
             if (argValue == null)

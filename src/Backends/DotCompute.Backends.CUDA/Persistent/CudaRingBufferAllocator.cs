@@ -102,11 +102,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-
-                throw new ObjectDisposedException(nameof(CudaRingBufferAllocator));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.
@@ -369,11 +365,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-
-                throw new ObjectDisposedException(nameof(RingBuffer<>));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.

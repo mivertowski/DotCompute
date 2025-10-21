@@ -66,10 +66,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -100,10 +97,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         IUnifiedMemoryBuffer<T> destination,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -122,10 +116,7 @@ public sealed class CudaMemoryIntegration : IDisposable
     /// </summary>
     public CudaMemoryStatistics GetMemoryStatistics()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {
@@ -201,10 +192,7 @@ public sealed class CudaMemoryIntegration : IDisposable
     /// </summary>
     public async Task OptimizeMemoryAsync(CudaWorkloadProfile profile, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Run(() =>
         {

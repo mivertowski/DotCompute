@@ -166,7 +166,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
             throw new ArgumentNullException(nameof(buffer));
 
         if (offset < 0 || length <= 0 || offset + length > buffer.Length)
-            throw new ArgumentOutOfRangeException("Invalid view range");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid view range");
 
         // For OpenCL, we create a slice (which creates a copy for simplicity)
         // In a production implementation, you might create a sub-buffer
@@ -483,8 +483,7 @@ internal sealed class OpenCLMemoryManager : IUnifiedMemoryManager
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLMemoryManager));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

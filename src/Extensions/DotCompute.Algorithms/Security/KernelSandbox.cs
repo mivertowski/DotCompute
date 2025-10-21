@@ -56,11 +56,7 @@ public sealed partial class KernelSandbox : IDisposable
 
         IDictionary<string, object>? parameters = null, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(KernelSandbox));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         ArgumentException.ThrowIfNullOrWhiteSpace(kernelCode);

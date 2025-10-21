@@ -348,7 +348,7 @@ public sealed class CudaKernelExecutor : IDisposable
 
     private static string GenerateKernelKey(KernelDefinition definition, CompilationOptions? options)
     {
-        var optionsHash = options?.GetHashCode().ToString() ?? "default";
+        var optionsHash = options?.GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "default";
         return $"{definition.Name}_{definition.GetHashCode()}_{optionsHash}";
     }
 
@@ -367,10 +367,7 @@ public sealed class CudaKernelExecutor : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelExecutor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.
@@ -542,10 +539,7 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
 
     public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(ManagedCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return _kernel.ExecuteAsync(arguments, cancellationToken);
     }
@@ -594,10 +588,7 @@ internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger 
 
     public KernelExecutionConfig OptimizeConfiguration(ICompiledKernel kernel, int[] problemSize)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(KernelConfigurationOptimizer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {

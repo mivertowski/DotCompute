@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Manager for CUDA Cooperative Groups functionality
     /// </summary>
-    public sealed class CudaCooperativeGroupsManager : IDisposable
+    public sealed partial class CudaCooperativeGroupsManager : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaDeviceProperties _deviceProperties;
@@ -50,7 +50,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _metricsTimer = new Timer(UpdateMetrics, null,
                 TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
-            _logger.LogDebugMessage("Cooperative Groups Manager initialized");
+            LogManagerInitialized(_logger);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error optimizing kernel for cooperative groups");
+                LogOptimizationError(_logger, ex);
                 return new CudaOptimizationResult
                 {
                     Success = false,
@@ -194,7 +194,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage("");
+                LogLaunchError(_logger, ex);
                 return new CudaCooperativeLaunchResult
                 {
                     Success = false,
@@ -250,12 +250,12 @@ namespace DotCompute.Backends.CUDA.Advanced
 
                 if (oldKernels.Count > 0)
                 {
-                    _logger.LogDebugMessage(" unused cooperative kernels");
+                    LogMaintenanceCleanup(_logger, oldKernels.Count);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during cooperative groups maintenance");
+                LogMaintenanceError(_logger, ex);
             }
         }
 
@@ -369,14 +369,11 @@ namespace DotCompute.Backends.CUDA.Advanced
                     _synchronizationOverhead = newSynchronizationOverhead;
                 }
 
-
-                _logger.LogTrace("Updated cooperative groups metrics: Efficiency={EfficiencyScore:F3}, Overhead={SynchronizationOverhead:F2}ms",
-
-                    _efficiencyScore, _synchronizationOverhead);
+                LogMetricsUpdate(_logger, _efficiencyScore, _synchronizationOverhead);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error updating cooperative groups metrics");
+                LogMetricsUpdateError(_logger, ex);
             }
         }
 
@@ -466,10 +463,7 @@ namespace DotCompute.Backends.CUDA.Advanced
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaCooperativeGroupsManager));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
         /// <summary>
         /// Performs dispose.

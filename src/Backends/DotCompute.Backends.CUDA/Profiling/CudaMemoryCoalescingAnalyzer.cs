@@ -24,7 +24,7 @@ namespace DotCompute.Backends.CUDA.Analysis
     /// Production-grade CUDA memory coalescing analyzer for identifying and optimizing
     /// memory access patterns to maximize bandwidth utilization.
     /// </summary>
-    public sealed class CudaMemoryCoalescingAnalyzer
+    public sealed partial class CudaMemoryCoalescingAnalyzer
     {
         private readonly ILogger<CudaMemoryCoalescingAnalyzer> _logger;
         private readonly List<AccessPattern> _accessPatterns;
@@ -59,7 +59,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             _metricsCache = [];
 
 
-            _logger.LogInfoMessage("CUDA Memory Coalescing Analyzer initialized");
+            LogInitialized(_logger);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             MemoryAccessInfo accessInfo,
             int deviceId = 0)
         {
-            _logger.LogDebugMessage("Analyzing memory access pattern for {accessInfo.KernelName}");
+            LogAnalyzingPattern(_logger, accessInfo.KernelName);
 
             var analysis = new CoalescingAnalysis
             {
@@ -132,11 +132,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 Timestamp = analysis.Timestamp
             };
 
-            _logger.LogInformation(
-                "Coalescing analysis for {KernelName}: Efficiency={Efficiency:P}, Wasted BW={WastedBW:F2} GB/s",
-                accessInfo.KernelName,
-                analysis.CoalescingEfficiency,
-                analysis.WastedBandwidth / 1e9);
+            LogAnalysisComplete(_logger, accessInfo.KernelName, analysis.CoalescingEfficiency, analysis.WastedBandwidth / 1e9);
 
             return analysis;
         }
@@ -207,9 +203,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 }
             }
 
-            _logger.LogDebug(
-                "Strided access analysis: Stride={Stride}, Efficiency={Efficiency:P}, Transactions={Trans}",
-                stride, analysis.Efficiency, analysis.TransactionsPerWarp);
+            LogStridedAnalysis(_logger, stride, analysis.Efficiency, analysis.TransactionsPerWarp);
 
             return analysis;
         }
@@ -279,9 +273,7 @@ namespace DotCompute.Backends.CUDA.Analysis
                 }
             }
 
-            _logger.LogInformation(
-                "2D access analysis: {Order} access, Efficiency={Efficiency:P}, Optimal={Optimal}",
-                accessOrder, analysis.BandwidthEfficiency, analysis.IsOptimal);
+            Log2DAnalysis(_logger, accessOrder, analysis.BandwidthEfficiency, analysis.IsOptimal);
 
             return analysis;
         }
@@ -295,7 +287,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             int warmupRuns = 3,
             int profileRuns = 10)
         {
-            _logger.LogDebugMessage("Profiling runtime memory access for {kernelName}");
+            LogProfilingRuntime(_logger, kernelName);
 
             var profile = new RuntimeCoalescingProfile
             {
@@ -358,12 +350,7 @@ namespace DotCompute.Backends.CUDA.Analysis
             profile.EstimatedCoalescingEfficiency = 1.0 - (timeVariance / profile.AverageExecutionTime.TotalMilliseconds);
             profile.EstimatedCoalescingEfficiency = Math.Max(0, Math.Min(1, profile.EstimatedCoalescingEfficiency));
 
-            _logger.LogInformation(
-                "Runtime profile for {KernelName}: Avg={AvgTime:F3}ms, Bandwidth={BW:F2} GB/s, Coalescing={Coal:P}",
-                kernelName,
-                profile.AverageExecutionTime.TotalMilliseconds,
-                profile.EstimatedBandwidth / 1e9,
-                profile.EstimatedCoalescingEfficiency);
+            LogRuntimeProfile(_logger, kernelName, profile.AverageExecutionTime.TotalMilliseconds, profile.EstimatedBandwidth / 1e9, profile.EstimatedCoalescingEfficiency);
 
             return profile;
         }

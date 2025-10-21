@@ -67,10 +67,7 @@ namespace DotCompute.Runtime.Services
         /// </summary>
         public async Task<SystemHealthReport> PerformHealthCheckAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ProductionMonitor));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var healthChecks = new List<HealthCheckResult>
             {

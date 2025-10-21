@@ -59,10 +59,7 @@ namespace DotCompute.Runtime.Services
             ArgumentNullException.ThrowIfNull(kernel);
             ArgumentNullException.ThrowIfNull(parameters);
 
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ProductionKernelExecutor));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var executionId = Guid.NewGuid();
             var stopwatch = Stopwatch.StartNew();

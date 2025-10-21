@@ -420,10 +420,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(UnifiedSecurityValidator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <inheritdoc/>

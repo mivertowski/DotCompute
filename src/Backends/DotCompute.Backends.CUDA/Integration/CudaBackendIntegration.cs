@@ -451,11 +451,7 @@ public sealed class CudaBackendIntegration : IDisposable
         // Apply user preferences
         if (options.PreferredStream != null)
         {
-            config = config with
-            {
-                Stream = options.PreferredStream,
-                CaptureTimings = options.CaptureTimings
-            };
+            config = config with { Stream = options.PreferredStream };
         }
 
         return config;
@@ -655,10 +651,7 @@ public sealed class CudaBackendIntegration : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaBackendIntegration));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <summary>
     /// Performs dispose.

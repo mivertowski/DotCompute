@@ -54,7 +54,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
         [LoggerMessage(EventId = 24011, Level = LogLevel.Warning,
             Message = "Shared memory {SharedMemory} bytes exceeds device limit {DeviceLimit} bytes")]
-        private static partial void LogSharedMemoryExceedsLimit(ILogger logger, uint sharedMemory, uint deviceLimit);
+        private static partial void LogSharedMemoryExceedsLimit(ILogger logger, ulong sharedMemory, ulong deviceLimit);
 
         [LoggerMessage(EventId = 24012, Level = LogLevel.Information,
             Message = "RTX 2000 Ada: Low occupancy detected. Consider reducing block size for better performance")]

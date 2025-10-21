@@ -130,7 +130,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
     {
         if (offset < 0 || length <= 0 || offset + length > Length)
-            throw new ArgumentOutOfRangeException("Invalid range for mapping");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
 
         var hostData = new T[length];
         CopyToHost(hostData, (nuint)offset, (nuint)length);
@@ -529,8 +529,7 @@ internal sealed class OpenCLMemoryBuffer<T> : IUnifiedMemoryBuffer<T> where T : 
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLMemoryBuffer<T>));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

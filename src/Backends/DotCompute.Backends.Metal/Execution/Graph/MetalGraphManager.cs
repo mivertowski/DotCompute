@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using DotCompute.Backends.Metal.Execution.Graph.Configuration;
 using DotCompute.Backends.Metal.Execution.Graph.Statistics;
 using DotCompute.Backends.Metal.Execution.Graph.Types;
@@ -648,16 +649,16 @@ public sealed partial class MetalGraphManager : IDisposable
         var aggregated = GetAggregatedStatistics();
 
         _ = report.AppendLine("Metal Graph Manager Comprehensive Report");
-        _ = report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
         _ = report.AppendLine(new string('=', 60));
 
         // Manager summary
         _ = report.AppendLine("\nManager Summary:");
-        _ = report.AppendLine($"  Total Graphs Managed: {aggregated.TotalGraphs:N0}");
-        _ = report.AppendLine($"  Total Executions: {aggregated.TotalExecutions:N0}");
-        _ = report.AppendLine($"  Overall Success Rate: {aggregated.OverallSuccessRate:F1}%");
-        _ = report.AppendLine($"  Total GPU Time: {aggregated.TotalGpuTimeMs:F0} ms");
-        _ = report.AppendLine($"  Average Execution Time: {aggregated.AverageExecutionTimeMs:F2} ms");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Graphs Managed: {aggregated.TotalGraphs:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Executions: {aggregated.TotalExecutions:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Overall Success Rate: {aggregated.OverallSuccessRate:F1}%");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total GPU Time: {aggregated.TotalGpuTimeMs:F0} ms");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Average Execution Time: {aggregated.AverageExecutionTimeMs:F2} ms");
 
         // Individual graph reports
         _ = report.AppendLine("\nIndividual Graph Reports:");

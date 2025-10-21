@@ -326,7 +326,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
             {
                 TotalAllocations = totalAllocations,
                 TotalAllocatedBytes = TotalAllocatedBytes,
-                NodeAllocations = nodeAllocations[..^1], // Exclude system allocations
+                NodeAllocations = Array.AsReadOnly(nodeAllocations[..^1]), // Exclude system allocations
                 SystemAllocations = nodeAllocations[^1],
                 AllocationsByType = allocationsByType,
                 AverageAllocationSize = totalAllocations > 0 ? TotalAllocatedBytes / totalAllocations : 0,
@@ -421,10 +421,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NumaMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>
@@ -504,7 +501,7 @@ public sealed class MemoryStatistics
     public required long TotalAllocatedBytes { get; init; }
 
     /// <summary>Bytes allocated per NUMA node.</summary>
-    public required long[] NodeAllocations { get; init; }
+    public required IReadOnlyList<long> NodeAllocations { get; init; }
 
     /// <summary>Bytes allocated using system allocation.</summary>
     public required long SystemAllocations { get; init; }
@@ -519,13 +516,13 @@ public sealed class MemoryStatistics
     public required double MemoryFragmentation { get; init; }
 
     /// <summary>Gets the most used node.</summary>
-    public int MostUsedNode => NodeAllocations.Length > 0
-        ? Array.IndexOf(NodeAllocations, NodeAllocations.Max())
+    public int MostUsedNode => NodeAllocations.Count > 0
+        ? NodeAllocations.IndexOf(NodeAllocations.Max())
         : 0;
 
     /// <summary>Gets the least used node.</summary>
-    public int LeastUsedNode => NodeAllocations.Length > 0
-        ? Array.IndexOf(NodeAllocations, NodeAllocations.Min())
+    public int LeastUsedNode => NodeAllocations.Count > 0
+        ? NodeAllocations.IndexOf(NodeAllocations.Min())
         : 0;
 
     /// <summary>Gets memory distribution balance score.</summary>
@@ -533,7 +530,7 @@ public sealed class MemoryStatistics
     {
         get
         {
-            if (NodeAllocations.Length == 0)
+            if (NodeAllocations.Count == 0)
             {
                 return 1.0;
             }
@@ -546,7 +543,7 @@ public sealed class MemoryStatistics
             }
 
 
-            var expected = (double)total / NodeAllocations.Length;
+            var expected = (double)total / NodeAllocations.Count;
             var variance = NodeAllocations.Select(bytes => Math.Pow(bytes - expected, 2)).Average();
             var standardDeviation = Math.Sqrt(variance);
 

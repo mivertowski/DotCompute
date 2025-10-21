@@ -20,7 +20,7 @@ namespace DotCompute.Backends.CUDA.Advanced
     /// <summary>
     /// Advanced kernel profiler for CUDA with RTX 2000 Ada optimizations
     /// </summary>
-    public sealed class CudaKernelProfiler : IDisposable
+    public sealed partial class CudaKernelProfiler : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -84,7 +84,7 @@ namespace DotCompute.Backends.CUDA.Advanced
                     _ = await ExecuteKernelOnceAsync(functionHandle, arguments, launchConfig, startEvent, endEvent, cancellationToken);
                 }
 
-                _logger.LogInfoMessage("Starting profiling of kernel '{KernelName}' for {kernelName, iterations} iterations");
+                LogProfilingStart(_logger, kernelName, iterations);
 
                 // Profiling runs
                 for (var i = 0; i < iterations; i++)

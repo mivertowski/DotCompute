@@ -10,7 +10,7 @@ namespace DotCompute.Backends.CUDA.Graphs
     /// Production-grade CUDA graph optimization manager with automatic graph capture,
     /// instantiation, and performance analysis.
     /// </summary>
-    public sealed class CudaGraphOptimizationManager : IDisposable
+    public sealed partial class CudaGraphOptimizationManager : IDisposable
     {
         private readonly ILogger<CudaGraphOptimizationManager> _logger;
         private readonly ConcurrentDictionary<string, GraphInstance> _graphs;
@@ -88,8 +88,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 TimeSpan.FromMinutes(1),
                 TimeSpan.FromMinutes(5));
 
-
-            _logger.LogInfoMessage("CUDA Graph Optimization Manager initialized");
+            LogManagerInitialized();
         }
 
         /// <summary>
@@ -107,7 +106,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             await _graphCreationLock.WaitAsync();
             try
             {
-                _logger.LogDebugMessage("Beginning graph capture for {graphName}");
+                LogBeginningGraphCapture(graphName);
 
                 // Start capture
 
@@ -130,10 +129,10 @@ namespace DotCompute.Backends.CUDA.Graphs
                     // Execute the operations to be captured
                     await operations();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     // Abort capture on error
-                    _logger.LogErrorMessage("Error during graph capture operations");
+                    LogGraphCaptureError(ex);
                     throw;
                 }
 
@@ -191,9 +190,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                     EdgeCount = analysis.EdgeCount
                 };
 
-                _logger.LogInformation(
-                    "Successfully captured graph {GraphName} with {NodeCount} nodes and {EdgeCount} edges in {CaptureTime:F2}ms",
-                    graphName, analysis.NodeCount, analysis.EdgeCount, captureElapsed.TotalMilliseconds);
+                LogGraphCaptureSuccess(graphName, analysis.NodeCount, analysis.EdgeCount, captureElapsed.TotalMilliseconds);
 
                 // Export debug visualization if requested
                 if (options.ExportDebugVisualization)
@@ -252,11 +249,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             }
 
 
-            _logger.LogDebug(
-                "Launched graph {GraphName} in {LaunchTime:F3}ms (avg: {AvgTime:F3}ms)",
-                graphName,
-                launchElapsed.TotalMilliseconds,
-                stats.AverageLaunchTime.TotalMilliseconds);
+            LogGraphLaunched(graphName, launchElapsed.TotalMilliseconds, stats.AverageLaunchTime.TotalMilliseconds);
 
             await Task.CompletedTask;
         }
@@ -277,7 +270,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             await _graphCreationLock.WaitAsync();
             try
             {
-                _logger.LogDebugMessage("Updating graph {graphName}");
+                LogUpdatingGraph(graphName);
 
                 // Capture new graph
 
@@ -309,17 +302,14 @@ namespace DotCompute.Backends.CUDA.Graphs
                     instance.Graph = newGraph;
                     instance.LastUpdatedAt = DateTimeOffset.UtcNow;
 
-
                     _statistics[graphName].UpdateCount++;
-                    _logger.LogInfoMessage("Successfully updated graph {graphName} in-place");
+                    LogGraphUpdateSuccess(graphName);
                     return true;
                 }
                 else
                 {
                     // Update failed - need to recreate executable
-                    _logger.LogWarning(
-                        "In-place update failed for graph {GraphName} (result: {UpdateResult}), recreating",
-                        graphName, updateResult);
+                    LogUpdateFailed(graphName, updateResult.ToString());
 
                     // Destroy old resources
                     _ = cudaGraphExecDestroy(instance.GraphExec);
@@ -413,9 +403,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                     EdgeCount = clonedInstance.EdgeCount
                 };
 
-                _logger.LogInformation(
-                    "Successfully cloned graph {SourceGraph} to {TargetGraph}",
-                    sourceGraphName, targetName);
+                LogGraphCloned(sourceGraphName, targetName);
 
                 return targetName;
             }
@@ -436,7 +424,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             var error = cudaGraphGetNodes(graph, IntPtr.Zero, out var nodeCount);
             if (error is not CudaError.Success and not CudaError.InvalidValue)
             {
-                _logger.LogWarningMessage("Failed to get graph node count: {error}");
+                LogGetNodeCountFailed(error.ToString());
                 return analysis;
             }
             analysis.NodeCount = (int)nodeCount;
@@ -445,7 +433,7 @@ namespace DotCompute.Backends.CUDA.Graphs
             error = cudaGraphGetEdges(graph, IntPtr.Zero, IntPtr.Zero, out var edgeCount);
             if (error is not CudaError.Success and not CudaError.InvalidValue)
             {
-                _logger.LogWarningMessage("Failed to get graph edge count: {error}");
+                LogGetEdgeCountFailed(error.ToString());
                 return analysis;
             }
             analysis.EdgeCount = (int)edgeCount;
@@ -489,19 +477,18 @@ namespace DotCompute.Backends.CUDA.Graphs
                 var dotFile = $"graph_{graphName}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.dot";
                 var error = cudaGraphDebugDotPrint(graph, dotFile, 0);
 
-
                 if (error == CudaError.Success)
                 {
-                    _logger.LogInfoMessage("Exported graph visualization to {dotFile}");
+                    LogGraphVisualizationExported(dotFile);
                 }
                 else
                 {
-                    _logger.LogWarningMessage("Failed to export graph visualization: {error}");
+                    LogGraphVisualizationFailed(error.ToString());
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error exporting graph visualization");
+                LogGraphVisualizationError(ex);
             }
 
             await Task.CompletedTask;
@@ -533,11 +520,7 @@ namespace DotCompute.Backends.CUDA.Graphs
 
                         stats.LastLaunchTime > stats.AverageLaunchTime * 1.5)
                     {
-                        _logger.LogWarning(
-                            "Graph {GraphName} showing performance degradation. Last: {LastTime:F3}ms, Avg: {AvgTime:F3}ms",
-                            name,
-                            stats.LastLaunchTime.TotalMilliseconds,
-                            stats.AverageLaunchTime.TotalMilliseconds);
+                        LogPerformanceDegradation(name, stats.LastLaunchTime.TotalMilliseconds, stats.AverageLaunchTime.TotalMilliseconds);
                     }
 
                     // Log high failure rate
@@ -546,9 +529,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                         var failureRate = (double)stats.FailureCount / (stats.LaunchCount + stats.FailureCount);
                         if (failureRate > 0.1)
                         {
-                            _logger.LogWarning(
-                                "Graph {GraphName} has high failure rate: {FailureRate:P}",
-                                name, failureRate);
+                            LogHighFailureRate(name, failureRate);
                         }
                     }
                 }
@@ -563,20 +544,16 @@ namespace DotCompute.Backends.CUDA.Graphs
                         _ = _statistics.TryRemove(name, out _);
 
 
-                        _logger.LogInformation(
-                            "Removed unused graph {GraphName} (last used: {LastUsed})",
-                            name, instance.LastUsedAt?.ToString() ?? "never");
+                        LogUnusedGraphRemoved(name, instance.LastUsedAt?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "never");
                     }
                 }
 
                 // Log summary
-                _logger.LogInformation(
-                    "Graph optimization complete. Active graphs: {ActiveCount}, Removed: {RemovedCount}",
-                    _graphs.Count, graphsToRemove.Count);
+                LogOptimizationComplete(_graphs.Count, graphsToRemove.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error during graph optimization");
+                LogGraphOptimizationError(ex);
             }
         }
 
@@ -601,8 +578,7 @@ namespace DotCompute.Backends.CUDA.Graphs
                 _ = cudaGraphDestroy(instance.Graph);
                 _ = _statistics.TryRemove(graphName, out _);
 
-
-                _logger.LogInfoMessage("Removed graph {graphName}");
+                LogGraphRemoved(graphName);
                 return true;
             }
 
@@ -631,9 +607,9 @@ namespace DotCompute.Backends.CUDA.Graphs
                     _ = cudaGraphExecDestroy(instance.GraphExec);
                     _ = cudaGraphDestroy(instance.Graph);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    _logger.LogErrorMessage("Error disposing graph instance");
+                    LogGraphDisposeError(ex);
                 }
             }
 

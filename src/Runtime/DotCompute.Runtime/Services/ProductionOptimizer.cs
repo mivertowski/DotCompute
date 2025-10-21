@@ -108,10 +108,7 @@ namespace DotCompute.Runtime.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(kernelName);
             ArgumentNullException.ThrowIfNull(kernel);
 
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(ProductionOptimizer));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _logger.LogInfoMessage($"Applying automatic optimizations for kernel {kernelName}");
 

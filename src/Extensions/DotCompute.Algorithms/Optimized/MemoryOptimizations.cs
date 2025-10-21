@@ -43,10 +43,7 @@ public static class MemoryOptimizations
         public unsafe Span<T> Allocate<T>(int count, int numaNode = -1, int alignment = CACHE_LINE_SIZE)
             where T : unmanaged
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(NumaAllocator));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
 
             var size = count * sizeof(T);
@@ -190,10 +187,7 @@ public static class MemoryOptimizations
         /// <returns>Rented buffer span</returns>
         public Span<T> Rent(int size)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(OptimizedMemoryPool<>));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             // Try to find a suitable buffer from the pool
 

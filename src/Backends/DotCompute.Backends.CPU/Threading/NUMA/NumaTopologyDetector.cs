@@ -181,8 +181,8 @@ public static partial class NumaTopologyDetector
             ProcessorCount = processorCount,
             Nodes = nodes.AsReadOnly(),
             DistanceMatrix = distanceMatrix.Select(row => row.AsReadOnly()).ToList().AsReadOnly(),
-            CacheLineSize = NumaConstants.Sizes.CacheLineSize,
-            PageSize = NumaConstants.Sizes.PageSize,
+            CacheLineSize = NumaSizes.CacheLineSize,
+            PageSize = NumaSizes.PageSize,
             SupportsMemoryBinding = false,
             SupportsMemoryPolicy = false
         };
@@ -203,10 +203,10 @@ public static partial class NumaTopologyDetector
         { Levels = new List<CacheLevel>() };
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static int GetWindowsNodeDistance(int fromNode, int toNode) => fromNode == toNode ? NumaConstants.Distances.Local : NumaConstants.Distances.Remote;
+    private static int GetWindowsNodeDistance(int fromNode, int toNode) => fromNode == toNode ? NumaDistances.Local : NumaDistances.Remote;
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static int GetWindowsCacheLineSize() => NumaConstants.Sizes.CacheLineSize; // Windows detection would go here
+    private static int GetWindowsCacheLineSize() => NumaSizes.CacheLineSize; // Windows detection would go here
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static ulong GetProcessorMaskFromWmi(ManagementObject node)
@@ -508,7 +508,7 @@ public static partial class NumaTopologyDetector
         {
             // Ignore errors
         }
-        return NumaConstants.Sizes.CacheLineSize;
+        return NumaSizes.CacheLineSize;
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
@@ -540,7 +540,7 @@ public static partial class NumaTopologyDetector
         {
             // Ignore errors
         }
-        return NumaConstants.Sizes.PageSize;
+        return NumaSizes.PageSize;
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
@@ -612,8 +612,8 @@ public static partial class NumaTopologyDetector
             ProcessorCount = processorCount,
             Nodes = nodes.AsReadOnly(),
             DistanceMatrix = EstimateDistanceMatrix(nodes.Count).Select(row => row.AsReadOnly()).ToList().AsReadOnly(),
-            CacheLineSize = NumaConstants.Sizes.CacheLineSize,
-            PageSize = NumaConstants.Sizes.PageSize,
+            CacheLineSize = NumaSizes.CacheLineSize,
+            PageSize = NumaSizes.PageSize,
             SupportsMemoryBinding = false,
             SupportsMemoryPolicy = false
         };
@@ -635,7 +635,7 @@ public static partial class NumaTopologyDetector
                 new()
                 {
                     NodeId = 0,
-                    ProcessorMask = (1UL << Math.Min(processorCount, NumaConstants.Limits.MaxCpusInMask)) - 1,
+                    ProcessorMask = (1UL << Math.Min(processorCount, NumaLimits.MaxCpusInMask)) - 1,
                     ProcessorCount = processorCount,
                     MemorySize = 0,
                     Group = 0,
@@ -644,10 +644,10 @@ public static partial class NumaTopologyDetector
             }.AsReadOnly(),
             DistanceMatrix = new List<IReadOnlyList<int>>
             {
-                new List<int> { NumaConstants.Distances.Local }.AsReadOnly()
+                new List<int> { NumaDistances.Local }.AsReadOnly()
             }.AsReadOnly(),
-            CacheLineSize = NumaConstants.Sizes.CacheLineSize,
-            PageSize = NumaConstants.Sizes.PageSize,
+            CacheLineSize = NumaSizes.CacheLineSize,
+            PageSize = NumaSizes.PageSize,
             SupportsMemoryBinding = false,
             SupportsMemoryPolicy = false
         };
@@ -661,7 +661,7 @@ public static partial class NumaTopologyDetector
             matrix[i] = new int[nodeCount];
             for (var j = 0; j < nodeCount; j++)
             {
-                matrix[i][j] = i == j ? NumaConstants.Distances.Local : NumaConstants.Distances.Remote;
+                matrix[i][j] = i == j ? NumaDistances.Local : NumaDistances.Remote;
             }
         }
         return matrix;
@@ -713,7 +713,7 @@ public static partial class NumaTopologyDetector
                         Level = level,
                         SizeInBytes = size * multiplier,
                         Type = type,
-                        LineSize = NumaConstants.Sizes.CacheLineSize
+                        LineSize = NumaSizes.CacheLineSize
                     };
                 }
             }

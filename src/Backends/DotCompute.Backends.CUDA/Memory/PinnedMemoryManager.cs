@@ -51,11 +51,7 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
     /// <returns>A span over the managed memory.</returns>
     public override Span<T> GetSpan()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PinnedMemoryManager<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         return new Span<T>(_pinnedPtr.ToPointer(), _elementCount);
@@ -68,11 +64,7 @@ internal sealed unsafe class PinnedMemoryManager<T> : MemoryManager<T>, IDisposa
     /// <returns>A memory handle for the pinned memory.</returns>
     public override MemoryHandle Pin(int elementIndex = 0)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(PinnedMemoryManager<>));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         if (elementIndex < 0 || elementIndex >= _elementCount)

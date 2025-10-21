@@ -283,7 +283,7 @@ public static class CpuUtilities
     public static ulong CreateCpuMask(int startCpu, int endCpu)
     {
         ulong mask = 0;
-        for (var i = startCpu; i <= endCpu && i < NumaConstants.Limits.MaxCpusInMask; i++)
+        for (var i = startCpu; i <= endCpu && i < NumaLimits.MaxCpusInMask; i++)
         {
             mask |= (1UL << i);
         }
@@ -316,14 +316,14 @@ public static class CpuUtilities
                     int.TryParse(range[0], out var start) &&
                     int.TryParse(range[1], out var end))
                 {
-                    for (var i = start; i <= end && i < NumaConstants.Limits.MaxCpusInMask; i++)
+                    for (var i = start; i <= end && i < NumaLimits.MaxCpusInMask; i++)
                     {
                         mask |= (1UL << i);
                         count++;
                     }
                 }
             }
-            else if (int.TryParse(trimmed, out var cpu) && cpu < NumaConstants.Limits.MaxCpusInMask)
+            else if (int.TryParse(trimmed, out var cpu) && cpu < NumaLimits.MaxCpusInMask)
             {
                 mask |= (1UL << cpu);
                 count++;

@@ -882,7 +882,7 @@ namespace DotCompute.Backends.CUDA.Memory
             if (offset < 0 || length < 0 || offset + length > Length)
             {
 
-                throw new ArgumentOutOfRangeException("Slice parameters are out of range");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Slice parameters are out of range");
             }
 
 

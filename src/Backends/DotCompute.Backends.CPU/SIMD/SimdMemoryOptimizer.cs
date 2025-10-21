@@ -276,8 +276,8 @@ public sealed class MemoryAnalysisResult
     /// <value>The cache efficiency.</value>
     public double CacheEfficiency { get; set; }
     /// <summary>
-    /// Gets or sets the recommendations.
+    /// Gets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public List<string> Recommendations { get; init; } = [];
+    public List<string> Recommendations { get; } = new List<string>();
 }

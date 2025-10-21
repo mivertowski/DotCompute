@@ -332,12 +332,12 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         var performanceProfile = plugin.GetPerformanceProfile();
         if (requirements.PerformanceRequirements != null)
         {
-            if (performanceProfile.MemoryUsage <= requirements.PerformanceRequirements.MaxMemoryMB * 1024 * 1024)
+            if (performanceProfile.MemoryRequirementMB <= requirements.PerformanceRequirements.MaxMemoryMB)
             {
                 score += 10.0;
             }
 
-            if (performanceProfile.ExecutionTime <= requirements.PerformanceRequirements.MaxExecutionTime)
+            if (performanceProfile.EstimatedExecutionTimeMs <= requirements.PerformanceRequirements.MaxExecutionTime.TotalMilliseconds)
             {
                 score += 10.0;
             }

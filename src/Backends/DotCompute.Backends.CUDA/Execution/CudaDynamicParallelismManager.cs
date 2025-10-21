@@ -63,7 +63,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             _operationCount = 0;
             _totalExecutionTimeMs = 0.0;
 
-            _logger.LogDebugMessage("Dynamic Parallelism Manager initialized");
+            LogManagerInitialized(_logger);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace DotCompute.Backends.CUDA.Advanced
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error optimizing kernel for dynamic parallelism");
+                LogOptimizationError(_logger, ex);
                 return Task.FromResult(new CudaOptimizationResult
                 {
                     Success = false,

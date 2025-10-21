@@ -154,10 +154,7 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
     /// <returns>A pooled buffer if available, null otherwise.</returns>
     internal async ValueTask<IUnifiedMemoryBuffer?> TryGetBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MemoryPoolService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
@@ -255,10 +252,7 @@ public sealed class MemoryPoolService : IMemoryPoolService, IDisposable
     /// <returns>A new pooled buffer.</returns>
     internal async ValueTask<IUnifiedMemoryBuffer> CreateBufferAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MemoryPoolService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
@@ -530,10 +524,7 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(PooledBuffer));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
@@ -549,10 +540,7 @@ internal sealed class PooledBuffer : IUnifiedMemoryBuffer, IDisposable
 
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(PooledBuffer));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         // Simplified implementation for production usage TODO
         return ValueTask.CompletedTask;
@@ -636,10 +624,7 @@ internal sealed class AcceleratorMemoryPool(string acceleratorId, ILogger logger
 
     public async Task<IUnifiedMemoryBuffer> AllocateAsync(long sizeInBytes)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AcceleratorMemoryPool));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.CompletedTask;
 

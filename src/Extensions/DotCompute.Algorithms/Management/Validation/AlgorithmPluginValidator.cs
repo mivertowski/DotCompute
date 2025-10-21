@@ -288,7 +288,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             if (string.IsNullOrEmpty(assemblyName.Name))
             {
                 result.Errors.Add("Assembly has no name");
-                return false;
+                return Task.FromResult(false);
             }
 
             // Validate version
@@ -348,12 +348,12 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             {
                 if (!ValidatePluginType(pluginType, result))
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
             }
 
             result.PluginTypesFound = pluginTypes.Count;
-            return true;
+            return Task.FromResult(true);
         }
         catch (Exception ex)
         {
@@ -387,7 +387,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             if (pluginType.GetMethods().All(m => m.Name != methodName))
             {
                 result.Errors.Add($"Plugin type {pluginType.Name} missing required method: {methodName}");
-                return false;
+                return Task.FromResult(false);
             }
         }
 

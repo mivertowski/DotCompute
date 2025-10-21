@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Backends.Metal.Native;
@@ -476,9 +477,9 @@ public sealed class UnifiedValidationResult
         _ = report.AppendLine(new string('=', 40));
         _ = report.AppendLine();
 
-        _ = report.AppendLine($"Status: {(IsValid ? "PASSED" : "FAILED")}");
-        _ = report.AppendLine($"Errors: {ErrorCount}");
-        _ = report.AppendLine($"Warnings: {WarningCount}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Status: {(IsValid ? "PASSED" : "FAILED")}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Errors: {ErrorCount}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Warnings: {WarningCount}");
         _ = report.AppendLine();
 
         if (_errors.Count > 0)
@@ -486,7 +487,7 @@ public sealed class UnifiedValidationResult
             _ = report.AppendLine("ERRORS:");
             foreach (var error in _errors)
             {
-                _ = report.AppendLine($"  ❌ {error}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  ❌ {error}");
             }
             _ = report.AppendLine();
         }
@@ -496,7 +497,7 @@ public sealed class UnifiedValidationResult
             _ = report.AppendLine("WARNINGS:");
             foreach (var warning in _warnings)
             {
-                _ = report.AppendLine($"  ⚠️  {warning}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  ⚠️  {warning}");
             }
             _ = report.AppendLine();
         }
@@ -506,7 +507,7 @@ public sealed class UnifiedValidationResult
             _ = report.AppendLine("INFORMATION:");
             foreach (var info in _info)
             {
-                _ = report.AppendLine($"  ℹ️  {info}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  ℹ️  {info}");
             }
         }
 

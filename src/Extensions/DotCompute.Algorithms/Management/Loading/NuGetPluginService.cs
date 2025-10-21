@@ -86,7 +86,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 loadResult.PackageIdentity.Id,
                 loadResult.PackageIdentity.Version.ToString(),
                 loadResult.LoadedAssemblyPaths.Length,
-                loadResult.ResolvedDependencies.Length);
+                loadResult.ResolvedDependencies.Count);
 
             // Load plugins from each assembly in the package
             var totalPluginsLoaded = 0;
@@ -109,7 +109,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
             totalPluginsLoaded = pluginCounts.Sum();
 
             // Log dependency information
-            if (loadResult.ResolvedDependencies.Length > 0)
+            if (loadResult.ResolvedDependencies.Count > 0)
             {
                 LogNuGetDependenciesResolved(
                     loadResult.PackageIdentity.Id,
@@ -264,10 +264,10 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 Version = loadResult.PackageIdentity.Version.ToString(),
                 IsValid = true,
                 AssemblyCount = loadResult.LoadedAssemblyPaths.Length,
-                DependencyCount = loadResult.ResolvedDependencies.Length,
+                DependencyCount = loadResult.ResolvedDependencies.Count,
                 SecurityValidationPassed = !string.IsNullOrEmpty(loadResult.SecurityValidationResult),
                 SecurityDetails = loadResult.SecurityValidationResult ?? "No security validation performed",
-                Warnings = loadResult.Warnings,
+                Warnings = loadResult.Warnings.ToArray(),
                 ValidationTime = loadResult.LoadTime,
                 PackageSize = loadResult.TotalSize
             };

@@ -48,10 +48,7 @@ public sealed class ProductionMemoryBufferView(long viewId, IUnifiedMemoryBuffer
 
     public ValueTask CopyFromAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryBufferView));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         return _parentBuffer.CopyFromAsync(source, _offset + offset, cancellationToken);
     }
@@ -66,10 +63,7 @@ public sealed class ProductionMemoryBufferView(long viewId, IUnifiedMemoryBuffer
 
     public ValueTask CopyToAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(ProductionMemoryBufferView));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         return _parentBuffer.CopyToAsync(destination, _offset + offset, cancellationToken);
     }

@@ -48,10 +48,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     public int GetOptimalDevice(CudaWorkloadProfile profile)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaDeviceManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_availableDevices.Count == 0)
         {
@@ -74,10 +71,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     public CudaDeviceInfo GetDeviceInfo(int deviceId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaDeviceManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (!_availableDevices.TryGetValue(deviceId, out var deviceInfo))
         {
@@ -92,10 +86,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     public double GetDeviceHealth()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaDeviceManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_availableDevices.Count == 0)
         {
@@ -127,10 +118,7 @@ public sealed class CudaDeviceManager : IDisposable
     /// </summary>
     public async Task OptimizeDeviceAsync(CudaWorkloadProfile profile, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaDeviceManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Run(() =>
         {

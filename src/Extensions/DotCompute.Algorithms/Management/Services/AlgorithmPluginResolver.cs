@@ -169,7 +169,15 @@ public sealed partial class AlgorithmPluginResolver(
         // Check performance requirements
         if (requirements.PerformanceRequirements != null)
         {
-            var performanceProfile = plugin.GetPerformanceProfile();
+            var algorithmPerformanceProfile = plugin.GetPerformanceProfile();
+
+            // Convert AlgorithmPerformanceProfile to PerformanceProfile for compatibility check
+            var performanceProfile = new DotCompute.Abstractions.Factories.PerformanceProfile
+            {
+                MemoryRequirementMB = algorithmPerformanceProfile.MemoryRequirementMB,
+                EstimatedExecutionTimeMs = (long)algorithmPerformanceProfile.EstimatedExecutionTimeMs
+            };
+
             var perfResult = CheckPerformanceCompatibility(performanceProfile, requirements.PerformanceRequirements);
 
             result.CompatibilityScore += perfResult.Score;
@@ -374,14 +382,14 @@ public sealed partial class AlgorithmPluginResolver(
         }
 
         // Score based on performance characteristics
-        if (profile.EstimatedExecutionTimeMs <= requirements.MaxExecutionTime)
+        if (profile.EstimatedExecutionTimeMs <= requirements.MaxExecutionTime.TotalMilliseconds)
         {
             result.Score += 10;
         }
         else
         {
             result.Score -= 5;
-            result.Warning = $"Execution time {profile.EstimatedExecutionTimeMs} exceeds preferred maximum {requirements.MaxExecutionTime}";
+            result.Warning = $"Execution time {profile.EstimatedExecutionTimeMs}ms exceeds preferred maximum {requirements.MaxExecutionTime.TotalMilliseconds}ms";
         }
 
         return result;
@@ -390,7 +398,7 @@ public sealed partial class AlgorithmPluginResolver(
     /// <summary>
     /// Recursively resolves plugin dependencies.
     /// </summary>
-    private void ResolveDependenciesRecursive(string pluginId, IReadOnlyList<string> resolved, HashSet<string> visited, HashSet<string> visiting)
+    private void ResolveDependenciesRecursive(string pluginId, List<string> resolved, HashSet<string> visited, HashSet<string> visiting)
     {
         if (visiting.Contains(pluginId))
         {

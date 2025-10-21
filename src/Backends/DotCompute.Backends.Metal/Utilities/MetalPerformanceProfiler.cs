@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.Metal.Utilities;
@@ -137,19 +138,19 @@ public sealed class MetalPerformanceProfiler(ILogger<MetalPerformanceProfiler> l
             {
                 var metrics = kvp.Value;
                 _ = report.AppendLine();
-                _ = report.AppendLine($"Operation: {metrics.OperationName}");
-                _ = report.AppendLine($"  Executions: {metrics.ExecutionCount:N0}");
-                _ = report.AppendLine($"  Success Rate: {metrics.SuccessRate:P2}");
-                _ = report.AppendLine($"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
-                _ = report.AppendLine($"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"Operation: {metrics.OperationName}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Executions: {metrics.ExecutionCount:N0}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Success Rate: {metrics.SuccessRate:P2}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Time: {metrics.TotalTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Average Time: {metrics.AverageTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Min Time: {metrics.MinTime.TotalMilliseconds:F2} ms");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Max Time: {metrics.MaxTime.TotalMilliseconds:F2} ms");
 
                 if (metrics.ExecutionCount > 1)
                 {
                     var variance = metrics.TimeVariance;
                     var stdDev = Math.Sqrt(variance);
-                    _ = report.AppendLine($"  Std Dev: {stdDev:F2} ms");
+                    _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Std Dev: {stdDev:F2} ms");
                 }
             }
 

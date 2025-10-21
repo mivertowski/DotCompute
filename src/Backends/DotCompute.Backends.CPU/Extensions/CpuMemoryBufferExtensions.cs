@@ -85,7 +85,7 @@ public static class CpuMemoryBufferExtensions
 
             if (offset < 0 || length < 0 || offset + length > elementCount)
             {
-                throw new ArgumentOutOfRangeException("Offset and length specify a range outside the buffer bounds");
+                throw new ArgumentOutOfRangeException(nameof(offset), "Offset and length specify a range outside the buffer bounds");
             }
         }
 

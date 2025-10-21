@@ -10,24 +10,28 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed partial class CudaKernelExecutor
     {
-        #region LoggerMessage Delegates
-
-        [LoggerMessage(EventId = 24031, Level = LogLevel.Information,
+        [LoggerMessage(EventId = 22100, Level = LogLevel.Information,
             Message = "CUDA Kernel Executor initialized for device {DeviceId} ({DeviceName})")]
         private static partial void LogExecutorInitialized(ILogger logger, int deviceId, string deviceName);
 
-        [LoggerMessage(EventId = 24032, Level = LogLevel.Error,
+        [LoggerMessage(EventId = 22101, Level = LogLevel.Error,
             Message = "Kernel execution failed")]
         private static partial void LogKernelExecutionFailed(ILogger logger);
 
-        [LoggerMessage(EventId = 24033, Level = LogLevel.Error,
-            Message = "Failed to execute kernel asynchronously")]
+        [LoggerMessage(EventId = 22102, Level = LogLevel.Error,
+            Message = "Asynchronous kernel execution failed")]
         private static partial void LogAsyncExecutionFailed(ILogger logger);
 
-        [LoggerMessage(EventId = 24034, Level = LogLevel.Debug,
-            Message = "Calculated optimal block size for kernel")]
+        [LoggerMessage(EventId = 22103, Level = LogLevel.Debug,
+            Message = "Optimal block size calculated for RTX 2000 Ada architecture")]
         private static partial void LogOptimalBlockSizeCalculated(ILogger logger);
 
-        #endregion
+        [LoggerMessage(EventId = 22104, Level = LogLevel.Warning,
+            Message = "Some executions did not complete within timeout during disposal")]
+        private static partial void LogDisposalTimeoutWarning(ILogger logger, Exception ex);
+
+        [LoggerMessage(EventId = 22105, Level = LogLevel.Warning,
+            Message = "Failed to clean up execution events")]
+        private static partial void LogEventCleanupError(ILogger logger, Exception ex);
     }
 }

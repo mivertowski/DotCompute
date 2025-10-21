@@ -410,7 +410,7 @@ public static class NumaDiagnostics
         }
 
         // Check cache line alignment
-        if (topology.CacheLineSize != NumaConstants.Sizes.CacheLineSize)
+        if (topology.CacheLineSize != NumaSizes.CacheLineSize)
         {
             warnings.Add($"Non-standard cache line size detected: {topology.CacheLineSize} bytes");
         }

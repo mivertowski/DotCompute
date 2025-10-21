@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace DotCompute.Backends.Metal.Execution.Graph.Statistics;
@@ -504,50 +505,50 @@ public class MetalGraphStatistics
         var report = new System.Text.StringBuilder();
 
 
-        _ = report.AppendLine($"Metal Graph Statistics Report for '{Name}'");
-        _ = report.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Metal Graph Statistics Report for '{Name}'");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
         _ = report.AppendLine(new string('=', 60));
 
         // Graph structure
 
         _ = report.AppendLine("\nGraph Structure:");
-        _ = report.AppendLine($"  Total Nodes: {NodeCount:N0}");
-        _ = report.AppendLine($"  Kernel Nodes: {KernelNodeCount:N0}");
-        _ = report.AppendLine($"  Memory Operation Nodes: {MemoryOperationNodeCount:N0}");
-        _ = report.AppendLine($"  Critical Path Length: {CriticalPathLength:N0}");
-        _ = report.AppendLine($"  Parallelism Opportunities: {ParallelismOpportunities:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Nodes: {NodeCount:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Kernel Nodes: {KernelNodeCount:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Memory Operation Nodes: {MemoryOperationNodeCount:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Critical Path Length: {CriticalPathLength:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Parallelism Opportunities: {ParallelismOpportunities:N0}");
 
         // Execution statistics
 
         _ = report.AppendLine("\nExecution Statistics:");
-        _ = report.AppendLine($"  Total Executions: {TotalExecutions:N0}");
-        _ = report.AppendLine($"  Success Rate: {SuccessRate:F1}%");
-        _ = report.AppendLine($"  Last Executed: {LastExecutedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never"}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Executions: {TotalExecutions:N0}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Success Rate: {SuccessRate:F1}%");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Last Executed: {LastExecutedAt?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? "Never"}");
 
         // Performance metrics
 
         _ = report.AppendLine("\nPerformance Metrics:");
-        _ = report.AppendLine($"  Average GPU Time: {AverageGpuExecutionTimeMs:F2} ms");
-        _ = report.AppendLine($"  Min/Max GPU Time: {MinGpuExecutionTimeMs:F2} / {MaxGpuExecutionTimeMs:F2} ms");
-        _ = report.AppendLine($"  Throughput: {ThroughputExecutionsPerSec:F2} executions/sec");
-        _ = report.AppendLine($"  Efficiency Ratio: {EfficiencyRatio:F2}");
-        _ = report.AppendLine($"  Resource Utilization: {ResourceUtilizationScore:F1}%");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Average GPU Time: {AverageGpuExecutionTimeMs:F2} ms");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Min/Max GPU Time: {MinGpuExecutionTimeMs:F2} / {MaxGpuExecutionTimeMs:F2} ms");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Throughput: {ThroughputExecutionsPerSec:F2} executions/sec");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Efficiency Ratio: {EfficiencyRatio:F2}");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Resource Utilization: {ResourceUtilizationScore:F1}%");
 
         // Memory statistics
 
         _ = report.AppendLine("\nMemory Statistics:");
-        _ = report.AppendLine($"  Total Memory Transferred: {TotalMemoryTransferred:N0} bytes");
-        _ = report.AppendLine($"  Average Memory Bandwidth: {AverageMemoryBandwidthGBps:F2} GB/s");
-        _ = report.AppendLine($"  Peak Memory Bandwidth: {PeakMemoryBandwidthGBps:F2} GB/s");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Total Memory Transferred: {TotalMemoryTransferred:N0} bytes");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Average Memory Bandwidth: {AverageMemoryBandwidthGBps:F2} GB/s");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Peak Memory Bandwidth: {PeakMemoryBandwidthGBps:F2} GB/s");
 
         // Optimization results
 
         if (OptimizationPasses > 0)
         {
             _ = report.AppendLine("\nOptimization Results:");
-            _ = report.AppendLine($"  Optimization Passes: {OptimizationPasses:N0}");
-            _ = report.AppendLine($"  Kernel Fusions Applied: {KernelFusionsApplied:N0}");
-            _ = report.AppendLine($"  Performance Speedup: {OptimizationSpeedup:F2}x");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Optimization Passes: {OptimizationPasses:N0}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Kernel Fusions Applied: {KernelFusionsApplied:N0}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Performance Speedup: {OptimizationSpeedup:F2}x");
         }
 
         // Error summary
@@ -555,12 +556,12 @@ public class MetalGraphStatistics
         if (FailedExecutions > 0)
         {
             _ = report.AppendLine("\nError Summary:");
-            _ = report.AppendLine($"  Failed Executions: {FailedExecutions:N0}");
-            _ = report.AppendLine($"  Node Execution Failures: {NodeExecutionFailures:N0}");
-            _ = report.AppendLine($"  Memory Allocation Failures: {MemoryAllocationFailures:N0}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Failed Executions: {FailedExecutions:N0}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Node Execution Failures: {NodeExecutionFailures:N0}");
+            _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Memory Allocation Failures: {MemoryAllocationFailures:N0}");
             if (!string.IsNullOrEmpty(MostCommonError))
             {
-                _ = report.AppendLine($"  Most Common Error: {MostCommonError}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"  Most Common Error: {MostCommonError}");
             }
         }
 

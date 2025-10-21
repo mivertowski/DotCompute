@@ -356,8 +356,7 @@ internal sealed class OpenCLContext : IDisposable
     /// </summary>
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(OpenCLContext));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>

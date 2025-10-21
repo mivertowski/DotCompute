@@ -779,7 +779,7 @@ public class CpuCapabilities
     /// Gets or sets the supported instruction sets.
     /// </summary>
     /// <value>The supported instruction sets.</value>
-    public HashSet<string> SupportedInstructionSets { get; set; } = [];
+    public HashSet<string> SupportedInstructionSets { get; init; } = [];
 }
 /// <summary>
 /// A class that represents cpu validation result.

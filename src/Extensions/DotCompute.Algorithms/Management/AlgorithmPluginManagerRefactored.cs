@@ -375,7 +375,7 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
     /// </summary>
     /// <param name="requirements">The plugin requirements.</param>
     /// <returns>The best matching plugin if found; otherwise, null.</returns>
-    public IAlgorithmPlugin? ResolvePlugin(PluginRequirements requirements)
+    public IAlgorithmPlugin? ResolvePlugin(Services.PluginRequirements requirements)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _dependencyResolver.ResolvePlugin(requirements);

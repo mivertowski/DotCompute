@@ -150,7 +150,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _allocations[devicePtr] = sizeInBytes;
             _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-            LogMemoryAllocated(sizeInBytes, devicePtr);
+            LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
 
             return new CudaMemoryBuffer<T>(devicePtr, count, _context);
         }
@@ -173,7 +173,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                LogMemoryAllocated(sizeInBytes, devicePtr);
+                LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
 
                 // Return a non-generic buffer that implements IUnifiedMemoryBuffer
                 return new CudaMemoryBuffer(_device, devicePtr, sizeInBytes);
@@ -240,7 +240,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                LogMemoryAllocated(sizeInBytes, devicePtr);
+                LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
 
                 return (IUnifiedMemoryBuffer<T>)new CudaMemoryBuffer<T>(devicePtr, count, _context);
             }, cancellationToken);
@@ -264,7 +264,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[unifiedPtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                LogUnifiedMemoryAllocated(sizeInBytes, unifiedPtr, typeof(T).Name);
+                LogUnifiedMemoryAllocated(_logger, sizeInBytes, unifiedPtr, typeof(T).Name);
 
                 return (IUnifiedMemoryBuffer<T>)new SimpleCudaUnifiedMemoryBuffer<T>(unifiedPtr, (int)count, true);
             }, cancellationToken);
@@ -281,7 +281,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 if (result == CudaError.Success)
                 {
                     _ = Interlocked.Add(ref _totalAllocated, -size);
-                    LogMemoryFreed(size, devicePtr);
+                    LogMemoryFreed(_logger, size, devicePtr);
                 }
                 else
                 {
@@ -309,11 +309,11 @@ namespace DotCompute.Backends.CUDA.Memory
                     _totalMemory = (long)total;
                     // Set max allocation size to 90% of total memory to leave room for other operations
                     _maxAllocationSize = (long)(total * 0.9);
-                    LogMemoryInfoInitialized(_totalMemory, _maxAllocationSize);
+                    LogMemoryInfoInitialized(_logger, _totalMemory, _maxAllocationSize);
                 }
                 else
                 {
-                    LogMemoryInfoInitializationFailed();
+                    LogMemoryInfoInitializationFailed(_logger);
                     // Fallback values
                     _totalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
                     _maxAllocationSize = _totalMemory / 2;
@@ -321,7 +321,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             catch (Exception ex)
             {
-                LogMemoryInfoInitializationException(ex);
+                LogMemoryInfoInitializationException(_logger, ex);
                 // Fallback values
                 _totalMemory = 8L * 1024 * 1024 * 1024; // 8GB default
                 _maxAllocationSize = _totalMemory / 2;
@@ -351,7 +351,7 @@ namespace DotCompute.Backends.CUDA.Memory
             InitializeMemoryInfo();
 
 
-            LogMemoryManagerReset();
+            LogMemoryManagerReset(_logger);
         }
 
         /// <inheritdoc/>
@@ -374,14 +374,14 @@ namespace DotCompute.Backends.CUDA.Memory
                     var result = CudaRuntime.cudaDeviceSynchronize();
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("CUDA synchronization during optimization failed: {Result}", result);
+                        LogOptimizationSyncError(_logger, result);
                     }
 
-                    LogOptimizationCompleted();
+                    LogOptimizationCompleted(_logger);
                 }
                 catch (Exception ex)
                 {
-                    LogOptimizationError(ex);
+                    LogOptimizationError(_logger, ex);
                 }
             }, cancellationToken);
         }
@@ -401,7 +401,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _ = Interlocked.Exchange(ref _totalAllocated, 0);
             _ = Interlocked.Exchange(ref _deallocationCount, 0);
 
-            LogMemoryManagerCleared();
+            LogMemoryManagerCleared(_logger);
         }
 
         /// <inheritdoc/>
@@ -450,7 +450,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     _allocations[unifiedPtr] = sizeInBytes;
                     _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                    LogUnifiedMemoryAllocatedRaw(sizeInBytes, unifiedPtr);
+                    LogUnifiedMemoryAllocatedRaw(_logger, sizeInBytes, unifiedPtr);
                     return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(_device, unifiedPtr, sizeInBytes, options);
                 }, cancellationToken);
             }
@@ -465,7 +465,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _allocations[devicePtr] = sizeInBytes;
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-                LogMemoryAllocated(sizeInBytes, devicePtr);
+                LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
                 return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(_device, devicePtr, sizeInBytes, options);
             }, cancellationToken);
         }
@@ -487,17 +487,17 @@ namespace DotCompute.Backends.CUDA.Memory
                         {
                             _ = Interlocked.Add(ref _totalAllocated, -size);
                             _ = Interlocked.Increment(ref _deallocationCount);
-                            LogMemoryFreed(size, devicePtr);
+                            LogMemoryFreed(_logger, size, devicePtr);
                         }
                         else
                         {
-                            _logger.LogWarning("Failed to free CUDA memory at 0x{DevicePtr:X}: {Result}", devicePtr, result);
+                            LogMemoryFreeError(_logger, devicePtr, result);
                         }
                     }
                 }
                 else
                 {
-                    LogCannotFreeNonCudaBuffer(buffer.GetType().Name);
+                    LogCannotFreeNonCudaBuffer(_logger, buffer.GetType().Name);
                 }
             }, cancellationToken);
         }
@@ -766,7 +766,7 @@ namespace DotCompute.Backends.CUDA.Memory
             }
             catch (Exception ex)
             {
-                LogStatisticsError(ex);
+                LogStatisticsError(_logger, ex);
                 return new MemoryStatistics
                 {
                     TotalAllocated = TotalAllocatedBytes,

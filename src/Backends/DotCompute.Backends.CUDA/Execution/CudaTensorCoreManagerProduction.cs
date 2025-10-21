@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DotCompute.Backends.CUDA.DeviceManagement;
@@ -171,18 +172,18 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
 
         var caps = new StringBuilder();
         _ = caps.AppendLine("Tensor Core Capabilities:");
-        _ = caps.AppendLine($"  WMMA: {_capabilities.WmmaSupported}");
-        _ = caps.AppendLine($"  FP16: {_capabilities.Fp16Supported}");
-        _ = caps.AppendLine($"  BF16: {_capabilities.Bf16Supported}");
-        _ = caps.AppendLine($"  TF32: {_capabilities.Tf32Supported}");
-        _ = caps.AppendLine($"  FP8: {_capabilities.Fp8Supported}");
-        _ = caps.AppendLine($"  INT8: {_capabilities.Int8Supported}");
-        _ = caps.AppendLine($"  INT4: {_capabilities.Int4Supported}");
-        _ = caps.AppendLine($"  FP64: {_capabilities.Fp64Supported}");
-        _ = caps.AppendLine($"  Sparsity: {_capabilities.SparsitySupported}");
-        _ = caps.AppendLine($"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
-        _ = caps.AppendLine($"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
-        _ = caps.AppendLine($"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  WMMA: {_capabilities.WmmaSupported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP16: {_capabilities.Fp16Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  BF16: {_capabilities.Bf16Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  TF32: {_capabilities.Tf32Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP8: {_capabilities.Fp8Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  INT8: {_capabilities.Int8Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  INT4: {_capabilities.Int4Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  FP64: {_capabilities.Fp64Supported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Sparsity: {_capabilities.SparsitySupported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Transformer Engine: {_capabilities.TransformerEngineSupported}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Max Tile: {_capabilities.MaxWmmaM}x{_capabilities.MaxWmmaN}x{_capabilities.MaxWmmaK}");
+        _ = caps.AppendLine(CultureInfo.InvariantCulture, $"  Peak TFLOPS: {_capabilities.PeakTflops:F2}");
 
 
         _logger.LogInformation(caps.ToString());
@@ -408,7 +409,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         _ = ptx.AppendLine(".address_size 64");
 
         // Kernel entry point
-        _ = ptx.AppendLine($".visible .entry tensor_gemm_{inputType}_{outputType}(");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $".visible .entry tensor_gemm_{inputType}_{outputType}(");
         _ = ptx.AppendLine("    .param .u64 param_a,");
         _ = ptx.AppendLine("    .param .u64 param_b,");
         _ = ptx.AppendLine("    .param .u64 param_c,");
@@ -429,7 +430,7 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         // WMMA fragment declarations based on data type
 
         var wmmaShape = GetWmmaShape(inputType);
-        _ = ptx.AppendLine($"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // WMMA fragments for {wmmaShape.M}x{wmmaShape.N}x{wmmaShape.K}");
 
         // Generate WMMA operations
 
@@ -451,19 +452,19 @@ public sealed class CudaTensorCoreManagerProduction : IDisposable
         WmmaShape shape)
     {
         // Load fragments
-        _ = ptx.AppendLine($"    // Load A fragment");
-        _ = ptx.AppendLine($"    wmma.load.a.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(inputType)}");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Load A fragment");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.load.a.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(inputType)}");
 
-        _ = ptx.AppendLine($"    // Load B fragment");
-        _ = ptx.AppendLine($"    wmma.load.b.sync.aligned.{shape.M}x{shape.N}x{shape.K}.col.{GetPtxType(inputType)}");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Load B fragment");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.load.b.sync.aligned.{shape.M}x{shape.N}x{shape.K}.col.{GetPtxType(inputType)}");
 
         // Compute
-        _ = ptx.AppendLine($"    // Compute C = A * B");
-        _ = ptx.AppendLine($"    wmma.mma.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.col.{GetPtxType(outputType)}.{GetPtxType(inputType)}");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Compute C = A * B");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.mma.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.col.{GetPtxType(outputType)}.{GetPtxType(inputType)}");
 
         // Store result
-        _ = ptx.AppendLine($"    // Store C fragment");
-        _ = ptx.AppendLine($"    wmma.store.d.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(outputType)}");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    // Store C fragment");
+        _ = ptx.AppendLine(CultureInfo.InvariantCulture, $"    wmma.store.d.sync.aligned.{shape.M}x{shape.N}x{shape.K}.row.{GetPtxType(outputType)}");
     }
 
     /// <summary>

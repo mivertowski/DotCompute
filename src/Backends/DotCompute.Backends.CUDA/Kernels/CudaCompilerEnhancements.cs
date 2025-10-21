@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Types;
@@ -146,10 +147,10 @@ namespace DotCompute.Backends.CUDA.Compilation
             var (major, minor) = GetEnhancedComputeCapability(deviceId);
 
             // Add enhanced header with metadata
-            _ = builder.AppendLine($"// Enhanced CUDA kernel: {source.Name}");
-            _ = builder.AppendLine($"// Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-            _ = builder.AppendLine($"// Target: Compute Capability {major}.{minor}");
-            _ = builder.AppendLine($"// Optimization: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Enhanced CUDA kernel: {source.Name}");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Target: Compute Capability {major}.{minor}");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
             _ = builder.AppendLine();
 
             // NVRTC does not support external headers - all built-in CUDA functions
@@ -197,7 +198,7 @@ namespace DotCompute.Backends.CUDA.Compilation
             _ = builder.AppendLine();
 
             // Add compute capability specific features
-            _ = builder.AppendLine($"// Compute Capability {major}.{minor} Features");
+            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"// Compute Capability {major}.{minor} Features");
 
             if (ComputeCapabilityExtensions.SupportsFeature(major, minor, ComputeFeature.TensorCores))
             {
@@ -225,8 +226,8 @@ namespace DotCompute.Backends.CUDA.Compilation
             if (major >= 8) // Ampere and newer
             {
                 _ = builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
-                _ = builder.AppendLine($"#define MAX_SHARED_MEM_PER_BLOCK {ComputeCapabilityExtensions.GetMaxSharedMemoryPerBlock(major, minor)}");
-                _ = builder.AppendLine($"#define RECOMMENDED_BLOCK_SIZE {ComputeCapabilityExtensions.GetRecommendedBlockSize(major, minor)}");
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"#define MAX_SHARED_MEM_PER_BLOCK {ComputeCapabilityExtensions.GetMaxSharedMemoryPerBlock(major, minor)}");
+                _ = builder.AppendLine(CultureInfo.InvariantCulture, $"#define RECOMMENDED_BLOCK_SIZE {ComputeCapabilityExtensions.GetRecommendedBlockSize(major, minor)}");
             }
 
             if (major >= 8 && minor >= 9) // Ada generation specific

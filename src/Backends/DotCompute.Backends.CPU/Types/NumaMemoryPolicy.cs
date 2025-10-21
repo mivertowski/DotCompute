@@ -11,7 +11,7 @@ public sealed class NumaMemoryPolicy
     /// <summary>
     /// Gets or sets the preferred NUMA nodes for allocation.
     /// </summary>
-    public int[] PreferredNodes { get; set; } = [];
+    public IReadOnlyList<int> PreferredNodes { get; set; } = Array.Empty<int>();
 
     /// <summary>
     /// Gets or sets the allocation strategy.

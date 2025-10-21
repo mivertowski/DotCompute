@@ -264,6 +264,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "MappedMemory is returned to caller who is responsible for disposal")]
     public ValueTask<MappedMemory<byte>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default) => ValueTask.FromResult(Map(mode));
     /// <summary>
     /// Performs ensure on host.
@@ -562,11 +563,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
     private void EnsureNotDisposed()
     {
-        if (_isDisposed)
-        {
-
-            throw new ObjectDisposedException(nameof(CpuMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
     }
 }
 
@@ -585,13 +582,7 @@ internal unsafe class UnmanagedMemoryManager<T>(T* pointer, int length) : Memory
 
     public override Span<T> GetSpan()
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(UnmanagedMemoryManager<T>));
-        }
-
-
+        ObjectDisposedException.ThrowIf(_disposed, this);
         return new Span<T>(_pointer, _length);
     }
     /// <summary>
@@ -602,13 +593,7 @@ internal unsafe class UnmanagedMemoryManager<T>(T* pointer, int length) : Memory
 
     public override MemoryHandle Pin(int elementIndex = 0)
     {
-        if (_disposed)
-        {
-
-            throw new ObjectDisposedException(nameof(UnmanagedMemoryManager<T>));
-        }
-
-
+        ObjectDisposedException.ThrowIf(_disposed, this);
         return new MemoryHandle(_pointer + elementIndex);
     }
     /// <summary>

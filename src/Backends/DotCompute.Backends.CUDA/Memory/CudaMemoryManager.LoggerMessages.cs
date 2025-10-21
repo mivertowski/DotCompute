@@ -1,97 +1,71 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
-    /// <summary>
-    /// LoggerMessage delegates for CudaMemoryManager.
-    /// </summary>
     public sealed partial class CudaMemoryManager
     {
-        #region LoggerMessage Delegates
+        [LoggerMessage(EventId = 23100, Level = LogLevel.Debug,
+            Message = "Allocated {SizeInBytes} bytes of device memory at 0x{DevicePtr:X}")]
+        private static partial void LogMemoryAllocated(ILogger logger, long sizeInBytes, IntPtr devicePtr);
 
-        [LoggerMessage(
-            EventId = 23001,
-            Level = LogLevel.Debug,
-            Message = "Allocated {SizeInBytes} bytes at 0x{DevicePtr:X}")]
-        private partial void LogMemoryAllocated(long sizeInBytes, IntPtr devicePtr);
+        [LoggerMessage(EventId = 23101, Level = LogLevel.Debug,
+            Message = "Allocated {SizeInBytes} bytes of unified memory at 0x{UnifiedPtr:X} for type {TypeName}")]
+        private static partial void LogUnifiedMemoryAllocated(ILogger logger, long sizeInBytes, IntPtr unifiedPtr, string typeName);
 
-        [LoggerMessage(
-            EventId = 23003,
-            Level = LogLevel.Debug,
-            Message = "Allocated {SizeInBytes} bytes unified memory at {UnifiedPtr} for type {TypeName}")]
-        private partial void LogUnifiedMemoryAllocated(long sizeInBytes, IntPtr unifiedPtr, string typeName);
+        [LoggerMessage(EventId = 23102, Level = LogLevel.Debug,
+            Message = "Freed {SizeInBytes} bytes of device memory at 0x{DevicePtr:X}")]
+        private static partial void LogMemoryFreed(ILogger logger, long sizeInBytes, IntPtr devicePtr);
 
-        [LoggerMessage(
-            EventId = 23004,
-            Level = LogLevel.Debug,
-            Message = "Freed {Size} bytes at 0x{DevicePtr:X}")]
-        private partial void LogMemoryFreed(long size, IntPtr devicePtr);
+        [LoggerMessage(EventId = 23103, Level = LogLevel.Information,
+            Message = "Initialized memory info: Total={TotalMemory} bytes, MaxAllocation={MaxAllocationSize} bytes")]
+        private static partial void LogMemoryInfoInitialized(ILogger logger, long totalMemory, long maxAllocationSize);
 
-        [LoggerMessage(
-            EventId = 23006,
-            Level = LogLevel.Debug,
-            Message = "Initialized CUDA memory info - Total: {TotalMemory} bytes, Max allocation: {MaxAllocationSize} bytes")]
-        private partial void LogMemoryInfoInitialized(long totalMemory, long maxAllocationSize);
+        [LoggerMessage(EventId = 23104, Level = LogLevel.Warning,
+            Message = "Failed to initialize memory info, using defaults")]
+        private static partial void LogMemoryInfoInitializationFailed(ILogger logger);
 
-        [LoggerMessage(
-            EventId = 23007,
-            Level = LogLevel.Warning,
-            Message = "Failed to initialize CUDA memory info, using fallback values")]
-        private partial void LogMemoryInfoInitializationFailed();
+        [LoggerMessage(EventId = 23105, Level = LogLevel.Error,
+            Message = "Exception during memory info initialization")]
+        private static partial void LogMemoryInfoInitializationException(ILogger logger, Exception ex);
 
-        [LoggerMessage(
-            EventId = 23008,
-            Level = LogLevel.Warning,
-            Message = "Exception while initializing CUDA memory info")]
-        private partial void LogMemoryInfoInitializationException(Exception ex);
+        [LoggerMessage(EventId = 23106, Level = LogLevel.Information,
+            Message = "Memory manager reset completed")]
+        private static partial void LogMemoryManagerReset(ILogger logger);
 
-        [LoggerMessage(
-            EventId = 23009,
-            Level = LogLevel.Information,
-            Message = "CUDA memory manager reset completed")]
-        private partial void LogMemoryManagerReset();
+        [LoggerMessage(EventId = 23107, Level = LogLevel.Debug,
+            Message = "Memory optimization completed")]
+        private static partial void LogOptimizationCompleted(ILogger logger);
 
-        [LoggerMessage(
-            EventId = 23011,
-            Level = LogLevel.Debug,
-            Message = "CUDA memory optimization completed")]
-        private partial void LogOptimizationCompleted();
+        [LoggerMessage(EventId = 23108, Level = LogLevel.Error,
+            Message = "Error during memory optimization")]
+        private static partial void LogOptimizationError(ILogger logger, Exception ex);
 
-        [LoggerMessage(
-            EventId = 23012,
-            Level = LogLevel.Warning,
-            Message = "Error during CUDA memory optimization")]
-        private partial void LogOptimizationError(Exception ex);
+        [LoggerMessage(EventId = 23109, Level = LogLevel.Information,
+            Message = "Memory manager cleared")]
+        private static partial void LogMemoryManagerCleared(ILogger logger);
 
-        [LoggerMessage(
-            EventId = 23013,
-            Level = LogLevel.Information,
-            Message = "CUDA memory manager cleared")]
-        private partial void LogMemoryManagerCleared();
+        [LoggerMessage(EventId = 23110, Level = LogLevel.Debug,
+            Message = "Allocated {SizeInBytes} bytes of unified memory at 0x{UnifiedPtr:X}")]
+        private static partial void LogUnifiedMemoryAllocatedRaw(ILogger logger, long sizeInBytes, IntPtr unifiedPtr);
 
-        [LoggerMessage(
-            EventId = 23014,
-            Level = LogLevel.Debug,
-            Message = "Allocated {SizeInBytes} bytes unified memory at {UnifiedPtr}")]
-        private partial void LogUnifiedMemoryAllocatedRaw(long sizeInBytes, IntPtr unifiedPtr);
+        [LoggerMessage(EventId = 23111, Level = LogLevel.Warning,
+            Message = "Cannot free non-CUDA buffer of type {BufferType}")]
+        private static partial void LogCannotFreeNonCudaBuffer(ILogger logger, string bufferType);
 
-        [LoggerMessage(
-            EventId = 23016,
-            Level = LogLevel.Warning,
-            Message = "Cannot free non-CUDA buffer of type {BufferTypeName}")]
-        private partial void LogCannotFreeNonCudaBuffer(string bufferTypeName);
+        [LoggerMessage(EventId = 23112, Level = LogLevel.Error,
+            Message = "Error getting memory statistics")]
+        private static partial void LogStatisticsError(ILogger logger, Exception ex);
 
-        [LoggerMessage(
-            EventId = 23017,
-            Level = LogLevel.Warning,
-            Message = "Error retrieving CUDA memory statistics")]
-        private partial void LogStatisticsError(Exception ex);
+        [LoggerMessage(EventId = 23113, Level = LogLevel.Warning,
+            Message = "Failed to free CUDA memory at 0x{DevicePtr:X}: {Result}")]
+        private static partial void LogMemoryFreeError(ILogger logger, IntPtr devicePtr, CudaError result);
 
-        #endregion
+        [LoggerMessage(EventId = 23114, Level = LogLevel.Warning,
+            Message = "CUDA synchronization during optimization failed: {Result}")]
+        private static partial void LogOptimizationSyncError(ILogger logger, CudaError result);
     }
 }

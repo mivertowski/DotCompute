@@ -23,7 +23,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// execution, and optimization. It provides advanced features like kernel fusion, Ada Lovelace
     /// architecture optimizations, and performance monitoring for high-throughput computing scenarios.
     /// </remarks>
-    public sealed class CudaGraphSupport : IDisposable
+    public sealed partial class CudaGraphSupport : IDisposable
     {
         private readonly CudaContext _context;
         private readonly CudaStreamManager _streamManager;
@@ -395,7 +395,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error cleaning up failed graph capture");
+                        LogGraphCaptureCleanupError(_logger, ex);
                     }
                     throw;
                 }
@@ -550,7 +550,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error cleaning up graph node during build failure");
+                        LogGraphNodeCleanupError(_logger, ex);
                     }
                 }
                 throw;
@@ -694,7 +694,7 @@ namespace DotCompute.Backends.CUDA.Execution
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogWarning(ex, "Error optimizing graph {GraphId}", graphId);
+                                LogGraphOptimizationError(_logger, graphId, ex);
                             }
                         });
                     }
@@ -705,16 +705,13 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during periodic graph optimization");
+                LogPeriodicOptimizationError(_logger, ex);
             }
         }
 
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CudaGraphSupport));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
 
         /// <summary>

@@ -225,7 +225,11 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
 
                 foreach (var node in remainingNodes)
                 {
-                    _ = node.Dependencies.RemoveAll(dep => dep.Id == nodeId);
+                    var depsToRemove = node.Dependencies.Where(dep => dep.Id == nodeId).ToList();
+                    foreach (var dep in depsToRemove)
+                    {
+                        _ = node.Dependencies.Remove(dep);
+                    }
                 }
 
                 // Clear and repopulate the concurrent bag

@@ -58,7 +58,7 @@ public sealed class MetalExecutionManager : IDisposable
             // Record initialization telemetry
             _telemetry.RecordEvent("Initialization", "ExecutionManagerCreated", new Dictionary<string, object>
             {
-                ["Device"] = _device.ToString(),
+                ["Device"] = _device.ToString(CultureInfo.InvariantCulture),
                 ["IsAppleSilicon"] = _executionContext?.IsAppleSilicon ?? false,
                 ["EnableTelemetry"] = managerOptions.EnableTelemetry
             });
@@ -473,10 +473,10 @@ public sealed class MetalExecutionManager : IDisposable
 
         // Messages would be populated with recent diagnostic messages - currently empty
 
-        diagnosticInfo.SystemInfo["Device"] = _device.ToString();
-        diagnosticInfo.SystemInfo["IsAppleSilicon"] = stats.IsAppleSilicon.ToString();
-        diagnosticInfo.SystemInfo["GpuAvailable"] = stats.IsGpuAvailable.ToString();
-        diagnosticInfo.SystemInfo["ExecutionPaused"] = stats.IsExecutionPaused.ToString();
+        diagnosticInfo.SystemInfo["Device"] = _device.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["IsAppleSilicon"] = stats.IsAppleSilicon.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["GpuAvailable"] = stats.IsGpuAvailable.ToString(CultureInfo.InvariantCulture);
+        diagnosticInfo.SystemInfo["ExecutionPaused"] = stats.IsExecutionPaused.ToString(CultureInfo.InvariantCulture);
 
         return diagnosticInfo;
     }
@@ -538,10 +538,7 @@ public sealed class MetalExecutionManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalExecutionManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     #endregion
@@ -559,7 +556,7 @@ public sealed class MetalExecutionManager : IDisposable
                 // Record disposal telemetry
                 _telemetry?.RecordEvent("Lifecycle", "ExecutionManagerDisposed", new Dictionary<string, object>
                 {
-                    ["Device"] = _device.ToString(),
+                    ["Device"] = _device.ToString(CultureInfo.InvariantCulture),
                     ["IsAppleSilicon"] = _executionContext?.IsAppleSilicon ?? false
                 });
 

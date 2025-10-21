@@ -55,7 +55,7 @@ public sealed class NumaNode
     {
         get
         {
-            for (var i = 0; i < NumaConstants.Limits.MaxCpusInMask; i++)
+            for (var i = 0; i < NumaLimits.MaxCpusInMask; i++)
             {
                 if ((ProcessorMask & (1UL << i)) != 0)
                 {
@@ -71,7 +71,7 @@ public sealed class NumaNode
     /// <param name="cpuId">The CPU ID to check.</param>
     /// <returns>True if the CPU belongs to this node.</returns>
     public bool ContainsCpu(int cpuId)
-        => cpuId >= 0 && cpuId < NumaConstants.Limits.MaxCpusInMask &&
+        => cpuId >= 0 && cpuId < NumaLimits.MaxCpusInMask &&
         (ProcessorMask & (1UL << cpuId)) != 0;
 
     /// <summary>
@@ -121,12 +121,12 @@ public sealed class NumaTopology
     /// <summary>
     /// Gets the cache line size in bytes.
     /// </summary>
-    public int CacheLineSize { get; init; } = NumaConstants.Sizes.CacheLineSize;
+    public int CacheLineSize { get; init; } = NumaSizes.CacheLineSize;
 
     /// <summary>
     /// Gets the page size in bytes.
     /// </summary>
-    public int PageSize { get; init; } = NumaConstants.Sizes.PageSize;
+    public int PageSize { get; init; } = NumaSizes.PageSize;
 
     /// <summary>
     /// Gets whether the system supports memory binding to specific nodes.
@@ -173,7 +173,7 @@ public sealed class NumaTopology
         }
 
         var mask = Nodes[nodeId].ProcessorMask;
-        for (var i = 0; i < NumaConstants.Limits.MaxCpusInMask; i++)
+        for (var i = 0; i < NumaLimits.MaxCpusInMask; i++)
         {
             if ((mask & (1UL << i)) != 0)
             {
@@ -194,7 +194,7 @@ public sealed class NumaTopology
             fromNode < 0 || fromNode >= NodeCount ||
             toNode < 0 || toNode >= NodeCount)
         {
-            return fromNode == toNode ? NumaConstants.Distances.Local : NumaConstants.Distances.Remote;
+            return fromNode == toNode ? NumaDistances.Local : NumaDistances.Remote;
         }
 
         return DistanceMatrix[fromNode][toNode];

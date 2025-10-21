@@ -191,7 +191,7 @@ public sealed partial class AlgorithmPluginLoader(
                 loadResult.PackageIdentity.Id,
                 loadResult.PackageIdentity.Version.ToString(),
                 loadResult.LoadedAssemblyPaths.Length,
-                loadResult.ResolvedDependencies.Length);
+                loadResult.ResolvedDependencies.Count);
 
             // Load plugins from each assembly in the package
             var loadedPlugins = new List<LoadedPluginType>();

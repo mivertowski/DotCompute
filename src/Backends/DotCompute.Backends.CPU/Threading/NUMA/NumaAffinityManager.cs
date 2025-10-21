@@ -240,7 +240,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
         try
         {
             // Set affinity to all processors
-            var allProcessorsMask = (1UL << Math.Min(_topology.ProcessorCount, NumaConstants.Limits.MaxCpusInMask)) - 1;
+            var allProcessorsMask = (1UL << Math.Min(_topology.ProcessorCount, NumaLimits.MaxCpusInMask)) - 1;
 
             if (SetThreadAffinityMask(threadId, allProcessorsMask))
             {
@@ -326,7 +326,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
             {
                 TotalManagedThreads = totalThreads,
                 TotalManagedProcesses = totalProcesses,
-                NodeDistribution = nodeDistribution,
+                NodeDistribution = Array.AsReadOnly(nodeDistribution),
                 AverageThreadsPerNode = totalThreads > 0 ? (double)totalThreads / _topology.NodeCount : 0.0,
                 LoadBalanceScore = CalculateLoadBalanceScore(nodeDistribution)
             };
@@ -393,10 +393,7 @@ public sealed class NumaAffinityManager(NumaTopology topology) : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NumaAffinityManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>
@@ -456,7 +453,7 @@ public sealed class AffinityStatistics
     public required int TotalManagedProcesses { get; init; }
 
     /// <summary>Distribution of threads across NUMA nodes.</summary>
-    public required int[] NodeDistribution { get; init; }
+    public required IReadOnlyList<int> NodeDistribution { get; init; }
 
     /// <summary>Average threads per node.</summary>
     public required double AverageThreadsPerNode { get; init; }
@@ -465,13 +462,13 @@ public sealed class AffinityStatistics
     public required double LoadBalanceScore { get; init; }
 
     /// <summary>Gets the most loaded node.</summary>
-    public int MostLoadedNode => NodeDistribution.Length > 0
-        ? Array.IndexOf(NodeDistribution, NodeDistribution.Max())
+    public int MostLoadedNode => NodeDistribution.Count > 0
+        ? NodeDistribution.IndexOf(NodeDistribution.Max())
         : 0;
 
     /// <summary>Gets the least loaded node.</summary>
-    public int LeastLoadedNode => NodeDistribution.Length > 0
-        ? Array.IndexOf(NodeDistribution, NodeDistribution.Min())
+    public int LeastLoadedNode => NodeDistribution.Count > 0
+        ? NodeDistribution.IndexOf(NodeDistribution.Min())
         : 0;
 }
 

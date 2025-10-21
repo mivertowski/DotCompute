@@ -239,7 +239,7 @@ public sealed class NumaScheduler : IDisposable
             return new SchedulingStatistics
             {
                 TotalQueuedTasks = totalQueued,
-                QueueLengthsByNode = queueLengths,
+                QueueLengthsByNode = Array.AsReadOnly(queueLengths),
                 AverageQueueLength = totalQueued > 0 ? (double)totalQueued / _topology.NodeCount : 0.0,
                 LoadImbalance = CalculateLoadImbalance(queueLengths),
                 NextTaskId = _nextTaskId
@@ -371,10 +371,7 @@ public sealed class NumaScheduler : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NumaScheduler));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <summary>
@@ -510,7 +507,7 @@ public sealed class SchedulingStatistics
     public required int TotalQueuedTasks { get; init; }
 
     /// <summary>Queue lengths per NUMA node.</summary>
-    public required int[] QueueLengthsByNode { get; init; }
+    public required IReadOnlyList<int> QueueLengthsByNode { get; init; }
 
     /// <summary>Average queue length across nodes.</summary>
     public required double AverageQueueLength { get; init; }
@@ -522,12 +519,12 @@ public sealed class SchedulingStatistics
     public required long NextTaskId { get; init; }
 
     /// <summary>Gets the most loaded node.</summary>
-    public int MostLoadedNode => QueueLengthsByNode.Length > 0
-        ? Array.IndexOf(QueueLengthsByNode, QueueLengthsByNode.Max())
+    public int MostLoadedNode => QueueLengthsByNode.Count > 0
+        ? QueueLengthsByNode.IndexOf(QueueLengthsByNode.Max())
         : 0;
 
     /// <summary>Gets the least loaded node.</summary>
-    public int LeastLoadedNode => QueueLengthsByNode.Length > 0
-        ? Array.IndexOf(QueueLengthsByNode, QueueLengthsByNode.Min())
+    public int LeastLoadedNode => QueueLengthsByNode.Count > 0
+        ? QueueLengthsByNode.IndexOf(QueueLengthsByNode.Min())
         : 0;
 }

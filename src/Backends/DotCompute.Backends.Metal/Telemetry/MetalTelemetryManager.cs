@@ -343,10 +343,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public MetalTelemetrySnapshot GetCurrentSnapshot()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalTelemetryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         var snapshot = new MetalTelemetrySnapshot
@@ -384,10 +381,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
     /// </summary>
     public MetalProductionReport GenerateProductionReport()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(MetalTelemetryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 
         var snapshot = GetCurrentSnapshot();

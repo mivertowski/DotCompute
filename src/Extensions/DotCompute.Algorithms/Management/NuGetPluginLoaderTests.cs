@@ -149,7 +149,7 @@ namespace DotCompute.Algorithms.Management
             var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
             // Verify results
-            _logger.LogInfoMessage($"Package loaded - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, LoadTime: {result.LoadTime.TotalMilliseconds}ms, Assemblies: {result.LoadedAssemblyPaths.Length}, Dependencies: {result.ResolvedDependencies.Length}, FromCache: {result.FromCache}, Size: {result.TotalSize} bytes");
+            _logger.LogInfoMessage($"Package loaded - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, LoadTime: {result.LoadTime?.TotalMilliseconds}ms, Assemblies: {result.LoadedAssemblyPaths.Length}, Dependencies: {result.ResolvedDependencies.Count}, FromCache: {result.FromCache}, Size: {result.TotalSize} bytes");
 
             foreach (var assemblyPath in result.LoadedAssemblyPaths)
             {
@@ -186,12 +186,11 @@ namespace DotCompute.Algorithms.Management
 
             var result = await loader.LoadPackageAsync(packagePath, "net9.0");
 
-            _logger.LogInfoMessage($"Package manifest parsed - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, Dependencies: {result.ResolvedDependencies.Length}");
+            _logger.LogInfoMessage($"Package manifest parsed - ID: {result.PackageIdentity.Id}, Version: {result.PackageIdentity.Version}, Dependencies: {result.ResolvedDependencies.Count}");
 
             foreach (var dependency in result.ResolvedDependencies)
             {
-                var frameworks = dependency.TargetFrameworks?.Length > 0 ? string.Join(", ", dependency.TargetFrameworks) : "None";
-                _logger.LogInfoMessage($"Dependency found - ID: {dependency.Id}, VersionRange: {dependency.VersionRange}, Frameworks: {frameworks}");
+                _logger.LogInfoMessage($"Dependency found: {dependency}");
             }
 
             _logger.LogInfoMessage("Package manifest parsing test completed successfully");
@@ -225,11 +224,13 @@ namespace DotCompute.Algorithms.Management
                     _logger.LogInfoMessage("Testing framework compatibility: {framework}");
                     var result = await loader.LoadPackageAsync(packagePath, framework);
 
-                    _logger.LogInfoMessage("Framework {Framework} supported - {framework, result.LoadedAssemblyPaths.Length} assemblies found");
+                    _logger.LogInfoMessage($"Framework {framework} supported - {result.LoadedAssemblyPaths.Length} assemblies found");
                     foreach (var assembly in result.LoadedAssemblyPaths)
                     {
-                        var relativePath = Path.GetRelativePath(result.CachePath!, assembly);
-                        _logger.LogInfoMessage("Assembly path for {Framework}: {framework, relativePath}");
+                        var relativePath = result.ExtractedPath != null
+                            ? Path.GetRelativePath(result.ExtractedPath, assembly)
+                            : assembly;
+                        _logger.LogInfoMessage($"Assembly path for {framework}: {relativePath}");
                     }
                 }
                 catch (Exception ex)
@@ -275,11 +276,11 @@ namespace DotCompute.Algorithms.Management
 
             // Check cached packages
             var cachedPackages = loader.GetCachedPackages();
-            _logger.LogInfoMessage("Cache contains {cachedPackages.Length} packages");
+            _logger.LogInfoMessage($"Cache contains {cachedPackages.Count} packages");
 
             foreach (var cached in cachedPackages)
             {
-                _logger.LogInfoMessage($"Cached package - ID: {cached.Identity.Id}, Version: {cached.Identity.Version}, Age: {cached.CacheAge}, Assemblies: {cached.AssemblyCount}, Size: {cached.PackageSize} bytes, SecurityValidated: {cached.IsSecurityValidated}");
+                _logger.LogInfoMessage($"Cached package path: {cached}");
             }
 
             // Test cache clearing
@@ -288,7 +289,7 @@ namespace DotCompute.Algorithms.Management
             await loader.ClearCacheAsync(TimeSpan.FromSeconds(1));
 
             var remainingCached = loader.GetCachedPackages();
-            _logger.LogInfoMessage("Cache cleared - remaining packages: {remainingCached.Length}");
+            _logger.LogInfoMessage($"Cache cleared - remaining packages: {remainingCached.Count}");
 
             _logger.LogInfoMessage("Package caching test completed successfully");
         }
@@ -318,7 +319,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var result = await loader.LoadPackageAsync(packagePath, "net9.0");
-                _logger.LogInfoMessage($"Package loaded with security validation - Result: {result.SecurityValidationResult ?? "No security issues"}, Warnings: {result.Warnings.Length}");
+                _logger.LogInfoMessage($"Package loaded with security validation - Result: {result.SecurityValidationResult ?? "No security issues"}, Warnings: {result.Warnings.Count}");
 
                 foreach (var warning in result.Warnings)
                 {
@@ -397,25 +398,18 @@ namespace DotCompute.Algorithms.Management
             // Check that both versions are cached separately
             var cachedPackages = loader.GetCachedPackages();
             var updatablePackages = cachedPackages
-                .Where(p => p.Identity.Id == "UpdatablePackage")
+                .Where(p => p.Contains("UpdatablePackage"))
                 .ToArray();
 
-            _logger.LogInfoMessage("Cached versions of UpdatablePackage: {updatablePackages.Length}");
+            _logger.LogInfoMessage($"Cached versions containing UpdatablePackage: {updatablePackages.Length}");
             foreach (var cached in updatablePackages)
             {
-                _logger.LogInfoMessage("Cached version: {cached.Identity.Version}");
+                _logger.LogInfoMessage($"Cached package path: {cached}");
             }
 
-            // Test update functionality (would require remote package resolution in real implementation)
-            try
-            {
-                var updateResult = await loader.UpdatePackageAsync("UpdatablePackage", "net9.0");
-                _logger.LogInfoMessage("Package updated to version: {updateResult.PackageIdentity.Version}");
-            }
-            catch (Exception ex)
-            {
-                LogUpdateFailed(ex, ex.Message);
-            }
+            // Test update functionality would require remote package resolution in real implementation
+            // Note: UpdatePackageAsync method doesn't exist in NuGetPluginLoader
+            _logger.LogInfoMessage("Package update testing skipped - UpdatePackageAsync not implemented");
 
             _logger.LogInfoMessage("Package updates test completed successfully");
         }
@@ -489,7 +483,7 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var result = await loader.LoadPackageAsync(validPackagePath, "invalid-framework");
-                _logger.LogInfoMessage("Loaded with invalid framework (may be handled gracefully): {result.LoadedAssemblyPaths.Length} assemblies");
+                _logger.LogInfoMessage($"Loaded with invalid framework (may be handled gracefully): {result.LoadedAssemblyPaths.Length} assemblies");
             }
             catch (Exception ex)
             {
