@@ -67,7 +67,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             // Fallback kernel source since GetKernelSource doesn't exist
             var kernelSource = GetMatrixMultiplyKernelSource(accelerator.Info.DeviceType);
-            var kernel = await GetOrCompileKernelAsync("MatrixMultiply", kernelSource, accelerator, cancellationToken).ConfigureAwait(false);
+            _ = await GetOrCompileKernelAsync("MatrixMultiply", kernelSource, accelerator, cancellationToken).ConfigureAwait(false);
 
             var result = new Matrix(a.Rows, b.Columns);
             var aData = a.ToArray();
@@ -103,11 +103,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 // Note: This is a simplified implementation. In production, proper kernel execution
                 // would be implemented through the kernel manager service.
                 throw new NotImplementedException("Kernel execution requires integration with kernel manager service");
-
-                await bufferC.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);
-                CopyArrayToMatrix(resultData, result);
-
-                return result;
             }
             finally
             {
@@ -126,109 +121,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="hardware">Hardware information.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Q and R matrices.</returns>
-        public static async Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public static Task<(Matrix Q, Matrix R)> QRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
         {
-            var m = matrix.Rows;
-            var n = matrix.Columns;
-
-            var context = new KernelGenerationContext
-            {
-                DeviceInfo = accelerator.Info,
-                UseSharedMemory = true,
-                Precision = PrecisionMode.Single,
-                WorkGroupDimensions = [Math.Min(256, accelerator.Info.MaxThreadsPerBlock)]
-            };
-
-            var a = matrix.Clone();
-            var q = Matrix.Identity(m);
-
-            try
-            {
-                // Use advanced parallel QR kernel for CUDA
-                if (accelerator.Info.DeviceType.ToUpperInvariant() == "CUDA")
-                {
-                    // Note: Kernel compilation requires integration with kernel manager service
-                    throw new NotImplementedException("Parallel QR requires kernel manager integration");
-
-                    var aData = a.ToArray();
-                    var qData = q.ToArray();
-                    var tauData = new float[Math.Min(m, n)];
-
-                    var aBuffer = await accelerator.Memory.AllocateAsync<float>(aData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                    var qBuffer = await accelerator.Memory.AllocateAsync<float>(qData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                    var tauBuffer = await accelerator.Memory.AllocateAsync<float>(tauData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                    var sharedBuffer = await accelerator.Memory.AllocateAsync<float>(4096, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-
-                    try
-                    {
-                        await aBuffer.WriteAsync(aData, 0, cancellationToken).ConfigureAwait(false);
-                        await qBuffer.WriteAsync(qData, 0, cancellationToken).ConfigureAwait(false);
-                        await tauBuffer.WriteAsync(tauData, 0, cancellationToken).ConfigureAwait(false);
-
-                        // Execute QR decomposition steps
-                        for (var step = 0; step < Math.Min(m - 1, n); step++)
-                        {
-                            var args = new[]
-                            {
-                                new KernelArgument { Name = "A", Value = aBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = aBuffer },
-                                new KernelArgument { Name = "Q", Value = qBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = qBuffer },
-                                new KernelArgument { Name = "tau", Value = tauBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = tauBuffer },
-                                new KernelArgument { Name = "m", Value = m, Type = typeof(int), IsDeviceMemory = false },
-                                new KernelArgument { Name = "n", Value = n, Type = typeof(int), IsDeviceMemory = false },
-                                new KernelArgument { Name = "step", Value = step, Type = typeof(int), IsDeviceMemory = false },
-                                new KernelArgument { Name = "shared_memory", Value = sharedBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = sharedBuffer }
-                            };
-
-                            var config = new KernelExecutionConfig
-                            {
-                                GlobalWorkSize = [((Math.Max(m, n) + 255) / 256) * 256, n],
-                                LocalWorkSize = [256, 1],
-                                CaptureTimings = true,
-                                DynamicSharedMemorySize = 256 * sizeof(float)
-                            };
-
-                            // Kernel execution would go here
-                            throw new NotImplementedException("Kernel execution requires kernel manager integration");
-                        }
-
-                        // Read results
-                        await aBuffer.ReadAsync(aData, 0, cancellationToken).ConfigureAwait(false);
-                        await qBuffer.ReadAsync(qData, 0, cancellationToken).ConfigureAwait(false);
-
-                        CopyArrayToMatrix(aData, a);
-                        CopyArrayToMatrix(qData, q);
-                    }
-                    finally
-                    {
-                        await aBuffer.DisposeAsync().ConfigureAwait(false);
-                        await qBuffer.DisposeAsync().ConfigureAwait(false);
-                        await tauBuffer.DisposeAsync().ConfigureAwait(false);
-                        await sharedBuffer.DisposeAsync().ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    // Use standard Householder QR for other accelerators
-                    throw new NotImplementedException("Standard Householder QR requires kernel manager integration");
-                }
-
-                // Extract R matrix from upper triangular part of A
-                var r = new Matrix(Math.Min(m, n), n);
-                for (var i = 0; i < r.Rows; i++)
-                {
-                    for (var j = i; j < n; j++)
-                    {
-                        r[i, j] = a[i, j];
-                    }
-                }
-
-                return (q, r);
-            }
-            catch
-            {
-                // Fall back to CPU implementation on error
-                throw new InvalidOperationException("GPU QR decomposition failed");
-            }
+            // Note: Kernel compilation requires integration with kernel manager service
+            throw new NotImplementedException("QR decomposition requires kernel manager integration");
         }
 
         /// <summary>
@@ -240,160 +136,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="hardware">Hardware information.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>U, S, and VT matrices.</returns>
-        public static async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
+        public static Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken = default)
         {
-            var m = matrix.Rows;
-            var n = matrix.Columns;
-
-            try
-            {
-                // Initialize matrices for Jacobi SVD
-                var u = Matrix.Identity(m);
-                var a = matrix.Clone();
-                var v = Matrix.Identity(n);
-
-                var context = new KernelGenerationContext
-                {
-                    DeviceInfo = accelerator.Info,
-                    UseSharedMemory = true,
-                    Precision = PrecisionMode.Single,
-                    WorkGroupDimensions = [Math.Min(256, accelerator.Info.MaxThreadsPerBlock)]
-                };
-
-                const int maxIterations = 1000;
-
-                // Allocate GPU memory for matrices
-                var aData = a.ToArray();
-                var uData = u.ToArray();
-                var vData = v.ToArray();
-
-                var aBuffer = await accelerator.Memory.AllocateAsync<float>(aData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var uBuffer = await accelerator.Memory.AllocateAsync<float>(uData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var vBuffer = await accelerator.Memory.AllocateAsync<float>(vData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-                var convergenceBuffer = await accelerator.Memory.AllocateAsync<float>(1, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-
-                try
-                {
-                    await aBuffer.WriteAsync(aData, 0, cancellationToken).ConfigureAwait(false);
-                    await uBuffer.WriteAsync(uData, 0, cancellationToken).ConfigureAwait(false);
-                    await vBuffer.WriteAsync(vData, 0, cancellationToken).ConfigureAwait(false);
-
-                    // Note: Jacobi SVD kernel compilation requires kernel manager integration
-                    throw new NotImplementedException("Jacobi SVD requires kernel manager integration");
-
-                    // Jacobi SVD iterations
-                    for (var iter = 0; iter < maxIterations; iter++)
-                    {
-                        var converged = true;
-
-                        // Iterate over all off-diagonal pairs
-                        for (var i = 0; i < Math.Min(m, n) && converged; i++)
-                        {
-                            for (var j = i + 1; j < Math.Min(m, n); j++)
-                            {
-                                // Set convergence flag to 0 (not converged)
-                                var convergenceFlag = new float[] { 0.0f };
-                                await convergenceBuffer.WriteAsync(convergenceFlag, 0, cancellationToken).ConfigureAwait(false);
-
-                                var args = new[]
-                                {
-                                    new KernelArgument { Name = "A", Value = aBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = aBuffer },
-                                    new KernelArgument { Name = "U", Value = uBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = uBuffer },
-                                    new KernelArgument { Name = "V", Value = vBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = vBuffer },
-                                    new KernelArgument { Name = "n", Value = Math.Min(m, n), Type = typeof(int), IsDeviceMemory = false },
-                                    new KernelArgument { Name = "i", Value = i, Type = typeof(int), IsDeviceMemory = false },
-                                    new KernelArgument { Name = "j", Value = j, Type = typeof(int), IsDeviceMemory = false },
-                                    new KernelArgument { Name = "convergence_flag", Value = convergenceBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = convergenceBuffer }
-                                };
-
-                                var parameters = LinearAlgebraKernelLibrary.GetOptimizedParameters(
-                                    LinearAlgebraOp.JacobiSVD,
-                                    (Math.Min(m, n), Math.Min(m, n)),
-                                    accelerator.Info.Name);
-
-                                var config = new KernelExecutionConfig
-                                {
-                                    GlobalWorkSize = parameters.GlobalWorkSize,
-                                    LocalWorkSize = parameters.LocalWorkSize,
-                                    CaptureTimings = false // Avoid overhead in tight loop
-                                };
-
-                                // Kernel execution would go here
-                                throw new NotImplementedException("Jacobi SVD execution requires kernel manager integration");
-
-                                // Check convergence
-                                await convergenceBuffer.ReadAsync(convergenceFlag, 0, cancellationToken).ConfigureAwait(false);
-                                if (convergenceFlag[0] < 0.5f) // Not converged
-                                {
-                                    converged = false;
-                                }
-                            }
-                        }
-
-                        if (converged)
-                        {
-                            break;
-                        }
-
-                    }
-
-                    // Note: Singular values extraction requires kernel manager integration
-                    throw new NotImplementedException("Singular values extraction requires kernel manager integration");
-
-                    var sData = new float[Math.Min(m, n) * Math.Min(m, n)];
-                    var sBuffer = await accelerator.Memory.AllocateAsync<float>(sData.Length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
-
-                    var svdArgs = new[]
-                    {
-                        new KernelArgument { Name = "A", Value = aBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = aBuffer },
-                        new KernelArgument { Name = "S", Value = sBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = sBuffer },
-                        new KernelArgument { Name = "U", Value = uBuffer, Type = typeof(float[]), IsDeviceMemory = true, MemoryBuffer = uBuffer },
-                        new KernelArgument { Name = "n", Value = Math.Min(m, n), Type = typeof(int), IsDeviceMemory = false }
-                    };
-
-                    var svdConfig = new KernelExecutionConfig
-                    {
-                        GlobalWorkSize = [((Math.Min(m, n) + 127) / 128) * 128],
-                        LocalWorkSize = [128],
-                        CaptureTimings = true
-                    };
-
-                    // Kernel execution would go here
-                    throw new NotImplementedException("Singular values execution requires kernel manager integration");
-
-                    // Read results back from GPU
-                    await aBuffer.ReadAsync(aData, 0, cancellationToken).ConfigureAwait(false);
-                    await uBuffer.ReadAsync(uData, 0, cancellationToken).ConfigureAwait(false);
-                    await vBuffer.ReadAsync(vData, 0, cancellationToken).ConfigureAwait(false);
-                    await sBuffer.ReadAsync(sData, 0, cancellationToken).ConfigureAwait(false);
-
-                    // Construct result matrices
-                    CopyArrayToMatrix(uData, u);
-                    CopyArrayToMatrix(vData, v);
-
-                    var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
-                    for (var i = 0; i < Math.Min(m, n); i++)
-                    {
-                        s[i, i] = sData[i * Math.Min(m, n) + i];
-                    }
-
-                    await sBuffer.DisposeAsync().ConfigureAwait(false);
-
-                    return (u, s, TransposeMatrix(v));
-                }
-                finally
-                {
-                    await aBuffer.DisposeAsync().ConfigureAwait(false);
-                    await uBuffer.DisposeAsync().ConfigureAwait(false);
-                    await vBuffer.DisposeAsync().ConfigureAwait(false);
-                    await convergenceBuffer.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-            catch
-            {
-                // Fall back to CPU implementation if GPU fails
-                throw new InvalidOperationException("GPU SVD failed");
-            }
+            // Note: Jacobi SVD kernel compilation requires kernel manager integration
+            throw new NotImplementedException("Jacobi SVD requires kernel manager integration");
         }
 
         /// <summary>
@@ -420,13 +166,13 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             return result;
         }
 
-        private async Task<ManagedCompiledKernel> GetOrCompileKernelAsync(string kernelName, string kernelSource, IAccelerator accelerator, CancellationToken cancellationToken)
+        private Task<ManagedCompiledKernel> GetOrCompileKernelAsync(string kernelName, string kernelSource, IAccelerator accelerator, CancellationToken cancellationToken)
         {
             var cacheKey = $"{kernelName}_{accelerator.Info.DeviceType}_{accelerator.Info.Name}";
 
             if (_kernelCache.TryGetValue(cacheKey, out var cached))
             {
-                return cached;
+                return Task.FromResult(cached);
             }
 
             // Note: Kernel compilation requires kernel manager integration

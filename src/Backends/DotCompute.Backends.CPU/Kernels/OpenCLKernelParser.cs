@@ -39,13 +39,19 @@ internal partial class OpenCLKernelParser(ILogger logger)
         var kernelType = DetectKernelType(kernelSource);
         var parameters = ExtractParameters(kernelSource);
 
-        return new KernelInfo
+        var kernelInfo = new KernelInfo
         {
             Name = entryPoint,
             Type = kernelType,
-            Source = kernelSource,
-            Parameters = parameters
+            Source = kernelSource
         };
+
+        foreach (var param in parameters)
+        {
+            kernelInfo.Parameters.Add(param);
+        }
+
+        return kernelInfo;
     }
 
     private static KernelType DetectKernelType(string kernelSource)

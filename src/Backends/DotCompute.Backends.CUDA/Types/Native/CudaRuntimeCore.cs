@@ -71,7 +71,6 @@ namespace DotCompute.Backends.CUDA.Native
 
                                     return handle;
                                 }
-
                             }
                         }
                         return IntPtr.Zero;

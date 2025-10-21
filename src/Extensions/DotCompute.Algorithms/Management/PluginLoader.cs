@@ -250,7 +250,10 @@ namespace DotCompute.Algorithms.Management
                         IsIsolated = _options.EnableIsolation
                     };
 
-                    loadedAssembly.Plugins.AddRange(plugins);
+                    foreach (var plugin in plugins)
+                    {
+                        loadedAssembly.Plugins.Add(plugin);
+                    }
                     _ = _loadedAssemblies.TryAdd(assemblyName, loadedAssembly);
                     _ = _loadContexts.TryAdd(assemblyName, loadContext);
 
@@ -258,7 +261,10 @@ namespace DotCompute.Algorithms.Management
 
                     var result = new PluginLoadResult();
                     result.Success = true;
-                    result.Plugins.AddRange(plugins);
+                    foreach (var plugin in plugins)
+                    {
+                        result.Plugins.Add(plugin);
+                    }
                     result.UnifiedValidationResult = validationResult;
                     result.LoadContext = loadContext;
                     result.Assembly = assembly;
@@ -433,11 +439,17 @@ namespace DotCompute.Algorithms.Management
                 if (!policyResult.IsAllowed)
                 {
                     result.IsValid = false;
-                    result.Errors.AddRange(policyResult.Violations);
+                    foreach (var violation in policyResult.Violations)
+                    {
+                        result.Errors.Add(violation);
+                    }
                     return result;
                 }
 
-                result.Warnings.AddRange(policyResult.Warnings);
+                foreach (var warning in policyResult.Warnings)
+                {
+                    result.Warnings.Add(warning);
+                }
                 result.Metadata["SecurityLevel"] = policyResult.SecurityLevel.ToString();
 
                 LogComprehensiveValidationPassed(assemblyPath);
@@ -670,13 +682,16 @@ namespace DotCompute.Algorithms.Management
                     PluginCount = la.Plugins.Count
                 };
 
-                info.Plugins.AddRange(la.Plugins.Select(p => new PluginInfo
+                foreach (var p in la.Plugins)
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Version = p.Version,
-                    Description = p.Description
-                }));
+                    info.Plugins.Add(new PluginInfo
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Version = p.Version,
+                        Description = p.Description
+                    });
+                }
 
                 return info;
             });

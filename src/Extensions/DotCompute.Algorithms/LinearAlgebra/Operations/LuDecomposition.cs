@@ -299,9 +299,12 @@ public static class LuDecomposition
         for (var i = 0; i < n; i++)
         {
             if (visited[i] || permutation[i] == i)
+            {
                 continue;
+            }
 
             // Count cycle length
+
             var cycleLength = 0;
             var current = i;
 

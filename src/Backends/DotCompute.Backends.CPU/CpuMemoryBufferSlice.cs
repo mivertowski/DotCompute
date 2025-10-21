@@ -451,7 +451,6 @@ internal sealed class CpuMemoryBufferSlice(
 
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
         }
-
     }
     /// <summary>
     /// Performs dispose.

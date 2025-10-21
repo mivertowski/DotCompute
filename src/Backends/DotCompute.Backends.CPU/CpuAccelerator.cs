@@ -285,12 +285,18 @@ public sealed class CpuAccelerator(
 
     private static CompilationOptions ConvertToCoreCompilationOptions(CompilationOptions options)
     {
-        return new CompilationOptions
+        var result = new CompilationOptions
         {
             OptimizationLevel = options.OptimizationLevel,
-            EnableDebugInfo = options.EnableDebugInfo,
-            AdditionalFlags = options.AdditionalFlags
+            EnableDebugInfo = options.EnableDebugInfo
         };
+
+        foreach (var flag in options.AdditionalFlags)
+        {
+            result.AdditionalFlags.Add(flag);
+        }
+
+        return result;
     }
 }
 

@@ -141,7 +141,10 @@ public sealed class SecurityPolicy
             if (!ruleResult.IsAllowed)
             {
                 result.IsAllowed = false;
-                result.Violations.AddRange(ruleResult.Violations);
+                foreach (var violation in ruleResult.Violations)
+                {
+                    result.Violations.Add(violation);
+                }
             }
 
             // Take the lowest security level
@@ -150,7 +153,10 @@ public sealed class SecurityPolicy
                 result.SecurityLevel = ruleResult.SecurityLevel;
             }
 
-            result.Warnings.AddRange(ruleResult.Warnings);
+            foreach (var warning in ruleResult.Warnings)
+            {
+                result.Warnings.Add(warning);
+            }
         }
 
         // Check minimum security level

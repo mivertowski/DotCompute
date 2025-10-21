@@ -142,7 +142,6 @@ namespace DotCompute.Backends.CUDA.Native
                     {
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
 
 
@@ -152,7 +151,6 @@ namespace DotCompute.Backends.CUDA.Native
                     {
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
             }
         }
@@ -196,7 +194,6 @@ namespace DotCompute.Backends.CUDA.Native
 
                         Marshal.FreeHGlobal(ptr);
                     }
-
                 }
             }
         }

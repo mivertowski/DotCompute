@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Memory.Models
     /// <remarks>
     /// Initializes a new instance of the UnifiedMemoryBuffer class.
     /// </remarks>
-    public class UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, ManagedMemoryFlags flags) : IUnifiedMemoryBuffer
+    public class UnifiedMemoryBuffer(IntPtr pointer, long sizeInBytes, int deviceId, CudaMemoryFlags flags) : IUnifiedMemoryBuffer
     {
         /// <summary>
         /// Gets the pointer to the unified memory.
@@ -31,12 +31,12 @@ namespace DotCompute.Backends.CUDA.Memory.Models
         /// <summary>
         /// Gets the managed memory flags used for allocation.
         /// </summary>
-        public ManagedMemoryFlags Flags { get; private set; } = flags;
+        public CudaMemoryFlags Flags { get; private set; } = flags;
 
         /// <summary>
         /// Gets or sets the current residence location.
         /// </summary>
-        public MemoryResidence CurrentResidence { get; set; } = flags.HasFlag(ManagedMemoryFlags.PreferDeviceNative)
+        public MemoryResidence CurrentResidence { get; set; } = flags.HasFlag(CudaMemoryFlags.DeviceLocal)
 
                 ? MemoryResidence.Device
 

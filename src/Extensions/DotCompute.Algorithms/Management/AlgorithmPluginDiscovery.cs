@@ -205,7 +205,6 @@ namespace DotCompute.Algorithms.Management
 
                     return assemblyPath;
                 }
-
             }
 
             return filePath;

@@ -210,10 +210,19 @@ public sealed class CodeAccessSecurityManager : IDisposable
                 EnableNetworkRestrictions = _options.EnableNetworkRestrictions,
                 EnableReflectionRestrictions = _options.EnableReflectionRestrictions,
                 MaxMemoryUsage = _options.MaxMemoryUsage,
-                MaxExecutionTime = _options.MaxExecutionTime,
-                AllowedFileSystemPaths = [.. _options.AllowedFileSystemPaths],
-                AllowedNetworkEndpoints = [.. _options.AllowedNetworkEndpoints]
+                MaxExecutionTime = _options.MaxExecutionTime
             };
+
+            // Populate collections after construction since they are getter-only
+            foreach (var path in _options.AllowedFileSystemPaths)
+            {
+                config.AllowedFileSystemPaths.Add(path);
+            }
+
+            foreach (var endpoint in _options.AllowedNetworkEndpoints)
+            {
+                config.AllowedNetworkEndpoints.Add(endpoint);
+            }
 
             var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
@@ -290,7 +299,10 @@ public sealed class CodeAccessSecurityManager : IDisposable
 
         // Add allowed file paths
         permissionSet.AllowedFilePaths.Add(Environment.CurrentDirectory);
-        permissionSet.AllowedFilePaths.AddRange(_options.AllowedFileSystemPaths);
+        foreach (var path in _options.AllowedFileSystemPaths)
+        {
+            permissionSet.AllowedFilePaths.Add(path);
+        }
     }
 
     private void AddInternetPermissions(SecurityPermissionSet permissionSet)
@@ -304,8 +316,14 @@ public sealed class CodeAccessSecurityManager : IDisposable
         permissionSet.MaxExecutionTime = _options.MaxExecutionTime;
 
         // Limited file I/O for specific directories only
-        permissionSet.AllowedFilePaths.AddRange(_options.AllowedFileSystemPaths);
-        permissionSet.AllowedNetworkEndpoints.AddRange(_options.AllowedNetworkEndpoints);
+        foreach (var path in _options.AllowedFileSystemPaths)
+        {
+            permissionSet.AllowedFilePaths.Add(path);
+        }
+        foreach (var endpoint in _options.AllowedNetworkEndpoints)
+        {
+            permissionSet.AllowedNetworkEndpoints.Add(endpoint);
+        }
     }
 
     private static void AddUntrustedPermissions(SecurityPermissionSet permissionSet)
@@ -476,10 +494,16 @@ public sealed class CodeAccessSecurityManager : IDisposable
         _options.MaxExecutionTime = config.MaxExecutionTime;
 
         _options.AllowedFileSystemPaths.Clear();
-        _options.AllowedFileSystemPaths.AddRange(config.AllowedFileSystemPaths);
+        foreach (var path in config.AllowedFileSystemPaths)
+        {
+            _options.AllowedFileSystemPaths.Add(path);
+        }
 
         _options.AllowedNetworkEndpoints.Clear();
-        _options.AllowedNetworkEndpoints.AddRange(config.AllowedNetworkEndpoints);
+        foreach (var endpoint in config.AllowedNetworkEndpoints)
+        {
+            _options.AllowedNetworkEndpoints.Add(endpoint);
+        }
     }
 
     /// <inheritdoc/>
@@ -696,8 +720,14 @@ public sealed class SecurityPermissionSet
             MaxExecutionTime = MaxExecutionTime
         };
 
-        clone.AllowedFilePaths.AddRange(AllowedFilePaths);
-        clone.AllowedNetworkEndpoints.AddRange(AllowedNetworkEndpoints);
+        foreach (var path in AllowedFilePaths)
+        {
+            clone.AllowedFilePaths.Add(path);
+        }
+        foreach (var endpoint in AllowedNetworkEndpoints)
+        {
+            clone.AllowedNetworkEndpoints.Add(endpoint);
+        }
 
         foreach (var permission in Permissions)
         {

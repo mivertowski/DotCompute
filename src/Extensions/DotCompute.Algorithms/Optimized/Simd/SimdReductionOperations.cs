@@ -447,7 +447,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] < result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -472,7 +474,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] > result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -497,7 +501,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] < result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -522,7 +528,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] > result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -547,7 +555,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] < result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -572,7 +582,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] > result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -597,7 +609,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] < result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -622,7 +636,9 @@ internal static class SimdReductionOperations
         for (; i < length; i++)
         {
             if (values[i] > result)
+            {
                 result = values[i];
+            }
         }
 
         return result;
@@ -687,7 +703,9 @@ internal static class SimdReductionOperations
         for (var i = 0; i < length; i++)
         {
             if (values[i] < min)
+            {
                 min = values[i];
+            }
         }
         return min;
     }
@@ -699,7 +717,9 @@ internal static class SimdReductionOperations
         for (var i = 0; i < length; i++)
         {
             if (values[i] > max)
+            {
                 max = values[i];
+            }
         }
         return max;
     }

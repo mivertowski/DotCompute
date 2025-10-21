@@ -396,17 +396,17 @@ public static class SimdConversionOperations
     private static unsafe void ConvertDoubleToFloat32Neon(double* input, float* result, int length)
     {
         var i = 0;
-        var vectorSize = SimdCapabilities.Vector128Size / sizeof(double);
-        var vectorCount = length - (length % vectorSize);
+        // Process 2 doubles at a time to produce 2 floats
+        var vectorCount = length - (length % 2);
 
-        for (; i < vectorCount; i += vectorSize)
+        for (; i < vectorCount; i += 2)
         {
+            // Load 2 doubles and convert to 2 floats
             var doubleVec = AdvSimd.LoadVector128(input + i);
-            var floatVec = AdvSimd.ConvertToSingle(doubleVec);
-            // Note: This produces a 64-bit vector with 2 floats, need to handle appropriately
-            result[i] = floatVec.ToScalar();
-            if (i + 1 < length)
-                result[i + 1] = floatVec.AsDouble().GetElement(1); // Get second element
+            var floatVec = AdvSimd.ConvertToSingleLower(doubleVec);
+            // Store the resulting 2 floats
+            result[i] = floatVec.GetElement(0);
+            result[i + 1] = floatVec.GetElement(1);
         }
 
         // Handle remaining elements
@@ -425,9 +425,10 @@ public static class SimdConversionOperations
 
         for (; i < vectorCount; i += 2)
         {
-            var floatVec = Vector64.Create(input[i], input[i + 1]);
-            var doubleVec = AdvSimd.ConvertToDouble(floatVec);
-            AdvSimd.Store(result + i, doubleVec);
+            // Load 2 floats and convert to 2 doubles using scalar conversion
+            // ARM NEON doesn't have a direct vector float32->double conversion
+            result[i] = input[i];
+            result[i + 1] = input[i + 1];
         }
 
         // Handle remaining elements

@@ -348,18 +348,34 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
 
 
-        return new MetalTelemetrySnapshot
+        var snapshot = new MetalTelemetrySnapshot
         {
             Timestamp = DateTimeOffset.UtcNow,
             TotalOperations = Interlocked.Read(ref _totalOperations),
             TotalErrors = Interlocked.Read(ref _totalErrors),
             ErrorRate = CalculateErrorRate(),
-            OperationMetrics = new Dictionary<string, MetalOperationMetrics>(_operationMetrics),
-            ResourceMetrics = new Dictionary<string, MetalResourceMetrics>(_resourceMetrics),
-            PerformanceCounters = _performanceCounters.GetCurrentCounters(),
             HealthStatus = _healthMonitor.GetCurrentHealth(),
             SystemInfo = GetSystemInfo()
         };
+
+        // Add items to collection properties
+        foreach (var kvp in _operationMetrics)
+        {
+            snapshot.OperationMetrics[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var kvp in _resourceMetrics)
+        {
+            snapshot.ResourceMetrics[kvp.Key] = kvp.Value;
+        }
+
+        var performanceCounters = _performanceCounters.GetCurrentCounters();
+        foreach (var kvp in performanceCounters)
+        {
+            snapshot.PerformanceCounters[kvp.Key] = kvp.Value;
+        }
+
+        return snapshot;
     }
 
     /// <summary>
@@ -376,15 +392,33 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         var snapshot = GetCurrentSnapshot();
 
 
-        return new MetalProductionReport
+        var report = new MetalProductionReport
         {
             Snapshot = snapshot,
             PerformanceAnalysis = _performanceCounters.AnalyzePerformance(),
-            HealthAnalysis = _healthMonitor.AnalyzeHealth(),
-            AlertsSummary = _alertsManager.GetActivAlerts(),
-            Recommendations = GenerateRecommendations(snapshot),
-            ExportedMetrics = _metricsExporter.GetExportableMetrics()
+            HealthAnalysis = _healthMonitor.AnalyzeHealth()
         };
+
+        // Add items to collection properties
+        var alerts = _alertsManager.GetActivAlerts();
+        foreach (var alert in alerts)
+        {
+            report.AlertsSummary.Add(alert);
+        }
+
+        var recommendations = GenerateRecommendations(snapshot);
+        foreach (var recommendation in recommendations)
+        {
+            report.Recommendations.Add(recommendation);
+        }
+
+        var exportedMetrics = _metricsExporter.GetExportableMetrics();
+        foreach (var kvp in exportedMetrics)
+        {
+            report.ExportedMetrics[kvp.Key] = kvp.Value;
+        }
+
+        return report;
     }
 
     /// <summary>
@@ -572,9 +606,9 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
     protected override string GetBackendType() => "Metal";
 
-    public override void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (!_disposed && disposing)
         {
             _disposed = true;
 
@@ -603,8 +637,8 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
 
             // Dispose OpenTelemetry
             _meter?.Dispose();
-
-            GC.SuppressFinalize(this);
         }
+
+        base.Dispose(disposing);
     }
 }

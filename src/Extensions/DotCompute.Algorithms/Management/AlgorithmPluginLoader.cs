@@ -331,8 +331,8 @@ namespace DotCompute.Algorithms.Management
                 TypeName = plugin.GetType().FullName ?? "Unknown",
                 Capabilities = [.. plugin.SupportedOperations],
                 SupportedAccelerators = [.. plugin.SupportedAcceleratorTypes.Select(t => t.ToString())],
-                LoadContextName = "Default",
-                AdditionalMetadata = []
+                LoadContextName = "Default"
+                // AdditionalMetadata is initialized by property initializer
             };
         }
 

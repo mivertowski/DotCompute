@@ -54,7 +54,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
     public async Task<KernelExecutionPlan> CreateOptimizedExecutionPlanAsync(
         KernelDefinition definition,
         WorkDimensions workDimensions,
-        OptimizationLevel optimizationLevel = OptimizationLevel.Balanced)
+        OptimizationLevel optimizationLevel = OptimizationLevel.O2)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
@@ -296,7 +296,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             VectorWidth = analysis.OptimalVectorWidth,
             WorkGroupSize = analysis.PreferredWorkGroupSize,
             MemoryPrefetchDistance = DetermineMemoryPrefetchDistance(analysis),
-            EnableLoopUnrolling = optimizationLevel >= OptimizationLevel.Balanced,
+            EnableLoopUnrolling = optimizationLevel >= OptimizationLevel.O2,
             InstructionSets = GetAvailableInstructionSets(),
             MemoryOptimizations = DetermineMemoryOptimizations(analysis, optimizationLevel),
             CacheOptimizations = DetermineCacheOptimizations(analysis, optimizationLevel)
@@ -633,7 +633,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
     {
         return analysis.CanVectorize &&
                analysis.TotalWorkItems >= MinWorkItemsForVectorization &&
-               level >= OptimizationLevel.Balanced;
+               level >= OptimizationLevel.O2;
     }
 
     private static bool ShouldUseParallelization(KernelAnalysis analysis, OptimizationLevel level)
@@ -651,8 +651,8 @@ internal sealed class CpuKernelOptimizer : IDisposable
         {
             OptimizationLevel.None => 1,
             OptimizationLevel.O1 => Math.Min(2, maxThreads),
-            OptimizationLevel.Balanced => Math.Min((int)Math.Ceiling(totalWorkItems / 100.0), maxThreads),
-            OptimizationLevel.Aggressive => maxThreads,
+            OptimizationLevel.O2 => Math.Min((int)Math.Ceiling(totalWorkItems / 100.0), maxThreads),
+            OptimizationLevel.O3 => maxThreads,
             _ => Math.Min(4, maxThreads)
         };
     }
@@ -670,7 +670,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
     {
         var optimizations = new List<string>();
 
-        if (level >= OptimizationLevel.Balanced)
+        if (level >= OptimizationLevel.O2)
         {
             if (analysis.MemoryAccessPattern == MemoryAccessPattern.Random)
             {
@@ -690,7 +690,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
     {
         var optimizations = new List<string>();
 
-        if (level >= OptimizationLevel.Aggressive)
+        if (level >= OptimizationLevel.O3)
         {
             optimizations.Add("EnableCachePrefetching");
             optimizations.Add("OptimizeDataLocality");

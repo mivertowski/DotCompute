@@ -157,9 +157,16 @@ public sealed class MetalComputeGraph : IDisposable
             ThreadgroupsPerGrid = threadgroupsPerGrid,
             ThreadsPerThreadgroup = threadsPerThreadgroup,
             Arguments = arguments,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = EstimateKernelMemoryUsage(kernel, arguments)
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -186,9 +193,16 @@ public sealed class MetalComputeGraph : IDisposable
             SourceBuffer = sourceBuffer,
             DestinationBuffer = destinationBuffer,
             CopySize = size,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = size
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -215,9 +229,16 @@ public sealed class MetalComputeGraph : IDisposable
             DestinationBuffer = buffer,
             FillValue = value,
             CopySize = size,
-            Dependencies = dependencies?.ToList() ?? [],
             EstimatedMemoryUsage = size
         };
+
+        if (dependencies != null)
+        {
+            foreach (var dep in dependencies)
+            {
+                node.AddDependency(dep);
+            }
+        }
 
         return AddNodeInternal(node);
     }
@@ -235,9 +256,13 @@ public sealed class MetalComputeGraph : IDisposable
         var nodeId = GenerateNodeId();
         var node = new MetalGraphNode(nodeId, MetalNodeType.Barrier)
         {
-            Dependencies = [.. dependencies],
             EstimatedMemoryUsage = 0 // Barriers don't consume additional memory
         };
+
+        foreach (var dep in dependencies)
+        {
+            node.AddDependency(dep);
+        }
 
         return AddNodeInternal(node);
     }
@@ -269,7 +294,11 @@ public sealed class MetalComputeGraph : IDisposable
             var dependentNodes = _nodes.Where(n => n.Dependencies.Any(d => d.Id == nodeId)).ToList();
             foreach (var dependent in dependentNodes)
             {
-                _ = dependent.Dependencies.RemoveAll(d => d.Id == nodeId);
+                var toRemove = dependent.Dependencies.Where(d => d.Id == nodeId).ToList();
+                foreach (var dep in toRemove)
+                {
+                    dependent.Dependencies.Remove(dep);
+                }
             }
 
             // Rebuild the concurrent bag without the removed node

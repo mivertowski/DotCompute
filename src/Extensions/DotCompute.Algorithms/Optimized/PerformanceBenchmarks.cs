@@ -262,7 +262,12 @@ public static class PerformanceBenchmarks
 
             var simdResult = BenchmarkFunction(
                 "SIMD Matrix Multiply",
-                () => { var result = new Matrix(size, size); MatrixOptimizations.SimdMultiply(matrixA, matrixB, result); return result; },
+                () =>
+                {
+                    var result = new Matrix(size, size);
+                    MatrixOptimizations.SimdMultiply(matrixA, matrixB, result);
+                    return result;
+                },
                 flopCount, bytesProcessed, baselineTime);
             report.Add(simdResult);
 
@@ -271,7 +276,12 @@ public static class PerformanceBenchmarks
             {
                 var blockedResult = BenchmarkFunction(
                     "Blocked Matrix Multiply",
-                    () => { var result = new Matrix(size, size); MatrixOptimizations.BlockedMultiply(matrixA, matrixB, result); return result; },
+                    () =>
+                    {
+                        var result = new Matrix(size, size);
+                        MatrixOptimizations.BlockedMultiply(matrixA, matrixB, result);
+                        return result;
+                    },
                     flopCount, bytesProcessed, baselineTime);
                 report.Add(blockedResult);
             }
@@ -281,7 +291,12 @@ public static class PerformanceBenchmarks
             {
                 var strassenResult = BenchmarkFunction(
                     "Strassen Matrix Multiply",
-                    () => { var result = new Matrix(size, size); MatrixOptimizations.StrassenMultiply(matrixA, matrixB, result); return result; },
+                    () =>
+                    {
+                        var result = new Matrix(size, size);
+                        MatrixOptimizations.StrassenMultiply(matrixA, matrixB, result);
+                        return result;
+                    },
                     flopCount, bytesProcessed, baselineTime);
                 report.Add(strassenResult);
             }
@@ -319,7 +334,12 @@ public static class PerformanceBenchmarks
 
             var naiveResult = BenchmarkFunction(
                 "Naive DFT",
-                () => { var data = complexData.ToArray(); NaiveDFT(data); return data; },
+                () =>
+                {
+                    var data = complexData.ToArray();
+                    NaiveDFT(data);
+                    return data;
+                },
                 flopCount, bytesProcessed);
             report.Add(naiveResult);
 
@@ -330,7 +350,11 @@ public static class PerformanceBenchmarks
 
             var optimizedResult = BenchmarkFunction(
                 "Optimized FFT",
-                () => { var data = complexData.ToArray(); /* FFTOptimizations.OptimizedFFT(data); */ return data; },
+                () =>
+                {
+                    var data = complexData.ToArray(); /* FFTOptimizations.OptimizedFFT(data); */
+                    return data;
+                },
                 flopCount, bytesProcessed, baselineTime);
             report.Add(optimizedResult);
 
@@ -405,14 +429,24 @@ public static class PerformanceBenchmarks
 
             var naiveAxpyResult = BenchmarkFunction(
                 "Naive AXPY",
-                () => { var y = vectorY.ToArray(); NaiveAxpy(2.0f, vectorX, y); return y; },
+                () =>
+                {
+                    var y = vectorY.ToArray();
+                    NaiveAxpy(2.0f, vectorX, y);
+                    return y;
+                },
                 axpyFlopCount, axpyBytesProcessed);
             report.Add(naiveAxpyResult);
 
 
             var optimizedAxpyResult = BenchmarkFunction(
                 "Optimized AXPY",
-                () => { var y = vectorY.ToArray(); BLASOptimizations.OptimizedAxpy(2.0f, vectorX, y); return y; },
+                () =>
+                {
+                    var y = vectorY.ToArray();
+                    BLASOptimizations.OptimizedAxpy(2.0f, vectorX, y);
+                    return y;
+                },
                 axpyFlopCount, axpyBytesProcessed, naiveAxpyResult.MeanTime.TotalSeconds);
             report.Add(optimizedAxpyResult);
 
@@ -512,14 +546,24 @@ public static class PerformanceBenchmarks
 
                 var sequentialSortResult = BenchmarkFunction(
                     "Sequential Sort",
-                    () => { var copy = sortArray.ToArray(); Array.Sort(copy); return copy; },
+                    () =>
+                    {
+                        var copy = sortArray.ToArray();
+                        Array.Sort(copy);
+                        return copy;
+                    },
                     sortFlopCount, sortBytesProcessed);
                 report.Add(sequentialSortResult);
 
 
                 var parallelSortResult = BenchmarkFunction(
                     "Parallel Sort",
-                    () => { var copy = sortArray.ToArray(); ParallelOptimizations.ParallelSort(copy, Comparer<float>.Default); return copy; },
+                    () =>
+                    {
+                        var copy = sortArray.ToArray();
+                        ParallelOptimizations.ParallelSort(copy, Comparer<float>.Default);
+                        return copy;
+                    },
                     sortFlopCount, sortBytesProcessed, sequentialSortResult.MeanTime.TotalSeconds);
                 report.Add(parallelSortResult);
             }
@@ -549,25 +593,37 @@ public static class PerformanceBenchmarks
 
         var matrixSizes = new[] { 64, 128, 256, 512, 1024 };
         var matrixReport = BenchmarkMatrixMultiplication(matrixSizes);
-        combinedReport.Results.AddRange(matrixReport.Results);
+        foreach (var result in matrixReport.Results)
+        {
+            combinedReport.Results.Add(result);
+        }
 
         // FFT benchmarks
 
         var fftSizes = new[] { 64, 128, 256, 512, 1024, 2048 };
         var fftReport = BenchmarkFFT(fftSizes);
-        combinedReport.Results.AddRange(fftReport.Results);
+        foreach (var result in fftReport.Results)
+        {
+            combinedReport.Results.Add(result);
+        }
 
         // BLAS benchmarks
 
         var blasSizes = new[] { 100, 500, 1000, 2000 };
         var blasReport = BenchmarkBLAS(blasSizes);
-        combinedReport.Results.AddRange(blasReport.Results);
+        foreach (var result in blasReport.Results)
+        {
+            combinedReport.Results.Add(result);
+        }
 
         // Parallel algorithm benchmarks
 
         var parallelSizes = new[] { 10000, 100000, 1000000 };
         var parallelReport = BenchmarkParallelAlgorithms(parallelSizes);
-        combinedReport.Results.AddRange(parallelReport.Results);
+        foreach (var result in parallelReport.Results)
+        {
+            combinedReport.Results.Add(result);
+        }
 
 
         Console.WriteLine("\nBenchmark Suite Completed!");

@@ -950,13 +950,19 @@ public sealed class MetalExecutionGraph
                        MetalStreamPriority priority = MetalStreamPriority.Normal,
                        params string[] dependencies)
     {
-        _nodes.Add(new MetalExecutionNode
+        var node = new MetalExecutionNode
         {
             Id = id,
             Operation = operation,
-            Priority = priority,
-            Dependencies = [.. dependencies]
-        });
+            Priority = priority
+        };
+
+        foreach (var dep in dependencies)
+        {
+            node.Dependencies.Add(dep);
+        }
+
+        _nodes.Add(node);
     }
 
     internal MetalExecutionPlan BuildExecutionPlan()

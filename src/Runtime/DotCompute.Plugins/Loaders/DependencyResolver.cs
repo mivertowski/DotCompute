@@ -249,7 +249,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
         }
 
         // Handle simple patterns
-        if (versionRange.StartsWith('[') && versionRange.EndsWith(']'))
+        if (versionRange.StartsWith("[", StringComparison.Ordinal) && versionRange.EndsWith("]", StringComparison.Ordinal))
         {
             // Exact version: [1.0.0]
             var version = versionRange.Trim('[', ']');
@@ -267,7 +267,7 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
             };
         }
 
-        if (versionRange.Contains(','))
+        if (versionRange.Contains(",", StringComparison.Ordinal))
         {
             // Range: [1.0.0,2.0.0) or (1.0.0,2.0.0]
             var parts = versionRange.Trim('[', '(', ']', ')').Split(',');
@@ -275,8 +275,8 @@ public class DependencyResolver(ILogger logger, DependencyResolutionSettings set
             {
                 MinVersion = parts[0].Trim(),
                 MaxVersion = parts.Length > 1 ? parts[1].Trim() : null,
-                IncludeMinVersion = versionRange.StartsWith('['),
-                IncludeMaxVersion = versionRange.EndsWith(']')
+                IncludeMinVersion = versionRange.StartsWith("[", StringComparison.Ordinal),
+                IncludeMaxVersion = versionRange.EndsWith("]", StringComparison.Ordinal)
             };
         }
 

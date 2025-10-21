@@ -131,7 +131,6 @@ internal static class SimdInstructionSetDetector
         {
             _ = sets.Add("LZCNT");
         }
-
     }
 
     private static void AddArmInstructionSets(HashSet<string> sets)
@@ -195,6 +194,5 @@ internal static class SimdInstructionSetDetector
 
             _ = sets.Add("SHA256");
         }
-
     }
 }

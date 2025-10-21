@@ -390,7 +390,6 @@ public sealed class MetalMemoryManager : BaseMemoryManager
                 {
                     break;
                 }
-
             } while (Interlocked.CompareExchange(ref _peakAllocatedBytes, totalBytes, currentPeak) != currentPeak);
         }
     }

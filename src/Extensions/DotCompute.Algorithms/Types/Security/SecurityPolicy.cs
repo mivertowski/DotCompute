@@ -71,7 +71,10 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(thumbprint);
         _ = _trustedPublishers.Add(thumbprint.ToUpperInvariant());
-        if (_logger is not null) LogAddedTrustedPublisher(thumbprint);
+        if (_logger is not null)
+        {
+            LogAddedTrustedPublisher(thumbprint);
+        }
     }
 
     /// <summary>
@@ -100,7 +103,10 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         ArgumentNullException.ThrowIfNull(rule);
 
         _securityRules[name] = rule;
-        if (_logger is not null) LogAddedSecurityRule(name);
+        if (_logger is not null)
+        {
+            LogAddedSecurityRule(name);
+        }
     }
 
     /// <summary>
@@ -183,13 +189,22 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             }
             catch (Exception ex)
             {
-                if (_logger is not null) LogErrorEvaluatingSecurityRule(ex, name);
+                if (_logger is not null)
+                {
+                    LogErrorEvaluatingSecurityRule(ex, name);
+                }
+
+
                 result.IsAllowed = false;
                 result.Violations.Add($"Rule evaluation error: {name}");
             }
         }
 
-        if (_logger is not null) LogSecurityEvaluationResult(result.IsAllowed, result.SecurityLevel, result.Violations.Count);
+        if (_logger is not null)
+        {
+            LogSecurityEvaluationResult(result.IsAllowed, result.SecurityLevel, result.Violations.Count);
+        }
+
 
         return result;
     }
@@ -220,7 +235,10 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
         var json = JsonSerializer.Serialize(policyData, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(filePath, json);
 
-        if (_logger is not null) LogSecurityPolicySaved(filePath);
+        if (_logger is not null)
+        {
+            LogSecurityPolicySaved(filePath);
+        }
     }
 
     /// <summary>
@@ -287,7 +305,11 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             }
         }
 
-        if (_logger is not null) LogSecurityPolicyLoaded(filePath);
+        if (_logger is not null)
+        {
+
+            LogSecurityPolicyLoaded(filePath);
+        }
     }
 
     #region LoggerMessage Delegates

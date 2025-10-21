@@ -530,13 +530,6 @@ internal static partial class CpuKernelCompiler
             entryPoint: original.EntryPoint ?? "main",
             dependencies: []
         );
-        _ = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false,
-            AdditionalFlags = [],
-            Defines = []
-        };
 
         var definition = new KernelDefinition(original.Name, kernelSource.Code, kernelSource.EntryPoint);
 
@@ -630,10 +623,23 @@ internal static partial class KernelSourceParser
             ast.HasLoops = visitor.HasLoops;
             ast.HasRecursion = visitor.HasRecursion;
             ast.HasIndirectMemoryAccess = visitor.HasIndirectMemoryAccess;
-            ast.Operations = visitor.Operations;
-            ast.Variables = visitor.Variables;
-            ast.Parameters = visitor.Parameters;
-            ast.FunctionCalls = visitor.FunctionCalls;
+
+            foreach (var op in visitor.Operations)
+            {
+                ast.Operations.Add(op);
+            }
+            foreach (var variable in visitor.Variables)
+            {
+                ast.Variables.Add(variable);
+            }
+            foreach (var parameter in visitor.Parameters)
+            {
+                ast.Parameters.Add(parameter);
+            }
+            foreach (var call in visitor.FunctionCalls)
+            {
+                ast.FunctionCalls.Add(call);
+            }
 
             // Additional analysis
             ast.ComplexityScore = CalculateComplexityScore(ast);

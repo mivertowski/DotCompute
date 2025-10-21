@@ -36,7 +36,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     minSingularValue = value;
                 }
-
             }
 
             return minSingularValue > 0 ? maxSingularValue / minSingularValue : float.PositiveInfinity;
@@ -85,7 +84,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     maxColumnSum = columnSum;
                 }
-
             }
 
             return maxColumnSum;
@@ -112,7 +110,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     maxRowSum = rowSum;
                 }
-
             }
 
             return maxRowSum;
@@ -137,7 +134,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     maxSingularValue = value;
                 }
-
             }
 
             return maxSingularValue;
@@ -185,7 +181,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     rank++;
                 }
-
             }
 
             return rank;
@@ -217,7 +212,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                         return false;
                     }
-
                 }
             }
 
@@ -297,7 +291,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                     {
                         max = absValue;
                     }
-
                 }
                 return max;
             }

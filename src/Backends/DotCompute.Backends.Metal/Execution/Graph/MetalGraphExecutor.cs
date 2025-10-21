@@ -296,7 +296,6 @@ public sealed class MetalGraphExecutor : IDisposable
             {
                 errors.Add($"Failed to determine execution order: {ex.Message}");
             }
-
         }, cancellationToken);
 
         return errors;
@@ -504,7 +503,7 @@ public sealed class MetalGraphExecutor : IDisposable
         _logger.LogTrace("Executed barrier node '{NodeId}'", node.Id);
     }
 
-    private static List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyIReadOnlyList<MetalGraphNode> nodes)
+    private static List<List<MetalGraphNode>> GroupNodesByExecutionLevel(IReadOnlyList<MetalGraphNode> nodes)
     {
         var levels = new List<List<MetalGraphNode>>();
         var nodeToLevel = new Dictionary<string, int>();

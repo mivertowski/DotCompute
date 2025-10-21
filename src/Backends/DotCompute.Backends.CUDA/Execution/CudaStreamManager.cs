@@ -1141,7 +1141,12 @@ namespace DotCompute.Backends.CUDA.Execution
         /// <returns>The stream health.</returns>
         public double GetStreamHealth()
         {
-            if (_disposed) return 0.0;
+            if (_disposed)
+            {
+
+                return 0.0;
+            }
+
 
             try
             {

@@ -26,18 +26,10 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
         object input,
         CancellationToken cancellationToken = default)
     {
-        if (plugin == null)
-        {
-
-            throw new ArgumentNullException(nameof(plugin));
-        }
+        ArgumentNullException.ThrowIfNull(plugin);
 
 
-        if (input == null)
-        {
-
-            throw new ArgumentNullException(nameof(input));
-        }
+        ArgumentNullException.ThrowIfNull(input);
 
 
         LogExecutingPlugin(plugin.Id, input.GetType().Name);
@@ -172,7 +164,7 @@ public partial class AlgorithmPluginExecutor(ILogger<AlgorithmPluginExecutor> lo
         // Check for specific error messages or types that indicate transient errors
 
         var message = ex.Message?.ToUpperInvariant() ?? string.Empty;
-        if (message.Contains("timeout", StringComparison.CurrentCulture) || message.Contains("temporary", StringComparison.CurrentCulture) || message.Contains("transient"))
+        if (message.Contains("timeout", StringComparison.CurrentCulture) || message.Contains("temporary", StringComparison.CurrentCulture) || message.Contains("transient", StringComparison.Ordinal))
         {
             return true;
         }

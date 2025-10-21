@@ -703,7 +703,6 @@ namespace DotCompute.Backends.CUDA.Compilation
 
                     return true;
                 }
-
             }
 
             // For other structs, check if they're likely blittable
@@ -796,7 +795,6 @@ namespace DotCompute.Backends.CUDA.Compilation
                     {
                         return false;
                     }
-
                 }
                 return true;
             }

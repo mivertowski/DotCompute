@@ -6,9 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.SignalProcessing;
 using DotCompute.Algorithms.Types.Abstractions;
-using DotCompute.Algorithms.Types.SignalProcessing;
 using Microsoft.Extensions.Logging;
-using Complex = DotCompute.Algorithms.Types.SignalProcessing.Complex;
+using Complex = DotCompute.Algorithms.SignalProcessing.Complex;
 
 namespace DotCompute.Algorithms.Plugins
 {

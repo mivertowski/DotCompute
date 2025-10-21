@@ -259,7 +259,10 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         }
 
         // Add warnings for policy issues
-        result.Warnings.AddRange(policyResult.Warnings);
+        foreach (var warning in policyResult.Warnings)
+        {
+            ((List<string>)result.Warnings).Add(warning);
+        }
         result.SecurityValidation = securityResult;
 
         return true;
@@ -270,7 +273,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
         Justification = "Plugin infrastructure requires dynamic assembly inspection for plugin discovery and validation. This is a core design requirement.")]
-    private static async Task<bool> ValidateAssemblyStructureAsync(
+    private static Task<bool> ValidateAssemblyStructureAsync(
         string assemblyPath,
         PluginValidationResult result,
         CancellationToken cancellationToken)
@@ -301,12 +304,12 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
                 result.Warnings.Add("Assembly missing title attribute");
             }
 
-            return true;
+            return Task.FromResult(true);
         }
         catch (Exception ex)
         {
             result.Errors.Add($"Assembly structure validation failed: {ex.Message}");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -319,7 +322,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         Justification = "Plugin validation requires interface inspection on enumerated types")]
     [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
         Justification = "Plugin validation requires enumeration of types from assembly")]
-    private async Task<bool> ValidatePluginInterfacesAsync(
+    private Task<bool> ValidatePluginInterfacesAsync(
         string assemblyPath,
         PluginValidationResult result,
         CancellationToken cancellationToken)
@@ -337,7 +340,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             if (pluginTypes.Count == 0)
             {
                 result.Errors.Add("No plugin types found implementing IAlgorithmPlugin");
-                return false;
+                return Task.FromResult(false);
             }
 
             // Validate each plugin type
@@ -388,7 +391,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             }
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
     /// <summary>
@@ -396,7 +399,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCodeAttribute",
         Justification = "Plugin infrastructure requires dynamic assembly inspection for performance validation.")]
-    private static async Task ValidatePerformanceCharacteristicsAsync(
+    private static Task ValidatePerformanceCharacteristicsAsync(
         string assemblyPath,
         PluginValidationResult result,
         CancellationToken cancellationToken)
@@ -432,6 +435,8 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         {
             result.Warnings.Add($"Performance validation failed: {ex.Message}");
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -800,8 +805,17 @@ public sealed class PerformanceValidationMetrics
 /// </summary>
 
 // Placeholder classes for security components
-internal sealed class SecurityPolicyEngine(ILogger logger) : IDisposable
+internal sealed class SecurityPolicyEngine : IDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SecurityPolicyEngine"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    public SecurityPolicyEngine(ILogger logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+    }
+
     /// <summary>
     /// Gets or sets the require digital signature.
     /// </summary>
@@ -843,8 +857,17 @@ internal sealed class SecurityPolicyEngine(ILogger logger) : IDisposable
 /// A class that represents authenticode validator.
 /// </summary>
 
-internal sealed class AuthenticodeValidator(ILogger logger) : IDisposable
+internal sealed class AuthenticodeValidator : IDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthenticodeValidator"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    public AuthenticodeValidator(ILogger logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+    }
+
     /// <summary>
     /// Validates the async.
     /// </summary>
@@ -860,8 +883,17 @@ internal sealed class AuthenticodeValidator(ILogger logger) : IDisposable
 /// A class that represents malware scanner.
 /// </summary>
 
-internal sealed class MalwareScanner(ILogger logger) : IDisposable
+internal sealed class MalwareScanner : IDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MalwareScanner"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    public MalwareScanner(ILogger logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+    }
+
     /// <summary>
     /// Gets scan assembly asynchronously.
     /// </summary>

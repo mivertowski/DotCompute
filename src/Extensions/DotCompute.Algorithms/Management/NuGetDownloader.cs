@@ -305,7 +305,7 @@ namespace DotCompute.Algorithms.Management
                         // Check for suspicious entry names
                         if (entry.FullName.Contains("..", StringComparison.OrdinalIgnoreCase) ||
                             entry.FullName.StartsWith("/", StringComparison.OrdinalIgnoreCase) ||
-                            entry.FullName.Contains(":"))
+                            entry.FullName.Contains(":", StringComparison.Ordinal))
                         {
                             LogSuspiciousEntryFound(entry.FullName);
                             isValid = false;

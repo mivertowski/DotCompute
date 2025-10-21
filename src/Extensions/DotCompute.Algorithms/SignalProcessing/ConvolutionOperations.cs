@@ -3,6 +3,7 @@
 
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
+using DotCompute.Abstractions.Interfaces.Kernels;
 using DotCompute.Core.Kernels;
 // using DotCompute.Core.Types; // Commented out missing namespace
 using Microsoft.Extensions.Logging;
@@ -76,7 +77,12 @@ namespace DotCompute.Algorithms.SignalProcessing
             CancellationToken cancellationToken = default)
         {
             ValidateInputs(signal, kernel);
-            if (stride <= 0) throw new ArgumentException("Stride must be positive.", nameof(stride));
+            if (stride <= 0)
+            {
+
+                throw new ArgumentException("Stride must be positive.", nameof(stride));
+            }
+
 
             var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, stride);
             var result = new float[outputLength];
@@ -107,7 +113,12 @@ namespace DotCompute.Algorithms.SignalProcessing
             CancellationToken cancellationToken = default)
         {
             ValidateInputs(signal, kernel);
-            if (dilation <= 0) throw new ArgumentException("Dilation must be positive.", nameof(dilation));
+            if (dilation <= 0)
+            {
+
+                throw new ArgumentException("Dilation must be positive.", nameof(dilation));
+            }
+
 
             var effectiveKernelSize = (kernel.Length - 1) * dilation + 1;
             var outputLength = CalculateOutputLength(signal.Length, effectiveKernelSize, padding, 1);
@@ -133,7 +144,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -169,7 +180,12 @@ namespace DotCompute.Algorithms.SignalProcessing
         {
             ValidateInputs2D(input, kernel, inputWidth, inputHeight, kernelWidth, kernelHeight);
 
-            if (stride == default) stride = (1, 1);
+            if (stride == default)
+            {
+                stride = (1, 1);
+            }
+
+
             strategy = SelectOptimalStrategy(strategy, Math.Max(kernelWidth, kernelHeight), 2);
 
             return strategy switch
@@ -210,9 +226,13 @@ namespace DotCompute.Algorithms.SignalProcessing
         {
             ValidateInputs(kernelX, kernelY);
             if (input.Length != inputWidth * inputHeight)
+            {
+
                 throw new ArgumentException("Input size mismatch.");
+            }
 
             // First pass: convolve rows with kernelX
+
             var tempResult = new float[inputWidth * inputHeight];
             await ConvolveRows2DAsync(input, kernelX, tempResult, inputWidth, inputHeight, padding, cancellationToken);
 
@@ -250,11 +270,24 @@ namespace DotCompute.Algorithms.SignalProcessing
             CancellationToken cancellationToken = default)
         {
             if (input.Length != channels * inputHeight * inputWidth)
-                throw new ArgumentException("Input size mismatch.");
-            if (kernels.Length != channels * kernelHeight * kernelWidth)
-                throw new ArgumentException("Kernel size mismatch.");
+            {
 
-            if (stride == default) stride = (1, 1);
+                throw new ArgumentException("Input size mismatch.");
+            }
+
+
+            if (kernels.Length != channels * kernelHeight * kernelWidth)
+            {
+
+                throw new ArgumentException("Kernel size mismatch.");
+            }
+
+
+            if (stride == default)
+            {
+                stride = (1, 1);
+            }
+
 
             var outputHeight = CalculateOutputLength(inputHeight, kernelHeight, padding, stride.y);
             var outputWidth = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
@@ -284,7 +317,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -322,7 +355,12 @@ namespace DotCompute.Algorithms.SignalProcessing
         {
             ValidateInputs3D(input, kernel, inputWidth, inputHeight, inputDepth, kernelWidth, kernelHeight, kernelDepth);
 
-            if (stride == default) stride = (1, 1, 1);
+            if (stride == default)
+            {
+
+                stride = (1, 1, 1);
+            }
+
 
             var outputWidth = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
             var outputHeight = CalculateOutputLength(inputHeight, kernelHeight, padding, stride.y);
@@ -355,7 +393,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -420,7 +458,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -459,11 +497,24 @@ namespace DotCompute.Algorithms.SignalProcessing
             CancellationToken cancellationToken = default)
         {
             if (batchInput.Length != batchSize * inputChannels * inputHeight * inputWidth)
-                throw new ArgumentException("Batch input size mismatch.");
-            if (kernels.Length != outputChannels * inputChannels * kernelHeight * kernelWidth)
-                throw new ArgumentException("Kernel size mismatch.");
+            {
 
-            if (stride == default) stride = (1, 1);
+                throw new ArgumentException("Batch input size mismatch.");
+            }
+
+
+            if (kernels.Length != outputChannels * inputChannels * kernelHeight * kernelWidth)
+            {
+
+                throw new ArgumentException("Kernel size mismatch.");
+            }
+
+
+            if (stride == default)
+            {
+                stride = (1, 1);
+            }
+
 
             var outputHeight = CalculateOutputLength(inputHeight, kernelHeight, padding, stride.y);
             var outputWidth = CalculateOutputLength(inputWidth, kernelWidth, padding, stride.x);
@@ -495,7 +546,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -531,7 +582,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -599,7 +650,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -643,7 +694,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -685,7 +736,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -728,7 +779,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
             return result;
         }
 
@@ -795,7 +846,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
         }
 
         private async ValueTask ConvolveColumns2DAsync(
@@ -827,22 +878,21 @@ namespace DotCompute.Algorithms.SignalProcessing
             new KernelArgument { Name = "padding", Type = typeof(int), Value = (int)padding }
         };
 
-            await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
+            _ = await _kernelManager.ExecuteKernelAsync(compiledKernel, arguments, _accelerator, cancellationToken: cancellationToken);
         }
 
         #endregion
 
         #region Utility Methods
 
-        private object CreateKernelGenerationContext()
+        private KernelGenerationContext CreateKernelGenerationContext()
         {
-            // Mock implementation - in real code this would return KernelGenerationContext
-            return new
+            return new KernelGenerationContext
             {
                 DeviceInfo = _accelerator.Info,
                 UseSharedMemory = _accelerator.Info.LocalMemorySize > 0,
                 UseVectorTypes = true,
-                Precision = "Single", // PrecisionMode.Single
+                Precision = PrecisionMode.Single,
                 WorkGroupDimensions = GetOptimalWorkGroupSize()
             };
         }
@@ -853,17 +903,30 @@ namespace DotCompute.Algorithms.SignalProcessing
             var maxWorkGroupSize = _accelerator.Info.MaxThreadsPerBlock;
 
             if (maxWorkGroupSize >= 256)
+            {
+
                 return [16, 16]; // 2D work groups
+            }
+
             else if (maxWorkGroupSize >= 64)
+            {
                 return [8, 8];
+            }
             else
+            {
+
                 return [4, 4];
+            }
         }
 
         private static ConvolutionStrategy SelectOptimalStrategy(ConvolutionStrategy strategy, int maxKernelSize, int dimensions)
         {
             if (strategy != ConvolutionStrategy.Auto)
+            {
+
                 return strategy;
+            }
+
 
             return (dimensions, maxKernelSize) switch
             {
@@ -929,8 +992,18 @@ namespace DotCompute.Algorithms.SignalProcessing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void ValidateInputs(float[] signal, float[] kernel)
         {
-            if (signal == null || signal.Length == 0) throw new ArgumentException("Signal cannot be null or empty.", nameof(signal));
-            if (kernel == null || kernel.Length == 0) throw new ArgumentException("Kernel cannot be null or empty.", nameof(kernel));
+            if (signal == null || signal.Length == 0)
+            {
+
+                throw new ArgumentException("Signal cannot be null or empty.", nameof(signal));
+            }
+
+
+            if (kernel == null || kernel.Length == 0)
+            {
+
+                throw new ArgumentException("Kernel cannot be null or empty.", nameof(kernel));
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -938,13 +1011,31 @@ namespace DotCompute.Algorithms.SignalProcessing
             int inputWidth, int inputHeight, int kernelWidth, int kernelHeight)
         {
             if (input.Length != inputWidth * inputHeight)
+            {
+
                 throw new ArgumentException("Input size mismatch.");
+            }
+
+
             if (kernel.Length != kernelWidth * kernelHeight)
+            {
+
                 throw new ArgumentException("Kernel size mismatch.");
+            }
+
+
             if (inputWidth <= 0 || inputHeight <= 0)
+            {
+
                 throw new ArgumentException("Input dimensions must be positive.");
+            }
+
+
             if (kernelWidth <= 0 || kernelHeight <= 0)
+            {
+
                 throw new ArgumentException("Kernel dimensions must be positive.");
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -952,13 +1043,31 @@ namespace DotCompute.Algorithms.SignalProcessing
             int inputWidth, int inputHeight, int inputDepth, int kernelWidth, int kernelHeight, int kernelDepth)
         {
             if (input.Length != inputWidth * inputHeight * inputDepth)
+            {
+
                 throw new ArgumentException("Input size mismatch.");
+            }
+
+
             if (kernel.Length != kernelWidth * kernelHeight * kernelDepth)
+            {
+
                 throw new ArgumentException("Kernel size mismatch.");
+            }
+
+
             if (inputWidth <= 0 || inputHeight <= 0 || inputDepth <= 0)
+            {
+
                 throw new ArgumentException("Input dimensions must be positive.");
+            }
+
+
             if (kernelWidth <= 0 || kernelHeight <= 0 || kernelDepth <= 0)
+            {
+
                 throw new ArgumentException("Kernel dimensions must be positive.");
+            }
         }
 
         #endregion

@@ -416,7 +416,7 @@ public sealed class MetalKernelCompiler : IUnifiedKernelCompiler, IDisposable
         }
 
         // Additional optimization hints could be set here based on the options
-        if (options.OptimizationLevel == OptimizationLevel.Maximum)
+        if (options.OptimizationLevel == OptimizationLevel.O3)
         {
             _logger.LogDebug("Maximum optimization requested for kernel: {Name}", kernelName);
             // Metal doesn't expose many additional optimization flags through the public API

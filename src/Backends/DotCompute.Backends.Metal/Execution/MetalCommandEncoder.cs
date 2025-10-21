@@ -284,9 +284,10 @@ public sealed class MetalCommandEncoder : IDisposable
         };
 
         // Count command types
-        stats.CommandTypeCounts = _commands
-            .GroupBy(c => c.Type)
-            .ToDictionary(g => g.Key, g => g.Count());
+        foreach (var group in _commands.GroupBy(c => c.Type))
+        {
+            stats.CommandTypeCounts[group.Key] = group.Count();
+        }
 
         // Calculate encoding duration
         if (stats.FirstCommandTime.HasValue && stats.LastCommandTime.HasValue)

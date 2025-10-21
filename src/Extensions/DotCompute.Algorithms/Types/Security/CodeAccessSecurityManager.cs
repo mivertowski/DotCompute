@@ -3,6 +3,7 @@
 
 // using global::System.Security.Permissions; // Commented out for .NET compatibility
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Permissions;
 using System.Text.Json;
 using DotCompute.Abstractions.Security;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ namespace DotCompute.Algorithms.Types.Security
     {
         private readonly ILogger<CodeAccessSecurityManager>? _logger = logger;
         private readonly CodeAccessSecurityOptions _options = options ?? new CodeAccessSecurityOptions();
-        private readonly Dictionary<string, object> _permissionSets = []; // Mock PermissionSet
+        private readonly Dictionary<string, PermissionSet> _permissionSets = [];
         private bool _disposed;
 
         /// <summary>
@@ -34,15 +35,27 @@ namespace DotCompute.Algorithms.Types.Security
         /// <param name="assemblyPath">Path to the assembly.</param>
         /// <param name="securityZone">Security zone for the assembly.</param>
         /// <returns>The created permission set.</returns>
-        public object CreateRestrictedPermissionSet(string assemblyPath, SecurityZone securityZone)
+        public PermissionSet CreateRestrictedPermissionSet(string assemblyPath, SecurityZone securityZone)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(assemblyPath);
 
             LogCreatingPermissionSet(assemblyPath, securityZone);
 
-            // Create a mock permission set based on security zone
-            var permissionSet = new { Zone = securityZone, Permissions = new List<string>() };
+            // Create a permission set based on security zone
+            var permissionSet = new PermissionSet
+            {
+                Zone = securityZone,
+                Level = securityZone switch
+                {
+                    SecurityZone.LocalMachine => DotCompute.Abstractions.Security.SecurityLevel.Maximum,
+                    SecurityZone.LocalIntranet => DotCompute.Abstractions.Security.SecurityLevel.High,
+                    SecurityZone.TrustedSites => DotCompute.Abstractions.Security.SecurityLevel.Medium,
+                    SecurityZone.Internet => DotCompute.Abstractions.Security.SecurityLevel.Low,
+                    SecurityZone.RestrictedSites => DotCompute.Abstractions.Security.SecurityLevel.Basic,
+                    _ => DotCompute.Abstractions.Security.SecurityLevel.None
+                }
+            };
 
             // Add permissions based on security zone
             switch (securityZone)
@@ -70,7 +83,7 @@ namespace DotCompute.Algorithms.Types.Security
             // Store the permission set
             _permissionSets[assemblyPath] = permissionSet;
 
-            LogCreatedPermissionSet(permissionSet.Permissions.Count, assemblyPath);
+            LogCreatedPermissionSet(permissionSet.GrantedPermissions.Count, assemblyPath);
 
             return permissionSet;
         }
@@ -162,27 +175,42 @@ namespace DotCompute.Algorithms.Types.Security
 
             // Load configuration properties
             if (root.TryGetProperty("DefaultSecurityZone", out var zone))
+            {
                 _options.DefaultSecurityZone = Enum.Parse<SecurityZone>(zone.GetString()!);
+            }
 
             if (root.TryGetProperty("EnableFileSystemRestrictions", out var fileRestrictions))
+            {
                 _options.EnableFileSystemRestrictions = fileRestrictions.GetBoolean();
+            }
 
             if (root.TryGetProperty("EnableNetworkRestrictions", out var netRestrictions))
+            {
                 _options.EnableNetworkRestrictions = netRestrictions.GetBoolean();
+            }
 
             if (root.TryGetProperty("EnableReflectionRestrictions", out var refRestrictions))
+            {
                 _options.EnableReflectionRestrictions = refRestrictions.GetBoolean();
+            }
 
             if (root.TryGetProperty("AllowReflectionEmit", out var allowRefEmit))
+            {
                 _options.AllowReflectionEmit = allowRefEmit.GetBoolean();
+            }
 
             if (root.TryGetProperty("MaxMemoryUsage", out var maxMem))
+            {
                 _options.MaxMemoryUsage = maxMem.GetInt64();
+            }
 
             if (root.TryGetProperty("MaxExecutionTime", out var maxTime))
+            {
                 _options.MaxExecutionTime = TimeSpan.FromMilliseconds(maxTime.GetDouble());
+            }
 
             // Load allowed paths and endpoints
+
             if (root.TryGetProperty("AllowedFileSystemPaths", out var paths))
             {
                 _options.AllowedFileSystemPaths.Clear();
@@ -253,7 +281,12 @@ namespace DotCompute.Algorithms.Types.Security
 
         private bool CheckFileReadPermission(PermissionSet permissionSet, string? target)
         {
-            if (!_options.EnableFileSystemRestrictions) return true;
+            if (!_options.EnableFileSystemRestrictions)
+            {
+
+                return true;
+            }
+
 
             try
             {
@@ -270,7 +303,12 @@ namespace DotCompute.Algorithms.Types.Security
 
         private bool CheckFileWritePermission(PermissionSet permissionSet, string? target)
         {
-            if (!_options.EnableFileSystemRestrictions) return true;
+            if (!_options.EnableFileSystemRestrictions)
+            {
+
+                return true;
+            }
+
 
             try
             {
@@ -285,7 +323,12 @@ namespace DotCompute.Algorithms.Types.Security
 
         private bool CheckNetworkPermission(PermissionSet permissionSet, string? target)
         {
-            if (!_options.EnableNetworkRestrictions) return true;
+            if (!_options.EnableNetworkRestrictions)
+            {
+
+                return true;
+            }
+
 
             return string.IsNullOrEmpty(target) ||
                    _options.AllowedNetworkEndpoints.Any(endpoint =>
@@ -294,7 +337,12 @@ namespace DotCompute.Algorithms.Types.Security
 
         private bool CheckReflectionPermission(PermissionSet permissionSet)
         {
-            if (!_options.EnableReflectionRestrictions) return true;
+            if (!_options.EnableReflectionRestrictions)
+            {
+
+                return true;
+            }
+
 
             try
             {

@@ -94,9 +94,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             // Create a fallback implementation since GetOptimizedParameters doesn't exist
             return new LAKernelParams
             {
-                GlobalWorkSize = [(ulong)properties.Rows, (ulong)properties.Columns],
-                LocalWorkSize = [16UL, 16UL],
-                WorkGroupSize = Math.Min(hardware.MaxWorkGroupSize, 256)
+                GlobalWorkSize = [properties.Rows, properties.Columns],
+                LocalWorkSize = [16, 16]
             };
         }
 
@@ -414,7 +413,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                         {
                             pivotRow = i;
                         }
-
                     }
 
                     // Swap rows
@@ -468,7 +466,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 {
                     zeroCount++;
                 }
-
             }
 
             return (float)zeroCount / data.Length;
@@ -492,7 +489,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
                         return false;
                     }
-
                 }
             }
             return true;
@@ -515,7 +511,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     {
                         return false;
                     }
-
                 }
                 return true; // More rigorous test would require eigenvalue computation
             }

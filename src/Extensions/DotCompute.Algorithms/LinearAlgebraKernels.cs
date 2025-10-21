@@ -1250,5 +1250,4 @@ __kernel void lu_decomposition_step(
         #endregion
 
     } // class LinearAlgebraKernels
-
 } // namespace DotCompute.Algorithms

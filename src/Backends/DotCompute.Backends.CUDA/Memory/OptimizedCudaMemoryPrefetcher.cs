@@ -616,7 +616,9 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             _accessPatterns.Clear();
 
 
-            while (_pendingRequests.TryDequeue(out _)) { }
+            while (_pendingRequests.TryDequeue(out _))
+            {
+            }
 
             _logger.LogDebug("Optimized CUDA memory prefetcher disposed");
         }

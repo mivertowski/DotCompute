@@ -482,7 +482,6 @@ public sealed class CpuMemoryBufferTyped<T>(
 
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
         }
-
     }
     /// <summary>
     /// Performs dispose.
@@ -992,7 +991,6 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
 
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer), "Parent buffer has been disposed");
         }
-
     }
     /// <summary>
     /// Performs dispose.

@@ -169,7 +169,10 @@ public sealed class AuthenticodeValidator(ILogger<AuthenticodeValidator> logger)
 
                 // Non-critical issues - still consider valid but with lower trust
                 result.TrustLevel = TrustLevel.Low;
-                result.Warnings.AddRange(chain.ChainStatus.Select(s => s.StatusInformation));
+                foreach (var warning in chain.ChainStatus.Select(s => s.StatusInformation))
+                {
+                    result.Warnings.Add(warning);
+                }
             }
 
             // Check if certificate is in trusted publisher store

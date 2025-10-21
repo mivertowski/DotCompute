@@ -87,7 +87,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
 
             try
             {
-                return await _matrixOps.QRDecompositionAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+                return await GpuMatrixOperations.QRDecompositionAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
 
             try
             {
-                return await _matrixOps.SVDAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+                return await GpuMatrixOperations.SVDAsync(matrix, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -146,7 +146,7 @@ namespace DotCompute.Algorithms.LinearAlgebra
             {
                 return selectedMethod switch
                 {
-                    LinearSystemSolver.LU => await _solverOps.SolveLUAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
+                    LinearSystemSolver.LU => await GpuSolverOperations.SolveLUAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                     LinearSystemSolver.Cholesky => await GpuSolverOperations.SolveCholeskyAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                     LinearSystemSolver.QR => await _solverOps.SolveQRAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),
                     LinearSystemSolver.ConjugateGradient => await _solverOps.SolveIterativeAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false),

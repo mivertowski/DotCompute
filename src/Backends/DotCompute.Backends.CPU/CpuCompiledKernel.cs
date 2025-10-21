@@ -158,7 +158,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
             }
 
             // Check cache for optimized execution plan
-            var cacheKey = CpuKernelCache.GenerateCacheKey(_definition, context.WorkDimensions, Abstractions.Types.OptimizationLevel.Balanced);
+            var cacheKey = CpuKernelCache.GenerateCacheKey(_definition, context.WorkDimensions, Abstractions.Types.OptimizationLevel.O2);
             var cachedKernel = await _cache.GetKernelAsync(cacheKey);
 
             if (cachedKernel != null)

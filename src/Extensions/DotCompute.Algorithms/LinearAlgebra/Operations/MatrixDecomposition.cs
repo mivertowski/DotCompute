@@ -444,7 +444,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     break;
                 }
-
             }
 
             // Extract singular values and ensure they are positive
@@ -631,7 +630,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
 
                     return false;
                 }
-
             }
             return true;
         }
@@ -1048,7 +1046,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                         {
                             break;
                         }
-
                     }
 
                     // Extract singular values using GPU kernel

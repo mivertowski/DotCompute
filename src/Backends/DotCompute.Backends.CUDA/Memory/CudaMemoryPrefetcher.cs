@@ -332,7 +332,6 @@ namespace DotCompute.Backends.CUDA.Memory
                 {
                     successCount++;
                 }
-
             }
 
             _logger.LogDebugMessage(" successful");

@@ -90,7 +90,6 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                     return null;
                 }
-
             }
 
             var session = new ProfilingSession(metrics ?? GetDefaultMetrics());

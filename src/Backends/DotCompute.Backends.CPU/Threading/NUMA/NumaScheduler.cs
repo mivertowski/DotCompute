@@ -64,7 +64,11 @@ public sealed class NumaScheduler : IDisposable
         }
 
 
-        return ScheduleOnNodeAsync(() => { action(); return Task.CompletedTask; }, nodeId, priority);
+        return ScheduleOnNodeAsync(() =>
+        {
+            action();
+            return Task.CompletedTask;
+        }, nodeId, priority);
     }
 
     /// <summary>

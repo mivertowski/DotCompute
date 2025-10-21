@@ -1202,5 +1202,4 @@ namespace DotCompute.Backends.CUDA.Native
 
         #endregion
     }
-
 }

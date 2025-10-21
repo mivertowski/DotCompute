@@ -74,13 +74,12 @@ public sealed class MetalHealthMonitor : IDisposable
             EventType = HealthEventType.Error,
             Component = GetErrorComponent(error),
             Severity = GetErrorSeverity(error),
-            Message = $"Metal error: {error} in context: {context}",
-            Data = new Dictionary<string, object>
-            {
-                ["error_code"] = error,
-                ["context"] = context
-            }
+            Message = $"Metal error: {error} in context: {context}"
         };
+
+        // Add data to the collection property
+        healthEvent.Data["error_code"] = error;
+        healthEvent.Data["context"] = context;
 
         RecordHealthEvent(healthEvent);
 
@@ -142,13 +141,12 @@ public sealed class MetalHealthMonitor : IDisposable
             EventType = HealthEventType.MemoryPressure,
             Component = "Memory",
             Severity = severity,
-            Message = $"Memory pressure: {level} at {percentage:F1}%",
-            Data = new Dictionary<string, object>
-            {
-                ["pressure_level"] = level,
-                ["percentage"] = percentage
-            }
+            Message = $"Memory pressure: {level} at {percentage:F1}%"
         };
+
+        // Add data to the collection property
+        healthEvent.Data["pressure_level"] = level;
+        healthEvent.Data["percentage"] = percentage;
 
         RecordHealthEvent(healthEvent);
 
@@ -188,13 +186,12 @@ public sealed class MetalHealthMonitor : IDisposable
             EventType = HealthEventType.Success,
             Component = component,
             Severity = HealthSeverity.Info,
-            Message = $"Successful {operation} completed in {duration.TotalMilliseconds:F2}ms",
-            Data = new Dictionary<string, object>
-            {
-                ["operation"] = operation,
-                ["duration_ms"] = duration.TotalMilliseconds
-            }
+            Message = $"Successful {operation} completed in {duration.TotalMilliseconds:F2}ms"
         };
+
+        // Add data to the collection property
+        healthEvent.Data["operation"] = operation;
+        healthEvent.Data["duration_ms"] = duration.TotalMilliseconds;
 
         RecordHealthEvent(healthEvent);
 
@@ -274,18 +271,35 @@ public sealed class MetalHealthMonitor : IDisposable
         var report = new MetalHealthReport
         {
             Timestamp = DateTimeOffset.UtcNow,
-            OverallHealth = GetCurrentHealth(),
-            ComponentHealthMap = new Dictionary<string, ComponentHealth>(_componentHealth),
-            RecentEvents = recentEvents,
-            CircuitBreakerStates = new Dictionary<string, CircuitBreakerState>
-            {
-                ["Memory"] = _memoryCircuitBreaker.GetState(),
-                ["Device"] = _deviceCircuitBreaker.GetState(),
-                ["Kernel"] = _kernelCircuitBreaker.GetState()
-            },
-            SystemMetrics = GetSystemHealthMetrics(),
-            Recommendations = GenerateHealthRecommendations(recentEvents)
+            OverallHealth = GetCurrentHealth()
         };
+
+        // Add items to collection properties
+        foreach (var kvp in _componentHealth)
+        {
+            report.ComponentHealthMap[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var evt in recentEvents)
+        {
+            report.RecentEvents.Add(evt);
+        }
+
+        report.CircuitBreakerStates["Memory"] = _memoryCircuitBreaker.GetState();
+        report.CircuitBreakerStates["Device"] = _deviceCircuitBreaker.GetState();
+        report.CircuitBreakerStates["Kernel"] = _kernelCircuitBreaker.GetState();
+
+        var systemMetrics = GetSystemHealthMetrics();
+        foreach (var kvp in systemMetrics)
+        {
+            report.SystemMetrics[kvp.Key] = kvp.Value;
+        }
+
+        var recommendations = GenerateHealthRecommendations(recentEvents);
+        foreach (var recommendation in recommendations)
+        {
+            report.Recommendations.Add(recommendation);
+        }
 
         return report;
     }
@@ -313,23 +327,35 @@ public sealed class MetalHealthMonitor : IDisposable
         };
 
         // Analyze error patterns
-        analysis.ErrorPatterns = AnalyzeErrorPatterns(recentEvents);
+        var errorPatterns = AnalyzeErrorPatterns(recentEvents);
+        foreach (var kvp in errorPatterns)
+        {
+            analysis.ErrorPatterns[kvp.Key] = kvp.Value;
+        }
 
         // Analyze performance degradation
-
-        analysis.PerformanceDegradation = AnalyzePerformanceDegradation(recentEvents);
+        var performanceDegradation = AnalyzePerformanceDegradation(recentEvents);
+        foreach (var kvp in performanceDegradation)
+        {
+            analysis.PerformanceDegradation[kvp.Key] = kvp.Value;
+        }
 
         // Analyze resource pressure trends
-
-        analysis.ResourcePressureTrends = AnalyzeResourcePressure(recentEvents);
+        var resourcePressure = AnalyzeResourcePressure(recentEvents);
+        foreach (var kvp in resourcePressure)
+        {
+            analysis.ResourcePressureTrends[kvp.Key] = kvp.Value;
+        }
 
         // Calculate health score
-
         analysis.HealthScore = CalculateHealthScore(recentEvents);
 
         // Predict potential issues
-
-        analysis.PredictedIssues = PredictPotentialIssues(recentEvents);
+        var predictedIssues = PredictPotentialIssues(recentEvents);
+        foreach (var issue in predictedIssues)
+        {
+            analysis.PredictedIssues.Add(issue);
+        }
 
         return analysis;
     }

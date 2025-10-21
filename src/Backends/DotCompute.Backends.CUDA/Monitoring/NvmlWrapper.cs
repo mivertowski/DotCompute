@@ -84,7 +84,6 @@ namespace DotCompute.Backends.CUDA.Monitoring
 
                     return new GpuMetrics { IsAvailable = false };
                 }
-
             }
 
             var metrics = new GpuMetrics { IsAvailable = true, DeviceIndex = deviceIndex };

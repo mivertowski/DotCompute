@@ -65,6 +65,11 @@ public class Matrix
     public int Columns => Implementation.Columns;
 
     /// <summary>
+    /// Gets a value indicating whether this is a square matrix.
+    /// </summary>
+    public bool IsSquare => Implementation.IsSquare;
+
+    /// <summary>
     /// Gets the element at the specified position.
     /// </summary>
     public float this[int row, int col] => Implementation[row, col];

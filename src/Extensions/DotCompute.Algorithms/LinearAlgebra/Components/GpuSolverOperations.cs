@@ -94,7 +94,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
             var matrixProperties = AnalyzeMatrixProperties(a);
             var hardwareInfo = GetHardwareInfo(accelerator);
 
-            var (q, r) = await _matrixOps.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
+            var (q, r) = await GpuMatrixOperations.QRDecompositionAsync(a, accelerator, matrixProperties, hardwareInfo, cancellationToken).ConfigureAwait(false);
 
             // Solve R * x = Q^T * b
             var qTranspose = await GpuMatrixOperations.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false);
@@ -346,25 +346,25 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
             for (var col = 0; col < b.Columns; col++)
             {
-                var r = await _vectorOps.SubtractAsync(b.GetColumn(col), await _matrixOps.MultiplyAsync(a, x.GetColumn(col), accelerator, GetOptimalKernelConfig(AnalyzeMatrixProperties(a)), cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
+                var r = await GpuVectorOperations.SubtractAsync(b.GetColumn(col), await _matrixOps.MultiplyAsync(a, x.GetColumn(col), accelerator, GetOptimalKernelConfig(AnalyzeMatrixProperties(a)), cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
                 var p = r.Clone();
-                var rsold = await _vectorOps.DotProductAsync(r, r, accelerator, cancellationToken).ConfigureAwait(false);
+                var rsold = await GpuVectorOperations.DotProductAsync(r, r, accelerator, cancellationToken).ConfigureAwait(false);
 
                 for (var iter = 0; iter < maxIterations; iter++)
                 {
                     var ap = await _matrixOps.MultiplyAsync(a, p, accelerator, GetOptimalKernelConfig(AnalyzeMatrixProperties(a)), cancellationToken).ConfigureAwait(false);
-                    var alpha = rsold / await _vectorOps.DotProductAsync(p, ap, accelerator, cancellationToken).ConfigureAwait(false);
+                    var alpha = rsold / await GpuVectorOperations.DotProductAsync(p, ap, accelerator, cancellationToken).ConfigureAwait(false);
 
                     var xCol = x.GetColumn(col);
-                    var newXCol = await _vectorOps.AddAsync(xCol, await _vectorOps.ScaleAsync(p, alpha, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
+                    var newXCol = await GpuVectorOperations.AddAsync(xCol, await GpuVectorOperations.ScaleAsync(p, alpha, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
 
                     for (var i = 0; i < n; i++)
                     {
                         x[i, col] = newXCol[i, 0];
                     }
 
-                    r = await _vectorOps.SubtractAsync(r, await _vectorOps.ScaleAsync(ap, alpha, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
-                    var rsnew = await _vectorOps.DotProductAsync(r, r, accelerator, cancellationToken).ConfigureAwait(false);
+                    r = await GpuVectorOperations.SubtractAsync(r, await GpuVectorOperations.ScaleAsync(ap, alpha, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
+                    var rsnew = await GpuVectorOperations.DotProductAsync(r, r, accelerator, cancellationToken).ConfigureAwait(false);
 
                     if (Math.Sqrt(rsnew) < tolerance)
                     {
@@ -373,7 +373,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
 
                     var beta = rsnew / rsold;
-                    p = await _vectorOps.AddAsync(r, await _vectorOps.ScaleAsync(p, beta, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
+                    p = await GpuVectorOperations.AddAsync(r, await GpuVectorOperations.ScaleAsync(p, beta, accelerator, cancellationToken).ConfigureAwait(false), accelerator, cancellationToken).ConfigureAwait(false);
                     rsold = rsnew;
                 }
             }
@@ -393,7 +393,8 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         {
             return new MatrixProperties
             {
-                Size = matrix.Size,
+                Rows = matrix.Rows,
+                Columns = matrix.Columns,
                 SparsityRatio = ComputeSparsityRatio(matrix),
                 IsSymmetric = IsSymmetric(matrix),
                 IsPositiveDefinite = IsPositiveDefinite(matrix)
@@ -431,7 +432,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 {
                     zeroCount++;
                 }
-
             }
 
             return (float)zeroCount / data.Length;
@@ -455,7 +455,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
                         return false;
                     }
-
                 }
             }
             return true;
@@ -478,7 +477,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                     {
                         return false;
                     }
-
                 }
                 return true; // More rigorous test would require eigenvalue computation
             }

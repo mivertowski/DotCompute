@@ -340,7 +340,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
                 {
                     break;
                 }
-
             }
 
             return x;

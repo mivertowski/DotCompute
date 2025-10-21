@@ -607,7 +607,6 @@ public sealed class MetalKernelCache : IDisposable
             {
                 File.Delete(metaPath);
             }
-
         }
         catch (Exception ex)
         {
