@@ -287,7 +287,7 @@ internal sealed class CpuKernelCache : IDisposable
         if (definition.Metadata?.Count > 0)
         {
             var metadataHash = string.Join(",", definition.Metadata.Keys.OrderBy(k => k));
-            key += $"_{metadataHash.GetHashCode():X}";
+            key += $"_{metadataHash.GetHashCode(StringComparison.Ordinal):X}";
         }
 
         return key;

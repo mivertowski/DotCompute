@@ -81,7 +81,7 @@ public sealed class MetalGraphNode
     /// <summary>
     /// Gets or sets the kernel arguments array.
     /// </summary>
-    public object[] Arguments { get; set; }
+    public IReadOnlyList<object> Arguments { get; set; } = Array.Empty<object>();
 
     #endregion
 

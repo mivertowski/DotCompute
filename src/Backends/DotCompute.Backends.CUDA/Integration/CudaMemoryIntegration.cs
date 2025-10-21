@@ -241,7 +241,7 @@ public sealed class CudaMemoryIntegration : IDisposable
 
             // Optimize memory layout
 
-            _ = _asyncAdapter.OptimizeAsync().AsTask().Wait(TimeSpan.FromSeconds(30));
+            _ = _asyncAdapter.OptimizeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
 
             _logger.LogDebugMessage("Memory maintenance completed");

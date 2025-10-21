@@ -18,7 +18,7 @@ public sealed class PermissionSet
     /// <summary>
     /// Gets the security zone associated with this permission set.
     /// </summary>
-    public SecurityZone Zone { get; init; } = SecurityZone.RestrictedSites;
+    public SecurityZone Zone { get; init; } = SecurityZone.Internet;
 
     /// <summary>
     /// Gets the security level for this permission set.
@@ -81,7 +81,7 @@ public sealed class PermissionSet
     {
         IsUnrestricted = true,
         Level = SecurityLevel.Maximum,
-        Zone = SecurityZone.LocalMachine
+        Zone = SecurityZone.LocalMachine  // Using the canonical SecurityZone from Abstractions
     };
 
     /// <summary>
@@ -90,7 +90,7 @@ public sealed class PermissionSet
     public static PermissionSet CreateLocalMachine() => new()
     {
         Level = SecurityLevel.High,
-        Zone = SecurityZone.LocalMachine
+        Zone = SecurityZone.LocalMachine  // Using the canonical SecurityZone from Abstractions
     };
 
     /// <summary>
@@ -101,7 +101,7 @@ public sealed class PermissionSet
         var permSet = new PermissionSet
         {
             Level = SecurityLevel.Medium,
-            Zone = SecurityZone.LocalIntranet
+            Zone = SecurityZone.LocalIntranet  // Using the canonical SecurityZone from Abstractions
         };
         permSet.AddPermission("FileIO.Read");
         permSet.AddPermission("FileIO.Write");
@@ -135,7 +135,7 @@ public sealed class PermissionSet
         var permSet = new PermissionSet
         {
             Level = SecurityLevel.Low,
-            Zone = SecurityZone.RestrictedSites
+            Zone = SecurityZone.Internet
         };
         permSet.AddPermission("Execution");
         return permSet;
@@ -149,7 +149,7 @@ public sealed class PermissionSet
         var permSet = new PermissionSet
         {
             Level = SecurityLevel.Basic,
-            Zone = SecurityZone.RestrictedSites
+            Zone = SecurityZone.Internet
         };
         permSet.AddPermission("Execution");
         return permSet;

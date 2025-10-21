@@ -374,8 +374,8 @@ namespace DotCompute.Backends.CUDA.Memory
         IntPtr hostPointer,
         IntPtr devicePointer,
         long count,
-        CudaContext context,
-        ILogger logger) : IPinnedMemoryBuffer<T> where T : unmanaged
+        CudaContext _context,
+        ILogger _logger) : IPinnedMemoryBuffer<T> where T : unmanaged
     {
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;

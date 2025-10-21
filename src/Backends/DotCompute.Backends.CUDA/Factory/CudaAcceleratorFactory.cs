@@ -400,7 +400,7 @@ namespace DotCompute.Backends.CUDA.Factory
             // Initialize profiling if requested
             if (config.EnableProfiling)
             {
-                accelerator.Profiler.StartProfilingAsync().Wait();
+                accelerator.Profiler.StartProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
                 enabledFeatures.Add("Performance Profiling");
             }
 
@@ -991,7 +991,7 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 if (_baseAccelerator != null)
                 {
-                    _baseAccelerator.DisposeAsync().AsTask().Wait();
+                    _baseAccelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
                 _disposed = true;

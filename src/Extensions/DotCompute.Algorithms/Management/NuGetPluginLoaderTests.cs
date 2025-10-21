@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#nullable disable
+
 using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
@@ -398,7 +400,7 @@ namespace DotCompute.Algorithms.Management
             // Check that both versions are cached separately
             var cachedPackages = loader.GetCachedPackages();
             var updatablePackages = cachedPackages
-                .Where(p => p.Contains("UpdatablePackage"))
+                .Where(p => p.Contains("UpdatablePackage", StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
             _logger.LogInfoMessage($"Cached versions containing UpdatablePackage: {updatablePackages.Length}");

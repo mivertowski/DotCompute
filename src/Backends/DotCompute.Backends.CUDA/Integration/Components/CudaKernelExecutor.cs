@@ -15,9 +15,9 @@ namespace DotCompute.Backends.CUDA.Integration.Components;
 /// CUDA kernel execution orchestrator that provides high-level kernel execution
 /// services with optimization, configuration management, and performance monitoring.
 /// </summary>
-public sealed class CudaKernelExecutor : IDisposable
+public sealed partial class CudaKernelExecutor : IDisposable
 {
-    private readonly ILogger<CudaKernelExecutor> _logger;
+    private readonly ILogger _logger;
     private readonly CudaContext _context;
     private readonly CudaStreamManager _streamManager;
     private readonly CudaEventManager _eventManager;
@@ -54,7 +54,7 @@ public sealed class CudaKernelExecutor : IDisposable
         _configurationOptimizer = new KernelConfigurationOptimizer(context, logger);
         _kernelCache = [];
 
-        _logger.LogDebug("CUDA kernel execution orchestrator initialized for device {DeviceId}", context.DeviceId);
+        LogOrchestratorInitialized(context.DeviceId);
     }
 
     /// <summary>
@@ -80,8 +80,7 @@ public sealed class CudaKernelExecutor : IDisposable
 
         try
         {
-            _logger.LogDebug("Executing kernel {KernelName} with {ArgumentCount} arguments",
-                kernel.Name, arguments.Length);
+            LogExecutingKernel(kernel.Name, arguments.Length);
 
             // Validate arguments
             ValidateKernelArguments(arguments);
@@ -99,8 +98,7 @@ public sealed class CudaKernelExecutor : IDisposable
             var endTime = DateTimeOffset.UtcNow;
             var executionTime = endTime - startTime;
 
-            _logger.LogDebug("Kernel {KernelName} executed in {ExecutionTime:F2}ms with success: {Success}",
-                kernel.Name, executionTime.TotalMilliseconds, result.Success);
+            LogKernelExecuted(kernel.Name, executionTime.TotalMilliseconds, result.Success);
 
             // Enhance result with additional metrics
             return new KernelExecutionResult
@@ -118,7 +116,7 @@ public sealed class CudaKernelExecutor : IDisposable
             var endTime = DateTimeOffset.UtcNow;
             var executionTime = endTime - startTime;
 
-            _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernel.Name);
+            LogKernelExecutionFailed(ex, kernel.Name);
 
             return new KernelExecutionResult
             {
@@ -147,7 +145,7 @@ public sealed class CudaKernelExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to optimize configuration for kernel {KernelName}, using fallback", kernel.Name);
+            LogConfigurationOptimizationFailed(ex, kernel.Name);
             return CreateFallbackConfiguration(problemSize);
         }
     }
@@ -172,13 +170,13 @@ public sealed class CudaKernelExecutor : IDisposable
         // Check cache first
         if (_kernelCache.TryGetValue(kernelKey, out var cachedKernel))
         {
-            _logger.LogDebug("Using cached kernel {KernelName}", definition.Name);
+            LogUsingCachedKernel(definition.Name);
             return cachedKernel;
         }
 
         try
         {
-            _logger.LogDebug("Compiling kernel {KernelName}", definition.Name);
+            LogCompilingKernel(definition.Name);
 
             // Compile kernel using the accelerator
             var accelerator = _kernelExecutor.Accelerator;
@@ -191,12 +189,12 @@ public sealed class CudaKernelExecutor : IDisposable
             // Cache for reuse
             _kernelCache[kernelKey] = managedKernel;
 
-            _logger.LogDebug("Kernel {KernelName} compiled and cached successfully", definition.Name);
+            LogKernelCompiledAndCached(definition.Name);
             return managedKernel;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile kernel {KernelName}", definition.Name);
+            LogKernelCompilationFailed(ex, definition.Name);
             throw;
         }
     }
@@ -219,7 +217,7 @@ public sealed class CudaKernelExecutor : IDisposable
             return [];
         }
 
-        _logger.LogDebug("Executing batch of {KernelCount} kernels", kernelBatch.Length);
+        LogExecutingBatch(kernelBatch.Length);
 
         var results = new KernelExecutionResult[kernelBatch.Length];
         var tasks = new Task[kernelBatch.Length];
@@ -247,7 +245,7 @@ public sealed class CudaKernelExecutor : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to execute kernel {Index} in batch", index);
+                    LogBatchKernelExecutionFailed(ex, index);
                     results[index] = new KernelExecutionResult
                     {
                         Success = false,
@@ -260,8 +258,7 @@ public sealed class CudaKernelExecutor : IDisposable
         await Task.WhenAll(tasks).ConfigureAwait(false);
 
         var successCount = results.Count(r => r.Success);
-        _logger.LogDebug("Batch execution completed: {SuccessCount}/{TotalCount} kernels succeeded",
-            successCount, kernelBatch.Length);
+        LogBatchExecutionCompleted(successCount, kernelBatch.Length);
 
         return results;
     }
@@ -390,7 +387,7 @@ public sealed class CudaKernelExecutor : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error disposing cached kernel");
+                    LogCachedKernelDisposalFailed(ex);
                 }
             }
             _kernelCache.Clear();
@@ -398,7 +395,7 @@ public sealed class CudaKernelExecutor : IDisposable
             _configurationOptimizer?.Dispose();
             (_kernelExecutor as IDisposable)?.Dispose();
 
-            _logger.LogDebug("CUDA kernel execution orchestrator disposed");
+            LogOrchestratorDisposed();
         }
     }
 }
@@ -575,7 +572,7 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
 /// <summary>
 /// Kernel configuration optimizer for CUDA execution.
 /// </summary>
-internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger logger) : IDisposable
+internal sealed class KernelConfigurationOptimizer(CudaContext _context, ILogger logger) : IDisposable
 {
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;

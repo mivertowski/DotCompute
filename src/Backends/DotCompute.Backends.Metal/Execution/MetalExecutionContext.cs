@@ -738,8 +738,9 @@ public sealed partial class MetalExecutionContext : IDisposable
             try
             {
                 // Pause execution and wait for operations to complete
+                // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
                 _executionPaused = true;
-                WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).GetAwaiter().GetResult();
+                WaitForActiveOperationsAsync(TimeSpan.FromSeconds(10), CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 // Dispose components
                 _maintenanceTimer?.Dispose();
@@ -792,7 +793,7 @@ public sealed class MetalExecutionContextOptions
 public sealed class MetalExecutionOptions
 {
     public MetalOperationPriority Priority { get; set; } = MetalOperationPriority.Normal;
-    public string[]? Dependencies { get; set; }
+    public IReadOnlyList<string>? Dependencies { get; set; }
     public TimeSpan? Timeout { get; set; }
     public bool EnableProfiling { get; set; }
 

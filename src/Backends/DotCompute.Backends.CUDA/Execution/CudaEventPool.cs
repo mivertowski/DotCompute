@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// High-performance CUDA event pool with separate pools for timing and synchronization events
     /// </summary>
-    internal sealed class CudaEventPool : IDisposable
+    internal sealed partial class CudaEventPool : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger _logger;
@@ -85,8 +85,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _ = Interlocked.Increment(ref _totalEventsAcquired);
 
-                _logger.LogTrace("Acquired timing event {Event} (acquired {Count} times)",
-                    pooledEvent.Handle, pooledEvent.AcquireCount);
+                LogTimingEventAcquired(_logger, pooledEvent.Handle, pooledEvent.AcquireCount);
 
                 return pooledEvent.Handle;
             }
@@ -114,8 +113,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _ = Interlocked.Increment(ref _totalEventsAcquired);
 
-                _logger.LogTrace("Acquired sync event {Event} (acquired {Count} times)",
-                    pooledEvent.Handle, pooledEvent.AcquireCount);
+                LogSyncEventAcquired(_logger, pooledEvent.Handle, pooledEvent.AcquireCount);
 
                 return pooledEvent.Handle;
             }
@@ -155,15 +153,13 @@ namespace DotCompute.Backends.CUDA.Execution
                 targetQueue.Enqueue(pooledEvent);
                 _ = Interlocked.Increment(ref _totalEventsReturned);
 
-                _logger.LogTrace("Returned {Type} event {Event} to pool",
-                    eventType, eventHandle);
+                LogEventReturned(_logger, eventType, eventHandle);
             }
             else
             {
                 // Pool is full, destroy the event
                 DestroyPooledEvent(pooledEvent);
-                _logger.LogTrace("Destroyed excess {Type} event {Event}",
-                    eventType, eventHandle);
+                LogEventDestroyed(_logger, eventType, eventHandle);
             }
 
             _ = _poolSemaphore.Release();
@@ -217,11 +213,11 @@ namespace DotCompute.Backends.CUDA.Execution
                     // Rebalance pools if needed
                     RebalancePools();
 
-                    _logger.LogTrace("Event pool maintenance completed");
+                    LogMaintenanceCompleted(_logger);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during event pool maintenance");
+                    LogMaintenanceError(_logger, ex);
                 }
             }
         }
@@ -264,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             // No timing events available, create a new one
             var newEvent = CreateTimingEvent() ?? throw new InvalidOperationException("Failed to create new timing event for pool");
-            _logger.LogTrace("Created new timing event {Event} for pool", newEvent.Handle);
+            LogTimingEventCreated(_logger, newEvent.Handle);
             return newEvent;
         }
 
@@ -278,7 +274,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
             // No sync events available, create a new one
             var newEvent = CreateSyncEvent() ?? throw new InvalidOperationException("Failed to create new sync event for pool");
-            _logger.LogTrace("Created new sync event {Event} for pool", newEvent.Handle);
+            LogSyncEventCreated(_logger, newEvent.Handle);
             return newEvent;
         }
 
@@ -361,7 +357,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Exception destroying pooled event {Event}", pooledEvent.Handle);
+                LogEventDestructionError(_logger, ex, pooledEvent.Handle);
             }
         }
 
@@ -428,8 +424,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                 }
 
-                _logger.LogTrace("Added {Count} events to maintain minimum size for {Queue} pool",
-                    needed, queueName);
+                LogEventsAdded(_logger, needed, queueName);
             }
         }
 
@@ -442,8 +437,7 @@ namespace DotCompute.Backends.CUDA.Execution
             // If one pool is significantly larger than the other and usage suggests rebalancing
             if (Math.Abs(timingCount - syncCount) > 20)
             {
-                _logger.LogTrace("Pool imbalance detected: timing={TimingCount}, sync={SyncCount}",
-                    timingCount, syncCount);
+                LogPoolImbalance(_logger, timingCount, syncCount);
 
                 // More sophisticated rebalancing could be implemented here based on actual usage patterns
             }

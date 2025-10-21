@@ -462,14 +462,48 @@ public sealed class AffinityStatistics
     public required double LoadBalanceScore { get; init; }
 
     /// <summary>Gets the most loaded node.</summary>
-    public int MostLoadedNode => NodeDistribution.Count > 0
-        ? NodeDistribution.IndexOf(NodeDistribution.Max())
-        : 0;
+    public int MostLoadedNode
+    {
+        get
+        {
+            if (NodeDistribution.Count == 0)
+                return 0;
+
+            int maxIndex = 0;
+            int maxValue = NodeDistribution[0];
+            for (int i = 1; i < NodeDistribution.Count; i++)
+            {
+                if (NodeDistribution[i] > maxValue)
+                {
+                    maxValue = NodeDistribution[i];
+                    maxIndex = i;
+                }
+            }
+            return maxIndex;
+        }
+    }
 
     /// <summary>Gets the least loaded node.</summary>
-    public int LeastLoadedNode => NodeDistribution.Count > 0
-        ? NodeDistribution.IndexOf(NodeDistribution.Min())
-        : 0;
+    public int LeastLoadedNode
+    {
+        get
+        {
+            if (NodeDistribution.Count == 0)
+                return 0;
+
+            int minIndex = 0;
+            int minValue = NodeDistribution[0];
+            for (int i = 1; i < NodeDistribution.Count; i++)
+            {
+                if (NodeDistribution[i] < minValue)
+                {
+                    minValue = NodeDistribution[i];
+                    minIndex = i;
+                }
+            }
+            return minIndex;
+        }
+    }
 }
 
 /// <summary>

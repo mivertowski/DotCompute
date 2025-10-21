@@ -411,7 +411,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Internal memory pool for a specific size class.
         /// </summary>
-        private sealed class MemoryPool(int blockSize, int maxBlocks, ILogger logger) : IDisposable
+        private sealed class MemoryPool(int blockSize, int maxBlocks, ILogger _logger) : IDisposable
         {
             private readonly ConcurrentBag<MemoryBlock> _availableBlocks = [];
             private readonly HashSet<IntPtr> _allBlocks = [];

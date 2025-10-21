@@ -514,8 +514,8 @@ namespace DotCompute.Backends.CUDA.Execution
         public IntPtr CreateEvent(CudaEventFlags flags = CudaEventFlags.Default)
         {
             var eventHandle = flags == CudaEventFlags.Default
-                ? CreateTimingEventAsync().Result
-                : CreateSyncEventAsync().Result;
+                ? CreateTimingEventAsync().ConfigureAwait(false).GetAwaiter().GetResult()
+                : CreateSyncEventAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             return eventHandle.Handle;
         }
 

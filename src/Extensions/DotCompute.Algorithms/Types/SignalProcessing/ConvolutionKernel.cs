@@ -13,7 +13,7 @@ public sealed class ConvolutionKernel
     /// Gets or sets the coefficients.
     /// </summary>
     /// <value>The coefficients.</value>
-    public required float[] Coefficients { get; init; }
+    public required IReadOnlyList<float> Coefficients { get; init; }
     /// <summary>
     /// Gets or sets the size.
     /// </summary>

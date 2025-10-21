@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#nullable disable
+
 using Microsoft.Extensions.Logging;
 using MSLogger = Microsoft.Extensions.Logging.ILogger;
 using NuGet.Configuration;

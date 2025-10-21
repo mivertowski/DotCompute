@@ -149,7 +149,7 @@ public sealed partial class AuthenticodeValidator(ILogger<AuthenticodeValidator>
         {
             IsValid = isSystemFile, // Mock: assume system files are signed
             SignerName = isSystemFile ? "Microsoft Corporation" : "Unknown",
-            TrustLevel = isSystemFile ? TrustLevel.Trusted : TrustLevel.Unknown,
+            TrustLevel = isSystemFile ? TrustLevel.High : TrustLevel.Unknown,
             IsTrustedPublisher = isSystemFile,
             ErrorMessage = isSystemFile ? null : "No valid signature found"
         };

@@ -70,3 +70,27 @@ using System.Diagnostics.CodeAnalysis;
 // Justification: LogDisposingAsync is a LoggerMessage delegate generated method name.
 // The name matches the async disposal pattern being logged, not the method's async nature.
 [assembly: SuppressMessage("AsyncUsage.CSharp.Naming", "VSTHRD200:Avoid 'Async' suffix in names of methods that do not return an awaitable type", Justification = "LoggerMessage generated delegate - name reflects logged operation, not method signature", Scope = "member", Target = "~M:DotCompute.Abstractions.DisposalUtilities.LogDisposing(Microsoft.Extensions.Logging.ILogger,System.String)")]
+
+// CA2000: Dispose objects before losing scope
+// Most CA2000 warnings in abstractions are false positives due to interface design patterns:
+// - Factory methods and builders transfer ownership to callers
+// - Default implementations create disposable objects that callers must manage
+// - Base classes leave disposal to derived implementations
+// The abstractions define contracts; actual disposal is responsibility of concrete implementations or callers.
+[assembly: SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    Justification = "Abstractions use ownership transfer patterns. Factory methods transfer ownership to callers. Base classes delegate disposal to derived types. Interface contracts define lifecycle; implementations handle actual disposal.")]
+
+// CA1848: Use LoggerMessage delegates for high performance logging
+// Abstraction layer prioritizes simplicity and clarity for interface definitions
+[assembly: SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates",
+    Justification = "Abstraction layer prioritizes interface clarity. Concrete implementations optimize logging as needed.")]
+
+// CA1859: Use concrete types when possible for improved performance
+// Interface types are the core purpose of an abstractions assembly
+[assembly: SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance",
+    Justification = "Abstractions assembly defines interface contracts by design. Concrete types in implementation assemblies.")]
+
+// CA1852: Type can be sealed
+// Base classes and abstract types intentionally left unsealed for inheritance
+[assembly: SuppressMessage("Performance", "CA1852:Seal internal types",
+    Justification = "Base classes and abstract types designed for inheritance. Sealing would break intended usage pattern.")]

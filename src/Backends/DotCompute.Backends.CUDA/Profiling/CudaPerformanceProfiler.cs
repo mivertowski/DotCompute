@@ -747,7 +747,7 @@ namespace DotCompute.Backends.CUDA.Profiling
 
             if (_isProfilingActive)
             {
-                _ = StopProfilingAsync().Wait(TimeSpan.FromSeconds(5));
+                StopProfilingAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             if (_cuptiSubscriber != IntPtr.Zero)

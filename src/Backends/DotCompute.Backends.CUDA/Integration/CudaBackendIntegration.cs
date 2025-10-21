@@ -26,7 +26,7 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// Complete CUDA backend integration for production use with RTX 2000 Ada optimizations.
 /// Orchestrates device management, kernel execution, memory operations, and error handling.
 /// </summary>
-public sealed class CudaBackendIntegration : IDisposable
+public sealed partial class CudaBackendIntegration : IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CudaBackendIntegration> _logger;
@@ -94,7 +94,7 @@ public sealed class CudaBackendIntegration : IDisposable
         _healthCheckTimer = new Timer(PerformHealthCheck, null,
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
 
-        _logger.LogInformation("CUDA Backend Integration initialized for device {DeviceId}", context.DeviceId);
+        LogBackendInitialized(_logger, context.DeviceId);
     }
 
     #region Public Properties
@@ -404,8 +404,7 @@ public sealed class CudaBackendIntegration : IDisposable
             summary.EndTime = DateTimeOffset.UtcNow;
             summary.Success = true;
 
-            _logger.LogInformation("Backend optimization completed: {OptimizationCount} optimizations applied",
-                summary.OptimizationsApplied.Count);
+            LogOptimizationCompleted(_logger, summary.OptimizationsApplied.Count);
 
             return summary;
         }
@@ -605,11 +604,11 @@ public sealed class CudaBackendIntegration : IDisposable
 
             if (health.OverallHealth < 0.7)
             {
-                _logger.LogWarning("CUDA backend health degraded: {OverallHealth:F2}", health.OverallHealth);
+                LogBackendHealthDegraded(_logger, health.OverallHealth);
             }
             else
             {
-                _logger.LogDebug("CUDA backend health: {OverallHealth:F2}", health.OverallHealth);
+                LogBackendHealth(_logger, health.OverallHealth);
             }
 
             // Trigger maintenance if needed
@@ -620,7 +619,7 @@ public sealed class CudaBackendIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during health check");
+            LogHealthCheckError(_logger, ex);
         }
     }
 
@@ -637,11 +636,11 @@ public sealed class CudaBackendIntegration : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during memory cleanup maintenance");
+                    LogMemoryCleanupError(_logger, ex);
                 }
             });
 
-            _logger.LogInformation("CUDA backend maintenance completed");
+            LogMaintenanceCompleted(_logger);
         }
         catch (Exception ex)
         {
@@ -678,7 +677,7 @@ public sealed class CudaBackendIntegration : IDisposable
             _errorHandler?.Dispose();
             _deviceManager?.Dispose();
 
-            _logger.LogInformation("CUDA Backend Integration disposed");
+            LogBackendDisposed(_logger);
         }
     }
 }

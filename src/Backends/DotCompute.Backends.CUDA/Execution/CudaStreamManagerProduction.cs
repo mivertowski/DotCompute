@@ -24,7 +24,7 @@ internal delegate void StreamCallbackDelegate(IntPtr stream, CudaError status, I
 /// <summary>
 /// Production-grade CUDA stream manager with stream pools, priorities, callbacks, and graph capture.
 /// </summary>
-public sealed class CudaStreamManagerProduction : IDisposable
+public sealed partial class CudaStreamManagerProduction : IDisposable
 {
     private readonly ILogger<CudaStreamManagerProduction> _logger;
     private readonly CudaContext _context;
@@ -114,7 +114,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to pre-allocate stream {Index}", i);
+                LogPreAllocateStreamFailed(_logger, ex, i);
                 break;
             }
         }
@@ -309,7 +309,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to synchronize pooled stream");
+                    LogPooledStreamSyncFailed(_logger, ex);
                     // Continue with other streams - don't fail the entire operation
                 }
             }
@@ -331,7 +331,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, "Failed to synchronize graph capture stream");
+                    LogGraphCaptureSyncFailed(_logger, ex);
                     throw;
                 }
             }
@@ -607,7 +607,7 @@ public sealed class CudaStreamManagerProduction : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error destroying stream");
+            LogStreamDestroyError(_logger, ex);
         }
     }
 

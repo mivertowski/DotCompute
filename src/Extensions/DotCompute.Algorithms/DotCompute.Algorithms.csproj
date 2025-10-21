@@ -10,6 +10,8 @@
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Suppress CS8602 in generated LoggerMessage code -->
+    <NoWarn>$(NoWarn);CS8602</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

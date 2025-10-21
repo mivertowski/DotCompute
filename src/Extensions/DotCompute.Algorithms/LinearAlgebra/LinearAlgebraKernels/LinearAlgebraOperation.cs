@@ -81,12 +81,12 @@ public sealed class KernelExecutionParameters
     /// <summary>
     /// Gets or sets the global work size dimensions.
     /// </summary>
-    public ulong[] GlobalWorkSize { get; init; } = [];
+    public IReadOnlyList<ulong> GlobalWorkSize { get; init; } = Array.Empty<ulong>();
 
     /// <summary>
     /// Gets or sets the local work size dimensions.
     /// </summary>
-    public ulong[] LocalWorkSize { get; init; } = [];
+    public IReadOnlyList<ulong> LocalWorkSize { get; init; } = Array.Empty<ulong>();
 
     /// <summary>
     /// Gets or sets the work group size.

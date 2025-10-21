@@ -519,12 +519,52 @@ public sealed class SchedulingStatistics
     public required long NextTaskId { get; init; }
 
     /// <summary>Gets the most loaded node.</summary>
-    public int MostLoadedNode => QueueLengthsByNode.Count > 0
-        ? QueueLengthsByNode.IndexOf(QueueLengthsByNode.Max())
-        : 0;
+    public int MostLoadedNode
+    {
+        get
+        {
+            if (QueueLengthsByNode.Count == 0)
+            {
+                return 0;
+            }
+
+
+            var maxIndex = 0;
+            var maxValue = QueueLengthsByNode[0];
+            for (var i = 1; i < QueueLengthsByNode.Count; i++)
+            {
+                if (QueueLengthsByNode[i] > maxValue)
+                {
+                    maxValue = QueueLengthsByNode[i];
+                    maxIndex = i;
+                }
+            }
+            return maxIndex;
+        }
+    }
 
     /// <summary>Gets the least loaded node.</summary>
-    public int LeastLoadedNode => QueueLengthsByNode.Count > 0
-        ? QueueLengthsByNode.IndexOf(QueueLengthsByNode.Min())
-        : 0;
+    public int LeastLoadedNode
+    {
+        get
+        {
+            if (QueueLengthsByNode.Count == 0)
+            {
+                return 0;
+            }
+
+
+            var minIndex = 0;
+            var minValue = QueueLengthsByNode[0];
+            for (var i = 1; i < QueueLengthsByNode.Count; i++)
+            {
+                if (QueueLengthsByNode[i] < minValue)
+                {
+                    minValue = QueueLengthsByNode[i];
+                    minIndex = i;
+                }
+            }
+            return minIndex;
+        }
+    }
 }

@@ -56,7 +56,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
         _optimizer = new CpuKernelOptimizer(logger, threadPool);
         _cache = new CpuKernelCache(logger);
 
-        _logger.LogDebug("CpuCompiledKernel initialized with orchestrated components for kernel {kernelName}", definition.Name);
+        _logger.LogDebug("CpuCompiledKernel initialized with orchestrated components for kernel {KernelName}", definition.Name);
     }
     /// <summary>
     /// Gets execute asynchronously.
@@ -115,7 +115,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
     {
         ArgumentNullException.ThrowIfNull(compiledDelegate);
         _executor.SetCompiledDelegate(compiledDelegate);
-        _logger.LogDebug("Compiled delegate set for kernel {kernelName}", _definition.Name);
+        _logger.LogDebug("Compiled delegate set for kernel {KernelName}", _definition.Name);
     }
     /// <summary>
     /// Gets execute asynchronously.
@@ -164,7 +164,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
 
             if (cachedKernel != null)
             {
-                _logger.LogDebug("Using cached compiled kernel for kernel {kernelName}", _definition.Name);
+                _logger.LogDebug("Using cached compiled kernel for kernel {KernelName}", _definition.Name);
             }
 
             // Execute using the executor component
@@ -176,13 +176,13 @@ public sealed class CpuCompiledKernel : ICompiledKernel
             var metrics = _executor.GetExecutionStatistics();
             await _cache.UpdateKernelPerformanceAsync(cacheKey, metrics);
 
-            _logger.LogDebug("Kernel {kernelName} executed successfully in {executionTime:F2}ms",
+            _logger.LogDebug("Kernel {KernelName} executed successfully in {ExecutionTime:F2}ms",
                 _definition.Name, stopwatch.Elapsed.TotalMilliseconds);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Kernel execution failed for {kernelName}", _definition.Name);
+            _logger.LogError(ex, "Kernel execution failed for {KernelName}", _definition.Name);
             throw;
         }
     }
@@ -218,7 +218,7 @@ public sealed class CpuCompiledKernel : ICompiledKernel
         _optimizer?.Dispose();
         _cache?.Dispose();
 
-        _logger.LogDebug("CpuCompiledKernel disposed for kernel {kernelName}", _definition.Name);
+        _logger.LogDebug("CpuCompiledKernel disposed for kernel {KernelName}", _definition.Name);
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);

@@ -402,11 +402,10 @@ public static class SimdConversionOperations
         for (; i < vectorCount; i += 2)
         {
             // Load 2 doubles and convert to 2 floats
-            var doubleVec = AdvSimd.LoadVector128(input + i);
-            var floatVec = AdvSimd.ConvertToSingleLower(doubleVec);
-            // Store the resulting 2 floats
-            result[i] = floatVec.GetElement(0);
-            result[i + 1] = floatVec.GetElement(1);
+            // ARM NEON doesn't have a direct vector double->float conversion
+            // Use scalar conversion instead
+            result[i] = (float)input[i];
+            result[i + 1] = (float)input[i + 1];
         }
 
         // Handle remaining elements
@@ -512,7 +511,8 @@ public static class SimdConversionOperations
 
         for (; i < vectorCount; i += vectorSize)
         {
-            var floatVec = Sse.LoadLow(Sse.StaticCast<double, float>(Sse2.LoadVector128(result + i)), input + i); // Load 2 floats
+            // Load 2 floats from input
+            var floatVec = Sse.LoadVector128(input + i);
             var doubleVec = Sse2.ConvertToVector128Double(floatVec);
             Sse2.Store(result + i, doubleVec);
         }

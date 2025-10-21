@@ -517,7 +517,7 @@ public sealed partial class MetalKernelCache : IDisposable
 
         var inputBytes = Encoding.UTF8.GetBytes(inputBuilder.ToString());
         var hashBytes = SHA256.HashData(inputBytes);
-        return Convert.ToBase64String(hashBytes).Replace("/", "_").Replace("+", "-");
+        return Convert.ToBase64String(hashBytes).Replace("/", "_", StringComparison.Ordinal).Replace("+", "-", StringComparison.Ordinal);
     }
 
     /// <summary>

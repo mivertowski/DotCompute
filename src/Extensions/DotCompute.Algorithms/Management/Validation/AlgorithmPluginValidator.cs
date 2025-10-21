@@ -358,7 +358,7 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
         catch (Exception ex)
         {
             result.Errors.Add($"Plugin interface validation failed: {ex.Message}");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -387,11 +387,11 @@ public sealed partial class AlgorithmPluginValidator : IAsyncDisposable, IDispos
             if (pluginType.GetMethods().All(m => m.Name != methodName))
             {
                 result.Errors.Add($"Plugin type {pluginType.Name} missing required method: {methodName}");
-                return Task.FromResult(false);
+                return false;
             }
         }
 
-        return Task.FromResult(true);
+        return true;
     }
 
     /// <summary>

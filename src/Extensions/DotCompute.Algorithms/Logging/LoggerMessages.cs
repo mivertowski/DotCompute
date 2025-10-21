@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#nullable disable
+
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Logging;
@@ -76,7 +78,7 @@ internal static partial class LoggerMessages
         EventId = 76000,
         Level = LogLevel.Error,
         Message = "Algorithm {AlgorithmName} failed: {ErrorMessage}")]
-    public static partial void AlgorithmError(this ILogger logger, string algorithmName, string errorMessage, Exception? exception = null);
+    public static partial void AlgorithmError(this ILogger logger, string algorithmName, string errorMessage, Exception exception);
 
     [LoggerMessage(
         EventId = 76001,

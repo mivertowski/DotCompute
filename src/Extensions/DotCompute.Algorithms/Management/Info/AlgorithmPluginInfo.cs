@@ -43,13 +43,13 @@ public sealed class AlgorithmPluginInfo
     /// Gets or sets the accelerator types supported by this plugin.
     /// Determines which hardware devices can execute this algorithm.
     /// </summary>
-    public required AcceleratorType[] SupportedAccelerators { get; init; }
+    public required IReadOnlyList<AcceleratorType> SupportedAccelerators { get; init; }
 
     /// <summary>
     /// Gets or sets the type names of input data accepted by the plugin.
     /// Used for type validation and compatibility checking.
     /// </summary>
-    public required string[] InputTypes { get; init; }
+    public required IReadOnlyList<string> InputTypes { get; init; }
 
     /// <summary>
     /// Gets or sets the type name of output data produced by the plugin.

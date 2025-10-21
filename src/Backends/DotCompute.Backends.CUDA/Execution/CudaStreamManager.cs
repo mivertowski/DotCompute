@@ -622,7 +622,7 @@ namespace DotCompute.Backends.CUDA.Execution
                         .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
                         .ToArray();
 
-                    _ = Task.WaitAll(syncTasks, TimeSpan.FromSeconds(10));
+                    Task.WhenAll(syncTasks).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
@@ -859,7 +859,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// Group of streams working together
     /// </summary>
-    public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
+    public sealed class CudaStreamGroup(string name, int _capacity = 4) : IDisposable
     {
         private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;

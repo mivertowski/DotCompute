@@ -506,7 +506,7 @@ public sealed partial class MetalCommandStream : IDisposable
 
                         completedNodes[node.Id] = true;
 
-                        LogExecutionGraphNodeCompleted(_logger, node.Id.GetHashCode(), streamHandle.StreamId);
+                        LogExecutionGraphNodeCompleted(_logger, node.Id.GetHashCode(StringComparison.Ordinal), streamHandle.StreamId);
                     }
                     finally
                     {
@@ -810,11 +810,13 @@ public sealed partial class MetalCommandStream : IDisposable
             try
             {
                 // Synchronize all active streams
+                // Note: Dispose cannot be async, using ConfigureAwait to avoid deadlocks
                 var syncTasks = _activeStreams.Values
                     .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
                     .ToArray();
 
-                _ = Task.WaitAll(syncTasks, TimeSpan.FromSeconds(10));
+                // Use ConfigureAwait(false) to prevent deadlocks in SynchronizationContext
+                Task.WhenAll(syncTasks).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

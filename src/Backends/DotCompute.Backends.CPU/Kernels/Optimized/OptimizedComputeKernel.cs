@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ internal class OptimizedComputeKernel(string name, CompilationOptions options, I
 
         var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
         var outputBuffer = arguments.Arguments[1] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IUnifiedMemoryBuffer");
-        var iterations = Convert.ToInt32(arguments.Arguments[2]);
+        var iterations = Convert.ToInt32(arguments.Arguments[2], CultureInfo.InvariantCulture);
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
 

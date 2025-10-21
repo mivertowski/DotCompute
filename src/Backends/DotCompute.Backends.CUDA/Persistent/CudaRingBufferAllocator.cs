@@ -251,7 +251,7 @@ namespace DotCompute.Backends.CUDA.Persistent
         int depth,
         long elementsPerSlice,
         long sliceBytes,
-        CudaContext context,
+        CudaContext _context,
         ILogger logger) : IRingBuffer<T> where T : unmanaged
     {
         private readonly IntPtr _basePointer = basePointer;

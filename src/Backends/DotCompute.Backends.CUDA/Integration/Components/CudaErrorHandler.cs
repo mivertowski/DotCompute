@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Integration.Components;
 /// CUDA error handling and diagnostic component that provides comprehensive
 /// error analysis, recovery strategies, and diagnostic information.
 /// </summary>
-public sealed class CudaErrorHandler : IDisposable
+public sealed partial class CudaErrorHandler : IDisposable
 {
     private readonly ILogger<CudaErrorHandler> _logger;
     private readonly CudaContext _context;
@@ -45,7 +45,7 @@ public sealed class CudaErrorHandler : IDisposable
         _diagnosticsTimer = new Timer(PerformPeriodicDiagnostics, null,
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
 
-        _logger.LogDebug("CUDA error handler initialized for device {DeviceId}", context.DeviceId);
+        Log.LogErrorHandlerInitialized(_logger, context.DeviceId);
     }
 
     /// <summary>
@@ -98,14 +98,12 @@ public sealed class CudaErrorHandler : IDisposable
 
                 if (recoveryResult.Success)
                 {
-                    _logger.LogInformation("Successfully recovered from CUDA error {Error} in operation {Operation}",
-                        error, operation);
+                    Log.LogRecoverySuccess(_logger, error, operation);
                     _errorStatistics.RecordRecoverySuccess();
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to recover from CUDA error {Error} in operation {Operation}: {Message}",
-                        error, operation, recoveryResult.Message);
+                    Log.LogRecoveryFailure(_logger, error, operation, recoveryResult.Message);
                     _errorStatistics.RecordRecoveryFailure();
                 }
 
@@ -123,7 +121,7 @@ public sealed class CudaErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception during error recovery for {Error} in {Operation}", error, operation);
+                Log.LogRecoveryException(_logger, ex, error, operation);
                 _errorStatistics.RecordRecoveryFailure();
 
                 result = new CudaErrorHandlingResult
@@ -247,11 +245,11 @@ public sealed class CudaErrorHandler : IDisposable
             // Determine overall health
             overallHealth = DetermineOverallHealth(healthChecks.Values);
 
-            _logger.LogDebug("Health check completed: {OverallHealth}", overallHealth);
+            Log.LogHealthCheckCompleted(_logger, overallHealth);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during health check");
+            Log.LogHealthCheckError(_logger, ex);
             overallHealth = CudaHealthStatus.Critical;
             healthChecks.Add("Health Check Error", new HealthCheckResult
             {
@@ -285,7 +283,7 @@ public sealed class CudaErrorHandler : IDisposable
         _errorStatistics.Configure(policies.StatisticsPolicy);
         ErrorRecoveryStrategies.Configure(policies.RecoveryPolicy);
 
-        _logger.LogDebug("Error handling policies configured");
+        Log.LogPoliciesConfigured(_logger);
     }
 
     #region Private Methods
@@ -349,25 +347,22 @@ public sealed class CudaErrorHandler : IDisposable
 
     private void LogError(CudaErrorRecord errorRecord, CudaErrorSeverity severity)
     {
-        var message = "CUDA error {Error} in operation {Operation}";
-        var args = new object[] { errorRecord.Error, errorRecord.Operation };
-
         switch (severity)
         {
             case CudaErrorSeverity.Critical:
-                _logger.LogCritical(message, args);
+                Log.LogCriticalError(_logger, errorRecord.Error, errorRecord.Operation);
                 break;
             case CudaErrorSeverity.High:
-                _logger.LogError(message, args);
+                Log.LogErrorError(_logger, errorRecord.Error, errorRecord.Operation);
                 break;
             case CudaErrorSeverity.Medium:
-                _logger.LogWarning(message, args);
+                Log.LogWarningError(_logger, errorRecord.Error, errorRecord.Operation);
                 break;
             case CudaErrorSeverity.Low:
-                _logger.LogInformation(message, args);
+                Log.LogInformationError(_logger, errorRecord.Error, errorRecord.Operation);
                 break;
             default:
-                _logger.LogDebug(message, args);
+                Log.LogDebugError(_logger, errorRecord.Error, errorRecord.Operation);
                 break;
         }
     }
@@ -409,7 +404,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to query device status");
+            Log.LogDeviceStatusQueryFailed(_logger, ex);
             return new CudaDeviceStatus
             {
                 DeviceId = _context.DeviceId,
@@ -581,19 +576,17 @@ public sealed class CudaErrorHandler : IDisposable
 
             if (diagnostics.CriticalErrors > 0)
             {
-                _logger.LogWarning("Periodic diagnostics: {CriticalErrors} critical errors detected",
-                    diagnostics.CriticalErrors);
+                Log.LogPeriodicDiagnosticsCriticalErrors(_logger, (int)diagnostics.CriticalErrors);
             }
 
             if (diagnostics.RecoverySuccessRate < 0.8 && diagnostics.TotalErrors > 10)
             {
-                _logger.LogWarning("Periodic diagnostics: Low recovery success rate: {Rate:P1}",
-                    diagnostics.RecoverySuccessRate);
+                Log.LogPeriodicDiagnosticsLowRecoveryRate(_logger, diagnostics.RecoverySuccessRate);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during periodic diagnostics");
+            Log.LogPeriodicDiagnosticsError(_logger, ex);
         }
     }
 
@@ -614,7 +607,7 @@ public sealed class CudaErrorHandler : IDisposable
             _disposed = true;
             _diagnosticsTimer?.Dispose();
             _recoveryStrategies?.Dispose();
-            _logger.LogDebug("CUDA error handler disposed");
+            Log.LogErrorHandlerDisposed(_logger);
         }
     }
 }

@@ -544,9 +544,9 @@ public sealed class MetalPerformanceCounters : IDisposable
     {
         // Convert to safe counter name
         return name.ToLowerInvariant()
-            .Replace(" ", "_")
-            .Replace("-", "_")
-            .Replace(".", "_");
+            .Replace(" ", "_", StringComparison.Ordinal)
+            .Replace("-", "_", StringComparison.Ordinal)
+            .Replace(".", "_", StringComparison.Ordinal);
     }
 
     private static double GetCpuUsage()

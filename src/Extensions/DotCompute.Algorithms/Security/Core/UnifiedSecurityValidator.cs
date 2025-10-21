@@ -179,7 +179,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
                 IsValid = result.IsValid,
                 TrustLevel = result.TrustLevel,
                 SignerName = result.SignerName,
-                CertificateThumbprint = result.CertificateInfo?.Thumbprint,
+                CertificateThumbprint = result.Certificate?.Thumbprint,
                 ErrorMessage = result.ErrorMessage
             };
         }
@@ -314,18 +314,15 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
         DigitalSignatureResult? digitalSignature,
         StrongNameResult? strongName)
     {
-        var context = new SecurityEvaluationContext
-        {
-            AssemblyPath = assemblyPath,
-            AssemblyBytes = await File.ReadAllBytesAsync(assemblyPath).ConfigureAwait(false)
-        };
+        var assemblyBytes = await File.ReadAllBytesAsync(assemblyPath).ConfigureAwait(false);
 
+        X509Certificate2? certificate = null;
         // Add certificate information if available
         if (digitalSignature?.IsValid == true && digitalSignature.CertificateThumbprint != null)
         {
             try
             {
-                context.Certificate = GetCertificateFromStore(digitalSignature.CertificateThumbprint);
+                certificate = GetCertificateFromStore(digitalSignature.CertificateThumbprint);
             }
             catch
             {
@@ -333,11 +330,20 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
             }
         }
 
+        byte[]? strongNameKey = null;
         // Add strong name key if available
         if (strongName?.IsValid == true && strongName.PublicKey != null)
         {
-            context.StrongNameKey = strongName.PublicKey;
+            strongNameKey = strongName.PublicKey;
         }
+
+        var context = new SecurityEvaluationContext
+        {
+            AssemblyPath = assemblyPath,
+            AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes),
+            Certificate = certificate,
+            StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey) : null
+        };
 
         return context;
     }

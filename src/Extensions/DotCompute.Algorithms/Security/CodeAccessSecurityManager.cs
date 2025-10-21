@@ -7,6 +7,7 @@ using System.Runtime.Loader;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using DotCompute.Algorithms.Logging;
+using DotCompute.Abstractions.Security;
 
 namespace DotCompute.Algorithms.Security;
 
@@ -57,11 +58,11 @@ public sealed class CodeAccessSecurityManager : IDisposable
             // Add permissions based on security zone
             switch (securityZone)
             {
-                case SecurityZone.MyComputer:
+                case SecurityZone.LocalMachine:  // Was MyComputer
                     AddTrustedPermissions(permissionSet);
                     break;
 
-                case SecurityZone.Intranet:
+                case SecurityZone.LocalIntranet:  // Was Intranet
                     AddIntranetPermissions(permissionSet);
                     break;
 
@@ -69,7 +70,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
                     AddInternetPermissions(permissionSet);
                     break;
 
-                case SecurityZone.Untrusted:
+                case SecurityZone.RestrictedSites:  // Was Untrusted
                     AddUntrustedPermissions(permissionSet);
                     break;
 
@@ -570,36 +571,8 @@ public sealed class CodeAccessSecurityOptions
     public IList<string> AllowedNetworkEndpoints { get; } = [];
 }
 
-/// <summary>
-/// Security zones for assemblies.
-/// </summary>
-public enum SecurityZone
-{
-    /// <summary>
-    /// Unknown security zone.
-    /// </summary>
-    Unknown = -1,
-
-    /// <summary>
-    /// MyComputer zone - full trust.
-    /// </summary>
-    MyComputer = 0,
-
-    /// <summary>
-    /// Intranet zone - high trust.
-    /// </summary>
-    Intranet = 1,
-
-    /// <summary>
-    /// Internet zone - medium trust.
-    /// </summary>
-    Internet = 2,
-
-    /// <summary>
-    /// Untrusted zone - minimal trust.
-    /// </summary>
-    Untrusted = 3
-}
+// SecurityZone enum removed - using canonical version from DotCompute.Abstractions.Security
+// Mapping: MyComputer -> LocalMachine, Intranet -> LocalIntranet, Internet -> Internet, Untrusted -> RestrictedSites
 
 /// <summary>
 /// Security operations that can be validated.

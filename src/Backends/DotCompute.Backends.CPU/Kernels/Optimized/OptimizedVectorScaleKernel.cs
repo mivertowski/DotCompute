@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Numerics;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Kernels;
@@ -50,7 +51,7 @@ internal class OptimizedVectorScaleKernel(string name, CompilationOptions option
         }
 
         var inputBuffer = arguments.Arguments[0] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IUnifiedMemoryBuffer");
-        var scaleFactor = Convert.ToSingle(arguments.Arguments[1]);
+        var scaleFactor = Convert.ToSingle(arguments.Arguments[1], CultureInfo.InvariantCulture);
         var resultBuffer = arguments.Arguments[2] as IUnifiedMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IUnifiedMemoryBuffer");
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));

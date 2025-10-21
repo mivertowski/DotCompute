@@ -1118,12 +1118,12 @@ __kernel void lu_decomposition_step(
             /// Gets or sets the global work size.
             /// </summary>
             /// <value>The global work size.</value>
-            public int[] GlobalWorkSize { get; set; } = [];
+            public IReadOnlyList<int> GlobalWorkSize { get; set; } = Array.Empty<int>();
             /// <summary>
             /// Gets or sets the local work size.
             /// </summary>
             /// <value>The local work size.</value>
-            public int[] LocalWorkSize { get; set; } = [];
+            public IReadOnlyList<int> LocalWorkSize { get; set; } = Array.Empty<int>();
             /// <summary>
             /// Gets or sets the shared memory size.
             /// </summary>

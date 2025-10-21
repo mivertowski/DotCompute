@@ -516,14 +516,48 @@ public sealed class MemoryStatistics
     public required double MemoryFragmentation { get; init; }
 
     /// <summary>Gets the most used node.</summary>
-    public int MostUsedNode => NodeAllocations.Count > 0
-        ? NodeAllocations.IndexOf(NodeAllocations.Max())
-        : 0;
+    public int MostUsedNode
+    {
+        get
+        {
+            if (NodeAllocations.Count == 0)
+                return 0;
+
+            int maxIndex = 0;
+            long maxValue = NodeAllocations[0];
+            for (int i = 1; i < NodeAllocations.Count; i++)
+            {
+                if (NodeAllocations[i] > maxValue)
+                {
+                    maxValue = NodeAllocations[i];
+                    maxIndex = i;
+                }
+            }
+            return maxIndex;
+        }
+    }
 
     /// <summary>Gets the least used node.</summary>
-    public int LeastUsedNode => NodeAllocations.Count > 0
-        ? NodeAllocations.IndexOf(NodeAllocations.Min())
-        : 0;
+    public int LeastUsedNode
+    {
+        get
+        {
+            if (NodeAllocations.Count == 0)
+                return 0;
+
+            int minIndex = 0;
+            long minValue = NodeAllocations[0];
+            for (int i = 1; i < NodeAllocations.Count; i++)
+            {
+                if (NodeAllocations[i] < minValue)
+                {
+                    minValue = NodeAllocations[i];
+                    minIndex = i;
+                }
+            }
+            return minIndex;
+        }
+    }
 
     /// <summary>Gets memory distribution balance score.</summary>
     public double DistributionBalance

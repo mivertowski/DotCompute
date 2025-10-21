@@ -591,7 +591,7 @@ public sealed class Alert
     public DateTimeOffset? ResolvedAt { get; set; }
     public int OccurrenceCount { get; set; }
     public Dictionary<string, object>? Properties { get; set; }
-    public string[]? RecommendedActions { get; set; }
+    public IReadOnlyList<string>? RecommendedActions { get; set; }
     public string? Resolution { get; set; }
 }
 

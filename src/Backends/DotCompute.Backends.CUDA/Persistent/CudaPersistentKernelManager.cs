@@ -285,7 +285,7 @@ namespace DotCompute.Backends.CUDA.Persistent
             {
                 try
                 {
-                    StopKernelAsync(kernelId).GetAwaiter().GetResult();
+                    StopKernelAsync(kernelId).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
                 catch (Exception)
                 {
@@ -402,7 +402,7 @@ namespace DotCompute.Backends.CUDA.Persistent
     internal sealed class PersistentKernelHandle(
         CudaPersistentKernelManager manager,
         string kernelId,
-        CudaPersistentKernelManager.PersistentKernelState state) : IPersistentKernelHandle
+        CudaPersistentKernelManager.PersistentKernelState _state) : IPersistentKernelHandle
     {
         private readonly CudaPersistentKernelManager _manager = manager;
         private readonly string _kernelId = kernelId;
@@ -455,7 +455,7 @@ namespace DotCompute.Backends.CUDA.Persistent
         {
             try
             {
-                StopAsync().GetAwaiter().GetResult();
+                StopAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception)
             {

@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// <summary>
     /// High-performance CUDA stream pool with priority-based allocation and automatic rebalancing
     /// </summary>
-    internal sealed class CudaStreamPool : IDisposable
+    internal sealed partial class CudaStreamPool : IDisposable
     {
         private readonly CudaContext _context;
         private readonly ILogger<CudaStreamPool> _logger;
@@ -88,8 +88,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 _ = Interlocked.Increment(ref _totalAcquired);
 
-                _logger.LogTrace("Acquired stream {Stream} from {Priority} priority pool (acquired {Count} times)",
-                    pooledStream.Handle, priority, pooledStream.AcquireCount);
+                LogStreamAcquired(_logger, pooledStream.Handle, priority, pooledStream.AcquireCount);
 
                 return new PooledCudaStreamHandle(StreamId.New(), pooledStream.Handle, this, pooledStream);
             }
@@ -128,15 +127,13 @@ namespace DotCompute.Backends.CUDA.Execution
                 targetQueue.Enqueue(pooledStream);
                 _ = Interlocked.Increment(ref _totalReturned);
 
-                _logger.LogTrace("Returned stream {Stream} to {Priority} priority pool",
-                    stream, priority);
+                LogStreamReturned(_logger, stream, priority);
             }
             else
             {
                 // Pool is full, destroy the stream
                 DestroyPooledStream(pooledStream);
-                _logger.LogTrace("Destroyed excess stream {Stream} from {Priority} priority pool",
-                    stream, priority);
+                LogStreamDestroyed(_logger, stream, priority);
             }
 
             _ = _poolSemaphore.Release();
@@ -190,11 +187,11 @@ namespace DotCompute.Backends.CUDA.Execution
                     // Ensure minimum pool sizes
                     EnsureMinimumPoolSizes();
 
-                    _logger.LogTrace("Stream pool maintenance completed");
+                    LogMaintenanceCompleted(_logger);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error during stream pool maintenance");
+                    LogMaintenanceError(_logger, ex);
                 }
             }
         }
@@ -260,15 +257,14 @@ namespace DotCompute.Backends.CUDA.Execution
             {
                 if (queue.TryDequeue(out stream))
                 {
-                    _logger.LogTrace("Using fallback stream from different priority pool for {Priority} request", priority);
+                    LogStreamFallback(_logger, priority);
                     return stream;
                 }
             }
 
             // No streams available, create a new one
             var newStream = CreatePooledStream(priority) ?? throw new InvalidOperationException("Failed to create new stream for pool");
-            _logger.LogTrace("Created new stream {Stream} for {Priority} priority pool",
-                newStream.Handle, priority);
+            LogStreamCreated(_logger, newStream.Handle, priority);
 
             return newStream;
         }
@@ -335,7 +331,7 @@ namespace DotCompute.Backends.CUDA.Execution
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Exception destroying pooled stream {Stream}", pooledStream.Handle);
+                LogStreamDestructionError(_logger, ex, pooledStream.Handle);
             }
         }
 
@@ -351,7 +347,7 @@ namespace DotCompute.Backends.CUDA.Execution
                 {
                     stream.Priority = CudaStreamPriority.High;
                     _highPriorityStreams.Enqueue(stream);
-                    _logger.LogTrace("Promoted stream to high priority pool during rebalancing");
+                    LogStreamPromoted(_logger);
                 }
             }
 
@@ -421,8 +417,7 @@ namespace DotCompute.Backends.CUDA.Execution
                     }
                 }
 
-                _logger.LogTrace("Added {Count} streams to maintain minimum size for {Queue} priority pool",
-                    needed, queueName);
+                LogStreamsAdded(_logger, needed, queueName);
             }
         }
 

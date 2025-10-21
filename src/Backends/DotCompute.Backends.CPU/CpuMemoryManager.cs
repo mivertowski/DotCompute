@@ -39,8 +39,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
 
         // NUMA-aware allocation implementation
         var selectedNode = SelectOptimalNumaNode(effectivePolicy, sizeInBytes);
-        _logger.LogDebug("Selected NUMA node {Node} for {Size} bytes allocation with policy {Policy}",
-            selectedNode, sizeInBytes, effectivePolicy.Strategy);
+        _logger.LogNumaNodeSelected(selectedNode, sizeInBytes, effectivePolicy.Strategy.ToString());
 
 
         return AllocateNumaAsync(sizeInBytes, options, selectedNode, cancellationToken);
@@ -146,7 +145,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
 
         // 7. Last resort: use node 0
-        _logger.LogWarning("No suitable NUMA nodes found for allocation of {Size} bytes, using node 0", sizeInBytes);
+        _logger.LogNoSuitableNumaNodes(sizeInBytes);
         return 0;
     }
 
@@ -278,7 +277,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to get current thread NUMA node, using node 0");
+            _logger.LogFailedToGetNumaNode(ex);
             // Fallback to node 0 if detection fails
             return 0;
         }
@@ -306,7 +305,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to get per-node memory info, using fallback");
+            _logger.LogFailedToGetPerNodeMemory(ex);
             // Fallback: assume all memory is available on node 0
             result[0] = 4L * 1024 * 1024 * 1024; // 4GB fallback
         }
@@ -334,14 +333,13 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
                 await BindBufferToNumaNodeAsync(buffer, preferredNode, cancellationToken);
             }
 
-            _logger.LogDebug("Created NUMA-aware buffer: {Size} bytes on node {Node}",
-                sizeInBytes, preferredNode);
+            _logger.LogNumaBufferCreated(sizeInBytes, preferredNode);
 
             return buffer;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to create NUMA-aware buffer, falling back to default allocation");
+            _logger.LogNumaBufferCreationFailed(ex);
             return new CpuMemoryBuffer(sizeInBytes, options, this, 0, _defaultPolicy);
         }
     }
@@ -355,15 +353,14 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         {
             // In production, this would use VirtualLock (Windows) or mlock (Linux)
             // For demonstration, we mark the buffer as pinned
-            _logger.LogDebug("Pinning {Size} bytes for buffer {BufferId}",
-                buffer.SizeInBytes, buffer.GetHashCode());
+            _logger.LogPinningBuffer(buffer.SizeInBytes, buffer.GetHashCode());
 
             // Simulate memory pinning operation
             return ValueTask.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to pin buffer memory");
+            _logger.LogPinBufferFailed(ex);
             return ValueTask.CompletedTask;
         }
     }
@@ -377,14 +374,14 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         {
             // In production, this would use SetThreadAffinityMask and mbind (Linux) or
             // VirtualAllocExNuma (Windows) to bind memory to specific NUMA nodes TODO
-            _logger.LogDebug("Binding buffer to NUMA node {Node}", numaNode);
+            _logger.LogBindingBufferToNode(numaNode);
 
             // Simulate NUMA binding operation
             return ValueTask.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to bind buffer to NUMA node {Node}", numaNode);
+            _logger.LogBindBufferFailed(ex, numaNode);
             return ValueTask.CompletedTask;
         }
     }
@@ -405,12 +402,12 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
             // Create a shared view that references the parent buffer
             var view = new CpuMemoryBufferView(parent, offset, length);
 
-            _logger.LogDebug("Created shared memory view: offset={Offset}, length={Length}", offset, length);
+            _logger.LogSharedMemoryViewCreated(offset, length);
             return view;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create shared memory view");
+            _logger.LogSharedMemoryViewFailed(ex);
             throw;
         }
     }
@@ -437,7 +434,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
                 // Use high-performance memory copy
                 sourceSpan[..copyLength].CopyTo(destSpan);
 
-                _logger.LogDebug("Copied {Count} elements between CPU buffers", copyLength);
+                _logger.LogCopiedBetweenBuffers(copyLength);
             }
             else
             {
@@ -448,7 +445,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy between CPU buffers");
+            _logger.LogCopyBetweenBuffersFailed(ex);
             throw;
         }
     }
@@ -496,8 +493,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
                 var destSlice = destSpan.Slice(destinationOffset, count);
                 sourceSlice.CopyTo(destSlice);
 
-                _logger.LogDebug("Copied {Count} elements with offsets: src={SrcOffset}, dst={DstOffset}",
-                    count, sourceOffset, destinationOffset);
+                _logger.LogCopiedWithOffsets(count, sourceOffset, destinationOffset);
             }
             else
             {
@@ -508,7 +504,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy between CPU buffers with offsets");
+            _logger.LogCopyWithOffsetsFailed(ex);
             throw;
         }
     }
@@ -531,7 +527,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
 
                 sourceSpan[..copyLength].CopyTo(destination.Span);
 
-                _logger.LogDebug("Copied {Count} elements from CPU buffer to host memory", copyLength);
+                _logger.LogCopiedToHost(copyLength);
             }
             else
             {
@@ -542,7 +538,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy from CPU buffer to host memory");
+            _logger.LogCopyToHostFailed(ex);
             throw;
         }
     }
@@ -565,7 +561,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
 
                 source.Span[..copyLength].CopyTo(destSpan);
 
-                _logger.LogDebug("Copied {Count} elements from host memory to CPU buffer", copyLength);
+                _logger.LogCopiedFromHost(copyLength);
             }
             else
             {
@@ -576,7 +572,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy from host memory to CPU buffer");
+            _logger.LogCopyFromHostFailed(ex);
             throw;
         }
     }
@@ -611,7 +607,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create typed buffer view");
+            _logger.LogTypedBufferViewFailed(ex);
             throw;
         }
     }
@@ -627,7 +623,7 @@ public sealed class CpuMemoryManager(ILogger<CpuMemoryManager> logger, NumaMemor
     private ValueTask<IUnifiedMemoryBuffer> AllocateNumaAsync(long sizeInBytes, MemoryOptions options, int numaNode, CancellationToken cancellationToken)
     {
         // Delegate to existing allocation with NUMA node hint
-        _logger.LogDebug("Allocating {Size} bytes on NUMA node {Node}", sizeInBytes, numaNode);
+        _logger.LogAllocatingOnNode(sizeInBytes, numaNode);
         return AllocateAsync(sizeInBytes, options, cancellationToken);
     }
 }

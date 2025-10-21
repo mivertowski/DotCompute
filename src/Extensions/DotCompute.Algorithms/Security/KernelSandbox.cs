@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#nullable disable
+
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -907,7 +909,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            LogErrorUpdatingResourceUsage(ex);
+            _logger.LogWarning(ex, "Error updating resource usage");
         }
     }
 

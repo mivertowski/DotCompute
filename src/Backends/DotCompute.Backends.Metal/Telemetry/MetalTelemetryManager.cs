@@ -583,7 +583,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         }
 
         // Memory recommendations
-        var memoryMetrics = snapshot.ResourceMetrics.Values.FirstOrDefault(m => m.ResourceName.Contains("memory"));
+        var memoryMetrics = snapshot.ResourceMetrics.Values.FirstOrDefault(m => m.ResourceName.Contains("memory", StringComparison.OrdinalIgnoreCase));
         if (memoryMetrics != null && memoryMetrics.UtilizationPercentage > 85)
         {
             recommendations.Add($"High memory utilization ({memoryMetrics.UtilizationPercentage:F1}%). Consider implementing memory pooling or reducing allocation sizes.");

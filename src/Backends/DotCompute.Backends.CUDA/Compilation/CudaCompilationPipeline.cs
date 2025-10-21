@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// Coordinates the overall CUDA kernel compilation pipeline.
 /// Orchestrates source preparation, validation, compilation target selection, and caching.
 /// </summary>
-internal sealed class CudaCompilationPipeline
+internal sealed partial class CudaCompilationPipeline
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -97,7 +97,7 @@ internal sealed class CudaCompilationPipeline
         ArgumentNullException.ThrowIfNull(definition);
 
         var stopwatch = Stopwatch.StartNew();
-        _logger.LogDebug("Starting compilation pipeline for kernel {KernelName}", definition.Name);
+        LogPipelineStart(_logger, definition.Name);
 
         try
         {
@@ -105,9 +105,7 @@ internal sealed class CudaCompilationPipeline
             var cacheKey = CudaCompilationCache.GenerateCacheKey(definition, options);
             if (_cache.TryGetCachedKernel(cacheKey, out var cachedKernel, out var metadata))
             {
-                _logger.LogDebug("Using cached kernel {KernelName} (access count: {AccessCount})",
-
-                    definition.Name, metadata?.AccessCount ?? 0);
+                LogCachedKernel(_logger, definition.Name, metadata?.AccessCount ?? 0);
                 return cachedKernel!; // Non-null when TryGetCachedKernel returns true
             }
 
@@ -126,15 +124,13 @@ internal sealed class CudaCompilationPipeline
             {
                 foreach (var warning in validationResult.Warnings)
                 {
-                    _logger.LogWarning("Source warning in kernel '{KernelName}': {Warning}", source.Name, warning);
+                    LogSourceWarning(_logger, source.Name, warning);
                 }
             }
 
             // Phase 4: Determine compilation target (PTX vs CUBIN)
             var compilationTarget = DetermineCompilationTarget(options);
-            _logger.LogDebug("Selected compilation target: {Target} for kernel {KernelName}",
-
-                compilationTarget, source.Name);
+            LogCompilationTarget(_logger, compilationTarget, source.Name);
 
             // Phase 5: Compile kernel
             byte[] compiledCode;
@@ -156,7 +152,7 @@ internal sealed class CudaCompilationPipeline
             // Phase 6: Verify compiled code
             if (!CudaCompilerValidator.VerifyCompiledCode(compiledCode, source.Name, _logger))
             {
-                _logger.LogWarning("Compiled code verification failed for kernel '{KernelName}'", source.Name);
+                LogVerificationFailed(_logger, source.Name);
             }
 
             // Phase 7: Create compiled kernel object
@@ -172,18 +168,14 @@ internal sealed class CudaCompilationPipeline
             await _cache.CacheKernelAsync(cacheKey, compiledKernel, definition, options).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Successfully compiled kernel {KernelName} in {ElapsedMs}ms using {Target}",
-
-                definition.Name, stopwatch.ElapsedMilliseconds, compilationTarget);
+            LogCompilationSuccess(_logger, definition.Name, stopwatch.ElapsedMilliseconds, compilationTarget);
 
             return compiledKernel;
         }
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Compilation pipeline failed for kernel {KernelName} after {ElapsedMs}ms",
-
-                definition.Name, stopwatch.ElapsedMilliseconds);
+            LogCompilationFailure(_logger, ex, definition.Name, stopwatch.ElapsedMilliseconds);
             throw new KernelCompilationException($"Compilation pipeline failed for kernel '{definition.Name}'", ex);
         }
     }
@@ -210,7 +202,7 @@ internal sealed class CudaCompilationPipeline
             return Array.Empty<CudaCompiledKernel>();
         }
 
-        _logger.LogInformation("Starting batch compilation of {KernelCount} kernels", definitions.Length);
+        LogBatchStart(_logger, definitions.Length);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -235,16 +227,14 @@ internal sealed class CudaCompilationPipeline
             var results = await Task.WhenAll(compilationTasks).ConfigureAwait(false);
 
             stopwatch.Stop();
-            _logger.LogInformation("Completed batch compilation of {KernelCount} kernels in {ElapsedMs}ms",
-
-                definitions.Length, stopwatch.ElapsedMilliseconds);
+            LogBatchSuccess(_logger, definitions.Length, stopwatch.ElapsedMilliseconds);
 
             return results;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Batch compilation failed after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            LogBatchFailure(_logger, ex, stopwatch.ElapsedMilliseconds);
             throw;
         }
     }
@@ -438,7 +428,7 @@ internal sealed class CudaCompilationPipeline
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to determine optimal compilation target, defaulting to PTX");
+            LogTargetSelectionFailed(_logger, ex);
             return CompilationTarget.PTX;
         }
     }
@@ -483,7 +473,7 @@ internal sealed class CudaCompilationPipeline
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to clean up compilation pipeline resources");
+            LogCleanupFailed(_logger, ex);
         }
     }
 }

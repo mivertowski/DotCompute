@@ -250,7 +250,7 @@ namespace DotCompute.Backends.CUDA
             {
                 if (accelerator != null)
                 {
-                    accelerator.DisposeAsync().AsTask().Wait();
+                    accelerator.DisposeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
                 }
             }
 

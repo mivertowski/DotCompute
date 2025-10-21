@@ -685,7 +685,7 @@ namespace DotCompute.Backends.CUDA.Execution
 
                 try
                 {
-                    _ = Task.WaitAll([.. completionTasks], timeout);
+                    Task.WhenAll(completionTasks).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
