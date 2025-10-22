@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     /// to query GPU hardware capabilities, memory configuration, and supported features.
     /// Values are typically queried using cuDeviceGetAttribute or similar API calls.
     /// </remarks>
-    public enum CudaDeviceAttribute : uint
+    public enum CudaDeviceAttribute : int
     {
         /// <summary>
         /// Maximum number of threads per block. Typical values: 512, 1024.

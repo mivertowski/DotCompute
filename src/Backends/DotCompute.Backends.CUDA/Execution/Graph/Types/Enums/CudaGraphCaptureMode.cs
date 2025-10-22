@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     /// The capture mode determines how the graph interacts with other CUDA operations
     /// during the capture process, affecting thread safety and operation restrictions.
     /// </remarks>
-    public enum CudaGraphCaptureMode : uint
+    public enum CudaGraphCaptureMode : int
     {
         /// <summary>
         /// Global capture mode where all CUDA operations across all threads in the process

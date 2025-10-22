@@ -983,7 +983,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A dim3 structure.
         /// </summary>
 
-        public struct Dim3(int x, int y, int z)
+        public struct Dim3(int x, int y, int z) : IEquatable<Dim3>
         {
             /// <summary>
             /// Gets or sets the x.
@@ -1010,7 +1010,12 @@ namespace DotCompute.Backends.CUDA.Optimization
             /// <summary>
             /// Determines whether the specified object is equal to the current Dim3.
             /// </summary>
-            public override bool Equals(object? obj) => obj is Dim3 other && X == other.X && Y == other.Y && Z == other.Z;
+            public override bool Equals(object? obj) => obj is Dim3 other && Equals(other);
+
+            /// <summary>
+            /// Determines whether this instance is equal to another Dim3.
+            /// </summary>
+            public bool Equals(Dim3 other) => X == other.X && Y == other.Y && Z == other.Z;
 
             /// <summary>
             /// Returns the hash code for this Dim3.

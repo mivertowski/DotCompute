@@ -93,7 +93,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 // Check if we have enough space
                 if (_totalAllocated + alignedSize > _maxPinnedMemory)
                 {
-                    throw new OutOfMemoryException(
+                    throw new InvalidOperationException(
                         $"Cannot allocate {alignedSize:N0} bytes of pinned memory. " +
                         $"Current: {_totalAllocated:N0}, Max: {_maxPinnedMemory:N0}");
                 }

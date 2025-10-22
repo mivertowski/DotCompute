@@ -176,7 +176,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
 
     // Cache configuration
     private static readonly TimeSpan _cacheExpirationTime = TimeSpan.FromDays(7);
-    private static readonly int _maxCacheEntries = 1000;
+    private const int _maxCacheEntries = 1000;
 
     // Cached JsonSerializerOptions to avoid CA1869
     private static readonly JsonSerializerOptions _jsonOptions = new()

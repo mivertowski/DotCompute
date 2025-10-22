@@ -93,7 +93,7 @@ namespace DotCompute.Backends.CUDA.Memory
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _device = device ?? new CudaDevice(context.DeviceId, logger);
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger;
             _allocations = new ConcurrentDictionary<IntPtr, long>();
             _pinnedAllocator = new CudaPinnedMemoryAllocator(context, logger);
 

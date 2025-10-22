@@ -177,7 +177,7 @@ public sealed class AutoTuner : IDisposable
     /// </summary>
     public readonly struct PerformanceMeasurement(Dictionary<string, object> parameters,
 
-        double performance, TimeSpan executionTime, double standardDeviation)
+        double performance, TimeSpan executionTime, double standardDeviation) : IEquatable<PerformanceMeasurement>
     {
         /// <summary>
         /// Gets the parameters.
@@ -461,9 +461,9 @@ public sealed class AutoTuner : IDisposable
 
             foreach (var (name, range) in ranges)
             {
-                if (parameters.ContainsKey(name))
+                if (parameters.TryGetValue(name, out var value))
                 {
-                    parameters[name] = PerturbParameter(parameters[name], range);
+                    parameters[name] = PerturbParameter(value, range);
                 }
             }
 

@@ -201,7 +201,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
             var devices = _deviceManager.Devices;
-            LogEnumeratingDevices(devices.Count());
+            LogEnumeratingDevices(devices.Count);
 
             var accelerators = new List<ProductionCudaAccelerator>();
 
@@ -569,7 +569,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
 
-            if (devices.Count() > 1)
+            if (devices.Count > 1)
             {
                 features.Add("Multi-GPU");
             }

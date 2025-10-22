@@ -744,7 +744,7 @@ public enum StreamPriority
 /// Stream creation flags.
 /// </summary>
 [Flags]
-public enum StreamFlags : uint
+public enum StreamFlags : int
 {
     Default = 0x00,
     NonBlocking = 0x01

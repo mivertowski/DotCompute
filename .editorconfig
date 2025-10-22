@@ -244,6 +244,8 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1720.severity = none
 # CA1711: Identifiers should not have incorrect suffix (Stream, Flags are native naming)
 dotnet_diagnostic.CA1711.severity = none
+# CA1051: Public instance fields required for P/Invoke marshaling
+dotnet_diagnostic.CA1051.severity = none
 # CA1028: Enum storage should be Int32 (native enums need specific backing types)
 dotnet_diagnostic.CA1028.severity = none
 # CA1008: Enums should have zero value (native enums match C/C++ definitions)
@@ -252,6 +254,8 @@ dotnet_diagnostic.CA1008.severity = none
 dotnet_diagnostic.CA1700.severity = none
 # CA1815: Equals and operator overloads (P/Invoke structs rarely need comparison)
 dotnet_diagnostic.CA1815.severity = none
+# CA1027: Enums don't need [Flags] (sequential IDs, not bitwise flags)
+dotnet_diagnostic.CA1027.severity = none
 
 [**/Monitoring/NvmlWrapper.cs]
 dotnet_diagnostic.CA1707.severity = none
@@ -271,3 +275,14 @@ dotnet_diagnostic.CA1815.severity = none
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1720.severity = none
 dotnet_diagnostic.CA1815.severity = none
+
+# CUDA Backend - Native API terminology (data types, Flags, Stream suffixes are standard)
+# CA1708: P/Invoke structs legitimately have both native fields (PciDeviceID) and C# wrappers (PciDeviceId)
+[**/DotCompute.Backends.CUDA/**.cs]
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1708.severity = none
+
+# Metal Backend - Native API terminology (Flags, Stream suffixes are standard)
+[**/DotCompute.Backends.Metal/**.cs]
+dotnet_diagnostic.CA1711.severity = none

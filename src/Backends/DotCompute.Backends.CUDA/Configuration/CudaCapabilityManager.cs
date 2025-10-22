@@ -82,15 +82,9 @@ namespace DotCompute.Backends.CUDA.Configuration
         private static partial void LogCacheCleared(ILogger logger);
 
         #endregion
-        private static readonly ILogger _logger;
+        private static readonly ILogger _logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("CudaCapabilityManager");
         private static (int major, int minor)? _cachedCapability;
         private static readonly object _lock = new();
-
-        static CudaCapabilityManager()
-        {
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = loggerFactory.CreateLogger("CudaCapabilityManager");
-        }
 
         /// <summary>
         /// Gets the target compute capability for compilation, with appropriate capping for driver compatibility.

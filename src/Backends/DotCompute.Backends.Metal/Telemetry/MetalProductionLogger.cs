@@ -447,7 +447,7 @@ public sealed partial class MetalProductionLogger : IDisposable
         {
             ["operation"] = "stack_trace",
             ["stack_trace"] = stackTrace,
-            ["thread_id"] = Thread.CurrentThread.ManagedThreadId,
+            ["thread_id"] = Environment.CurrentManagedThreadId,
             ["process_id"] = Environment.ProcessId
         };
 
@@ -471,7 +471,7 @@ public sealed partial class MetalProductionLogger : IDisposable
         properties["timestamp"] = DateTimeOffset.UtcNow;
         properties["machine_name"] = Environment.MachineName;
         properties["process_id"] = Environment.ProcessId;
-        properties["thread_id"] = Thread.CurrentThread.ManagedThreadId;
+        properties["thread_id"] = Environment.CurrentManagedThreadId;
 
         var logEntry = new StructuredLogEntry
         {

@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     /// determines how the 64KB of on-chip memory is partitioned between the two.
     /// The actual configuration used depends on device capabilities and kernel requirements.
     /// </remarks>
-    public enum CudaCacheConfig : uint
+    public enum CudaCacheConfig : int
     {
         /// <summary>
         /// No preference for cache configuration. Uses device default.
@@ -49,7 +49,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     /// serializing the accesses. Proper bank size selection can reduce conflicts
     /// based on the data access patterns in your kernel.
     /// </remarks>
-    public enum CudaSharedMemConfig : uint
+    public enum CudaSharedMemConfig : int
     {
         /// <summary>
         /// Use default shared memory bank size (device-dependent).
@@ -81,7 +81,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types.Enums
     /// Limits are set per-device and affect kernel execution characteristics.
     /// Use cuCtxSetLimit or cudaDeviceSetLimit to configure these values.
     /// </remarks>
-    public enum CudaLimit : uint
+    public enum CudaLimit : int
     {
         /// <summary>
         /// Stack size in bytes for each GPU thread.
