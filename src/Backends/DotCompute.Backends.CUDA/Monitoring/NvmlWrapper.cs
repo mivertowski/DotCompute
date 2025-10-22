@@ -297,9 +297,11 @@ namespace DotCompute.Backends.CUDA.Monitoring
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlShutdown();
 
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlSystemGetNVMLVersion(StringBuilder version, uint length);
+#pragma warning restore CA2101
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]

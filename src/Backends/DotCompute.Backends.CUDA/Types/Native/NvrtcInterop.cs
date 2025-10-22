@@ -40,7 +40,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Creates a compilation program from source code.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcCreateProgram(
             out IntPtr prog,
@@ -60,7 +60,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Compiles the program with specified options.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcCompileProgram(
             IntPtr prog,
@@ -277,7 +277,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Adds a name expression to track during compilation.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression);
@@ -285,7 +285,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Gets the lowered (mangled) name for a name expression.
         /// </summary>
-        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         internal static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression,

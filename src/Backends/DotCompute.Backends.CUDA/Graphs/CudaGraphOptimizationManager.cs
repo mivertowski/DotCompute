@@ -66,7 +66,7 @@ namespace DotCompute.Backends.CUDA.Graphs
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphDebugDotPrint(
-            IntPtr graph, string path, uint flags);
+            IntPtr graph, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint flags);
 
         [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
