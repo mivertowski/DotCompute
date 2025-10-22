@@ -856,6 +856,7 @@ namespace DotCompute.Backends.CUDA.Execution
     /// </summary>
     public sealed class CudaStreamGroup(string name, int capacity = 4) : IDisposable
     {
+        private readonly int _capacity = capacity; // Reserved for future use
         private readonly ConcurrentDictionary<StreamId, IntPtr> _streams = new();
         private volatile bool _disposed;
         /// <summary>

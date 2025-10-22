@@ -361,6 +361,16 @@ public sealed class MetalCommandEncoder : IDisposable
             var stats = GetEncodingStats();
             _logger.LogTrace("Disposed Metal command encoder: {CommandCount} commands encoded, duration: {Duration}ms",
                 stats.TotalCommands, stats.EncodingDuration?.TotalMilliseconds ?? 0);
+
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    ~MetalCommandEncoder()
+    {
+        if (!_disposed && _encoder != IntPtr.Zero)
+        {
+            MetalNative.ReleaseEncoder(_encoder);
         }
     }
 }

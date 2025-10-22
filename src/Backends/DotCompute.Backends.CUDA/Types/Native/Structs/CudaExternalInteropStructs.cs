@@ -37,13 +37,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint flags;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalMemoryHandleDesc left, CudaExternalMemoryHandleDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalMemoryHandleDesc left, CudaExternalMemoryHandleDesc right) => !(left == right);
 
     }
 
@@ -66,13 +62,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint flags;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalMemoryBufferDesc left, CudaExternalMemoryBufferDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalMemoryBufferDesc left, CudaExternalMemoryBufferDesc right) => !(left == right);
 
     }
 
@@ -103,13 +95,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint numLevels;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalMemoryMipmappedArrayDesc left, CudaExternalMemoryMipmappedArrayDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalMemoryMipmappedArrayDesc left, CudaExternalMemoryMipmappedArrayDesc right) => !(left == right);
 
     }
 
@@ -140,13 +128,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint flags;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalSemaphoreHandleDesc left, CudaExternalSemaphoreHandleDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalSemaphoreHandleDesc left, CudaExternalSemaphoreHandleDesc right) => !(left == right);
 
     }
 
@@ -174,13 +158,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
         public uint[] reserved;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalSemaphoreSignalParams left, CudaExternalSemaphoreSignalParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalSemaphoreSignalParams left, CudaExternalSemaphoreSignalParams right) => !(left == right);
 
     }
 
@@ -208,13 +188,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
         public uint[] reserved;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalSemaphoreWaitParams left, CudaExternalSemaphoreWaitParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalSemaphoreWaitParams left, CudaExternalSemaphoreWaitParams right) => !(left == right);
 
     }
 
@@ -237,13 +213,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint numExtSems;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaExternalSemaphoreSignalNodeParams left, CudaExternalSemaphoreSignalNodeParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaExternalSemaphoreSignalNodeParams left, CudaExternalSemaphoreSignalNodeParams right) => !(left == right);
 
     }
 
@@ -297,7 +269,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if equal; otherwise, false.</returns>
-        public static bool operator ==(CudaExternalSemaphoreWaitNodeParams left, CudaExternalSemaphoreWaitNodeParams right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two CudaExternalSemaphoreWaitNodeParams instances are not equal.
@@ -305,6 +276,5 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         /// <returns>True if not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaExternalSemaphoreWaitNodeParams left, CudaExternalSemaphoreWaitNodeParams right) => !left.Equals(right);
     }
 }

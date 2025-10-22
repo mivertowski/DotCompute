@@ -104,7 +104,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <value>The accelerator.</value>
 
         // Additional interface properties
-        public IAccelerator Accelerator => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
+        public IAccelerator Accelerator => _parentBuffer.Accelerator;
         /// <summary>
         /// Gets or sets a value indicating whether on host.
         /// </summary>

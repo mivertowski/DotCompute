@@ -278,7 +278,8 @@ public sealed class MetalAccelerator : BaseAccelerator
             MetalNative.ReleaseDevice(_device);
         }
 
-        await ValueTask.CompletedTask;
+        // Call base class disposal
+        await base.DisposeCoreAsync().ConfigureAwait(false);
     }
 
     private void PerformCleanup(object? state)

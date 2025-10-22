@@ -66,7 +66,7 @@ public sealed partial class MetalExecutionContext : IDisposable, IAsyncDisposabl
         _recentMetrics = new ConcurrentQueue<MetalExecutionMetrics>();
 
         // Initialize performance collector
-        _performanceCollector = new MetalPerformanceCollector(_logger, contextOptions);
+        _performanceCollector = new MetalPerformanceCollector(contextOptions);
 
         // Setup maintenance timer
         _maintenanceTimer = new Timer(PerformMaintenance, null,
@@ -904,7 +904,7 @@ public sealed class MetalExecutionStatistics
     public Dictionary<MetalResourceType, int> ResourceBreakdown { get; } = [];
     public MetalStreamStatistics? StreamStatistics { get; set; }
     public MetalEventStatistics? EventStatistics { get; set; }
-    public IReadOnlyDictionary<MetalError, MetalErrorHandler.ErrorStatistics>? ErrorStatistics { get; set; }
+    public IReadOnlyDictionary<MetalError, MetalErrorStatistics>? ErrorStatistics { get; set; }
     public Dictionary<string, object> PerformanceMetrics { get; } = [];
 }
 
@@ -922,7 +922,7 @@ public sealed class MetalHealthCheckResult
 /// <summary>
 /// Performance metrics collector
 /// </summary>
-internal sealed class MetalPerformanceCollector(ILogger logger, MetalExecutionContextOptions options) : IDisposable
+internal sealed class MetalPerformanceCollector(MetalExecutionContextOptions options) : IDisposable
 {
     private readonly MetalExecutionContextOptions _options = options;
     private readonly ConcurrentDictionary<string, object> _metrics = new();

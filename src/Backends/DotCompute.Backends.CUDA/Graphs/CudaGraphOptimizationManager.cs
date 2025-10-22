@@ -19,51 +19,65 @@ namespace DotCompute.Backends.CUDA.Graphs
         private bool _disposed;
 
         // CUDA API imports
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphCreate(out IntPtr graph, uint flags);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphInstantiate(
             out IntPtr graphExec, IntPtr graph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphLaunch(IntPtr graphExec, IntPtr stream);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphDestroy(IntPtr graph);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphExecDestroy(IntPtr graphExec);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaStreamBeginCapture(IntPtr stream, CudaGraphCaptureMode mode);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaStreamEndCapture(IntPtr stream, out IntPtr graph);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphExecUpdate(
             IntPtr hGraphExec, IntPtr hGraph, IntPtr hErrorNode, out CudaGraphExecUpdateResult updateResult);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphGetNodes(
             IntPtr graph, IntPtr nodes, out ulong numNodes);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphGetEdges(
             IntPtr graph, IntPtr from, IntPtr to, out ulong numEdges);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphDebugDotPrint(
             IntPtr graph, string path, uint flags);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphClone(out IntPtr clonedGraph, IntPtr originalGraph);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphNodeGetType(
             IntPtr node, out CudaGraphNodeType type);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaGraphExecGetFlags(
             IntPtr graphExec, out ulong flags);

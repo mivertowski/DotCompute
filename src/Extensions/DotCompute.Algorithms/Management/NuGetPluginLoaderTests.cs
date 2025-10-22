@@ -260,7 +260,8 @@ namespace DotCompute.Algorithms.Management
             // Test cache clearing
             _logger.LogInfoMessage("Testing cache clearing - removing packages older than 1 second");
             await Task.Delay(1100); // Wait a bit
-            await loader.ClearCacheAsync(TimeSpan.FromSeconds(1));
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await loader.ClearCacheAsync(cts.Token);
 
             var remainingCached = loader.GetCachedPackages();
             _logger.LogInfoMessage($"Cache cleared - remaining packages: {remainingCached.Count}");
@@ -283,7 +284,12 @@ namespace DotCompute.Algorithms.Management
             try
             {
                 var result = await loader.LoadPackageAsync(packagePath, "net9.0");
-                _logger.LogInfoMessage($"Package loaded with security validation - Result: {result.SecurityValidationResult ?? "No security issues"}, Warnings: {result.Warnings.Count}");
+                var securityMessage = result.SecurityValidationResult?.IsValid == true
+                    ? "Security validation passed"
+                    : result.SecurityValidationResult?.IsValid == false
+                        ? $"Security validation failed: {string.Join(", ", result.SecurityValidationResult.Errors)}"
+                        : "No security validation performed";
+                _logger.LogInfoMessage($"Package loaded with security validation - Result: {securityMessage}, Warnings: {result.Warnings.Count}");
 
                 foreach (var warning in result.Warnings)
                 {

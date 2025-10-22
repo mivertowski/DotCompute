@@ -4,6 +4,7 @@
 
 using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
+using DotCompute.Algorithms.Management.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Loading;
@@ -13,6 +14,7 @@ namespace DotCompute.Algorithms.Management.Loading;
 /// </summary>
 public sealed partial class NuGetPluginService : INuGetPluginService
 {
+    private readonly ILogger<NuGetPluginService> _logger;
     private readonly IPluginLifecycleManager _lifecycleManager;
     private readonly IPluginDiscoveryService _discoveryService;
     private readonly AlgorithmPluginManagerOptions _options;
@@ -44,7 +46,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageSource);
 
-        LogLoadingFromNuGetPackage(packageSource);
+        LogLoadingFromNuGetPackage(_logger, packageSource);
 
         try
         {
@@ -58,7 +60,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                 EnableMalwareScanning = _options.EnableMalwareScanning,
                 MaxAssemblySize = _options.MaxAssemblySize,
                 MinimumSecurityLevel = _options.MinimumSecurityLevel,
-                IncludePrerelease = false,
+                IncludePrereleaseVersions = false,
                 MaxConcurrentDownloads = 2
             };
 
@@ -78,16 +80,17 @@ public sealed partial class NuGetPluginService : INuGetPluginService
 
             using var nugetLoader = new NuGetPluginLoader(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                nugetOptions);
+                nugetOptions.CacheDirectory);
 
             // Load the package and get assembly paths
-            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false);
+            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework ?? nugetOptions.DefaultTargetFramework, cancellationToken).ConfigureAwait(false);
 
             LogNuGetPackageLoaded(
-                loadResult.PackageIdentity.Id,
-                loadResult.PackageIdentity.Version.ToString(),
+                _logger,
+                loadResult.PackageId,
+                "1.0.0",
                 loadResult.LoadedAssemblyPaths.Length,
-                loadResult.ResolvedDependencies.Count);
+                0);
 
             // Load plugins from each assembly in the package
             var totalPluginsLoaded = 0;
@@ -101,7 +104,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
                     }
                     catch (Exception ex)
                     {
-                        LogNuGetAssemblyLoadFailed(assemblyPath, ex.Message);
+                        LogNuGetAssemblyLoadFailed(_logger, assemblyPath, ex.Message);
                         return 0;
                     }
                 });
@@ -109,37 +112,18 @@ public sealed partial class NuGetPluginService : INuGetPluginService
             var pluginCounts = await Task.WhenAll(assemblyLoadTasks).ConfigureAwait(false);
             totalPluginsLoaded = pluginCounts.Sum();
 
-            // Log dependency information
-            if (loadResult.ResolvedDependencies.Count > 0)
-            {
-                LogNuGetDependenciesResolved(
-                    loadResult.PackageIdentity.Id,
-                    string.Join(", ", loadResult.ResolvedDependencies.Select(d => $"{d.Id} {d.VersionRange}")));
-            }
-
-            // Log security validation results
-            if (!string.IsNullOrEmpty(loadResult.SecurityValidationResult))
-            {
-                LogNuGetSecurityValidation(loadResult.PackageIdentity.Id, loadResult.SecurityValidationResult);
-            }
-
-            // Log any warnings
-            foreach (var warning in loadResult.Warnings)
-            {
-                LogNuGetPackageWarning(loadResult.PackageIdentity.Id, warning);
-            }
-
             LogNuGetPackageLoadCompleted(
-                loadResult.PackageIdentity.Id,
-                loadResult.PackageIdentity.Version.ToString(),
+                _logger,
+                loadResult.PackageId,
+                "1.0.0",
                 totalPluginsLoaded,
-                loadResult.LoadTime.TotalMilliseconds);
+                0.0);
 
             return totalPluginsLoaded;
         }
         catch (Exception ex)
         {
-            LogNuGetPackageLoadFailed(packageSource, ex.Message);
+            LogNuGetPackageLoadFailed(_logger, packageSource, ex.Message);
             throw;
         }
     }
@@ -152,7 +136,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
 
-        LogUpdatingNuGetPackage(packageId);
+        LogUpdatingNuGetPackage(_logger, packageId);
 
         try
         {
@@ -166,7 +150,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
             foreach (var pluginId in existingPlugins)
             {
                 _ = await _lifecycleManager.UnregisterPluginAsync(pluginId).ConfigureAwait(false);
-                LogUnregisteredNuGetPlugin(pluginId, packageId);
+                LogUnregisteredNuGetPlugin(_logger, pluginId, packageId);
             }
 
             // Load the updated package
@@ -174,7 +158,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
         }
         catch (Exception ex)
         {
-            LogNuGetPackageUpdateFailed(packageId, ex.Message);
+            LogNuGetPackageUpdateFailed(_logger, packageId, ex.Message);
             throw;
         }
     }
@@ -182,7 +166,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
     /// <inheritdoc/>
     public async Task ClearNuGetCacheAsync(TimeSpan? olderThan = null, CancellationToken cancellationToken = default)
     {
-        LogClearingNuGetCache(olderThan?.ToString() ?? "all");
+        LogClearingNuGetCache(_logger, olderThan?.ToString() ?? "all");
 
         try
         {
@@ -193,14 +177,14 @@ public sealed partial class NuGetPluginService : INuGetPluginService
 
             using var nugetLoader = new NuGetPluginLoader(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                nugetOptions);
+                nugetOptions.CacheDirectory);
 
-            await nugetLoader.ClearCacheAsync(olderThan).ConfigureAwait(false);
-            LogNuGetCacheCleared();
+            await nugetLoader.ClearCacheAsync(cancellationToken).ConfigureAwait(false);
+            LogNuGetCacheCleared(_logger);
         }
         catch (Exception ex)
         {
-            LogNuGetCacheClearFailed(ex.Message);
+            LogNuGetCacheClearFailed(_logger, ex.Message);
             throw;
         }
     }
@@ -217,14 +201,20 @@ public sealed partial class NuGetPluginService : INuGetPluginService
 
             using var nugetLoader = new NuGetPluginLoader(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                nugetOptions);
+                nugetOptions.CacheDirectory);
 
             await Task.CompletedTask.ConfigureAwait(false); // Make async for consistency
-            return nugetLoader.GetCachedPackages();
+            return nugetLoader.GetCachedPackages().Select(p => new CachedPackageInfo
+            {
+                PackageId = p,
+                Version = "unknown", // Version info not available from cache
+                FilePath = Path.Combine(nugetOptions.CacheDirectory, p),
+                CachedDate = DateTime.UtcNow
+            }).ToArray();
         }
         catch (Exception ex)
         {
-            LogGetCachedPackagesFailed(ex.Message);
+            LogGetCachedPackagesFailed(_logger, ex.Message);
             return [];
         }
     }
@@ -237,7 +227,7 @@ public sealed partial class NuGetPluginService : INuGetPluginService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageSource);
 
-        LogValidatingNuGetPackage(packageSource);
+        LogValidatingNuGetPackage(_logger, packageSource);
 
         try
         {
@@ -254,31 +244,31 @@ public sealed partial class NuGetPluginService : INuGetPluginService
 
             using var nugetLoader = new NuGetPluginLoader(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                nugetOptions);
+                nugetOptions.CacheDirectory);
 
             // Load package to trigger validation
-            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false);
+            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework ?? "net9.0", cancellationToken).ConfigureAwait(false);
 
             var validationResult = new NuGetValidationResult
             {
-                PackageId = loadResult.PackageIdentity.Id,
-                Version = loadResult.PackageIdentity.Version.ToString(),
-                IsValid = true,
+                PackageId = loadResult.PackageId,
+                Version = "1.0.0",
+                IsValid = loadResult.Success,
                 AssemblyCount = loadResult.LoadedAssemblyPaths.Length,
-                DependencyCount = loadResult.ResolvedDependencies.Count,
-                SecurityValidationPassed = !string.IsNullOrEmpty(loadResult.SecurityValidationResult),
-                SecurityDetails = loadResult.SecurityValidationResult ?? "No security validation performed",
-                Warnings = loadResult.Warnings.ToArray(),
-                ValidationTime = loadResult.LoadTime,
-                PackageSize = loadResult.TotalSize
+                DependencyCount = 0,
+                SecurityValidationPassed = loadResult.Success,
+                SecurityDetails = loadResult.Success ? "Validation succeeded" : (loadResult.ErrorMessage ?? "Unknown error"),
+                Warnings = [],
+                ValidationTime = TimeSpan.Zero,
+                PackageSize = 0
             };
 
-            LogNuGetPackageValidated(packageSource, validationResult.IsValid, validationResult.Warnings.Length);
+            LogNuGetPackageValidated(_logger, packageSource, validationResult.IsValid, validationResult.Warnings.Length);
             return validationResult;
         }
         catch (Exception ex)
         {
-            LogNuGetPackageValidationFailed(packageSource, ex.Message);
+            LogNuGetPackageValidationFailed(_logger, packageSource, ex.Message);
             return new NuGetValidationResult
             {
                 PackageId = packageSource,

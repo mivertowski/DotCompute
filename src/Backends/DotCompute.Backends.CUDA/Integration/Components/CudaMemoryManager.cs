@@ -1273,8 +1273,8 @@ internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, IL
     private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools = [];
     private readonly object _lock = new();
     private volatile bool _disposed;
-    private readonly int _hitCount; // Initialize to suppress warning
-    private int _missCount;
+    private int _hitCount = 0;
+    private int _missCount = 0;
     /// <summary>
     /// Gets or sets the last optimization time.
     /// </summary>

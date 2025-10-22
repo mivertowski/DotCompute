@@ -17,16 +17,6 @@ namespace DotCompute.Backends.CUDA.Integration.Components;
 /// </summary>
 public sealed partial class CudaKernelExecutor : IDisposable
 {
-    #region LoggerMessage Delegates
-
-    [LoggerMessage(
-        EventId = 6860,
-        Level = LogLevel.Warning,
-        Message = "Failed to optimize kernel configuration")]
-    private static partial void LogFailedToOptimizeKernelConfiguration(ILogger logger, Exception ex);
-
-    #endregion
-
     private readonly ILogger _logger;
     private readonly CudaContext _context;
     private readonly CudaStreamManager _streamManager;
@@ -579,8 +569,9 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
 /// <summary>
 /// Kernel configuration optimizer for CUDA execution.
 /// </summary>
-internal sealed class KernelConfigurationOptimizer(CudaContext _context, ILogger logger) : IDisposable
+internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger logger) : IDisposable
 {
+    private readonly CudaContext _context = context; // Reserved for future use
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
     /// <summary>
@@ -611,7 +602,7 @@ internal sealed class KernelConfigurationOptimizer(CudaContext _context, ILogger
         }
         catch (Exception ex)
         {
-            LogFailedToOptimizeKernelConfiguration(_logger, ex);
+            CudaKernelExecutor.LogFailedToOptimizeKernelConfiguration(_logger, ex);
             throw;
         }
     }

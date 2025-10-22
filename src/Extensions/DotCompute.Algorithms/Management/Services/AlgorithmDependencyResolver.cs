@@ -5,6 +5,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
+using DotCompute.Plugins.Recovery;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Management.Services;
@@ -330,10 +332,10 @@ public sealed partial class AlgorithmDependencyResolver(
         // Score based on health status
         var healthScore = loadedPlugin.Health switch
         {
-            PluginHealthStatus.Healthy => 1.0,
-            PluginHealthStatus.Degraded => 0.7,
-            PluginHealthStatus.Unhealthy => 0.3,
-            PluginHealthStatus.Critical => 0.0,
+            PluginHealth.Healthy => 1.0,
+            PluginHealth.Degraded => 0.7,
+            PluginHealth.Critical => 0.3,
+            PluginHealth.Unknown => 0.5,
             _ => 0.5
         };
 
@@ -387,7 +389,7 @@ public sealed partial class AlgorithmDependencyResolver(
     /// <summary>
     /// Builds dependency chain recursively.
     /// </summary>
-    private void BuildDependencyChain(string pluginId, HashSet<string> visited, IReadOnlyList<string> dependencyChain)
+    private void BuildDependencyChain(string pluginId, HashSet<string> visited, List<string> dependencyChain)
     {
         if (visited.Contains(pluginId))
         {
@@ -414,7 +416,7 @@ public sealed partial class AlgorithmDependencyResolver(
     /// <summary>
     /// Checks for circular dependencies using DFS.
     /// </summary>
-    private bool HasCircularDependency(string pluginId, HashSet<string> visited, HashSet<string> recursionStack, IReadOnlyList<string> path)
+    private bool HasCircularDependency(string pluginId, HashSet<string> visited, HashSet<string> recursionStack, List<string> path)
     {
         _ = visited.Add(pluginId);
         _ = recursionStack.Add(pluginId);

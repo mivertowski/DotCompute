@@ -67,8 +67,8 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
         var discoveryLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AlgorithmPluginDiscovery>.Instance;
         _discovery = new AlgorithmPluginDiscovery(discoveryLogger, _options);
 
-        // Setup event handlers
-        _discovery.PluginFileChanged += OnPluginFileChanged;
+        // Setup event handlers - use SetupHotReload instead of event subscription
+        // _discovery.PluginFileChanged += OnPluginFileChanged; // Event-based approach replaced with SetupHotReload
         // _discovery.WatcherError += OnWatcherError; // Event does not exist
 
         // Initialize health check timer if enabled
@@ -151,10 +151,14 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             LogLoadingAssembly(assemblyPath);
 
             // Step 1: Security validation
-            if (_options.EnableSecurityValidation && !await _validator.ValidateAssemblySecurityAsync(assemblyPath))
+            if (_options.EnableSecurityValidation)
             {
-                LogSecurityValidationFailed(assemblyPath);
-                return 0;
+                var validationResult = await _validator.ValidateAssemblyAsync(assemblyPath);
+                if (!validationResult.IsValid)
+                {
+                    LogSecurityValidationFailed(assemblyPath);
+                    return 0;
+                }
             }
 
             // Step 2: Load assembly and discover plugin types
@@ -652,8 +656,8 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             // Stop health check timer
             _healthCheckTimer.Dispose();
 
-            // Unsubscribe from events
-            _discovery.PluginFileChanged -= OnPluginFileChanged;
+            // Unsubscribe from events - SetupHotReload manages cleanup internally
+            // _discovery.PluginFileChanged -= OnPluginFileChanged; // Event-based approach replaced with SetupHotReload
 
             // Dispose components (plugins will be disposed via DisposeAsync)
             _registry.Dispose();
@@ -672,8 +676,8 @@ public sealed partial class AlgorithmPluginOrchestrator : IAsyncDisposable
             // Stop health check timer
             _healthCheckTimer.Dispose();
 
-            // Unsubscribe from events
-            _discovery.PluginFileChanged -= OnPluginFileChanged;
+            // Unsubscribe from events - SetupHotReload manages cleanup internally
+            // _discovery.PluginFileChanged -= OnPluginFileChanged; // Event-based approach replaced with SetupHotReload
             // _discovery.WatcherError -= OnWatcherError; // Event does not exist
 
             // Dispose all components

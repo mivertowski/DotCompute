@@ -597,7 +597,7 @@ public sealed class MetalExecutionManagerStats
     public MetalStreamStatistics StreamStatistics { get; set; } = new();
     public MetalEventStatistics EventStatistics { get; set; } = new();
     public MetalExecutionStatistics ExecutionStatistics { get; set; } = new();
-    public Dictionary<string, MetalErrorHandler.ErrorStatistics> ErrorStatistics { get; } = [];
+    public Dictionary<string, MetalErrorStatistics> ErrorStatistics { get; } = [];
     public bool IsGpuAvailable { get; set; }
     public bool IsExecutionPaused { get; set; }
     public bool IsAppleSilicon { get; set; }

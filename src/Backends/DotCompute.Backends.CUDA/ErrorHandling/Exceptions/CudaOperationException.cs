@@ -13,6 +13,7 @@ public sealed class CudaOperationException : Exception
     /// </summary>
     public CudaOperationException()
     {
+        Operation = string.Empty;
     }
 
     /// <summary>
@@ -21,6 +22,7 @@ public sealed class CudaOperationException : Exception
     /// <param name="message">The message.</param>
     public CudaOperationException(string message) : base(message)
     {
+        Operation = string.Empty;
     }
 
     /// <summary>
@@ -30,6 +32,7 @@ public sealed class CudaOperationException : Exception
     /// <param name="innerException">The inner exception.</param>
     public CudaOperationException(string message, Exception innerException) : base(message, innerException)
     {
+        Operation = string.Empty;
     }
 
     /// <summary>

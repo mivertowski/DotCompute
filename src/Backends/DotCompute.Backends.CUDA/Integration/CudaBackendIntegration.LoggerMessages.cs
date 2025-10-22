@@ -57,5 +57,11 @@ namespace DotCompute.Backends.CUDA.Integration
             Level = LogLevel.Information,
             Message = "CUDA Backend Integration disposed")]
         private static partial void LogBackendDisposed(ILogger logger);
+
+        [LoggerMessage(
+            EventId = 20008,
+            Level = LogLevel.Warning,
+            Message = "Error updating performance metrics")]
+        private static partial void LogErrorUpdatingPerformanceMetrics(ILogger logger, Exception ex);
     }
 }

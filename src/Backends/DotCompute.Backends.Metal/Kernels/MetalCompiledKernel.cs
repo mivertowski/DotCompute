@@ -328,7 +328,11 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         };
     }
 
-    public async ValueTask DisposeAsync() => await Task.Run(Dispose).ConfigureAwait(false);
+    public async ValueTask DisposeAsync()
+    {
+        await Task.Run(Dispose).ConfigureAwait(false);
+        GC.SuppressFinalize(this);
+    }
 
     public void Dispose()
     {
@@ -342,6 +346,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
         {
             MetalNative.ReleasePipelineState(_pipelineState);
         }
+
+        // Note: _commandBufferPool is shared and managed by MetalAccelerator lifecycle, not disposed here
 
         GC.SuppressFinalize(this);
     }

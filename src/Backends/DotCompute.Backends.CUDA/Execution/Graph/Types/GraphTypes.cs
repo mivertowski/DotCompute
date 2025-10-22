@@ -60,18 +60,15 @@ namespace DotCompute.Backends.CUDA.Execution.Graph.Types
         /// <value>The z.</value>
         public uint Z { get; set; } = z;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
+        public override bool Equals(object? obj) => obj is GridDimensions other && Equals(other);
 
-        public override int GetHashCode() => throw new NotImplementedException();
+        public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
         public static bool operator ==(GridDimensions left, GridDimensions right) => left.Equals(right);
 
         public static bool operator !=(GridDimensions left, GridDimensions right) => !(left == right);
 
-        public bool Equals(GridDimensions other)
-        {
-            throw new NotImplementedException();
-        }
+        public bool Equals(GridDimensions other) => X == other.X && Y == other.Y && Z == other.Z;
     }
 
     /// <summary>

@@ -30,19 +30,23 @@ namespace DotCompute.Backends.CUDA.Analysis
         private readonly Dictionary<string, CoalescingMetrics> _metricsCache;
 
         // CUDA API imports
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaDeviceGetAttribute(
             out int value,
             CudaDeviceAttribute attr,
             int device);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetMemoryBusWidth(
             IntPtr device, out uint busWidth);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetPcieThroughput(
             IntPtr device, NvmlPcieUtilCounter counter, out uint value);

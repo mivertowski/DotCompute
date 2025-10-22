@@ -83,7 +83,7 @@ namespace DotCompute.Backends.CUDA.Memory
             var size = MIN_POOL_SIZE;
             while (size <= MAX_POOL_SIZE)
             {
-                _pools[size] = new MemoryPool(size, MAX_BLOCKS_PER_POOL, _logger);
+                _pools[size] = new MemoryPool(size, MAX_BLOCKS_PER_POOL);
                 size *= POOL_SIZE_MULTIPLIER;
             }
         }
@@ -410,7 +410,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Internal memory pool for a specific size class.
         /// </summary>
-        private sealed class MemoryPool(int blockSize, int maxBlocks, ILogger _logger) : IDisposable
+        private sealed class MemoryPool(int blockSize, int maxBlocks) : IDisposable
         {
             private readonly ConcurrentBag<MemoryBlock> _availableBlocks = [];
             private readonly HashSet<IntPtr> _allBlocks = [];
@@ -496,11 +496,11 @@ namespace DotCompute.Backends.CUDA.Memory
                         {
                             try
                             {
-                                _ = _allBlocks.Remove(block.DevicePointer);
+                                _allBlocks.Remove(block.DevicePointer);
                             }
                             finally
                             {
-                                _ = _lock.Release();
+                                _lock.Release();
                             }
                         }
                         else
@@ -521,7 +521,8 @@ namespace DotCompute.Backends.CUDA.Memory
             {
                 while (_availableBlocks.TryTake(out var block))
                 {
-                    _ = CudaRuntime.cudaFree(block.DevicePointer);
+                    var result = CudaRuntime.cudaFree(block.DevicePointer);
+                    // Ignore errors during cleanup
                 }
 
 

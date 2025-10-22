@@ -689,7 +689,13 @@ internal static class SimdMathOperations
         {
             var leftVec = AdvSimd.LoadVector128(left + i);
             var rightVec = AdvSimd.LoadVector128(right + i);
-            var resultVec = AdvSimd.Divide(leftVec, rightVec);
+
+            // ARM NEON doesn't have hardware division - use reciprocal estimate with Newton-Raphson refinement
+            var recip = AdvSimd.ReciprocalEstimate(rightVec);
+            recip = AdvSimd.Multiply(recip, AdvSimd.ReciprocalStep(rightVec, recip));
+            recip = AdvSimd.Multiply(recip, AdvSimd.ReciprocalStep(rightVec, recip)); // Second iteration for better accuracy
+            var resultVec = AdvSimd.Multiply(leftVec, recip);
+
             AdvSimd.Store(result + i, resultVec);
         }
 

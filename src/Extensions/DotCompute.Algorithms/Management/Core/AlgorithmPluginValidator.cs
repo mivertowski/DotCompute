@@ -134,7 +134,7 @@ public sealed partial class AlgorithmPluginValidator : IDisposable
                 AssemblyPath = assemblyPath,
                 AssemblyBytes = ImmutableArray.Create(assemblyBytes),
                 Certificate = certificate,
-                StrongNameKey = strongNameKey != null ? ImmutableArray.Create(strongNameKey) : null
+                StrongNameKey = strongNameKey != null ? ImmutableArray.Create(strongNameKey) : ImmutableArray<byte>.Empty
             };
 
             var policyResult = _securityPolicy.EvaluateRules(context);

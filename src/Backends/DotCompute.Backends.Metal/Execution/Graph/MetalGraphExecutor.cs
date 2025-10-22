@@ -459,7 +459,7 @@ public sealed partial class MetalGraphExecutor : IDisposable
             SetMetalComputePipelineState(computeEncoder, node.Kernel);
 
             // Set kernel arguments
-            for (var i = 0; i < node.Arguments.Length; i++)
+            for (var i = 0; i < node.Arguments.Count; i++)
             {
                 SetMetalKernelArgument(computeEncoder, i, node.Arguments[i]);
             }

@@ -238,12 +238,13 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
+        var mostRequested = GetMostRequestedPlugins();
         return new ResolutionStatistics
         {
             TotalResolutions = _resolutionCache.Count,
             CacheHitRate = CalculateCacheHitRate(),
             AverageResolutionTime = CalculateAverageResolutionTime(),
-            MostRequestedPlugins = GetMostRequestedPlugins(),
+            MostRequestedPlugins = mostRequested,
             DependencyGraphSize = _dependencyGraph.Count
         };
     }
@@ -259,14 +260,16 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
         if (requirements.PreferredAcceleratorType.HasValue)
         {
             candidates = candidates.Where(p =>
-                p.SupportedAcceleratorTypes?.Contains(requirements.PreferredAcceleratorType.Value) == true);
+                !p.SupportedAcceleratorTypes.IsDefaultOrEmpty &&
+                p.SupportedAcceleratorTypes.Contains(requirements.PreferredAcceleratorType.Value));
         }
 
         // Filter by input type
         if (requirements.InputType != null)
         {
             candidates = candidates.Where(p =>
-                p.InputTypes?.Contains(requirements.InputType) == true);
+                !p.InputTypes.IsDefaultOrEmpty &&
+                p.InputTypes.Contains(requirements.InputType));
         }
 
         // Filter by output type
@@ -313,13 +316,16 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
 
         // Accelerator type match
         if (requirements.PreferredAcceleratorType.HasValue &&
-            plugin.SupportedAcceleratorTypes?.Contains(requirements.PreferredAcceleratorType.Value) == true)
+            !plugin.SupportedAcceleratorTypes.IsDefaultOrEmpty &&
+            plugin.SupportedAcceleratorTypes.Contains(requirements.PreferredAcceleratorType.Value))
         {
             score += 20.0;
         }
 
         // Exact type matches
-        if (requirements.InputType != null && plugin.InputTypes?.Contains(requirements.InputType) == true)
+        if (requirements.InputType != null &&
+            !plugin.InputTypes.IsDefaultOrEmpty &&
+            plugin.InputTypes.Contains(requirements.InputType))
         {
             score += 15.0;
         }
@@ -376,14 +382,16 @@ public sealed partial class AlgorithmPluginDependencyResolver : IDisposable
     {
         // Check accelerator support
         if (requirements.PreferredAcceleratorType.HasValue &&
-            plugin.SupportedAcceleratorTypes?.Contains(requirements.PreferredAcceleratorType.Value) != true)
+            (plugin.SupportedAcceleratorTypes.IsDefaultOrEmpty ||
+             !plugin.SupportedAcceleratorTypes.Contains(requirements.PreferredAcceleratorType.Value)))
         {
             return false;
         }
 
         // Check input type compatibility
         if (requirements.InputType != null &&
-            plugin.InputTypes?.Contains(requirements.InputType) != true)
+            (plugin.InputTypes.IsDefaultOrEmpty ||
+             !plugin.InputTypes.Contains(requirements.InputType)))
         {
             return false;
         }
@@ -825,7 +833,7 @@ public sealed class ResolutionStatistics
     /// <summary>
     /// Gets or sets the most requested plugins.
     /// </summary>
-    public Dictionary<string, int> MostRequestedPlugins { get; } = [];
+    public Dictionary<string, int> MostRequestedPlugins { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the dependency graph size.

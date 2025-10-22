@@ -368,7 +368,7 @@ public sealed partial class AlgorithmPluginMetrics : IDisposable
 
         return new SystemMetrics
         {
-            TotalPlugins = _registry.PluginCount,
+            TotalPlugins = _registry.Count,
             ActivePlugins = allMetrics.Count,
             TotalExecutions = allMetrics.Sum(m => m.TotalExecutions),
             TotalSuccessfulExecutions = allMetrics.Sum(m => m.SuccessfulExecutions),

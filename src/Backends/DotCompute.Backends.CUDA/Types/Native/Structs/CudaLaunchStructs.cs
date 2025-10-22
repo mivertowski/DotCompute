@@ -38,13 +38,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint numAttrs;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaNativeLaunchConfig left, CudaNativeLaunchConfig right) => left.Equals(right);
 
-        public static bool operator !=(CudaNativeLaunchConfig left, CudaNativeLaunchConfig right) => !(left == right);
 
     }
 
@@ -67,13 +63,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint z;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaDim3 left, CudaDim3 right) => left.Equals(right);
 
-        public static bool operator !=(CudaDim3 left, CudaDim3 right) => !(left == right);
 
     }
 
@@ -92,13 +84,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public CudaLaunchAttributeValue val;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaLaunchAttribute left, CudaLaunchAttribute right) => left.Equals(right);
 
-        public static bool operator !=(CudaLaunchAttribute left, CudaLaunchAttribute right) => !(left == right);
 
     }
 
@@ -161,13 +149,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         [FieldOffset(0)] public uint preferredShmemCarveout;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaLaunchAttributeValue left, CudaLaunchAttributeValue right) => left.Equals(right);
 
-        public static bool operator !=(CudaLaunchAttributeValue left, CudaLaunchAttributeValue right) => !(left == right);
 
     }
 
@@ -198,13 +182,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public CudaAccessProperty missProp;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaAccessPolicyWindow left, CudaAccessPolicyWindow right) => left.Equals(right);
 
-        public static bool operator !=(CudaAccessPolicyWindow left, CudaAccessPolicyWindow right) => !(left == right);
 
     }
 
@@ -227,13 +207,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public uint z;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaClusterDimension left, CudaClusterDimension right) => left.Equals(right);
 
-        public static bool operator !=(CudaClusterDimension left, CudaClusterDimension right) => !(left == right);
 
     }
 
@@ -252,13 +228,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public byte remote;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaLaunchMemSyncDomainMap left, CudaLaunchMemSyncDomainMap right) => left.Equals(right);
 
-        public static bool operator !=(CudaLaunchMemSyncDomainMap left, CudaLaunchMemSyncDomainMap right) => !(left == right);
 
     }
 
@@ -307,7 +279,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified instances of CudaDeviceNumaConfig are not equal.
@@ -315,6 +286,5 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaDeviceNumaConfig left, CudaDeviceNumaConfig right) => !left.Equals(right);
     }
 }

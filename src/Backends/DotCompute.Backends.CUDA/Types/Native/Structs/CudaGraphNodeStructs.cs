@@ -20,13 +20,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public IntPtr userData;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaHostNodeParams left, CudaHostNodeParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaHostNodeParams left, CudaHostNodeParams right) => !(left == right);
 
     }
 
@@ -77,13 +73,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public IntPtr extra;                   // Extra options
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right) => !(left == right);
 
     }
 
@@ -118,13 +110,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public nuint height;                  // Height in elements
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaMemsetParams left, CudaMemsetParams right) => left.Equals(right);
 
-        public static bool operator !=(CudaMemsetParams left, CudaMemsetParams right) => !(left == right);
 
     }
 
@@ -167,13 +155,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public CudaMemcpyKind kind;           // Copy kind
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => left.Equals(right);
 
-        public static bool operator !=(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => !(left == right);
 
     }
 
@@ -196,13 +180,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public nuint z;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaPos left, CudaPos right) => left.Equals(right);
 
-        public static bool operator !=(CudaPos left, CudaPos right) => !(left == right);
 
     }
 
@@ -265,7 +245,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaMemRangeAttribute structures have different values.
@@ -273,6 +252,5 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaMemRangeAttribute to compare.</param>
         /// <param name="right">The second CudaMemRangeAttribute to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaMemRangeAttribute left, CudaMemRangeAttribute right) => !left.Equals(right);
     }
 }

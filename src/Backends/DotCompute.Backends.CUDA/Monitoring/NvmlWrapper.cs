@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// P/Invoke wrapper for NVIDIA Management Library (NVML) for GPU monitoring.
     /// </summary>
-    public sealed partial class NvmlWrapper(ILogger logger) : IDisposable
+    internal sealed partial class NvmlWrapper(ILogger logger) : IDisposable
     {
         #region LoggerMessage Delegates
 
@@ -289,39 +289,51 @@ namespace DotCompute.Backends.CUDA.Monitoring
         // NVML P/Invoke Declarations
         // ========================================
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY, EntryPoint = "nvmlInit_v2")]
         private static extern NvmlReturn nvmlInit_v2();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlShutdown();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlSystemGetNVMLVersion(StringBuilder version, uint length);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetHandleByIndex(uint index, ref IntPtr device);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetTemperature(IntPtr device, NvmlTemperatureSensors sensorType, ref uint temp);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetPowerUsage(IntPtr device, ref uint power);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetMemoryInfo(IntPtr device, ref NvmlMemory memory);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetUtilizationRates(IntPtr device, ref NvmlUtilization utilization);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetClockInfo(IntPtr device, NvmlClockType type, ref uint clock);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetPcieThroughput(IntPtr device, NvmlPcieUtilCounter counter, ref uint value);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetFanSpeed(IntPtr device, ref uint speed);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport(NVML_LIBRARY)]
         private static extern NvmlReturn nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, ref ulong clocksThrottleReasons);
     }
@@ -333,7 +345,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     // NVML Data Structures and Enums
     // ========================================
 
-    public enum NvmlReturn
+    internal enum NvmlReturn
     {
         Success = 0,
         Uninitialized = 1,
@@ -361,7 +373,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// An nvml temperature sensors enumeration.
     /// </summary>
 
-    public enum NvmlTemperatureSensors
+    internal enum NvmlTemperatureSensors
     {
         Gpu = 0,
         Count = 1
@@ -370,7 +382,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// An nvml clock type enumeration.
     /// </summary>
 
-    public enum NvmlClockType
+    internal enum NvmlClockType
     {
         Graphics = 0,
         Sm = 1,
@@ -382,7 +394,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// An nvml pcie util counter enumeration.
     /// </summary>
 
-    public enum NvmlPcieUtilCounter
+    internal enum NvmlPcieUtilCounter
     {
         TxBytes = 0,
         RxBytes = 1
@@ -392,7 +404,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NvmlMemory
+    internal struct NvmlMemory : IEquatable<NvmlMemory>
     {
         /// <summary>
         /// The total.
@@ -407,21 +419,22 @@ namespace DotCompute.Backends.CUDA.Monitoring
         /// </summary>
         public ulong Used;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
+        public override bool Equals(object? obj) => obj is NvmlMemory other && Equals(other);
 
-        public override int GetHashCode() => throw new NotImplementedException();
+        public override int GetHashCode() => HashCode.Combine(Total, Free, Used);
 
         public static bool operator ==(NvmlMemory left, NvmlMemory right) => left.Equals(right);
 
         public static bool operator !=(NvmlMemory left, NvmlMemory right) => !(left == right);
 
+        public bool Equals(NvmlMemory other) => Total == other.Total && Free == other.Free && Used == other.Used;
     }
     /// <summary>
     /// A nvml utilization structure.
     /// </summary>
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct NvmlUtilization : IEquatable<NvmlUtilization>
+    internal struct NvmlUtilization : IEquatable<NvmlUtilization>
     {
         /// <summary>
         /// The gpu.
@@ -472,7 +485,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
     /// <summary>
     /// GPU metrics collected from NVML.
     /// </summary>
-    public sealed class GpuMetrics
+    internal sealed class GpuMetrics
     {
         /// <summary>
         /// Gets or sets a value indicating whether available.

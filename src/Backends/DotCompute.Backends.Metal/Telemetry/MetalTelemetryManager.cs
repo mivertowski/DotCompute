@@ -393,7 +393,7 @@ public sealed class MetalTelemetryManager : BaseTelemetryProvider
         };
 
         // Add items to collection properties
-        var alerts = _alertsManager.GetActivAlerts();
+        var alerts = _alertsManager.ActiveAlerts;
         foreach (var alert in alerts)
         {
             report.AlertsSummary.Add(alert);

@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Abstractions.Factories;
+using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
@@ -38,13 +38,13 @@ public sealed partial class AlgorithmPluginResolver(
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
 
-        LogResolvingPluginForRequirements(requirements.ToString());
+        LogResolvingPluginForRequirements(_logger, requirements.ToString());
 
         // Get all healthy plugins
         var candidates = _registry.GetHealthyPlugins().ToList();
         if (candidates.Count == 0)
         {
-            LogNoHealthyPluginsAvailable();
+            LogNoHealthyPluginsAvailable(_logger);
             return null;
         }
 
@@ -52,7 +52,7 @@ public sealed partial class AlgorithmPluginResolver(
         candidates = ApplyRequirementFilters(candidates, requirements);
         if (candidates.Count == 0)
         {
-            LogNoPluginsMatchRequirements();
+            LogNoPluginsMatchRequirements(_logger);
             return null;
         }
 
@@ -62,7 +62,7 @@ public sealed partial class AlgorithmPluginResolver(
             .ToList();
 
         var bestPlugin = scoredCandidates.First().Plugin;
-        LogResolvedPluginWithScore(bestPlugin.Id, scoredCandidates.First().Score);
+        LogResolvedPluginWithScore(_logger, bestPlugin.Id, scoredCandidates.First().Score);
 
         return bestPlugin;
     }
@@ -78,7 +78,7 @@ public sealed partial class AlgorithmPluginResolver(
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(requirements);
 
-        LogResolvingMultiplePlugins(maxResults);
+        LogResolvingMultiplePlugins(_logger, maxResults);
 
         var candidates = _registry.GetHealthyPlugins().ToList();
         if (candidates.Count == 0)
@@ -96,7 +96,7 @@ public sealed partial class AlgorithmPluginResolver(
             .Select(sc => sc.Plugin)
             .ToList();
 
-        LogResolvedPluginCount(results.Count);
+        LogResolvedPluginCount(_logger, results.Count);
         return results;
     }
 
@@ -170,9 +170,9 @@ public sealed partial class AlgorithmPluginResolver(
             var algorithmPerformanceProfile = plugin.GetPerformanceProfile();
 
             // Convert AlgorithmPerformanceProfile to PerformanceProfile for compatibility check
-            var performanceProfile = new DotCompute.Abstractions.Factories.PerformanceProfile
+            var performanceProfile = new PerformanceProfile
             {
-                MemoryRequirementMB = algorithmPerformanceProfile.MemoryRequirementMB,
+                MemoryRequirementMB = (long)algorithmPerformanceProfile.MemoryRequirementMB,
                 EstimatedExecutionTimeMs = (long)algorithmPerformanceProfile.EstimatedExecutionTimeMs
             };
 
@@ -295,38 +295,38 @@ public sealed partial class AlgorithmPluginResolver(
     /// </summary>
     private static List<IAlgorithmPlugin> ApplyRequirementFilters(IReadOnlyList<IAlgorithmPlugin> candidates, PluginRequirements requirements)
     {
-        var filtered = candidates;
+        IEnumerable<IAlgorithmPlugin> filtered = candidates;
 
         // Filter by accelerator type
         if (requirements.RequiredAcceleratorType.HasValue)
         {
-            filtered = [.. filtered.Where(p => p.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value))];
+            filtered = filtered.Where(p => p.SupportedAcceleratorTypes.Contains(requirements.RequiredAcceleratorType.Value));
         }
 
         // Filter by input type
         if (requirements.InputType != null)
         {
-            filtered = [.. filtered.Where(p => p.InputTypes.Contains(requirements.InputType))];
+            filtered = filtered.Where(p => p.InputTypes.Contains(requirements.InputType));
         }
 
         // Filter by output type
         if (requirements.OutputType != null)
         {
-            filtered = [.. filtered.Where(p => requirements.OutputType.IsAssignableFrom(p.OutputType))];
+            filtered = filtered.Where(p => requirements.OutputType.IsAssignableFrom(p.OutputType));
         }
 
         // Filter by version requirements
         if (requirements.MinimumVersion != null)
         {
-            filtered = [.. filtered.Where(p => p.Version >= requirements.MinimumVersion)];
+            filtered = filtered.Where(p => p.Version >= requirements.MinimumVersion);
         }
 
         if (requirements.MaximumVersion != null)
         {
-            filtered = [.. filtered.Where(p => p.Version <= requirements.MaximumVersion)];
+            filtered = filtered.Where(p => p.Version <= requirements.MaximumVersion);
         }
 
-        return filtered;
+        return filtered.ToList();
     }
 
     /// <summary>
@@ -430,23 +430,23 @@ public sealed partial class AlgorithmPluginResolver(
 
     #region LoggerMessage Delegates
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Resolving plugin for requirements: {Requirements}")]
-    private partial void LogResolvingPluginForRequirements(string requirements);
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Resolving plugin for requirements: {Requirements}")]
+    private static partial void LogResolvingPluginForRequirements(ILogger logger, string requirements);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "No healthy plugins available for resolution")]
-    private partial void LogNoHealthyPluginsAvailable();
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Warning, Message = "No healthy plugins available for resolution")]
+    private static partial void LogNoHealthyPluginsAvailable(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "No plugins match the specified requirements")]
-    private partial void LogNoPluginsMatchRequirements();
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "No plugins match the specified requirements")]
+    private static partial void LogNoPluginsMatchRequirements(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Resolved plugin {PluginId} (score: {Score}) for requirements")]
-    private partial void LogResolvedPluginWithScore(string pluginId, int score);
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Resolved plugin {PluginId} (score: {Score}) for requirements")]
+    private static partial void LogResolvedPluginWithScore(ILogger logger, string pluginId, int score);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Resolving up to {MaxResults} plugins for requirements")]
-    private partial void LogResolvingMultiplePlugins(int maxResults);
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Debug, Message = "Resolving up to {MaxResults} plugins for requirements")]
+    private static partial void LogResolvingMultiplePlugins(ILogger logger, int maxResults);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Resolved {ResultCount} plugins for requirements")]
-    private partial void LogResolvedPluginCount(int resultCount);
+    [LoggerMessage(Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Resolved {ResultCount} plugins for requirements")]
+    private static partial void LogResolvedPluginCount(ILogger logger, int resultCount);
 
     #endregion
 

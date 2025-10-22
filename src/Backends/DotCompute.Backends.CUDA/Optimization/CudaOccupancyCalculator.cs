@@ -17,6 +17,7 @@ namespace DotCompute.Backends.CUDA.Optimization
 
         // CUDA API imports
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
             out int numBlocks,
@@ -24,6 +25,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             int blockSize,
             nuint dynamicSMemSize);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaOccupancyMaxPotentialBlockSize(
             out int minGridSize,
@@ -32,6 +34,7 @@ namespace DotCompute.Backends.CUDA.Optimization
             nuint dynamicSMemSize,
             int blockSizeLimit);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaOccupancyMaxPotentialBlockSizeVariableSMem(
             out int minGridSize,
@@ -40,11 +43,13 @@ namespace DotCompute.Backends.CUDA.Optimization
             BlockSizeToSMemFunc blockSizeToSMemSize,
             int blockSizeLimit);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaFuncGetAttributes(
             out CudaFuncAttributes attr,
             IntPtr func);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cudart64_12", CallingConvention = CallingConvention.Cdecl)]
         private static extern CudaError cudaDeviceGetAttribute(
             out int value,
@@ -1002,13 +1007,25 @@ namespace DotCompute.Backends.CUDA.Optimization
 
             public override string ToString() => $"({X},{Y},{Z})";
 
-            public override bool Equals(object obj) => throw new NotImplementedException();
+            /// <summary>
+            /// Determines whether the specified object is equal to the current Dim3.
+            /// </summary>
+            public override bool Equals(object? obj) => obj is Dim3 other && X == other.X && Y == other.Y && Z == other.Z;
 
-            public override int GetHashCode() => throw new NotImplementedException();
+            /// <summary>
+            /// Returns the hash code for this Dim3.
+            /// </summary>
+            public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
+            /// <summary>
+            /// Determines whether two Dim3 instances are equal.
+            /// </summary>
             public static bool operator ==(Dim3 left, Dim3 right) => left.Equals(right);
 
-            public static bool operator !=(Dim3 left, Dim3 right) => !(left == right);
+            /// <summary>
+            /// Determines whether two Dim3 instances are not equal.
+            /// </summary>
+            public static bool operator !=(Dim3 left, Dim3 right) => !left.Equals(right);
 
         }
         /// <summary>

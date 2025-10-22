@@ -117,7 +117,7 @@ namespace DotCompute.Backends.CUDA.Memory
 
                 LogAllocatedPinnedMemory(_logger, alignedSize, hostPtr, devicePtr);
 
-                return new CudaPinnedMemoryBuffer<T>(this, hostPtr, devicePtr, count, _context, _logger);
+                return new CudaPinnedMemoryBuffer<T>(this, hostPtr, devicePtr, count);
             }
             finally
             {
@@ -381,9 +381,7 @@ namespace DotCompute.Backends.CUDA.Memory
         CudaPinnedMemoryAllocator allocator,
         IntPtr hostPointer,
         IntPtr devicePointer,
-        long count,
-        CudaContext _context,
-        ILogger _logger) : IPinnedMemoryBuffer<T> where T : unmanaged
+        long count) : IPinnedMemoryBuffer<T> where T : unmanaged
     {
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;

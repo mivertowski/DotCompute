@@ -185,7 +185,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
 
                 // Return a non-generic buffer that implements IUnifiedMemoryBuffer
-                return new CudaMemoryBuffer(_device, devicePtr, sizeInBytes);
+                return new CudaMemoryBuffer(devicePtr, sizeInBytes);
             }, cancellationToken);
         }
 
@@ -460,7 +460,7 @@ namespace DotCompute.Backends.CUDA.Memory
                     _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
                     LogUnifiedMemoryAllocatedRaw(_logger, sizeInBytes, unifiedPtr);
-                    return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(_device, unifiedPtr, sizeInBytes, options);
+                    return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(unifiedPtr, sizeInBytes, options);
                 }, cancellationToken);
             }
 
@@ -475,7 +475,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
                 LogMemoryAllocated(_logger, sizeInBytes, devicePtr);
-                return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(_device, devicePtr, sizeInBytes, options);
+                return (IUnifiedMemoryBuffer)new CudaMemoryBuffer(devicePtr, sizeInBytes, options);
             }, cancellationToken);
         }
 

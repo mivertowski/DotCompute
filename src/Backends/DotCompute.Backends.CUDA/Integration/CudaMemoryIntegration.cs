@@ -373,7 +373,7 @@ public sealed partial class CudaMemoryIntegration : IDisposable
 
             // Optimize memory layout
 
-            _ = _asyncAdapter.OptimizeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+            _asyncAdapter.OptimizeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
             LogMaintenanceCompleted(_logger);
         }

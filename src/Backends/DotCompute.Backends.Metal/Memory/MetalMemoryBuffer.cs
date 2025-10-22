@@ -94,7 +94,7 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
             if (Buffer == IntPtr.Zero)
             {
-                throw new OutOfMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes");
+                throw new InsufficientMemoryException($"Failed to allocate Metal buffer of size {SizeInBytes} bytes");
             }
 
 
@@ -114,27 +114,24 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
         return new ValueTask(Task.Run(() =>
         {
-            var elementSize = Marshal.SizeOf<T>();
-            var totalBytes = source.Length * elementSize;
-
-
-            if (offset + totalBytes > SizeInBytes)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
-            }
-
-            // Get buffer contents pointer
-
-            var bufferContents = MetalNative.GetBufferContents(Buffer);
-            if (bufferContents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
-            }
-
-            // Copy data from source to Metal buffer
-
             unsafe
             {
+                var elementSize = sizeof(T);
+                var totalBytes = source.Length * elementSize;
+
+                if (offset + totalBytes > SizeInBytes)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+                }
+
+                // Get buffer contents pointer
+                var bufferContents = MetalNative.GetBufferContents(Buffer);
+                if (bufferContents == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+                }
+
+                // Copy data from source to Metal buffer
                 var sourceHandle = source.Pin();
                 try
                 {
@@ -146,14 +143,13 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
                 {
                     sourceHandle.Dispose();
                 }
-            }
 
-            // Mark the modified range if using managed storage
-
-            var storageMode = GetStorageMode(Options);
-            if (storageMode == MetalStorageMode.Managed)
-            {
-                MetalNative.DidModifyRange(Buffer, offset, totalBytes);
+                // Mark the modified range if using managed storage
+                var storageMode = GetStorageMode(Options);
+                if (storageMode == MetalStorageMode.Managed)
+                {
+                    MetalNative.DidModifyRange(Buffer, offset, totalBytes);
+                }
             }
         }, cancellationToken));
     }
@@ -170,27 +166,24 @@ public sealed class MetalMemoryBuffer : IUnifiedMemoryBuffer
 
         return new ValueTask(Task.Run(() =>
         {
-            var elementSize = Marshal.SizeOf<T>();
-            var totalBytes = destination.Length * elementSize;
-
-
-            if (offset + totalBytes > SizeInBytes)
-            {
-                throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
-            }
-
-            // Get buffer contents pointer
-
-            var bufferContents = MetalNative.GetBufferContents(Buffer);
-            if (bufferContents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
-            }
-
-            // Copy data from Metal buffer to destination
-
             unsafe
             {
+                var elementSize = sizeof(T);
+                var totalBytes = destination.Length * elementSize;
+
+                if (offset + totalBytes > SizeInBytes)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(offset), "Copy would exceed buffer bounds");
+                }
+
+                // Get buffer contents pointer
+                var bufferContents = MetalNative.GetBufferContents(Buffer);
+                if (bufferContents == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to get Metal buffer contents pointer");
+                }
+
+                // Copy data from Metal buffer to destination
                 var destHandle = destination.Pin();
                 try
                 {

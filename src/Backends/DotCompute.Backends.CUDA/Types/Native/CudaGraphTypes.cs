@@ -95,15 +95,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The user data.
         /// </summary>
         public IntPtr userData;
-
-        public override bool Equals(object obj) => throw new NotImplementedException();
-
-        public override int GetHashCode() => throw new NotImplementedException();
-
-        public static bool operator ==(CudaHostNodeParams left, CudaHostNodeParams right) => left.Equals(right);
-
-        public static bool operator !=(CudaHostNodeParams left, CudaHostNodeParams right) => !(left == right);
-
     }
 
     /// <summary>
@@ -152,15 +143,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The extra.
         /// </summary>
         public IntPtr extra;                   // Extra options
-
-        public override bool Equals(object obj) => throw new NotImplementedException();
-
-        public override int GetHashCode() => throw new NotImplementedException();
-
-        public static bool operator ==(CudaKernelNodeParams left, CudaKernelNodeParams right) => left.Equals(right);
-
-        public static bool operator !=(CudaKernelNodeParams left, CudaKernelNodeParams right) => !(left == right);
-
     }
 
     /// <summary>
@@ -201,15 +183,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The kind.
         /// </summary>
         public CudaMemcpyKind kind;           // Copy kind
-
-        public override bool Equals(object obj) => throw new NotImplementedException();
-
-        public override int GetHashCode() => throw new NotImplementedException();
-
-        public static bool operator ==(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => left.Equals(right);
-
-        public static bool operator !=(CudaMemcpy3DParms left, CudaMemcpy3DParms right) => !(left == right);
-
     }
 
     /// <summary>
@@ -242,14 +215,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// The height.
         /// </summary>
         public nuint height;                  // Height in elements
-
-        public override bool Equals(object obj) => throw new NotImplementedException();
-
-        public override int GetHashCode() => throw new NotImplementedException();
-
-        public static bool operator ==(CudaMemsetParams left, CudaMemsetParams right) => left.Equals(right);
-
-        public static bool operator !=(CudaMemsetParams left, CudaMemsetParams right) => !(left == right);
     }
 
     /// <summary>

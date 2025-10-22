@@ -373,7 +373,7 @@ namespace DotCompute.Backends.CUDA
                 var info = device.ToAcceleratorInfo();
 
 
-                LogDeviceDetected(logger, device.Name, device.ComputeCapability);
+                LogDeviceDetected(logger, device.Name, device.ComputeCapability.ToString());
 
 
                 return info;

@@ -27,8 +27,9 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// <summary>
     /// Manages CUDA graph creation, execution, and optimization
     /// </summary>
-    public sealed partial class CudaGraphManager(CudaContext _context, ILogger<CudaGraphManager> logger) : IDisposable
+    public sealed partial class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
     {
+        private readonly CudaContext _context = context; // Reserved for future use
         private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();
         private readonly ConcurrentDictionary<string, CudaGraphExecutable> _executables = new();

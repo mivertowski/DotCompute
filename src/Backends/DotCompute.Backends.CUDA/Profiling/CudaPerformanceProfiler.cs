@@ -25,15 +25,18 @@ namespace DotCompute.Backends.CUDA.Profiling
         private static readonly JsonSerializerOptions ReportJsonOptions = new() { WriteIndented = true };
 
         // CUPTI API imports
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiSubscribe(
             out IntPtr subscriber,
             CuptiCallbackFunc callback,
             IntPtr userdata);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiUnsubscribe(IntPtr subscriber);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiEnableCallback(
             uint enable,
@@ -41,48 +44,59 @@ namespace DotCompute.Backends.CUDA.Profiling
             CuptiCallbackDomain domain,
             uint cbid);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiActivityEnable(CuptiActivityKind kind);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiActivityDisable(CuptiActivityKind kind);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiActivityFlushAll(uint flag);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("cupti64_2023.3.1", CallingConvention = CallingConvention.Cdecl)]
         private static extern CuptiResult cuptiGetTimestamp(out ulong timestamp);
 
         // NVML API imports for GPU metrics
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlInit();
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetUtilizationRates(
             IntPtr device,
             out NvmlUtilization utilization);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetMemoryInfo(
             IntPtr device,
             out NvmlMemory memory);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetTemperature(
             IntPtr device,
             NvmlTemperatureSensor sensorType,
             out uint temp);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetPowerUsage(
             IntPtr device,
             out uint power);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlDeviceGetHandleByIndex(
             uint index,
             out IntPtr device);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         [DllImport("nvml", CallingConvention = CallingConvention.Cdecl)]
         private static extern NvmlReturn nvmlShutdown();
 

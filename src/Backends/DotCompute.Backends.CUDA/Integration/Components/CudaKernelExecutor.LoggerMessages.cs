@@ -53,4 +53,7 @@ public sealed partial class CudaKernelExecutor
 
     [LoggerMessage(24013, LogLevel.Debug, "CUDA kernel execution orchestrator disposed")]
     private partial void LogOrchestratorDisposed();
+
+    [LoggerMessage(24014, LogLevel.Warning, "Failed to optimize kernel configuration")]
+    internal static partial void LogFailedToOptimizeKernelConfiguration(ILogger logger, Exception ex);
 }

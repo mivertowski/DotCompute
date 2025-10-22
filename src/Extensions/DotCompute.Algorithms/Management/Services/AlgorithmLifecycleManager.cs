@@ -7,6 +7,7 @@ using DotCompute.Algorithms.Management.Configuration;
 using DotCompute.Algorithms.Management.Core;
 using DotCompute.Algorithms.Management.Info;
 using DotCompute.Algorithms.Abstractions;
+using DotCompute.Algorithms.Types.Enums;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Net.Sockets;
@@ -64,7 +65,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         {
             _registry.UpdatePluginState(pluginId, PluginState.Initializing);
 
-            await loadedPlugin.Plugin.InitializeAsync(accelerator, _logger).ConfigureAwait(false);
+            await loadedPlugin.Plugin.InitializeAsync(accelerator, cancellationToken).ConfigureAwait(false);
 
             _registry.UpdatePluginState(pluginId, PluginState.Running);
             _registry.UpdatePluginHealth(pluginId, PluginHealth.Healthy);
@@ -217,9 +218,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         {
             try
             {
-                // Convert inputs array to single input object for plugin interface
-                var singleInput = inputs.Length == 1 ? inputs[0] : inputs;
-                return await plugin.ExecuteAsync(singleInput, cancellationToken).ConfigureAwait(false);
+                return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (attempt < maxRetries && IsTransientError(ex))
             {
@@ -229,9 +228,7 @@ public sealed partial class AlgorithmLifecycleManager : IDisposable
         }
 
         // Final attempt without retry handling
-        // Convert inputs array to single input object for plugin interface
-        var singleInput = inputs.Length == 1 ? inputs[0] : inputs;
-        return await plugin.ExecuteAsync(singleInput, cancellationToken).ConfigureAwait(false);
+        return await plugin.ExecuteAsync(inputs, parameters, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

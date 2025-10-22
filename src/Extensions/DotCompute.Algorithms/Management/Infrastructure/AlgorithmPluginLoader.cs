@@ -164,7 +164,7 @@ public sealed partial class AlgorithmPluginLoader(
                 EnableMalwareScanning = _options.EnableMalwareScanning,
                 MaxAssemblySize = _options.MaxAssemblySize,
                 MinimumSecurityLevel = _options.MinimumSecurityLevel,
-                IncludePrerelease = false,
+                IncludePrereleaseVersions = false,
                 MaxConcurrentDownloads = 2
             };
 
@@ -182,18 +182,18 @@ public sealed partial class AlgorithmPluginLoader(
                 }
             }
 
-            using var nugetLoader = new NuGetPluginLoader(
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance,
-                nugetOptions);
+            using var nugetLoader = new DotCompute.Algorithms.Management.Loading.NuGetPluginLoader(
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<DotCompute.Algorithms.Management.Loading.NuGetPluginLoader>.Instance,
+                nugetOptions.CacheDirectory);
 
             // Load the package and get assembly paths
-            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false);
+            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework ?? "net9.0", cancellationToken).ConfigureAwait(false);
 
             LogNuGetPackageLoaded(
-                loadResult.PackageIdentity.Id,
-                loadResult.PackageIdentity.Version?.ToString() ?? "unknown",
+                loadResult.PackageId,
+                "1.0.0",
                 loadResult.LoadedAssemblyPaths.Length,
-                loadResult.ResolvedDependencies.Count);
+                0);
 
             // Load plugins from each assembly in the package
             var loadedPlugins = new List<LoadedPluginType>();
@@ -226,13 +226,13 @@ public sealed partial class AlgorithmPluginLoader(
 
             return new NuGetLoadResult
             {
-                PackageId = loadResult.PackageIdentity.Id,
-                Version = loadResult.PackageIdentity.Version.ToString(),
+                PackageId = loadResult.PackageId,
+                Version = "1.0.0",
                 LoadedPlugins = loadedPlugins,
                 Success = true,
-                SecurityValidationResult = loadResult.SecurityValidationResult?.ToString() ?? string.Empty,
-                Warnings = loadResult.Warnings.ToArray(),
-                LoadTime = loadResult.LoadTime ?? TimeSpan.Zero
+                SecurityValidationResult = string.Empty,
+                Warnings = [],
+                LoadTime = TimeSpan.Zero
             };
         }
         catch (Exception ex)

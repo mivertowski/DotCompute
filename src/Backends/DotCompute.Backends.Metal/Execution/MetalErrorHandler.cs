@@ -15,7 +15,7 @@ namespace DotCompute.Backends.Metal.Execution;
 public sealed partial class MetalErrorHandler : IDisposable
 {
     private readonly ILogger<MetalErrorHandler> _logger;
-    private readonly ConcurrentDictionary<MetalError, ErrorStatistics> _errorStats;
+    private readonly ConcurrentDictionary<MetalError, MetalErrorStatistics> _errorStats;
     private readonly IAsyncPolicy _retryPolicy;
     private readonly IAsyncPolicy _memoryRetryPolicy;
     private readonly IAsyncPolicy<bool> _circuitBreakerPolicy;
@@ -30,7 +30,7 @@ public sealed partial class MetalErrorHandler : IDisposable
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _options = options ?? new MetalErrorRecoveryOptions();
-        _errorStats = new ConcurrentDictionary<MetalError, ErrorStatistics>();
+        _errorStats = new ConcurrentDictionary<MetalError, MetalErrorStatistics>();
         _isAppleSilicon = DetectAppleSilicon();
 
         _retryPolicy = CreateRetryPolicy();
@@ -638,7 +638,7 @@ public sealed partial class MetalErrorHandler : IDisposable
     private void RecordError(MetalError error)
     {
         var stats = _errorStats.AddOrUpdate(error,
-            _ => new ErrorStatistics { FirstOccurrence = DateTimeOffset.UtcNow },
+            _ => new MetalErrorStatistics { FirstOccurrence = DateTimeOffset.UtcNow },
             (_, existing) =>
             {
                 existing.Count++;
@@ -657,7 +657,7 @@ public sealed partial class MetalErrorHandler : IDisposable
     /// <summary>
     /// Gets error statistics
     /// </summary>
-    public IReadOnlyDictionary<MetalError, ErrorStatistics> GetErrorStatistics()
+    public IReadOnlyDictionary<MetalError, MetalErrorStatistics> GetErrorStatistics()
         => _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
@@ -701,15 +701,16 @@ public sealed partial class MetalErrorHandler : IDisposable
 
         => ClearStatistics();
 
-    /// <summary>
-    /// Error statistics tracking
-    /// </summary>
-    public sealed class ErrorStatistics
-    {
-        public int Count { get; set; }
-        public DateTimeOffset FirstOccurrence { get; init; }
-        public DateTimeOffset LastOccurrence { get; set; }
-    }
+}
+
+/// <summary>
+/// Error statistics tracking for Metal operations
+/// </summary>
+public sealed class MetalErrorStatistics
+{
+    public int Count { get; set; }
+    public DateTimeOffset FirstOccurrence { get; init; }
+    public DateTimeOffset LastOccurrence { get; set; }
 }
 
 /// <summary>
@@ -818,13 +819,23 @@ public class MetalException : Exception
         ErrorCode = MetalError.Unknown;
     }
 
+    public MetalException(string message) : base(message)
+    {
+        ErrorCode = MetalError.Unknown;
+    }
+
+    public MetalException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+        ErrorCode = MetalError.Unknown;
+    }
+
     public MetalException(MetalError errorCode, string message) : base(message)
     {
         ErrorCode = errorCode;
     }
 
     public MetalException(MetalError errorCode, string message, Exception innerException)
-
         : base(message, innerException)
     {
         ErrorCode = errorCode;
@@ -843,15 +854,24 @@ public class MetalOperationException : MetalException
         OperationName = string.Empty;
     }
 
-    public MetalOperationException(string operationName, string message)
+    public MetalOperationException(string message) : base(message)
+    {
+        OperationName = string.Empty;
+    }
 
+    public MetalOperationException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+        OperationName = string.Empty;
+    }
+
+    public MetalOperationException(string operationName, string message)
         : base(MetalError.Unknown, $"Metal operation '{operationName}' failed: {message}")
     {
         OperationName = operationName;
     }
 
     public MetalOperationException(string operationName, string message, Exception innerException)
-
         : base(MetalError.Unknown, $"Metal operation '{operationName}' failed: {message}", innerException)
     {
         OperationName = operationName;

@@ -17,13 +17,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         public byte[] reserved;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaIpcEventHandle left, CudaIpcEventHandle right) => left.Equals(right);
 
-        public static bool operator !=(CudaIpcEventHandle left, CudaIpcEventHandle right) => !(left == right);
 
     }
 
@@ -91,7 +87,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaIpcMemHandle left, CudaIpcMemHandle right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified CudaIpcMemHandle structures have different values.
@@ -99,6 +94,5 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first CudaIpcMemHandle to compare.</param>
         /// <param name="right">The second CudaIpcMemHandle to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaIpcMemHandle left, CudaIpcMemHandle right) => !left.Equals(right);
     }
 }

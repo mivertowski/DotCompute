@@ -200,14 +200,38 @@ public sealed class AutoTuner : IDisposable
         /// </summary>
         public bool IsValid { get; } = performance > 0 && !double.IsNaN(performance);
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
+        /// <summary>
+        /// Determines whether the specified object is equal to the current PerformanceMeasurement.
+        /// </summary>
+        public override bool Equals(object? obj) => obj is PerformanceMeasurement other && Equals(other);
 
-        public override int GetHashCode() => throw new NotImplementedException();
+        /// <summary>
+        /// Determines whether this instance is equal to another PerformanceMeasurement.
+        /// </summary>
+        public bool Equals(PerformanceMeasurement other)
+        {
+            return Performance == other.Performance &&
+                   ExecutionTime == other.ExecutionTime &&
+                   StandardDeviation == other.StandardDeviation &&
+                   IsValid == other.IsValid &&
+                   ((Parameters == null && other.Parameters == null) ||
+                    (Parameters != null && other.Parameters != null && Parameters.SequenceEqual(other.Parameters)));
+        }
 
+        /// <summary>
+        /// Returns the hash code for this PerformanceMeasurement.
+        /// </summary>
+        public override int GetHashCode() => HashCode.Combine(Performance, ExecutionTime, StandardDeviation, IsValid);
+
+        /// <summary>
+        /// Determines whether two PerformanceMeasurement instances are equal.
+        /// </summary>
         public static bool operator ==(PerformanceMeasurement left, PerformanceMeasurement right) => left.Equals(right);
 
-        public static bool operator !=(PerformanceMeasurement left, PerformanceMeasurement right) => !(left == right);
-
+        /// <summary>
+        /// Determines whether two PerformanceMeasurement instances are not equal.
+        /// </summary>
+        public static bool operator !=(PerformanceMeasurement left, PerformanceMeasurement right) => !left.Equals(right);
     }
 
 

@@ -12,6 +12,7 @@ using DotCompute.Algorithms.Management.Models;
 using DotCompute.Algorithms.Management.Services;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Abstractions.Security;
+using DotCompute.Algorithms.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SecurityPolicy = DotCompute.Algorithms.Security.SecurityPolicy;
@@ -433,9 +434,9 @@ namespace DotCompute.Algorithms.Management
                 var context = new SecurityEvaluationContext
                 {
                     AssemblyPath = assemblyPath,
-                    AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes),
+                    AssemblyBytes = System.Collections.Immutable.ImmutableArray.Create(assemblyBytes, 0, assemblyBytes.Length),
                     Certificate = certificate,
-                    StrongNameKey = strongNameKey
+                    StrongNameKey = strongNameKey != null ? System.Collections.Immutable.ImmutableArray.Create(strongNameKey, 0, strongNameKey.Length) : default
                 };
 
                 // Certificate and strong name are set during context initialization

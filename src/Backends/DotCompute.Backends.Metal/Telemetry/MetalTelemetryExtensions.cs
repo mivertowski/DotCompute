@@ -276,6 +276,11 @@ internal sealed class MetalTelemetryHostedService(
 
                 try
                 {
+                    if (_telemetryManager is null)
+                    {
+                        break;
+                    }
+
                     // Generate periodic health report
                     var report = _telemetryManager.GenerateProductionReport();
 

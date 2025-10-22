@@ -199,7 +199,7 @@ namespace DotCompute.Backends.CUDA.Persistent
 
             _activeKernels[kernelId] = state;
 
-            LogPersistentKernelLaunched(_logger, waveType.ToString(), kernelId, gridWidth, gridHeight, gridDepth);
+            LogPersistentKernelLaunched(_logger, waveType.ToString(), kernelId, (uint)gridWidth, (uint)gridHeight, (uint)gridDepth);
 
             return new PersistentKernelHandle(this, kernelId, state);
         }
@@ -444,10 +444,11 @@ namespace DotCompute.Backends.CUDA.Persistent
     internal sealed class PersistentKernelHandle(
         CudaPersistentKernelManager manager,
         string kernelId,
-        CudaPersistentKernelManager.PersistentKernelState _state) : IPersistentKernelHandle
+        CudaPersistentKernelManager.PersistentKernelState state) : IPersistentKernelHandle
     {
         private readonly CudaPersistentKernelManager _manager = manager;
         private readonly string _kernelId = kernelId;
+        private readonly CudaPersistentKernelManager.PersistentKernelState _state = state; // Reserved for future use
         /// <summary>
         /// Gets or sets the kernel identifier.
         /// </summary>

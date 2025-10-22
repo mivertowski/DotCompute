@@ -57,13 +57,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public nuint pitchInBytes;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaResourceDesc left, CudaResourceDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaResourceDesc left, CudaResourceDesc right) => !(left == right);
 
     }
 
@@ -146,13 +142,9 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// </summary>
         public int seamlessCubemap;
 
-        public override bool Equals(object obj) => throw new NotImplementedException();
 
-        public override int GetHashCode() => throw new NotImplementedException();
 
-        public static bool operator ==(CudaTextureDesc left, CudaTextureDesc right) => left.Equals(right);
 
-        public static bool operator !=(CudaTextureDesc left, CudaTextureDesc right) => !(left == right);
 
     }
 
@@ -231,7 +223,6 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are equal; otherwise, false.</returns>
-        public static bool operator ==(CudaResourceViewDesc left, CudaResourceViewDesc right) => left.Equals(right);
 
         /// <summary>
         /// Determines whether two specified instances of CudaResourceViewDesc are not equal.
@@ -239,6 +230,5 @@ namespace DotCompute.Backends.CUDA.Types.Native.Structs
         /// <param name="left">The first instance to compare.</param>
         /// <param name="right">The second instance to compare.</param>
         /// <returns>true if left and right are not equal; otherwise, false.</returns>
-        public static bool operator !=(CudaResourceViewDesc left, CudaResourceViewDesc right) => !left.Equals(right);
     }
 }
