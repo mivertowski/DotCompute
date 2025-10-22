@@ -58,7 +58,7 @@
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
     
     <!-- Performance counters (Windows-specific, conditional) -->
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.9" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.10" Condition="'$(TargetFramework)' == 'net9.0' AND '$(OS)' == 'Windows_NT'" />
     <PackageReference Include="XmlFix.Analyzers" Version="0.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
