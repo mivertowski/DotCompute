@@ -976,7 +976,7 @@ __kernel void lu_decomposition_step(
         /// <param name="matrixSize">Matrix dimensions.</param>
         /// <param name="deviceInfo">GPU device information.</param>
         /// <returns>Optimized kernel execution parameters.</returns>
-        public static KernelExecutionParameters GetOptimizedParameters(
+        internal static KernelExecutionParameters GetOptimizedParameters(
             LinearAlgebraOperation operation,
             (int rows, int cols) matrixSize,
             string deviceInfo)
@@ -1026,7 +1026,7 @@ __kernel void lu_decomposition_step(
         /// <param name="matrixProperties">Matrix characteristics.</param>
         /// <param name="hardwareInfo">Hardware specifications.</param>
         /// <returns>Optimized configuration.</returns>
-        public static AdaptiveKernelConfig GetAdaptiveConfiguration(
+        internal static AdaptiveKernelConfig GetAdaptiveConfiguration(
             LinearAlgebraOperation operation,
             MatrixProperties matrixProperties,
             HardwareInfo hardwareInfo)
@@ -1113,7 +1113,7 @@ __kernel void lu_decomposition_step(
         /// <summary>
         /// Kernel execution parameters optimized for specific operations.
         /// </summary>
-        public class KernelExecutionParameters
+        internal class KernelExecutionParameters
         {
             /// <summary>
             /// Gets or sets the global work size.
@@ -1145,7 +1145,7 @@ __kernel void lu_decomposition_step(
         /// <summary>
         /// Matrix properties for adaptive optimization.
         /// </summary>
-        public class MatrixProperties
+        internal class MatrixProperties
         {
             /// <summary>
             /// Gets or sets the size.
@@ -1209,7 +1209,7 @@ __kernel void lu_decomposition_step(
         /// <summary>
         /// Adaptive kernel configuration based on runtime analysis.
         /// </summary>
-        public class AdaptiveKernelConfig
+        internal class AdaptiveKernelConfig
         {
             /// <summary>
             /// Gets or sets the use sparse optimizations.

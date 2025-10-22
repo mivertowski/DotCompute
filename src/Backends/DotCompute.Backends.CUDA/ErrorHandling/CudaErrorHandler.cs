@@ -484,7 +484,7 @@ public sealed partial class CudaErrorHandler : IDisposable
     /// <summary>
     /// Gets error statistics.
     /// </summary>
-    public IReadOnlyDictionary<CudaError, ErrorStatistics> GetErrorStatistics() => _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    internal IReadOnlyDictionary<CudaError, ErrorStatistics> GetErrorStatistics() => _errorStats.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// <summary>
     /// Clears error statistics.
@@ -510,7 +510,7 @@ public sealed partial class CudaErrorHandler : IDisposable
     /// <summary>
     /// Error statistics tracking.
     /// </summary>
-    public sealed class ErrorStatistics
+    internal sealed class ErrorStatistics
     {
         /// <summary>
         /// Gets or sets the count.

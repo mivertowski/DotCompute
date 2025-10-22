@@ -270,6 +270,11 @@ public sealed class MetalPerformanceCounters : IDisposable
     }
 
     /// <summary>
+    /// Gets current counter values.
+    /// </summary>
+    public Dictionary<string, object> GetCurrentCounters() => CurrentCounters;
+
+    /// <summary>
     /// Performs performance analysis
     /// </summary>
     public MetalPerformanceAnalysis AnalyzePerformance()

@@ -64,7 +64,7 @@ public sealed class KernelNode : GraphNode
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public object[]? Parameters { get; set; }
+    public IReadOnlyList<object>? Parameters { get; set; }
 }
 
 /// <summary>

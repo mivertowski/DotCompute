@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.CUDA.Integration.Components.Policies;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,8 @@ namespace DotCompute.Backends.CUDA.Integration.Components.ErrorHandling;
 /// </summary>
 internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logger) : IDisposable
 {
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this error recovery strategy")]
     private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
     private readonly ILogger _logger = logger; // Reserved for future logging
     private volatile bool _disposed;

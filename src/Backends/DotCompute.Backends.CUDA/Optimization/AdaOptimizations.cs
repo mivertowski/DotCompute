@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// <summary>
         /// RTX 2000 Ada device specifications
         /// </summary>
-        public static class RTX2000Specs
+        internal static class RTX2000Specs
         {
             /// <summary>
             /// The streaming multiprocessors.

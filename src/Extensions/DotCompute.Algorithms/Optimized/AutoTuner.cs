@@ -175,7 +175,7 @@ public sealed class AutoTuner : IDisposable
     /// <summary>
     /// Performance measurement result.
     /// </summary>
-    public readonly struct PerformanceMeasurement(Dictionary<string, object> parameters,
+    internal readonly struct PerformanceMeasurement(Dictionary<string, object> parameters,
 
         double performance, TimeSpan executionTime, double standardDeviation) : IEquatable<PerformanceMeasurement>
     {

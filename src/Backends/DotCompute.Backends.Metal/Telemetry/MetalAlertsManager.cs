@@ -623,17 +623,13 @@ public sealed class MetalAlertsManager : IDisposable
         // Update alert with current telemetry data
         alert.LastOccurrence = DateTimeOffset.UtcNow;
 
-        // Add current snapshot data to alert properties
-
-        if (alert.Properties == null)
+        // Add current snapshot data to alert properties (if properties dictionary exists)
+        if (alert.Properties != null)
         {
-            alert.Properties = [];
+            alert.Properties["last_update"] = DateTimeOffset.UtcNow;
+            alert.Properties["total_operations"] = snapshot.TotalOperations;
+            alert.Properties["error_rate"] = snapshot.ErrorRate;
         }
-
-
-        alert.Properties["last_update"] = DateTimeOffset.UtcNow;
-        alert.Properties["total_operations"] = snapshot.TotalOperations;
-        alert.Properties["error_rate"] = snapshot.ErrorRate;
     }
 
     private bool ShouldResolveAlert(Alert alert, MetalTelemetrySnapshot snapshot)

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using DotCompute.Backends.CUDA.Extensions;
@@ -20,6 +21,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="memoryManager">The underlying CUDA memory manager.</param>
     public sealed class CudaAsyncMemoryManagerAdapter(CudaMemoryManager memoryManager) : IUnifiedMemoryManager
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Injected via constructor and not owned by adapter - lifecycle managed externally by CudaMemoryIntegration")]
         private readonly CudaMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         private readonly ConcurrentDictionary<IUnifiedMemoryBuffer, long> _bufferSizes = new();
         private long _totalAllocatedBytes;
@@ -145,7 +148,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var deviceMemory = buffer.GetDeviceMemory();
                 var basePtr = deviceMemory.Handle;
                 var viewPtr = IntPtr.Add(basePtr, offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
-                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, count, ownsMemory: false);
+                return new SimpleCudaUnifiedMemoryBuffer<T>(viewPtr, length, ownsMemory: false);
             }
         }
 

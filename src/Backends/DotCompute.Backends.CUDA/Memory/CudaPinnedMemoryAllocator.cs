@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -380,6 +381,8 @@ namespace DotCompute.Backends.CUDA.Memory
         IntPtr devicePointer,
         long count) : IPinnedMemoryBuffer<T> where T : unmanaged
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Handle class does not own the allocator - memory is returned to allocator via FreePinned call")]
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;
         /// <summary>
@@ -487,6 +490,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     internal sealed class PinnedMemoryRegistration(IntPtr hostPointer, long size, CudaPinnedMemoryAllocator allocator) : IPinnedMemoryRegistration
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Registration class does not own the allocator - memory is unregistered via UnregisterHostMemory call")]
         private readonly CudaPinnedMemoryAllocator _allocator = allocator;
         private bool _disposed;
         /// <summary>

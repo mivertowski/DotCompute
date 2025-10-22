@@ -24,7 +24,7 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all sparse matrix operation kernels.
     /// </summary>
-    public static class SparseMatrix
+    internal static class SparseMatrix
     {
         /// <summary>
         /// OpenCL kernel for Compressed Sparse Row (CSR) matrix-vector multiplication.
@@ -40,7 +40,7 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all LAPACK-style iterative solver kernels.
     /// </summary>
-    public static class Solvers
+    internal static class Solvers
     {
         /// <summary>
         /// OpenCL kernel for Conjugate Gradient iteration.
@@ -56,7 +56,7 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all eigenvalue computation kernels.
     /// </summary>
-    public static class Eigenvalues
+    internal static class Eigenvalues
     {
         // Forward references to EigenKernels methods when they exist
     }
@@ -64,7 +64,7 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all BLAS operation kernels.
     /// </summary>
-    public static class BLAS
+    internal static class BLAS
     {
         // Forward references to BLASKernels methods when they exist
     }
@@ -72,7 +72,7 @@ public static class AdvancedLinearAlgebraKernels
     /// <summary>
     /// Gets all matrix decomposition kernels.
     /// </summary>
-    public static class Decomposition
+    internal static class Decomposition
     {
         // Forward references to DecompositionKernels methods when they exist
     }

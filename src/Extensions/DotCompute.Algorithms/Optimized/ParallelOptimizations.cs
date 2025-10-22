@@ -568,7 +568,7 @@ public static class ParallelOptimizations
     /// GPU-optimized data transfer and computation coordination.
     /// Manages CPU-GPU data movement and parallel execution.
     /// </summary>
-    public static class GPUOptimizations
+    internal static class GPUOptimizations
     {
         /// <summary>
         /// Asynchronous GPU computation with optimal data transfer patterns.

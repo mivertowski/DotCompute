@@ -35,7 +35,7 @@ public sealed class CudaErrorDiagnostics
     /// Gets or sets the recent errors.
     /// </summary>
     /// <value>The recent errors.</value>
-    public CudaErrorRecord[] RecentErrors { get; init; } = [];
+    public IReadOnlyList<CudaErrorRecord> RecentErrors { get; init; } = [];
     /// <summary>
     /// Gets or sets the most common errors.
     /// </summary>

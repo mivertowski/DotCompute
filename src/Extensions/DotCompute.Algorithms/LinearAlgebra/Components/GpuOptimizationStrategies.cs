@@ -89,7 +89,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="properties">Matrix properties.</param>
         /// <param name="hardware">Hardware information.</param>
         /// <returns>Optimized kernel parameters.</returns>
-        public static LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
+        internal static LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
         {
             // Create a fallback implementation since GetOptimizedParameters doesn't exist
             return new LAKernelParams

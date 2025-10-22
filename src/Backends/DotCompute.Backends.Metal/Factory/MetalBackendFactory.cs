@@ -188,7 +188,7 @@ namespace DotCompute.Backends.Metal.Factory
         /// <summary>
         /// Get information about available Metal devices
         /// </summary>
-        public IReadOnlyList<DeviceInfo> GetAvailableDevices()
+        internal IReadOnlyList<DeviceInfo> GetAvailableDevices()
         {
             var devices = new List<DeviceInfo>();
 
@@ -231,7 +231,7 @@ namespace DotCompute.Backends.Metal.Factory
         /// <summary>
         /// Device information
         /// </summary>
-        public record DeviceInfo
+        internal record DeviceInfo
         {
             public int Index { get; init; }
             public string Name { get; init; } = string.Empty;

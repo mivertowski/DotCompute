@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
@@ -14,6 +15,8 @@ namespace DotCompute.Backends.CUDA.Persistent
     /// </summary>
     public sealed partial class CudaRingBufferAllocator(CudaContext context, ILogger logger) : IDisposable
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this allocator")]
         private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly List<RingBufferAllocation> _allocations = [];
@@ -252,6 +255,8 @@ namespace DotCompute.Backends.CUDA.Persistent
     {
         private readonly IntPtr _basePointer = basePointer;
         private readonly long _sliceBytes = sliceBytes;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this ring buffer")]
         private readonly CudaContext _context = context; // Reserved for future use
         private readonly ILogger _logger = logger;
         private int _currentIndex;

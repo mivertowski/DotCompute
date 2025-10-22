@@ -1002,6 +1002,11 @@ public sealed class CudaPerformanceMonitor : IDisposable
 
     public CudaPerformanceMetrics CurrentMetrics => _currentMetrics;
 
+    /// <summary>
+    /// Gets the current performance metrics.
+    /// </summary>
+    public CudaPerformanceMetrics GetCurrentMetrics() => CurrentMetrics;
+
     private void UpdateMetrics(object? state)
     {
         if (_disposed)
@@ -1023,7 +1028,7 @@ public sealed class CudaPerformanceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            LogErrorUpdatingPerformanceMetrics(_logger, ex);
+            _logger.LogError(ex, "Error updating performance metrics");
         }
     }
     /// <summary>

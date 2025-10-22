@@ -8,6 +8,7 @@ using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Types.Enums;
 using DotCompute.Plugins.Recovery;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Algorithms.Management.Services;
 
@@ -19,6 +20,8 @@ public sealed partial class AlgorithmDependencyResolver(
     AlgorithmRegistry registry) : IDisposable
 {
     private readonly ILogger<AlgorithmDependencyResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Registry is injected via constructor and not owned by this class. Lifetime managed by DI container or parent component.")]
     private readonly AlgorithmRegistry _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     private bool _disposed;
 

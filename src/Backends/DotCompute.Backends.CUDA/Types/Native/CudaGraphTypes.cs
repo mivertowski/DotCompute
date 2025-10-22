@@ -272,9 +272,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <returns>True if not equal; otherwise, false.</returns>
         public static bool operator !=(CudaPos left, CudaPos right) => !left.Equals(right);
     }
-    /// <summary>
-    /// An cuda memory advise enumeration.
-    /// </summary>
 
     // CudaExtent is defined in CudaRuntimeExtended.cs
 
@@ -321,9 +318,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         DeviceLaunch = 0x04,
         UseNodePriority = 0x08
     }
-    /// <summary>
-    /// An cuda graph node type enumeration.
-    /// </summary>
 
     // CudaGraphExecUpdateResult is defined in CudaRuntimeExtended.cs
 
@@ -347,9 +341,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         BatchMemOp = 0x0c,
         Conditional = 0x0d
     }
-    /// <summary>
-    /// An cuda graph dependency type enumeration.
-    /// </summary>
 
     /// <summary>
     /// CUDA graph dependency type.

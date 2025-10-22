@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Execution.Graph.Configuration;
@@ -29,6 +30,8 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
     /// </summary>
     public sealed partial class CudaGraphManager(CudaContext context, ILogger<CudaGraphManager> logger) : IDisposable
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this graph manager")]
         private readonly CudaContext _context = context; // Reserved for future use
         private readonly ILogger<CudaGraphManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly ConcurrentDictionary<string, CudaGraph> _graphs = new();

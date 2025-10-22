@@ -107,7 +107,7 @@ namespace DotCompute.Backends.CUDA.Graphs
         /// <summary>
         /// Captures a sequence of CUDA operations into a graph for optimized execution.
         /// </summary>
-        public async Task<string> CaptureGraphAsync(
+        internal async Task<string> CaptureGraphAsync(
             IntPtr stream,
             Func<Task> operations,
             string? graphName = null,
@@ -573,12 +573,12 @@ namespace DotCompute.Backends.CUDA.Graphs
         /// <summary>
         /// Gets performance statistics for a graph.
         /// </summary>
-        public GraphStatistics? GetStatistics(string graphName) => _statistics.TryGetValue(graphName, out var stats) ? stats : null;
+        internal GraphStatistics? GetStatistics(string graphName) => _statistics.TryGetValue(graphName, out var stats) ? stats : null;
 
         /// <summary>
         /// Gets all graph statistics.
         /// </summary>
-        public IReadOnlyDictionary<string, GraphStatistics> GetAllStatistics() => _statistics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        internal IReadOnlyDictionary<string, GraphStatistics> GetAllStatistics() => _statistics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         /// <summary>
         /// Removes a graph from the manager.
@@ -694,7 +694,7 @@ namespace DotCompute.Backends.CUDA.Graphs
         /// A class that represents graph statistics.
         /// </summary>
 
-        public class GraphStatistics
+        internal class GraphStatistics
         {
             /// <summary>
             /// Gets or sets the graph name.
@@ -793,7 +793,7 @@ namespace DotCompute.Backends.CUDA.Graphs
         /// A class that represents graph capture options.
         /// </summary>
 
-        public class GraphCaptureOptions
+        internal class GraphCaptureOptions
         {
             /// <summary>
             /// Gets or sets the allow invalidation.

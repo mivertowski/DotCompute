@@ -464,7 +464,7 @@ namespace DotCompute.Backends.CUDA.Monitoring
         /// Gets or sets the requested metrics.
         /// </summary>
         /// <value>The requested metrics.</value>
-        public string[] RequestedMetrics { get; }
+        public IReadOnlyList<string> RequestedMetrics { get; }
         /// <summary>
         /// Gets or sets the start time.
         /// </summary>

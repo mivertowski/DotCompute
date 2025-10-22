@@ -60,7 +60,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="config">Kernel execution configuration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Result matrix.</returns>
-        public async Task<Matrix> MultiplyAsync(Matrix a, Matrix b, IAccelerator accelerator, LAKernelParams config, CancellationToken cancellationToken = default)
+        internal async Task<Matrix> MultiplyAsync(Matrix a, Matrix b, IAccelerator accelerator, LAKernelParams config, CancellationToken cancellationToken = default)
         {
             // Fallback kernel source since GetKernelSource doesn't exist
             var kernelSource = GetMatrixMultiplyKernelSource(accelerator.Info.DeviceType);

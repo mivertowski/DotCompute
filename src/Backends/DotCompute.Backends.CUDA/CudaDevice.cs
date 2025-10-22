@@ -420,6 +420,11 @@ namespace DotCompute.Backends.CUDA
         }
 
         /// <summary>
+        /// Gets the estimated number of CUDA cores on this device.
+        /// </summary>
+        public int GetEstimatedCudaCores() => EstimatedCudaCores;
+
+        /// <summary>
         /// Creates an AcceleratorInfo instance from this device.
         /// </summary>
         /// <returns>An AcceleratorInfo instance representing this device.</returns>

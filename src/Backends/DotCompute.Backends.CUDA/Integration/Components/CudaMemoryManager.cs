@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,8 @@ public sealed partial class CudaMemoryManager : IUnifiedMemoryManager, IDisposab
 {
     private readonly CudaContext _context;
     private readonly ILogger<CudaMemoryManager> _logger;
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Disposed via null-conditional operator in Dispose method")]
     private readonly Memory.CudaMemoryManager _cudaMemoryManager;
     private readonly IUnifiedMemoryManager _asyncAdapter;
     private readonly MemoryPool _memoryPool;
@@ -1268,12 +1271,13 @@ internal sealed class MemoryUsageTracker
 /// </summary>
 internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger logger) : IDisposable
 {
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Shared memory manager managed by CudaMemoryManager - not owned by this pool")]
     private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly Dictionary<Type, Queue<IUnifiedMemoryBuffer>> _pools = [];
     private readonly object _lock = new();
     private volatile bool _disposed;
-    private int _hitCount;
     private int _missCount;
     /// <summary>
     /// Gets or sets the last optimization time.
@@ -1286,14 +1290,7 @@ internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, IL
     /// </summary>
     /// <value>The hit ratio.</value>
 
-    public double HitRatio
-    {
-        get
-        {
-            var total = _hitCount + _missCount;
-            return total > 0 ? (double)_hitCount / total : 0.0;
-        }
-    }
+    public double HitRatio => 0.0; // Simplified pool always misses
     /// <summary>
     /// Gets allocate asynchronously.
     /// </summary>

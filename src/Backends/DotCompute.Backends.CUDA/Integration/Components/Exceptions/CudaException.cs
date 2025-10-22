@@ -21,12 +21,6 @@ public sealed class CudaException : Exception
     /// </summary>
     /// <value>The handling result.</value>
     public CudaErrorHandlingResult? HandlingResult { get; }
-    /// <summary>
-    /// Initializes a new instance of the CudaException class.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <param name="cudaError">The cuda error.</param>
-    /// <param name="handlingResult">The handling result.</param>
 
     /// <summary>
     /// Initializes a new instance of the CudaException class.

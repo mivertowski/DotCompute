@@ -75,7 +75,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Calculates optimal launch configuration for a kernel.
         /// </summary>
-        public async Task<LaunchConfiguration> CalculateOptimalLaunchConfigAsync(
+        internal async Task<LaunchConfiguration> CalculateOptimalLaunchConfigAsync(
             IntPtr kernelFunc,
             int deviceId,
             nuint dynamicSharedMemory = 0,
@@ -153,7 +153,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Calculates occupancy for multiple block sizes to find optimal configuration.
         /// </summary>
-        public async Task<OccupancyCurve> CalculateOccupancyCurveAsync(
+        internal async Task<OccupancyCurve> CalculateOccupancyCurveAsync(
             IntPtr kernelFunc,
             int deviceId,
             nuint dynamicSharedMemory = 0,
@@ -221,7 +221,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Analyzes register pressure and suggests optimizations.
         /// </summary>
-        public async Task<RegisterAnalysis> AnalyzeRegisterPressureAsync(
+        internal async Task<RegisterAnalysis> AnalyzeRegisterPressureAsync(
             IntPtr kernelFunc,
             int deviceId,
             int blockSize)
@@ -291,7 +291,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// <summary>
         /// Calculates optimal configuration for 2D/3D kernels.
         /// </summary>
-        public async Task<LaunchConfiguration> Calculate2DOptimalConfigAsync(
+        internal async Task<LaunchConfiguration> Calculate2DOptimalConfigAsync(
             IntPtr kernelFunc,
             int deviceId,
             Dim2 problemSize,
@@ -715,7 +715,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// </summary>
 
 
-        public class LaunchConstraints
+        internal class LaunchConstraints
         {
             /// <summary>
             /// Gets or sets the min block size.
@@ -760,7 +760,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A class that represents occupancy result.
         /// </summary>
 
-        public class OccupancyResult
+        internal class OccupancyResult
         {
             /// <summary>
             /// Gets or sets the percentage.
@@ -787,7 +787,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A class that represents occupancy curve.
         /// </summary>
 
-        public class OccupancyCurve
+        internal class OccupancyCurve
         {
             /// <summary>
             /// Gets or sets the kernel name.
@@ -819,7 +819,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A class that represents occupancy data point.
         /// </summary>
 
-        public class OccupancyDataPoint
+        internal class OccupancyDataPoint
         {
             /// <summary>
             /// Gets or sets the block size.
@@ -851,7 +851,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A class that represents register analysis.
         /// </summary>
 
-        public class RegisterAnalysis
+        internal class RegisterAnalysis
         {
             /// <summary>
             /// Gets or sets the registers per thread.
@@ -983,7 +983,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A dim3 structure.
         /// </summary>
 
-        public struct Dim3(int x, int y, int z) : IEquatable<Dim3>
+        internal struct Dim3(int x, int y, int z) : IEquatable<Dim3>
         {
             /// <summary>
             /// Gets or sets the x.
@@ -1037,7 +1037,7 @@ namespace DotCompute.Backends.CUDA.Optimization
         /// A dim2 structure.
         /// </summary>
 
-        public struct Dim2(int x, int y) : IEquatable<Dim2>
+        internal struct Dim2(int x, int y) : IEquatable<Dim2>
         {
             /// <summary>
             /// Gets or sets the x.

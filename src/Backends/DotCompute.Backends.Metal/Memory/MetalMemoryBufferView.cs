@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Backends.Metal.Memory;
 
@@ -17,6 +18,8 @@ namespace DotCompute.Backends.Metal.Memory;
 /// <param name="length">The length of the view.</param>
 public sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length) : IUnifiedMemoryBuffer
 {
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "View class does not own the parent buffer. Parent is responsible for its own disposal.")]
     private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
     private readonly long _offset = offset;
     private readonly long _length = length;

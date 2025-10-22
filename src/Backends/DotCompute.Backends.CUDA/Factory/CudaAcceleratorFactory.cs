@@ -113,7 +113,7 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Creates a fully configured production accelerator with all features.
         /// </summary>
-        public ProductionCudaAccelerator CreateProductionAccelerator(
+        internal ProductionCudaAccelerator CreateProductionAccelerator(
             int deviceId,
             ProductionConfiguration? config = null)
         {
@@ -629,7 +629,7 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Production configuration for CUDA accelerators.
         /// </summary>
-        public class ProductionConfiguration
+        internal class ProductionConfiguration
         {
             /// <summary>
             /// Gets or sets the enable stream management.
@@ -764,7 +764,7 @@ namespace DotCompute.Backends.CUDA.Factory
         /// <summary>
         /// Production CUDA accelerator with all advanced features.
         /// </summary>
-        public class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
+        internal class ProductionCudaAccelerator : IAccelerator, IDisposable, IAsyncDisposable
         {
             private readonly CudaAccelerator _baseAccelerator;
             private readonly Lazy<IUnifiedMemoryManager> _memoryAdapter;

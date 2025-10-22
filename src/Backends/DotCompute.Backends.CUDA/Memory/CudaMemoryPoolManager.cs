@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types.Native;
 using Microsoft.Extensions.Logging;
@@ -588,6 +589,8 @@ namespace DotCompute.Backends.CUDA.Memory
         long requestedSize,
         int poolSize) : IPooledMemoryBuffer
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Handle class does not own the manager - memory block is returned to pool via ReturnToPool call")]
         private readonly CudaMemoryPoolManager _manager = manager;
         private readonly MemoryBlock _block = block;
         private readonly int _poolSize = poolSize;

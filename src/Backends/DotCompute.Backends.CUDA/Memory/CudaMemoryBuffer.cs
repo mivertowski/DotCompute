@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -227,6 +228,8 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="accelerator">Optional accelerator reference for advanced features.</param>
     public sealed class CudaMemoryBuffer<T>(nint devicePointer, long count, CudaContext context, MemoryOptions options = MemoryOptions.None, IAccelerator? accelerator = null) : IUnifiedMemoryBuffer<T>, IDisposable where T : unmanaged
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this buffer")]
         private CudaContext? _context = context ?? throw new ArgumentNullException(nameof(context));
         private readonly nint _devicePointer = devicePointer;
         private readonly long _count = count;

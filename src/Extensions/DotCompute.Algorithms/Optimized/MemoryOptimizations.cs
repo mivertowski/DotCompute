@@ -26,7 +26,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// NUMA-aware memory allocator with optimal placement strategies.
     /// </summary>
-    public sealed class NumaAllocator : IDisposable
+    internal sealed class NumaAllocator : IDisposable
     {
         private readonly Dictionary<int, IntPtr> _numaBuffers = [];
         private readonly object _lock = new();
@@ -156,7 +156,7 @@ public static class MemoryOptimizations
     /// High-performance memory pool with cache-aligned allocation and reuse.
     /// </summary>
     /// <typeparam name="T">Element type</typeparam>
-    public sealed class OptimizedMemoryPool<T>(int maxBuffers = 100) : IDisposable where T : unmanaged
+    internal sealed class OptimizedMemoryPool<T>(int maxBuffers = 100) : IDisposable where T : unmanaged
     {
         private readonly ConcurrentStack<PooledBuffer> _availableBuffers = new();
         private readonly ConcurrentBag<PooledBuffer> _allBuffers = [];
@@ -292,7 +292,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Cache-oblivious data layout optimizer for maximum memory bandwidth.
     /// </summary>
-    public static class DataLayoutOptimizer
+    internal static class DataLayoutOptimizer
     {
         /// <summary>
         /// Converts row-major matrix to cache-friendly blocked layout.
@@ -433,7 +433,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Memory prefetching utilities for improved cache performance.
     /// </summary>
-    public static class PrefetchOptimizer
+    internal static class PrefetchOptimizer
     {
         /// <summary>
         /// Prefetches memory for sequential access pattern.
@@ -582,7 +582,7 @@ public static class MemoryOptimizations
     /// <summary>
     /// Cache-friendly iteration patterns for optimal memory access.
     /// </summary>
-    public static class CacheOptimizedIterators
+    internal static class CacheOptimizedIterators
     {
         /// <summary>
         /// Iterates through a 2D array in cache-friendly order using tiling.

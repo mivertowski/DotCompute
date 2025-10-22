@@ -151,7 +151,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Maximum dimensions of a thread block as an array [x, y, z].
         /// </summary>
-        public unsafe int[] MaxThreadsDim
+        public unsafe IReadOnlyList<int> MaxThreadsDim
         {
             get
             {
@@ -195,7 +195,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Maximum dimensions of a grid of thread blocks as an array [x, y, z].
         /// </summary>
-        public unsafe int[] MaxGridSize
+        public unsafe IReadOnlyList<int> MaxGridSize
         {
             get
             {
@@ -207,7 +207,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Maximum dimensions of a grid of thread blocks as an array [x, y, z] (alias for MaxGridSize).
         /// </summary>
-        public unsafe int[] MaxGridDim => MaxGridSize;
+        public unsafe IReadOnlyList<int> MaxGridDim => MaxGridSize;
         /// <summary>
         /// The clock rate.
         /// </summary>
@@ -612,9 +612,6 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// </summary>
         [FieldOffset(708)]
         public int DirectManagedMemAccessFromHost;
-        /// <summary>
-        /// The max texture1 d.
-        /// </summary>
 
         // Additional missing fields for texture limits
 
@@ -649,7 +646,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Maximum 2D texture dimensions as array.
         /// </summary>
-        public unsafe int[] MaxTexture2D
+        public unsafe IReadOnlyList<int> MaxTexture2D
         {
             get => [MaxTexture2DWidth, MaxTexture2DHeight];
         }
@@ -688,7 +685,7 @@ namespace DotCompute.Backends.CUDA.Types.Native
         /// <summary>
         /// Maximum 3D texture dimensions as array.
         /// </summary>
-        public unsafe int[] MaxTexture3D
+        public unsafe IReadOnlyList<int> MaxTexture3D
         {
             get => [MaxTexture3DWidth, MaxTexture3DHeight, MaxTexture3DDepth];
         }

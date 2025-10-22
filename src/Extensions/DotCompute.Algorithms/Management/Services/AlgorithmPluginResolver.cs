@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Debugging.Types;
 using DotCompute.Algorithms.Management.Core;
@@ -25,6 +26,8 @@ public sealed partial class AlgorithmPluginResolver(
     AlgorithmPluginRegistry registry) : IDisposable
 {
     private readonly ILogger<AlgorithmPluginResolver> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Injected via constructor and not owned by this class - lifecycle managed by dependency injection container")]
     private readonly AlgorithmPluginRegistry _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     private bool _disposed;
 

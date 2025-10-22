@@ -392,7 +392,7 @@ namespace DotCompute.Backends.CUDA.Resilience
                 {
                     try
                     {
-                        RegisterKernel(kernel.Name, kernel.PtxCode, kernel.CubinCode);
+                        RegisterKernel(kernel.Name, kernel.PtxCode.ToArray(), kernel.CubinCode?.ToArray());
                         result.RestoredKernels++;
                     }
                     catch (Exception ex)
@@ -851,12 +851,12 @@ namespace DotCompute.Backends.CUDA.Resilience
         /// Gets or sets the ptx code.
         /// </summary>
         /// <value>The ptx code.</value>
-        public byte[] PtxCode { get; init; } = [];
+        public IReadOnlyList<byte> PtxCode { get; init; } = [];
         /// <summary>
         /// Gets or sets the cubin code.
         /// </summary>
         /// <value>The cubin code.</value>
-        public byte[]? CubinCode { get; init; }
+        public IReadOnlyList<byte>? CubinCode { get; init; }
         /// <summary>
         /// Gets or sets the compilation time.
         /// </summary>

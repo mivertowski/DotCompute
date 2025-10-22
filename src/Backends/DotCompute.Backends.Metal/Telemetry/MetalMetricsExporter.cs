@@ -294,6 +294,11 @@ public sealed partial class MetalMetricsExporter : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets metrics in a format suitable for external systems.
+    /// </summary>
+    public Dictionary<string, object> GetExportableMetrics() => ExportableMetrics;
+
     private async Task ExportToPrometheusAsync(ExporterConfiguration exporter, MetalTelemetrySnapshot snapshot, CancellationToken cancellationToken)
     {
         try

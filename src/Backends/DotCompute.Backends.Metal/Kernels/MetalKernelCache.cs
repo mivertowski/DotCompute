@@ -36,7 +36,7 @@ public sealed partial class MetalKernelCache : IDisposable
     /// <summary>
     /// Cache statistics for monitoring and optimization.
     /// </summary>
-    public record CacheStatistics
+    internal record CacheStatistics
     {
         public long HitCount { get; init; }
         public long MissCount { get; init; }
@@ -451,7 +451,7 @@ public sealed partial class MetalKernelCache : IDisposable
     /// <summary>
     /// Gets current cache statistics.
     /// </summary>
-    public CacheStatistics GetStatistics()
+    internal CacheStatistics GetStatistics()
     {
         lock (_statsLock)
         {

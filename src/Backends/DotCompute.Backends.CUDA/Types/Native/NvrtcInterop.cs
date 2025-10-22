@@ -713,7 +713,7 @@ namespace DotCompute.Backends.CUDA.Native
         /// <summary>
         /// Common compute capabilities with latest GPU generations.
         /// </summary>
-        public static class KnownComputeCapabilities
+        internal static class KnownComputeCapabilities
         {
             // Legacy generations
             public static readonly (int major, int minor) Fermi = (2, 0);

@@ -240,7 +240,7 @@ public sealed partial class CudaKernelExecutor : IDisposable
                     var config = batch.ExecutionConfig with { Stream = stream };
 
                     results[index] = await ExecuteAndWaitAsync(
-                        batch.Kernel, batch.Arguments, config, cancellationToken)
+                        batch.Kernel, batch.Arguments.ToArray(), config, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 catch (Exception ex)
@@ -413,7 +413,7 @@ public readonly record struct KernelBatchExecution
     /// Gets or sets the arguments.
     /// </summary>
     /// <value>The arguments.</value>
-    public KernelArgument[] Arguments { get; init; }
+    public IReadOnlyList<KernelArgument> Arguments { get; init; }
     /// <summary>
     /// Gets or sets the execution config.
     /// </summary>
@@ -571,6 +571,8 @@ public sealed class ManagedCompiledKernel(ICompiledKernel kernel, KernelDefiniti
 /// </summary>
 internal sealed class KernelConfigurationOptimizer(CudaContext context, ILogger logger) : IDisposable
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Shared CUDA context managed by CudaAccelerator - not owned by this optimizer")]
     private readonly CudaContext _context = context; // Reserved for future use
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;

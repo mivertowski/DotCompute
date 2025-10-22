@@ -39,6 +39,8 @@ public sealed partial class AlgorithmPluginManagerRefactored : IAsyncDisposable
     private readonly AlgorithmPluginCache _cache;
 
     // Service components
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Field is disposed via null-conditional operator in DisposeAsync: _orchestrator?.Dispose()")]
     private AlgorithmPluginOrchestrator? _orchestrator;
     private readonly AlgorithmPluginMetrics _metrics;
 

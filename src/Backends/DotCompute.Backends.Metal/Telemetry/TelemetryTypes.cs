@@ -492,6 +492,11 @@ public sealed class CircuitBreaker(string name, int threshold, TimeSpan timeout)
             return CurrentState;
         }
     }
+
+    /// <summary>
+    /// Gets the current state of the circuit breaker.
+    /// </summary>
+    public CircuitBreakerState GetState() => State;
 }
 
 /// <summary>

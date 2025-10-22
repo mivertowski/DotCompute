@@ -144,7 +144,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Starts profiling session with specified configuration.
         /// </summary>
-        public async Task StartProfilingAsync(ProfilingConfiguration? config = null)
+        internal async Task StartProfilingAsync(ProfilingConfiguration? config = null)
         {
             config ??= ProfilingConfiguration.Default;
 
@@ -226,7 +226,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Stops the current profiling session and generates report.
         /// </summary>
-        public async Task<ProfilingReport> StopProfilingAsync()
+        internal async Task<ProfilingReport> StopProfilingAsync()
         {
             await _profilingLock.WaitAsync();
             try
@@ -286,7 +286,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Profiles a specific kernel execution.
         /// </summary>
-        public async Task<KernelProfile> ProfileKernelAsync(
+        internal async Task<KernelProfile> ProfileKernelAsync(
             string kernelName,
             Func<Task> kernelExecution,
             int warmupRuns = 3,
@@ -351,7 +351,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Collects current GPU metrics.
         /// </summary>
-        public async Task<GpuMetrics> CollectGpuMetricsAsync(int deviceIndex = 0)
+        internal async Task<GpuMetrics> CollectGpuMetricsAsync(int deviceIndex = 0)
         {
             var metrics = new GpuMetrics
             {
@@ -403,7 +403,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Analyzes memory transfer patterns.
         /// </summary>
-        public MemoryTransferAnalysis AnalyzeMemoryTransfers()
+        internal MemoryTransferAnalysis AnalyzeMemoryTransfers()
         {
             var analysis = new MemoryTransferAnalysis();
 
@@ -646,7 +646,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// <summary>
         /// Exports profiling report to file.
         /// </summary>
-        public async Task ExportReportAsync(ProfilingReport report, string filepath)
+        internal async Task ExportReportAsync(ProfilingReport report, string filepath)
         {
             try
             {
@@ -775,7 +775,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// </summary>
 
         // Supporting classes and enums
-        public class ProfilingConfiguration
+        internal class ProfilingConfiguration
         {
             /// <summary>
             /// Gets or sets the profile kernels.
@@ -810,7 +810,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents kernel profile.
         /// </summary>
 
-        public class KernelProfile
+        internal class KernelProfile
         {
             /// <summary>
             /// Gets or sets the name.
@@ -877,7 +877,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents memory profile.
         /// </summary>
 
-        public class MemoryProfile
+        internal class MemoryProfile
         {
             /// <summary>
             /// Gets or sets the name.
@@ -919,7 +919,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents gpu metrics.
         /// </summary>
 
-        public class GpuMetrics
+        internal class GpuMetrics
         {
             /// <summary>
             /// Gets or sets the timestamp.
@@ -971,7 +971,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents profiling report.
         /// </summary>
 
-        public class ProfilingReport
+        internal class ProfilingReport
         {
             /// <summary>
             /// Gets or sets the generated at.
@@ -1023,7 +1023,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents memory transfer analysis.
         /// </summary>
 
-        public class MemoryTransferAnalysis
+        internal class MemoryTransferAnalysis
         {
             /// <summary>
             /// Gets or sets the total transfers.
@@ -1060,7 +1060,7 @@ namespace DotCompute.Backends.CUDA.Profiling
         /// A class that represents transfer type stats.
         /// </summary>
 
-        public class TransferTypeStats
+        internal class TransferTypeStats
         {
             /// <summary>
             /// Gets or sets the count.

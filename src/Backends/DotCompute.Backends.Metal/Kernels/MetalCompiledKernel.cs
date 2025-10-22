@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
 using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 using DotCompute.Abstractions.Kernels;
 using DotCompute.Abstractions.Types;
@@ -31,6 +32,8 @@ MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
     private readonly IntPtr _pipelineState = pipelineState;
     private readonly IntPtr _commandQueue = commandQueue;
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Command buffer pool is shared infrastructure managed by MetalAccelerator lifecycle. See Dispose() method comment.")]
     private readonly MetalCommandBufferPool? _commandBufferPool = commandBufferPool;
     private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
     private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;

@@ -98,7 +98,7 @@ namespace DotCompute.Backends.CUDA.Execution.Graph
         /// <summary>
         /// Gets or sets the original operations that were fused to create this operation.
         /// </summary>
-        /// <value>An array of <see cref="CudaKernelOperation"/> instances that were combined, or <c>null</c> if not fused.</value>
-        public CudaKernelOperation[]? OriginalOperations { get; set; }
+        /// <value>A collection of <see cref="CudaKernelOperation"/> instances that were combined, or <c>null</c> if not fused.</value>
+        public IReadOnlyList<CudaKernelOperation>? OriginalOperations { get; set; }
     }
 }

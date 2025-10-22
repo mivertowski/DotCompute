@@ -723,17 +723,17 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Gets or sets the dimensions a.
         /// </summary>
         /// <value>The dimensions a.</value>
-        public int[] DimensionsA { get; set; } = [];
+        public IReadOnlyList<int> DimensionsA { get; set; } = [];
         /// <summary>
         /// Gets or sets the dimensions b.
         /// </summary>
         /// <value>The dimensions b.</value>
-        public int[] DimensionsB { get; set; } = [];
+        public IReadOnlyList<int> DimensionsB { get; set; } = [];
         /// <summary>
         /// Gets or sets the dimensions c.
         /// </summary>
         /// <value>The dimensions c.</value>
-        public int[] DimensionsC { get; set; } = [];
+        public IReadOnlyList<int> DimensionsC { get; set; } = [];
         /// <summary>
         /// Gets or sets the alpha.
         /// </summary>
@@ -803,7 +803,7 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Gets or sets the dimensions.
         /// </summary>
         /// <value>The dimensions.</value>
-        public int[] Dimensions { get; set; } = [];
+        public IReadOnlyList<int> Dimensions { get; set; } = [];
         /// <summary>
         /// Gets or sets the precision.
         /// </summary>
@@ -830,12 +830,12 @@ namespace DotCompute.Backends.CUDA.Advanced
         /// Gets or sets the original dimensions.
         /// </summary>
         /// <value>The original dimensions.</value>
-        public int[] OriginalDimensions { get; set; } = [];
+        public IReadOnlyList<int> OriginalDimensions { get; set; } = [];
         /// <summary>
         /// Gets or sets the optimized dimensions.
         /// </summary>
         /// <value>The optimized dimensions.</value>
-        public int[] OptimizedDimensions { get; set; } = [];
+        public IReadOnlyList<int> OptimizedDimensions { get; set; } = [];
         /// <summary>
         /// Gets or sets the alignment.
         /// </summary>

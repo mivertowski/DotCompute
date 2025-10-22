@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CUDA.Types
         /// <summary>
         /// Gets or sets the compiled kernel binary.
         /// </summary>
-        public byte[] Binary { get; set; } = [];
+        public IReadOnlyList<byte> Binary { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the compilation timestamp.

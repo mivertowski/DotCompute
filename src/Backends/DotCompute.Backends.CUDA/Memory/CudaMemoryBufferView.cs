@@ -3,6 +3,7 @@
 
 using DotCompute.Abstractions.Memory;
 using DotCompute.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Backends.CUDA.Memory
 {
@@ -20,6 +21,8 @@ namespace DotCompute.Backends.CUDA.Memory
     {
         private readonly nint _devicePointer = devicePointer;
         private readonly long _sizeInBytes = sizeInBytes;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "View class does not own the parent buffer. Parent is responsible for its own disposal. See Dispose() method comment.")]
         private readonly IUnifiedMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
         private bool _disposed;
 
@@ -72,11 +75,13 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="devicePointer">The device memory pointer for this view.</param>
     /// <param name="length">The number of elements in this view.</param>
     /// <param name="parentBuffer">The parent buffer that owns the memory.</param>
-    public sealed class CudaMemoryBufferView<T>(nint devicePointer, int length, IUnifiedMemoryBuffer parentBuffer) : IUnifiedMemoryBuffer<T> where T : unmanaged
+    public sealed class CudaMemoryBufferView<T>(nint devicePointer, int length, IUnifiedMemoryBuffer<T> parentBuffer) : IUnifiedMemoryBuffer<T> where T : unmanaged
     {
         private readonly nint _devicePointer = devicePointer;
         private readonly int _length = length;
-        private readonly IUnifiedMemoryBuffer _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "View class does not own the parent buffer. Parent is responsible for its own disposal. See Dispose() method comment.")]
+        private readonly IUnifiedMemoryBuffer<T> _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
         private bool _disposed;
 
         /// <summary>
@@ -156,8 +161,8 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <summary>
         /// Gets map range.
         /// </summary>
-        /// <param name="start">The start.</param>
-        /// <param name="count">The count.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="length">The length.</param>
         /// <param name="mode">The mode.</param>
         /// <returns>The result of the operation.</returns>
         public MappedMemory<T> MapRange(int offset, int length, MapMode mode) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");
@@ -234,7 +239,7 @@ namespace DotCompute.Backends.CUDA.Memory
         /// <param name="sourceOffset">The source offset.</param>
         /// <param name="destination">The destination.</param>
         /// <param name="destinationOffset">The destination offset.</param>
-        /// <param name="length">The length.</param>
+        /// <param name="count">The count.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The result of the operation.</returns>
         public ValueTask CopyToAsync(int sourceOffset, IUnifiedMemoryBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default) => throw new NotImplementedException("Buffer view operations should be performed through the memory manager");

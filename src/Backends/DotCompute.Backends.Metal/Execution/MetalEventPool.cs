@@ -430,6 +430,26 @@ public sealed class MetalEventPool : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets statistics about the event pool.
+    /// </summary>
+    public MetalEventPoolStatistics GetStatistics()
+    {
+        var total = _totalCreated;
+        var reused = _totalReused;
+        return new MetalEventPoolStatistics
+        {
+            TimingPoolSize = _timingPoolSize,
+            SyncPoolSize = _syncPoolSize,
+            ActiveEvents = _activeEvents.Count,
+            TotalCreated = total,
+            TotalReused = reused,
+            ReuseRatio = total > 0 ? (double)reused / total : 0.0,
+            MaxTimingPoolSize = MAX_TIMING_POOL_SIZE,
+            MaxSyncPoolSize = MAX_SYNC_POOL_SIZE
+        };
+    }
+
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()

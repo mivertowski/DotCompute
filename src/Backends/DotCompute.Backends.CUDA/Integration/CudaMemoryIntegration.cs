@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Memory;
@@ -155,6 +156,8 @@ public sealed partial class CudaMemoryIntegration : IDisposable
 
     private readonly CudaContext _context;
     private readonly ILogger _logger;
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+        Justification = "Disposed via null-conditional operator in Dispose method (line 561)")]
     private readonly CudaMemoryManager _memoryManager;
     private readonly CudaAsyncMemoryManagerAdapter _asyncAdapter;
     private readonly Dictionary<IntPtr, CudaBufferInfo> _bufferRegistry;

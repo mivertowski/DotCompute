@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 // using DotCompute.Backends.CUDA.Kernels; // Not available
 using DotCompute.Backends.CUDA.Memory;
@@ -446,8 +447,12 @@ namespace DotCompute.Backends.CUDA.Persistent
         string kernelId,
         CudaPersistentKernelManager.PersistentKernelState state) : IPersistentKernelHandle
     {
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "Handle class does not own the manager - kernel is stopped via StopKernelAsync call")]
         private readonly CudaPersistentKernelManager _manager = manager;
         private readonly string _kernelId = kernelId;
+        [SuppressMessage("IDisposableAnalyzers.Correctness", "CA2213:Disposable fields should be disposed",
+            Justification = "State is managed by CudaPersistentKernelManager - not owned by this handle")]
         private readonly CudaPersistentKernelManager.PersistentKernelState _state = state; // Reserved for future use
         /// <summary>
         /// Gets or sets the kernel identifier.

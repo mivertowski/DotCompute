@@ -286,7 +286,7 @@ public static class PerformanceBenchmarks
     /// </summary>
     /// <param name="sizes">Matrix sizes to test</param>
     /// <returns>Benchmark report with detailed performance metrics</returns>
-    public static BenchmarkReport BenchmarkMatrixMultiplication(int[] sizes)
+    internal static BenchmarkReport BenchmarkMatrixMultiplication(int[] sizes)
     {
         var report = new BenchmarkReport();
         Console.WriteLine("Running matrix multiplication benchmarks...");
@@ -377,7 +377,7 @@ public static class PerformanceBenchmarks
     /// </summary>
     /// <param name="sizes">FFT sizes to test</param>
     /// <returns>FFT benchmark report</returns>
-    public static BenchmarkReport BenchmarkFFT(int[] sizes)
+    internal static BenchmarkReport BenchmarkFFT(int[] sizes)
     {
         var report = new BenchmarkReport();
         Console.WriteLine("Running FFT benchmarks...");
@@ -449,7 +449,7 @@ public static class PerformanceBenchmarks
     /// </summary>
     /// <param name="sizes">Vector/matrix sizes to test</param>
     /// <returns>BLAS benchmark report</returns>
-    public static BenchmarkReport BenchmarkBLAS(int[] sizes)
+    internal static BenchmarkReport BenchmarkBLAS(int[] sizes)
     {
         var report = new BenchmarkReport();
         Console.WriteLine("Running BLAS benchmarks...");
@@ -548,7 +548,7 @@ public static class PerformanceBenchmarks
     /// </summary>
     /// <param name="sizes">Problem sizes to test</param>
     /// <returns>Parallel algorithm benchmark report</returns>
-    public static BenchmarkReport BenchmarkParallelAlgorithms(int[] sizes)
+    internal static BenchmarkReport BenchmarkParallelAlgorithms(int[] sizes)
     {
         var report = new BenchmarkReport();
         Console.WriteLine("Running parallel algorithm benchmarks...");
@@ -643,7 +643,7 @@ public static class PerformanceBenchmarks
     /// Runs all benchmarks and generates a comprehensive report.
     /// </summary>
     /// <returns>Combined benchmark report</returns>
-    public static BenchmarkReport RunFullBenchmarkSuite()
+    internal static BenchmarkReport RunFullBenchmarkSuite()
     {
         Console.WriteLine("Starting DotCompute Algorithm Optimization Benchmark Suite");
         Console.WriteLine("============================================================");

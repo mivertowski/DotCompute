@@ -89,5 +89,5 @@ public sealed class CudaKernelOperation
     /// Gets or sets the original operations if this is a fused kernel.
     /// Maintains traceability after kernel fusion.
     /// </summary>
-    public CudaKernelOperation[]? OriginalOperations { get; set; }
+    public IReadOnlyList<CudaKernelOperation>? OriginalOperations { get; set; }
 }

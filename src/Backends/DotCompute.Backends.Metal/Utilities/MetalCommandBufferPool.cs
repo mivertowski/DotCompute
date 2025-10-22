@@ -168,6 +168,11 @@ public sealed class MetalCommandBufferPool : IDisposable
         CurrentPoolSize = _currentPoolSize
     };
 
+    /// <summary>
+    /// Gets statistics about the command buffer pool.
+    /// </summary>
+    public CommandBufferPoolStats GetStats() => Stats;
+
     private static bool IsBufferStale(CommandBufferInfo? info)
     {
         if (info == null)
