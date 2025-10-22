@@ -19,8 +19,95 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Handles core execution logic for CPU kernels with SIMD vectorization support.
 /// Provides optimized execution paths for both scalar and vectorized operations.
 /// </summary>
-internal sealed class CpuKernelExecutor : IDisposable
+internal sealed partial class CpuKernelExecutor : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 7300,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "CpuKernelExecutor initialized for kernel {KernelName} with vectorization: {UseVectorization}")]
+    private static partial void LogExecutorInitialized(ILogger logger, string kernelName, bool useVectorization);
+
+    [LoggerMessage(
+        EventId = 7301,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Compiled delegate set for kernel {KernelName}")]
+    private static partial void LogCompiledDelegateSet(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7302,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Executing kernel {KernelName} with work dimensions [{X}, {Y}, {Z}]")]
+    private static partial void LogExecutingKernel(ILogger logger, string kernelName, long x, long y, long z);
+
+    [LoggerMessage(
+        EventId = 7303,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Kernel execution failed for {KernelName}")]
+    private static partial void LogKernelExecutionFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7304,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Executing vectorized kernel {KernelName}")]
+    private static partial void LogExecutingVectorizedKernel(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7305,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Executing compiled delegate for kernel {KernelName}")]
+    private static partial void LogExecutingCompiledDelegate(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7306,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Executing scalar kernel {KernelName}")]
+    private static partial void LogExecutingScalarKernel(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7307,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Vectorized execution for {Count} work items with vector width {Width}")]
+    private static partial void LogVectorizedExecution(ILogger logger, int count, int width);
+
+    [LoggerMessage(
+        EventId = 7308,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Vectorized work item execution failed")]
+    private static partial void LogVectorizedWorkItemFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 7309,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Compiled delegate work item execution failed")]
+    private static partial void LogCompiledDelegateWorkItemFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 7310,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Scalar work item execution failed")]
+    private static partial void LogScalarWorkItemFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 7311,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Executing basic kernel for work item [{WorkItem}]")]
+    private static partial void LogExecutingBasicKernel(ILogger logger, string workItem);
+
+    [LoggerMessage(
+        EventId = 7312,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Kernel {KernelName} executed in {ExecutionTime:F2}ms (execution #{Count})")]
+    private static partial void LogKernelExecutionTime(ILogger logger, string kernelName, double executionTime, long count);
+
+    [LoggerMessage(
+        EventId = 7313,
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = "Kernel {KernelName} performance: {Count} executions, {AvgTime:F2}ms average")]
+    private static partial void LogKernelPerformanceStats(ILogger logger, string kernelName, long count, double avgTime);
+
+    #endregion
     private readonly KernelDefinition _definition;
     private readonly KernelExecutionPlan _executionPlan;
     private readonly CpuThreadPool _threadPool;
@@ -67,8 +154,7 @@ internal sealed class CpuKernelExecutor : IDisposable
             _kernelExecutor = _codeGenerator.GetOrCreateVectorizedKernel(definition, executionPlan);
         }
 
-        _logger.LogDebug("CpuKernelExecutor initialized for kernel {KernelName} with vectorization: {UseVectorization}",
-            definition.Name, _executionPlan.UseVectorization);
+        LogExecutorInitialized(_logger, definition.Name, _executionPlan.UseVectorization);
     }
 
     /// <summary>
@@ -77,7 +163,7 @@ internal sealed class CpuKernelExecutor : IDisposable
     public void SetCompiledDelegate(Delegate compiledDelegate)
     {
         _compiledDelegate = compiledDelegate ?? throw new ArgumentNullException(nameof(compiledDelegate));
-        _logger.LogDebug("Compiled delegate set for kernel {KernelName}", _definition.Name);
+        LogCompiledDelegateSet(_logger, _definition.Name);
     }
 
     /// <summary>
@@ -92,8 +178,7 @@ internal sealed class CpuKernelExecutor : IDisposable
 
         try
         {
-            _logger.LogDebug("Executing kernel {KernelName} with work dimensions [{X}, {Y}, {Z}]",
-                _definition.Name, context.WorkDimensions.X, context.WorkDimensions.Y, context.WorkDimensions.Z);
+            LogExecutingKernel(_logger, _definition.Name, context.WorkDimensions.X, context.WorkDimensions.Y, context.WorkDimensions.Z);
 
             // Choose execution path based on vectorization capability
             if (_executionPlan.UseVectorization && _kernelExecutor != null)
@@ -115,7 +200,7 @@ internal sealed class CpuKernelExecutor : IDisposable
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Kernel execution failed for {KernelName}", _definition.Name);
+            LogKernelExecutionFailed(_logger, ex, _definition.Name);
             throw;
         }
     }
@@ -127,12 +212,10 @@ internal sealed class CpuKernelExecutor : IDisposable
     {
         if (_kernelExecutor == null)
         {
-
             throw new InvalidOperationException("Vectorized kernel executor is not available");
         }
 
-
-        _logger.LogDebug("Executing vectorized kernel {KernelName}", _definition.Name);
+        LogExecutingVectorizedKernel(_logger, _definition.Name);
 
         var totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
         var vectorFactor = _executionPlan.VectorizationFactor;
@@ -149,7 +232,7 @@ internal sealed class CpuKernelExecutor : IDisposable
             var endIndex = Math.Min(startIndex + workItemsPerThread, totalWorkItems);
 
             tasks[threadIndex] = Task.Run(() => ExecuteVectorizedWorkItems(
-                context, startIndex, endIndex, vectorFactor, barrier, cancellationToken));
+                context, startIndex, endIndex, vectorFactor, barrier, cancellationToken), cancellationToken);
         }
 
         await Task.WhenAll(tasks);
@@ -162,12 +245,10 @@ internal sealed class CpuKernelExecutor : IDisposable
     {
         if (_compiledDelegate == null)
         {
-
             throw new InvalidOperationException("Compiled delegate is not available");
         }
 
-
-        _logger.LogDebug("Executing compiled delegate for kernel {KernelName}", _definition.Name);
+        LogExecutingCompiledDelegate(_logger, _definition.Name);
 
         var totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
         var numThreads = Math.Min(_threadPool.MaxConcurrency, (int)totalWorkItems);
@@ -183,7 +264,7 @@ internal sealed class CpuKernelExecutor : IDisposable
             var endIndex = Math.Min(startIndex + workItemsPerThread, totalWorkItems);
 
             tasks[threadIndex] = Task.Run(() => ExecuteCompiledDelegateWorkItems(
-                context, startIndex, endIndex, barrier, cancellationToken));
+                context, startIndex, endIndex, barrier, cancellationToken), cancellationToken);
         }
 
         await Task.WhenAll(tasks);
@@ -194,7 +275,7 @@ internal sealed class CpuKernelExecutor : IDisposable
     /// </summary>
     private async ValueTask ExecuteScalarAsync(KernelExecutionContext context, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Executing scalar kernel {KernelName}", _definition.Name);
+        LogExecutingScalarKernel(_logger, _definition.Name);
 
         var totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
         var numThreads = Math.Min(_threadPool.MaxConcurrency, (int)totalWorkItems);
@@ -210,7 +291,7 @@ internal sealed class CpuKernelExecutor : IDisposable
             var endIndex = Math.Min(startIndex + workItemsPerThread, totalWorkItems);
 
             tasks[threadIndex] = Task.Run(() => ExecuteScalarWorkItems(
-                context, startIndex, endIndex, barrier, cancellationToken));
+                context, startIndex, endIndex, barrier, cancellationToken), cancellationToken);
         }
 
         await Task.WhenAll(tasks);
@@ -306,13 +387,12 @@ internal sealed class CpuKernelExecutor : IDisposable
 
                 // For now, log the vectorized execution attempt
                 // Full implementation would convert buffers to Span<byte> and call Execute
-                _logger.LogTrace("Vectorized execution for {Count} work items with vector width {Width}",
-                    elementCount, vectorWidth);
+                LogVectorizedExecution(_logger, elementCount, vectorWidth);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Vectorized work item execution failed");
+            LogVectorizedWorkItemFailed(_logger, ex);
             throw;
         }
     }
@@ -328,7 +408,7 @@ internal sealed class CpuKernelExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Compiled delegate work item execution failed");
+            LogCompiledDelegateWorkItemFailed(_logger, ex);
             throw;
         }
     }
@@ -344,7 +424,7 @@ internal sealed class CpuKernelExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Scalar work item execution failed");
+            LogScalarWorkItemFailed(_logger, ex);
             throw;
         }
     }
@@ -352,10 +432,11 @@ internal sealed class CpuKernelExecutor : IDisposable
     // Helper methods
 
     private void ExecuteBasicKernel(KernelExecutionContext context, long[] workItemId)
+    {
         // Basic kernel execution - this would be implemented based on kernel definition
         // For now, this is a placeholder that would delegate to the actual kernel logic
-
-        => _logger.LogTrace("Executing basic kernel for work item [{WorkItem}]", string.Join(", ", workItemId));
+        LogExecutingBasicKernel(_logger, string.Join(", ", workItemId));
+    }
 
     private static long GetTotalWorkItems(WorkDimensions dimensions) => dimensions.X * dimensions.Y * dimensions.Z;
 
@@ -390,15 +471,13 @@ internal sealed class CpuKernelExecutor : IDisposable
         _totalExecutionTimeMs += executionTimeMs;
         var newTotal = _totalExecutionTimeMs;
 
-        _logger.LogTrace("Kernel {KernelName} executed in {ExecutionTime:F2}ms (execution #{Count})",
-            _definition.Name, executionTimeMs, _executionCount);
+        LogKernelExecutionTime(_logger, _definition.Name, executionTimeMs, _executionCount);
 
         // Log performance stats periodically
         if (_executionCount % 100 == 0)
         {
             var avgTime = newTotal / _executionCount;
-            _logger.LogInformation("Kernel {KernelName} performance: {Count} executions, {AvgTime:F2}ms average",
-                _definition.Name, _executionCount, avgTime);
+            LogKernelPerformanceStats(_logger, _definition.Name, _executionCount, avgTime);
         }
     }
     /// <summary>

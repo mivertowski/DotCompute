@@ -10,12 +10,29 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// Performance profiler for SIMD operations with detailed metrics collection
 /// </summary>
-public sealed class SimdPerformanceProfiler : IDisposable
+public sealed partial class SimdPerformanceProfiler : IDisposable
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<SimdExecutionStrategy, StrategyMetrics> _strategyMetrics;
     private readonly Timer _metricsReportTimer;
     private volatile bool _disposed;
+
+    #region LoggerMessage Delegates (Event IDs 7560-7579)
+
+    [LoggerMessage(EventId = 7560, Level = LogLevel.Information, Message = "SIMD Performance Summary: {TotalExecutions} executions, {Strategies} strategies used")]
+    private static partial void LogPerformanceSummary(ILogger logger, long totalExecutions, int strategies);
+
+    [LoggerMessage(EventId = 7561, Level = LogLevel.Debug, Message = "Strategy {Strategy}: {Throughput:F2} elements/sec, {VectorizationRatio:P1} vectorized")]
+    private static partial void LogStrategyPerformance(ILogger logger, SimdExecutionStrategy strategy, double throughput, double vectorizationRatio);
+
+    [LoggerMessage(EventId = 7562, Level = LogLevel.Error, Message = "Error reporting SIMD performance metrics")]
+    private static partial void LogMetricsReportError(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 7563, Level = LogLevel.Debug, Message = "SIMD Performance Profiler disposed")]
+    private static partial void LogProfilerDisposed(ILogger logger);
+
+    #endregion
+
     /// <summary>
     /// Initializes a new instance of the SimdPerformanceProfiler class.
     /// </summary>
@@ -334,19 +351,16 @@ public sealed class SimdPerformanceProfiler : IDisposable
         try
         {
             var report = GetPerformanceReport();
-            _logger.LogInformation("SIMD Performance Summary: {TotalExecutions} executions, {Strategies} strategies used",
-                report.OverallStatistics.TotalExecutions,
-                report.StrategyPerformance.Count);
+            LogPerformanceSummary(_logger, report.OverallStatistics.TotalExecutions, report.StrategyPerformance.Count);
 
             foreach (var (strategy, performance) in report.StrategyPerformance)
             {
-                _logger.LogDebug("Strategy {Strategy}: {Throughput:F2} elements/sec, {VectorizationRatio:P1} vectorized",
-                    strategy, performance.AverageThroughput, performance.VectorizationRatio);
+                LogStrategyPerformance(_logger, strategy, performance.AverageThroughput, performance.VectorizationRatio);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reporting SIMD performance metrics");
+            LogMetricsReportError(_logger, ex);
         }
     }
     /// <summary>
@@ -359,7 +373,7 @@ public sealed class SimdPerformanceProfiler : IDisposable
         {
             _metricsReportTimer?.Dispose();
             _disposed = true;
-            _logger.LogDebug("SIMD Performance Profiler disposed");
+            LogProfilerDisposed(_logger);
         }
     }
 }

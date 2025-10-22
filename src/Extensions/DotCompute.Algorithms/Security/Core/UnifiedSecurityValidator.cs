@@ -172,7 +172,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
 
         try
         {
-            var result = await _authenticodeValidator.ValidateAsync(assemblyPath).ConfigureAwait(false);
+            var result = await _authenticodeValidator.ValidateAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
 
             return new DigitalSignatureResult
             {
@@ -247,7 +247,7 @@ public sealed partial class UnifiedSecurityValidator : IUnifiedSecurityValidator
 
         try
         {
-            return await _malwareScanner.ScanAssemblyAsync(assemblyPath).ConfigureAwait(false);
+            return await _malwareScanner.ScanAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

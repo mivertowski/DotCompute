@@ -1,8 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-#nullable disable
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -28,9 +26,8 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Initializes a new instance of the KernelSandbox class.
     /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="configuration">The configuration.</param>
-
+    /// <param name="logger">The logger for capturing execution information.</param>
+    /// <param name="configuration">The sandbox configuration settings.</param>
     public KernelSandbox(ILogger<KernelSandbox> logger, SandboxConfiguration? configuration = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,14 +46,16 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Executes kernel code in a secure sandbox environment.
     /// </summary>
-    /// <param name="kernelCode">The kernel code to execute</param>
-    /// <param name="kernelName">Name of the kernel for identification</param>
-    /// <param name="parameters">Execution parameters</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Execution result with security information</returns>
-    public async Task<SandboxExecutionResult> ExecuteKernelAsync(string kernelCode, string kernelName,
-
-        IDictionary<string, object>? parameters = null, CancellationToken cancellationToken = default)
+    /// <param name="kernelCode">The kernel code to execute.</param>
+    /// <param name="kernelName">Name of the kernel for identification.</param>
+    /// <param name="parameters">Execution parameters.</param>
+    /// <param name="cancellationToken">Cancellation token for operation cancellation.</param>
+    /// <returns>Execution result with security information.</returns>
+    public async Task<SandboxExecutionResult> ExecuteKernelAsync(
+        string kernelCode,
+        string kernelName,
+        IDictionary<string, object>? parameters = null,
+        CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -93,8 +92,9 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Creates a new sandbox instance with security restrictions.
     /// </summary>
-    private async Task<SandboxInstance> CreateSandboxInstanceAsync(string sandboxId, string kernelName,
-
+    private async Task<SandboxInstance> CreateSandboxInstanceAsync(
+        string sandboxId,
+        string kernelName,
         CancellationToken cancellationToken)
     {
         var sandbox = new SandboxInstance
@@ -133,9 +133,11 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Executes kernel code within the sandbox with comprehensive monitoring.
     /// </summary>
-    private async Task<SandboxExecutionResult> ExecuteInSandboxAsync(SandboxInstance sandbox, string kernelCode,
-
-        IDictionary<string, object>? parameters, CancellationToken cancellationToken)
+    private async Task<SandboxExecutionResult> ExecuteInSandboxAsync(
+        SandboxInstance sandbox,
+        string kernelCode,
+        IDictionary<string, object>? parameters,
+        CancellationToken cancellationToken)
     {
         var result = new SandboxExecutionResult
         {
@@ -164,7 +166,7 @@ public sealed partial class KernelSandbox : IDisposable
                 timeoutCts.Token);
 
 
-            result.ResourceUsage = sandbox.ResourceMonitor?.GetCurrentUsage();
+            result.ResourceUsage = sandbox.ResourceMonitor?.CurrentUsage;
             result.ExecutionTime = DateTimeOffset.UtcNow - result.StartTime;
             result.Success = true;
 
@@ -209,9 +211,11 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Executes kernel code with comprehensive security restrictions and monitoring.
     /// </summary>
-    private async Task<SandboxExecutionResult> ExecuteKernelWithRestrictionsAsync(SandboxInstance sandbox,
-
-        string kernelCode, IDictionary<string, object>? parameters, CancellationToken cancellationToken)
+    private async Task<SandboxExecutionResult> ExecuteKernelWithRestrictionsAsync(
+        SandboxInstance sandbox,
+        string kernelCode,
+        IDictionary<string, object>? parameters,
+        CancellationToken cancellationToken)
     {
         var result = new SandboxExecutionResult
         {
@@ -235,9 +239,8 @@ public sealed partial class KernelSandbox : IDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var usage = sandbox.ResourceMonitor?.GetCurrentUsage();
+                var usage = sandbox.ResourceMonitor?.CurrentUsage;
                 if (usage == null)
-
                 {
                     await Task.Delay(100, cancellationToken);
                     continue;
@@ -289,9 +292,11 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Compiles and executes kernel code in the restricted environment.
     /// </summary>
-    private async Task CompileAndExecuteKernelAsync(string kernelCode, IDictionary<string, object>? parameters,
-
-        RestrictedExecutionContext context, CancellationToken cancellationToken)
+    private async Task CompileAndExecuteKernelAsync(
+        string kernelCode,
+        IDictionary<string, object>? parameters,
+        RestrictedExecutionContext context,
+        CancellationToken cancellationToken)
     {
         // This would integrate with the actual kernel compilation and execution system
         // For now, simulate execution with validation
@@ -470,6 +475,7 @@ public sealed partial class KernelSandbox : IDisposable
     /// <summary>
     /// Monitors active sandboxes for violations and resource usage.
     /// </summary>
+    /// <param name="state">Timer state object.</param>
     private void MonitorSandboxes(object? state)
     {
         if (_disposed)
@@ -495,7 +501,7 @@ public sealed partial class KernelSandbox : IDisposable
             {
                 if (sandbox.ResourceMonitor != null)
                 {
-                    var usage = sandbox.ResourceMonitor.GetCurrentUsage();
+                    var usage = sandbox.ResourceMonitor.CurrentUsage;
                     if (usage.MemoryUsage > _configuration.MaxMemoryUsage * 0.9) // 90% threshold
                     {
                         _logger.LogWarningMessage($"Sandbox approaching memory limit: {sandbox.Id}, Usage: {usage.MemoryUsage} bytes");
@@ -527,15 +533,16 @@ public sealed partial class KernelSandbox : IDisposable
         _creationLock?.Dispose();
 
         // Destroy all active sandboxes
-
         var sandboxTasks = _activeSandboxes.Keys
             .Select(id => Task.Run(() => DestroySandboxInstanceAsync(id)))
             .ToArray();
 
-
         try
         {
+            // Dispose is synchronous, so we must wait. Timeout prevents indefinite blocking.
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             _ = Task.WaitAll(sandboxTasks, TimeSpan.FromSeconds(30));
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
         }
         catch (Exception ex)
         {
@@ -556,9 +563,6 @@ public sealed partial class KernelSandbox : IDisposable
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to delete sandbox directory: {WorkingDirectory}")]
     private partial void LogFailedToDeleteSandboxDirectory(Exception ex, string workingDirectory);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Error updating resource usage")]
-    private partial void LogErrorUpdatingResourceUsage(Exception ex);
 
     #endregion
 }
@@ -828,7 +832,7 @@ public sealed class ResourceUsage
 /// <summary>
 /// Monitors resource usage within a sandbox.
 /// </summary>
-internal sealed class SandboxResourceMonitor : IDisposable
+internal sealed partial class SandboxResourceMonitor : IDisposable
 {
     private readonly ILogger _logger;
     private readonly SandboxConfiguration _configuration;
@@ -879,11 +883,9 @@ internal sealed class SandboxResourceMonitor : IDisposable
         _logger.LogDebugMessage("Resource monitoring stopped");
     }
     /// <summary>
-    /// Gets the current usage.
+    /// Gets the current resource usage of the monitored process.
     /// </summary>
-    /// <returns>The current usage.</returns>
-
-    public ResourceUsage GetCurrentUsage() => _currentUsage;
+    public ResourceUsage CurrentUsage => _currentUsage;
 
     private void UpdateResourceUsage(object? state)
     {
@@ -892,11 +894,9 @@ internal sealed class SandboxResourceMonitor : IDisposable
             return;
         }
 
-
         try
         {
             _monitoredProcess ??= Process.GetCurrentProcess();
-
 
             _currentUsage = new ResourceUsage
             {
@@ -909,7 +909,7 @@ internal sealed class SandboxResourceMonitor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error updating resource usage");
+            LogErrorUpdatingResourceUsage(ex);
         }
     }
 
@@ -929,7 +929,6 @@ internal sealed class SandboxResourceMonitor : IDisposable
     /// <summary>
     /// Performs dispose.
     /// </summary>
-
     public void Dispose()
     {
         if (_disposed)
@@ -937,9 +936,15 @@ internal sealed class SandboxResourceMonitor : IDisposable
             return;
         }
 
-
         _disposed = true;
         _monitoringTimer?.Dispose();
         _monitoredProcess?.Dispose();
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Error updating resource usage")]
+    private partial void LogErrorUpdatingResourceUsage(Exception ex);
+
+    #endregion
 }

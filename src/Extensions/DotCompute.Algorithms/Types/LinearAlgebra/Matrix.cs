@@ -39,20 +39,36 @@ public class Matrix
     }
 
     /// <summary>
-    /// Implicit conversion from the main Matrix type.
+    /// Converts from the main Matrix type.
     /// </summary>
-    public static implicit operator Matrix(Algorithms.LinearAlgebra.Matrix matrix)
+    /// <param name="matrix">The matrix to convert.</param>
+    /// <returns>A new Matrix wrapper instance.</returns>
+    public static Matrix ToMatrix(Algorithms.LinearAlgebra.Matrix matrix)
     {
+        ArgumentNullException.ThrowIfNull(matrix);
         return new Matrix(matrix.Rows, matrix.Columns, matrix.ToArray());
     }
 
     /// <summary>
-    /// Implicit conversion to the main Matrix type.
+    /// Converts to the main Matrix type.
     /// </summary>
-    public static implicit operator Algorithms.LinearAlgebra.Matrix(Matrix matrix)
+    /// <param name="matrix">The matrix to convert.</param>
+    /// <returns>The underlying implementation.</returns>
+    public static Algorithms.LinearAlgebra.Matrix FromMatrix(Matrix matrix)
     {
+        ArgumentNullException.ThrowIfNull(matrix);
         return matrix.Implementation;
     }
+
+    /// <summary>
+    /// Implicit conversion from the main Matrix type.
+    /// </summary>
+    public static implicit operator Matrix(Algorithms.LinearAlgebra.Matrix matrix) => ToMatrix(matrix);
+
+    /// <summary>
+    /// Implicit conversion to the main Matrix type.
+    /// </summary>
+    public static implicit operator Algorithms.LinearAlgebra.Matrix(Matrix matrix) => FromMatrix(matrix);
 
     /// <summary>
     /// Gets the number of rows.

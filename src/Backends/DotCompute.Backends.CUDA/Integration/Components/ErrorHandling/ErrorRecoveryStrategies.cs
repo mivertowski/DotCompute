@@ -13,7 +13,6 @@ namespace DotCompute.Backends.CUDA.Integration.Components.ErrorHandling;
 internal sealed class ErrorRecoveryStrategies(CudaContext context, ILogger logger) : IDisposable
 {
     private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private volatile bool _disposed;
     /// <summary>
     /// Gets attempt recovery.

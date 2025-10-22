@@ -21,7 +21,6 @@ namespace DotCompute.Backends.CUDA.Memory
     /// <param name="options">Memory allocation options.</param>
     public sealed class CudaMemoryBuffer(CudaDevice device, nint devicePointer, long sizeInBytes, MemoryOptions options = MemoryOptions.None) : IUnifiedMemoryBuffer, IDisposable
     {
-        private readonly CudaDevice _device = device ?? throw new ArgumentNullException(nameof(device));
         private readonly nint _devicePointer = devicePointer;
         private readonly long _sizeInBytes = sizeInBytes;
         private bool _disposed;
@@ -224,7 +223,7 @@ namespace DotCompute.Backends.CUDA.Memory
         private readonly long _count = count;
         private readonly long _sizeInBytes = count * Unsafe.SizeOf<T>();
         private bool _disposed;
-        private bool _isDirty = false;
+        private bool _isDirty;
         private readonly HashSet<(long start, long end)> _dirtyRanges = [];
         private readonly object _dirtyLock = new();
         private readonly WeakReference<IAccelerator>? _acceleratorRef = accelerator != null ? new WeakReference<IAccelerator>(accelerator) : null;

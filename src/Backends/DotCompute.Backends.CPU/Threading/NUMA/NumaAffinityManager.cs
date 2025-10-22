@@ -467,7 +467,9 @@ public sealed class AffinityStatistics
         get
         {
             if (NodeDistribution.Count == 0)
+            {
                 return 0;
+            }
 
             int maxIndex = 0;
             int maxValue = NodeDistribution[0];
@@ -489,7 +491,9 @@ public sealed class AffinityStatistics
         get
         {
             if (NodeDistribution.Count == 0)
+            {
                 return 0;
+            }
 
             int minIndex = 0;
             int minValue = NodeDistribution[0];

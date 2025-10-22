@@ -225,15 +225,19 @@ public sealed class CpuAcceleratorOptions
     /// <summary>
     /// Gets the effective vector width based on configuration and hardware capabilities.
     /// </summary>
-    public int GetEffectiveVectorWidth()
+    /// <value>The vector width in bits (128, 256, or 512).</value>
+    public int EffectiveVectorWidth
     {
-        if (TargetVectorWidth > 0)
+        get
         {
-            return TargetVectorWidth;
-        }
+            if (TargetVectorWidth > 0)
+            {
+                return TargetVectorWidth;
+            }
 
-        // Auto-detect based on hardware capabilities
-        return Intrinsics.SimdCapabilities.PreferredVectorWidth;
+            // Auto-detect based on hardware capabilities
+            return Intrinsics.SimdCapabilities.PreferredVectorWidth;
+        }
     }
 
     /// <summary>

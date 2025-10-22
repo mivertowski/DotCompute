@@ -19,7 +19,6 @@ namespace DotCompute.Algorithms.Management.Core;
 /// </summary>
 public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, AlgorithmPluginManagerOptions options) : IDisposable
 {
-    private readonly ILogger<AlgorithmLoader> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly AlgorithmPluginManagerOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ConcurrentDictionary<string, PluginAssemblyLoadContext> _loadContexts = new();
     private readonly SemaphoreSlim _loadingSemaphore = new(1, 1);
@@ -292,7 +291,3 @@ public sealed partial class AlgorithmLoader(ILogger<AlgorithmLoader> logger, Alg
 
     #endregion
 }
-
-// LoadedPluginInfo moved to dedicated file: Management/Info/LoadedPluginInfo.cs
-
-// PluginAssemblyLoadContext class moved to dedicated file: Management/Loading/PluginAssemblyLoadContext.cs

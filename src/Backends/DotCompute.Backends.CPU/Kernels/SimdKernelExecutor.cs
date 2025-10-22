@@ -506,30 +506,27 @@ public sealed class HardwareSimdKernelExecutor(SimdSummary simdCapabilities)
     /// <summary>
     /// Gets the maximum number of elements that can be processed in a single vector operation.
     /// </summary>
-    public int GetMaxVectorElements() => _preferredVectorWidth / 32; // Assuming 32-bit floats
+    public int MaxVectorElements => _preferredVectorWidth / 32; // Assuming 32-bit floats
 
     /// <summary>
     /// Determines if the specified element count is suitable for vectorization.
     /// </summary>
     public bool IsVectorizationBeneficial(int elementCount)
     {
-        var minElements = GetMaxVectorElements();
+        var minElements = MaxVectorElements;
         return elementCount >= minElements && _simdCapabilities.IsHardwareAccelerated;
     }
 
     /// <summary>
     /// Gets the optimal work group size for vectorized operations.
     /// </summary>
-    public int GetOptimalWorkGroupSize()
+    public int OptimalWorkGroupSize => _preferredVectorWidth switch
     {
-        return _preferredVectorWidth switch
-        {
-            512 => 256,  // AVX-512: process 256 elements (16 vectors) per work group
-            256 => 128,  // AVX2: process 128 elements (16 vectors) per work group
-            128 => 64,   // SSE: process 64 elements (16 vectors) per work group
-            _ => 32      // Fallback
-        };
-    }
+        512 => 256,  // AVX-512: process 256 elements (16 vectors) per work group
+        256 => 128,  // AVX2: process 128 elements (16 vectors) per work group
+        128 => 64,   // SSE: process 64 elements (16 vectors) per work group
+        _ => 32      // Fallback
+    };
 }
 
 /// <summary>

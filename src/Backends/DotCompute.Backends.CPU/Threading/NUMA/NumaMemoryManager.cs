@@ -245,30 +245,30 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
     /// <summary>
     /// Frees previously allocated memory.
     /// </summary>
-    /// <param name="ptr">Pointer to memory to free.</param>
+    /// <param name="memoryAddress">Address of memory to free.</param>
     /// <returns>True if memory was freed successfully.</returns>
-    public bool Free(IntPtr ptr)
+    public bool Free(IntPtr memoryAddress)
     {
         ThrowIfDisposed();
 
-        if (ptr == IntPtr.Zero)
+        if (memoryAddress == IntPtr.Zero)
         {
             return false;
         }
 
         try
         {
-            if (_allocations.TryRemove(ptr, out var allocationInfo))
+            if (_allocations.TryRemove(memoryAddress, out var allocationInfo))
             {
                 switch (allocationInfo.AllocationMethod)
                 {
                     case AllocationType.NumaSpecific:
                     case AllocationType.Interleaved:
-                        NumaInterop.FreeNumaMemory(ptr, allocationInfo.Size);
+                        NumaInterop.FreeNumaMemory(memoryAddress, allocationInfo.Size);
                         break;
 
                     case AllocationType.System:
-                        Marshal.FreeHGlobal(ptr);
+                        Marshal.FreeHGlobal(memoryAddress);
                         break;
                 }
 
@@ -285,14 +285,14 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
     }
 
     /// <summary>
-    /// Gets allocation information for a memory pointer.
+    /// Gets allocation information for a memory address.
     /// </summary>
-    /// <param name="ptr">Memory pointer.</param>
+    /// <param name="memoryAddress">Memory address.</param>
     /// <returns>Allocation information or null if not found.</returns>
-    public AllocationInfo? GetAllocationInfo(IntPtr ptr)
+    public AllocationInfo? GetAllocationInfo(IntPtr memoryAddress)
     {
         ThrowIfDisposed();
-        return _allocations.TryGetValue(ptr, out var info) ? info : null;
+        return _allocations.TryGetValue(memoryAddress, out var info) ? info : null;
     }
 
     /// <summary>
@@ -365,14 +365,14 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
     /// <summary>
     /// Migrates memory from one node to another (if supported by platform).
     /// </summary>
-    /// <param name="ptr">Memory pointer.</param>
+    /// <param name="memoryAddress">Memory address.</param>
     /// <param name="targetNodeId">Target node ID.</param>
     /// <returns>True if migration was successful or not needed.</returns>
-    public bool MigrateMemory(IntPtr ptr, int targetNodeId)
+    public bool MigrateMemory(IntPtr memoryAddress, int targetNodeId)
     {
         ThrowIfDisposed();
 
-        if (ptr == IntPtr.Zero)
+        if (memoryAddress == IntPtr.Zero)
         {
             return false;
         }
@@ -384,7 +384,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
 
         try
         {
-            if (_allocations.TryGetValue(ptr, out var allocationInfo))
+            if (_allocations.TryGetValue(memoryAddress, out var allocationInfo))
             {
                 if (allocationInfo.NodeId == targetNodeId)
                 {
@@ -394,7 +394,7 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
                 // For now, we'll update the tracking information
                 // In a full implementation, this would actually migrate the memory
                 var updatedInfo = allocationInfo with { NodeId = targetNodeId };
-                return _allocations.TryUpdate(ptr, updatedInfo, allocationInfo);
+                return _allocations.TryUpdate(memoryAddress, updatedInfo, allocationInfo);
             }
         }
         catch (Exception ex)
@@ -432,9 +432,9 @@ public sealed class NumaMemoryManager(NumaTopology topology) : IDisposable
         if (!_disposed)
         {
             // Free all managed allocations
-            foreach (var ptr in _allocations.Keys.ToArray())
+            foreach (var memoryAddress in _allocations.Keys.ToArray())
             {
-                _ = Free(ptr);
+                _ = Free(memoryAddress);
             }
 
             _allocations.Clear();
@@ -521,7 +521,9 @@ public sealed class MemoryStatistics
         get
         {
             if (NodeAllocations.Count == 0)
+            {
                 return 0;
+            }
 
             int maxIndex = 0;
             long maxValue = NodeAllocations[0];
@@ -543,7 +545,9 @@ public sealed class MemoryStatistics
         get
         {
             if (NodeAllocations.Count == 0)
+            {
                 return 0;
+            }
 
             int minIndex = 0;
             long minValue = NodeAllocations[0];

@@ -206,7 +206,7 @@ public sealed class NumaScheduler : IDisposable
             {
                 LoadBalancingStrategy.RoundRobin => i % _topology.NodeCount,
                 LoadBalancingStrategy.LeastLoaded => GetLeastLoadedNode(),
-                LoadBalancingStrategy.Random => Random.Shared.Next(_topology.NodeCount),
+                LoadBalancingStrategy.Random => System.Security.Cryptography.RandomNumberGenerator.GetInt32(_topology.NodeCount),
                 LoadBalancingStrategy.LocalNode => GetCurrentThreadNode(),
                 _ => i % _topology.NodeCount
             };

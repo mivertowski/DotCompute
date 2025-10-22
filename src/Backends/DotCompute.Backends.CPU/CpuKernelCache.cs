@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Provides caching logic and compiled kernel management for CPU backend.
 /// Manages kernel compilation cache, optimization profiles, and performance metrics.
 /// </summary>
-internal sealed class CpuKernelCache : IDisposable
+internal sealed partial class CpuKernelCache : IDisposable
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<string, CachedKernel> _kernelCache;
@@ -29,6 +29,124 @@ internal sealed class CpuKernelCache : IDisposable
     private readonly TimeSpan _defaultExpiryTime = TimeSpan.FromHours(1);
     private readonly int _defaultMaxCacheSize = 1000;
     private readonly TimeSpan _defaultCleanupInterval = TimeSpan.FromMinutes(5);
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 7100,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "CpuKernelCache initialized with max size: {MaxSize}, expiry: {Expiry}")]
+    private static partial void LogCacheInitialized(ILogger logger, int maxSize, TimeSpan expiry);
+
+    [LoggerMessage(
+        EventId = 7101,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Cache hit for kernel: {CacheKey}")]
+    private static partial void LogCacheHit(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 7102,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Cache miss (expired) for kernel: {CacheKey}")]
+    private static partial void LogCacheMissExpired(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 7103,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Cache miss for kernel: {CacheKey}")]
+    private static partial void LogCacheMiss(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 7104,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Stored kernel in cache: {CacheKey}, expires: {Expiry}")]
+    private static partial void LogKernelStored(ILogger logger, string cacheKey, DateTimeOffset expiry);
+
+    [LoggerMessage(
+        EventId = 7105,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Removed kernel from cache: {CacheKey}")]
+    private static partial void LogKernelRemoved(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 7106,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Optimization profile cache hit: {ProfileKey}")]
+    private static partial void LogOptimizationProfileHit(ILogger logger, string profileKey);
+
+    [LoggerMessage(
+        EventId = 7107,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Optimization profile cache miss (expired): {ProfileKey}")]
+    private static partial void LogOptimizationProfileMissExpired(ILogger logger, string profileKey);
+
+    [LoggerMessage(
+        EventId = 7108,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Stored optimization profile: {ProfileKey}")]
+    private static partial void LogOptimizationProfileStored(ILogger logger, string profileKey);
+
+    [LoggerMessage(
+        EventId = 7109,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Performance metrics cache hit: {MetricsKey}")]
+    private static partial void LogPerformanceMetricsHit(ILogger logger, string metricsKey);
+
+    [LoggerMessage(
+        EventId = 7110,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Performance metrics cache miss (expired): {MetricsKey}")]
+    private static partial void LogPerformanceMetricsMissExpired(ILogger logger, string metricsKey);
+
+    [LoggerMessage(
+        EventId = 7111,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Stored performance metrics: {MetricsKey}")]
+    private static partial void LogPerformanceMetricsStored(ILogger logger, string metricsKey);
+
+    [LoggerMessage(
+        EventId = 7112,
+        Level = Microsoft.Extensions.Logging.LogLevel.Trace,
+        Message = "Updated performance metrics for kernel: {CacheKey}")]
+    private static partial void LogPerformanceMetricsUpdated(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 7113,
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = "Cleared all cache entries")]
+    private static partial void LogCacheCleared(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 7114,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Preload requested for kernel: {KernelName}")]
+    private static partial void LogPreloadRequested(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7115,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Evicted {Count} cache entries due to size limit")]
+    private static partial void LogCacheEntriesEvicted(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 7116,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Error during cache cleanup")]
+    private static partial void LogCacheCleanupError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 7117,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Cleaned up expired cache entries: {Kernels} kernels, {Profiles} profiles, {Metrics} metrics")]
+    private static partial void LogExpiredEntriesCleanup(ILogger logger, int kernels, int profiles, int metrics);
+
+    [LoggerMessage(
+        EventId = 7118,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Error disposing cached kernel")]
+    private static partial void LogKernelDisposeError(ILogger logger, Exception ex);
+
+    #endregion
     /// <summary>
     /// Initializes a new instance of the CpuKernelCache class.
     /// </summary>
@@ -49,7 +167,7 @@ internal sealed class CpuKernelCache : IDisposable
             _configuration.CleanupInterval ?? _defaultCleanupInterval,
             _configuration.CleanupInterval ?? _defaultCleanupInterval);
 
-        _logger.LogDebug("CpuKernelCache initialized with max size: {MaxSize}, expiry: {Expiry}",
+        LogCacheInitialized(_logger,
             _configuration.MaxCacheSize ?? _defaultMaxCacheSize,
             _configuration.ExpiryTime ?? _defaultExpiryTime);
     }
@@ -71,19 +189,19 @@ internal sealed class CpuKernelCache : IDisposable
                 cachedKernel.LastAccessed = DateTimeOffset.UtcNow;
                 cachedKernel.HitCount++;
 
-                _logger.LogDebug("Cache hit for kernel: {CacheKey}", cacheKey);
+                LogCacheHit(_logger, cacheKey);
                 return cachedKernel.CompiledKernel;
             }
             else
             {
                 // Remove expired kernel
                 _ = await RemoveKernelAsync(cacheKey);
-                _logger.LogDebug("Cache miss (expired) for kernel: {CacheKey}", cacheKey);
+                LogCacheMissExpired(_logger, cacheKey);
             }
         }
         else
         {
-            _logger.LogDebug("Cache miss for kernel: {CacheKey}", cacheKey);
+            LogCacheMiss(_logger, cacheKey);
         }
 
         return null;
@@ -128,8 +246,7 @@ internal sealed class CpuKernelCache : IDisposable
             var added = _kernelCache.TryAdd(cacheKey, cachedKernel);
             if (added)
             {
-                _logger.LogDebug("Stored kernel in cache: {CacheKey}, expires: {Expiry}",
-                    cacheKey, cachedKernel.ExpiryTime);
+                LogKernelStored(_logger, cacheKey, cachedKernel.ExpiryTime);
             }
 
             return added;
@@ -156,7 +273,7 @@ internal sealed class CpuKernelCache : IDisposable
                 disposableKernel.Dispose();
             }
 
-            _logger.LogDebug("Removed kernel from cache: {CacheKey}", cacheKey);
+            LogKernelRemoved(_logger, cacheKey);
             return Task.FromResult(true);
         }
 
@@ -176,13 +293,13 @@ internal sealed class CpuKernelCache : IDisposable
             if (IsProfileValid(profile))
             {
                 profile.LastAccessed = DateTimeOffset.UtcNow;
-                _logger.LogTrace("Optimization profile cache hit: {ProfileKey}", profileKey);
+                LogOptimizationProfileHit(_logger, profileKey);
                 return Task.FromResult<OptimizationProfile?>(profile);
             }
             else
             {
                 _ = _optimizationCache.TryRemove(profileKey, out _);
-                _logger.LogTrace("Optimization profile cache miss (expired): {ProfileKey}", profileKey);
+                LogOptimizationProfileMissExpired(_logger, profileKey);
             }
         }
 
@@ -203,7 +320,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (added)
         {
-            _logger.LogTrace("Stored optimization profile: {ProfileKey}", profileKey);
+            LogOptimizationProfileStored(_logger, profileKey);
         }
 
         return Task.FromResult(added);
@@ -221,13 +338,13 @@ internal sealed class CpuKernelCache : IDisposable
         {
             if (IsMetricsValid(metrics))
             {
-                _logger.LogTrace("Performance metrics cache hit: {MetricsKey}", metricsKey);
+                LogPerformanceMetricsHit(_logger, metricsKey);
                 return Task.FromResult<PerformanceMetrics?>(metrics);
             }
             else
             {
                 _ = _performanceCache.TryRemove(metricsKey, out _);
-                _logger.LogTrace("Performance metrics cache miss (expired): {MetricsKey}", metricsKey);
+                LogPerformanceMetricsMissExpired(_logger, metricsKey);
             }
         }
 
@@ -247,7 +364,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (added)
         {
-            _logger.LogTrace("Stored performance metrics: {MetricsKey}", metricsKey);
+            LogPerformanceMetricsStored(_logger, metricsKey);
         }
 
         return Task.FromResult(added);
@@ -267,7 +384,7 @@ internal sealed class CpuKernelCache : IDisposable
             cachedKernel.ExecutionStatistics = statistics;
             cachedKernel.LastAccessed = DateTimeOffset.UtcNow;
 
-            _logger.LogTrace("Updated performance metrics for kernel: {CacheKey}", cacheKey);
+            LogPerformanceMetricsUpdated(_logger, cacheKey);
         }
 
         return Task.CompletedTask;
@@ -340,7 +457,7 @@ internal sealed class CpuKernelCache : IDisposable
             _optimizationCache.Clear();
             _performanceCache.Clear();
 
-            _logger.LogInformation("Cleared all cache entries");
+            LogCacheCleared(_logger);
         }
         finally
         {
@@ -360,7 +477,7 @@ internal sealed class CpuKernelCache : IDisposable
         {
             // This would typically involve compiling and caching common kernel configurations
             // For now, this is a placeholder that could be implemented based on usage patterns
-            _logger.LogDebug("Preload requested for kernel: {KernelName}", kernelName);
+            LogPreloadRequested(_logger, kernelName);
         }
 
         return Task.CompletedTask;
@@ -400,7 +517,7 @@ internal sealed class CpuKernelCache : IDisposable
             _ = await RemoveKernelAsync(entry.CacheKey);
         }
 
-        _logger.LogDebug("Evicted {Count} cache entries due to size limit", entriesToEvict.Count);
+        LogCacheEntriesEvicted(_logger, entriesToEvict.Count);
     }
 
     private void PerformCacheCleanup(object? state)
@@ -411,7 +528,7 @@ internal sealed class CpuKernelCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during cache cleanup");
+            LogCacheCleanupError(_logger, ex);
         }
     }
 
@@ -467,8 +584,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (expiredKernels.Count > 0 || expiredProfiles.Count > 0 || expiredMetrics.Count > 0)
         {
-            _logger.LogDebug("Cleaned up expired cache entries: {Kernels} kernels, {Profiles} profiles, {Metrics} metrics",
-                expiredKernels.Count, expiredProfiles.Count, expiredMetrics.Count);
+            LogExpiredEntriesCleanup(_logger, expiredKernels.Count, expiredProfiles.Count, expiredMetrics.Count);
         }
     }
 
@@ -556,7 +672,7 @@ internal sealed class CpuKernelCache : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error disposing cached kernel");
+                        LogKernelDisposeError(_logger, ex);
                     }
                 }
             }

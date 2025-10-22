@@ -16,6 +16,24 @@ namespace DotCompute.Backends.CUDA.Memory
     /// </summary>
     public sealed partial class CudaMemoryPrefetcher : IDisposable
     {
+        #region LoggerMessage Delegates (Event IDs 5600-5649)
+
+        // LoggerMessage delegates moved to CudaMemoryPrefetcher.LoggerMessages.cs
+
+        [LoggerMessage(EventId = 5605, Level = LogLevel.Debug, Message = "Batch prefetch: {SuccessCount}/{TotalCount} successful")]
+        private static partial void LogBatchPrefetchResult(ILogger logger, int successCount, int totalCount);
+
+        [LoggerMessage(EventId = 5606, Level = LogLevel.Warning, Message = "Failed to synchronize prefetch stream")]
+        private static partial void LogFailedToSynchronizePrefetchStream(ILogger logger);
+
+        [LoggerMessage(EventId = 5607, Level = LogLevel.Warning, Message = "Failed to destroy prefetch stream")]
+        private static partial void LogFailedToDestroyPrefetchStream(ILogger logger);
+
+        [LoggerMessage(EventId = 5608, Level = LogLevel.Information, Message = "Disposed memory prefetcher. Total prefetched: {TotalBytes} bytes in {OperationCount} operations")]
+        private static partial void LogDisposedMemoryPrefetcher(ILogger logger, long totalBytes, long operationCount);
+
+        #endregion
+
         private readonly CudaContext _context;
         private readonly CudaDevice _device;
         private readonly ILogger _logger;
@@ -81,17 +99,17 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamCreate(ref _prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogCreatePrefetchStreamFailed(new InvalidOperationException($"Failed with error: {result}"));
                     _supportsPrefetch = false;
                 }
                 else
                 {
-                    _logger.LogInfoMessage("");
+                    LogPrefetchEnabled();
                 }
             }
             else
             {
-                _logger.LogInfoMessage("");
+                LogPrefetchNotSupported();
             }
         }
 
@@ -187,7 +205,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogPrefetchMemoryFailed(new InvalidOperationException($"Prefetch failed with error: {result}"));
                     return false;
                 }
             }
@@ -242,7 +260,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogPrefetchMemoryFailed(new InvalidOperationException($"Prefetch failed with error: {result}"));
                     return false;
                 }
             }
@@ -290,7 +308,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
                 else
                 {
-                    _logger.LogWarningMessage("");
+                    LogAdviseMemoryFailed(new InvalidOperationException($"Advise failed with error: {result}"));
                     return false;
                 }
             }, cancellationToken);
@@ -334,7 +352,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 }
             }
 
-            _logger.LogDebugMessage(" successful");
+            LogBatchPrefetchResult(_logger, successCount, requests.Length);
             return successCount;
         }
 
@@ -354,7 +372,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamSynchronize(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogFailedToSynchronizePrefetchStream(_logger);
                 }
             }, cancellationToken);
         }
@@ -408,7 +426,7 @@ namespace DotCompute.Backends.CUDA.Memory
                 var result = CudaRuntime.cudaStreamDestroy(_prefetchStream);
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage("");
+                    LogFailedToDestroyPrefetchStream(_logger);
                 }
             }
 
@@ -416,7 +434,7 @@ namespace DotCompute.Backends.CUDA.Memory
             _prefetchSemaphore?.Dispose();
             _disposed = true;
 
-            _logger.LogInfoMessage($"Disposed memory prefetcher. Total prefetched: {_totalPrefetchedBytes} bytes in {_prefetchCount} operations");
+            LogDisposedMemoryPrefetcher(_logger, _totalPrefetchedBytes, _prefetchCount);
         }
         /// <summary>
         /// A class that represents prefetch info.

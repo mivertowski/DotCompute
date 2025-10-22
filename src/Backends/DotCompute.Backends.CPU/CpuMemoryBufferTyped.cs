@@ -164,7 +164,7 @@ public sealed class CpuMemoryBufferTyped<T>(
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _elementCount)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
         var memory = AsMemory().Slice(offset, length);
@@ -322,14 +322,11 @@ public sealed class CpuMemoryBufferTyped<T>(
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
-
 
         if (sourceOffset + count > _elementCount)
         {
-
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source buffer boundaries");
         }
 
@@ -679,7 +676,7 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _elementCount)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
         var memory = AsMemory().Slice(offset, length);
@@ -838,14 +835,11 @@ public sealed class CpuMemoryBufferTypedSlice<T>(
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
-
 
         if (sourceOffset + count > _elementCount)
         {
-
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source slice boundaries");
         }
 

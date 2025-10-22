@@ -34,7 +34,7 @@ internal partial class OpenCLKernelParser(ILogger logger)
 
     public KernelInfo ParseKernel(string kernelSource, string entryPoint)
     {
-        _logger.LogDebug("Parsing kernel: {EntryPoint}", entryPoint);
+        LogParsingKernel(_logger, entryPoint);
 
         var kernelType = DetectKernelType(kernelSource);
         var parameters = ExtractParameters(kernelSource);

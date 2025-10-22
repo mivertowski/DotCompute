@@ -67,10 +67,10 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         try
         {
             // Allocate aligned memory for better SIMD performance
-            _nativeHandle = Marshal.AllocHGlobal((IntPtr)_sizeInBytes);
+            _nativeHandle = checked((IntPtr)Marshal.AllocHGlobal((nint)_sizeInBytes));
             if (_nativeHandle == IntPtr.Zero)
             {
-                throw new OutOfMemoryException($"Failed to allocate {_sizeInBytes} bytes of CPU memory");
+                throw new InsufficientMemoryException($"Failed to allocate {_sizeInBytes} bytes of CPU memory");
             }
 
             // Initialize memory if requested
@@ -89,9 +89,9 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
 
                 _sizeInBytes, _nativeHandle, _numaNode);
         }
-        catch (OutOfMemoryException)
+        catch (Exception ex) when (ex is OutOfMemoryException or InsufficientMemoryException)
         {
-            _logger?.LogError("Failed to allocate {Size} bytes of CPU memory", _sizeInBytes);
+            _logger?.LogError(ex, "Failed to allocate {Size} bytes of CPU memory", _sizeInBytes);
             throw;
         }
     }
@@ -243,8 +243,7 @@ public sealed class CpuMemoryBuffer : IUnifiedMemoryBuffer<byte>, IDisposable
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _sizeInBytes)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
 

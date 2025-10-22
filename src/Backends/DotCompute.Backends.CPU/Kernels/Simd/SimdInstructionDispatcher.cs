@@ -12,13 +12,33 @@ namespace DotCompute.Backends.CPU.Kernels.Simd;
 /// SIMD instruction dispatcher responsible for coordinating execution across different
 /// instruction sets and managing the execution pipeline.
 /// </summary>
-public sealed class SimdInstructionDispatcher : IDisposable
+public sealed partial class SimdInstructionDispatcher : IDisposable
 {
     private readonly ILogger<SimdInstructionDispatcher> _logger;
     private readonly SimdOptimizationEngine _optimizationEngine;
     private readonly SimdPerformanceAnalyzer _performanceAnalyzer;
     private readonly ThreadLocal<ExecutionContext> _threadContext;
     private volatile bool _disposed;
+
+    // LoggerMessage delegates - Event IDs 7580-7599
+    [LoggerMessage(EventId = 7580, Level = LogLevel.Debug, Message = "SIMD instruction dispatcher initialized")]
+    private partial void LogDispatcherInitialized();
+
+    [LoggerMessage(EventId = 7581, Level = LogLevel.Trace, Message = "Selected execution strategy: {Strategy} for {ElementCount} elements of type {TypeName}")]
+    private partial void LogStrategySelected(SimdExecutionStrategy strategy, long elementCount, string typeName);
+
+    [LoggerMessage(EventId = 7582, Level = LogLevel.Error, Message = "Error during SIMD execution dispatch for {ElementCount} elements")]
+    private partial void LogExecutionError(long elementCount, Exception ex);
+
+    [LoggerMessage(EventId = 7583, Level = LogLevel.Error, Message = "Error during SIMD reduction dispatch for {ElementCount} elements")]
+    private partial void LogReductionError(int elementCount, Exception ex);
+
+    [LoggerMessage(EventId = 7584, Level = LogLevel.Information, Message = "Performance declining for thread context, considering strategy adjustment")]
+    private partial void LogPerformanceDeclining();
+
+    [LoggerMessage(EventId = 7585, Level = LogLevel.Debug, Message = "SIMD instruction dispatcher disposed")]
+    private partial void LogDispatcherDisposed();
+
     /// <summary>
     /// Initializes a new instance of the SimdInstructionDispatcher class.
     /// </summary>
@@ -41,7 +61,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
             () => new ExecutionContext(capabilities),
             trackAllValues: true);
 
-        _logger.LogDebug("SIMD instruction dispatcher initialized");
+        LogDispatcherInitialized();
     }
 
     /// <summary>
@@ -75,8 +95,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
             var strategy = _optimizationEngine.DetermineExecutionStrategy<T>(elementCount, context);
 
             // Log strategy selection for debugging
-            _logger.LogTrace("Selected execution strategy: {Strategy} for {ElementCount} elements of type {Type}",
-                strategy, elementCount, typeof(T).Name);
+            LogStrategySelected(strategy, elementCount, typeof(T).Name);
 
             // Dispatch to appropriate execution path
             DispatchToStrategy(strategy, input1, input2, output, elementCount, context);
@@ -88,7 +107,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during SIMD execution dispatch for {ElementCount} elements", elementCount);
+            LogExecutionError(elementCount, ex);
             throw;
         }
     }
@@ -132,7 +151,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during SIMD reduction dispatch for {ElementCount} elements", input.Length);
+            LogReductionError(input.Length, ex);
             throw;
         }
     }
@@ -272,7 +291,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
 
             if (performance.TrendDirection == PerformanceTrend.Declining)
             {
-                _logger.LogInformation("Performance declining for thread context, considering strategy adjustment");
+                LogPerformanceDeclining();
                 // Could adjust thresholds or strategy selection here
             }
         }
@@ -292,7 +311,7 @@ public sealed class SimdInstructionDispatcher : IDisposable
         {
             _disposed = true;
             _threadContext?.Dispose();
-            _logger.LogDebug("SIMD instruction dispatcher disposed");
+            LogDispatcherDisposed();
         }
     }
 }

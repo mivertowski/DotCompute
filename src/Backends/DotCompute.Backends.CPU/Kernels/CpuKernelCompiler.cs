@@ -15,8 +15,6 @@ using DotCompute.Backends.CPU.Kernels.Models;
 using DotCompute.Backends.CPU.Kernels.Types;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
-
 namespace DotCompute.Backends.CPU.Kernels;
 
 
@@ -38,7 +36,7 @@ internal static partial class CpuKernelCompiler
         var options = context.Options;
         var logger = context.Logger;
 
-        logger.LogDebug("Starting kernel compilation: {KernelName}", definition.Name);
+        LogStartingCompilation(logger, definition.Name);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -85,14 +83,13 @@ internal static partial class CpuKernelCompiler
             }
 
             stopwatch.Stop();
-            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {DotCompute.Abstractions.Enums.OptimizationLevel} optimization",
-                definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
+            LogCompilationSuccess(logger, definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
 
             return compiledKernel;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to compile kernel '{KernelName}'", definition.Name);
+            LogCompilationError(logger, ex, definition.Name);
             throw new KernelCompilationException($"Failed to compile kernel '{definition.Name}'", ex);
         }
     }
@@ -1075,7 +1072,7 @@ internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharp
         base.VisitInvocationExpression(node);
 
         // Check for recursion after visiting all nodes
-        HasRecursion = _declaredMethods.Intersect(_calledMethods).Count() > 0;
+        HasRecursion = _declaredMethods.Intersect(_calledMethods).Any();
     }
 }
 

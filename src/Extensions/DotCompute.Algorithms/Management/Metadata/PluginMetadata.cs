@@ -99,5 +99,5 @@ public sealed class PluginMetadata
     /// Gets additional metadata as key-value pairs.
     /// Custom metadata that doesn't fit into predefined fields.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetadata { get; } = [];
+    public Dictionary<string, object> AdditionalMetadata { get; init; } = [];
 }

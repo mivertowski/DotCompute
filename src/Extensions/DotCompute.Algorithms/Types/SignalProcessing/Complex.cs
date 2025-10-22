@@ -13,7 +13,7 @@ namespace DotCompute.Algorithms.Types.SignalProcessing;
 /// </remarks>
 /// <param name="real">The real component.</param>
 /// <param name="imaginary">The imaginary component.</param>
-public readonly struct Complex(float real, float imaginary)
+public readonly struct Complex(float real, float imaginary) : IEquatable<Complex>
 {
     private readonly Algorithms.SignalProcessing.Complex _inner = new(real, imaginary);
 
@@ -51,5 +51,56 @@ public readonly struct Complex(float real, float imaginary)
     public static implicit operator Algorithms.SignalProcessing.Complex(Complex complex)
     {
         return complex._inner;
+    }
+
+    /// <summary>
+    /// Creates a Complex instance from the main Complex type (alternative to implicit conversion).
+    /// </summary>
+    /// <param name="complex">The main Complex instance to convert.</param>
+    /// <returns>A Complex instance.</returns>
+    public static Complex ToComplex(Algorithms.SignalProcessing.Complex complex)
+    {
+        return new Complex(complex.Real, complex.Imaginary);
+    }
+
+    /// <summary>
+    /// Converts a Complex instance to the main Complex type (alternative to implicit conversion).
+    /// </summary>
+    /// <param name="complex">The Complex instance to convert.</param>
+    /// <returns>The main Complex instance.</returns>
+    public static Algorithms.SignalProcessing.Complex FromComplex(Complex complex)
+    {
+        return complex._inner;
+    }
+
+    /// <inheritdoc/>
+    public bool Equals(Complex other) => Real == other.Real && Imaginary == other.Imaginary;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is Complex other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Real, Imaginary);
+
+    /// <summary>
+    /// Equality operator.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>True if the operands are equal; otherwise, false.</returns>
+    public static bool operator ==(Complex left, Complex right)
+    {
+        return left.Equals(right);
+    }
+
+    /// <summary>
+    /// Inequality operator.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>True if the operands are not equal; otherwise, false.</returns>
+    public static bool operator !=(Complex left, Complex right)
+    {
+        return !left.Equals(right);
     }
 }

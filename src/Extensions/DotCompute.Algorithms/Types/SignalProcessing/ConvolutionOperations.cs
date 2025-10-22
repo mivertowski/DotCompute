@@ -45,8 +45,22 @@ public class ConvolutionOperations : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes managed resources.
+    /// </summary>
+    /// <param name="disposing">True if disposing managed resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
         if (!_disposed)
         {
+            if (disposing)
+            {
+                // Dispose managed resources if any in the future
+            }
             _disposed = true;
         }
     }

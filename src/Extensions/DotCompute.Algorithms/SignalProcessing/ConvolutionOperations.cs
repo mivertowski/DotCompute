@@ -87,11 +87,7 @@ namespace DotCompute.Algorithms.SignalProcessing
             var outputLength = CalculateOutputLength(signal.Length, kernel.Length, padding, stride);
             var result = new float[outputLength];
 
-            var context = CreateKernelGenerationContext();
-            // Mock compilation - in real implementation would use kernel manager
-            var compiledKernel = new MockCompiledKernel("StridedConvolution1D");
-
-            // Mock execution - in real implementation would execute kernel
+            // Mock execution - in real implementation would use kernel manager
             await Task.Delay(1, cancellationToken); // Simulate execution
             return result;
         }
@@ -1079,9 +1075,32 @@ namespace DotCompute.Algorithms.SignalProcessing
         /// </summary>
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">True if disposing managed resources.</param>
+        private void Dispose(bool disposing)
+        {
             if (!_disposed)
             {
-                // KernelManager and accelerator are not owned by this class
+                if (disposing)
+                {
+                    // Dispose managed resources
+                    if (_kernelManager is IDisposable disposableKernelManager)
+                    {
+                        disposableKernelManager.Dispose();
+                    }
+
+                    if (_accelerator is IDisposable disposableAccelerator)
+                    {
+                        disposableAccelerator.Dispose();
+                    }
+                }
+
                 _disposed = true;
             }
         }

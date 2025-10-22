@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// Intelligent instruction set selection based on workload characteristics
 /// </summary>
-public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger logger) : IDisposable
+public sealed partial class SimdInstructionSelector(SimdSummary capabilities, ILogger logger) : IDisposable
 {
     private readonly SimdSummary _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -73,8 +73,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         // Strategy selection logic based on multiple factors
         var strategy = EvaluateStrategies<T>(profile);
 
-        _logger.LogDebug("Selected SIMD strategy {Strategy} for workload: {ElementCount} elements, {DataSize} bytes",
-            strategy, profile.ElementCount, profile.DataSize);
+        LogStrategySelected(_logger, strategy, profile.ElementCount, profile.DataSize);
 
         return strategy;
     }
@@ -321,7 +320,7 @@ public sealed class SimdInstructionSelector(SimdSummary capabilities, ILogger lo
         if (!_disposed)
         {
             _disposed = true;
-            _logger.LogDebug("SIMD Instruction Selector disposed");
+            LogDisposed(_logger);
         }
     }
 }

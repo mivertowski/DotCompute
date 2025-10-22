@@ -24,6 +24,11 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
     private readonly HashSet<string> _trustedPublishers = [];
 
     /// <summary>
+    /// Cached JSON serializer options for policy serialization/deserialization.
+    /// </summary>
+    private static readonly JsonSerializerOptions s_jsonSerializerOptions = new() { WriteIndented = true };
+
+    /// <summary>
     /// Gets or sets whether digital signatures are required.
     /// </summary>
     public bool RequireDigitalSignature { get; set; } = true;
@@ -232,7 +237,7 @@ public partial class SecurityPolicy(ILogger<SecurityPolicy>? logger = null)
             TrustedPublishers = _trustedPublishers.ToList()
         };
 
-        var json = JsonSerializer.Serialize(policyData, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(policyData, s_jsonSerializerOptions);
         await File.WriteAllTextAsync(filePath, json);
 
         if (_logger is not null)
@@ -357,12 +362,12 @@ public class SecurityEvaluationResult
     public SecurityLevel SecurityLevel { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of security violations.
+    /// Gets the list of security violations.
     /// </summary>
     public IList<string> Violations { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets the list of security warnings.
+    /// Gets the list of security warnings.
     /// </summary>
     public IList<string> Warnings { get; init; } = [];
 }

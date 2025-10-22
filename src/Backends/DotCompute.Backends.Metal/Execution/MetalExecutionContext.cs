@@ -928,7 +928,6 @@ public sealed class MetalHealthCheckResult
 /// </summary>
 internal sealed class MetalPerformanceCollector(ILogger logger, MetalExecutionContextOptions options) : IDisposable
 {
-    private readonly ILogger _logger = logger;
     private readonly MetalExecutionContextOptions _options = options;
     private readonly ConcurrentDictionary<string, object> _metrics = new();
     private volatile bool _disposed;

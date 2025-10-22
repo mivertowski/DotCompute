@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA.Integration.Components;
 /// CUDA device management component responsible for device discovery, context management,
 /// and hardware abstraction layer interactions.
 /// </summary>
-public sealed class CudaDeviceManager : IDisposable
+public sealed partial class CudaDeviceManager : IDisposable
 {
     private readonly ILogger<CudaDeviceManager> _logger;
     private readonly Dictionary<int, CudaDeviceInfo> _deviceCache;
@@ -95,7 +95,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to query CUDA device count");
+            LogDeviceCountQueryFailed(ex);
             return 0;
         }
     }
@@ -122,7 +122,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to query memory for device {DeviceId}", deviceId);
+            LogMemoryQueryFailed(ex, deviceId);
         }
 
         // Return default values on error
@@ -147,7 +147,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to query CUDA driver version");
+            LogDriverVersionQueryFailed(ex);
         }
 
         return "12.0"; // Default fallback version
@@ -185,7 +185,7 @@ public sealed class CudaDeviceManager : IDisposable
         try
         {
             var deviceCount = GetDeviceCount();
-            _logger.LogDebug("Initializing CUDA device cache for {DeviceCount} devices", deviceCount);
+            LogInitializingDeviceCache(deviceCount);
 
             for (var i = 0; i < deviceCount; i++)
             {
@@ -193,17 +193,17 @@ public sealed class CudaDeviceManager : IDisposable
                 {
                     var deviceInfo = QueryDeviceInfo(i);
                     _deviceCache[i] = deviceInfo;
-                    _logger.LogDebug("Cached device info for device {DeviceId}: {DeviceName}", i, deviceInfo.Name);
+                    LogDeviceInfoCached(i, deviceInfo.Name);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to cache device info for device {DeviceId}", i);
+                    LogCacheDeviceInfoFailed(ex, i);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize CUDA device cache");
+            LogInitializeCacheFailed(ex);
         }
     }
 
@@ -256,7 +256,7 @@ public sealed class CudaDeviceManager : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to query device properties for device {DeviceId}", deviceId);
+            LogQueryDevicePropertiesFailed(ex, deviceId);
 
             // Return basic device info as fallback
             return new CudaDeviceInfo
@@ -301,14 +301,14 @@ public sealed class CudaDeviceManager : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Error disposing accelerator wrapper");
+                        LogDisposeAcceleratorWrapperError(ex);
                     }
                 }
                 _contextToAcceleratorMap.Clear();
             }
 
             _deviceCache.Clear();
-            _logger.LogDebug("CUDA device manager disposed");
+            LogDeviceManagerDisposed();
         }
     }
 }

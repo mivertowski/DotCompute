@@ -257,7 +257,7 @@ namespace DotCompute.Backends.CUDA.Persistent
         private readonly IntPtr _basePointer = basePointer;
         private readonly long _sliceBytes = sliceBytes;
         private readonly ILogger _logger = logger;
-        private int _currentIndex = 0;
+        private int _currentIndex;
         private bool _disposed;
         /// <summary>
         /// Gets or sets the depth.

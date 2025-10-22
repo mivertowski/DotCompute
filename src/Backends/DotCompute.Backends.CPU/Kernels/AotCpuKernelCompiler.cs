@@ -13,8 +13,6 @@ using DotCompute.Backends.CPU.Kernels.Enums;
 using Microsoft.Extensions.Logging;
 using KernelExecutionContext = DotCompute.Abstractions.Execution.KernelExecutionContext;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
-
 namespace DotCompute.Backends.CPU.Kernels;
 
 
@@ -22,10 +20,21 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// AOT-compatible CPU kernel compiler that uses pre-compiled delegates instead of dynamic IL emission.
 /// This replaces the reflection-emit based CpuKernelCompiler for Native AOT scenarios.
 /// </summary>
-internal sealed class AotCpuKernelCompiler
+internal sealed partial class AotCpuKernelCompiler
 {
     private readonly Dictionary<string, Func<KernelExecutionContext, Task>> _precompiledKernels;
     private readonly Dictionary<string, KernelMetadata> _kernelMetadata;
+
+    #region LoggerMessage Delegates (Event IDs 7500-7519)
+
+    [LoggerMessage(EventId = 7500, Level = LogLevel.Debug, Message = "Starting AOT kernel compilation: {KernelName}")]
+    private static partial void LogStartingCompilation(ILogger logger, string kernelName);
+
+    [LoggerMessage(EventId = 7501, Level = LogLevel.Information, Message = "Successfully compiled AOT kernel: {KernelName}")]
+    private static partial void LogCompilationSuccess(ILogger logger, string kernelName);
+
+    #endregion
+
     /// <summary>
     /// Initializes a new instance of the AotCpuKernelCompiler class.
     /// </summary>
@@ -103,7 +112,7 @@ internal sealed class AotCpuKernelCompiler
         var definition = context.Definition;
         var logger = context.Logger;
 
-        logger.LogDebug("Starting AOT kernel compilation: {KernelName}", definition.Name);
+        LogStartingCompilation(logger, definition.Name);
 
         // Look up pre-compiled kernel
         if (!_precompiledKernels.TryGetValue(definition.Name, out var kernelImpl))
@@ -132,7 +141,7 @@ internal sealed class AotCpuKernelCompiler
             context.ThreadPool,
             logger);
 
-        logger.LogInformation("Successfully compiled AOT kernel: {KernelName}", definition.Name);
+        LogCompilationSuccess(logger, definition.Name);
 
         await Task.Yield(); // Maintain async signature for compatibility
         return compiledKernel;
@@ -390,7 +399,7 @@ internal sealed class KernelMetadata
 /// <summary>
 /// AOT-compatible compiled kernel implementation.
 /// </summary>
-internal sealed class AotCompiledKernel(
+internal sealed partial class AotCompiledKernel(
 KernelDefinition definition,
 Func<KernelExecutionContext, Task> implementation,
 KernelExecutionPlan executionPlan,
@@ -406,6 +415,23 @@ ILogger logger) : ICompiledKernel
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
 #pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    #region LoggerMessage Delegates (Event IDs 7520-7539)
+
+    [LoggerMessage(EventId = 7520, Level = LogLevel.Debug, Message = "Executing AOT kernel: {Name}")]
+    private static partial void LogExecutingKernel(ILogger logger, string name);
+
+    [LoggerMessage(EventId = 7521, Level = LogLevel.Debug, Message = "Successfully executed AOT kernel: {Name}")]
+    private static partial void LogExecutionSuccess(ILogger logger, string name);
+
+    [LoggerMessage(EventId = 7522, Level = LogLevel.Error, Message = "Error executing AOT kernel: {Name}")]
+    private static partial void LogExecutionError(ILogger logger, Exception ex, string name);
+
+    [LoggerMessage(EventId = 7523, Level = LogLevel.Debug, Message = "Disposed AOT kernel: {Name}")]
+    private static partial void LogKernelDisposed(ILogger logger, string name);
+
+    #endregion
+
     /// <summary>
     /// Gets or sets the id.
     /// </summary>
@@ -431,7 +457,7 @@ ILogger logger) : ICompiledKernel
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Executing AOT kernel: {Name}", Name);
+        LogExecutingKernel(_logger, Name);
 
         try
         {
@@ -444,11 +470,11 @@ ILogger logger) : ICompiledKernel
             }
 
             await _implementation(context).ConfigureAwait(false);
-            _logger.LogDebug("Successfully executed AOT kernel: {Name}", Name);
+            LogExecutionSuccess(_logger, Name);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing AOT kernel: {Name}", Name);
+            LogExecutionError(_logger, ex, Name);
             throw;
         }
     }
@@ -467,10 +493,11 @@ ILogger logger) : ICompiledKernel
     /// </summary>
 
     public void Dispose()
+    {
         // Thread pool disposal is handled by the accelerator
         // _threadPool is managed externally
-
-        => _logger.LogDebug("Disposed AOT kernel: {Name}", Name);
+        LogKernelDisposed(_logger, Name);
+    }
 }
 
 

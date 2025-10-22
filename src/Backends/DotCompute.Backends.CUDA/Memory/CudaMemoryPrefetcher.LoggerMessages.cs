@@ -115,6 +115,24 @@ namespace DotCompute.Backends.CUDA.Memory
             Message = "Disposed memory prefetcher. Total prefetched: {TotalBytes} bytes in {Count} operations")]
         private partial void LogPrefetcherDisposed(long totalBytes, long count);
 
+        [LoggerMessage(
+            EventId = 23218,
+            Level = LogLevel.Warning,
+            Message = "Failed to create prefetch stream")]
+        private partial void LogCreatePrefetchStreamFailed(Exception ex);
+
+        [LoggerMessage(
+            EventId = 23219,
+            Level = LogLevel.Warning,
+            Message = "Failed to prefetch memory")]
+        private partial void LogPrefetchMemoryFailed(Exception ex);
+
+        [LoggerMessage(
+            EventId = 23220,
+            Level = LogLevel.Warning,
+            Message = "Failed to advise memory")]
+        private partial void LogAdviseMemoryFailed(Exception ex);
+
         #endregion
     }
 }

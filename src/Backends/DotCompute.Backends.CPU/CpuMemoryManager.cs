@@ -734,6 +734,8 @@ internal sealed class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, l
 
     {
         // View doesn't own the memory, parent does
+        // Dispose the parent buffer as it's owned by this view
+        _parent?.Dispose();
     }
     /// <summary>
     /// Gets dispose asynchronously.

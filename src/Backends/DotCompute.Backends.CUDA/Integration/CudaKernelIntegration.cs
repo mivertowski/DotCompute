@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// <summary>
 /// Integrates CUDA kernel compilation and execution with optimization
 /// </summary>
-public sealed class CudaKernelIntegration : IDisposable
+public sealed partial class CudaKernelIntegration : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -53,7 +53,7 @@ public sealed class CudaKernelIntegration : IDisposable
         _optimizationTimer = new Timer(PerformOptimization, null,
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
 
-        _logger.LogInfoMessage($"CUDA Kernel Integration initialized for device {context.DeviceId}");
+        LogIntegrationInitialized(context.DeviceId);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public sealed class CudaKernelIntegration : IDisposable
             var cacheKey = GenerateCacheKey(kernelSource, kernelName, options);
             if (_cache.TryGetKernel(cacheKey, out var cachedKernel))
             {
-                _logger.LogDebugMessage($"Kernel '{kernelName}' loaded from cache");
+                LogKernelCacheHit(kernelName);
                 return (cachedKernel as CudaCompiledKernel)!; // Non-null when TryGetKernel returns true, cast to specific type
             }
 
@@ -103,14 +103,14 @@ public sealed class CudaKernelIntegration : IDisposable
             _cache.CacheKernel(cacheKey, compiledKernel!); // Non-null after successful compilation and cast
 
 
-            _logger.LogDebugMessage($"Kernel '{kernelName}' compiled and cached");
+            LogKernelCompiledAndCached(kernelName);
 
 
             return compiledKernel!; // Non-null after successful compilation
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to compile optimized kernel '{kernelName}'");
+            LogCompileOptimizedFailed(ex, kernelName);
             throw;
         }
     }
@@ -146,7 +146,7 @@ public sealed class CudaKernelIntegration : IDisposable
             RecordExecutionStats(kernel.Name, endTime - startTime, result.Success);
 
 
-            _logger.LogDebugMessage($"Kernel '{kernel.Name}' executed: Success={result.Success}, Duration={endTime - startTime}");
+            LogKernelExecuted(kernel.Name, result.Success, endTime - startTime);
 
 
             return result;
@@ -157,7 +157,7 @@ public sealed class CudaKernelIntegration : IDisposable
             RecordExecutionStats(kernel.Name, endTime - startTime, false);
 
 
-            _logger.LogErrorMessage(ex, $"Kernel '{kernel.Name}' execution failed");
+            LogKernelExecutionFailed(ex, kernel.Name);
             throw;
         }
     }
@@ -268,11 +268,11 @@ public sealed class CudaKernelIntegration : IDisposable
                 UpdateOptimizationStrategies(profile);
 
 
-                _logger.LogDebugMessage("Kernel optimization completed");
+                LogOptimizationCompleted();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Kernel optimization failed");
+                LogOptimizationFailed(ex);
             }
         }, cancellationToken);
     }
@@ -307,16 +307,16 @@ public sealed class CudaKernelIntegration : IDisposable
 
                 if (oldEntries.Count > 0)
                 {
-                    _logger.LogDebugMessage($"Cleaned up {oldEntries.Count} old execution statistics");
+                    LogCleanedUpOldStats(oldEntries.Count);
                 }
             }
 
 
-            _logger.LogDebugMessage("Kernel maintenance completed");
+            LogMaintenanceCompleted();
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during kernel maintenance");
+            LogMaintenanceError(ex);
         }
     }
 
@@ -412,11 +412,11 @@ public sealed class CudaKernelIntegration : IDisposable
         {
             // Update compiler optimization strategies based on workload
             // This could involve adjusting default compilation options
-            _logger.LogDebugMessage("Optimization strategies updated for workload profile");
+            LogStrategiesUpdated();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to update optimization strategies");
+            LogOptimizationFailed(ex);
         }
     }
 
@@ -474,7 +474,7 @@ public sealed class CudaKernelIntegration : IDisposable
             _disposed = true;
 
 
-            _logger.LogDebugMessage("CUDA Kernel Integration disposed");
+            LogIntegrationDisposed();
         }
     }
 }

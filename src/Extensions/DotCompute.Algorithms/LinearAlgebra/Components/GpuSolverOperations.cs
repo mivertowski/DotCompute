@@ -25,7 +25,6 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         GpuVectorOperations vectorOps) : IDisposable
     {
         private readonly GpuMatrixOperations _matrixOps = matrixOps ?? throw new ArgumentNullException(nameof(matrixOps));
-        private readonly GpuVectorOperations _vectorOps = vectorOps ?? throw new ArgumentNullException(nameof(vectorOps));
         private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
 

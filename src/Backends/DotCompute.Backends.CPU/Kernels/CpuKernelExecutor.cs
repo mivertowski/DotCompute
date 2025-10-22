@@ -19,7 +19,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// High-performance kernel executor for CPU with SIMD vectorization and parallel execution.
 /// </summary>
-internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger, SimdSummary? simdCapabilities = null)
+internal sealed partial class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger, SimdSummary? simdCapabilities = null)
 {
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -48,7 +48,7 @@ internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger
             var totalWorkItems = CalculateTotalWorkItems(arguments);
             var strategy = DetermineExecutionStrategy(totalWorkItems, executionPlan);
 
-            _logger.LogDebug("Executing kernel '{KernelName}' with {TotalWorkItems} items using {Strategy}", definition.Name, totalWorkItems, strategy);
+            LogExecutingKernel(_logger, definition.Name, totalWorkItems, strategy);
 
             switch (strategy)
             {
@@ -75,11 +75,11 @@ internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger
             stopwatch.Stop();
             UpdatePerformanceMetrics(stopwatch.Elapsed.TotalMilliseconds);
 
-            _logger.LogDebug("Kernel '{KernelName}' executed in {ElapsedMs}ms", definition.Name, stopwatch.ElapsedMilliseconds);
+            LogKernelExecuted(_logger, definition.Name, stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to execute kernel '{KernelName}'", definition.Name);
+            LogExecutionError(_logger, ex, definition.Name);
             throw;
         }
     }
@@ -585,7 +585,7 @@ internal sealed class CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger
         var input3 = args.Input3;
         var output = args.Output;
 
-        if (input3 == null)
+        if (input3.IsEmpty)
         {
             return;
         }

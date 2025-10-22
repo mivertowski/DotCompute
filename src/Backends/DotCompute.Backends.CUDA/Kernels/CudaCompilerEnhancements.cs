@@ -19,8 +19,67 @@ namespace DotCompute.Backends.CUDA.Compilation
     /// <summary>
     /// Enhanced compilation features for modern CUDA architectures including RTX 2000 Ada Generation.
     /// </summary>
-    public static class CudaCompilerEnhancements
+    public static partial class CudaCompilerEnhancements
     {
+        #region LoggerMessage Delegates
+
+        [LoggerMessage(
+            EventId = 5200,
+            Level = LogLevel.Debug,
+            Message = "Starting enhanced NVRTC compilation for: {KernelName}")]
+        private static partial void LogCompilationStarting(ILogger logger, string kernelName);
+
+        [LoggerMessage(
+            EventId = 5201,
+            Level = LogLevel.Debug,
+            Message = "Enhanced NVRTC options: {Options}")]
+        private static partial void LogCompilationOptions(ILogger logger, string options);
+
+        [LoggerMessage(
+            EventId = 5202,
+            Level = LogLevel.Information,
+            Message = "NVRTC compilation log for {KernelName}: {Log}")]
+        private static partial void LogCompilationLog(ILogger logger, string kernelName, string log);
+
+        [LoggerMessage(
+            EventId = 5203,
+            Level = LogLevel.Error,
+            Message = "NVRTC compilation failed for {KernelName}: {Log}")]
+        private static partial void LogCompilationFailed(ILogger logger, string kernelName, string log);
+
+        [LoggerMessage(
+            EventId = 5204,
+            Level = LogLevel.Information,
+            Message = "Generated CUBIN binary ({Size} bytes) for kernel: {KernelName}")]
+        private static partial void LogCubinGenerated(ILogger logger, int size, string kernelName);
+
+        [LoggerMessage(
+            EventId = 5205,
+            Level = LogLevel.Information,
+            Message = "Generated PTX code ({Size} bytes) for kernel: {KernelName}")]
+        private static partial void LogPtxGenerated(ILogger logger, int size, string kernelName);
+
+        [LoggerMessage(
+            EventId = 5206,
+            Level = LogLevel.Information,
+            Message = "Enhanced NVRTC compilation completed for {KernelName} in {ElapsedMs}ms")]
+        private static partial void LogCompilationCompleted(ILogger logger, string kernelName, long elapsedMs);
+
+        [LoggerMessage(
+            EventId = 5207,
+            Level = LogLevel.Error,
+            Message = "Enhanced NVRTC compilation failed for: {KernelName}")]
+        private static partial void LogCompilationException(ILogger logger, Exception ex, string kernelName);
+
+        [LoggerMessage(
+            EventId = 5208,
+            Level = LogLevel.Warning,
+            Message = "Failed to cleanup NVRTC program for: {KernelName}")]
+        private static partial void LogCleanupFailed(ILogger logger, Exception ex, string kernelName);
+
+        #endregion
+
+
         /// <summary>
         /// Enhanced compilation options with RTX 2000 Ada Generation (8.9) optimizations.
         /// </summary>
@@ -379,7 +438,7 @@ namespace DotCompute.Backends.CUDA.Compilation
 
             try
             {
-                logger.LogDebug("Starting enhanced NVRTC compilation for: {KernelName}", kernelName);
+                LogCompilationStarting(logger, kernelName);
 
                 // Create NVRTC program using enhanced interop
                 var result = NvrtcInterop.CreateProgram(
@@ -394,7 +453,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                 // Build enhanced compilation options
                 var compilationOptions = BuildEnhancedCompilationOptions(options, deviceId);
 
-                logger.LogDebug("Enhanced NVRTC options: {Options}", string.Join(" ", compilationOptions));
+                LogCompilationOptions(logger, string.Join(" ", compilationOptions));
 
                 // Compile the program
                 result = NvrtcInterop.CompileProgram(program, compilationOptions);
@@ -405,11 +464,11 @@ namespace DotCompute.Backends.CUDA.Compilation
                 {
                     if (result == NvrtcResult.Success)
                     {
-                        logger.LogInformation("NVRTC compilation log for {KernelName}: {Log}", kernelName, compilerLog);
+                        LogCompilationLog(logger, kernelName, compilerLog);
                     }
                     else
                     {
-                        logger.LogError("NVRTC compilation failed for {KernelName}: {Log}", kernelName, compilerLog);
+                        LogCompilationFailed(logger, kernelName, compilerLog);
                     }
                 }
 
@@ -424,25 +483,22 @@ namespace DotCompute.Backends.CUDA.Compilation
                 if (ShouldUseCubinForArchitecture(major, minor, options))
                 {
                     compiledCode = NvrtcInterop.GetCubinCode(program);
-                    logger.LogInformation("Generated CUBIN binary ({Size} bytes) for kernel: {KernelName}",
-                        compiledCode.Length, kernelName);
+                    LogCubinGenerated(logger, compiledCode.Length, kernelName);
                 }
                 else
                 {
                     compiledCode = NvrtcInterop.GetPtxCode(program);
-                    logger.LogInformation("Generated PTX code ({Size} bytes) for kernel: {KernelName}",
-                        compiledCode.Length, kernelName);
+                    LogPtxGenerated(logger, compiledCode.Length, kernelName);
                 }
 
                 stopwatch.Stop();
-                logger.LogInformation("Enhanced NVRTC compilation completed for {KernelName} in {ElapsedMs}ms",
-                    kernelName, stopwatch.ElapsedMilliseconds);
+                LogCompilationCompleted(logger, kernelName, stopwatch.ElapsedMilliseconds);
 
                 return compiledCode;
             }
             catch (Exception ex) when (ex is not NvrtcException)
             {
-                logger.LogError(ex, "Enhanced NVRTC compilation failed for: {KernelName}", kernelName);
+                LogCompilationException(logger, ex, kernelName);
                 throw new KernelCompilationException($"Enhanced NVRTC compilation failed for kernel '{kernelName}'", ex);
             }
             finally
@@ -455,7 +511,7 @@ namespace DotCompute.Backends.CUDA.Compilation
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Failed to cleanup NVRTC program for: {KernelName}", kernelName);
+                        LogCleanupFailed(logger, ex, kernelName);
                     }
                 }
             }

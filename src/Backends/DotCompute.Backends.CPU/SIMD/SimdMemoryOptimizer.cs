@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CPU.Kernels.Simd;
@@ -279,5 +280,5 @@ public sealed class MemoryAnalysisResult
     /// Gets the recommendations.
     /// </summary>
     /// <value>The recommendations.</value>
-    public List<string> Recommendations { get; } = new List<string>();
+    public Collection<string> Recommendations { get; } = new Collection<string>();
 }

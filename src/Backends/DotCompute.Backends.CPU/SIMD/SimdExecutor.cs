@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CPU.SIMD;
 /// <summary>
 /// Main SIMD kernel executor with strategy-based execution
 /// </summary>
-public sealed class SimdExecutor : IDisposable
+public sealed partial class SimdExecutor : IDisposable
 {
     private readonly ILogger<SimdExecutor> _logger;
     private readonly SimdSummary _capabilities;
@@ -31,6 +31,17 @@ public sealed class SimdExecutor : IDisposable
     private long _scalarElements;
     private long _totalExecutionTime;
     private volatile bool _disposed;
+
+    // LoggerMessage delegates - Event IDs 7640-7659
+    [LoggerMessage(EventId = 7640, Level = LogLevel.Debug, Message = "SIMD executor initialized with capabilities: {Capabilities}")]
+    private partial void LogExecutorInitialized(SimdSummary capabilities);
+
+    [LoggerMessage(EventId = 7641, Level = LogLevel.Error, Message = "Error executing SIMD kernel for {ElementCount} elements")]
+    private partial void LogExecutionError(long elementCount, Exception ex);
+
+    [LoggerMessage(EventId = 7642, Level = LogLevel.Debug, Message = "SIMD executor disposed")]
+    private partial void LogExecutorDisposed();
+
     /// <summary>
     /// Initializes a new instance of the SimdExecutor class.
     /// </summary>
@@ -52,7 +63,7 @@ public sealed class SimdExecutor : IDisposable
         _instructionSelector = new SimdInstructionSelector(_capabilities, logger);
         _profiler = new SimdPerformanceProfiler(logger);
 
-        _logger.LogDebug("SIMD executor initialized with capabilities: {Capabilities}", _capabilities);
+        LogExecutorInitialized(_capabilities);
     }
 
     /// <summary>
@@ -107,7 +118,7 @@ public sealed class SimdExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing SIMD kernel for {ElementCount} elements", elementCount);
+            LogExecutionError(elementCount, ex);
             throw;
         }
     }
@@ -197,7 +208,7 @@ public sealed class SimdExecutor : IDisposable
             _memoryOptimizer?.Dispose();
             _instructionSelector?.Dispose();
             _profiler?.Dispose();
-            _logger.LogDebug("SIMD executor disposed");
+            LogExecutorDisposed();
         }
     }
 }

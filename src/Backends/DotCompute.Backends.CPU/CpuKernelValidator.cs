@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Provides CPU-specific validation and verification for kernel execution.
 /// Ensures kernel correctness, safety, and compatibility with CPU architecture.
 /// </summary>
-internal sealed class CpuKernelValidator : IDisposable
+internal sealed partial class CpuKernelValidator : IDisposable
 {
     private readonly ILogger _logger;
     private readonly CpuCapabilities _cpuCapabilities;
@@ -26,6 +26,65 @@ internal sealed class CpuKernelValidator : IDisposable
     private const int MaxThreadCount = 1024;
     private const int MinVectorWidth = 2;
     private const int MaxVectorWidth = 64;
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 7400,
+        Level = LogLevel.Debug,
+        Message = "CpuKernelValidator initialized with CPU capabilities: {Capabilities}")]
+    private static partial void LogValidatorInitialized(ILogger logger, string capabilities);
+
+    [LoggerMessage(
+        EventId = 7401,
+        Level = LogLevel.Debug,
+        Message = "Validating kernel {KernelName} for CPU execution")]
+    private static partial void LogValidatingKernel(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7402,
+        Level = LogLevel.Debug,
+        Message = "Kernel validation completed for {KernelName}: Valid={IsValid}, Issues={IssueCount}")]
+    private static partial void LogValidationCompleted(ILogger logger, string kernelName, bool isValid, int issueCount);
+
+    [LoggerMessage(
+        EventId = 7403,
+        Level = LogLevel.Error,
+        Message = "Kernel validation failed for {KernelName}")]
+    private static partial void LogValidationFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7404,
+        Level = LogLevel.Debug,
+        Message = "Validating execution plan for kernel {KernelName}")]
+    private static partial void LogValidatingExecutionPlan(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7405,
+        Level = LogLevel.Error,
+        Message = "Execution plan validation failed for {KernelName}")]
+    private static partial void LogExecutionPlanValidationFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7406,
+        Level = LogLevel.Debug,
+        Message = "Validating kernel arguments for {KernelName}")]
+    private static partial void LogValidatingArguments(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7407,
+        Level = LogLevel.Error,
+        Message = "Argument validation failed for {KernelName}")]
+    private static partial void LogArgumentValidationFailed(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7408,
+        Level = LogLevel.Error,
+        Message = "Runtime validation failed for {KernelName}")]
+    private static partial void LogRuntimeValidationFailed(ILogger logger, Exception ex, string kernelName);
+
+    #endregion
+
     /// <summary>
     /// Initializes a new instance of the CpuKernelValidator class.
     /// </summary>
@@ -36,8 +95,7 @@ internal sealed class CpuKernelValidator : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cpuCapabilities = DetectCpuCapabilities();
 
-        _logger.LogDebug("CpuKernelValidator initialized with CPU capabilities: {Capabilities}",
-            string.Join(", ", _cpuCapabilities.SupportedInstructionSets));
+        LogValidatorInitialized(_logger, string.Join(", ", _cpuCapabilities.SupportedInstructionSets));
     }
 
     /// <summary>
@@ -50,7 +108,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating kernel {KernelName} for CPU execution", definition.Name);
+        LogValidatingKernel(_logger, definition.Name);
 
         var result = new CpuValidationResult
         {
@@ -82,14 +140,13 @@ internal sealed class CpuKernelValidator : IDisposable
             // Resource usage validation
             await ValidateResourceUsageAsync(definition, workDimensions, result);
 
-            _logger.LogDebug("Kernel validation completed for {KernelName}: Valid={IsValid}, Issues={IssueCount}",
-                definition.Name, result.IsValid, result.Issues.Count);
+            LogValidationCompleted(_logger, definition.Name, result.IsValid, result.Issues.Count);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Kernel validation failed for {KernelName}", definition.Name);
+            LogValidationFailed(_logger, ex, definition.Name);
             result.IsValid = false;
             result.Issues.Add(new ValidationIssue(
                 "CPU_VALIDATION_001",
@@ -110,7 +167,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ArgumentNullException.ThrowIfNull(executionPlan);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating execution plan for kernel {KernelName}", definition.Name);
+        LogValidatingExecutionPlan(_logger, definition.Name);
 
         var result = new ExecutionPlanValidationResult
         {
@@ -140,7 +197,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Execution plan validation failed for {KernelName}", definition.Name);
+            LogExecutionPlanValidationFailed(_logger, ex, definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Execution plan validation failed: {ex.Message}");
             return result;
@@ -158,7 +215,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating kernel arguments for {KernelName}", definition.Name);
+        LogValidatingArguments(_logger, definition.Name);
 
         var result = new ArgumentValidationResult
         {
@@ -185,7 +242,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Argument validation failed for {KernelName}", definition.Name);
+            LogArgumentValidationFailed(_logger, ex, definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Argument validation failed: {ex.Message}");
             return result;
@@ -228,7 +285,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Runtime validation failed for {KernelName}", definition.Name);
+            LogRuntimeValidationFailed(_logger, ex, definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Runtime validation failed: {ex.Message}");
             return result;

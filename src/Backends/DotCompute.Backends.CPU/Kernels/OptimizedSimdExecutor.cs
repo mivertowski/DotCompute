@@ -20,13 +20,29 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// - Runtime CPU feature detection and optimization
 /// Target: 4-8x performance improvement over scalar code
 /// </summary>
-public sealed class OptimizedSimdExecutor : IDisposable
+public sealed partial class OptimizedSimdExecutor : IDisposable
 {
     private readonly ILogger<OptimizedSimdExecutor> _logger;
     private readonly SimdOptimizationEngine _optimizationEngine;
     private readonly SimdInstructionDispatcher _instructionDispatcher;
     private readonly SimdPerformanceAnalyzer _performanceAnalyzer;
     private volatile bool _disposed;
+
+    // LoggerMessage delegates - Event IDs 7600-7619
+    [LoggerMessage(EventId = 7600, Level = LogLevel.Debug, Message = "Optimized SIMD executor initialized with capabilities: {Capabilities}")]
+    private partial void LogExecutorInitialized(SimdSummary capabilities);
+
+    [LoggerMessage(EventId = 7601, Level = LogLevel.Error, Message = "Error executing SIMD kernel for {ElementCount} elements")]
+    private partial void LogKernelExecutionError(long elementCount, Exception ex);
+
+    [LoggerMessage(EventId = 7602, Level = LogLevel.Error, Message = "Error executing SIMD reduction for {ElementCount} elements")]
+    private partial void LogReductionExecutionError(int elementCount, Exception ex);
+
+    [LoggerMessage(EventId = 7603, Level = LogLevel.Information, Message = "SIMD executor statistics reset")]
+    private partial void LogStatisticsReset();
+
+    [LoggerMessage(EventId = 7604, Level = LogLevel.Debug, Message = "Optimized SIMD executor disposed")]
+    private partial void LogExecutorDisposed();
 
     /// <summary>
     /// Initializes a new optimized SIMD executor.
@@ -54,7 +70,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
             _performanceAnalyzer,
             capabilities);
 
-        _logger.LogDebug("Optimized SIMD executor initialized with capabilities: {Capabilities}", capabilities);
+        LogExecutorInitialized(capabilities);
     }
 
     /// <summary>
@@ -90,7 +106,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing SIMD kernel for {ElementCount} elements", elementCount);
+            LogKernelExecutionError(elementCount, ex);
             throw;
         }
     }
@@ -118,7 +134,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing SIMD reduction for {ElementCount} elements", input.Length);
+            LogReductionExecutionError(input.Length, ex);
             throw;
         }
     }
@@ -168,7 +184,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
     {
         ThrowIfDisposed();
         _performanceAnalyzer.Reset();
-        _logger.LogInformation("SIMD executor statistics reset");
+        LogStatisticsReset();
     }
 
     /// <summary>
@@ -211,7 +227,7 @@ public sealed class OptimizedSimdExecutor : IDisposable
             _disposed = true;
             _instructionDispatcher?.Dispose();
             _performanceAnalyzer?.Dispose();
-            _logger.LogDebug("Optimized SIMD executor disposed");
+            LogExecutorDisposed();
         }
     }
 }

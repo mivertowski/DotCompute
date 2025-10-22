@@ -21,7 +21,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// Provides optimization strategies and performance tuning for CPU kernel execution.
 /// Analyzes workloads and applies various optimization techniques for maximum performance.
 /// </summary>
-internal sealed class CpuKernelOptimizer : IDisposable
+internal sealed partial class CpuKernelOptimizer : IDisposable
 {
     private readonly ILogger _logger;
     private readonly CpuThreadPool _threadPool;
@@ -45,8 +45,102 @@ internal sealed class CpuKernelOptimizer : IDisposable
         _profileCache = [];
         _performanceCounter = new PerformanceCounter();
 
-        _logger.LogDebug("CpuKernelOptimizer initialized");
+        LogOptimizerInitialized(_logger);
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 7200,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "CpuKernelOptimizer initialized")]
+    private static partial void LogOptimizerInitialized(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 7201,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Creating optimized execution plan for kernel {KernelName} with {Optimization} optimization")]
+    private static partial void LogCreatingExecutionPlan(ILogger logger, string kernelName, OptimizationLevel optimization);
+
+    [LoggerMessage(
+        EventId = 7202,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Using cached optimization profile for kernel {KernelName}")]
+    private static partial void LogUsingCachedProfile(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7203,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Optimization plan created for kernel {KernelName} in {Time:F2}ms")]
+    private static partial void LogOptimizationPlanCreated(ILogger logger, string kernelName, double time);
+
+    [LoggerMessage(
+        EventId = 7204,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Failed to create optimization plan for kernel {KernelName}")]
+    private static partial void LogOptimizationPlanFailed(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7205,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Analyzing performance for kernel {KernelName}")]
+    private static partial void LogAnalyzingPerformance(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7206,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Performance analysis completed for kernel {KernelName} with {Count} recommendations")]
+    private static partial void LogPerformanceAnalysisCompleted(ILogger logger, string kernelName, int count);
+
+    [LoggerMessage(
+        EventId = 7207,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Performance analysis failed for kernel {KernelName}")]
+    private static partial void LogPerformanceAnalysisFailed(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7208,
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = "Benchmarking execution strategies for kernel {KernelName}")]
+    private static partial void LogBenchmarkingStrategies(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7209,
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = "Benchmark completed for kernel {KernelName}: Optimal={Optimal}")]
+    private static partial void LogBenchmarkCompleted(ILogger logger, string kernelName, string optimal);
+
+    [LoggerMessage(
+        EventId = 7210,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Benchmarking failed for kernel {KernelName}")]
+    private static partial void LogBenchmarkingFailed(ILogger logger, Exception exception, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7211,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Applying dynamic optimizations for kernel {KernelName}")]
+    private static partial void LogApplyingDynamicOptimizations(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7212,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Thread pool configuration optimized for kernel {KernelName}")]
+    private static partial void LogThreadPoolOptimized(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7213,
+        Level = Microsoft.Extensions.Logging.LogLevel.Debug,
+        Message = "Vectorization settings optimized for kernel {KernelName}")]
+    private static partial void LogVectorizationOptimized(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 7214,
+        Level = Microsoft.Extensions.Logging.LogLevel.Error,
+        Message = "Dynamic optimization failed for kernel {KernelName}")]
+    private static partial void LogDynamicOptimizationFailed(ILogger logger, Exception exception, string kernelName);
+
+    #endregion
 
     /// <summary>
     /// Creates an optimized execution plan for the given kernel definition.
@@ -59,8 +153,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Creating optimized execution plan for kernel {KernelName} with {Optimization} optimization",
-            definition.Name, optimizationLevel);
+        LogCreatingExecutionPlan(_logger, definition.Name, optimizationLevel);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -70,7 +163,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             var cacheKey = GenerateCacheKey(definition, workDimensions, optimizationLevel);
             if (_profileCache.TryGetValue(cacheKey, out var cachedProfile))
             {
-                _logger.LogDebug("Using cached optimization profile for kernel {KernelName}", definition.Name);
+                LogUsingCachedProfile(_logger, definition.Name);
                 return cachedProfile.ExecutionPlan;
             }
 
@@ -94,14 +187,13 @@ internal sealed class CpuKernelOptimizer : IDisposable
             _profileCache[cacheKey] = profile;
 
             stopwatch.Stop();
-            _logger.LogDebug("Optimization plan created for kernel {KernelName} in {Time:F2}ms",
-                definition.Name, stopwatch.Elapsed.TotalMilliseconds);
+            LogOptimizationPlanCreated(_logger, definition.Name, stopwatch.Elapsed.TotalMilliseconds);
 
             return executionPlan;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create optimization plan for kernel {KernelName}", definition.Name);
+            LogOptimizationPlanFailed(_logger, ex, definition.Name);
             throw;
         }
     }
@@ -118,7 +210,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(statistics);
 
-        _logger.LogDebug("Analyzing performance for kernel {KernelName}", definition.Name);
+        LogAnalyzingPerformance(_logger, definition.Name);
 
         var recommendations = new OptimizationRecommendations
         {
@@ -144,14 +236,13 @@ internal sealed class CpuKernelOptimizer : IDisposable
             // Generate specific optimization suggestions
             GenerateOptimizationSuggestions(recommendations);
 
-            _logger.LogDebug("Performance analysis completed for kernel {KernelName} with {Count} recommendations",
-                definition.Name, recommendations.Suggestions.Count);
+            LogPerformanceAnalysisCompleted(_logger, definition.Name, recommendations.Suggestions.Count);
 
             return recommendations;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Performance analysis failed for kernel {KernelName}", definition.Name);
+            LogPerformanceAnalysisFailed(_logger, ex, definition.Name);
             recommendations.ErrorMessage = ex.Message;
             return recommendations;
         }
@@ -168,7 +259,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogInformation("Benchmarking execution strategies for kernel {KernelName}", definition.Name);
+        LogBenchmarkingStrategies(_logger, definition.Name);
 
         var results = new BenchmarkResults
         {
@@ -201,14 +292,13 @@ internal sealed class CpuKernelOptimizer : IDisposable
             // Determine optimal configuration
             results.OptimalConfiguration = DetermineOptimalConfiguration(results);
 
-            _logger.LogInformation("Benchmark completed for kernel {KernelName}: Optimal={Optimal}",
-                definition.Name, results.OptimalConfiguration.Description);
+            LogBenchmarkCompleted(_logger, definition.Name, results.OptimalConfiguration.Description);
 
             return results;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Benchmarking failed for kernel {KernelName}", definition.Name);
+            LogBenchmarkingFailed(_logger, ex, definition.Name);
             results.ErrorMessage = ex.Message;
             return results;
         }
@@ -229,7 +319,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
         try
         {
-            _logger.LogDebug("Applying dynamic optimizations for kernel {KernelName}", kernelName);
+            LogApplyingDynamicOptimizations(_logger, kernelName);
 
             var optimizationsApplied = false;
 
@@ -240,14 +330,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 if (await OptimizeThreadPoolConfigurationAsync(currentPlan))
                 {
                     optimizationsApplied = true;
-                    _logger.LogDebug("Thread pool configuration optimized for kernel {KernelName}", kernelName);
+                    LogThreadPoolOptimized(_logger, kernelName);
                 }
 
                 // Attempt to adjust vectorization settings
                 if (await OptimizeVectorizationSettingsAsync(currentPlan, currentStats))
                 {
                     optimizationsApplied = true;
-                    _logger.LogDebug("Vectorization settings optimized for kernel {KernelName}", kernelName);
+                    LogVectorizationOptimized(_logger, kernelName);
                 }
             }
 
@@ -255,7 +345,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Dynamic optimization failed for kernel {KernelName}", kernelName);
+            LogDynamicOptimizationFailed(_logger, ex, kernelName);
             return false;
         }
     }

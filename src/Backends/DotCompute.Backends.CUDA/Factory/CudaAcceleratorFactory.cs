@@ -26,7 +26,7 @@ namespace DotCompute.Backends.CUDA.Factory
     /// Production-grade CUDA accelerator factory with comprehensive feature integration,
     /// dependency injection support, and intelligent resource management.
     /// </summary>
-    public sealed class CudaAcceleratorFactory : IBackendFactory, IDisposable
+    public sealed partial class CudaAcceleratorFactory : IBackendFactory, IDisposable
     {
         private readonly ILogger<CudaAcceleratorFactory> _logger;
         private readonly IServiceProvider? _serviceProvider;
@@ -80,7 +80,7 @@ namespace DotCompute.Backends.CUDA.Factory
             _systemInfoManager = new SystemInfoManager(systemInfoLogger);
 
 
-            _logger.LogInfoMessage("Production CUDA Accelerator Factory initialized");
+            LogFactoryInitialized();
         }
 
         /// <summary>
@@ -93,9 +93,7 @@ namespace DotCompute.Backends.CUDA.Factory
             config ??= ProductionConfiguration.Default;
 
 
-            _logger.LogInformation(
-                "Creating production CUDA accelerator for device {DeviceId} with config: {@Config}",
-                deviceId, config);
+            LogCreatingAccelerator(deviceId, config);
 
             // Create accelerator with dependency injection
             var accelerator = _serviceProvider != null
@@ -109,9 +107,7 @@ namespace DotCompute.Backends.CUDA.Factory
             _createdAccelerators.Add(accelerator);
 
 
-            _logger.LogInformation(
-                "Production accelerator created for device {DeviceId} with {FeatureCount} features enabled",
-                deviceId, accelerator.EnabledFeatures.Count);
+            LogAcceleratorCreated(deviceId, accelerator.EnabledFeatures.Count);
 
 
             return accelerator;
@@ -129,39 +125,39 @@ namespace DotCompute.Backends.CUDA.Factory
 
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarningMessage($"");
+                    LogCudaApiError(result.ToString());
                     return false;
                 }
 
                 if (deviceCount == 0)
                 {
-                    _logger.LogWarningMessage("No CUDA devices found");
+                    LogNoDevicesFound();
                     return false;
                 }
 
                 // Check driver version
                 if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"");
+                    LogDriverVersion(FormatCudaVersion(driverVersion));
                 }
 
                 // Check runtime version
                 if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
-                    _logger.LogInfoMessage($"");
+                    LogRuntimeVersion(FormatCudaVersion(runtimeVersion));
                 }
 
-                _logger.LogInfoMessage(" device(s)");
+                LogDeviceCountFound(deviceCount);
                 return true;
             }
             catch (DllNotFoundException ex)
             {
-                _logger.LogErrorMessage(ex, "CUDA runtime library not found");
+                LogRuntimeLibraryNotFound(ex);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Error checking CUDA availability");
+                LogAvailabilityCheckError(ex);
                 return false;
             }
         }
@@ -173,12 +169,12 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             if (!IsAvailable())
             {
-                _logger.LogWarningMessage("CUDA not available, no accelerators created");
+                LogCudaNotAvailable();
                 yield break;
             }
 
             var devices = _deviceManager.Devices;
-            _logger.LogInfoMessage(" CUDA devices");
+            LogEnumeratingDevices(devices.Count());
 
             var accelerators = new List<ProductionCudaAccelerator>();
 
@@ -196,19 +192,14 @@ namespace DotCompute.Backends.CUDA.Factory
                     accelerator = CreateProductionAccelerator(device.DeviceId, config);
 
 
-                    _logger.LogInformation(
-                        "Created production accelerator for {DeviceName} (CC {ComputeCapability})",
-                        device.Name, $"{device.Major}.{device.Minor}");
+                    LogAcceleratorCreatedForDevice(device.Name, $"{device.Major}.{device.Minor}");
 
 
                     accelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex,
-
-                        "Failed to create accelerator for device {DeviceId}: {DeviceName}",
-                        device.DeviceId, device.Name);
+                    LogCreateAcceleratorFailed(ex, device.DeviceId, device.Name);
 
 
                     accelerator?.Dispose();
@@ -230,7 +221,7 @@ namespace DotCompute.Backends.CUDA.Factory
         {
             if (!IsAvailable())
             {
-                _logger.LogWarningMessage("CUDA not available, cannot create default accelerator");
+                LogCannotCreateDefault();
                 return null;
             }
 
@@ -248,7 +239,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 var bestDevice = _deviceManager.SelectBestDevice(criteria);
 
 
-                _logger.LogInfoMessage(" as default");
+                LogDefaultDeviceSelected(bestDevice);
 
 
                 var config = ProductionConfiguration.HighPerformance;
@@ -256,7 +247,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Failed to create default accelerator");
+                LogCreateDefaultFailed(ex);
                 throw; // Re-throw to see the actual error
             }
         }
@@ -589,7 +580,7 @@ namespace DotCompute.Backends.CUDA.Factory
             }
 
 
-            _logger.LogInfoMessage("Disposing Production CUDA Factory");
+            LogDisposingFactory();
 
             // Dispose all created accelerators
             foreach (var accelerator in _createdAccelerators)
@@ -600,7 +591,7 @@ namespace DotCompute.Backends.CUDA.Factory
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogErrorMessage(ex, $"Error disposing accelerator for device {accelerator.DeviceId}");
+                    LogDisposeAcceleratorError(ex, accelerator.DeviceId);
                 }
             }
 

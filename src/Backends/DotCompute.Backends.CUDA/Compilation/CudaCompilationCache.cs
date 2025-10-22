@@ -66,10 +66,106 @@ internal sealed partial class CudaCompilationCache : IDisposable
     #region LoggerMessage Delegates
 
     [LoggerMessage(
-        EventId = 21108,
+        EventId = 5100,
+        Level = LogLevel.Debug,
+        Message = "Cached compiled kernel {KernelName} with key {CacheKey}")]
+    private static partial void LogKernelCached(ILogger logger, string kernelName, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 5101,
         Level = LogLevel.Warning,
         Message = "Failed to cache kernel {KernelName}")]
     private static partial void LogCacheFailure(ILogger logger, Exception ex, string kernelName);
+
+    [LoggerMessage(
+        EventId = 5102,
+        Level = LogLevel.Debug,
+        Message = "No persistent cache metadata found")]
+    private static partial void LogNoCacheMetadata(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5103,
+        Level = LogLevel.Warning,
+        Message = "Failed to deserialize cache metadata")]
+    private static partial void LogMetadataDeserializationFailed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5104,
+        Level = LogLevel.Debug,
+        Message = "Cache file missing for key {CacheKey}")]
+    private static partial void LogCacheFileMissing(ILogger logger, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 5105,
+        Level = LogLevel.Warning,
+        Message = "Failed to load cache entry {CacheKey}")]
+    private static partial void LogCacheEntryLoadFailed(ILogger logger, Exception ex, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 5106,
+        Level = LogLevel.Information,
+        Message = "Loaded {LoadedCount} cache entries from persistent storage")]
+    private static partial void LogCacheEntriesLoaded(ILogger logger, int loadedCount);
+
+    [LoggerMessage(
+        EventId = 5107,
+        Level = LogLevel.Error,
+        Message = "Failed to load persistent cache")]
+    private static partial void LogPersistentCacheLoadFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5108,
+        Level = LogLevel.Warning,
+        Message = "Failed to persist kernel to disk cache for key {CacheKey}")]
+    private static partial void LogKernelPersistFailed(ILogger logger, Exception ex, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 5109,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {RemovedCount} old cache entries")]
+    private static partial void LogCacheCleanup(ILogger logger, int removedCount);
+
+    [LoggerMessage(
+        EventId = 5110,
+        Level = LogLevel.Warning,
+        Message = "Failed to cleanup cache")]
+    private static partial void LogCacheCleanupFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5111,
+        Level = LogLevel.Warning,
+        Message = "Failed to delete cache entry {CacheKey}")]
+    private static partial void LogCacheEntryDeletionFailed(ILogger logger, Exception ex, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 5112,
+        Level = LogLevel.Debug,
+        Message = "Saved cache metadata for {EntryCount} entries")]
+    private static partial void LogMetadataSaved(ILogger logger, int entryCount);
+
+    [LoggerMessage(
+        EventId = 5113,
+        Level = LogLevel.Error,
+        Message = "Failed to save persistent cache metadata")]
+    private static partial void LogMetadataSaveFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5114,
+        Level = LogLevel.Debug,
+        Message = "Cache cleared successfully")]
+    private static partial void LogCacheCleared(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5115,
+        Level = LogLevel.Warning,
+        Message = "Failed to clear disk cache")]
+    private static partial void LogDiskCacheClearFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5116,
+        Level = LogLevel.Warning,
+        Message = "Failed to save cache during disposal")]
+    private static partial void LogDisposalSaveFailed(ILogger logger, Exception ex);
 
     #endregion
     private readonly ConcurrentDictionary<string, CudaCompiledKernel> _kernelCache;
@@ -178,7 +274,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
             // Persist to disk asynchronously
             await PersistKernelToDiskAsync(cacheKey, compiledKernel, metadata).ConfigureAwait(false);
 
-            _logger.LogDebug("Cached compiled kernel {KernelName} with key {CacheKey}", definition.Name, cacheKey);
+            LogKernelCached(_logger, definition.Name, cacheKey);
 
             // Clean up old entries if cache is too large
             await CleanupCacheIfNeededAsync().ConfigureAwait(false);
@@ -205,7 +301,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
             var metadataFile = Path.Combine(_cacheDirectory, "metadata.json");
             if (!File.Exists(metadataFile))
             {
-                _logger.LogDebug("No persistent cache metadata found");
+                LogNoCacheMetadata(_logger);
                 return;
             }
 
@@ -214,7 +310,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
 
             if (metadataEntries == null)
             {
-                _logger.LogWarning("Failed to deserialize cache metadata");
+                LogMetadataDeserializationFailed(_logger);
                 return;
             }
 
@@ -239,20 +335,20 @@ internal sealed partial class CudaCompilationCache : IDisposable
                     }
                     else
                     {
-                        _logger.LogDebug("Cache file missing for key {CacheKey}", cacheKey);
+                        LogCacheFileMissing(_logger, cacheKey);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to load cache entry {CacheKey}", cacheKey);
+                    LogCacheEntryLoadFailed(_logger, ex, cacheKey);
                 }
             }
 
-            _logger.LogInformation("Loaded {LoadedCount} cache entries from persistent storage", loadedCount);
+            LogCacheEntriesLoaded(_logger, loadedCount);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load persistent cache");
+            LogPersistentCacheLoadFailed(_logger, ex);
         }
     }
 
@@ -272,7 +368,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to persist kernel to disk cache for key {CacheKey}", cacheKey);
+            LogKernelPersistFailed(_logger, ex, cacheKey);
         }
     }
 
@@ -300,11 +396,11 @@ internal sealed partial class CudaCompilationCache : IDisposable
                 await DeleteCacheEntryAsync(metadata.CacheKey).ConfigureAwait(false);
             }
 
-            _logger.LogDebug("Cleaned up {RemovedCount} old cache entries", entriesToRemove.Count);
+            LogCacheCleanup(_logger, entriesToRemove.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cleanup cache");
+            LogCacheCleanupFailed(_logger, ex);
         }
     }
 
@@ -329,7 +425,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to delete cache entry {CacheKey}", cacheKey);
+            LogCacheEntryDeletionFailed(_logger, ex, cacheKey);
         }
     }
 
@@ -351,11 +447,11 @@ internal sealed partial class CudaCompilationCache : IDisposable
             var metadataJson = JsonSerializer.Serialize(metadataSnapshot, _jsonOptions);
             await File.WriteAllTextAsync(metadataFile, metadataJson).ConfigureAwait(false);
 
-            _logger.LogDebug("Saved cache metadata for {EntryCount} entries", metadataSnapshot.Count);
+            LogMetadataSaved(_logger, metadataSnapshot.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save persistent cache metadata");
+            LogMetadataSaveFailed(_logger, ex);
         }
     }
 
@@ -441,11 +537,11 @@ internal sealed partial class CudaCompilationCache : IDisposable
                 }
             }
 
-            _logger.LogDebug("Cache cleared successfully");
+            LogCacheCleared(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to clear disk cache");
+            LogDiskCacheClearFailed(_logger, ex);
         }
     }
     /// <summary>
@@ -467,7 +563,7 @@ internal sealed partial class CudaCompilationCache : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save cache during disposal");
+            LogDisposalSaveFailed(_logger, ex);
         }
 
         _disposed = true;

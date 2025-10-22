@@ -160,7 +160,7 @@ internal sealed class CpuMemoryBufferSlice(
         EnsureNotDisposed();
         if (offset < 0 || length < 0 || offset + length > _length)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset), "Invalid range for mapping");
         }
 
         var memory = AsMemory().Slice(offset, length);
@@ -319,14 +319,11 @@ internal sealed class CpuMemoryBufferSlice(
         EnsureNotDisposed();
         if (sourceOffset < 0 || destinationOffset < 0 || count < 0)
         {
-
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(sourceOffset), "Negative offsets or count not allowed");
         }
-
 
         if (sourceOffset + count > _length)
         {
-
             throw new ArgumentOutOfRangeException(nameof(count), "Copy extends beyond source slice boundaries");
         }
 

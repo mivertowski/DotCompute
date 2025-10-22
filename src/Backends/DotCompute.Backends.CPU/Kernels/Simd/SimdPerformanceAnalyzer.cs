@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CPU.Kernels.Simd;
 /// Performance analysis and metrics collection for SIMD operations.
 /// Tracks execution statistics, performance trends, and optimization effectiveness.
 /// </summary>
-public sealed class SimdPerformanceAnalyzer : IDisposable
+public sealed partial class SimdPerformanceAnalyzer : IDisposable
 {
     private readonly ILogger<SimdPerformanceAnalyzer> _logger;
     private readonly ConcurrentDictionary<string, PerformanceMetric> _metrics;
@@ -29,6 +29,23 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
     // Strategy-specific counters
     private readonly ConcurrentDictionary<SimdExecutionStrategy, long> _strategyUsage;
     private readonly ConcurrentDictionary<ReductionOperation, long> _reductionUsage;
+
+    // LoggerMessage delegates - Event IDs 7620-7639
+    [LoggerMessage(EventId = 7620, Level = LogLevel.Debug, Message = "SIMD performance analyzer initialized")]
+    private partial void LogAnalyzerInitialized();
+
+    [LoggerMessage(EventId = 7621, Level = LogLevel.Information, Message = "Performance analyzer metrics reset")]
+    private partial void LogMetricsReset();
+
+    [LoggerMessage(EventId = 7622, Level = LogLevel.Information, Message = "SIMD Performance Metrics - Executions: {Executions}, Vectorization: {VectorizationRatio:P2}, Performance Gain: {PerformanceGain:F2}x, Avg Time: {AvgTime:F2}ms")]
+    private partial void LogPerformanceMetrics(long executions, double vectorizationRatio, double performanceGain, double avgTime);
+
+    [LoggerMessage(EventId = 7623, Level = LogLevel.Warning, Message = "Error reporting SIMD performance metrics")]
+    private partial void LogMetricsReportError(Exception ex);
+
+    [LoggerMessage(EventId = 7624, Level = LogLevel.Debug, Message = "SIMD performance analyzer disposed")]
+    private partial void LogAnalyzerDisposed();
+
     /// <summary>
     /// Initializes a new instance of the SimdPerformanceAnalyzer class.
     /// </summary>
@@ -57,7 +74,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
         _metricsReportTimer = new Timer(ReportMetrics, null,
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
-        _logger.LogDebug("SIMD performance analyzer initialized");
+        LogAnalyzerInitialized();
     }
 
     /// <summary>
@@ -201,7 +218,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
             _reductionUsage[operation] = 0;
         }
 
-        _logger.LogInformation("Performance analyzer metrics reset");
+        LogMetricsReset();
     }
 
     #region Private Helper Methods
@@ -291,9 +308,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
         try
         {
             var stats = GetStatistics();
-            _logger.LogInformation(
-                "SIMD Performance Metrics - Executions: {Executions}, Vectorization: {VectorizationRatio:P2}, " +
-                "Performance Gain: {PerformanceGain:F2}x, Avg Time: {AvgTime:F2}ms",
+            LogPerformanceMetrics(
                 stats.TotalExecutions,
                 stats.VectorizationRatio,
                 stats.PerformanceGain,
@@ -301,7 +316,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error reporting SIMD performance metrics");
+            LogMetricsReportError(ex);
         }
     }
     /// <summary>
@@ -316,7 +331,7 @@ public sealed class SimdPerformanceAnalyzer : IDisposable
         {
             _disposed = true;
             _metricsReportTimer?.Dispose();
-            _logger.LogDebug("SIMD performance analyzer disposed");
+            LogAnalyzerDisposed();
         }
     }
 }

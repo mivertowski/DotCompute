@@ -15,8 +15,145 @@ namespace DotCompute.Backends.CUDA.Integration;
 /// <summary>
 /// Integrates CUDA memory management with unified buffer system
 /// </summary>
-public sealed class CudaMemoryIntegration : IDisposable
+public sealed partial class CudaMemoryIntegration : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 5250,
+        Level = LogLevel.Information,
+        Message = "CUDA Memory Integration initialized for device {DeviceId}")]
+    private static partial void LogIntegrationInitialized(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 5251,
+        Level = LogLevel.Debug,
+        Message = "Allocated optimized buffer: {Count} elements of {TypeName}")]
+    private static partial void LogBufferAllocated(ILogger logger, int count, string typeName);
+
+    [LoggerMessage(
+        EventId = 5252,
+        Level = LogLevel.Error,
+        Message = "Failed to allocate optimized buffer for {Count} elements of {TypeName}")]
+    private static partial void LogBufferAllocationFailed(ILogger logger, Exception ex, int count, string typeName);
+
+    [LoggerMessage(
+        EventId = 5253,
+        Level = LogLevel.Debug,
+        Message = "Optimized copy completed: {Length} elements of {TypeName}")]
+    private static partial void LogCopyCompleted(ILogger logger, int length, string typeName);
+
+    [LoggerMessage(
+        EventId = 5254,
+        Level = LogLevel.Error,
+        Message = "Optimized copy failed for {TypeName}")]
+    private static partial void LogCopyFailed(ILogger logger, Exception ex, string typeName);
+
+    [LoggerMessage(
+        EventId = 5255,
+        Level = LogLevel.Warning,
+        Message = "Error getting memory statistics")]
+    private static partial void LogStatisticsError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5256,
+        Level = LogLevel.Warning,
+        Message = "Error calculating memory health")]
+    private static partial void LogHealthCalculationError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5257,
+        Level = LogLevel.Debug,
+        Message = "Memory optimization completed")]
+    private static partial void LogOptimizationCompleted(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5258,
+        Level = LogLevel.Warning,
+        Message = "Memory optimization failed")]
+    private static partial void LogOptimizationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5259,
+        Level = LogLevel.Debug,
+        Message = "Memory maintenance completed")]
+    private static partial void LogMaintenanceCompleted(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5260,
+        Level = LogLevel.Error,
+        Message = "Error during memory maintenance")]
+    private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5261,
+        Level = LogLevel.Debug,
+        Message = "Forced garbage collection completed")]
+    private static partial void LogGarbageCollectionCompleted(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 5262,
+        Level = LogLevel.Warning,
+        Message = "Error during forced garbage collection")]
+    private static partial void LogGarbageCollectionError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5263,
+        Level = LogLevel.Warning,
+        Message = "Failed to register buffer")]
+    private static partial void LogBufferRegistrationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5264,
+        Level = LogLevel.Debug,
+        Message = "Memory pool configured: large={Large}")]
+    private static partial void LogMemoryPoolConfigured(ILogger logger, bool large);
+
+    [LoggerMessage(
+        EventId = 5265,
+        Level = LogLevel.Warning,
+        Message = "Failed to configure memory pool")]
+    private static partial void LogMemoryPoolConfigurationFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5266,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {Count} orphaned buffer entries")]
+    private static partial void LogOrphanedBuffersCleanedUp(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 5267,
+        Level = LogLevel.Warning,
+        Message = "Error cleaning up orphaned buffers")]
+    private static partial void LogOrphanedBuffersCleanupError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5268,
+        Level = LogLevel.Warning,
+        Message = "Memory health degraded: {Health:F2}")]
+    private static partial void LogMemoryHealthDegraded(ILogger logger, double health);
+
+    [LoggerMessage(
+        EventId = 5269,
+        Level = LogLevel.Debug,
+        Message = "Memory health: {Health:F2}")]
+    private static partial void LogMemoryHealth(ILogger logger, double health);
+
+    [LoggerMessage(
+        EventId = 5270,
+        Level = LogLevel.Warning,
+        Message = "Error during memory monitoring")]
+    private static partial void LogMemoryMonitoringError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5271,
+        Level = LogLevel.Debug,
+        Message = "CUDA Memory Integration disposed")]
+    private static partial void LogIntegrationDisposed(ILogger logger);
+
+    #endregion
+
+
     private readonly CudaContext _context;
     private readonly ILogger _logger;
     private readonly CudaMemoryManager _memoryManager;
@@ -45,7 +182,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         _memoryMonitorTimer = new Timer(MonitorMemory, null,
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2));
 
-        _logger.LogInfoMessage($"CUDA Memory Integration initialized for device {context.DeviceId}");
+        LogIntegrationInitialized(_logger, context.DeviceId);
     }
 
     /// <summary>
@@ -73,18 +210,15 @@ public sealed class CudaMemoryIntegration : IDisposable
             var buffer = await _asyncAdapter.AllocateAsync<T>(count, options, cancellationToken);
 
             // Register buffer for monitoring
-
             RegisterBuffer(buffer);
 
-
-            _logger.LogDebugMessage($"Allocated optimized buffer: {count} elements of {typeof(T).Name}");
-
+            LogBufferAllocated(_logger, count, typeof(T).Name);
 
             return buffer;
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Failed to allocate optimized buffer for {count} elements of {typeof(T).Name}");
+            LogBufferAllocationFailed(_logger, ex, count, typeof(T).Name);
             throw;
         }
     }
@@ -102,11 +236,11 @@ public sealed class CudaMemoryIntegration : IDisposable
         try
         {
             await _asyncAdapter.CopyAsync(source, destination, cancellationToken);
-            _logger.LogDebugMessage($"Optimized copy completed: {source.Length} elements of {typeof(T).Name}");
+            LogCopyCompleted(_logger, source.Length, typeof(T).Name);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Optimized copy failed for {typeof(T).Name}");
+            LogCopyFailed(_logger, ex, typeof(T).Name);
             throw;
         }
     }
@@ -149,7 +283,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error getting memory statistics");
+            LogStatisticsError(_logger, ex);
             return new CudaMemoryStatistics { LastUpdated = DateTimeOffset.UtcNow };
         }
     }
@@ -182,7 +316,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error calculating memory health");
+            LogHealthCalculationError(_logger, ex);
             return 0.0;
         }
     }
@@ -214,12 +348,11 @@ public sealed class CudaMemoryIntegration : IDisposable
                     ConfigureMemoryPool(large: false);
                 }
 
-
-                _logger.LogDebugMessage("Memory optimization completed");
+                LogOptimizationCompleted(_logger);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Memory optimization failed");
+                LogOptimizationFailed(_logger, ex);
             }
         }, cancellationToken);
     }
@@ -243,12 +376,11 @@ public sealed class CudaMemoryIntegration : IDisposable
 
             _ = _asyncAdapter.OptimizeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
-
-            _logger.LogDebugMessage("Memory maintenance completed");
+            LogMaintenanceCompleted(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, "Error during memory maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
@@ -272,12 +404,11 @@ public sealed class CudaMemoryIntegration : IDisposable
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-
-            _logger.LogDebugMessage("Forced garbage collection completed");
+            LogGarbageCollectionCompleted(_logger);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during forced garbage collection");
+            LogGarbageCollectionError(_logger, ex);
         }
     }
 
@@ -303,7 +434,7 @@ public sealed class CudaMemoryIntegration : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to register buffer");
+            LogBufferRegistrationFailed(_logger, ex);
         }
     }
 
@@ -345,11 +476,11 @@ public sealed class CudaMemoryIntegration : IDisposable
         {
             // Configure memory pool settings based on workload requirements
             // This would involve setting pool sizes, allocation strategies, etc.
-            _logger.LogDebugMessage($"Memory pool configured: large={large}");
+            LogMemoryPoolConfigured(_logger, large);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to configure memory pool");
+            LogMemoryPoolConfigurationFailed(_logger, ex);
         }
     }
 
@@ -371,13 +502,13 @@ public sealed class CudaMemoryIntegration : IDisposable
 
                 if (orphanedBuffers.Count > 0)
                 {
-                    _logger.LogDebugMessage($"Cleaned up {orphanedBuffers.Count} orphaned buffer entries");
+                    LogOrphanedBuffersCleanedUp(_logger, orphanedBuffers.Count);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error cleaning up orphaned buffers");
+            LogOrphanedBuffersCleanupError(_logger, ex);
         }
     }
 
@@ -392,23 +523,21 @@ public sealed class CudaMemoryIntegration : IDisposable
         {
             var health = GetMemoryHealth();
 
-
             if (health < 0.5)
             {
-                _logger.LogWarning("Memory health degraded: {Health:F2}", health);
+                LogMemoryHealthDegraded(_logger, health);
 
                 // Trigger automatic cleanup
-
                 ForceGarbageCollection();
             }
             else
             {
-                _logger.LogDebugMessage($"Memory health: {health:F2}");
+                LogMemoryHealth(_logger, health);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during memory monitoring");
+            LogMemoryMonitoringError(_logger, ex);
         }
     }
     /// <summary>
@@ -435,8 +564,7 @@ public sealed class CudaMemoryIntegration : IDisposable
 
             _disposed = true;
 
-
-            _logger.LogDebugMessage("CUDA Memory Integration disposed");
+            LogIntegrationDisposed(_logger);
         }
     }
 }

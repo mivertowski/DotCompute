@@ -51,7 +51,7 @@ public sealed class NuGetValidationResult
     /// <summary>
     /// Gets or sets the validation warnings.
     /// </summary>
-    public string[] Warnings { get; set; } = [];
+    public IReadOnlyList<string> Warnings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the time taken for validation.

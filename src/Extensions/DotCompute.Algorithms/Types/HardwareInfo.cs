@@ -151,7 +151,7 @@ public sealed record HardwareInfo
     private static bool EstimateHalfPrecisionSupport(AcceleratorInfo info)
     {
         // Half precision support estimation
-        if (info.DeviceType.ToUpperInvariant() == "GPU")
+        if (string.Equals(info.DeviceType, "GPU", StringComparison.OrdinalIgnoreCase))
         {
             // Most modern GPUs support half precision
             // Check compute capability for NVIDIA GPUs

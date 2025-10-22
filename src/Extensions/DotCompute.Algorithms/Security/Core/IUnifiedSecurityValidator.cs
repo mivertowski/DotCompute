@@ -17,7 +17,7 @@ public interface IUnifiedSecurityValidator : IDisposable
     /// <param name="assemblyPath">Path to the assembly to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Comprehensive security validation result.</returns>
-    Task<UnifiedSecurityResult> ValidateAssemblyAsync(string assemblyPath, CancellationToken cancellationToken = default);
+    public Task<UnifiedSecurityResult> ValidateAssemblyAsync(string assemblyPath, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates digital signature and certificate trust.
@@ -25,7 +25,7 @@ public interface IUnifiedSecurityValidator : IDisposable
     /// <param name="assemblyPath">Path to the assembly to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Digital signature validation result.</returns>
-    Task<DigitalSignatureResult> ValidateDigitalSignatureAsync(string assemblyPath, CancellationToken cancellationToken = default);
+    public Task<DigitalSignatureResult> ValidateDigitalSignatureAsync(string assemblyPath, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates strong name signature.
@@ -33,7 +33,7 @@ public interface IUnifiedSecurityValidator : IDisposable
     /// <param name="assemblyPath">Path to the assembly to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Strong name validation result.</returns>
-    Task<StrongNameResult> ValidateStrongNameAsync(string assemblyPath, CancellationToken cancellationToken = default);
+    public Task<StrongNameResult> ValidateStrongNameAsync(string assemblyPath, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Performs malware scanning using available security providers.
@@ -41,7 +41,7 @@ public interface IUnifiedSecurityValidator : IDisposable
     /// <param name="assemblyPath">Path to the assembly to scan.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Malware scan result.</returns>
-    Task<MalwareScanResult> ScanForMalwareAsync(string assemblyPath, CancellationToken cancellationToken = default);
+    public Task<MalwareScanResult> ScanForMalwareAsync(string assemblyPath, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Evaluates security policy compliance.
@@ -50,19 +50,19 @@ public interface IUnifiedSecurityValidator : IDisposable
     /// <param name="context">Security evaluation context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Security policy evaluation result.</returns>
-    Task<SecurityPolicyResult> EvaluateSecurityPolicyAsync(string assemblyPath, SecurityEvaluationContext context, CancellationToken cancellationToken = default);
+    public Task<SecurityPolicyResult> EvaluateSecurityPolicyAsync(string assemblyPath, SecurityEvaluationContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks framework version compatibility.
     /// </summary>
     /// <param name="requiredVersion">Required framework version.</param>
     /// <returns>True if compatible; otherwise, false.</returns>
-    bool IsVersionCompatible(Version? requiredVersion);
+    public bool IsVersionCompatible(Version? requiredVersion);
 
     /// <summary>
     /// Gets the current security configuration.
     /// </summary>
-    SecurityConfiguration Configuration { get; }
+    public SecurityConfiguration Configuration { get; }
 }
 
 /// <summary>
@@ -165,7 +165,7 @@ public sealed class StrongNameResult
     /// <summary>
     /// Gets the public key information.
     /// </summary>
-    public byte[]? PublicKey { get; init; }
+    public IReadOnlyList<byte>? PublicKey { get; init; }
 
     /// <summary>
     /// Gets any error message.
@@ -235,14 +235,14 @@ public sealed class SecurityConfiguration
     public long MaxAssemblySize { get; set; } = 100 * 1024 * 1024; // 100MB
 
     /// <summary>
-    /// Gets or sets trusted publishers.
+    /// Gets trusted publishers.
     /// </summary>
-    public ISet<string> TrustedPublishers { get; set; } = new HashSet<string>();
+    public ISet<string> TrustedPublishers { get; init; } = new HashSet<string>();
 
     /// <summary>
-    /// Gets or sets allowed plugin directories.
+    /// Gets allowed plugin directories.
     /// </summary>
-    public ISet<string> AllowedPluginDirectories { get; set; } = new HashSet<string>();
+    public ISet<string> AllowedPluginDirectories { get; init; } = new HashSet<string>();
 
     /// <summary>
     /// Gets or sets scan timeout duration.

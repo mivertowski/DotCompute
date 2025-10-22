@@ -25,6 +25,11 @@ public sealed class SecurityPolicy
     private readonly Dictionary<string, SecurityLevel> _directoryPolicies = [];
 
     /// <summary>
+    /// Cached JSON serializer options for policy serialization/deserialization.
+    /// </summary>
+    private static readonly JsonSerializerOptions s_jsonSerializerOptions = new() { WriteIndented = true };
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
@@ -222,7 +227,7 @@ public sealed class SecurityPolicy
         try
         {
             var config = CreateConfiguration();
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(config, s_jsonSerializerOptions);
             await File.WriteAllTextAsync(configPath, json, cancellationToken);
 
             _logger.LogInfoMessage("Saved security policy to: {configPath}");
@@ -371,19 +376,19 @@ public sealed class SecurityPolicyConfiguration
     public long MaxAssemblySize { get; set; } = 50 * 1024 * 1024;
 
     /// <summary>
-    /// Gets or sets the trusted publishers.
+    /// Gets the trusted publishers.
     /// </summary>
-    public IList<string> TrustedPublishers { get; } = [];
+    public IList<string> TrustedPublishers { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets the blocked assemblies.
+    /// Gets the blocked assemblies.
     /// </summary>
-    public IList<string> BlockedAssemblies { get; } = [];
+    public IList<string> BlockedAssemblies { get; init; } = [];
 
     /// <summary>
-    /// Gets or sets the directory policies.
+    /// Gets the directory policies.
     /// </summary>
-    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; } = [];
+    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; init; } = [];
 }
 
 /// <summary>

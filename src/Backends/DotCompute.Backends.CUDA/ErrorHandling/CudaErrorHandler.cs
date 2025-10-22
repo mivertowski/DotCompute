@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CUDA.ErrorHandling;
 /// Production-grade CUDA error handler with retry logic, graceful degradation,
 /// and comprehensive error recovery strategies.
 /// </summary>
-public sealed class CudaErrorHandler : IDisposable
+public sealed partial class CudaErrorHandler : IDisposable
 {
     private readonly ILogger<CudaErrorHandler> _logger;
     private readonly ConcurrentDictionary<CudaError, ErrorStatistics> _errorStats;
@@ -123,10 +123,10 @@ public sealed class CudaErrorHandler : IDisposable
                 },
                 onReset: () =>
                 {
-                    _logger.LogInfoMessage("Circuit breaker reset, GPU operations resuming");
+                    LogCircuitBreakerReset();
                     _gpuAvailable = true;
                 },
-                onHalfOpen: () => _logger.LogInfoMessage("Circuit breaker half-open, testing GPU availability"));
+                onHalfOpen: () => LogCircuitBreakerHalfOpen());
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Unexpected error in {operationName}");
+            LogUnexpectedError(ex, operationName);
             throw new CudaOperationException(operationName, "Unexpected error occurred", ex);
         }
     }
@@ -202,7 +202,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogErrorMessage(cudaEx, $"CUDA error in {operationName}: {cudaEx.ErrorCode}");
+        LogCudaError(cudaEx, operationName, cudaEx.ErrorCode);
 
         // Try recovery strategies based on error type
         if (IsMemoryError(cudaEx.ErrorCode))
@@ -234,7 +234,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarningMessage("Attempting memory error recovery for {operationName}");
+        LogMemoryRecoveryAttempt(operationName);
 
         try
         {
@@ -253,7 +253,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Memory error recovery failed for {operationName}");
+            LogMemoryRecoveryFailed(ex, operationName);
 
 
             if (_options.EnableCpuFallback)
@@ -274,7 +274,7 @@ public sealed class CudaErrorHandler : IDisposable
         string operationName,
         CancellationToken cancellationToken)
     {
-        _logger.LogWarningMessage("Attempting device error recovery for {operationName}");
+        LogDeviceRecoveryAttempt(operationName);
 
         try
         {
@@ -290,7 +290,7 @@ public sealed class CudaErrorHandler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogErrorMessage(ex, $"Device error recovery failed for {operationName}");
+            LogDeviceRecoveryFailed(ex, operationName);
         }
 
         if (_options.EnableCpuFallback)
@@ -311,7 +311,7 @@ public sealed class CudaErrorHandler : IDisposable
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private async Task<T> FallbackToCpuAsync<T>(string operationName)
     {
-        _logger.LogInfoMessage("Falling back to CPU for {operationName}");
+        LogCpuFallback(operationName);
 
         // This would invoke CPU-based implementation
         // For now, throw to indicate fallback is needed
@@ -365,7 +365,7 @@ public sealed class CudaErrorHandler : IDisposable
         {
             try
             {
-                _logger.LogWarningMessage("Resetting CUDA device...");
+                LogDeviceReset();
 
 
                 var result = CudaRuntime.cudaDeviceReset();
@@ -373,7 +373,7 @@ public sealed class CudaErrorHandler : IDisposable
 
                 if (result == CudaError.Success)
                 {
-                    _logger.LogInfoMessage("Device reset successful");
+                    LogDeviceResetSuccess();
                     _gpuAvailable = true;
                 }
                 else
@@ -384,7 +384,7 @@ public sealed class CudaErrorHandler : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMessage(ex, "Device reset exception");
+                LogDeviceResetException(ex);
                 _gpuAvailable = false;
             }
         });

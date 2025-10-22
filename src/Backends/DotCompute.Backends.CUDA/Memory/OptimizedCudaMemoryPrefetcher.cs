@@ -19,8 +19,79 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// - Cache pollution avoidance with smart eviction policies
 /// Target: 30-50% improvement in memory-bound kernel performance
 /// </summary>
-public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
+public sealed partial class OptimizedCudaMemoryPrefetcher : IDisposable
 {
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 5150,
+        Level = LogLevel.Debug,
+        Message = "Optimized CUDA memory prefetcher initialized with {MaxConcurrent} concurrent prefetches")]
+    private static partial void LogPrefetcherInitialized(ILogger logger, int maxConcurrent);
+
+    [LoggerMessage(
+        EventId = 5151,
+        Level = LogLevel.Trace,
+        Message = "Prefetched {Size} bytes at offset {Offset} to {CacheLevel}")]
+    private static partial void LogPrefetchCompleted(ILogger logger, long size, long offset, CacheLevel cacheLevel);
+
+    [LoggerMessage(
+        EventId = 5152,
+        Level = LogLevel.Warning,
+        Message = "Prefetch failed: {Error}")]
+    private static partial void LogPrefetchFailed(ILogger logger, string error);
+
+    [LoggerMessage(
+        EventId = 5153,
+        Level = LogLevel.Debug,
+        Message = "Enabled auto-prefetch for memory region {Ptr} of size {Size} bytes")]
+    private static partial void LogAutoPrefetchEnabled(ILogger logger, IntPtr ptr, long size);
+
+    [LoggerMessage(
+        EventId = 5154,
+        Level = LogLevel.Debug,
+        Message = "Disabled auto-prefetch for memory region {Ptr}")]
+    private static partial void LogAutoPrefetchDisabled(ILogger logger, IntPtr ptr);
+
+    [LoggerMessage(
+        EventId = 5155,
+        Level = LogLevel.Debug,
+        Message = "Optimized {Count} prefetch patterns")]
+    private static partial void LogPatternsOptimized(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 5156,
+        Level = LogLevel.Warning,
+        Message = "Error during predictive prefetch for {Ptr}")]
+    private static partial void LogPredictivePrefetchError(ILogger logger, Exception ex, IntPtr ptr);
+
+    [LoggerMessage(
+        EventId = 5157,
+        Level = LogLevel.Trace,
+        Message = "Prefetcher maintenance - Patterns: {Patterns}, Hit Rate: {HitRate:P2}, Bandwidth Saved: {Bandwidth} MB")]
+    private static partial void LogMaintenanceStats(ILogger logger, int patterns, double hitRate, double bandwidth);
+
+    [LoggerMessage(
+        EventId = 5158,
+        Level = LogLevel.Warning,
+        Message = "Error during prefetcher maintenance")]
+    private static partial void LogMaintenanceError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 5159,
+        Level = LogLevel.Debug,
+        Message = "Cleaned up {Count} old access patterns")]
+    private static partial void LogPatternsCleanedUp(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 5160,
+        Level = LogLevel.Debug,
+        Message = "Optimized CUDA memory prefetcher disposed")]
+    private static partial void LogPrefetcherDisposed(ILogger logger);
+
+    #endregion
+
+
     private readonly CudaContext _context;
     private readonly ILogger<OptimizedCudaMemoryPrefetcher> _logger;
     private readonly ConcurrentDictionary<IntPtr, AccessPattern> _accessPatterns;
@@ -69,8 +140,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         _maintenanceTimer = new Timer(PerformMaintenance, null,
             _config.MaintenanceInterval, _config.MaintenanceInterval);
 
-        _logger.LogDebug("Optimized CUDA memory prefetcher initialized with {MaxConcurrent} concurrent prefetches",
-            _config.MaxConcurrentPrefetches);
+        LogPrefetcherInitialized(_logger, _config.MaxConcurrentPrefetches);
     }
 
     /// <summary>
@@ -194,14 +264,11 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
                 _ = Interlocked.Increment(ref _successfulPrefetches);
                 _ = Interlocked.Add(ref _bandwidthSaved, size);
 
-
-                _logger.LogTrace("Prefetched {Size} bytes at offset {Offset} to {CacheLevel}",
-
-                    size, offset, cacheLevel);
+                LogPrefetchCompleted(_logger, size, offset, cacheLevel);
             }
             else
             {
-                _logger.LogWarning("Prefetch failed: {Error}", CudaRuntime.GetErrorString(result));
+                LogPrefetchFailed(_logger, CudaRuntime.GetErrorString(result));
             }
 
             // Synchronize stream to ensure prefetch completion
@@ -232,9 +299,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         pattern.AdaptivePrefetchEnabled = enableAdaptive;
         pattern.MemorySize = size;
 
-        _logger.LogDebug("Enabled auto-prefetch for memory region {Ptr} of size {Size} bytes",
-
-            devicePtr, size);
+        LogAutoPrefetchEnabled(_logger, devicePtr, size);
     }
 
     /// <summary>
@@ -246,7 +311,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         if (_accessPatterns.TryGetValue(devicePtr, out var pattern))
         {
             pattern.AutoPrefetchEnabled = false;
-            _logger.LogDebug("Disabled auto-prefetch for memory region {Ptr}", devicePtr);
+            LogAutoPrefetchDisabled(_logger, devicePtr);
         }
     }
 
@@ -293,7 +358,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
         if (optimizedCount > 0)
         {
-            _logger.LogDebug("Optimized {Count} prefetch patterns", optimizedCount);
+            LogPatternsOptimized(_logger, optimizedCount);
         }
     }
 
@@ -331,7 +396,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during predictive prefetch for {Ptr}", pattern.DevicePtr);
+            LogPredictivePrefetchError(_logger, ex, pattern.DevicePtr);
             _ = Interlocked.Increment(ref _prefetchMisses);
         }
     }
@@ -547,14 +612,12 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             OptimizePrefetchPatterns();
 
             // Log statistics
-
             var stats = Statistics;
-            _logger.LogTrace("Prefetcher maintenance - Patterns: {Patterns}, Hit Rate: {HitRate:P2}, Bandwidth Saved: {Bandwidth} MB",
-                stats.ActivePatterns, stats.HitRate, stats.BandwidthSaved / (1024.0 * 1024.0));
+            LogMaintenanceStats(_logger, stats.ActivePatterns, stats.HitRate, stats.BandwidthSaved / (1024.0 * 1024.0));
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during prefetcher maintenance");
+            LogMaintenanceError(_logger, ex);
         }
     }
 
@@ -578,7 +641,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
 
         if (patternsToRemove.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} old access patterns", patternsToRemove.Count);
+            LogPatternsCleanedUp(_logger, patternsToRemove.Count);
         }
     }
 
@@ -617,7 +680,7 @@ public sealed class OptimizedCudaMemoryPrefetcher : IDisposable
             {
             }
 
-            _logger.LogDebug("Optimized CUDA memory prefetcher disposed");
+            LogPrefetcherDisposed(_logger);
         }
     }
 }
