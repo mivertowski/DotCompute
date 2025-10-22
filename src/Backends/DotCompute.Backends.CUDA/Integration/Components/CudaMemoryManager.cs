@@ -11,7 +11,7 @@ namespace DotCompute.Backends.CUDA.Integration.Components;
 /// CUDA memory management component that provides high-level memory operations,
 /// optimization strategies, and unified memory buffer management.
 /// </summary>
-public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
+public sealed partial class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger<CudaMemoryManager> _logger;
@@ -36,7 +36,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         _memoryPool = new MemoryPool(_asyncAdapter, logger);
         _usageTracker = new MemoryUsageTracker();
 
-        _logger.LogDebug("CUDA memory manager initialized for device {DeviceId}", context.DeviceId);
+        LogMemoryManagerInitialized(_logger, context.DeviceId);
     }
     /// <summary>
     /// Gets allocate asynchronously.
@@ -70,7 +70,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate {Count} elements of type {Type}", count, typeof(T).Name);
+            LogAllocationFailed(_logger, ex, count, typeof(T).Name);
             _usageTracker.RecordAllocationFailure(count * System.Runtime.InteropServices.Marshal.SizeOf<T>());
             throw new MemoryException($"Failed to allocate {count} elements of CUDA memory", ex);
         }
@@ -104,7 +104,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate {SizeInBytes} bytes of raw CUDA memory", sizeInBytes);
+            LogRawAllocationFailed(_logger, ex, sizeInBytes);
             _usageTracker.RecordAllocationFailure(sizeInBytes);
             throw new MemoryException($"Failed to allocate {sizeInBytes} bytes of CUDA memory", ex);
         }
@@ -132,7 +132,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate and copy {Count} elements of type {Type}", source.Length, typeof(T).Name);
+            LogAllocateAndCopyFailed(_logger, ex, source.Length, typeof(T).Name);
             _usageTracker.RecordAllocationFailure(source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>());
             throw new MemoryException($"Failed to allocate and copy {source.Length} elements to CUDA memory", ex);
         }
@@ -159,7 +159,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create memory view at offset {Offset} with length {Length}", offset, length);
+            LogCreateViewFailed(_logger, ex, offset, length);
             throw new MemoryException($"Failed to create memory view at offset {offset} with length {length}", ex);
         }
     }
@@ -186,7 +186,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {Count} elements to device memory", source.Length);
+            LogCopyToDeviceFailed(_logger, ex, source.Length);
             throw new MemoryException($"Failed to copy {source.Length} elements to device memory", ex);
         }
     }
@@ -213,7 +213,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {Count} elements from device memory", destination.Length);
+            LogCopyFromDeviceFailed(_logger, ex, destination.Length);
             throw new MemoryException($"Failed to copy {destination.Length} elements from device memory", ex);
         }
     }
@@ -239,7 +239,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy between device buffers");
+            LogCopyBetweenBuffersFailed(_logger, ex);
             throw new MemoryException("Failed to copy between buffers", ex);
         }
     }
@@ -272,7 +272,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {Count} elements with offsets", count);
+            LogCopyWithOffsetsFailed(_logger, ex, count);
             throw new MemoryException($"Failed to copy {count} elements with offsets", ex);
         }
     }
@@ -304,7 +304,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Warning: Failed to free memory buffer");
+            LogFreeFailed(_logger, ex);
         }
     }
     /// <summary>
@@ -336,7 +336,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to async free memory buffer");
+            LogAsyncFreeFailed(_logger, ex);
             throw new MemoryException("Failed to async free memory buffer", ex);
         }
     }
@@ -356,7 +356,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to clear memory");
+            LogClearFailed(_logger, ex);
             throw new MemoryException("Failed to clear memory", ex);
         }
     }
@@ -378,7 +378,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to optimize memory");
+            LogOptimizeFailed(_logger, ex);
             throw new MemoryException("Failed to optimize memory", ex);
         }
     }
@@ -476,14 +476,13 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
                 OptimizationsPerformed = new List<string> { "Pool cleanup", "Memory defragmentation", "Device synchronization" }
             };
 
-            _logger.LogInformation("Memory cleanup completed: {MemoryFreed} bytes freed in {Duration:F2}ms",
-                summary.MemoryFreed, summary.Duration.TotalMilliseconds);
+            LogCleanupCompleted(_logger, summary.MemoryFreed, summary.Duration.TotalMilliseconds);
 
             return summary;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to perform memory cleanup");
+            LogCleanupFailed(_logger, ex);
 
             return new MemoryCleanupSummary
             {
@@ -507,7 +506,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         MemoryPool.Configure(policies.PoolingPolicy);
         MemoryUsageTracker.Configure(policies.TrackingPolicy);
 
-        _logger.LogDebug("Memory management policies configured");
+        LogPoliciesConfigured(_logger);
     }
 
     #endregion
@@ -578,10 +577,10 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during memory manager disposal");
+                LogDisposalError(_logger, ex);
             }
 
-            _logger.LogDebug("CUDA memory manager disposed");
+            LogMemoryManagerDisposed(_logger);
         }
     }
     /// <summary>
@@ -605,7 +604,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during async disposal");
+            LogAsyncDisposalError(_logger, ex);
             return ValueTask.CompletedTask;
         }
     }
@@ -622,7 +621,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to allocate {SizeInBytes} bytes of device memory", sizeInBytes);
+            LogDeviceAllocationFailed(_logger, ex, sizeInBytes);
             _usageTracker.RecordAllocationFailure(sizeInBytes);
             throw new MemoryException($"Failed to allocate {sizeInBytes} bytes of device memory", ex);
         }
@@ -643,7 +642,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Warning: Failed to free device memory");
+            LogFreeDeviceFailed(_logger, ex);
         }
     }
 
@@ -658,7 +657,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to memset device memory");
+            LogMemsetDeviceFailed(_logger, ex);
             throw new MemoryException("Failed to memset device memory", ex);
         }
     }
@@ -674,7 +673,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to async memset device memory");
+            LogAsyncMemsetDeviceFailed(_logger, ex);
             throw new MemoryException("Failed to async memset device memory", ex);
         }
     }
@@ -691,7 +690,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes from host to device", sizeInBytes);
+            LogCopyHostToDeviceFailed(_logger, ex, sizeInBytes);
             throw new MemoryException($"Failed to copy {sizeInBytes} bytes from host to device", ex);
         }
     }
@@ -708,7 +707,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes from device to host", sizeInBytes);
+            LogCopyDeviceToHostFailed(_logger, ex, sizeInBytes);
             throw new MemoryException($"Failed to copy {sizeInBytes} bytes from device to host", ex);
         }
     }
@@ -725,7 +724,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to async copy {SizeInBytes} bytes from host to device", sizeInBytes);
+            LogAsyncCopyHostToDeviceFailed(_logger, ex, sizeInBytes);
             throw new MemoryException($"Failed to async copy {sizeInBytes} bytes from host to device", ex);
         }
     }
@@ -742,7 +741,7 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to async copy {SizeInBytes} bytes from device to host", sizeInBytes);
+            LogAsyncCopyDeviceToHostFailed(_logger, ex, sizeInBytes);
             throw new MemoryException($"Failed to async copy {sizeInBytes} bytes from device to host", ex);
         }
     }
@@ -759,10 +758,182 @@ public sealed class CudaMemoryManager : IUnifiedMemoryManager, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to copy {SizeInBytes} bytes between devices", sizeInBytes);
+            LogCopyDeviceToDeviceFailed(_logger, ex, sizeInBytes);
             throw new MemoryException($"Failed to copy {sizeInBytes} bytes between devices", ex);
         }
     }
+
+    #endregion
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6000,
+        Level = LogLevel.Debug,
+        Message = "CUDA memory manager initialized for device {DeviceId}")]
+    private static partial void LogMemoryManagerInitialized(ILogger logger, int deviceId);
+
+    [LoggerMessage(
+        EventId = 6001,
+        Level = LogLevel.Error,
+        Message = "Failed to allocate {Count} elements of type {Type}")]
+    private static partial void LogAllocationFailed(ILogger logger, Exception ex, int count, string type);
+
+    [LoggerMessage(
+        EventId = 6002,
+        Level = LogLevel.Error,
+        Message = "Failed to allocate {SizeInBytes} bytes of raw CUDA memory")]
+    private static partial void LogRawAllocationFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6003,
+        Level = LogLevel.Error,
+        Message = "Failed to allocate and copy {Count} elements of type {Type}")]
+    private static partial void LogAllocateAndCopyFailed(ILogger logger, Exception ex, int count, string type);
+
+    [LoggerMessage(
+        EventId = 6004,
+        Level = LogLevel.Error,
+        Message = "Failed to create memory view at offset {Offset} with length {Length}")]
+    private static partial void LogCreateViewFailed(ILogger logger, Exception ex, int offset, int length);
+
+    [LoggerMessage(
+        EventId = 6005,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {Count} elements to device memory")]
+    private static partial void LogCopyToDeviceFailed(ILogger logger, Exception ex, int count);
+
+    [LoggerMessage(
+        EventId = 6006,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {Count} elements from device memory")]
+    private static partial void LogCopyFromDeviceFailed(ILogger logger, Exception ex, int count);
+
+    [LoggerMessage(
+        EventId = 6007,
+        Level = LogLevel.Error,
+        Message = "Failed to copy between device buffers")]
+    private static partial void LogCopyBetweenBuffersFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6008,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {Count} elements with offsets")]
+    private static partial void LogCopyWithOffsetsFailed(ILogger logger, Exception ex, int count);
+
+    [LoggerMessage(
+        EventId = 6009,
+        Level = LogLevel.Warning,
+        Message = "Failed to free memory buffer")]
+    private static partial void LogFreeFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6010,
+        Level = LogLevel.Error,
+        Message = "Failed to async free memory buffer")]
+    private static partial void LogAsyncFreeFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6011,
+        Level = LogLevel.Error,
+        Message = "Failed to clear memory")]
+    private static partial void LogClearFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6012,
+        Level = LogLevel.Error,
+        Message = "Failed to optimize memory")]
+    private static partial void LogOptimizeFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6013,
+        Level = LogLevel.Information,
+        Message = "Memory cleanup completed: {MemoryFreed} bytes freed in {Duration:F2}ms")]
+    private static partial void LogCleanupCompleted(ILogger logger, long memoryFreed, double duration);
+
+    [LoggerMessage(
+        EventId = 6014,
+        Level = LogLevel.Error,
+        Message = "Failed to perform memory cleanup")]
+    private static partial void LogCleanupFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6015,
+        Level = LogLevel.Debug,
+        Message = "Memory management policies configured")]
+    private static partial void LogPoliciesConfigured(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6016,
+        Level = LogLevel.Error,
+        Message = "Failed to allocate {SizeInBytes} bytes of device memory")]
+    private static partial void LogDeviceAllocationFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6017,
+        Level = LogLevel.Warning,
+        Message = "Failed to free device memory")]
+    private static partial void LogFreeDeviceFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6018,
+        Level = LogLevel.Error,
+        Message = "Failed to memset device memory")]
+    private static partial void LogMemsetDeviceFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6019,
+        Level = LogLevel.Error,
+        Message = "Failed to async memset device memory")]
+    private static partial void LogAsyncMemsetDeviceFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6020,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {SizeInBytes} bytes from host to device")]
+    private static partial void LogCopyHostToDeviceFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6021,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {SizeInBytes} bytes from device to host")]
+    private static partial void LogCopyDeviceToHostFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6022,
+        Level = LogLevel.Error,
+        Message = "Failed to async copy {SizeInBytes} bytes from host to device")]
+    private static partial void LogAsyncCopyHostToDeviceFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6023,
+        Level = LogLevel.Error,
+        Message = "Failed to async copy {SizeInBytes} bytes from device to host")]
+    private static partial void LogAsyncCopyDeviceToHostFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6024,
+        Level = LogLevel.Error,
+        Message = "Failed to copy {SizeInBytes} bytes between devices")]
+    private static partial void LogCopyDeviceToDeviceFailed(ILogger logger, Exception ex, long sizeInBytes);
+
+    [LoggerMessage(
+        EventId = 6025,
+        Level = LogLevel.Debug,
+        Message = "CUDA memory manager disposed")]
+    private static partial void LogMemoryManagerDisposed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 6026,
+        Level = LogLevel.Warning,
+        Message = "Error during memory manager disposal")]
+    private static partial void LogDisposalError(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6027,
+        Level = LogLevel.Warning,
+        Message = "Error during async disposal")]
+    private static partial void LogAsyncDisposalError(ILogger logger, Exception ex);
 
     #endregion
 }
@@ -1098,7 +1269,7 @@ internal sealed class MemoryUsageTracker
 /// <summary>
 /// Simplified memory pool implementation.
 /// </summary>
-internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger logger) : IDisposable
+internal sealed partial class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger logger) : IDisposable
 {
     private readonly IUnifiedMemoryManager _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -1190,7 +1361,7 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to return buffer to pool");
+            LogReturnToPoolFailed(_logger, ex);
         }
     }
     /// <summary>
@@ -1219,7 +1390,7 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to free pooled buffer during clear");
+                        LogFreePooledBufferFailed(_logger, ex);
                     }
                 }
             }
@@ -1263,6 +1434,22 @@ internal sealed class MemoryPool(IUnifiedMemoryManager memoryManager, ILogger lo
             _ = Clear();
         }
     }
+
+    #region LoggerMessage Delegates
+
+    [LoggerMessage(
+        EventId = 6028,
+        Level = LogLevel.Warning,
+        Message = "Failed to return buffer to pool")]
+    private static partial void LogReturnToPoolFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 6029,
+        Level = LogLevel.Warning,
+        Message = "Failed to free pooled buffer during clear")]
+    private static partial void LogFreePooledBufferFailed(ILogger logger, Exception ex);
+
+    #endregion
 }
 
 

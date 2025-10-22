@@ -59,7 +59,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Creating optimized execution plan for kernel {kernelName} with {optimization} optimization",
+        _logger.LogDebug("Creating optimized execution plan for kernel {KernelName} with {Optimization} optimization",
             definition.Name, optimizationLevel);
 
         var stopwatch = Stopwatch.StartNew();
@@ -70,7 +70,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
             var cacheKey = GenerateCacheKey(definition, workDimensions, optimizationLevel);
             if (_profileCache.TryGetValue(cacheKey, out var cachedProfile))
             {
-                _logger.LogDebug("Using cached optimization profile for kernel {kernelName}", definition.Name);
+                _logger.LogDebug("Using cached optimization profile for kernel {KernelName}", definition.Name);
                 return cachedProfile.ExecutionPlan;
             }
 
@@ -94,14 +94,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
             _profileCache[cacheKey] = profile;
 
             stopwatch.Stop();
-            _logger.LogDebug("Optimization plan created for kernel {kernelName} in {time:F2}ms",
+            _logger.LogDebug("Optimization plan created for kernel {KernelName} in {Time:F2}ms",
                 definition.Name, stopwatch.Elapsed.TotalMilliseconds);
 
             return executionPlan;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create optimization plan for kernel {kernelName}", definition.Name);
+            _logger.LogError(ex, "Failed to create optimization plan for kernel {KernelName}", definition.Name);
             throw;
         }
     }
@@ -118,7 +118,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(statistics);
 
-        _logger.LogDebug("Analyzing performance for kernel {kernelName}", definition.Name);
+        _logger.LogDebug("Analyzing performance for kernel {KernelName}", definition.Name);
 
         var recommendations = new OptimizationRecommendations
         {
@@ -144,14 +144,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
             // Generate specific optimization suggestions
             GenerateOptimizationSuggestions(recommendations);
 
-            _logger.LogDebug("Performance analysis completed for kernel {kernelName} with {count} recommendations",
+            _logger.LogDebug("Performance analysis completed for kernel {KernelName} with {Count} recommendations",
                 definition.Name, recommendations.Suggestions.Count);
 
             return recommendations;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Performance analysis failed for kernel {kernelName}", definition.Name);
+            _logger.LogError(ex, "Performance analysis failed for kernel {KernelName}", definition.Name);
             recommendations.ErrorMessage = ex.Message;
             return recommendations;
         }
@@ -168,7 +168,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogInformation("Benchmarking execution strategies for kernel {kernelName}", definition.Name);
+        _logger.LogInformation("Benchmarking execution strategies for kernel {KernelName}", definition.Name);
 
         var results = new BenchmarkResults
         {
@@ -201,14 +201,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
             // Determine optimal configuration
             results.OptimalConfiguration = DetermineOptimalConfiguration(results);
 
-            _logger.LogInformation("Benchmark completed for kernel {kernelName}: Optimal={optimal}",
+            _logger.LogInformation("Benchmark completed for kernel {KernelName}: Optimal={Optimal}",
                 definition.Name, results.OptimalConfiguration.Description);
 
             return results;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Benchmarking failed for kernel {kernelName}", definition.Name);
+            _logger.LogError(ex, "Benchmarking failed for kernel {KernelName}", definition.Name);
             results.ErrorMessage = ex.Message;
             return results;
         }
@@ -229,7 +229,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
 
         try
         {
-            _logger.LogDebug("Applying dynamic optimizations for kernel {kernelName}", kernelName);
+            _logger.LogDebug("Applying dynamic optimizations for kernel {KernelName}", kernelName);
 
             var optimizationsApplied = false;
 
@@ -240,14 +240,14 @@ internal sealed class CpuKernelOptimizer : IDisposable
                 if (await OptimizeThreadPoolConfigurationAsync(currentPlan))
                 {
                     optimizationsApplied = true;
-                    _logger.LogDebug("Thread pool configuration optimized for kernel {kernelName}", kernelName);
+                    _logger.LogDebug("Thread pool configuration optimized for kernel {KernelName}", kernelName);
                 }
 
                 // Attempt to adjust vectorization settings
                 if (await OptimizeVectorizationSettingsAsync(currentPlan, currentStats))
                 {
                     optimizationsApplied = true;
-                    _logger.LogDebug("Vectorization settings optimized for kernel {kernelName}", kernelName);
+                    _logger.LogDebug("Vectorization settings optimized for kernel {KernelName}", kernelName);
                 }
             }
 
@@ -255,7 +255,7 @@ internal sealed class CpuKernelOptimizer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Dynamic optimization failed for kernel {kernelName}", kernelName);
+            _logger.LogError(ex, "Dynamic optimization failed for kernel {KernelName}", kernelName);
             return false;
         }
     }

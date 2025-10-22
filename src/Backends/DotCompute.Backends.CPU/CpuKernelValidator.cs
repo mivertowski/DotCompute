@@ -36,7 +36,7 @@ internal sealed class CpuKernelValidator : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _cpuCapabilities = DetectCpuCapabilities();
 
-        _logger.LogDebug("CpuKernelValidator initialized with CPU capabilities: {capabilities}",
+        _logger.LogDebug("CpuKernelValidator initialized with CPU capabilities: {Capabilities}",
             string.Join(", ", _cpuCapabilities.SupportedInstructionSets));
     }
 
@@ -50,7 +50,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating kernel {kernelName} for CPU execution", definition.Name);
+        _logger.LogDebug("Validating kernel {KernelName} for CPU execution", definition.Name);
 
         var result = new CpuValidationResult
         {
@@ -82,14 +82,14 @@ internal sealed class CpuKernelValidator : IDisposable
             // Resource usage validation
             await ValidateResourceUsageAsync(definition, workDimensions, result);
 
-            _logger.LogDebug("Kernel validation completed for {kernelName}: Valid={isValid}, Issues={issueCount}",
+            _logger.LogDebug("Kernel validation completed for {KernelName}: Valid={IsValid}, Issues={IssueCount}",
                 definition.Name, result.IsValid, result.Issues.Count);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Kernel validation failed for {kernelName}", definition.Name);
+            _logger.LogError(ex, "Kernel validation failed for {KernelName}", definition.Name);
             result.IsValid = false;
             result.Issues.Add(new ValidationIssue(
                 "CPU_VALIDATION_001",
@@ -110,7 +110,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ArgumentNullException.ThrowIfNull(executionPlan);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating execution plan for kernel {kernelName}", definition.Name);
+        _logger.LogDebug("Validating execution plan for kernel {KernelName}", definition.Name);
 
         var result = new ExecutionPlanValidationResult
         {
@@ -140,7 +140,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Execution plan validation failed for {kernelName}", definition.Name);
+            _logger.LogError(ex, "Execution plan validation failed for {KernelName}", definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Execution plan validation failed: {ex.Message}");
             return result;
@@ -158,7 +158,7 @@ internal sealed class CpuKernelValidator : IDisposable
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(definition);
 
-        _logger.LogDebug("Validating kernel arguments for {kernelName}", definition.Name);
+        _logger.LogDebug("Validating kernel arguments for {KernelName}", definition.Name);
 
         var result = new ArgumentValidationResult
         {
@@ -185,7 +185,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Argument validation failed for {kernelName}", definition.Name);
+            _logger.LogError(ex, "Argument validation failed for {KernelName}", definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Argument validation failed: {ex.Message}");
             return result;
@@ -228,7 +228,7 @@ internal sealed class CpuKernelValidator : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Runtime validation failed for {kernelName}", definition.Name);
+            _logger.LogError(ex, "Runtime validation failed for {KernelName}", definition.Name);
             result.IsValid = false;
             result.Issues.Add($"Runtime validation failed: {ex.Message}");
             return result;

@@ -49,7 +49,7 @@ internal sealed class CpuKernelCache : IDisposable
             _configuration.CleanupInterval ?? _defaultCleanupInterval,
             _configuration.CleanupInterval ?? _defaultCleanupInterval);
 
-        _logger.LogDebug("CpuKernelCache initialized with max size: {maxSize}, expiry: {expiry}",
+        _logger.LogDebug("CpuKernelCache initialized with max size: {MaxSize}, expiry: {Expiry}",
             _configuration.MaxCacheSize ?? _defaultMaxCacheSize,
             _configuration.ExpiryTime ?? _defaultExpiryTime);
     }
@@ -71,19 +71,19 @@ internal sealed class CpuKernelCache : IDisposable
                 cachedKernel.LastAccessed = DateTimeOffset.UtcNow;
                 cachedKernel.HitCount++;
 
-                _logger.LogDebug("Cache hit for kernel: {cacheKey}", cacheKey);
+                _logger.LogDebug("Cache hit for kernel: {CacheKey}", cacheKey);
                 return cachedKernel.CompiledKernel;
             }
             else
             {
                 // Remove expired kernel
                 _ = await RemoveKernelAsync(cacheKey);
-                _logger.LogDebug("Cache miss (expired) for kernel: {cacheKey}", cacheKey);
+                _logger.LogDebug("Cache miss (expired) for kernel: {CacheKey}", cacheKey);
             }
         }
         else
         {
-            _logger.LogDebug("Cache miss for kernel: {cacheKey}", cacheKey);
+            _logger.LogDebug("Cache miss for kernel: {CacheKey}", cacheKey);
         }
 
         return null;
@@ -128,7 +128,7 @@ internal sealed class CpuKernelCache : IDisposable
             var added = _kernelCache.TryAdd(cacheKey, cachedKernel);
             if (added)
             {
-                _logger.LogDebug("Stored kernel in cache: {cacheKey}, expires: {expiry}",
+                _logger.LogDebug("Stored kernel in cache: {CacheKey}, expires: {Expiry}",
                     cacheKey, cachedKernel.ExpiryTime);
             }
 
@@ -156,7 +156,7 @@ internal sealed class CpuKernelCache : IDisposable
                 disposableKernel.Dispose();
             }
 
-            _logger.LogDebug("Removed kernel from cache: {cacheKey}", cacheKey);
+            _logger.LogDebug("Removed kernel from cache: {CacheKey}", cacheKey);
             return Task.FromResult(true);
         }
 
@@ -176,13 +176,13 @@ internal sealed class CpuKernelCache : IDisposable
             if (IsProfileValid(profile))
             {
                 profile.LastAccessed = DateTimeOffset.UtcNow;
-                _logger.LogTrace("Optimization profile cache hit: {profileKey}", profileKey);
+                _logger.LogTrace("Optimization profile cache hit: {ProfileKey}", profileKey);
                 return Task.FromResult<OptimizationProfile?>(profile);
             }
             else
             {
                 _ = _optimizationCache.TryRemove(profileKey, out _);
-                _logger.LogTrace("Optimization profile cache miss (expired): {profileKey}", profileKey);
+                _logger.LogTrace("Optimization profile cache miss (expired): {ProfileKey}", profileKey);
             }
         }
 
@@ -203,7 +203,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (added)
         {
-            _logger.LogTrace("Stored optimization profile: {profileKey}", profileKey);
+            _logger.LogTrace("Stored optimization profile: {ProfileKey}", profileKey);
         }
 
         return Task.FromResult(added);
@@ -221,13 +221,13 @@ internal sealed class CpuKernelCache : IDisposable
         {
             if (IsMetricsValid(metrics))
             {
-                _logger.LogTrace("Performance metrics cache hit: {metricsKey}", metricsKey);
+                _logger.LogTrace("Performance metrics cache hit: {MetricsKey}", metricsKey);
                 return Task.FromResult<PerformanceMetrics?>(metrics);
             }
             else
             {
                 _ = _performanceCache.TryRemove(metricsKey, out _);
-                _logger.LogTrace("Performance metrics cache miss (expired): {metricsKey}", metricsKey);
+                _logger.LogTrace("Performance metrics cache miss (expired): {MetricsKey}", metricsKey);
             }
         }
 
@@ -247,7 +247,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (added)
         {
-            _logger.LogTrace("Stored performance metrics: {metricsKey}", metricsKey);
+            _logger.LogTrace("Stored performance metrics: {MetricsKey}", metricsKey);
         }
 
         return Task.FromResult(added);
@@ -267,7 +267,7 @@ internal sealed class CpuKernelCache : IDisposable
             cachedKernel.ExecutionStatistics = statistics;
             cachedKernel.LastAccessed = DateTimeOffset.UtcNow;
 
-            _logger.LogTrace("Updated performance metrics for kernel: {cacheKey}", cacheKey);
+            _logger.LogTrace("Updated performance metrics for kernel: {CacheKey}", cacheKey);
         }
 
         return Task.CompletedTask;
@@ -360,7 +360,7 @@ internal sealed class CpuKernelCache : IDisposable
         {
             // This would typically involve compiling and caching common kernel configurations
             // For now, this is a placeholder that could be implemented based on usage patterns
-            _logger.LogDebug("Preload requested for kernel: {kernelName}", kernelName);
+            _logger.LogDebug("Preload requested for kernel: {KernelName}", kernelName);
         }
 
         return Task.CompletedTask;
@@ -400,7 +400,7 @@ internal sealed class CpuKernelCache : IDisposable
             _ = await RemoveKernelAsync(entry.CacheKey);
         }
 
-        _logger.LogDebug("Evicted {count} cache entries due to size limit", entriesToEvict.Count);
+        _logger.LogDebug("Evicted {Count} cache entries due to size limit", entriesToEvict.Count);
     }
 
     private void PerformCacheCleanup(object? state)
@@ -467,7 +467,7 @@ internal sealed class CpuKernelCache : IDisposable
 
         if (expiredKernels.Count > 0 || expiredProfiles.Count > 0 || expiredMetrics.Count > 0)
         {
-            _logger.LogDebug("Cleaned up expired cache entries: {kernels} kernels, {profiles} profiles, {metrics} metrics",
+            _logger.LogDebug("Cleaned up expired cache entries: {Kernels} kernels, {Profiles} profiles, {Metrics} metrics",
                 expiredKernels.Count, expiredProfiles.Count, expiredMetrics.Count);
         }
     }
