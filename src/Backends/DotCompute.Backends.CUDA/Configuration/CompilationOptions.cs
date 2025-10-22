@@ -29,10 +29,10 @@ namespace DotCompute.Backends.CUDA.Configuration
         /// <summary>
         /// Gets or sets include directories for CUDA compilation.
         /// </summary>
-        public List<string> IncludeDirectories
+        public IList<string> IncludeDirectories
         {
 
-            get => [.. IncludePaths];
+            get => IncludePaths;
             set
             {
                 IncludePaths.Clear();

@@ -502,7 +502,7 @@ public sealed partial class LoadedAssemblyResult
     /// Gets or sets the loaded plugins.
     /// </summary>
     /// <value>The loaded plugins.</value>
-    public required List<LoadedPluginType> LoadedPlugins { get; init; }
+    public required IReadOnlyList<LoadedPluginType> LoadedPlugins { get; init; }
     /// <summary>
     /// Gets or sets the success.
     /// </summary>
@@ -534,7 +534,7 @@ public sealed partial class NuGetLoadResult
     /// Gets or sets the loaded plugins.
     /// </summary>
     /// <value>The loaded plugins.</value>
-    public required List<LoadedPluginType> LoadedPlugins { get; init; }
+    public required IReadOnlyList<LoadedPluginType> LoadedPlugins { get; init; }
     /// <summary>
     /// Gets or sets the success.
     /// </summary>

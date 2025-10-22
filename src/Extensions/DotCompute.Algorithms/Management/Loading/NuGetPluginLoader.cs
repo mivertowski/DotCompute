@@ -222,7 +222,7 @@ public sealed class NuGetPackageLoadResult
     /// <summary>
     /// Gets the resolved dependencies for this package.
     /// </summary>
-    public List<string> ResolvedDependencies { get; } = new List<string>();
+    public IReadOnlyList<string> ResolvedDependencies { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the security validation result for this package.
@@ -232,7 +232,7 @@ public sealed class NuGetPackageLoadResult
     /// <summary>
     /// Gets the warnings generated during package load.
     /// </summary>
-    public List<string> Warnings { get; } = new List<string>();
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the time taken to load the package.

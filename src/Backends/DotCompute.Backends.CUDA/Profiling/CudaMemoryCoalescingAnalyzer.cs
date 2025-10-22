@@ -362,7 +362,7 @@ namespace DotCompute.Backends.CUDA.Analysis
         /// Compares coalescing efficiency across different access patterns.
         /// </summary>
         public async Task<CoalescingComparison> CompareAccessPatternsAsync(
-            List<MemoryAccessInfo> patterns,
+            IReadOnlyList<MemoryAccessInfo> patterns,
             int deviceId = 0)
         {
             var comparison = new CoalescingComparison();
